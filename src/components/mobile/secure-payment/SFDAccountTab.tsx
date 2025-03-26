@@ -10,16 +10,21 @@ import { Fingerprint, RotateCw, Shield, Lock } from 'lucide-react';
 interface SFDAccountTabProps {
   paymentStatus: 'pending' | 'success' | 'failed' | null;
   handlePayment: () => void;
+  isWithdrawal?: boolean;
 }
 
-export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({ paymentStatus, handlePayment }) => {
+export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({ 
+  paymentStatus, 
+  handlePayment,
+  isWithdrawal = false
+}) => {
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(true);
   const [selected, setSelected] = useState("primary");
   
   return (
     <>
       <div>
-        <Label>Compte SFD source</Label>
+        <Label>{isWithdrawal ? "Compte SFD source" : "Compte SFD source"}</Label>
         <Select defaultValue="primary" onValueChange={setSelected}>
           <SelectTrigger>
             <SelectValue placeholder="Sélectionner un compte" />
@@ -35,22 +40,24 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({ paymentStatus, han
         </div>
       </div>
       
-      <div>
-        <Label>Prêt à rembourser</Label>
-        <Select defaultValue="loan1">
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionner un prêt" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="loan1">Microfinance Bamako (25 400 FCFA)</SelectItem>
-            <SelectItem value="loan2">Supermarché Sahara (5 800 FCFA)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {!isWithdrawal && (
+        <div>
+          <Label>Prêt à rembourser</Label>
+          <Select defaultValue="loan1">
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionner un prêt" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="loan1">Microfinance Bamako (25 400 FCFA)</SelectItem>
+              <SelectItem value="loan2">Supermarché Sahara (5 800 FCFA)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       
       <div>
-        <Label>Montant du remboursement</Label>
-        <Input type="text" value="3 500 FCFA" readOnly />
+        <Label>{isWithdrawal ? "Montant du retrait" : "Montant du remboursement"}</Label>
+        <Input type="text" value={isWithdrawal ? "25 000 FCFA" : "3 500 FCFA"} readOnly />
         <div className="mt-1 text-xs text-muted-foreground flex items-center">
           <Shield className="h-3 w-3 mr-1" />
           Transaction chiffrée en AES-256
@@ -79,7 +86,7 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({ paymentStatus, han
           className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
           onClick={handlePayment}
         >
-          Rembourser maintenant
+          {isWithdrawal ? "Retirer maintenant" : "Rembourser maintenant"}
         </Button>
       )}
     </>

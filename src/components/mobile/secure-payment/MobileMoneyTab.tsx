@@ -9,9 +9,14 @@ import { RotateCw, Smartphone } from 'lucide-react';
 interface MobileMoneyTabProps {
   paymentStatus: 'pending' | 'success' | 'failed' | null;
   handlePayment: () => void;
+  isWithdrawal?: boolean;
 }
 
-export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({ paymentStatus, handlePayment }) => {
+export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({ 
+  paymentStatus, 
+  handlePayment,
+  isWithdrawal = false
+}) => {
   const [selected, setSelected] = useState("orange");
   
   return (
@@ -60,16 +65,22 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({ paymentStatus, h
           <Label htmlFor="phone">Numéro de téléphone</Label>
           <Input id="phone" placeholder="+223 XX XX XX XX" />
           <div className="mt-1 text-xs text-muted-foreground">
-            Un code de confirmation sera envoyé à ce numéro
+            {isWithdrawal ? 
+              "Le montant sera envoyé à ce numéro" : 
+              "Un code de confirmation sera envoyé à ce numéro"
+            }
           </div>
         </div>
         
         <div>
           <Label>Montant</Label>
-          <Input type="text" value="3 500 FCFA" readOnly />
+          <Input type="text" value={isWithdrawal ? "25 000 FCFA" : "3 500 FCFA"} readOnly />
           <div className="flex items-center mt-1 text-xs text-green-600">
             <Smartphone className="h-3 w-3 mr-1" />
-            Aucuns frais de traitement
+            {isWithdrawal ? 
+              "Frais de retrait: 250 FCFA" : 
+              "Aucuns frais de traitement"
+            }
           </div>
         </div>
         
@@ -83,7 +94,7 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({ paymentStatus, h
             className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
             onClick={handlePayment}
           >
-            Rembourser maintenant
+            {isWithdrawal ? "Retirer maintenant" : "Rembourser maintenant"}
           </Button>
         )}
       </div>

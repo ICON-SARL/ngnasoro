@@ -4,16 +4,20 @@ import { Download, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface QRCodePaymentDialogProps {
   onClose: () => void;
+  amount?: number;
+  isWithdrawal?: boolean;
 }
 
-const QRCodePaymentDialog = ({ onClose }: QRCodePaymentDialogProps) => {
+const QRCodePaymentDialog = ({ onClose, amount = 3500, isWithdrawal = false }: QRCodePaymentDialogProps) => {
   const { toast } = useToast();
   const [qrGenerated, setQrGenerated] = useState(false);
   const [qrExpiry, setQrExpiry] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState('');
+  const [qrCode, setQrCode] = useState('');
 
   // Countdown timer for QR code expiry
   useEffect(() => {
@@ -38,28 +42,76 @@ const QRCodePaymentDialog = ({ onClose }: QRCodePaymentDialogProps) => {
     return () => clearInterval(interval);
   }, [qrExpiry]);
 
-  const handleGenerateQrCode = () => {
-    const expiryDate = new Date();
-    expiryDate.setMinutes(expiryDate.getMinutes() + 15); // 15 minutes expiry
-    
-    setQrExpiry(expiryDate);
-    setQrGenerated(true);
-    
-    toast({
-      title: "QR Code généré",
-      description: "Ce code est valable pendant 15 minutes. Présentez-le à l'agent SFD pour effectuer votre paiement.",
-    });
+  const handleGenerateQrCode = async () => {
+    try {
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Erreur d'authentification",
+          description: "Veuillez vous connecter pour générer un QR code",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Call the Edge Function to generate a QR code
+      const { data, error } = await supabase.functions.invoke('qr-code-verification/generate', {
+        method: 'POST',
+        body: {
+          userId: user.id,
+          loanId: "LOAN123", // Placeholder - would be real loan ID in production
+          amount: amount,
+          isWithdrawal: isWithdrawal
+        },
+      });
+      
+      if (error) {
+        console.error('QR Code generation error:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de générer le QR code",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const expiryDate = new Date(data.expiresAt);
+      setQrExpiry(expiryDate);
+      setQrGenerated(true);
+      setQrCode(data.code);
+      
+      toast({
+        title: "QR Code généré",
+        description: "Ce code est valable pendant 15 minutes. Présentez-le à l'agent SFD pour effectuer votre opération.",
+      });
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la génération du QR code",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Paiement en agence SFD</DialogTitle>
+        <DialogTitle>
+          {isWithdrawal ? "Retrait en agence SFD" : "Paiement en agence SFD"}
+        </DialogTitle>
       </DialogHeader>
       <div className="space-y-4">
         {!qrGenerated ? (
           <>
-            <p className="text-sm">Générez un QR code unique que vous présenterez à l'agent SFD pour effectuer votre paiement. Le code est valable 15 minutes.</p>
+            <p className="text-sm">
+              {isWithdrawal 
+                ? "Générez un QR code unique que vous présenterez à l'agent SFD pour effectuer votre retrait."
+                : "Générez un QR code unique que vous présenterez à l'agent SFD pour effectuer votre paiement."
+              } Le code est valable 15 minutes.
+            </p>
             <Button onClick={handleGenerateQrCode} className="w-full">
               Générer le QR code
             </Button>
@@ -74,7 +126,10 @@ const QRCodePaymentDialog = ({ onClose }: QRCodePaymentDialogProps) => {
             </div>
             <p className="text-sm font-medium text-green-600 mb-2">QR Code généré avec succès</p>
             <p className="text-xs text-gray-500 mb-4">
-              Présentez ce code à l'agent SFD pour effectuer votre paiement de 3 500 FCFA
+              {isWithdrawal 
+                ? `Présentez ce code à l'agent SFD pour effectuer votre retrait de ${amount.toLocaleString()} FCFA`
+                : `Présentez ce code à l'agent SFD pour effectuer votre paiement de ${amount.toLocaleString()} FCFA`
+              }
             </p>
             <div className="flex space-x-2">
               <Button variant="outline" onClick={() => setQrGenerated(false)} className="flex-1">

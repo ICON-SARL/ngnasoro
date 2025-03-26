@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -50,6 +50,8 @@ import {
   ArrowLeft,
   ActivitySquare
 } from 'lucide-react';
+
+const FundsManagementPage = lazy(() => import('@/components/mobile/FundsManagementPage'));
 
 const MainDashboard = ({ onAction, account, transactions, transactionsLoading, toggleMenu }) => {
   return (
@@ -140,8 +142,8 @@ const MobileFlow = () => {
     
     if (action === 'Send' || action === 'Receive') {
       navigate('/mobile-flow/payment');
-    } else if (action === 'Float me cash') {
-      navigate('/mobile-flow/secure-payment');
+    } else if (action === 'Float me cash' || action === 'Funds Management') {
+      navigate('/mobile-flow/funds-management');
     } else if (action === 'Schedule transfer') {
       navigate('/mobile-flow/schedule-transfer');
     } else if (action.startsWith('Transfer to')) {
@@ -170,7 +172,7 @@ const MobileFlow = () => {
       navigate('/mobile-flow/main');
       setShowWelcome(false);
     } else if (action === 'Repayment') {
-      navigate('/mobile-flow/payment');
+      navigate('/mobile-flow/secure-payment');
       if (data && data.amount) {
         // You would handle setting repayment amount here
       }
@@ -318,6 +320,11 @@ const MobileFlow = () => {
         } />
         <Route path="secure-payment" element={
           <SecurePaymentTab onBack={() => navigate('/mobile-flow/main')} />
+        } />
+        <Route path="funds-management" element={
+          <Suspense fallback={<div className="p-8 text-center">Chargement...</div>}>
+            <FundsManagementPage />
+          </Suspense>
         } />
         <Route path="schedule-transfer" element={
           <ScheduleTransferTab onBack={() => navigate('/mobile-flow/main')} />

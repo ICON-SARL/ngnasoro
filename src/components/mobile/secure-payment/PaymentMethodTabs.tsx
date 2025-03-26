@@ -11,6 +11,7 @@ interface PaymentMethodTabsProps {
   paymentStatus: 'pending' | 'success' | 'failed' | null;
   onPaymentMethodChange: (value: string) => void;
   handlePayment: () => void;
+  isWithdrawal?: boolean;
 }
 
 export const PaymentMethodTabs: React.FC<PaymentMethodTabsProps> = ({
@@ -19,6 +20,7 @@ export const PaymentMethodTabs: React.FC<PaymentMethodTabsProps> = ({
   paymentStatus,
   onPaymentMethodChange,
   handlePayment,
+  isWithdrawal = false
 }) => {
   return (
     <Tabs defaultValue={paymentMethod} onValueChange={onPaymentMethodChange} className="w-full">
@@ -40,14 +42,16 @@ export const PaymentMethodTabs: React.FC<PaymentMethodTabsProps> = ({
       <TabsContent value="sfd" className="space-y-4">
         <SFDAccountTab 
           paymentStatus={paymentStatus} 
-          handlePayment={handlePayment} 
+          handlePayment={handlePayment}
+          isWithdrawal={isWithdrawal}
         />
       </TabsContent>
       
       <TabsContent value="mobile" className="space-y-4">
         <MobileMoneyTab 
           paymentStatus={paymentStatus} 
-          handlePayment={handlePayment} 
+          handlePayment={handlePayment}
+          isWithdrawal={isWithdrawal}
         />
       </TabsContent>
     </Tabs>

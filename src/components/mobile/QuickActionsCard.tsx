@@ -1,145 +1,70 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CreditCard, Wallet, Volume2, AlertTriangle, Shield, Fingerprint } from 'lucide-react';
-import VoiceAssistant from '@/components/VoiceAssistant';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
+import { CreditCard, ArrowRight, HandCoins, Wallet } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface QuickActionsCardProps {
   onAction: (action: string, data?: any) => void;
-  loanId?: string;
-  paymentDue?: number;
+  loanId: string;
+  paymentDue: number;
 }
 
-const QuickActionsCard: React.FC<QuickActionsCardProps> = ({ 
-  onAction, 
-  loanId,
-  paymentDue = 0
-}) => {
-  const { toast } = useToast();
-  const [voiceGuidance, setVoiceGuidance] = useState(false);
-  const [showLimitWarning, setShowLimitWarning] = useState(false);
-  const [showSecurityInfo, setShowSecurityInfo] = useState(false);
+const QuickActionsCard = ({ onAction, loanId, paymentDue }: QuickActionsCardProps) => {
+  const navigate = useNavigate();
   
-  const handleNewLoanClick = () => {
-    setVoiceGuidance(true);
-    onAction('Loan Application');
-  };
-  
-  const handleRepaymentClick = () => {
-    // Check if the user is near their daily transaction limit
-    const mockDailyLimit = 500000; // 500,000 FCFA
-    const mockUsedToday = 480000; // 480,000 FCFA used already
-    const remainingLimit = mockDailyLimit - mockUsedToday;
-    
-    if (paymentDue > remainingLimit) {
-      setShowLimitWarning(true);
-      toast({
-        title: "Plafond journalier presque atteint",
-        description: `Il vous reste ${remainingLimit.toLocaleString()} FCFA sur votre plafond quotidien de ${mockDailyLimit.toLocaleString()} FCFA`,
-        variant: "destructive",
-      });
-      // Still allow the action, but with a warning
-      setTimeout(() => {
-        onAction('Repayment', { amount: paymentDue, loanId });
-      }, 1500);
-    } else {
-      onAction('Repayment', { amount: paymentDue, loanId });
-    }
-  };
-
-  const handleVoiceGuidanceToggle = () => {
-    setVoiceGuidance(!voiceGuidance);
-    toast({
-      title: voiceGuidance ? "Guide vocal désactivé" : "Guide vocal activé",
-      description: voiceGuidance ? 
-        "Le guide vocal a été désactivé pour cette session" : 
-        "Activez vos haut-parleurs pour entendre les instructions",
-    });
-  };
-
-  const toggleSecurityInfo = () => {
-    setShowSecurityInfo(!showSecurityInfo);
-  };
-
   return (
-    <Card className="border-0 shadow-md bg-white rounded-2xl overflow-hidden mt-4">
+    <Card className="border-0 shadow-sm mb-6">
       <CardContent className="p-4">
-        <h3 className="text-lg font-medium mb-4">Actions Rapides</h3>
-        
-        {showLimitWarning && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Attention: Vous approchez de votre plafond journalier de transactions Mobile Money.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {showSecurityInfo && (
-          <Alert className="mb-4 bg-blue-50 border-blue-200 text-blue-800">
-            <Fingerprint className="h-4 w-4" />
-            <AlertDescription>
-              Double authentification activée pour les transactions. Toutes les opérations sont sécurisées conformément aux standards bancaires.
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        <div className="grid grid-cols-2 gap-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-semibold">Actions rapides</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
           <Button 
-            onClick={handleNewLoanClick}
-            className="h-auto flex flex-col items-center p-6 bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+            variant="outline" 
+            className="bg-blue-50/50 border-blue-100 hover:bg-blue-50 text-blue-700 h-auto py-3"
+            onClick={() => onAction('Repayment', { loanId, amount: paymentDue })}
           >
-            <CreditCard className="h-8 w-8 mb-2" />
-            <span className="text-lg">Nouveau prêt</span>
-            <div 
-              className="flex items-center mt-1 text-xs opacity-80 cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleVoiceGuidanceToggle();
-              }}
-            >
-              <Volume2 className={`h-3 w-3 mr-1 ${voiceGuidance ? 'text-yellow-300' : ''}`} />
-              Guide vocal {voiceGuidance ? 'ON' : 'OFF'}
+            <div className="flex flex-col items-center w-full">
+              <CreditCard className="h-5 w-5 mb-1" />
+              <span className="text-xs font-normal">Rembourser</span>
             </div>
           </Button>
           
           <Button 
-            onClick={handleRepaymentClick}
-            className="h-auto flex flex-col items-center p-6 bg-[#FFAB2E] hover:bg-[#FFAB2E]/90"
-            disabled={!loanId || paymentDue <= 0}
+            variant="outline" 
+            className="bg-teal-50/50 border-teal-100 hover:bg-teal-50 text-teal-700 h-auto py-3"
+            onClick={() => navigate('/mobile-flow/loan-agreement')}
           >
-            <Wallet className="h-8 w-8 mb-2" />
-            <span className="text-lg">Rembourser</span>
-            {paymentDue > 0 && (
-              <div className="flex items-center mt-1 text-xs opacity-80">
-                <Shield className="h-3 w-3 mr-1" />
-                {paymentDue.toLocaleString()} FCFA
-              </div>
-            )}
+            <div className="flex flex-col items-center w-full">
+              <ArrowRight className="h-5 w-5 mb-1" />
+              <span className="text-xs font-normal">Prochaine étape</span>
+            </div>
           </Button>
-        </div>
-        
-        <div className="mt-3 text-xs text-blue-600 text-center">
+          
           <Button 
-            variant="link" 
-            className="p-0 h-auto text-xs"
-            onClick={toggleSecurityInfo}
+            variant="outline" 
+            className="bg-amber-50/50 border-amber-100 hover:bg-amber-50 text-amber-700 h-auto py-3"
+            onClick={() => onAction('Loan Application')}
           >
-            <Fingerprint className="h-3 w-3 mr-1" />
-            {showSecurityInfo ? "Masquer" : "Afficher"} les infos de sécurité
+            <div className="flex flex-col items-center w-full">
+              <HandCoins className="h-5 w-5 mb-1" />
+              <span className="text-xs font-normal">Nouveau prêt</span>
+            </div>
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="bg-green-50/50 border-green-100 hover:bg-green-50 text-green-700 h-auto py-3"
+            onClick={() => onAction('Funds Management')}
+          >
+            <div className="flex flex-col items-center w-full">
+              <Wallet className="h-5 w-5 mb-1" />
+              <span className="text-xs font-normal">Gérer les fonds</span>
+            </div>
           </Button>
         </div>
-        
-        {voiceGuidance && (
-          <VoiceAssistant 
-            message="Bienvenue dans l'assistant de demande de prêt. Je vais vous guider à travers les étapes nécessaires pour obtenir un financement adapté à vos besoins." 
-            autoPlay={true}
-            language="bambara"
-          />
-        )}
       </CardContent>
     </Card>
   );

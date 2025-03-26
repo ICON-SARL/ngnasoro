@@ -2,12 +2,16 @@
 import React from 'react';
 import { Check, Shield } from 'lucide-react';
 
-export const SecurityFeatures: React.FC = () => {
+interface SecurityFeaturesProps {
+  isWithdrawal?: boolean;
+}
+
+export const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ isWithdrawal = false }) => {
   return (
     <div className="mt-6 pt-6 border-t border-gray-200">
       <h3 className="text-sm font-medium mb-4 flex items-center">
         <Shield className="h-4 w-4 mr-2 text-[#0D6A51]" />
-        Sécurité des remboursements
+        {isWithdrawal ? "Sécurité des retraits" : "Sécurité des remboursements"}
       </h3>
       
       <div className="space-y-3">
@@ -16,7 +20,9 @@ export const SecurityFeatures: React.FC = () => {
             <Check className="h-3 w-3 text-green-600" />
           </div>
           <div>
-            <p className="text-sm font-medium">Remboursement sécurisé</p>
+            <p className="text-sm font-medium">
+              {isWithdrawal ? "Retrait sécurisé" : "Remboursement sécurisé"}
+            </p>
             <p className="text-xs text-gray-500">
               Vos données de paiement sont cryptées avec le niveau de sécurité bancaire
             </p>
@@ -30,7 +36,10 @@ export const SecurityFeatures: React.FC = () => {
           <div>
             <p className="text-sm font-medium">Confirmation immédiate</p>
             <p className="text-xs text-gray-500">
-              Votre remboursement est enregistré instantanément dans votre compte de prêt
+              {isWithdrawal 
+                ? "Votre retrait est enregistré instantanément dans votre compte" 
+                : "Votre remboursement est enregistré instantanément dans votre compte de prêt"
+              }
             </p>
           </div>
         </div>
