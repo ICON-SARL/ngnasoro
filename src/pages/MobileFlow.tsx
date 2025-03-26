@@ -42,7 +42,7 @@ import {
   HelpCircle,
   Settings,
   ArrowLeft,
-  FlowChart
+  ActivitySquare
 } from 'lucide-react';
 
 const MobileFlow = () => {

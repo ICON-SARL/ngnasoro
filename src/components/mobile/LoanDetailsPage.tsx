@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { ArrowLeft, DollarSign, CreditCard, Calendar, Clock, MoreHorizontal, QrCode, Smartphone, Download, Building, Wallet, FlowChart } from 'lucide-react';
+import { ArrowLeft, DollarSign, CreditCard, Calendar, Clock, MoreHorizontal, QrCode, Smartphone, Download, Building, Wallet, ActivitySquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -62,7 +63,7 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
         </Button>
         <h1 className="text-lg font-bold">Détails du prêt</h1>
         <Button variant="outline" size="sm" className="flex items-center text-xs" onClick={viewLoanProcess}>
-          <FlowChart className="h-3 w-3 mr-1" /> Processus
+          <ActivitySquare className="h-3 w-3 mr-1" /> Processus
         </Button>
       </div>
 
