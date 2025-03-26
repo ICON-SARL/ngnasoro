@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
@@ -15,7 +14,7 @@ import TransactionList from '@/components/mobile/TransactionList';
 import PaymentTabContent from '@/components/mobile/PaymentTabContent';
 import SecurePaymentTab from '@/components/mobile/SecurePaymentTab';
 import ScheduleTransferTab from '@/components/mobile/ScheduleTransferTab';
-import HomeLoanPage from '@/components/mobile/HomeLoanPage';
+import InstantLoanPage from '@/components/mobile/InstantLoanPage';
 import LoanActivityPage from '@/components/mobile/LoanActivityPage';
 import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
 import LoanSetupPage from '@/components/mobile/LoanSetupPage';
@@ -54,7 +53,6 @@ import {
   ActivitySquare
 } from 'lucide-react';
 
-// Main Dashboard Component
 const MainDashboard = ({ onAction, account, transactions, transactionsLoading, toggleMenu }) => {
   return (
     <div className="space-y-4 mt-0 p-0 pb-20">
@@ -88,7 +86,6 @@ const MainDashboard = ({ onAction, account, transactions, transactionsLoading, t
         />
       </div>
       
-      {/* New SFD Savings Overview Component */}
       <div className="mx-4">
         <SFDSavingsOverview />
       </div>
@@ -124,7 +121,6 @@ const MobileFlow = () => {
   const { account, isLoading: accountLoading, updateBalance } = useAccount();
   const { transactions, isLoading: transactionsLoading, addTransaction } = useTransactions();
 
-  // Check if it's a first visit or if coming from welcome route
   const [showWelcome, setShowWelcome] = useState(() => {
     const hasVisited = localStorage.getItem('hasVisitedApp');
     return !hasVisited;
@@ -136,7 +132,6 @@ const MobileFlow = () => {
     }
   }, [user, loading, navigate]);
 
-  // Mark as visited after welcome screen is shown
   useEffect(() => {
     if (!showWelcome) {
       localStorage.setItem('hasVisitedApp', 'true');
@@ -226,12 +221,10 @@ const MobileFlow = () => {
     }
   };
 
-  // Redirect to welcome if it's the first visit
   useEffect(() => {
     if (showWelcome && location.pathname === '/mobile-flow') {
       navigate('/mobile-flow/welcome');
     }
-    // If coming directly to a subpath and it's not the welcome page, mark as visited
     else if (location.pathname !== '/mobile-flow/welcome' && location.pathname !== '/mobile-flow') {
       setShowWelcome(false);
     }
@@ -335,7 +328,7 @@ const MobileFlow = () => {
         <Route path="schedule-transfer" element={
           <ScheduleTransferTab onBack={() => navigate('/mobile-flow/main')} />
         } />
-        <Route path="home-loan" element={<HomeLoanPage />} />
+        <Route path="home-loan" element={<InstantLoanPage />} />
         <Route path="loan-activity" element={<LoanActivityPage />} />
         <Route path="loan-details" element={
           <LoanDetailsPage onBack={() => navigate('/mobile-flow/home-loan')} />

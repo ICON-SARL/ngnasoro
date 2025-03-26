@@ -69,7 +69,7 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
       icon: null,
       label: "",
       value: 'action',
-      path: '/mobile-flow/loan-activity'
+      path: '/mobile-flow/loan-application'
     },
     {
       icon: <Wallet className="h-6 w-6" />,
