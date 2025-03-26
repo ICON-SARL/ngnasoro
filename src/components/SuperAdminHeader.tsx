@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BellRing, LogOut, Settings, User } from 'lucide-react';
+import { BellRing, LogOut, Settings, User, MessageCircle } from 'lucide-react';
 
 export const SuperAdminHeader = () => {
   return (
@@ -30,6 +30,9 @@ export const SuperAdminHeader = () => {
           </Link>
           <Link to="/agency-dashboard" className="text-sm font-medium hover:text-[#FFAB2E] transition-colors">
             Agences
+          </Link>
+          <Link to="/support" className="text-sm font-medium hover:text-[#FFAB2E] transition-colors">
+            Support
           </Link>
           <Link to="/security" className="text-sm font-medium hover:text-[#FFAB2E] transition-colors">
             Sécurité

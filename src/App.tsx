@@ -12,6 +12,7 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import AgencyDashboard from "./pages/AgencyDashboard";
 import AuthUI from "./components/AuthUI";
 import KYCVerification from "./pages/KYCVerification";
+import SupportPage from "./pages/SupportPage";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/agency-dashboard" element={<AgencyDashboard />} />
           <Route path="/auth" element={<AuthUI />} />
           <Route path="/kyc" element={<KYCVerification />} />
+          <Route path="/support" element={<SupportPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
