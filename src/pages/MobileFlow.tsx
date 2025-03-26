@@ -400,6 +400,19 @@ const MobileFlow = () => {
         <Route path="loan-process" element={
           <LoanProcessFlow onBack={() => navigate('/mobile-flow/main')} />
         } />
+        <Route path="profile" element={
+          <div className="p-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mb-4" 
+              onClick={() => navigate('/mobile-flow/main')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+            </Button>
+            <MultiSFDAccounts />
+          </div>
+        } />
         <Route path="" element={<Navigate to="/mobile-flow/welcome" replace />} />
         <Route path="*" element={<Navigate to="/mobile-flow/welcome" replace />} />
       </Routes>

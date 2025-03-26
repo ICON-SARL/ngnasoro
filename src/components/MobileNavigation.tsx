@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Home, Wallet, User, Plus, CreditCard } from 'lucide-react';
+import { Home, Wallet, User, Plus, BarChart3, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavigationItem {
@@ -47,13 +47,13 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
   const navigationItems: NavigationItem[] = [
     {
       icon: <Home className="h-6 w-6" />,
-      label: "Compte",
+      label: "Accueil",
       value: 'main',
       path: '/mobile-flow/main'
     },
     {
-      icon: <CreditCard className="h-6 w-6" />,
-      label: "Prêts",
+      icon: <Wallet className="h-6 w-6" />,
+      label: "Mes Prêts",
       value: 'home-loan',
       path: '/mobile-flow/home-loan'
     },
@@ -64,16 +64,22 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
       path: '/mobile-flow/loan-application'
     },
     {
-      icon: <Wallet className="h-6 w-6" />,
-      label: "Paiement",
+      icon: <RefreshCw className="h-6 w-6" />,
+      label: "Transactions",
       value: 'payment',
       path: '/mobile-flow/payment'
+    },
+    {
+      icon: <BarChart3 className="h-6 w-6" />,
+      label: "Épargne",
+      value: 'savings',
+      path: '/mobile-flow/loan-setup'
     },
     {
       icon: <User className="h-6 w-6" />,
       label: "Profil",
       value: 'profile',
-      path: '/mobile-flow/loan-setup'
+      path: '/mobile-flow/profile'
     }
   ];
 
@@ -99,7 +105,7 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
           return (
             <button
               key={index}
-              className={`flex flex-col items-center justify-center py-3 px-3 ${
+              className={`flex flex-col items-center justify-center py-3 px-2 ${
                 activeTab === item.value 
                   ? 'text-[#0D6A51] font-medium' 
                   : 'text-gray-400'

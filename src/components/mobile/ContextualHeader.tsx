@@ -8,7 +8,8 @@ import {
   BarChart3, 
   Building, 
   ChevronDown,
-  Shield
+  Shield,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
@@ -113,13 +114,16 @@ const ContextualHeader = () => {
         <Button 
           variant="ghost" 
           size="sm" 
-          className="p-1 text-white" 
-          onClick={() => navigate('/solvency-engine')}
+          className="p-1 text-white relative" 
+          onClick={() => navigate('/mobile-flow/home-loan')}
         >
-          <BarChart3 className="h-5 w-5 text-[#FFAB2E]" />
+          <RefreshCw className="h-5 w-5 text-[#FFAB2E]" />
+          <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></div>
         </Button>
-        <Bell className="h-6 w-6 text-white cursor-pointer" />
-        <Avatar className="h-8 w-8 bg-white/20 border border-white/30">
+        <Bell className="h-6 w-6 text-white cursor-pointer relative">
+          <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></div>
+        </Bell>
+        <Avatar className="h-8 w-8 bg-white/20 border border-white/30" onClick={() => navigate('/mobile-flow/profile')}>
           <User className="h-4 w-4 text-white" />
         </Avatar>
       </div>
