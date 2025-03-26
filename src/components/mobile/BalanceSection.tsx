@@ -4,21 +4,21 @@ import { Building, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { useAccount } from '@/hooks/useAccount';
 
 interface BalanceSectionProps {
   currency?: string;
-  balance?: number;
   onAction?: (action: string, data?: any) => void;
 }
 
 const BalanceSection = ({ 
   currency = "FCFA", 
-  balance = 0,
   onAction
 }: BalanceSectionProps) => {
   const navigate = useNavigate();
+  const { account, isLoading } = useAccount();
   
-  const maxApprovedLimit = 5000;
+  // Payment information
   const nextPaymentDate = "15/07/2023";
   const nextPaymentAmount = 25000;
   
@@ -31,13 +31,13 @@ const BalanceSection = ({
       <div className="flex justify-between items-center">
         <div>
           <p className="text-sm text-white/80 uppercase tracking-wide mb-1">
-            LIMITE DE PRÊT APPROUVÉE <span>↗</span>
+            SOLDE DISPONIBLE <span>↗</span>
           </p>
           <h1 className="text-4xl font-bold text-white mb-2">
-            {currency} {formatCurrency(maxApprovedLimit)}
+            {currency} {formatCurrency(account?.balance || 0)}
           </h1>
           <Badge className="bg-[#FFAB2E]/90 text-white border-none">
-            Nouveau prêt disponible
+            Compte actif
           </Badge>
         </div>
         <div className="bg-white/20 rounded-full px-3 py-1.5 flex items-center">
