@@ -258,8 +258,8 @@ const MobileFlow = () => {
               
               <div className="flex flex-col space-y-1">
                 <h3 className="text-sm font-medium text-gray-500 mb-2">Prêts et financements</h3>
-                <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/home-loan'); toggleMenu(); }}>
-                  <Wallet className="h-5 w-5 mr-2 text-[#FFAB2E]" /> Mes prêts
+                <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/funds-management'); toggleMenu(); }}>
+                  <Wallet className="h-5 w-5 mr-2 text-[#FFAB2E]" /> Mes fonds
                 </Button>
                 <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/loan-application'); toggleMenu(); }}>
                   <HandCoins className="h-5 w-5 mr-2 text-[#FFAB2E]" /> Demander un prêt

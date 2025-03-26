@@ -24,7 +24,7 @@ const QuickActionsCard = ({ onAction, loanId, paymentDue }: QuickActionsCardProp
           <Button 
             variant="outline" 
             className="bg-blue-50/50 border-blue-100 hover:bg-blue-50 text-blue-700 h-auto py-3"
-            onClick={() => onAction('Repayment', { loanId, amount: paymentDue })}
+            onClick={() => navigate('/mobile-flow/secure-payment')}
           >
             <div className="flex flex-col items-center w-full">
               <CreditCard className="h-5 w-5 mb-1" />
@@ -57,7 +57,7 @@ const QuickActionsCard = ({ onAction, loanId, paymentDue }: QuickActionsCardProp
           <Button 
             variant="outline" 
             className="bg-green-50/50 border-green-100 hover:bg-green-50 text-green-700 h-auto py-3"
-            onClick={() => onAction('Funds Management')}
+            onClick={() => navigate('/mobile-flow/funds-management')}
           >
             <div className="flex flex-col items-center w-full">
               <Wallet className="h-5 w-5 mb-1" />

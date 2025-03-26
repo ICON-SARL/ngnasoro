@@ -53,9 +53,9 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
     },
     {
       icon: <Wallet className="h-6 w-6" />,
-      label: "Mes Prêts",
-      value: 'home-loan',
-      path: '/mobile-flow/home-loan'
+      label: "Mes Fonds",
+      value: 'funds-management',
+      path: '/mobile-flow/funds-management'
     },
     {
       icon: null,
@@ -67,7 +67,7 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
       icon: <ArrowUp className="h-6 w-6" />,
       label: "Rembourser",
       value: 'payment',
-      path: '/mobile-flow/payment'
+      path: '/mobile-flow/secure-payment'
     },
     {
       icon: <User className="h-6 w-6" />,
