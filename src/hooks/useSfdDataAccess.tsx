@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { generateSfdContextToken } from '@/utils/sfdJwtContext';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
 
 export interface SfdData {
@@ -27,29 +26,19 @@ export function useSfdDataAccess() {
       setLoading(true);
       setError(null);
       
+      // For this example, we'll use mock data
       // In a real app, this would fetch from a 'user_sfds' table
-      // For this example, we're using mock data
-      const { data, error } = await supabase
-        .from('user_sfds')
-        .select('sfd_id, sfd_name')
-        .eq('user_id', user.id);
-        
-      if (error) throw error;
+      const mockSfdData: SfdData[] = [
+        { id: 'sfd1', name: 'Premier SFD', token: null, lastFetched: null },
+        { id: 'sfd2', name: 'Deuxième SFD', token: null, lastFetched: null },
+        { id: 'sfd3', name: 'Troisième SFD', token: null, lastFetched: null }
+      ];
       
-      if (data) {
-        const sfdList: SfdData[] = data.map(item => ({
-          id: item.sfd_id,
-          name: item.sfd_name,
-          token: null,
-          lastFetched: null
-        }));
-        
-        setSfdData(sfdList);
-        
-        // If we have SFDs but no active one is set, set the first one as active
-        if (sfdList.length > 0 && !activeSfdId) {
-          setActiveSfdId(sfdList[0].id);
-        }
+      setSfdData(mockSfdData);
+      
+      // If we have SFDs but no active one is set, set the first one as active
+      if (mockSfdData.length > 0 && !activeSfdId) {
+        setActiveSfdId(mockSfdData[0].id);
       }
     } catch (err: any) {
       console.error('Error fetching SFDs:', err);
