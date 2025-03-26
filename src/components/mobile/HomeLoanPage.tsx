@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, DollarSign, Wallet, Clock, ArrowRight, User, Bell, ActivitySquare, ExternalLink, CheckCircle, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,49 +10,24 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAccount } from '@/hooks/useAccount';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Slider } from '@/components/ui/slider';
 
 const HomeLoanPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { account } = useAccount();
+  const [loanAmount, setLoanAmount] = useState(3250);
+  const [termMonths, setTermMonths] = useState(3);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'User';
   
-  const loanCount = 3; // This would be fetched from a real API
-  
-  const loans = [
-    {
-      id: 1,
-      store: 'Insting Store',
-      amount: 25.40,
-      progress: 60,
-      status: 'Approved'
-    },
-    {
-      id: 2,
-      store: 'Home Decoration',
-      amount: 15.50,
-      progress: 30,
-      status: 'Approved'
-    },
-    {
-      id: 3,
-      store: 'Sahara Beauty',
-      amount: 5.80,
-      progress: 20,
-      status: 'Approved'
-    }
-  ];
-
   const goBack = () => {
     navigate('/mobile-flow');
   };
 
-  const handleLoanDetails = (loanId: number) => {
-    navigate('/mobile-flow');
-  };
-
-  const formatCurrency = (amount: number) => {
-    return `₹${amount.toFixed(2)}`;
+  const handleLoanAmountChange = (value: number[]) => {
+    setLoanAmount(value[0]);
   };
 
   const viewLoanProcess = () => {
@@ -61,6 +37,10 @@ const HomeLoanPage = () => {
       });
       window.dispatchEvent(event);
     }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return `₹${amount.toLocaleString('en-IN')}`;
   };
 
   return (
@@ -81,7 +61,7 @@ const HomeLoanPage = () => {
 
       <div className="px-4 pb-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-white">Approved limit up to</h1>
+          <h1 className="text-2xl font-bold text-white">Approved limit up to <span>↗</span></h1>
           <Button 
             variant="outline" 
             size="sm" 
@@ -95,14 +75,28 @@ const HomeLoanPage = () => {
       </div>
 
       <div className="bg-white rounded-t-3xl px-4 py-6 h-full">
-        <Card className="border shadow-sm rounded-xl overflow-hidden bg-white mb-6">
+        <Card className="border-0 shadow-sm rounded-xl overflow-hidden bg-white mb-6">
           <CardContent className="p-4">
             <div>
-              <p className="text-sm text-gray-600 mb-1">I want money</p>
-              <h3 className="text-4xl font-bold mb-4">₹3,250</h3>
+              <div className="flex justify-between items-center mb-1">
+                <p className="text-sm text-gray-600">I want money</p>
+                <div className="flex items-center">
+                  <div className="h-6 w-6 bg-blue-100 rounded-full flex items-center justify-center mr-2">
+                    <div className="h-3 w-3 bg-blue-400 rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+              <h3 className="text-4xl font-bold mb-4">{formatCurrency(loanAmount)}</h3>
               
-              <div className="w-full bg-gray-200 h-2 rounded-full mb-1">
-                <div className="bg-blue-600 h-2 rounded-full" style={{ width: '65%' }}></div>
+              <div className="mb-4">
+                <Slider 
+                  defaultValue={[loanAmount]} 
+                  max={5000} 
+                  min={1000} 
+                  step={250}
+                  onValueChange={handleLoanAmountChange}
+                  className="w-full"
+                />
               </div>
               
               <div className="flex justify-between text-xs text-gray-500 mb-4">
@@ -117,9 +111,11 @@ const HomeLoanPage = () => {
                 <div>
                   <p className="text-sm text-gray-600">For term:</p>
                   <div className="flex items-center">
-                    <h4 className="text-xl font-bold">3 months</h4>
-                    <div className="ml-3 bg-green-100 p-1 rounded-md">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    <h4 className="text-xl font-bold">{termMonths} months</h4>
+                    <div className="ml-3 bg-green-100 p-1 rounded-full flex items-center justify-center">
+                      <div className="h-4 w-4 bg-green-400 rounded-full flex items-center justify-center">
+                        <CheckCircle className="h-3 w-3 text-white" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -133,28 +129,49 @@ const HomeLoanPage = () => {
               
               <div className="flex justify-between items-center py-2 border-t border-gray-100">
                 <p className="text-gray-600">Disbursement amount</p>
-                <p className="font-semibold">₹4,750 <ExternalLink className="h-4 w-4 inline ml-1 text-gray-400" /></p>
+                <div className="flex items-center">
+                  <p className="font-semibold">{formatCurrency(4750)}</p>
+                  <div className="ml-1 h-4 w-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <ExternalLink className="h-2 w-2 text-gray-400" />
+                  </div>
+                </div>
               </div>
               
               <div className="flex justify-between items-center py-2 border-t border-gray-100">
                 <p className="text-gray-600">Repayment amount</p>
-                <p className="font-semibold">₹3,950 <ExternalLink className="h-4 w-4 inline ml-1 text-gray-400" /></p>
+                <div className="flex items-center">
+                  <p className="font-semibold">{formatCurrency(3950)}</p>
+                  <div className="ml-1 h-4 w-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <ExternalLink className="h-2 w-2 text-gray-400" />
+                  </div>
+                </div>
               </div>
               
               <div className="flex justify-between items-center py-2 border-t border-gray-100">
                 <p className="text-gray-600">Repayment date</p>
-                <p className="font-semibold">20.05.2023 <Calendar className="h-4 w-4 inline ml-1 text-gray-400" /></p>
+                <div className="flex items-center">
+                  <p className="font-semibold">20.05.2023</p>
+                  <div className="ml-1 h-4 w-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <Calendar className="h-2 w-2 text-gray-400" />
+                  </div>
+                </div>
               </div>
               
               <div className="mt-4 flex items-start space-x-2">
-                <Checkbox id="terms" className="mt-1" />
+                <Checkbox 
+                  id="terms" 
+                  className="mt-1" 
+                  checked={acceptTerms}
+                  onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
+                />
                 <label htmlFor="terms" className="text-xs text-gray-500">
                   I have read and agree to the Terms & Conditions of RupeeRedee
                 </label>
               </div>
               
               <Button 
-                className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white py-6 rounded-xl font-bold text-lg"
+                className={`w-full mt-4 py-6 rounded-xl font-bold text-lg ${acceptTerms ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                disabled={!acceptTerms}
               >
                 ACCEPT
               </Button>
@@ -163,10 +180,24 @@ const HomeLoanPage = () => {
         </Card>
         
         <div className="mb-6">
-          <h3 className="text-xl font-bold mb-4">BEST OFFER ONLY TODAY 🔥</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xl font-bold">BEST OFFER ONLY TODAY 🔥</h3>
+            <div className="h-6 w-6 bg-yellow-100 rounded-full flex items-center justify-center">
+              <div className="h-3 w-3 bg-yellow-400 rounded-full"></div>
+            </div>
+          </div>
           <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
-            <p className="text-sm mb-1">Get line of credit up to ↗</p>
-            <h2 className="text-4xl font-bold mb-4">₹25,000</h2>
+            <div className="flex justify-between items-center mb-2">
+              <div>
+                <p className="text-sm mb-1">Get line of credit up to ↗</p>
+                <h2 className="text-3xl font-bold mb-2">₹25,000</h2>
+              </div>
+              <img 
+                src="/lovable-uploads/006177a9-5cd7-4b31-9abb-0760a787e66f.png" 
+                alt="Mascot" 
+                className="h-12 w-12" 
+              />
+            </div>
             
             <Button className="w-full bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-bold">
               GET FIRST LOAN
@@ -178,7 +209,9 @@ const HomeLoanPage = () => {
                 <h4 className="text-sm font-semibold mb-1">E-voucher with limit up to ₹25,000</h4>
                 <div className="flex justify-end">
                   <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <DollarSign className="h-4 w-4 text-blue-600" />
+                    <div className="h-6 w-6 bg-blue-400 rounded-full flex items-center justify-center">
+                      <DollarSign className="h-3 w-3 text-white" />
+                    </div>
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Coming soon...</p>
@@ -189,7 +222,9 @@ const HomeLoanPage = () => {
                 <h4 className="text-sm font-semibold mb-1">Personal loans with personlised interest</h4>
                 <div className="flex justify-end">
                   <div className="h-10 w-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                    <Wallet className="h-4 w-4 text-yellow-600" />
+                    <div className="h-6 w-6 bg-yellow-400 rounded-full flex items-center justify-center">
+                      <Wallet className="h-3 w-3 text-white" />
+                    </div>
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Coming soon...</p>
@@ -198,7 +233,9 @@ const HomeLoanPage = () => {
             
             <div className="flex items-center mt-4 mb-2">
               <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <div className="h-6 w-6 bg-green-400 rounded-full flex items-center justify-center">
+                  <CheckCircle className="h-3 w-3 text-white" />
+                </div>
               </div>
               <div>
                 <h4 className="text-sm font-semibold">Invite friends - get bonus points!</h4>

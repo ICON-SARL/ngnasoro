@@ -1,98 +1,108 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, CheckCircle, Info, Camera } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Calendar, ExternalLink, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 
 const LoanDisbursementPage = () => {
   const navigate = useNavigate();
 
-  const goBack = () => {
+  const handleBack = () => {
+    navigate('/mobile-flow');
+  };
+
+  const handleConfirm = () => {
     navigate('/mobile-flow');
   };
 
   return (
-    <div className="h-full bg-green-500">
-      <div className="px-4 py-6">
+    <div className="h-full bg-white">
+      <div className="bg-blue-600 p-4 text-white">
         <div className="flex items-center mb-2">
-          <Button variant="ghost" className="p-1 mr-2 text-white" onClick={goBack}>
+          <Button variant="ghost" className="p-1 text-white" onClick={handleBack}>
             <ArrowLeft className="h-6 w-6" />
           </Button>
-          <h1 className="text-xl font-bold text-white">Disbursement Process</h1>
+          <h1 className="text-lg font-bold ml-2">Disbursement process</h1>
         </div>
       </div>
 
-      <div className="bg-white rounded-t-3xl p-6 flex flex-col items-center h-full">
-        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6">
-          <img 
-            src="/lovable-uploads/006177a9-5cd7-4b31-9abb-0760a787e66f.png" 
-            alt="Dog Mascot" 
-            className="h-20 w-20 object-contain" 
-          />
-        </div>
-        
-        <h2 className="text-2xl font-bold mb-2 text-center">Loan Approved!</h2>
-        <p className="text-gray-600 mb-6 text-center">
-          It usually takes no more than 5 minutes
-        </p>
-        
-        <Card className="w-full border shadow-sm rounded-xl overflow-hidden bg-white mb-6">
-          <CardContent className="p-4">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <p className="text-gray-600">Loan Amount</p>
-                <div className="flex items-center">
-                  <span className="font-semibold mr-1">Variable</span>
-                  <Info className="h-4 w-4 text-blue-500" />
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <p className="text-gray-600">Amount to be Credited</p>
-                <div className="flex items-center">
-                  <span className="font-semibold mr-1">₹3,951</span>
-                  <Info className="h-4 w-4 text-blue-500" />
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <p className="text-gray-600">Repayment Amount</p>
-                <div className="flex items-center">
-                  <span className="font-semibold mr-1">₹5,632</span>
-                  <Info className="h-4 w-4 text-blue-500" />
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <p className="text-gray-600">Repayment Date</p>
-                <div className="flex items-center">
-                  <span className="font-semibold mr-1">20.06.2023</span>
-                  <Calendar className="h-4 w-4 text-blue-500" />
-                </div>
+      <div className="p-6">
+        <div className="mb-8 flex justify-center">
+          <div className="relative">
+            <img 
+              src="/lovable-uploads/006177a9-5cd7-4b31-9abb-0760a787e66f.png" 
+              alt="Loan Approved" 
+              className="h-32 w-32" 
+            />
+            <div className="absolute -top-2 -right-2 bg-green-100 p-1 rounded-full">
+              <div className="h-6 w-6 bg-green-500 rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
               </div>
             </div>
-            
-            <p className="text-xs text-gray-500 mt-6">
-              Wait, please. As soon as the money is transferred and the 
-              contract is activated, we will send you a notification about 
-              this. Usually money is transferred instantly, but in rare cases 
-              there are delays.
-            </p>
-            
-            <Button 
-              variant="outline"
-              className="flex items-center justify-center mt-4 w-full border-blue-500 text-blue-600"
-            >
-              <Camera className="h-4 w-4 mr-2" /> Didn't receive money?
+          </div>
+        </div>
+
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold">Loan Approved!</h2>
+          <p className="text-gray-600">It usually takes no more than 5 minutes</p>
+        </div>
+
+        <div className="space-y-4 mb-8">
+          <div className="flex justify-between items-center p-3 border-b border-gray-100">
+            <div>
+              <p className="text-gray-500 text-sm">Loan ID:</p>
+              <p className="font-semibold">LN9382749</p>
+            </div>
+            <div className="flex items-center">
+              <span className="text-blue-600 text-xs font-medium mr-1">Variable</span>
+              <Info className="h-4 w-4 text-blue-500" />
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center p-3 border-b border-gray-100">
+            <div>
+              <p className="text-gray-500 text-sm">Amount:</p>
+              <p className="font-semibold">₹3,961</p>
+            </div>
+            <Info className="h-4 w-4 text-blue-500" />
+          </div>
+
+          <div className="flex justify-between items-center p-3 border-b border-gray-100">
+            <div>
+              <p className="text-gray-500 text-sm">Amount to be Credited:</p>
+              <p className="font-semibold">₹5,632</p>
+            </div>
+            <Info className="h-4 w-4 text-blue-500" />
+          </div>
+
+          <div className="flex justify-between items-center p-3 border-b border-gray-100">
+            <div>
+              <p className="text-gray-500 text-sm">Repayment Date:</p>
+              <p className="font-semibold">20.05.2023</p>
+            </div>
+            <Calendar className="h-4 w-4 text-blue-500" />
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <p className="text-xs text-gray-500 mb-4">
+            Your e-signature will appear on all loan documents. By clicking "CONFIRM" you are digitally signing this loan agreement and authorizing the disbursement of funds.
+          </p>
+          
+          <div className="flex items-center justify-center mb-4">
+            <Button variant="outline" className="text-blue-600 border-blue-600 text-sm">
+              <ExternalLink className="h-4 w-4 mr-1" /> When will I receive money?
             </Button>
-          </CardContent>
-        </Card>
-        
+          </div>
+        </div>
+
         <Button 
-          className="w-full bg-green-500 hover:bg-green-600 text-white py-6 rounded-xl font-bold text-lg mt-auto"
+          className="w-full bg-green-500 hover:bg-green-600 text-white py-6 rounded-full text-lg font-bold"
+          onClick={handleConfirm}
         >
-          ACCEPT
+          CONFIRM
         </Button>
       </div>
     </div>
