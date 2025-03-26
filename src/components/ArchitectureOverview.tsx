@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { DollarSign } from 'lucide-react';
 
 const ArchitectureOverview = () => {
   return (
@@ -150,7 +151,7 @@ const ArchitectureOverview = () => {
         <div className="mt-12 max-w-4xl mx-auto bg-white rounded-lg border border-amber-200 p-6 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="h-12 w-12 rounded-full bg-[#FFAB2E]/20 flex items-center justify-center text-[#FFAB2E] flex-shrink-0">
-              <BadgeDollarSign className="h-6 w-6" />
+              <DollarSign className="h-6 w-6" />
             </div>
             <div>
               <h3 className="font-medium text-lg mb-2">MEREF - Initiative Gouvernementale</h3>

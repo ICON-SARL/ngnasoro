@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Building, Users, CreditCard, Clock, Bell, User, LogOut, ArrowRight, BarChart, BadgeDollarSign, Info } from 'lucide-react';
+import { Building, Users, CreditCard, Clock, Bell, User, LogOut, ArrowRight, BarChart, DollarSign, Info } from 'lucide-react';
 import MultiSFDAccounts from '@/components/MultiSFDAccounts';
 import { LoanWorkflow } from '@/components/LoanWorkflow';
 import { useNavigate } from 'react-router-dom';
@@ -162,7 +162,7 @@ const MultiSFDDashboard = () => {
         <Card className="bg-[#0D6A51]/5 border-[#0D6A51]/20">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center text-[#0D6A51]">
-              <BadgeDollarSign className="h-4 w-4 mr-2" />
+              <DollarSign className="h-4 w-4 mr-2" />
               Initiative MEREF - Accès aux services financiers
             </CardTitle>
           </CardHeader>
