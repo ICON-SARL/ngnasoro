@@ -5,12 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format, addMonths } from 'date-fns';
-import { Calendar, CheckCircle, AlertTriangle, CalendarRange, Download } from 'lucide-react';
+import { Calendar, CheckCircle, AlertTriangle, CalendarRange, Download, Smartphone, Building, CreditCard } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 export const RepaymentCalendar = () => {
   const { toast } = useToast();
   const [startDate] = useState(new Date());
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
   
   // Générer un calendrier de remboursement de 12 mois
   const generateRepaymentSchedule = () => {
@@ -58,6 +61,21 @@ export const RepaymentCalendar = () => {
     }
   };
   
+  const handlePayment = (payment) => {
+    setSelectedPayment(payment);
+    setShowPaymentDialog(true);
+  };
+  
+  const processPayment = (method) => {
+    toast({
+      title: `Paiement par ${method} initié`,
+      description: method === 'mobile' 
+        ? "Veuillez confirmer le paiement sur votre téléphone." 
+        : "Un QR code de paiement a été généré pour l'agence SFD.",
+    });
+    setShowPaymentDialog(false);
+  };
+  
   return (
     <Card>
       <CardHeader>
@@ -91,6 +109,7 @@ export const RepaymentCalendar = () => {
               <TableHead>Principal</TableHead>
               <TableHead>Intérêts</TableHead>
               <TableHead>Statut</TableHead>
+              <TableHead className="text-right">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -107,6 +126,19 @@ export const RepaymentCalendar = () => {
                     <div className="text-xs text-muted-foreground mt-1">
                       Payé le {format(payment.payment_date, 'dd/MM/yyyy')}
                     </div>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  {payment.status !== 'paid' && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handlePayment(payment)}
+                      className={payment.status === 'late' ? "border-red-200 text-red-600 hover:bg-red-50" : ""}
+                    >
+                      <CreditCard className="h-3 w-3 mr-1" />
+                      Payer
+                    </Button>
                   )}
                 </TableCell>
               </TableRow>
@@ -128,6 +160,56 @@ export const RepaymentCalendar = () => {
             <p className="text-lg font-bold">{format(addMonths(startDate, 12), 'MM/yyyy')}</p>
           </div>
         </div>
+        
+        <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Options de paiement</DialogTitle>
+            </DialogHeader>
+            {selectedPayment && (
+              <div className="space-y-4">
+                <div className="bg-muted p-4 rounded-md mb-2">
+                  <p className="text-sm">Échéance #{selectedPayment.payment_number} - {format(selectedPayment.due_date, 'dd/MM/yyyy')}</p>
+                  <p className="text-xl font-bold">{selectedPayment.amount.toLocaleString()} FCFA</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start h-auto py-3" 
+                    onClick={() => processPayment('mobile')}
+                  >
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center mr-3">
+                        <Smartphone className="h-5 w-5 text-yellow-600" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-medium">Mobile Money</p>
+                        <p className="text-xs text-gray-500">Orange Money, MTN Mobile Money, Moov Money...</p>
+                      </div>
+                    </div>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start h-auto py-3" 
+                    onClick={() => processPayment('agence')}
+                  >
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                        <Building className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-medium">Paiement en agence SFD</p>
+                        <p className="text-xs text-gray-500">Générer un QR code à présenter en agence</p>
+                      </div>
+                    </div>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
       <CardFooter>
         <div className="w-full">

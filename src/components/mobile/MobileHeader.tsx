@@ -1,15 +1,19 @@
 
 import React from 'react';
 import { Avatar } from '@/components/ui/avatar';
-import { Bell, User, BarChart3 } from 'lucide-react';
+import { Bell, User, BarChart3, Building } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 const MobileHeader = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Utilisateur';
+  
+  // On pourrait stocker l'institution SFD active dans le localStorage ou dans le profil utilisateur
+  const activeSFD = localStorage.getItem('activeSFD') || 'Microfinance Bamako';
 
   return (
     <div className="flex justify-between items-center mb-3">
@@ -19,7 +23,13 @@ const MobileHeader = () => {
         </div>
         <div>
           <h1 className="text-xl font-bold text-white">InstingLoan</h1>
-          <p className="text-xs text-white/70">Multi-SFD Platform</p>
+          <div className="flex items-center">
+            <p className="text-xs text-white/70">Multi-SFD Platform</p>
+            <Badge className="ml-1 bg-white/20 text-white text-[0.6rem] py-0 h-4">
+              <Building className="h-2 w-2 mr-1" />
+              {activeSFD}
+            </Badge>
+          </div>
         </div>
       </div>
       <div className="flex items-center gap-2">
