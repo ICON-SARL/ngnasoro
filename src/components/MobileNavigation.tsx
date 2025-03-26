@@ -1,13 +1,13 @@
 
 import React from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Button } from './ui/button';
 import { Home, Wallet, User, Plus, Activity } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavigationItem {
   icon: React.ReactNode;
   label: string;
+  value: string;
   action: () => void;
 }
 
@@ -19,26 +19,31 @@ const MobileNavigation = () => {
     {
       icon: <Home className="h-6 w-6" />,
       label: "Accueil",
+      value: 'home',
       action: () => setActiveTab('home')
     },
     {
       icon: <Activity className="h-6 w-6" />,
       label: "Activité",
+      value: 'activity',
       action: () => setActiveTab('activity')
     },
     {
       icon: null,
       label: "",
+      value: 'action',
       action: () => console.log('Action button')
     },
     {
       icon: <Wallet className="h-6 w-6" />,
       label: "Cartes",
+      value: 'cards',
       action: () => setActiveTab('cards')
     },
     {
       icon: <User className="h-6 w-6" />,
       label: "Profil",
+      value: 'profile',
       action: () => setActiveTab('profile')
     }
   ];
@@ -68,7 +73,7 @@ const MobileNavigation = () => {
             <button
               key={index}
               className={`flex flex-col items-center justify-center py-3 px-3 ${
-                activeTab === item.label.toLowerCase() 
+                activeTab === item.value 
                   ? 'text-black' 
                   : 'text-gray-400'
               }`}
