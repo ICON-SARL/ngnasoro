@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Home, Wallet, User, Plus, CreditCard } from 'lucide-react';
 import { useState } from 'react';
@@ -18,6 +17,20 @@ interface MobileNavigationProps {
 const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('home');
+
+  useEffect(() => {
+    const handleCustomAction = (event: any) => {
+      if (event.detail && event.detail.action && onAction) {
+        onAction(event.detail.action);
+      }
+    };
+
+    window.addEventListener('lovable:action', handleCustomAction);
+    
+    return () => {
+      window.removeEventListener('lovable:action', handleCustomAction);
+    };
+  }, [onAction]);
 
   const handleNavItemClick = (value: string, action: string) => {
     setActiveTab(value);
@@ -65,7 +78,6 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
     <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 z-50">
       <div className="flex justify-around items-center px-2 relative">
         {navigationItems.map((item, index) => {
-          // Center button (Plus)
           if (index === 2) {
             return (
               <div key={index} className="relative -top-5">
@@ -79,7 +91,6 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
             );
           }
           
-          // Regular nav buttons
           return (
             <button
               key={index}

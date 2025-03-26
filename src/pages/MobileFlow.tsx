@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
@@ -18,6 +17,7 @@ import HomeLoanPage from '@/components/mobile/HomeLoanPage';
 import LoanActivityPage from '@/components/mobile/LoanActivityPage';
 import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
 import LoanSetupPage from '@/components/mobile/LoanSetupPage';
+import LoanProcessFlow from '@/components/mobile/LoanProcessFlow';
 import { PaymentOptions } from '@/components/PaymentOptions';
 import { LatePaymentAlerts } from '@/components/LatePaymentAlerts';
 import LoanApplicationFlow from '@/components/LoanApplicationFlow';
@@ -41,7 +41,8 @@ import {
   MessageSquare,
   HelpCircle,
   Settings,
-  ArrowLeft
+  ArrowLeft,
+  FlowChart
 } from 'lucide-react';
 
 const MobileFlow = () => {
@@ -55,7 +56,6 @@ const MobileFlow = () => {
   const { account, isLoading: accountLoading, updateBalance } = useAccount();
   const { transactions, isLoading: transactionsLoading, addTransaction } = useTransactions();
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
@@ -68,7 +68,6 @@ const MobileFlow = () => {
       description: `Vous avez choisi de ${action.toLowerCase()}`,
     });
     
-    // Switch to the corresponding tab when action is clicked
     if (action === 'Send' || action === 'Receive') {
       setActiveTab('payment');
     } else if (action === 'Float me cash') {
@@ -95,16 +94,15 @@ const MobileFlow = () => {
       setActiveTab('multi-sfd');
     } else if (action === 'Secure Layer') {
       setActiveTab('secure-layer');
+    } else if (action === 'Loan Process') {
+      setActiveTab('loan-process');
     }
   };
 
-  // Handle payment submission
   const handlePaymentSubmit = async (data: { recipient: string, amount: number, note: string }) => {
     try {
-      // Update balance (subtract amount)
       await updateBalance.mutateAsync({ amount: -data.amount });
       
-      // Add transaction
       await addTransaction.mutateAsync({
         name: data.recipient,
         type: 'Envoi',
@@ -124,12 +122,10 @@ const MobileFlow = () => {
     }
   };
 
-  // Toggle menu
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
 
-  // Logout
   const handleLogout = async () => {
     try {
       await signOut();
@@ -216,7 +212,6 @@ const MobileFlow = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsContent value="main" className="space-y-4 mt-0 p-0">
-          {/* Header Section with Profile & Balance */}
           <div className="bg-black text-white p-4 rounded-b-3xl relative">
             <div className="absolute top-4 right-4">
               <Button variant="ghost" size="sm" className="text-white p-1" onClick={toggleMenu}>
@@ -227,13 +222,10 @@ const MobileFlow = () => {
             <BalanceSection currency={account?.currency || 'FCFA'} balance={account?.balance || 0} />
           </div>
           
-          {/* Quick Access Section */}
           <QuickAccessCard onAction={handleAction} />
           
-          {/* Income & Expenses Section */}
           <FinancialOverview />
           
-          {/* Transactions Section */}
           <TransactionList 
             transactions={transactions.map(tx => ({
               id: tx.id,
@@ -339,6 +331,10 @@ const MobileFlow = () => {
             <ArrowLeft className="h-4 w-4 mr-1" /> Retour
           </Button>
           <SecurePaymentLayer />
+        </TabsContent>
+
+        <TabsContent value="loan-process" className="space-y-4 mt-0 p-0">
+          <LoanProcessFlow onBack={() => setActiveTab('main')} />
         </TabsContent>
       </Tabs>
       

@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, DollarSign, Wallet, Clock, ArrowRight, User, Bell } from 'lucide-react';
+import { ChevronLeft, DollarSign, Wallet, Clock, ArrowRight, User, Bell, FlowChart, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
@@ -53,6 +52,15 @@ const HomeLoanPage = () => {
     return `$${amount.toFixed(2)}`;
   };
 
+  const viewLoanProcess = () => {
+    if (typeof window !== 'undefined') {
+      const event = new CustomEvent('lovable:action', { 
+        detail: { action: 'Loan Process' } 
+      });
+      window.dispatchEvent(event);
+    }
+  };
+
   return (
     <div className="h-full bg-white">
       <div className="p-4 flex items-center justify-between">
@@ -66,7 +74,17 @@ const HomeLoanPage = () => {
       </div>
 
       <div className="px-4">
-        <h1 className="text-3xl font-bold">My Loans</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">My Loans</h1>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center text-xs"
+            onClick={viewLoanProcess}
+          >
+            <FlowChart className="h-3 w-3 mr-1" /> Processus
+          </Button>
+        </div>
       </div>
 
       <div className="px-4 py-6 mt-4 bg-lime-200 rounded-3xl mx-4">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, DollarSign, CreditCard, Calendar, Clock, MoreHorizontal, QrCode, Smartphone, Download, Building, Wallet } from 'lucide-react';
+import { ArrowLeft, DollarSign, CreditCard, Calendar, Clock, MoreHorizontal, QrCode, Smartphone, Download, Building, Wallet, FlowChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -45,6 +45,15 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
     });
   };
 
+  const viewLoanProcess = () => {
+    if (typeof window !== 'undefined') {
+      const event = new CustomEvent('lovable:action', { 
+        detail: { action: 'Loan Process' } 
+      });
+      window.dispatchEvent(event);
+    }
+  };
+
   return (
     <div className="h-full bg-white">
       <div className="p-4 flex items-center justify-between">
@@ -52,8 +61,8 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-lg font-bold">Détails du prêt</h1>
-        <Button variant="ghost" className="p-1">
-          <MoreHorizontal className="h-5 w-5" />
+        <Button variant="outline" size="sm" className="flex items-center text-xs" onClick={viewLoanProcess}>
+          <FlowChart className="h-3 w-3 mr-1" /> Processus
         </Button>
       </div>
 
