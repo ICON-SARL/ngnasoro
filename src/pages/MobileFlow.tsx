@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
@@ -13,49 +14,28 @@ import TransactionList from '@/components/mobile/TransactionList';
 import PaymentTabContent from '@/components/mobile/PaymentTabContent';
 import SecurePaymentTab from '@/components/mobile/SecurePaymentTab';
 import ScheduleTransferTab from '@/components/mobile/ScheduleTransferTab';
+import { useAuth } from '@/hooks/useAuth';
+import { useAccount } from '@/hooks/useAccount';
+import { useTransactions } from '@/hooks/useTransactions';
 
 const MobileFlow = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('main');
-  const [currency, setCurrency] = useState('FCFA');
+  const navigate = useNavigate();
+  
+  const { user, loading } = useAuth();
+  const { account, isLoading: accountLoading, updateBalance } = useAccount();
+  const { transactions, isLoading: transactionsLoading, addTransaction } = useTransactions();
 
-  const transactions = [
-    {
-      id: 1,
-      name: 'Dribbble Premium',
-      type: 'Subscription',
-      amount: '-$60.00',
-      date: '2 Oct 2023',
-      avatar: null
-    },
-    {
-      id: 2,
-      name: 'Mamadou Keita',
-      type: 'Reçu',
-      amount: '+25,000',
-      date: '18 Déc',
-      avatar: '/lovable-uploads/0497e073-9224-4a14-8851-577db02c0e57.png'
-    },
-    {
-      id: 3,
-      name: 'Orange Money',
-      type: 'Abonnement',
-      amount: '-1,200',
-      date: '15 Déc',
-      avatar: null
-    },
-    {
-      id: 4,
-      name: 'Aminata Diallo',
-      type: 'Reçu',
-      amount: '+15,000',
-      date: '12 Déc',
-      avatar: null
-    },
-  ];
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
 
-  const handleAction = (action: string) => {
+  const handleAction = async (action: string) => {
     toast({
       title: `Action ${action}`,
       description: `Vous avez choisi de ${action.toLowerCase()}`,
@@ -73,6 +53,36 @@ const MobileFlow = () => {
     }
   };
 
+  // Handle payment submission
+  const handlePaymentSubmit = async (data: { recipient: string, amount: number, note: string }) => {
+    try {
+      // Update balance (subtract amount)
+      await updateBalance.mutateAsync({ amount: -data.amount });
+      
+      // Add transaction
+      await addTransaction.mutateAsync({
+        name: data.recipient,
+        type: 'Envoi',
+        amount: -data.amount,
+        date: new Date().toISOString(),
+        avatar_url: null
+      });
+      
+      setActiveTab('main');
+      
+      toast({
+        title: 'Paiement réussi',
+        description: `Vous avez envoyé ${data.amount} FCFA à ${data.recipient}`,
+      });
+    } catch (error) {
+      console.error('Payment error:', error);
+    }
+  };
+
+  if (loading || accountLoading) {
+    return <div className="p-8 text-center">Chargement...</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -80,7 +90,7 @@ const MobileFlow = () => {
           {/* Header Section with Profile & Balance */}
           <div className="bg-black text-white p-4 rounded-b-3xl">
             <MobileHeader />
-            <BalanceSection currency={currency} />
+            <BalanceSection currency={account?.currency || 'FCFA'} balance={account?.balance || 0} />
           </div>
           
           {/* Quick Access Section */}
@@ -90,11 +100,24 @@ const MobileFlow = () => {
           <FinancialOverview />
           
           {/* Transactions Section */}
-          <TransactionList transactions={transactions} />
+          <TransactionList 
+            transactions={transactions.map(tx => ({
+              id: tx.id,
+              name: tx.name,
+              type: tx.type,
+              amount: tx.amount.toString(),
+              date: new Date(tx.date).toLocaleDateString(),
+              avatar: tx.avatar_url
+            }))}
+            isLoading={transactionsLoading}
+          />
         </TabsContent>
           
         <TabsContent value="payment" className="space-y-4 mt-0">
-          <PaymentTabContent onBack={() => setActiveTab('main')} />
+          <PaymentTabContent 
+            onBack={() => setActiveTab('main')} 
+            onSubmit={handlePaymentSubmit}
+          />
         </TabsContent>
 
         <TabsContent value="secure-payment" className="space-y-4 mt-0">

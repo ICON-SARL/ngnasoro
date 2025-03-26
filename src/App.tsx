@@ -3,7 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./hooks/useAuth";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import MobileFlow from "./pages/MobileFlow";
@@ -23,29 +24,31 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/mobile-flow" element={<MobileFlow />} />
-          <Route path="/premium-dashboard" element={<PremiumDashboard />} />
-          <Route path="/super-admin" element={<SuperAdminDashboard />} />
-          <Route path="/agency-dashboard" element={<AgencyDashboard />} />
-          <Route path="/auth" element={<AuthUI />} />
-          <Route path="/kyc" element={<KYCVerification />} />
-          <Route path="/support" element={<SupportPage />} />
-          <Route path="/infrastructure" element={<InfrastructurePage />} />
-          <Route path="/sfd-selector" element={<SFDSelector />} />
-          <Route path="/multi-sfd" element={<MultiSFDDashboard />} />
-          <Route path="/solvency-engine" element={<SolvencyEngine />} />
-          <Route path="/loan-system" element={<LoanSystemPage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/mobile-flow" element={<MobileFlow />} />
+            <Route path="/premium-dashboard" element={<PremiumDashboard />} />
+            <Route path="/super-admin" element={<SuperAdminDashboard />} />
+            <Route path="/agency-dashboard" element={<AgencyDashboard />} />
+            <Route path="/auth" element={<AuthUI />} />
+            <Route path="/kyc" element={<KYCVerification />} />
+            <Route path="/support" element={<SupportPage />} />
+            <Route path="/infrastructure" element={<InfrastructurePage />} />
+            <Route path="/sfd-selector" element={<SFDSelector />} />
+            <Route path="/multi-sfd" element={<MultiSFDDashboard />} />
+            <Route path="/solvency-engine" element={<SolvencyEngine />} />
+            <Route path="/loan-system" element={<LoanSystemPage />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

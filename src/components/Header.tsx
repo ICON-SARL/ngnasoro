@@ -2,9 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const { user, signOut } = useAuth();
   
   useEffect(() => {
     const handleScroll = () => {
@@ -59,9 +63,21 @@ const Header = () => {
           <Link to="/super-admin" className="hidden md:inline-flex h-9 px-4 py-2 rounded-md bg-[#0D6A51] text-white text-sm font-medium hover:bg-[#0D6A51]/90 transition-colors">
             Admin
           </Link>
-          <Link to="/auth" className="hidden md:inline-flex h-9 px-4 py-2 rounded-md bg-[#FFAB2E] text-white text-sm font-medium hover:bg-[#FFAB2E]/90 transition-colors">
-            Connexion
-          </Link>
+          
+          {user ? (
+            <Button 
+              onClick={() => signOut()}
+              className="hidden md:inline-flex h-9 px-4 py-2 rounded-md bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors"
+            >
+              <LogOut className="h-4 w-4 mr-1" />
+              Déconnexion
+            </Button>
+          ) : (
+            <Link to="/auth" className="hidden md:inline-flex h-9 px-4 py-2 rounded-md bg-[#FFAB2E] text-white text-sm font-medium hover:bg-[#FFAB2E]/90 transition-colors">
+              Connexion
+            </Link>
+          )}
+          
           <button className="md:hidden">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

@@ -3,30 +3,45 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import AuthenticationSystem from '@/components/AuthenticationSystem';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Phone, Lock, Mail, User, RefreshCw } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpValue, setOtpValue] = useState('');
   
+  const { signIn, signUp, user } = useAuth();
+  const navigate = useNavigate();
+  
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (user) {
+      navigate('/mobile-flow');
+    }
+  }, [user, navigate]);
+  
   const handleSendOTP = () => {
-    // Simulate OTP sending
+    // For now we'll simulate OTP sending
     console.log(`Sending OTP to ${phoneNumber}`);
     setOtpSent(true);
   };
   
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login attempt');
+    await signIn(email, password);
   };
   
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Registration attempt');
+    await signUp(email, password, fullName);
+    setActiveTab('login');
   };
 
   return (
@@ -54,72 +69,47 @@ const AuthUI = () => {
             <TabsContent value="login" className="p-6">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium mb-1">
-                    Numéro de téléphone
+                  <label htmlFor="email" className="block text-sm font-medium mb-1">
+                    Email
                   </label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+223 00 00 00 00"
+                      id="email"
+                      type="email"
+                      placeholder="email@example.com"
                       className="pl-10"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
                     />
                   </div>
                 </div>
                 
-                {!otpSent ? (
-                  <Button 
-                    type="button" 
-                    className="w-full" 
-                    onClick={handleSendOTP}
-                    disabled={!phoneNumber}
-                  >
-                    Envoyer le code OTP
-                  </Button>
-                ) : (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Entrez le code reçu par SMS
-                      </label>
-                      <InputOTP maxLength={6} value={otpValue} onChange={setOtpValue}>
-                        <InputOTPGroup>
-                          <InputOTPSlot index={0} />
-                          <InputOTPSlot index={1} />
-                          <InputOTPSlot index={2} />
-                          <InputOTPSlot index={3} />
-                          <InputOTPSlot index={4} />
-                          <InputOTPSlot index={5} />
-                        </InputOTPGroup>
-                      </InputOTP>
-                    </div>
-                    
-                    <div className="flex justify-between">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setOtpSent(false);
-                          setOtpValue('');
-                        }}
-                      >
-                        <RefreshCw className="h-4 w-4 mr-1" />
-                        Renvoyer
-                      </Button>
-                      
-                      <Button 
-                        type="submit" 
-                        disabled={otpValue.length !== 6}
-                      >
-                        Se connecter
-                      </Button>
-                    </div>
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium mb-1">
+                    Mot de passe
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      className="pl-10"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
                   </div>
-                )}
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                >
+                  Se connecter
+                </Button>
                 
                 <div className="relative mt-6">
                   <div className="absolute inset-0 flex items-center">
@@ -131,8 +121,8 @@ const AuthUI = () => {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline">Google</Button>
-                  <Button variant="outline">Facebook</Button>
+                  <Button variant="outline" type="button">Google</Button>
+                  <Button variant="outline" type="button">Facebook</Button>
                 </div>
               </form>
             </TabsContent>
@@ -150,21 +140,27 @@ const AuthUI = () => {
                       type="text"
                       placeholder="Nom et prénom"
                       className="pl-10"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
                     />
                   </div>
                 </div>
                 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-1">
+                  <label htmlFor="reg-email" className="block text-sm font-medium mb-1">
                     Email
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="email"
+                      id="reg-email"
                       type="email"
                       placeholder="email@example.com"
                       className="pl-10"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
                     />
                   </div>
                 </div>
@@ -180,21 +176,26 @@ const AuthUI = () => {
                       type="tel"
                       placeholder="+223 00 00 00 00"
                       className="pl-10"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
                     />
                   </div>
                 </div>
                 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium mb-1">
+                  <label htmlFor="reg-password" className="block text-sm font-medium mb-1">
                     Mot de passe
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="password"
+                      id="reg-password"
                       type="password"
                       placeholder="••••••••"
                       className="pl-10"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
                     />
                   </div>
                 </div>
@@ -217,11 +218,6 @@ const AuthUI = () => {
               </form>
             </TabsContent>
           </Tabs>
-        </div>
-        
-        <div className="mt-6">
-          <h3 className="text-lg font-medium mb-3">Mode d'authentification avancé</h3>
-          <AuthenticationSystem />
         </div>
       </div>
     </div>
