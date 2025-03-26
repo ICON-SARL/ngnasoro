@@ -21,13 +21,14 @@ interface TransactionListProps {
   transactions: Transaction[];
   isLoading?: boolean;
   onViewAll?: () => void;
+  title?: string; // Added optional title prop
 }
 
-const TransactionList = ({ transactions, isLoading = false, onViewAll }: TransactionListProps) => {
+const TransactionList = ({ transactions, isLoading = false, onViewAll, title = "Transactions Récentes" }: TransactionListProps) => {
   return (
     <div className="mx-4 mt-3 mb-20">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-medium">Transactions Récentes</h3>
+        <h3 className="text-lg font-medium">{title}</h3>
         <Button 
           variant="link" 
           className="text-sm text-lime-600 p-0 h-auto"

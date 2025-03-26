@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
@@ -101,6 +102,7 @@ const MainDashboard = ({ onAction, account, transactions, transactionsLoading, t
         }))}
         isLoading={transactionsLoading}
         onViewAll={() => onAction('Loans')}
+        title="Transactions Récentes"
       />
     </div>
   );

@@ -142,6 +142,7 @@ const HomeLoanPage = () => {
           transactions={formattedTransactions} 
           isLoading={isLoading}
           onViewAll={() => navigate('/mobile-flow/loan-activity')}
+          title="Transactions Récentes"
         />
       </div>
     </div>
