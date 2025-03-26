@@ -4,11 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Building, Users, CreditCard, Clock, Bell, User, LogOut } from 'lucide-react';
+import { Building, Users, CreditCard, Clock, Bell, User, LogOut, ArrowRight, BarChart } from 'lucide-react';
 import MultiSFDAccounts from '@/components/MultiSFDAccounts';
 import { LoanWorkflow } from '@/components/LoanWorkflow';
+import { useNavigate } from 'react-router-dom';
 
 const MultiSFDDashboard = () => {
+  const navigate = useNavigate();
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
@@ -47,11 +50,21 @@ const MultiSFDDashboard = () => {
       </header>
       
       <main className="container mx-auto py-6 px-4">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold">Tableau de bord multi-institutions</h2>
-          <p className="text-muted-foreground">
-            Gérez vos comptes et prêts à travers différentes institutions financières
-          </p>
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold">Tableau de bord multi-institutions</h2>
+            <p className="text-muted-foreground">
+              Gérez vos comptes et prêts à travers différentes institutions financières
+            </p>
+          </div>
+          
+          <Button 
+            className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+            onClick={() => navigate('/solvency-engine')}
+          >
+            <BarChart className="h-4 w-4 mr-1" />
+            Moteur de Solvabilité
+          </Button>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
