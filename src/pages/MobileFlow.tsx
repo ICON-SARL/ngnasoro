@@ -7,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 
 import MobileHeader from '@/components/mobile/MobileHeader';
 import ContextualHeader from '@/components/mobile/ContextualHeader';
-import BalanceSection from '@/components/mobile/BalanceSection';
 import TransactionList from '@/components/mobile/TransactionList';
 import PaymentTabContent from '@/components/mobile/PaymentTabContent';
 import SecurePaymentTab from '@/components/mobile/SecurePaymentTab';
@@ -27,7 +26,6 @@ import MultiSFDAccounts from '@/components/MultiSFDAccounts';
 import { SecurePaymentLayer } from '@/components/SecurePaymentLayer';
 import FinancialSnapshot from '@/components/mobile/FinancialSnapshot';
 import QuickActionsCard from '@/components/mobile/QuickActionsCard';
-import RealTimeSavingsWidget from '@/components/RealTimeSavingsWidget';
 import SFDSavingsOverview from '@/components/mobile/SFDSavingsOverview';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -63,10 +61,6 @@ const MainDashboard = ({ onAction, account, transactions, transactionsLoading, t
           </Button>
         </div>
         <ContextualHeader />
-        <BalanceSection 
-          currency={account?.currency || 'FCFA'} 
-          onAction={onAction}
-        />
       </div>
       
       <div className="mx-4 -mt-10">
