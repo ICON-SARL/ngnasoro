@@ -3,8 +3,11 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowUpRight, ArrowDownRight, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 
 const FinancialOverview = () => {
+  const navigate = useNavigate();
+  
   return (
     <div className="mx-4 mt-3">
       <Card className="border-0 shadow-sm bg-white rounded-2xl overflow-hidden">
@@ -51,7 +54,10 @@ const FinancialOverview = () => {
             </div>
           </div>
           
-          <button className="mt-3 w-full bg-lime-600 hover:bg-lime-700 text-white py-2 rounded-xl font-medium transition-colors">
+          <button 
+            className="mt-3 w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white py-2 rounded-xl font-medium transition-colors"
+            onClick={() => navigate('/solvency-engine')}
+          >
             Analyser maintenant
           </button>
         </CardContent>

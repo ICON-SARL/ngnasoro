@@ -31,7 +31,7 @@ const ContextualHeader = () => {
   
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Utilisateur';
   const activeSFD = sfdData.find(sfd => sfd.id === activeSfdId);
-  const activeSFDName = activeSFD?.name || 'SFD non sélectionnée';
+  const activeSFDName = activeSFD?.name || 'SFD Primaire';
 
   const handleSwitchSfd = async (sfdId: string) => {
     await switchActiveSfd(sfdId);
@@ -40,7 +40,7 @@ const ContextualHeader = () => {
   return (
     <div className="flex justify-between items-center mb-3">
       <div className="flex items-center">
-        <div className="w-8 h-8 rounded-full bg-lime-200 flex items-center justify-center mr-2">
+        <div className="w-8 h-8 rounded-full bg-[#FFAB2E]/80 flex items-center justify-center mr-2">
           <img 
             src="/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png" 
             alt="Logo SFD" 
@@ -49,7 +49,7 @@ const ContextualHeader = () => {
         </div>
         <div>
           <h1 className="text-xl font-bold text-white">
-            <span className="text-lime-300">N'GNA</span> SÔRÔ!
+            <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-[#0D6A51]/90">SÔRÔ!</span>
           </h1>
           <div className="flex items-center">
             <DropdownMenu>
@@ -62,8 +62,8 @@ const ContextualHeader = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
                 <div className="p-2">
-                  <div className="text-sm font-medium">Changer d'institution</div>
-                  <div className="text-xs text-muted-foreground mb-2">Connexion sécurisée multi-SFD</div>
+                  <div className="text-sm font-medium">Choisir SFD</div>
+                  <div className="text-xs text-muted-foreground mb-2">Sélectionnez votre institution</div>
                   <div className="flex items-center space-x-2 mb-2">
                     <Switch 
                       id="mobile-biometric" 
@@ -77,19 +77,33 @@ const ContextualHeader = () => {
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                {sfdData.map((sfd) => (
-                  <DropdownMenuItem 
-                    key={sfd.id}
-                    className={sfd.id === activeSfdId ? "bg-lime-50" : ""}
-                    onClick={() => handleSwitchSfd(sfd.id)}
-                  >
-                    <Building className="h-4 w-4 mr-2 text-lime-600" />
-                    <span className="flex-1">{sfd.name}</span>
-                    {sfd.id === activeSfdId && (
-                      <Badge className="bg-lime-200 text-lime-800 text-[0.6rem] py-0 px-1">Actif</Badge>
-                    )}
-                  </DropdownMenuItem>
-                ))}
+                {sfdData.length > 0 ? (
+                  sfdData.map((sfd) => (
+                    <DropdownMenuItem 
+                      key={sfd.id}
+                      className={sfd.id === activeSfdId ? "bg-[#0D6A51]/10" : ""}
+                      onClick={() => handleSwitchSfd(sfd.id)}
+                    >
+                      <Building className="h-4 w-4 mr-2 text-[#0D6A51]" />
+                      <span className="flex-1">{sfd.name}</span>
+                      {sfd.id === activeSfdId && (
+                        <Badge className="bg-[#0D6A51]/20 text-[#0D6A51] text-[0.6rem] py-0 px-1">Principal</Badge>
+                      )}
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <>
+                    <DropdownMenuItem className="bg-[#0D6A51]/10">
+                      <Building className="h-4 w-4 mr-2 text-[#0D6A51]" />
+                      <span className="flex-1">SFD Primaire</span>
+                      <Badge className="bg-[#0D6A51]/20 text-[#0D6A51] text-[0.6rem] py-0 px-1">Principal</Badge>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Building className="h-4 w-4 mr-2 text-[#0D6A51]" />
+                      <span className="flex-1">MEREF-SFD</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -102,7 +116,7 @@ const ContextualHeader = () => {
           className="p-1 text-white" 
           onClick={() => navigate('/solvency-engine')}
         >
-          <BarChart3 className="h-5 w-5 text-lime-300" />
+          <BarChart3 className="h-5 w-5 text-[#FFAB2E]" />
         </Button>
         <Bell className="h-6 w-6 text-white cursor-pointer" />
         <Avatar className="h-8 w-8 bg-white/20 border border-white/30">

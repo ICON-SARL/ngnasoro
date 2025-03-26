@@ -7,6 +7,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 
 import MobileHeader from '@/components/mobile/MobileHeader';
+import ContextualHeader from '@/components/mobile/ContextualHeader';
 import BalanceSection from '@/components/mobile/BalanceSection';
 import QuickAccessCard from '@/components/mobile/QuickAccessCard';
 import FinancialOverview from '@/components/mobile/FinancialOverview';
@@ -61,8 +62,12 @@ const MainDashboard = ({ onAction, account, transactions, transactionsLoading, t
             <Menu className="h-5 w-5" />
           </Button>
         </div>
-        <MobileHeader />
-        <BalanceSection currency={account?.currency || 'FCFA'} balance={account?.balance || 0} />
+        <ContextualHeader />
+        <BalanceSection 
+          currency={account?.currency || 'FCFA'} 
+          balance={account?.balance || 0} 
+          onAction={onAction}
+        />
       </div>
       
       <div className="mx-4 -mt-10">
@@ -245,35 +250,35 @@ const MobileFlow = () => {
               <div className="flex flex-col space-y-1">
                 <h3 className="text-sm font-medium text-gray-500 mb-2">Opérations bancaires</h3>
                 <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/payment'); toggleMenu(); }}>
-                  <CreditCard className="h-5 w-5 mr-2" /> Paiements et transferts
+                  <CreditCard className="h-5 w-5 mr-2 text-[#0D6A51]" /> Paiements et transferts
                 </Button>
                 <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/secure-payment'); toggleMenu(); }}>
-                  <ShieldCheck className="h-5 w-5 mr-2" /> Paiement sécurisé
+                  <ShieldCheck className="h-5 w-5 mr-2 text-[#0D6A51]" /> Paiement sécurisé
                 </Button>
                 <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/schedule-transfer'); toggleMenu(); }}>
-                  <Calendar className="h-5 w-5 mr-2" /> Transferts programmés
+                  <Calendar className="h-5 w-5 mr-2 text-[#0D6A51]" /> Transferts programmés
                 </Button>
                 <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/multi-sfd'); toggleMenu(); }}>
-                  <Building className="h-5 w-5 mr-2" /> Gestion Multi-SFD
+                  <Building className="h-5 w-5 mr-2 text-[#0D6A51]" /> Gestion Multi-SFD
                 </Button>
                 <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/secure-layer'); toggleMenu(); }}>
-                  <ShieldCheck className="h-5 w-5 mr-2" /> Sécurité avancée
+                  <ShieldCheck className="h-5 w-5 mr-2 text-[#0D6A51]" /> Sécurité avancée
                 </Button>
               </div>
               
               <div className="flex flex-col space-y-1">
                 <h3 className="text-sm font-medium text-gray-500 mb-2">Prêts et financements</h3>
                 <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/home-loan'); toggleMenu(); }}>
-                  <Wallet className="h-5 w-5 mr-2" /> Mes prêts
+                  <Wallet className="h-5 w-5 mr-2 text-[#FFAB2E]" /> Mes prêts
                 </Button>
                 <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/loan-application'); toggleMenu(); }}>
-                  <HandCoins className="h-5 w-5 mr-2" /> Demander un prêt
+                  <HandCoins className="h-5 w-5 mr-2 text-[#FFAB2E]" /> Demander un prêt
                 </Button>
                 <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/payment-options'); toggleMenu(); }}>
-                  <CreditCard className="h-5 w-5 mr-2" /> Options de paiement
+                  <CreditCard className="h-5 w-5 mr-2 text-[#FFAB2E]" /> Options de paiement
                 </Button>
                 <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/late-payments'); toggleMenu(); }}>
-                  <Bell className="h-5 w-5 mr-2" /> Alertes retards
+                  <Bell className="h-5 w-5 mr-2 text-[#FFAB2E]" /> Alertes retards
                 </Button>
               </div>
 
@@ -301,7 +306,7 @@ const MobileFlow = () => {
       )}
 
       <Routes>
-        <Route path="welcome" element={<WelcomeScreen />} />
+        <Route path="welcome" element={<WelcomeScreen onStart={() => handleAction('Start')} />} />
         <Route path="main" element={
           <MainDashboard 
             onAction={handleAction}
@@ -401,6 +406,7 @@ const MobileFlow = () => {
         <Route path="loan-process" element={
           <LoanProcessFlow onBack={() => navigate('/mobile-flow/main')} />
         } />
+        <Route path="" element={<Navigate to="/mobile-flow/welcome" replace />} />
         <Route path="*" element={<Navigate to="/mobile-flow/welcome" replace />} />
       </Routes>
       
