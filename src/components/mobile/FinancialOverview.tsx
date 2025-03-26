@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowUpRight, ArrowDownRight, Building, BarChart3 } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Building, BarChart3, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 
@@ -49,7 +49,7 @@ const FinancialOverview = () => {
               <p className="text-sm text-gray-500">Épargne du mois dernier</p>
               <div className="flex items-center">
                 <p className="font-medium">52.000 FCFA</p>
-                <ArrowUpRight className="h-4 w-4 text-green-500 ml-1" />
+                <TrendingUp className="h-4 w-4 text-green-500 ml-1" />
               </div>
             </div>
           </div>
