@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import InfrastructureMonitoring from '@/components/InfrastructureMonitoring';
 import { ApiIntegration } from '@/components/ApiIntegration';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Server, Server2, Settings, Cloud, GitBranch } from 'lucide-react';
+import { Server, HardDrive, Settings, Cloud, GitBranch } from 'lucide-react';
 
 const InfrastructurePage = () => {
   return (
