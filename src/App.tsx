@@ -1,38 +1,52 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import Index from './pages/Index';
-import MobileFlow from './pages/MobileFlow';
-import KYCVerification from './pages/KYCVerification';
-import MultiSFDDashboard from './pages/MultiSFDDashboard';
-import AgencyDashboard from './pages/AgencyDashboard';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
-import InfrastructurePage from './pages/InfrastructurePage';
-import PremiumDashboard from './pages/PremiumDashboard';
-import SupportPage from './pages/SupportPage';
-import SolvencyEngine from './pages/SolvencyEngine';
-import NotFound from './pages/NotFound';
+
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+import MobileFlow from "./pages/MobileFlow";
+import PremiumDashboard from "./pages/PremiumDashboard";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import AgencyDashboard from "./pages/AgencyDashboard";
+import AuthUI from "./components/AuthUI";
+import KYCVerification from "./pages/KYCVerification";
+import SupportPage from "./pages/SupportPage";
+import InfrastructurePage from "./pages/InfrastructurePage";
+import SFDSelector from "./pages/SFDSelector";
+import MultiSFDDashboard from "./pages/MultiSFDDashboard";
+import SolvencyEngine from "./pages/SolvencyEngine";
 import LoanSystemPage from "./pages/LoanSystemPage";
 
-function App() {
-  return (
-    <div className="App">
-      {/* Routes définition */}
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/mobile-flow" element={<MobileFlow />} />
-        <Route path="/kyc-verification" element={<KYCVerification />} />
-        <Route path="/multi-sfd" element={<MultiSFDDashboard />} />
-        <Route path="/agency" element={<AgencyDashboard />} />
-        <Route path="/super-admin" element={<SuperAdminDashboard />} />
-        <Route path="/infra" element={<InfrastructurePage />} />
-        <Route path="/premium" element={<PremiumDashboard />} />
-        <Route path="/support" element={<SupportPage />} />
-        <Route path="/solvency" element={<SolvencyEngine />} />
-        <Route path="/loan-system" element={<LoanSystemPage />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </div>
-  );
-}
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/mobile-flow" element={<MobileFlow />} />
+          <Route path="/premium-dashboard" element={<PremiumDashboard />} />
+          <Route path="/super-admin" element={<SuperAdminDashboard />} />
+          <Route path="/agency-dashboard" element={<AgencyDashboard />} />
+          <Route path="/auth" element={<AuthUI />} />
+          <Route path="/kyc" element={<KYCVerification />} />
+          <Route path="/support" element={<SupportPage />} />
+          <Route path="/infrastructure" element={<InfrastructurePage />} />
+          <Route path="/sfd-selector" element={<SFDSelector />} />
+          <Route path="/multi-sfd" element={<MultiSFDDashboard />} />
+          <Route path="/solvency-engine" element={<SolvencyEngine />} />
+          <Route path="/loan-system" element={<LoanSystemPage />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
