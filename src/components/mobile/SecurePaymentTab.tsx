@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { SecurePaymentHeader } from './secure-payment/SecurePaymentHeader';
-import { InsufficientBalanceAlert } from './secure-payment/InsufficientBalanceAlert';
+import { ArrowLeft, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { PaymentMethodTabs } from './secure-payment/PaymentMethodTabs';
 import { SecurityFeatures } from './secure-payment/SecurityFeatures';
 import { ReconciliationSection } from './secure-payment/ReconciliationSection';
+import MobileMoneyModal from './loan/MobileMoneyModal';
 
 interface SecurePaymentTabProps {
   onBack: () => void;
@@ -16,6 +18,9 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ onBack }) => {
   const [paymentMethod, setPaymentMethod] = useState('sfd');
   const [balanceStatus, setBalanceStatus] = useState<'sufficient' | 'insufficient'>('sufficient');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed' | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
   
   // Simulate automatic detection of the main SFD account
   useEffect(() => {
@@ -26,7 +31,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ onBack }) => {
         setBalanceStatus('insufficient');
         setPaymentMethod('mobile');
         toast({
-          title: "Compte SFD insuffisant",
+          title: "Solde SFD insuffisant",
           description: "Basculement automatique vers Mobile Money",
           variant: "default",
         });
@@ -41,46 +46,138 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ onBack }) => {
   
   const handlePayment = () => {
     setPaymentStatus('pending');
+    setProgress(0);
+    
+    // Simulate payment processing with progress
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 5;
+      });
+    }, 100);
     
     // Simulate payment processing
     setTimeout(() => {
+      clearInterval(interval);
+      setProgress(100);
+      
       const success = Math.random() > 0.2;
       
       if (success) {
         setPaymentStatus('success');
+        setPaymentSuccess(true);
         toast({
-          title: "Paiement réussi",
-          description: "Transaction traitée avec succès et tokenisée.",
+          title: "Remboursement réussi",
+          description: "Votre remboursement de prêt a été traité avec succès.",
           variant: "default",
         });
       } else {
         setPaymentStatus('failed');
         toast({
-          title: "Échec du paiement",
+          title: "Échec du remboursement",
           description: "Veuillez réessayer ou sélectionner une autre méthode.",
           variant: "destructive",
         });
       }
     }, 2000);
   };
+
+  const handleMobileMoneyPayment = () => {
+    setMobileMoneyInitiated(true);
+  };
   
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 pb-24">
-      <SecurePaymentHeader onBack={onBack} />
+    <div className="bg-white h-full pb-24">
+      <div className="p-4 flex items-center justify-between border-b">
+        <Button variant="ghost" onClick={onBack} className="p-1">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-lg font-bold">Remboursement de prêt</h1>
+        <div className="w-5"></div>
+      </div>
       
-      <InsufficientBalanceAlert show={balanceStatus === 'insufficient'} />
+      {paymentSuccess ? (
+        <div className="p-6 flex flex-col items-center justify-center text-center">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
+            <Check className="h-10 w-10 text-green-600" />
+          </div>
+          <h2 className="text-xl font-bold mb-2">Remboursement réussi</h2>
+          <p className="text-gray-600 mb-6">
+            Votre remboursement de 3 500 FCFA a été traité avec succès. Un reçu a été envoyé à votre adresse email.
+          </p>
+          <div className="w-full bg-gray-100 p-4 rounded-lg mb-6">
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-600">Référence:</span>
+              <span className="font-medium">REF-23458976</span>
+            </div>
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-600">Date:</span>
+              <span className="font-medium">{new Date().toLocaleDateString('fr-FR')}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Statut:</span>
+              <span className="text-green-600 font-medium">Confirmé</span>
+            </div>
+          </div>
+          <Button 
+            className="w-full mb-3"
+            onClick={onBack}
+          >
+            Retour aux détails du prêt
+          </Button>
+          <Button 
+            variant="outline"
+            className="w-full"
+            onClick={() => window.print()}
+          >
+            Télécharger le reçu
+          </Button>
+        </div>
+      ) : (
+        <div className="p-4 space-y-6">
+          <div className="bg-blue-50 p-4 rounded-lg mb-2">
+            <h2 className="font-bold mb-1">Détails du remboursement</h2>
+            <div className="flex justify-between mb-1">
+              <span className="text-gray-600">Prêt:</span>
+              <span>Microfinance Bamako</span>
+            </div>
+            <div className="flex justify-between mb-1">
+              <span className="text-gray-600">Échéance:</span>
+              <span>10 Juillet 2023</span>
+            </div>
+            <div className="flex justify-between text-lg font-bold">
+              <span>Montant dû:</span>
+              <span>3 500 FCFA</span>
+            </div>
+          </div>
+          
+          {paymentStatus === 'pending' && (
+            <div className="space-y-2 my-4">
+              <Progress value={progress} className="h-2" />
+              <p className="text-sm text-center text-gray-600">Traitement de votre remboursement...</p>
+            </div>
+          )}
+          
+          <PaymentMethodTabs 
+            paymentMethod={paymentMethod}
+            balanceStatus={balanceStatus}
+            paymentStatus={paymentStatus}
+            onPaymentMethodChange={setPaymentMethod}
+            handlePayment={handlePayment}
+          />
+          
+          <SecurityFeatures />
+          
+          <ReconciliationSection />
+        </div>
+      )}
       
-      <PaymentMethodTabs 
-        paymentMethod={paymentMethod}
-        balanceStatus={balanceStatus}
-        paymentStatus={paymentStatus}
-        onPaymentMethodChange={setPaymentMethod}
-        handlePayment={handlePayment}
-      />
-      
-      <SecurityFeatures />
-      
-      <ReconciliationSection />
+      {mobileMoneyInitiated && (
+        <MobileMoneyModal onClose={() => setMobileMoneyInitiated(false)} />
+      )}
     </div>
   );
 };

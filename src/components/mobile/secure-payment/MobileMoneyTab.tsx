@@ -2,11 +2,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { RotateCw, Shield, AlertTriangle, Fingerprint, Lock } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RotateCw, Smartphone } from 'lucide-react';
 
 interface MobileMoneyTabProps {
   paymentStatus: 'pending' | 'success' | 'failed' | null;
@@ -14,183 +12,81 @@ interface MobileMoneyTabProps {
 }
 
 export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({ paymentStatus, handlePayment }) => {
-  const { toast } = useToast();
-  const [provider, setProvider] = useState('orange');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [isSecondFactorSent, setIsSecondFactorSent] = useState(false);
-  const [verificationCode, setVerificationCode] = useState('');
-  const [securityInfo, setSecurityInfo] = useState<{
-    dailyLimit: number;
-    usedToday: number;
-    remainingLimit: number;
-    securityMethod: string;
-  }>({
-    dailyLimit: 500000, // 500,000 FCFA default
-    usedToday: 0,
-    remainingLimit: 500000,
-    securityMethod: 'Certificat client'
-  });
-
-  const handleProviderChange = (value: string) => {
-    setProvider(value);
-    
-    // Simulate fetching user limits for the selected provider
-    // And update security method based on provider
-    setTimeout(() => {
-      const mockLimits = {
-        orange: { dailyLimit: 500000, usedToday: 125000, securityMethod: 'Certificat client' },
-        wave: { dailyLimit: 750000, usedToday: 200000, securityMethod: 'HMAC-SHA256' },
-        mtn: { dailyLimit: 1000000, usedToday: 450000, securityMethod: 'OAuth2 + IP Whitelisting' }
-      };
-      
-      const limits = mockLimits[value as keyof typeof mockLimits];
-      setSecurityInfo({
-        dailyLimit: limits.dailyLimit,
-        usedToday: limits.usedToday,
-        remainingLimit: limits.dailyLimit - limits.usedToday,
-        securityMethod: limits.securityMethod
-      });
-    }, 500);
-  };
-
-  const sendVerificationCode = () => {
-    if (!phoneNumber || phoneNumber.length < 8) {
-      toast({
-        title: "Numéro invalide",
-        description: "Veuillez entrer un numéro de téléphone valide",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Simulate sending a verification code
-    toast({
-      title: "Code envoyé",
-      description: "Un code de vérification a été envoyé à votre téléphone",
-    });
-    
-    setIsSecondFactorSent(true);
-  };
-
-  const initiatePayment = () => {
-    if (!isSecondFactorSent) {
-      sendVerificationCode();
-      return;
-    }
-    
-    if (!verificationCode || verificationCode.length < 4) {
-      toast({
-        title: "Code invalide",
-        description: "Veuillez entrer le code de vérification",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Check daily limit
-    if (25000 > securityInfo.remainingLimit) {
-      toast({
-        title: "Plafond dépassé",
-        description: `Vous avez dépassé votre plafond journalier de ${securityInfo.dailyLimit.toLocaleString()} FCFA`,
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Proceed with payment
-    handlePayment();
-  };
-
-  const formatProviderName = (provider: string) => {
-    switch(provider) {
-      case 'orange': return 'Orange Money';
-      case 'wave': return 'Wave';
-      case 'mtn': return 'MTN Mobile Money';
-      default: return provider;
-    }
-  };
-
+  const [selected, setSelected] = useState("orange");
+  
   return (
     <>
-      <div>
-        <Label>Service Mobile Money</Label>
-        <Select value={provider} onValueChange={handleProviderChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionner un service" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="orange">Orange Money</SelectItem>
-            <SelectItem value="wave">Wave</SelectItem>
-            <SelectItem value="mtn">MTN Mobile Money</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="flex items-center text-xs text-muted-foreground mt-1">
-          <Lock className="h-3 w-3 mr-1" />
-          Sécurisé par {securityInfo.securityMethod}
-        </div>
-      </div>
-
-      {securityInfo.remainingLimit < 25000 && (
-        <Alert variant="destructive" className="my-2">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Plafond journalier de {formatProviderName(provider)} presque atteint. 
-            Disponible: {securityInfo.remainingLimit.toLocaleString()} FCFA
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      <div>
-        <Label>Numéro de téléphone</Label>
-        <Input 
-          type="tel" 
-          placeholder="+223 XX XX XX XX" 
-          value={phoneNumber}
-          onChange={(e) => setPhoneNumber(e.target.value)}
-        />
-      </div>
-      
-      <div>
-        <Label>Montant</Label>
-        <Input type="text" value="25,000 FCFA" readOnly />
-        <p className="text-xs text-muted-foreground mt-1">
-          Plafond journalier: {securityInfo.usedToday.toLocaleString()} / {securityInfo.dailyLimit.toLocaleString()} FCFA utilisés
-        </p>
-      </div>
-
-      {isSecondFactorSent && (
+      <div className="space-y-4">
+        <RadioGroup defaultValue={selected} onValueChange={setSelected} className="space-y-3">
+          <div className="flex items-center p-3 rounded-xl border bg-white shadow-sm hover:bg-orange-50/20 transition-colors">
+            <RadioGroupItem value="orange" id="orange" className="text-orange-500" />
+            <Label htmlFor="orange" className="font-normal flex items-center ml-2 cursor-pointer">
+              <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center mr-3">
+                <span className="text-orange-500 font-bold text-sm">OM</span>
+              </div>
+              <div>
+                <p className="font-medium">Orange Money</p>
+                <p className="text-xs text-gray-500">Transfert instantané</p>
+              </div>
+            </Label>
+          </div>
+          <div className="flex items-center p-3 rounded-xl border bg-white shadow-sm hover:bg-blue-50/20 transition-colors">
+            <RadioGroupItem value="wave" id="wave" className="text-blue-500" />
+            <Label htmlFor="wave" className="font-normal flex items-center ml-2 cursor-pointer">
+              <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center mr-3">
+                <span className="text-blue-500 font-bold text-sm">WV</span>
+              </div>
+              <div>
+                <p className="font-medium">Wave</p>
+                <p className="text-xs text-gray-500">Sans frais</p>
+              </div>
+            </Label>
+          </div>
+          <div className="flex items-center p-3 rounded-xl border bg-white shadow-sm hover:bg-yellow-50/20 transition-colors">
+            <RadioGroupItem value="mtn" id="mtn" className="text-yellow-500" />
+            <Label htmlFor="mtn" className="font-normal flex items-center ml-2 cursor-pointer">
+              <div className="h-10 w-10 rounded-lg bg-yellow-100 flex items-center justify-center mr-3">
+                <span className="text-yellow-500 font-bold text-sm">MTN</span>
+              </div>
+              <div>
+                <p className="font-medium">MTN Mobile Money</p>
+                <p className="text-xs text-gray-500">Disponible partout</p>
+              </div>
+            </Label>
+          </div>
+        </RadioGroup>
+        
         <div>
-          <Label className="flex items-center">
-            <Fingerprint className="h-4 w-4 mr-1 text-[#0D6A51]" />
-            Code de vérification
-          </Label>
-          <Input 
-            type="text" 
-            placeholder="XXXX" 
-            value={verificationCode}
-            onChange={(e) => setVerificationCode(e.target.value)}
-            maxLength={6}
-            className="text-center text-lg tracking-widest"
-          />
-          <p className="text-xs text-muted-foreground mt-1">
-            Un code a été envoyé au {phoneNumber}
-          </p>
+          <Label htmlFor="phone">Numéro de téléphone</Label>
+          <Input id="phone" placeholder="+223 XX XX XX XX" />
+          <div className="mt-1 text-xs text-muted-foreground">
+            Un code de confirmation sera envoyé à ce numéro
+          </div>
         </div>
-      )}
-      
-      {paymentStatus === 'pending' ? (
-        <Button disabled className="w-full">
-          <RotateCw className="mr-2 h-4 w-4 animate-spin" />
-          Traitement en cours...
-        </Button>
-      ) : (
-        <Button 
-          className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-          onClick={initiatePayment}
-        >
-          {isSecondFactorSent ? 'Confirmer le paiement' : 'Recevoir le code'}
-        </Button>
-      )}
+        
+        <div>
+          <Label>Montant</Label>
+          <Input type="text" value="3 500 FCFA" readOnly />
+          <div className="flex items-center mt-1 text-xs text-green-600">
+            <Smartphone className="h-3 w-3 mr-1" />
+            Aucuns frais de traitement
+          </div>
+        </div>
+        
+        {paymentStatus === 'pending' ? (
+          <Button disabled className="w-full">
+            <RotateCw className="mr-2 h-4 w-4 animate-spin" />
+            Traitement en cours...
+          </Button>
+        ) : (
+          <Button 
+            className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+            onClick={handlePayment}
+          >
+            Rembourser maintenant
+          </Button>
+        )}
+      </div>
     </>
   );
 };
