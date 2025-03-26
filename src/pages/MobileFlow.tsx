@@ -98,7 +98,7 @@ const MobileFlow = () => {
     } else if (action === 'Secure Layer') {
       setActiveTab('secure-layer');
     } else if (action === 'Loan Process') {
-      setActiveTab('loan-disbursement');
+      setActiveTab('loan-process');
     } else if (action === 'Start') {
       setActiveTab('home-loan');
     }

@@ -1,7 +1,17 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowDown, ArrowRight, CheckCircle, MessageSquare, Smartphone, QrCode, Building, CreditCard } from 'lucide-react';
+import { 
+  ArrowRight, 
+  ArrowDown, 
+  CheckCircle, 
+  MessageSquare, 
+  Smartphone, 
+  QrCode, 
+  Building, 
+  CreditCard,
+  User
+} from 'lucide-react';
 
 const LoanWorkflowDiagram = () => {
   return (
@@ -17,7 +27,7 @@ const LoanWorkflowDiagram = () => {
           <div className="flex items-center justify-center w-full mb-6">
             <div className="flex-1 text-right pr-3">
               <div className="inline-flex items-center bg-blue-50 px-3 py-2 rounded-lg">
-                <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
+                <User className="h-5 w-5 mr-2 text-blue-600" />
                 <span className="font-medium">Client</span>
               </div>
             </div>
@@ -74,7 +84,7 @@ const LoanWorkflowDiagram = () => {
           <div className="flex items-center justify-center w-full mb-6">
             <div className="flex-1 text-right pr-3">
               <div className="inline-flex items-center bg-blue-50 px-3 py-2 rounded-lg">
-                <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
+                <User className="h-5 w-5 mr-2 text-blue-600" />
                 <span className="font-medium">Client</span>
               </div>
             </div>
@@ -119,7 +129,7 @@ const LoanWorkflowDiagram = () => {
             <ArrowRight className="h-6 w-6 text-gray-400 mx-2 rotate-180" />
             <div className="flex-1 pl-3">
               <div className="inline-flex items-center bg-blue-50 px-3 py-2 rounded-lg">
-                <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
+                <User className="h-5 w-5 mr-2 text-blue-600" />
                 <span className="font-medium">Client</span>
               </div>
               <div className="text-sm text-gray-600 mt-1">SMS de confirmation</div>
@@ -131,7 +141,7 @@ const LoanWorkflowDiagram = () => {
           <div className="flex items-center justify-center w-full mb-6">
             <div className="flex-1 text-right pr-3">
               <div className="inline-flex items-center bg-blue-50 px-3 py-2 rounded-lg">
-                <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
+                <User className="h-5 w-5 mr-2 text-blue-600" />
                 <span className="font-medium">Client</span>
               </div>
             </div>
