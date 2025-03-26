@@ -7,7 +7,7 @@ import AuthenticationSystem from '@/components/AuthenticationSystem';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Building, ArrowRight, Shield, Clock, MapPin, Wifi } from 'lucide-react';
+import { Building, ArrowRight, Shield, Clock, MapPin, Wifi, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const SFDSelector = () => {
@@ -29,26 +29,57 @@ const SFDSelector = () => {
     navigate('/mobile-flow');
   };
 
+  const handleGoBack = () => {
+    // If we're in a step other than selection, go back to previous step
+    if (currentStep === 'authentication') {
+      setCurrentStep('selection');
+    } else if (currentStep === 'confirmation') {
+      setCurrentStep('authentication');
+    } else {
+      // If we're at the first step, navigate to home page
+      navigate('/');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="container mx-auto pt-6">
+      <div className="fixed top-0 left-0 right-0 bg-white p-2 z-10 shadow-sm flex items-center">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleGoBack}
+          className="mr-2"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => navigate('/')}
+          className="ml-auto"
+        >
+          <Home className="h-4 w-4 mr-1" /> Accueil
+        </Button>
+      </div>
+      
+      <div className="container mx-auto pt-14 max-w-xl">
         <div className="text-center mb-8">
           <img 
             src="/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png" 
             alt="NGNA SÔRÔ! Logo" 
-            className="h-16 mx-auto"
+            className="h-14 mx-auto"
           />
-          <h1 className="text-2xl font-bold mt-2">
+          <h1 className="text-xl sm:text-2xl font-bold mt-2">
             <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-[#0D6A51]">SÔRÔ!</span>
           </h1>
-          <p className="text-sm text-[#0D6A51] mb-1">MEREF - Système Financier Décentralisé</p>
+          <p className="text-xs sm:text-sm text-[#0D6A51] mb-1">MEREF - Système Financier Décentralisé</p>
           
           <Badge className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">Plateforme Multi-SFD</Badge>
         </div>
 
-        <Card className="max-w-3xl mx-auto">
+        <Card className="w-full mx-auto">
           <CardHeader>
-            <CardTitle>
+            <CardTitle className="text-lg sm:text-xl">
               {currentStep === 'selection' && "Sélectionnez votre SFD"}
               {currentStep === 'authentication' && "Vérification d'identité"}
               {currentStep === 'confirmation' && "Confirmation d'inscription"}
@@ -64,7 +95,7 @@ const SFDSelector = () => {
               <div className="space-y-6">
                 <GeoAgencySelector onSelectAgency={(agency) => handleSFDSelection(agency.name)} />
                 
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <h3 className="font-medium flex items-center text-blue-800">
                       <MapPin className="h-4 w-4 mr-2" />
