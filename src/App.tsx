@@ -14,6 +14,8 @@ import AuthUI from "./components/AuthUI";
 import KYCVerification from "./pages/KYCVerification";
 import SupportPage from "./pages/SupportPage";
 import InfrastructurePage from "./pages/InfrastructurePage";
+import SFDSelector from "./pages/SFDSelector";
+import MultiSFDDashboard from "./pages/MultiSFDDashboard";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +35,8 @@ const App = () => (
           <Route path="/kyc" element={<KYCVerification />} />
           <Route path="/support" element={<SupportPage />} />
           <Route path="/infrastructure" element={<InfrastructurePage />} />
+          <Route path="/sfd-selector" element={<SFDSelector />} />
+          <Route path="/multi-sfd" element={<MultiSFDDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
