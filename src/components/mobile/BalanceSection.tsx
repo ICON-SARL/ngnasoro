@@ -1,8 +1,7 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { ArrowUp, Building, Bell, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,21 +18,10 @@ const BalanceSection = ({
   onAction
 }: BalanceSectionProps) => {
   const navigate = useNavigate();
-  const [sliderValue, setSliderValue] = useState(65);
-  const [amountNeeded, setAmountNeeded] = useState(3250);
   
   const maxApprovedLimit = 5000;
   const nextPaymentDate = "15/07/2023";
   const nextPaymentAmount = 25000;
-  
-  const handleSliderChange = (value: number[]) => {
-    const newValue = value[0];
-    setSliderValue(newValue);
-    
-    // Calculate amount based on slider percentage
-    const calculatedAmount = Math.round((newValue / 100) * maxApprovedLimit);
-    setAmountNeeded(calculatedAmount);
-  };
   
   const handleRepaymentClick = () => {
     if (onAction) {
@@ -92,38 +80,6 @@ const BalanceSection = ({
           </div>
         </CardContent>
       </Card>
-      
-      <div className="p-4 bg-white/10 backdrop-blur-sm rounded-xl mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-white text-base">Montant souhaité</p>
-          <div className="h-6 w-6 bg-blue-400/50 rounded-full flex items-center justify-center">
-            <div className="h-3 w-3 bg-blue-400 rounded-full"></div>
-          </div>
-        </div>
-        
-        <h2 className="text-3xl font-bold text-white mb-3">
-          {currency} {formatCurrency(amountNeeded)}
-        </h2>
-        
-        <div className="mb-3">
-          <Slider 
-            value={[sliderValue]} 
-            onValueChange={handleSliderChange}
-            max={100} 
-            min={0}
-            step={1}
-            className="w-full"
-          />
-        </div>
-        
-        <div className="flex justify-between text-xs text-white">
-          <span>1000</span>
-          <span>2500</span>
-          <span>3000</span>
-          <span>4000</span>
-          <span>5000</span>
-        </div>
-      </div>
       
       <div className="grid grid-cols-2 gap-3">
         <Button 
