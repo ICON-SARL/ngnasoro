@@ -40,7 +40,8 @@ import {
   ShieldCheck,
   MessageSquare,
   HelpCircle,
-  Settings
+  Settings,
+  ArrowLeft
 } from 'lucide-react';
 
 const MobileFlow = () => {
