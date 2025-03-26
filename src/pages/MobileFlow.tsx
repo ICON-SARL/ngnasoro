@@ -18,6 +18,9 @@ import LoanActivityPage from '@/components/mobile/LoanActivityPage';
 import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
 import LoanSetupPage from '@/components/mobile/LoanSetupPage';
 import LoanProcessFlow from '@/components/mobile/LoanProcessFlow';
+import WelcomeScreen from '@/components/mobile/WelcomeScreen';
+import LoanDisbursementPage from '@/components/mobile/LoanDisbursementPage';
+import LoanAgreementPage from '@/components/mobile/LoanAgreementPage';
 import { PaymentOptions } from '@/components/PaymentOptions';
 import { LatePaymentAlerts } from '@/components/LatePaymentAlerts';
 import LoanApplicationFlow from '@/components/LoanApplicationFlow';
@@ -48,7 +51,7 @@ import {
 const MobileFlow = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('main');
+  const [activeTab, setActiveTab] = useState('welcome');
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   
@@ -89,13 +92,15 @@ const MobileFlow = () => {
     } else if (action === 'Late Payments') {
       setActiveTab('late-payments');
     } else if (action === 'Loan Application') {
-      setActiveTab('loan-application');
+      setActiveTab('loan-agreement');
     } else if (action === 'Multi SFD') {
       setActiveTab('multi-sfd');
     } else if (action === 'Secure Layer') {
       setActiveTab('secure-layer');
     } else if (action === 'Loan Process') {
-      setActiveTab('loan-process');
+      setActiveTab('loan-disbursement');
+    } else if (action === 'Start') {
+      setActiveTab('home-loan');
     }
   };
 
@@ -140,7 +145,7 @@ const MobileFlow = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
+    <div className="min-h-screen bg-white relative">
       {menuOpen && (
         <div className="absolute top-0 left-0 w-full h-full bg-white z-50">
           <div className="p-4">
@@ -211,8 +216,12 @@ const MobileFlow = () => {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsContent value="welcome" className="m-0 p-0 h-screen">
+          <WelcomeScreen />
+        </TabsContent>
+        
         <TabsContent value="main" className="space-y-4 mt-0 p-0">
-          <div className="bg-black text-white p-4 rounded-b-3xl relative">
+          <div className="bg-blue-600 text-white p-4 rounded-b-3xl relative">
             <div className="absolute top-4 right-4">
               <Button variant="ghost" size="sm" className="text-white p-1" onClick={toggleMenu}>
                 <Menu className="h-5 w-5" />
@@ -239,7 +248,7 @@ const MobileFlow = () => {
             onViewAll={() => handleAction('Loans')}
           />
         </TabsContent>
-          
+        
         <TabsContent value="payment" className="space-y-4 mt-0">
           <PaymentTabContent 
             onBack={() => setActiveTab('main')} 
@@ -255,7 +264,7 @@ const MobileFlow = () => {
           <ScheduleTransferTab onBack={() => setActiveTab('main')} />
         </TabsContent>
         
-        <TabsContent value="home-loan" className="space-y-4 mt-0 p-0">
+        <TabsContent value="home-loan" className="space-y-4 mt-0 p-0 h-screen">
           <HomeLoanPage />
         </TabsContent>
         
@@ -269,6 +278,14 @@ const MobileFlow = () => {
         
         <TabsContent value="loan-setup" className="space-y-4 mt-0 p-0">
           <LoanSetupPage />
+        </TabsContent>
+
+        <TabsContent value="loan-disbursement" className="space-y-4 mt-0 p-0 h-screen">
+          <LoanDisbursementPage />
+        </TabsContent>
+
+        <TabsContent value="loan-agreement" className="space-y-4 mt-0 p-0 h-screen">
+          <LoanAgreementPage />
         </TabsContent>
 
         <TabsContent value="payment-options" className="space-y-4 mt-0 p-4">
