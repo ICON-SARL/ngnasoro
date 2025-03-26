@@ -8,8 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import ContextualHeader from '@/components/mobile/ContextualHeader';
 import BalanceSection from '@/components/mobile/BalanceSection';
-import QuickAccessCard from '@/components/mobile/QuickAccessCard';
-import FinancialOverview from '@/components/mobile/FinancialOverview';
 import TransactionList from '@/components/mobile/TransactionList';
 import PaymentTabContent from '@/components/mobile/PaymentTabContent';
 import SecurePaymentTab from '@/components/mobile/SecurePaymentTab';
@@ -89,10 +87,6 @@ const MainDashboard = ({ onAction, account, transactions, transactionsLoading, t
       <div className="mx-4">
         <SFDSavingsOverview />
       </div>
-      
-      <QuickAccessCard onAction={onAction} />
-      
-      <FinancialOverview />
       
       <TransactionList 
         transactions={transactions.map(tx => ({

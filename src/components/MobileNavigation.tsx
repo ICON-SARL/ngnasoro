@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Home, Wallet, User, Plus, CreditCard, BarChart3 } from 'lucide-react';
+import { Home, Wallet, User, Plus, CreditCard } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavigationItem {
@@ -47,7 +47,7 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
   const navigationItems: NavigationItem[] = [
     {
       icon: <Home className="h-6 w-6" />,
-      label: "Accueil",
+      label: "Compte",
       value: 'main',
       path: '/mobile-flow/main'
     },

@@ -64,7 +64,7 @@ const BalanceSection = ({
       <div className="flex justify-between items-center">
         <div>
           <p className="text-sm text-white/80 uppercase tracking-wide mb-1">
-            APPROVED LIMIT UP TO <span>↗</span>
+            LIMITE DE PRÊT APPROUVÉE <span>↗</span>
           </p>
           <h1 className="text-4xl font-bold text-white mb-4">
             {currency} {formatCurrency(maxApprovedLimit)}
@@ -78,7 +78,7 @@ const BalanceSection = ({
       
       <div className="p-4 bg-white/10 backdrop-blur-sm rounded-xl mb-4">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-white text-base">I want money</p>
+          <p className="text-white text-base">Montant souhaité</p>
           <div className="h-6 w-6 bg-blue-400/50 rounded-full flex items-center justify-center">
             <div className="h-3 w-3 bg-blue-400 rounded-full"></div>
           </div>
@@ -115,7 +115,7 @@ const BalanceSection = ({
           onClick={handleSendClick}
         >
           <ArrowUp className="mr-2 h-5 w-5" />
-          Send
+          Envoyer
         </Button>
         <Button 
           variant="outline" 
@@ -123,7 +123,7 @@ const BalanceSection = ({
           onClick={handleReceiveClick}
         >
           <ArrowDown className="mr-2 h-5 w-5" />
-          Receive
+          Recevoir
         </Button>
         <Button 
           variant="outline" 
@@ -131,7 +131,7 @@ const BalanceSection = ({
           onClick={handleLoansClick}
         >
           <Building className="mr-2 h-5 w-5" />
-          Loans
+          Prêts
         </Button>
       </div>
     </div>
