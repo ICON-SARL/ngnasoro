@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
@@ -66,7 +65,6 @@ const MainDashboard = ({ onAction, account, transactions, transactionsLoading, t
         <ContextualHeader />
         <BalanceSection 
           currency={account?.currency || 'FCFA'} 
-          balance={account?.balance || 0} 
           onAction={onAction}
         />
       </div>
