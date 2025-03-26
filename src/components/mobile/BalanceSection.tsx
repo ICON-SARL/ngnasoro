@@ -1,7 +1,6 @@
 
 import React from 'react';
-import { ArrowUp, Building, Bell, Calendar } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Building, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,22 +22,6 @@ const BalanceSection = ({
   const nextPaymentDate = "15/07/2023";
   const nextPaymentAmount = 25000;
   
-  const handleRepaymentClick = () => {
-    if (onAction) {
-      onAction('Repayment', { amount: nextPaymentAmount });
-    } else {
-      navigate('/mobile-flow/payment');
-    }
-  };
-  
-  const handleLoansClick = () => {
-    if (onAction) {
-      onAction('Loans');
-    } else {
-      navigate('/mobile-flow/home-loan');
-    }
-  };
-
   const formatCurrency = (amount: number) => {
     return amount.toLocaleString();
   };
@@ -80,25 +63,6 @@ const BalanceSection = ({
           </div>
         </CardContent>
       </Card>
-      
-      <div className="grid grid-cols-2 gap-3">
-        <Button 
-          variant="outline" 
-          className="flex items-center justify-center py-5 bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm"
-          onClick={handleRepaymentClick}
-        >
-          <ArrowUp className="mr-2 h-5 w-5" />
-          Rembourser
-        </Button>
-        <Button 
-          variant="outline" 
-          className="flex items-center justify-center py-5 bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm"
-          onClick={handleLoansClick}
-        >
-          <Building className="mr-2 h-5 w-5" />
-          Mes Prêts
-        </Button>
-      </div>
     </div>
   );
 };
