@@ -2,7 +2,7 @@
 import React from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from './ui/button';
-import { Home, User, Wallet, Menu, X } from 'lucide-react';
+import { Home, User, Wallet, Menu, X, Landmark, Phone } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavigationItem {
@@ -27,6 +27,11 @@ const MobileNavigation = () => {
       action: () => console.log('Navigate to loans')
     },
     {
+      icon: <Landmark className="h-6 w-6" />,
+      label: "Épargne",
+      action: () => console.log('Navigate to savings')
+    },
+    {
       icon: <User className="h-6 w-6" />,
       label: "Compte",
       action: () => console.log('Navigate to account')
@@ -42,7 +47,7 @@ const MobileNavigation = () => {
           {navigationItems.map((item, index) => (
             <button
               key={index}
-              className="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary-foreground"
+              className="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-[#0D6A51] dark:text-gray-300 dark:hover:text-[#FFAB2E]"
               onClick={item.action}
             >
               {item.icon}
@@ -50,7 +55,7 @@ const MobileNavigation = () => {
             </button>
           ))}
           <button
-            className="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary-foreground"
+            className="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-[#0D6A51] dark:text-gray-300 dark:hover:text-[#FFAB2E]"
             onClick={() => setIsMenuOpen(true)}
           >
             <Menu className="h-6 w-6" />
@@ -63,16 +68,37 @@ const MobileNavigation = () => {
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-end">
           <div className="w-3/4 bg-white dark:bg-gray-900 h-full p-4 animate-slide-in-right">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">Menu</h2>
+              <div className="flex items-center gap-2">
+                <img 
+                  src="/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png" 
+                  alt="NGNA SÔRÔ! Logo" 
+                  className="h-8 w-auto" 
+                />
+                <h2 className="text-xl font-bold">
+                  <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-[#0D6A51]">SÔRÔ!</span>
+                </h2>
+              </div>
               <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(false)}>
                 <X className="h-6 w-6" />
               </Button>
             </div>
             <div className="space-y-4">
-              <a href="#" className="block p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">Historique des transactions</a>
-              <a href="#" className="block p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">Paramètres</a>
-              <a href="#" className="block p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">Support</a>
-              <a href="#" className="block p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">À propos</a>
+              <a href="#" className="block p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg flex items-center gap-3">
+                <Wallet className="h-5 w-5 text-[#0D6A51]" />
+                <span>Historique des transactions</span>
+              </a>
+              <a href="#" className="block p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg flex items-center gap-3">
+                <User className="h-5 w-5 text-[#0D6A51]" />
+                <span>Paramètres du compte</span>
+              </a>
+              <a href="#" className="block p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg flex items-center gap-3">
+                <Phone className="h-5 w-5 text-[#0D6A51]" />
+                <span>Support client</span>
+              </a>
+              <a href="#" className="block p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg flex items-center gap-3">
+                <Landmark className="h-5 w-5 text-[#0D6A51]" />
+                <span>À propos de MEREF-SFD</span>
+              </a>
             </div>
           </div>
         </div>

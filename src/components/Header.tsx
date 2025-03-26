@@ -24,33 +24,37 @@ const Header = () => {
     >
       <div className="container mx-auto px-4 md:px-6 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-white font-medium">
-            S
-          </div>
-          <Link to="/" className="font-medium text-lg">SecureFlux</Link>
+          <img 
+            src="/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png" 
+            alt="NGNA SÔRÔ! Logo" 
+            className="h-8 w-auto"
+          />
+          <Link to="/" className="font-medium text-lg">
+            <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-[#0D6A51]">SÔRÔ!</span>
+          </Link>
         </div>
         
         <nav className="hidden md:flex space-x-8">
-          <a href="#architecture" className="text-sm font-medium hover:text-primary transition-colors">
+          <a href="#architecture" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
             Architecture
           </a>
-          <a href="#security" className="text-sm font-medium hover:text-primary transition-colors">
-            Security
+          <a href="#security" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
+            Sécurité
           </a>
-          <a href="#microservices" className="text-sm font-medium hover:text-primary transition-colors">
+          <a href="#microservices" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
             Microservices
           </a>
-          <a href="#compliance" className="text-sm font-medium hover:text-primary transition-colors">
-            Compliance
+          <a href="#compliance" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
+            Conformité
           </a>
         </nav>
         
         <div className="flex items-center space-x-4">
-          <Link to="/mobile-flow" className="text-sm font-medium hover:text-primary transition-colors">
-            Mobile Flow
+          <Link to="/mobile-flow" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
+            App Mobile
           </Link>
-          <Link to="/premium-dashboard" className="hidden md:inline-flex h-9 px-4 py-2 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors">
-            Dashboard
+          <Link to="/premium-dashboard" className="hidden md:inline-flex h-9 px-4 py-2 rounded-md bg-[#0D6A51] text-white text-sm font-medium hover:bg-[#0D6A51]/90 transition-colors">
+            Tableau de Bord
           </Link>
           <button className="md:hidden">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
