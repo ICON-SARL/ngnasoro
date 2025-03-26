@@ -1,47 +1,47 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Calendar as CalendarIcon, Download, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { format, addMonths } from 'date-fns';
+import { Calendar, CheckCircle, AlertTriangle, CalendarRange, Download } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 export const RepaymentCalendar = () => {
   const { toast } = useToast();
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [startDate] = useState(new Date());
   
-  // Génération d'un calendrier de remboursement factice
-  const startDate = new Date();
-  const repaymentSchedule = Array.from({ length: 12 }, (_, i) => {
-    const dueDate = new Date(startDate);
-    dueDate.setMonth(startDate.getMonth() + i + 1);
+  // Générer un calendrier de remboursement de 12 mois
+  const generateRepaymentSchedule = () => {
+    const schedule = [];
+    const monthlyPayment = 38736; // Montant fixe pour la démonstration
     
-    const amount = 38736;
-    const principal = amount * 0.75;
-    const interest = amount * 0.25;
+    for (let i = 1; i <= 12; i++) {
+      const dueDate = addMonths(startDate, i);
+      const isPaid = i <= 2; // Les 2 premiers mois sont déjà payés
+      const isLate = i === 3 && !isPaid; // Le 3ème mois est en retard
+      
+      schedule.push({
+        payment_number: i,
+        due_date: dueDate,
+        amount: monthlyPayment,
+        principal: Math.round(monthlyPayment * 0.7),
+        interest: Math.round(monthlyPayment * 0.3),
+        status: isPaid ? 'paid' : isLate ? 'late' : 'upcoming',
+        payment_date: isPaid ? addMonths(dueDate, -0.1) : null
+      });
+    }
     
-    let status = 'pending';
-    if (i === 0) status = 'paid';
-    if (i === 1) status = 'upcoming';
-    if (i === 2) status = 'due-soon';
-    
-    return {
-      id: i + 1,
-      dueDate,
-      amount,
-      principal,
-      interest,
-      status
-    };
-  });
+    return schedule;
+  };
   
-  const exportToICalendar = () => {
-    // Simulation de l'exportation iCalendar
+  const schedule = generateRepaymentSchedule();
+  
+  const handleExportCalendar = () => {
     toast({
-      title: "Exportation réussie",
-      description: "Le calendrier a été exporté au format iCalendar.",
+      title: "Calendrier exporté",
+      description: "Le calendrier de remboursement a été exporté au format iCalendar (.ics).",
     });
   };
   
@@ -49,110 +49,93 @@ export const RepaymentCalendar = () => {
     switch (status) {
       case 'paid':
         return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Payé</Badge>;
+      case 'late':
+        return <Badge className="bg-red-100 text-red-800"><AlertTriangle className="h-3 w-3 mr-1" /> En retard</Badge>;
       case 'upcoming':
-        return <Badge className="bg-blue-100 text-blue-800"><Clock className="h-3 w-3 mr-1" /> À venir</Badge>;
-      case 'due-soon':
-        return <Badge className="bg-amber-100 text-amber-800"><AlertTriangle className="h-3 w-3 mr-1" /> Échéance proche</Badge>;
-      case 'pending':
+        return <Badge variant="outline">À venir</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800">En attente</Badge>;
+        return <Badge>{status}</Badge>;
     }
   };
-  
-  // Dates d'échéance pour le calendrier
-  const dueDates = repaymentSchedule.map(item => item.dueDate);
   
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
-          <CalendarIcon className="mr-2 h-5 w-5 text-[#0D6A51]" />
+          <Calendar className="mr-2 h-5 w-5 text-[#0D6A51]" />
           Calendrier de Remboursement
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="col-span-1">
-            <div className="space-y-2 mb-4">
-              <h3 className="text-sm font-medium">Visualisation du calendrier</h3>
+        <div className="rounded-md bg-muted p-4 mb-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-sm font-medium">Prêt #LN-2023-04587</h3>
               <p className="text-xs text-muted-foreground">
-                Les dates d'échéance sont en surbrillance
+                850,000 FCFA sur 12 mois @ 8.5%
               </p>
             </div>
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="border rounded-md p-2"
-              modifiers={{
-                dueSoon: [dueDates[2]],
-                upcoming: [dueDates[1]],
-                paid: [dueDates[0]],
-              }}
-              modifiersStyles={{
-                dueSoon: { backgroundColor: '#fef3c7', color: '#92400e', fontWeight: 'bold' },
-                upcoming: { backgroundColor: '#dbeafe', color: '#1e40af', fontWeight: 'bold' },
-                paid: { backgroundColor: '#dcfce7', color: '#166534', fontWeight: 'bold' },
-              }}
-            />
-            <div className="mt-4 space-y-2">
-              <div className="flex items-center text-xs">
-                <div className="h-3 w-3 rounded-full bg-green-100 mr-2"></div>
-                <span>Échéance payée</span>
-              </div>
-              <div className="flex items-center text-xs">
-                <div className="h-3 w-3 rounded-full bg-blue-100 mr-2"></div>
-                <span>Prochaine échéance</span>
-              </div>
-              <div className="flex items-center text-xs">
-                <div className="h-3 w-3 rounded-full bg-amber-100 mr-2"></div>
-                <span>Échéance imminente (7 jours)</span>
-              </div>
-            </div>
+            <Button variant="outline" size="sm" className="gap-1" onClick={handleExportCalendar}>
+              <CalendarRange className="h-4 w-4" />
+              <span className="hidden sm:inline">Exporter</span>
+            </Button>
           </div>
-          
-          <div className="col-span-2">
-            <div className="space-y-2 mb-4">
-              <h3 className="text-sm font-medium">Tableau d'amortissement</h3>
-              <p className="text-xs text-muted-foreground">
-                Le tableau ci-dessous affiche vos échéances de remboursement
-              </p>
-            </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>N°</TableHead>
-                  <TableHead>Date d'échéance</TableHead>
-                  <TableHead>Montant</TableHead>
-                  <TableHead>Principal</TableHead>
-                  <TableHead>Intérêts</TableHead>
-                  <TableHead>Statut</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {repaymentSchedule.slice(0, 6).map((payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell>{payment.id}</TableCell>
-                    <TableCell>{payment.dueDate.toLocaleDateString()}</TableCell>
-                    <TableCell>{payment.amount.toLocaleString()} FCFA</TableCell>
-                    <TableCell>{payment.principal.toLocaleString()} FCFA</TableCell>
-                    <TableCell>{payment.interest.toLocaleString()} FCFA</TableCell>
-                    <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-              <TableCaption>
-                Affichage des 6 premières échéances sur 12
-              </TableCaption>
-            </Table>
+        </div>
+        
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>N°</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Montant</TableHead>
+              <TableHead>Principal</TableHead>
+              <TableHead>Intérêts</TableHead>
+              <TableHead>Statut</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {schedule.map((payment) => (
+              <TableRow key={payment.payment_number}>
+                <TableCell>{payment.payment_number}</TableCell>
+                <TableCell>{format(payment.due_date, 'dd/MM/yyyy')}</TableCell>
+                <TableCell>{payment.amount.toLocaleString()} FCFA</TableCell>
+                <TableCell>{payment.principal.toLocaleString()} FCFA</TableCell>
+                <TableCell>{payment.interest.toLocaleString()} FCFA</TableCell>
+                <TableCell>
+                  {getStatusBadge(payment.status)}
+                  {payment.status === 'paid' && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Payé le {format(payment.payment_date, 'dd/MM/yyyy')}
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div className="bg-muted p-3 rounded-lg">
+            <p className="text-xs text-muted-foreground">Total du prêt</p>
+            <p className="text-lg font-bold">850,000 FCFA</p>
+          </div>
+          <div className="bg-muted p-3 rounded-lg">
+            <p className="text-xs text-muted-foreground">Intérêts totaux</p>
+            <p className="text-lg font-bold">{(38736 * 12 - 850000).toLocaleString()} FCFA</p>
+          </div>
+          <div className="bg-muted p-3 rounded-lg">
+            <p className="text-xs text-muted-foreground">Date de fin</p>
+            <p className="text-lg font-bold">{format(addMonths(startDate, 12), 'MM/yyyy')}</p>
           </div>
         </div>
       </CardContent>
-      <CardFooter className="justify-end">
-        <Button variant="outline" onClick={exportToICalendar}>
-          <Download className="h-4 w-4 mr-2" />
-          Exporter en iCalendar
-        </Button>
+      <CardFooter>
+        <div className="w-full">
+          <Button variant="outline" className="w-full" onClick={handleExportCalendar}>
+            <Download className="h-4 w-4 mr-2" />
+            Télécharger le calendrier (iCalendar)
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

@@ -1,44 +1,80 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Calendar as CalendarIcon, Check, HelpCircle, RefreshCw } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar, CalendarClock, RefreshCw, ChevronRight, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { format } from 'date-fns';
 
 export const RepaymentRescheduling = () => {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [rescheduled, setRescheduled] = useState(false);
+  const [processing, setProcessing] = useState(false);
   
-  const form = useForm({
-    defaultValues: {
-      loanId: 'LN-2023-04587',
-      borrowerName: 'Koné Ibrahim',
-      originalDate: new Date('2023-05-15'),
-      newDate: undefined,
-      reason: '',
-      notificationMethod: 'sms'
+  const reschedulingRequests = [
+    {
+      id: 'RSC-2023-001',
+      clientName: 'Koné Ibrahim',
+      loanRef: 'LN-2023-04587',
+      requestType: 'extension',
+      originalDate: '05/05/2023',
+      proposedDate: '20/05/2023',
+      reason: 'Retard de paiement de salaire',
+      status: 'approved',
+      requestDate: '02/05/2023'
+    },
+    {
+      id: 'RSC-2023-002',
+      clientName: 'Diallo Fatoumata',
+      loanRef: 'LN-2023-03256',
+      requestType: 'restructuration',
+      originalDate: 'Multiple',
+      proposedDate: 'Nouveau plan',
+      reason: 'Difficultés économiques temporaires',
+      status: 'pending',
+      requestDate: '03/05/2023'
+    },
+    {
+      id: 'RSC-2023-003',
+      clientName: 'Coulibaly Seydou',
+      loanRef: 'LN-2023-02879',
+      requestType: 'extension',
+      originalDate: '10/05/2023',
+      proposedDate: '25/05/2023',
+      reason: 'Problème de santé',
+      status: 'rejected',
+      requestDate: '01/05/2023'
     }
-  });
+  ];
   
-  const onSubmit = (data) => {
-    setIsLoading(true);
+  const handleReschedulingRequest = () => {
+    setProcessing(true);
     setTimeout(() => {
-      setIsLoading(false);
-      setRescheduled(true);
+      setProcessing(false);
       toast({
-        title: "Échéance reprogrammée",
-        description: `L'échéance a été reprogrammée au ${format(data.newDate, 'dd/MM/yyyy')}.`,
+        title: "Analyse terminée",
+        description: "La demande de reprogrammation a été évaluée et approuvée.",
       });
     }, 2000);
+  };
+  
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Approuvé</Badge>;
+      case 'pending':
+        return <Badge className="bg-amber-100 text-amber-800"><RefreshCw className="h-3 w-3 mr-1" /> En attente</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800"><XCircle className="h-3 w-3 mr-1" /> Rejeté</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
   };
   
   return (
@@ -46,242 +82,180 @@ export const RepaymentRescheduling = () => {
       <CardHeader>
         <CardTitle className="flex items-center">
           <RefreshCw className="mr-2 h-5 w-5 text-[#0D6A51]" />
-          Reprogrammation Intelligente des Échéances
+          Reprogrammation de Remboursement
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!rescheduled ? (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="loanId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Identifiant du prêt</FormLabel>
-                        <FormControl>
-                          <Input {...field} readOnly />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+        <Tabs defaultValue="requests">
+          <TabsList className="mb-6">
+            <TabsTrigger value="requests">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Demandes
+            </TabsTrigger>
+            <TabsTrigger value="new-request">
+              <CalendarClock className="h-4 w-4 mr-2" />
+              Analyser
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="requests">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Réf.</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Date proposée</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead>Date demande</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reschedulingRequests.map((request) => (
+                  <TableRow key={request.id}>
+                    <TableCell className="font-medium">{request.id}</TableCell>
+                    <TableCell>{request.clientName}</TableCell>
+                    <TableCell>
+                      {request.requestType === 'extension' ? (
+                        <Badge variant="outline">Extension</Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-blue-50">Restructuration</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>{request.proposedDate}</TableCell>
+                    <TableCell>{getStatusBadge(request.status)}</TableCell>
+                    <TableCell>{request.requestDate}</TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            
+            <div className="mt-6 p-4 rounded-md bg-blue-50 border border-blue-200">
+              <div className="flex items-start">
+                <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5" />
+                <div className="ml-2">
+                  <h3 className="text-sm font-medium text-blue-700">Algorithme d'ajustement</h3>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Notre système utilise un modèle prédictif pour évaluer l'impact de chaque demande de reprogrammation 
+                    sur le risque global du prêt, en prenant en compte l'historique du client et des facteurs externes.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="new-request">
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="loan-ref">Référence du prêt</Label>
+                    <Input id="loan-ref" placeholder="Ex: LN-2023-XXXX" />
+                  </div>
                   
-                  <FormField
-                    control={form.control}
-                    name="borrowerName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nom de l'emprunteur</FormLabel>
-                        <FormControl>
-                          <Input {...field} readOnly />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="originalDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date d'échéance actuelle</FormLabel>
-                        <FormControl>
-                          <div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                            {format(field.value, 'dd/MM/yyyy')}
-                          </div>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="newDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Nouvelle date d'échéance</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={`w-full justify-start text-left font-normal ${!field.value && "text-muted-foreground"}`}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? format(field.value, 'dd/MM/yyyy') : <span>Sélectionnez une date</span>}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="client-name">Nom du client</Label>
+                    <Input id="client-name" placeholder="Ex: Koné Ibrahim" />
+                  </div>
                 </div>
                 
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="reason"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Motif de la reprogrammation</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionnez un motif" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="cash-flow">Problème de trésorerie temporaire</SelectItem>
-                            <SelectItem value="medical">Dépense médicale imprévue</SelectItem>
-                            <SelectItem value="revenue-delay">Retard de paiement client</SelectItem>
-                            <SelectItem value="natural-disaster">Catastrophe naturelle</SelectItem>
-                            <SelectItem value="other">Autre motif</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Le motif sera enregistré dans l'historique du prêt.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="notificationMethod"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Méthode de notification</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionnez une méthode" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="sms">SMS</SelectItem>
-                            <SelectItem value="email">Email</SelectItem>
-                            <SelectItem value="both">SMS + Email</SelectItem>
-                            <SelectItem value="call">Appel téléphonique</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-md mt-6">
-                    <div className="flex items-start space-x-2">
-                      <HelpCircle className="h-5 w-5 text-amber-500 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-amber-800">Conseils de l'algorithme d'ajustement</p>
-                        <p className="text-xs text-amber-700 mt-1">
-                          L'analyse du profil client suggère que le {format(new Date('2023-05-25'), 'dd/MM/yyyy')} 
-                          serait une date optimale pour le report (10 jours après la date initiale). 
-                          Cette recommandation est basée sur l'historique de paiement et le flux de trésorerie estimé du client.
-                        </p>
-                      </div>
+                <div className="space-y-2">
+                  <Label>Type de reprogrammation</Label>
+                  <RadioGroup defaultValue="extension">
+                    <div className="flex items-center space-x-2 py-2">
+                      <RadioGroupItem value="extension" id="extension" />
+                      <Label htmlFor="extension" className="font-normal">
+                        Extension ponctuelle (report d'échéance)
+                      </Label>
                     </div>
+                    <div className="flex items-center space-x-2 py-2">
+                      <RadioGroupItem value="restructuration" id="restructuration" />
+                      <Label htmlFor="restructuration" className="font-normal">
+                        Restructuration complète du calendrier
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="current-date">Date d'échéance actuelle</Label>
+                    <Input id="current-date" type="date" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="proposed-date">Date proposée</Label>
+                    <Input id="proposed-date" type="date" />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="reason">Motif de la demande</Label>
+                  <Select>
+                    <SelectTrigger id="reason">
+                      <SelectValue placeholder="Sélectionnez un motif" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="salary-delay">Retard de paiement de salaire</SelectItem>
+                      <SelectItem value="health">Problème de santé</SelectItem>
+                      <SelectItem value="economic">Difficultés économiques temporaires</SelectItem>
+                      <SelectItem value="natural-disaster">Catastrophe naturelle</SelectItem>
+                      <SelectItem value="other">Autre raison</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="details">Informations complémentaires</Label>
+                  <Textarea id="details" placeholder="Détails supplémentaires sur la demande de reprogrammation..." />
+                </div>
+              </div>
+              
+              <div className="bg-muted p-4 rounded-md">
+                <h3 className="text-sm font-medium mb-2">Simulations de l'impact</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span>Montant de l'échéance actuelle:</span>
+                    <span className="font-medium">38,736 FCFA</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Montant proposé après ajustement:</span>
+                    <span className="font-medium">40,128 FCFA</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Impact sur les intérêts totaux:</span>
+                    <span className="font-medium text-amber-600">+12,500 FCFA</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Nouvelle date de fin de prêt:</span>
+                    <span className="font-medium">15/06/2024</span>
                   </div>
                 </div>
               </div>
               
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Traitement en cours..." : "Reprogrammer l'échéance"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        ) : (
-          <div className="space-y-6">
-            <div className="flex flex-col items-center justify-center py-6">
-              <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-                <Check className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="text-xl font-medium mb-2">Reprogrammation réussie !</h3>
-              <p className="text-muted-foreground mb-4">L'échéance a été reprogrammée et le client a été notifié.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="border rounded-md p-4">
-                <h4 className="text-sm font-medium mb-3">Détails de la reprogrammation</h4>
-                <div className="space-y-2 text-sm">
-                  <p className="flex justify-between">
-                    <span className="text-muted-foreground">Prêt référence:</span>
-                    <span>LN-2023-04587</span>
-                  </p>
-                  <p className="flex justify-between">
-                    <span className="text-muted-foreground">Client:</span>
-                    <span>Koné Ibrahim</span>
-                  </p>
-                  <p className="flex justify-between">
-                    <span className="text-muted-foreground">Date initiale:</span>
-                    <span>{format(new Date('2023-05-15'), 'dd/MM/yyyy')}</span>
-                  </p>
-                  <p className="flex justify-between">
-                    <span className="text-muted-foreground">Nouvelle date:</span>
-                    <span className="font-medium">{format(new Date('2023-05-25'), 'dd/MM/yyyy')}</span>
-                  </p>
-                  <p className="flex justify-between">
-                    <span className="text-muted-foreground">Frais de report:</span>
-                    <span>2,500 FCFA</span>
-                  </p>
-                </div>
-              </div>
-              
-              <div className="border rounded-md p-4">
-                <h4 className="text-sm font-medium mb-3">Impact sur le prêt</h4>
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <p className="text-muted-foreground mb-1">Score de crédit</p>
-                    <div className="flex items-center">
-                      <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-500 rounded-full" style={{ width: '85%' }}></div>
-                      </div>
-                      <span className="ml-2 font-medium">85/100</span>
-                    </div>
-                    <p className="text-xs text-amber-600 mt-1 flex items-center">
-                      <AlertTriangle className="h-3 w-3 mr-1" />
-                      Impact minimal (-2 points)
-                    </p>
-                  </div>
-                  
-                  <div className="pt-2">
-                    <Badge className="bg-blue-100 text-blue-800">Notification SMS envoyée</Badge>
-                  </div>
-                  
-                  <div className="pt-2">
-                    <p className="text-muted-foreground mb-1">Prochaine vérification de solvabilité</p>
-                    <p>{format(new Date('2023-06-15'), 'dd/MM/yyyy')}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-end">
-              <Button variant="outline" onClick={() => setRescheduled(false)}>
-                Retour à la gestion des échéances
+              <Button 
+                className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+                onClick={handleReschedulingRequest}
+                disabled={processing}
+              >
+                {processing ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Analyse en cours...
+                  </>
+                ) : (
+                  "Analyser et traiter la demande"
+                )}
               </Button>
             </div>
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

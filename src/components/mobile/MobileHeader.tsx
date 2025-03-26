@@ -31,6 +31,14 @@ const MobileHeader = () => {
         >
           <BarChart3 className="h-5 w-5 text-lime-300" />
         </Button>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="p-1 text-white" 
+          onClick={() => navigate('/loan-system')}
+        >
+          <span className="text-xs text-lime-300">Prêts</span>
+        </Button>
         <Bell className="h-6 w-6 text-white" />
         <Avatar className="h-8 w-8 bg-white/20 border border-white/30">
           <User className="h-4 w-4 text-white" />
