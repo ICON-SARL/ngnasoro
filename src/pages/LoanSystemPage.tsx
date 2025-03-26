@@ -10,6 +10,7 @@ import { LoanSimulator } from '@/components/LoanSimulator';
 import { ElectronicSignature } from '@/components/ElectronicSignature';
 import { RepaymentCalendar } from '@/components/RepaymentCalendar';
 import { PaymentOptions } from '@/components/PaymentOptions';
+import { SecurePaymentLayer } from '@/components/SecurePaymentLayer';
 import { CollateralManagement } from '@/components/CollateralManagement';
 import { RepaymentRescheduling } from '@/components/RepaymentRescheduling';
 import { LatePaymentAlerts } from '@/components/LatePaymentAlerts';
@@ -134,6 +135,10 @@ const LoanSystemPage = () => {
                   <CreditCard className="h-4 w-4 mr-2" />
                   Paiements
                 </TabsTrigger>
+                <TabsTrigger value="secure">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Paiement Sécurisé
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="simulator">
@@ -150,6 +155,10 @@ const LoanSystemPage = () => {
               
               <TabsContent value="payments">
                 <PaymentOptions />
+              </TabsContent>
+              
+              <TabsContent value="secure">
+                <SecurePaymentLayer />
               </TabsContent>
             </Tabs>
           </div>
