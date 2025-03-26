@@ -73,23 +73,28 @@ export function useSfdDataAccess() {
   }, [user, activeSfdId, setActiveSfdId, toast]);
 
   // Generate a new token for a specific SFD
-  const generateTokenForSfd = useCallback((sfdId: string): string | null => {
+  const generateTokenForSfd = useCallback(async (sfdId: string): Promise<string | null> => {
     if (!user) return null;
     
-    const token = generateSfdContextToken(user.id, sfdId);
-    
-    // Update the token in our state
-    setSfdData(prev => prev.map(sfd => 
-      sfd.id === sfdId 
-        ? { ...sfd, token, lastFetched: new Date() } 
-        : sfd
-    ));
-    
-    return token;
+    try {
+      const token = await generateSfdContextToken(user.id, sfdId);
+      
+      // Update the token in our state
+      setSfdData(prev => prev.map(sfd => 
+        sfd.id === sfdId 
+          ? { ...sfd, token, lastFetched: new Date() } 
+          : sfd
+      ));
+      
+      return token;
+    } catch (error) {
+      console.error('Error generating token:', error);
+      return null;
+    }
   }, [user]);
 
   // Switch the active SFD
-  const switchActiveSfd = useCallback((sfdId: string) => {
+  const switchActiveSfd = useCallback(async (sfdId: string) => {
     const sfd = sfdData.find(s => s.id === sfdId);
     if (!sfd) {
       toast({
@@ -104,7 +109,7 @@ export function useSfdDataAccess() {
     
     // Generate a new token for this SFD if needed
     if (!sfd.token || isTokenExpired(sfd.lastFetched)) {
-      generateTokenForSfd(sfdId);
+      await generateTokenForSfd(sfdId);
     }
     
     toast({
@@ -126,7 +131,7 @@ export function useSfdDataAccess() {
   };
 
   // Get current active SFD data
-  const getActiveSfdData = useCallback((): SfdData | null => {
+  const getActiveSfdData = useCallback(async (): Promise<SfdData | null> => {
     if (!activeSfdId) return null;
     
     const sfd = sfdData.find(s => s.id === activeSfdId);
@@ -134,15 +139,15 @@ export function useSfdDataAccess() {
     
     // Regenerate token if needed
     if (!sfd.token || isTokenExpired(sfd.lastFetched)) {
-      generateTokenForSfd(activeSfdId);
+      await generateTokenForSfd(activeSfdId);
     }
     
     return sfd;
   }, [activeSfdId, sfdData, generateTokenForSfd]);
 
   // Get the current token for API calls
-  const getCurrentSfdToken = useCallback((): string | null => {
-    const activeSfd = getActiveSfdData();
+  const getCurrentSfdToken = useCallback(async (): Promise<string | null> => {
+    const activeSfd = await getActiveSfdData();
     return activeSfd?.token || null;
   }, [getActiveSfdData]);
 

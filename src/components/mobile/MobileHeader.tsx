@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { Bell, User, BarChart3, Building, ChevronDown } from 'lucide-react';
@@ -21,8 +22,11 @@ const MobileHeader = () => {
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Utilisateur';
   const activeSFD = sfdData.find(sfd => sfd.id === activeSfdId)?.name || 'SFD non sélectionnée';
 
+  const handleSwitchSfd = async (sfdId: string) => {
+    await switchActiveSfd(sfdId);
+  };
+
   return (
-    
     <div className="flex justify-between items-center mb-3">
       <div className="flex items-center">
         <div className="w-8 h-8 rounded-full bg-lime-200 flex items-center justify-center mr-2">
@@ -45,7 +49,7 @@ const MobileHeader = () => {
                   <DropdownMenuItem 
                     key={sfd.id}
                     className={sfd.id === activeSfdId ? "bg-lime-50" : ""}
-                    onClick={() => switchActiveSfd(sfd.id)}
+                    onClick={() => handleSwitchSfd(sfd.id)}
                   >
                     <Building className="h-4 w-4 mr-2 text-lime-600" />
                     {sfd.name}

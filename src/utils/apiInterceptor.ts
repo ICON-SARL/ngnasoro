@@ -1,5 +1,5 @@
 
-import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import axios, { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { sfdCache } from './cacheUtils';
 
 // Create an axios instance for SFD-specific API calls
@@ -10,7 +10,7 @@ const sfdApiClient = axios.create({
 
 // Add a request interceptor to include the SFD context token
 sfdApiClient.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
     // Get the SFD ID from the config (must be provided in each call)
     const sfdId = config.headers?.['X-SFD-ID'] as string;
     const sfdToken = config.headers?.['X-SFD-TOKEN'] as string;
