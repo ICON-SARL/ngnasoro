@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Home, Wallet, User, Plus, BarChart3, RefreshCw } from 'lucide-react';
+import { Home, Wallet, User, Plus, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavigationItem {
@@ -62,18 +62,6 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
       label: "",
       value: 'action',
       path: '/mobile-flow/loan-application'
-    },
-    {
-      icon: <RefreshCw className="h-6 w-6" />,
-      label: "Transactions",
-      value: 'payment',
-      path: '/mobile-flow/payment'
-    },
-    {
-      icon: <BarChart3 className="h-6 w-6" />,
-      label: "Épargne",
-      value: 'savings',
-      path: '/mobile-flow/loan-setup'
     },
     {
       icon: <User className="h-6 w-6" />,

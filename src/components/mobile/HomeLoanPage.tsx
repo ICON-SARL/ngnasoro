@@ -38,7 +38,7 @@ const HomeLoanPage = () => {
   };
 
   return (
-    <div className="h-full bg-blue-600">
+    <div className="h-full bg-blue-600 pb-20">
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center">
           <div className="flex items-center space-x-2">
@@ -113,53 +113,6 @@ const HomeLoanPage = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center py-2 px-4">
-        <Button 
-          variant="ghost" 
-          className="flex flex-col items-center justify-center p-1 h-auto"
-          onClick={() => navigate('/mobile-flow/main')}
-        >
-          <Home className="h-5 w-5 text-gray-500" />
-          <span className="text-xs text-gray-500 mt-1">Accueil</span>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          className="flex flex-col items-center justify-center p-1 h-auto text-blue-600"
-        >
-          <CreditCard className="h-5 w-5" />
-          <span className="text-xs mt-1">Prêts</span>
-        </Button>
-        
-        <div className="relative -mt-8">
-          <Button 
-            className="h-14 w-14 rounded-full bg-black text-white flex items-center justify-center shadow-lg"
-            onClick={() => navigate('/mobile-flow/loan-application')}
-          >
-            <Plus className="h-8 w-8" />
-          </Button>
-        </div>
-        
-        <Button 
-          variant="ghost" 
-          className="flex flex-col items-center justify-center p-1 h-auto"
-          onClick={() => navigate('/mobile-flow/payment')}
-        >
-          <CreditCard className="h-5 w-5 text-gray-500" />
-          <span className="text-xs text-gray-500 mt-1">Paiement</span>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          className="flex flex-col items-center justify-center p-1 h-auto"
-          onClick={() => navigate('/mobile-flow/multi-sfd')}
-        >
-          <User className="h-5 w-5 text-gray-500" />
-          <span className="text-xs text-gray-500 mt-1">Profil</span>
-        </Button>
       </div>
     </div>
   );

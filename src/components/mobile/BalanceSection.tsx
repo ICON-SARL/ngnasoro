@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ArrowUp, ArrowDown, Building, Bell, Calendar } from 'lucide-react';
+import { ArrowUp, Building, Bell, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useNavigate } from 'react-router-dom';
@@ -43,14 +43,6 @@ const BalanceSection = ({
     }
   };
   
-  const handleReceiveClick = () => {
-    if (onAction) {
-      onAction('Receive');
-    } else {
-      navigate('/mobile-flow/secure-payment');
-    }
-  };
-
   const handleLoansClick = () => {
     if (onAction) {
       onAction('Loans');
@@ -133,7 +125,7 @@ const BalanceSection = ({
         </div>
       </div>
       
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <Button 
           variant="outline" 
           className="flex items-center justify-center py-5 bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm"
@@ -145,18 +137,10 @@ const BalanceSection = ({
         <Button 
           variant="outline" 
           className="flex items-center justify-center py-5 bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm"
-          onClick={handleReceiveClick}
-        >
-          <ArrowDown className="mr-2 h-5 w-5" />
-          Créditer
-        </Button>
-        <Button 
-          variant="outline" 
-          className="flex items-center justify-center py-5 bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm"
           onClick={handleLoansClick}
         >
           <Building className="mr-2 h-5 w-5" />
-          Prêts
+          Mes Prêts
         </Button>
       </div>
     </div>
