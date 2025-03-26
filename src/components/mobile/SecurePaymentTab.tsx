@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Check } from 'lucide-react';
@@ -11,6 +10,7 @@ import MobileMoneyModal from './loan/MobileMoneyModal';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import QRCodePaymentDialog from './loan/QRCodePaymentDialog';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SecurePaymentTabProps {
   onBack: () => void;
@@ -20,6 +20,7 @@ interface SecurePaymentTabProps {
 
 const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ onBack, isWithdrawal = false, loanId }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState('sfd');
   const [balanceStatus, setBalanceStatus] = useState<'sufficient' | 'insufficient'>('sufficient');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed' | null>(null);
@@ -115,17 +116,16 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ onBack, isWithdrawa
         if (error) throw error;
         
         // Add transaction record if payment successful
-        if (data?.success) {
+        if (data?.success && user) {
           const { error: txError } = await supabase
             .from('transactions')
-            .insert([
-              {
-                name: isWithdrawal ? 'Retrait de fonds' : 'Remboursement de prêt',
-                type: isWithdrawal ? 'withdrawal' : 'repayment',
-                amount: isWithdrawal ? -amount : -amount,
-                date: new Date().toISOString()
-              }
-            ]);
+            .insert({
+              user_id: user.id,
+              name: isWithdrawal ? 'Retrait de fonds' : 'Remboursement de prêt',
+              type: isWithdrawal ? 'withdrawal' : 'repayment',
+              amount: isWithdrawal ? -amount : -amount,
+              date: new Date().toISOString()
+            });
           
           if (txError) console.error('Transaction record error:', txError);
         }

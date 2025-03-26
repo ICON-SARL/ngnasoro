@@ -12,6 +12,6 @@ port = 54322
 [realtime]
 enabled = true
 
-[[functions]]
-name = "process-repayment"
+[functions]
+[functions.process-repayment]
 verify_jwt = false
