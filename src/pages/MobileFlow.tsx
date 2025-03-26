@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import MobileNavigation from '@/components/MobileNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
