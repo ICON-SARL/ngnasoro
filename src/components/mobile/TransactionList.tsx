@@ -27,7 +27,7 @@ const TransactionList = ({ transactions, isLoading = false, onViewAll }: Transac
         <h3 className="text-lg font-medium">Recent Transactions</h3>
         <Button 
           variant="link" 
-          className="text-sm text-blue-600 p-0 h-auto"
+          className="text-sm text-lime-600 p-0 h-auto"
           onClick={onViewAll}
         >
           View Loans
@@ -61,7 +61,7 @@ const TransactionList = ({ transactions, isLoading = false, onViewAll }: Transac
                 className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0"
               >
                 <div className="flex items-center">
-                  <Avatar className="h-10 w-10 mr-3 bg-gray-100">
+                  <Avatar className="h-10 w-10 mr-3 bg-lime-100">
                     {transaction.avatar ? (
                       <img src={transaction.avatar} alt={transaction.name} />
                     ) : (
@@ -76,7 +76,7 @@ const TransactionList = ({ transactions, isLoading = false, onViewAll }: Transac
                 <p 
                   className={`font-semibold ${
                     transaction.amount.startsWith('+') || !transaction.amount.startsWith('-') 
-                      ? 'text-green-600' 
+                      ? 'text-lime-600' 
                       : 'text-gray-800'
                   }`}
                 >

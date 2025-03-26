@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, DollarSign, Wallet, Clock, ArrowRight, User } from 'lucide-react';
+import { ChevronLeft, DollarSign, Wallet, Clock, ArrowRight, User, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccount } from '@/hooks/useAccount';
 
@@ -14,127 +15,120 @@ const HomeLoanPage = () => {
   const { account } = useAccount();
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'User';
   
-  const loanCount = 2; // This would be fetched from a real API
+  const loanCount = 3; // This would be fetched from a real API
+  
+  const loans = [
+    {
+      id: 1,
+      store: 'Insting Store',
+      amount: 25.40,
+      progress: 60,
+      status: 'Approved'
+    },
+    {
+      id: 2,
+      store: 'Home Decoration',
+      amount: 15.50,
+      progress: 30,
+      status: 'Approved'
+    },
+    {
+      id: 3,
+      store: 'Sahara Beauty',
+      amount: 5.80,
+      progress: 20,
+      status: 'Approved'
+    }
+  ];
 
   const goBack = () => {
     navigate('/mobile-flow');
   };
 
+  const handleLoanDetails = (loanId: number) => {
+    navigate('/mobile-flow');
+  };
+
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(amount);
+    return `$${amount.toFixed(2)}`;
   };
 
   return (
-    <div className="h-full bg-white p-4 pb-24">
-      <div className="flex items-center justify-between mb-6">
-        <Button variant="ghost" onClick={goBack} className="p-2">
-          <ChevronLeft className="h-6 w-6" />
-        </Button>
-        <Avatar className="h-10 w-10 bg-yellow-100">
-          {user?.user_metadata?.avatar_url ? (
-            <img src={user.user_metadata.avatar_url} alt={firstName} />
-          ) : (
-            <User className="h-6 w-6 text-yellow-800" />
-          )}
-        </Avatar>
+    <div className="h-full bg-white">
+      <div className="p-4 flex items-center justify-between">
+        <div className="flex items-center">
+          <div className="w-8 h-8 rounded-full bg-lime-200 flex items-center justify-center mr-2">
+            <span className="text-black font-bold">$</span>
+          </div>
+          <h1 className="text-xl font-bold">InstingLoan</h1>
+        </div>
+        <Bell className="h-6 w-6" />
       </div>
 
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold">Hi, {firstName}</h1>
-        <p className="text-gray-600 mt-1">Currently you have {loanCount} loans.</p>
+      <div className="px-4">
+        <h1 className="text-3xl font-bold">My Loans</h1>
       </div>
 
-      <div className="mb-8">
-        <p className="text-gray-600 mb-1">Current Balance</p>
-        <h2 className="text-5xl font-bold">{formatCurrency(account?.balance || 0)}</h2>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        <Card className="overflow-hidden border rounded-xl bg-green-50">
-          <CardContent className="p-4">
-            <div className="flex items-center mb-2">
-              <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center mr-2">
-                <Wallet className="h-5 w-5 text-green-800" />
-              </div>
-              <span className="text-sm">Loans Amount</span>
-            </div>
-            <p className="text-2xl font-bold">$159.20</p>
-          </CardContent>
-        </Card>
+      <div className="px-4 py-6 mt-4 bg-lime-200 rounded-3xl mx-4">
+        <p className="uppercase text-xs font-semibold">TOTAL BALANCE</p>
+        <h2 className="text-4xl font-bold mb-1">$82.50</h2>
+        <p className="text-sm">Due this month</p>
         
-        <Card className="overflow-hidden border rounded-xl bg-white">
-          <CardContent className="p-4">
-            <div className="flex items-center mb-2">
-              <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center mr-2">
-                <Clock className="h-5 w-5 text-gray-800" />
-              </div>
-              <span className="text-sm">Yearly Payment</span>
-            </div>
-            <p className="text-2xl font-bold">$159.20</p>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="current" className="mt-6">
+          <TabsList className="bg-white rounded-full p-1">
+            <TabsTrigger value="current" className="rounded-full px-6 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
+              <Wallet className="h-4 w-4 mr-2" /> Current loans
+            </TabsTrigger>
+            <TabsTrigger value="past" className="rounded-full px-6 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
+              <Clock className="h-4 w-4 mr-2" /> Past loans
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold mb-2">Quick Link</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="overflow-hidden border rounded-xl hover:shadow cursor-pointer">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <Wallet className="h-5 w-5 text-green-800" />
+      <div className="mt-4 px-4 space-y-4">
+        {loans.map((loan) => (
+          <Card key={loan.id} className="border shadow-sm rounded-xl overflow-hidden" onClick={() => handleLoanDetails(loan.id)}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                    {loan.store.includes('Insting') && (
+                      <div className="w-6 h-6 bg-lime-200 rounded-md flex items-center justify-center">
+                        <span className="text-xs font-bold">$</span>
+                      </div>
+                    )}
+                    {loan.store.includes('Home') && (
+                      <div className="w-6 h-6 bg-lime-100 rounded-md flex items-center justify-center">
+                        <span className="text-xs font-bold">H</span>
+                      </div>
+                    )}
+                    {loan.store.includes('Sahara') && (
+                      <div className="w-6 h-6 bg-purple-100 rounded-md flex items-center justify-center">
+                        <span className="text-xs font-bold">S</span>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium">{loan.store}</p>
+                    <p className="text-lg font-bold">${loan.amount.toFixed(2)}</p>
+                  </div>
                 </div>
-                <span className="font-medium">Apply for a loan</span>
+                <div className="text-right">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-lime-100 text-green-800">
+                    {loan.status}
+                  </span>
+                </div>
               </div>
-              <div className="h-8 w-8 bg-green-900 rounded-full flex items-center justify-center">
-                <ArrowRight className="h-5 w-5 text-white" />
+              <div className="w-full h-1 bg-gray-100 rounded-full mt-4">
+                <div 
+                  className="h-1 bg-lime-500 rounded-full" 
+                  style={{ width: `${loan.progress}%` }}
+                ></div>
               </div>
             </CardContent>
           </Card>
-          
-          <Card className="overflow-hidden border rounded-xl bg-green-50 hover:shadow cursor-pointer">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <DollarSign className="h-5 w-5 text-green-800" />
-                </div>
-                <span className="font-medium">Make a loan payment</span>
-              </div>
-              <div className="h-8 w-8 bg-green-900 rounded-full flex items-center justify-center">
-                <ArrowRight className="h-5 w-5 text-white" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="mt-4 flex justify-end">
-          <Button variant="outline" size="sm" className="rounded-xl">
-            View All
-          </Button>
-        </div>
-      </div>
-
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="text-2xl font-bold">Loan Offer</h2>
-          <Button variant="outline" size="sm" className="rounded-xl">
-            View All
-          </Button>
-        </div>
-        
-        <Card className="overflow-hidden border rounded-xl bg-green-50 p-4">
-          <CardContent className="p-0">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-xl font-bold">Special Offer</h3>
-                <p className="text-sm text-gray-600">Get a low interest loan today!</p>
-              </div>
-              <Button className="bg-green-900 rounded-xl text-white hover:bg-green-800">
-                Apply Now
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        ))}
       </div>
     </div>
   );

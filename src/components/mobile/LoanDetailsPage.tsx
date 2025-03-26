@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { ArrowLeft, CreditCard, DollarSign, Calendar, Clock, ArrowRight } from 'lucide-react';
+import { ArrowLeft, DollarSign, CreditCard, Calendar, Clock, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface LoanDetailsPageProps {
   onBack: () => void;
@@ -10,108 +11,140 @@ interface LoanDetailsPageProps {
 
 const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
   const loanDetails = {
-    type: 'Business Loan',
-    amount: 1459.20,
-    approvedDate: '02/02/2023',
-    nextPayment: '03/02/2023',
-    interestRate: '2.5%',
-    term: '12 months',
-    status: 'Active'
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(amount);
+    store: 'Insting Store',
+    paid: 10.40,
+    remaining: 15.00,
+    progress: 40, // percentage of completion
+    payments: [
+      { id: 1, date: '05 August 2023', amount: 3.50, status: 'paid' },
+      { id: 2, date: '05 July 2023', amount: 3.50, status: 'paid' },
+      { id: 3, date: '05 June 2023', amount: 3.50, status: 'paid' }
+    ]
   };
 
   return (
-    <div className="h-full bg-gray-50 p-4">
-      <div className="flex items-center mb-6">
-        <Button variant="outline" className="rounded-full p-2 mr-4 border-gray-300" onClick={onBack}>
-          <ArrowLeft className="h-6 w-6" />
+    <div className="h-full bg-white">
+      <div className="p-4 flex items-center justify-between">
+        <Button variant="ghost" onClick={onBack} className="p-1">
+          <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">{loanDetails.type}</h1>
+        <h1 className="text-lg font-bold">Loan details</h1>
+        <Button variant="ghost" className="p-1">
+          <MoreHorizontal className="h-5 w-5" />
+        </Button>
       </div>
 
-      <Card className="overflow-hidden border rounded-3xl shadow-sm mb-6">
-        <CardContent className="p-5">
-          <div className="mb-4">
-            <p className="text-gray-500">Current Balance</p>
-            <h2 className="text-4xl font-bold">{formatCurrency(loanDetails.amount)}</h2>
-          </div>
+      <div className="p-4">
+        <h1 className="text-2xl font-bold">Insting Store</h1>
+        
+        <Tabs defaultValue="tracking" className="mt-4">
+          <TabsList className="bg-gray-100 rounded-full p-1 mb-6">
+            <TabsTrigger value="tracking" className="rounded-full px-6 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
+              Tracking
+            </TabsTrigger>
+            <TabsTrigger value="details" className="rounded-full px-6 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
+              Details
+            </TabsTrigger>
+          </TabsList>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-green-50 rounded-xl p-3">
-              <div className="flex items-center">
-                <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center mr-2">
-                  <DollarSign className="h-4 w-4 text-green-800" />
-                </div>
-                <span className="text-sm">Loan Amount</span>
+          <TabsContent value="tracking" className="mt-2 space-y-4">
+            <div className="flex justify-between items-center mb-2">
+              <div>
+                <p className="text-sm text-gray-500">Paid to date</p>
+                <p className="text-xl font-bold">${loanDetails.paid}</p>
               </div>
-              <p className="text-xl font-bold mt-1">{formatCurrency(loanDetails.amount)}</p>
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Remaining</p>
+                <p className="text-xl font-bold">${loanDetails.remaining}</p>
+              </div>
             </div>
             
-            <div className="bg-green-50 rounded-xl p-3">
-              <div className="flex items-center">
-                <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center mr-2">
-                  <Calendar className="h-4 w-4 text-green-800" />
+            <div className="relative w-full h-2 bg-gray-100 rounded-full">
+              <div 
+                className="absolute top-0 left-0 h-2 bg-teal-500 rounded-full" 
+                style={{ width: `${loanDetails.progress}%` }}
+              ></div>
+              <div 
+                className="absolute top-0 left-0 h-6 w-6 rounded-full bg-white border-2 border-teal-500 -mt-2 flex items-center justify-center"
+                style={{ left: `${loanDetails.progress}%`, marginLeft: '-12px' }}
+              >
+                <div className="h-3 w-3 rounded-full bg-teal-500"></div>
+              </div>
+            </div>
+            
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold flex items-center mb-4">
+                <Clock className="h-5 w-5 mr-2" /> Processing
+              </h3>
+              
+              {loanDetails.payments.map((payment, index) => (
+                <div key={payment.id} className="mb-4 relative pl-6">
+                  <div className={`absolute top-1.5 left-0 w-3 h-3 rounded-full ${index === 0 ? 'bg-teal-500' : index === 1 ? 'bg-purple-400' : 'bg-teal-300'}`}></div>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium">Auto pay</p>
+                      <p className="text-xs text-gray-500">{payment.date}</p>
+                    </div>
+                    <p className="font-bold">${payment.amount.toFixed(2)}</p>
+                  </div>
                 </div>
-                <span className="text-sm">Monthly Payment</span>
-              </div>
-              <p className="text-xl font-bold mt-1">{formatCurrency(loanDetails.amount / 12)}</p>
+              ))}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <h2 className="text-xl font-bold mb-4">Loan Details</h2>
-      <Card className="overflow-hidden border rounded-3xl shadow-sm mb-6">
-        <CardContent className="p-0">
-          <div className="divide-y">
-            <div className="flex justify-between items-center p-4">
-              <span className="text-gray-500">Interest Rate</span>
-              <span className="font-semibold">{loanDetails.interestRate}</span>
+            
+            <Card className="bg-purple-100 border-0 rounded-xl mt-6">
+              <CardContent className="p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0 mr-4">
+                    <img src="/lovable-uploads/ef525c3f-3c63-46c2-a852-9c93524d29df.png" alt="Processing" className="w-16 h-16" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">Your loan still processing</h3>
+                    <p className="text-sm mt-1">The processing phase is an important step in the loan application process</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="details">
+            <div className="space-y-4">
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="font-bold mb-2">Loan Information</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Amount</p>
+                      <p className="font-bold">${(loanDetails.paid + loanDetails.remaining).toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Term</p>
+                      <p className="font-bold">6 months</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Interest Rate</p>
+                      <p className="font-bold">2.5%</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Monthly Payment</p>
+                      <p className="font-bold">$3.50</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="font-bold mb-2">Purchase Details</h3>
+                  <p className="text-sm text-gray-500">Date of Purchase</p>
+                  <p className="font-bold mb-2">January 5, 2023</p>
+                  
+                  <p className="text-sm text-gray-500">Store</p>
+                  <p className="font-bold">Insting Store</p>
+                </CardContent>
+              </Card>
             </div>
-            <div className="flex justify-between items-center p-4">
-              <span className="text-gray-500">Loan Term</span>
-              <span className="font-semibold">{loanDetails.term}</span>
-            </div>
-            <div className="flex justify-between items-center p-4">
-              <span className="text-gray-500">Next Payment Date</span>
-              <span className="font-semibold">{loanDetails.nextPayment}</span>
-            </div>
-            <div className="flex justify-between items-center p-4">
-              <span className="text-gray-500">Status</span>
-              <span className="font-semibold text-green-600">{loanDetails.status}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="overflow-hidden border rounded-xl shadow-sm hover:shadow cursor-pointer">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                <DollarSign className="h-5 w-5 text-green-800" />
-              </div>
-              <span className="font-medium">Make a payment</span>
-            </div>
-            <ArrowRight className="h-5 w-5 text-gray-400" />
-          </CardContent>
-        </Card>
-        
-        <Card className="overflow-hidden border rounded-xl shadow-sm hover:shadow cursor-pointer">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                <Clock className="h-5 w-5 text-blue-800" />
-              </div>
-              <span className="font-medium">Payment history</span>
-            </div>
-            <ArrowRight className="h-5 w-5 text-gray-400" />
-          </CardContent>
-        </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

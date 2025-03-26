@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Home, Wallet, User, Plus, Activity, CreditCard } from 'lucide-react';
+import { Home, Wallet, User, Plus, CreditCard } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavigationItem {
@@ -29,13 +29,13 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
   const navigationItems: NavigationItem[] = [
     {
       icon: <Home className="h-6 w-6" />,
-      label: "Accueil",
+      label: "Home",
       value: 'home',
       action: () => handleNavItemClick('home', 'Home')
     },
     {
       icon: <CreditCard className="h-6 w-6" />,
-      label: "Prêts",
+      label: "Loans",
       value: 'loans',
       action: () => handleNavItemClick('loans', 'Loans')
     },
@@ -47,13 +47,13 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
     },
     {
       icon: <Wallet className="h-6 w-6" />,
-      label: "Paiements",
-      value: 'cards',
-      action: () => handleNavItemClick('cards', 'Loan Details')
+      label: "Loan",
+      value: 'loan',
+      action: () => handleNavItemClick('loan', 'Loan Details')
     },
     {
       icon: <User className="h-6 w-6" />,
-      label: "Profil",
+      label: "Profile",
       value: 'profile',
       action: () => handleNavItemClick('profile', 'Loan Setup')
     }
@@ -70,7 +70,7 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
             return (
               <div key={index} className="relative -top-5">
                 <button 
-                  className="bg-green-900 text-white p-4 rounded-full shadow-lg"
+                  className="bg-black text-white p-4 rounded-full shadow-lg"
                   onClick={item.action}
                 >
                   <Plus className="h-6 w-6" />
@@ -85,7 +85,7 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
               key={index}
               className={`flex flex-col items-center justify-center py-3 px-3 ${
                 activeTab === item.value 
-                  ? 'text-green-900' 
+                  ? 'text-black font-medium' 
                   : 'text-gray-400'
               }`}
               onClick={item.action}

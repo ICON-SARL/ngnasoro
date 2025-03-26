@@ -58,19 +58,19 @@ const QuickAccessCard = ({ onAction }: QuickAccessCardProps) => {
           
           <div className="grid grid-cols-2 gap-4">
             <div 
-              className="flex flex-col items-center p-4 rounded-xl bg-blue-50 cursor-pointer"
+              className="flex flex-col items-center p-4 rounded-xl bg-lime-50 cursor-pointer"
               onClick={() => onAction('Schedule transfer')}
             >
-              <Calendar className="text-blue-600 mb-2 h-6 w-6" />
-              <p className="text-blue-600 font-medium">Schedule transfer</p>
+              <Calendar className="text-lime-600 mb-2 h-6 w-6" />
+              <p className="text-lime-600 font-medium">Schedule transfer</p>
             </div>
             
             <div 
-              className="flex flex-col items-center p-4 rounded-xl bg-green-50 cursor-pointer"
+              className="flex flex-col items-center p-4 rounded-xl bg-lime-50 cursor-pointer"
               onClick={() => onAction('Loans')}
             >
-              <CreditCard className="text-green-600 mb-2 h-6 w-6" />
-              <p className="text-green-600 font-medium">View Loans</p>
+              <CreditCard className="text-lime-600 mb-2 h-6 w-6" />
+              <p className="text-lime-600 font-medium">View Loans</p>
             </div>
           </div>
         </CardContent>

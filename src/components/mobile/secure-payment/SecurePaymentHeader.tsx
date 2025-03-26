@@ -11,7 +11,7 @@ export const SecurePaymentHeader: React.FC<SecurePaymentHeaderProps> = ({ onBack
   return (
     <>
       <Button 
-        variant="outline" 
+        variant="ghost" 
         size="sm" 
         className="mb-4" 
         onClick={onBack}
