@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { RotateCw, Shield, AlertTriangle } from 'lucide-react';
+import { RotateCw, Shield, AlertTriangle, Fingerprint, Lock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,28 +23,32 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({ paymentStatus, h
     dailyLimit: number;
     usedToday: number;
     remainingLimit: number;
+    securityMethod: string;
   }>({
     dailyLimit: 500000, // 500,000 FCFA default
     usedToday: 0,
-    remainingLimit: 500000
+    remainingLimit: 500000,
+    securityMethod: 'Certificat client'
   });
 
   const handleProviderChange = (value: string) => {
     setProvider(value);
     
     // Simulate fetching user limits for the selected provider
+    // And update security method based on provider
     setTimeout(() => {
       const mockLimits = {
-        orange: { dailyLimit: 500000, usedToday: 125000 },
-        wave: { dailyLimit: 750000, usedToday: 200000 },
-        mtn: { dailyLimit: 1000000, usedToday: 450000 }
+        orange: { dailyLimit: 500000, usedToday: 125000, securityMethod: 'Certificat client' },
+        wave: { dailyLimit: 750000, usedToday: 200000, securityMethod: 'HMAC-SHA256' },
+        mtn: { dailyLimit: 1000000, usedToday: 450000, securityMethod: 'OAuth2 + IP Whitelisting' }
       };
       
       const limits = mockLimits[value as keyof typeof mockLimits];
       setSecurityInfo({
         dailyLimit: limits.dailyLimit,
         usedToday: limits.usedToday,
-        remainingLimit: limits.dailyLimit - limits.usedToday
+        remainingLimit: limits.dailyLimit - limits.usedToday,
+        securityMethod: limits.securityMethod
       });
     }, 500);
   };
@@ -120,11 +124,10 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({ paymentStatus, h
             <SelectItem value="mtn">MTN Mobile Money</SelectItem>
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground mt-1">
-          Sécurisé par {provider === 'orange' ? 'certificat client' : 
-                      provider === 'wave' ? 'HMAC-SHA256' : 
-                      'OAuth2 + IP Whitelisting'}
-        </p>
+        <div className="flex items-center text-xs text-muted-foreground mt-1">
+          <Lock className="h-3 w-3 mr-1" />
+          Sécurisé par {securityInfo.securityMethod}
+        </div>
       </div>
 
       {securityInfo.remainingLimit < 25000 && (
@@ -158,7 +161,7 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({ paymentStatus, h
       {isSecondFactorSent && (
         <div>
           <Label className="flex items-center">
-            <Shield className="h-4 w-4 mr-1 text-[#0D6A51]" />
+            <Fingerprint className="h-4 w-4 mr-1 text-[#0D6A51]" />
             Code de vérification
           </Label>
           <Input 

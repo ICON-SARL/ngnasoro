@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CreditCard, Wallet, Volume2, AlertTriangle, Shield } from 'lucide-react';
+import { CreditCard, Wallet, Volume2, AlertTriangle, Shield, Fingerprint } from 'lucide-react';
 import VoiceAssistant from '@/components/VoiceAssistant';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +21,7 @@ const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
   const { toast } = useToast();
   const [voiceGuidance, setVoiceGuidance] = useState(false);
   const [showLimitWarning, setShowLimitWarning] = useState(false);
+  const [showSecurityInfo, setShowSecurityInfo] = useState(false);
   
   const handleNewLoanClick = () => {
     setVoiceGuidance(true);
@@ -38,7 +39,7 @@ const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
       toast({
         title: "Plafond journalier presque atteint",
         description: `Il vous reste ${remainingLimit.toLocaleString()} FCFA sur votre plafond quotidien de ${mockDailyLimit.toLocaleString()} FCFA`,
-        variant: "destructive", // Changed from "warning" to "destructive"
+        variant: "destructive",
       });
       // Still allow the action, but with a warning
       setTimeout(() => {
@@ -59,16 +60,29 @@ const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
     });
   };
 
+  const toggleSecurityInfo = () => {
+    setShowSecurityInfo(!showSecurityInfo);
+  };
+
   return (
     <Card className="border-0 shadow-md bg-white rounded-2xl overflow-hidden mt-4">
       <CardContent className="p-4">
         <h3 className="text-lg font-medium mb-4">Actions Rapides</h3>
         
         {showLimitWarning && (
-          <Alert variant="destructive" className="mb-4"> {/* Changed from "warning" to "destructive" */}
+          <Alert variant="destructive" className="mb-4">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               Attention: Vous approchez de votre plafond journalier de transactions Mobile Money.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {showSecurityInfo && (
+          <Alert className="mb-4 bg-blue-50 border-blue-200 text-blue-800">
+            <Fingerprint className="h-4 w-4" />
+            <AlertDescription>
+              Double authentification activée pour les transactions. Toutes les opérations sont sécurisées conformément aux standards bancaires.
             </AlertDescription>
           </Alert>
         )}
@@ -105,6 +119,17 @@ const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
                 {paymentDue.toLocaleString()} FCFA
               </div>
             )}
+          </Button>
+        </div>
+        
+        <div className="mt-3 text-xs text-blue-600 text-center">
+          <Button 
+            variant="link" 
+            className="p-0 h-auto text-xs"
+            onClick={toggleSecurityInfo}
+          >
+            <Fingerprint className="h-3 w-3 mr-1" />
+            {showSecurityInfo ? "Masquer" : "Afficher"} les infos de sécurité
           </Button>
         </div>
         

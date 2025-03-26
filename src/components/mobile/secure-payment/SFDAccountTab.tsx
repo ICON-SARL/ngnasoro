@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Fingerprint, RotateCw } from 'lucide-react';
+import { Fingerprint, RotateCw, Shield, Lock } from 'lucide-react';
 
 interface SFDAccountTabProps {
   paymentStatus: 'pending' | 'success' | 'failed' | null;
@@ -14,12 +14,13 @@ interface SFDAccountTabProps {
 
 export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({ paymentStatus, handlePayment }) => {
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(true);
+  const [selected, setSelected] = useState("primary");
   
   return (
     <>
       <div>
         <Label>Compte SFD</Label>
-        <Select defaultValue="primary">
+        <Select defaultValue="primary" onValueChange={setSelected}>
           <SelectTrigger>
             <SelectValue placeholder="Sélectionner un compte" />
           </SelectTrigger>
@@ -28,14 +29,19 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({ paymentStatus, han
             <SelectItem value="secondary">SFD Sikasso (•••• 5678)</SelectItem>
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground mt-1">
+        <div className="flex items-center text-xs text-muted-foreground mt-1">
+          <Lock className="h-3 w-3 mr-1" />
           Compte tokenisé conforme PCI DSS Level 1
-        </p>
+        </div>
       </div>
       
       <div>
         <Label>Montant</Label>
         <Input type="text" value="25,000 FCFA" readOnly />
+        <div className="mt-1 text-xs text-muted-foreground flex items-center">
+          <Shield className="h-3 w-3 mr-1" />
+          Transaction chiffrée en AES-256
+        </div>
       </div>
       
       <div className="flex items-center space-x-2">
