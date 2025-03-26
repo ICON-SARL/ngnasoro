@@ -3,32 +3,28 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { SfdData } from '@/hooks/useSfdDataAccess';
 import { Plus, CheckCircle, AlertCircle, ArrowRightCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 
-interface SfdAccountsSectionProps {
-  sfdData: SfdData[];
-  activeSfdId: string | null;
-  onSwitchSfd: (sfdId: string) => Promise<boolean>;
-}
-
-const SfdAccountsSection = ({ sfdData, activeSfdId, onSwitchSfd }: SfdAccountsSectionProps) => {
+const SfdAccountsSection = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { activeSfdId, setActiveSfdId } = useAuth();
+  const { sfdAccounts, isLoading, refetch } = useSfdAccounts();
   const [switchingId, setSwitchingId] = useState<string | null>(null);
 
   const handleSwitchSfd = async (sfdId: string) => {
     setSwitchingId(sfdId);
     try {
       // In a real app, this could trigger biometric authentication
-      const result = await onSwitchSfd(sfdId);
-      if (result) {
-        toast({
-          title: "SFD changée avec succès",
-          description: "Vous êtes maintenant connecté à une nouvelle SFD",
-        });
-      }
+      setActiveSfdId(sfdId);
+      refetch();
+      toast({
+        title: "SFD changée avec succès",
+        description: "Vous êtes maintenant connecté à une nouvelle SFD",
+      });
     } catch (error) {
       toast({
         title: "Erreur de changement",
@@ -40,6 +36,21 @@ const SfdAccountsSection = ({ sfdData, activeSfdId, onSwitchSfd }: SfdAccountsSe
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-4 mt-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Mes Comptes SFD</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 text-center py-6">
+            Chargement de vos comptes SFD...
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 mt-4">
       <Card>
@@ -48,7 +59,7 @@ const SfdAccountsSection = ({ sfdData, activeSfdId, onSwitchSfd }: SfdAccountsSe
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-3">
-            {sfdData.map((sfd) => (
+            {sfdAccounts.map((sfd) => (
               <div key={sfd.id} className="flex items-center justify-between border p-3 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center">

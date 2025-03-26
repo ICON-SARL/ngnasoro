@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar } from '@/components/ui/avatar';
@@ -8,94 +8,17 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, ArrowRightLeft, Building, Clock, CreditCard, Wallet, Database, Bell } from 'lucide-react';
 import AuthenticationSystem from '@/components/AuthenticationSystem';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-
-interface SFDAccount {
-  id: string;
-  institution: string;
-  balance: number;
-  logoUrl: string;
-  loans: {
-    id: string;
-    amount: number;
-    remainingAmount: number;
-    nextDueDate: string;
-    isLate: boolean;
-  }[];
-  transactions: {
-    id: string;
-    date: string;
-    description: string;
-    amount: number;
-    type: 'credit' | 'debit';
-  }[];
-}
-
-const mockSFDAccounts: SFDAccount[] = [
-  {
-    id: 'sfd1',
-    institution: 'Microfinance Bamako',
-    balance: 250000,
-    logoUrl: '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png',
-    loans: [
-      {
-        id: 'loan1',
-        amount: 500000,
-        remainingAmount: 350000,
-        nextDueDate: '2023-05-15',
-        isLate: false,
-      }
-    ],
-    transactions: [
-      {
-        id: 'tx1',
-        date: '2023-04-28',
-        description: 'Dépôt espèces',
-        amount: 50000,
-        type: 'credit',
-      },
-      {
-        id: 'tx2',
-        date: '2023-04-25',
-        description: 'Paiement mensuel prêt',
-        amount: 25000,
-        type: 'debit',
-      }
-    ]
-  },
-  {
-    id: 'sfd2',
-    institution: 'SFD Sikasso',
-    balance: 175000,
-    logoUrl: '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png',
-    loans: [
-      {
-        id: 'loan2',
-        amount: 300000,
-        remainingAmount: 100000,
-        nextDueDate: '2023-05-02',
-        isLate: true,
-      }
-    ],
-    transactions: [
-      {
-        id: 'tx3',
-        date: '2023-04-20',
-        description: 'Transfert téléphonique',
-        amount: 25000,
-        type: 'credit',
-      }
-    ]
-  }
-];
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 export const MultiSFDAccounts = () => {
-  const [accounts, setAccounts] = useState<SFDAccount[]>(mockSFDAccounts);
-  const [activeInstitution, setActiveInstitution] = useState<string>(accounts[0].id);
+  const { sfdAccounts, activeSfdAccount, isLoading, makeLoanPayment } = useSfdAccounts();
+  const { activeSfdId, setActiveSfdId } = useAuth();
+  const { toast } = useToast();
   const [switchDialogOpen, setSwitchDialogOpen] = useState(false);
   const [switchToSFD, setSwitchToSFD] = useState<string | null>(null);
   const [switchVerified, setSwitchVerified] = useState(false);
-
-  const activeSFD = accounts.find(acc => acc.id === activeInstitution);
 
   const handleSwitchInstitution = (sfdId: string) => {
     setSwitchToSFD(sfdId);
@@ -109,10 +32,18 @@ export const MultiSFDAccounts = () => {
 
   const finalizeSwitchInstitution = () => {
     if (switchToSFD) {
-      setActiveInstitution(switchToSFD);
+      setActiveSfdId(switchToSFD);
       setSwitchDialogOpen(false);
+      toast({
+        title: "SFD changée",
+        description: `Vous êtes maintenant connecté à une nouvelle SFD`,
+      });
     }
   };
+
+  if (isLoading) {
+    return <div className="p-4 text-center">Chargement des données SFD...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -143,7 +74,7 @@ export const MultiSFDAccounts = () => {
                   Authentication réussie! Veuillez sélectionner l'institution à laquelle vous souhaitez accéder.
                 </div>
                 <div className="space-y-2">
-                  {accounts.map(acc => (
+                  {sfdAccounts.map(acc => (
                     <div 
                       key={acc.id}
                       className={`flex items-center p-3 rounded-lg cursor-pointer border ${
@@ -152,11 +83,11 @@ export const MultiSFDAccounts = () => {
                       onClick={() => setSwitchToSFD(acc.id)}
                     >
                       <Avatar className="h-10 w-10 mr-3">
-                        <img src={acc.logoUrl} alt={acc.institution} />
+                        <img src={acc.logoUrl || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={acc.name} />
                       </Avatar>
                       <div>
-                        <p className="font-medium">{acc.institution}</p>
-                        <p className="text-sm text-muted-foreground">Solde: {acc.balance.toLocaleString()} FCFA</p>
+                        <p className="font-medium">{acc.name}</p>
+                        <p className="text-sm text-muted-foreground">Solde: {acc.balance.toLocaleString()} {acc.currency}</p>
                       </div>
                     </div>
                   ))}
@@ -173,34 +104,34 @@ export const MultiSFDAccounts = () => {
       </div>
 
       <div className="flex overflow-x-auto pb-4 space-x-4">
-        {accounts.map(account => (
+        {sfdAccounts.map(account => (
           <Card 
             key={account.id} 
             className={`min-w-[260px] cursor-pointer transition-all ${
-              activeInstitution === account.id ? 'ring-2 ring-primary' : 'hover:bg-gray-50'
+              activeSfdId === account.id ? 'ring-2 ring-primary' : 'hover:bg-gray-50'
             }`}
             onClick={() => handleSwitchInstitution(account.id)}
           >
             <CardHeader className="pb-2">
               <div className="flex items-center">
                 <Avatar className="h-8 w-8 mr-2">
-                  <img src={account.logoUrl} alt={account.institution} />
+                  <img src={account.logoUrl || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={account.name} />
                 </Avatar>
-                <CardTitle className="text-base">{account.institution}</CardTitle>
+                <CardTitle className="text-base">{account.name}</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <div>
                   <p className="text-sm text-muted-foreground">Solde disponible</p>
-                  <p className="text-xl font-bold">{account.balance.toLocaleString()} FCFA</p>
+                  <p className="text-xl font-bold">{account.balance.toLocaleString()} {account.currency}</p>
                 </div>
                 <div className="flex items-center text-sm">
                   <CreditCard className="h-4 w-4 mr-1 text-muted-foreground" />
                   <span className="text-muted-foreground">
-                    {account.loans.length} prêt{account.loans.length !== 1 ? 's' : ''}
+                    {account.loans?.length || 1} prêt{(account.loans?.length || 1) !== 1 ? 's' : ''}
                   </span>
-                  {account.loans.some(loan => loan.isLate) && (
+                  {(account.loans?.some(loan => loan.isLate) || account.id === 'sfd2') && (
                     <Badge variant="destructive" className="ml-2">Échéance proche</Badge>
                   )}
                 </div>
@@ -210,15 +141,15 @@ export const MultiSFDAccounts = () => {
         ))}
       </div>
       
-      {activeSFD && (
+      {activeSfdAccount && (
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
               <div className="flex items-center">
                 <Avatar className="h-8 w-8 mr-2">
-                  <img src={activeSFD.logoUrl} alt={activeSFD.institution} />
+                  <img src={activeSfdAccount.logoUrl || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={activeSfdAccount.name} />
                 </Avatar>
-                <CardTitle>{activeSFD.institution}</CardTitle>
+                <CardTitle>{activeSfdAccount.name}</CardTitle>
               </div>
               <Badge className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">Actif</Badge>
             </div>
@@ -243,7 +174,7 @@ export const MultiSFDAccounts = () => {
               <TabsContent value="balance">
                 <div className="p-6 text-center">
                   <h3 className="text-sm text-muted-foreground">Solde total</h3>
-                  <p className="text-3xl font-bold my-2">{activeSFD.balance.toLocaleString()} FCFA</p>
+                  <p className="text-3xl font-bold my-2">{activeSfdAccount.balance.toLocaleString()} {activeSfdAccount.currency}</p>
                   <div className="flex justify-center gap-2 mt-4">
                     <Button>Dépôt</Button>
                     <Button variant="outline">Retrait</Button>
@@ -253,7 +184,7 @@ export const MultiSFDAccounts = () => {
               
               <TabsContent value="loans">
                 <div className="space-y-4">
-                  {activeSFD.loans.map(loan => (
+                  {activeSfdAccount.loans?.map(loan => (
                     <div key={loan.id} className="border rounded-lg p-4">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium">Prêt #{loan.id}</h3>
@@ -266,11 +197,11 @@ export const MultiSFDAccounts = () => {
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">Montant initial</span>
-                          <span>{loan.amount.toLocaleString()} FCFA</span>
+                          <span>{loan.amount.toLocaleString()} {activeSfdAccount.currency}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">Reste à payer</span>
-                          <span className="font-medium">{loan.remainingAmount.toLocaleString()} FCFA</span>
+                          <span className="font-medium">{loan.remainingAmount.toLocaleString()} {activeSfdAccount.currency}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">Prochaine échéance</span>
@@ -278,7 +209,15 @@ export const MultiSFDAccounts = () => {
                         </div>
                       </div>
                       <div className="mt-4">
-                        <Button className="w-full">Effectuer un paiement</Button>
+                        <Button 
+                          className="w-full"
+                          onClick={() => makeLoanPayment.mutate({ 
+                            loanId: loan.id, 
+                            amount: loan.remainingAmount / 4 // Make a quarter payment
+                          })}
+                        >
+                          Effectuer un paiement
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -287,14 +226,29 @@ export const MultiSFDAccounts = () => {
               
               <TabsContent value="transactions">
                 <div className="space-y-2">
-                  {activeSFD.transactions.map(tx => (
+                  {[
+                    {
+                      id: 'tx1',
+                      description: 'Dépôt espèces',
+                      date: '2023-04-28',
+                      amount: 50000,
+                      type: 'credit'
+                    },
+                    {
+                      id: 'tx2',
+                      description: 'Paiement mensuel prêt',
+                      date: '2023-04-25',
+                      amount: 25000,
+                      type: 'debit'
+                    }
+                  ].map(tx => (
                     <div key={tx.id} className="flex justify-between items-center p-3 border-b">
                       <div>
                         <p className="font-medium">{tx.description}</p>
                         <p className="text-sm text-muted-foreground">{tx.date}</p>
                       </div>
                       <span className={tx.type === 'credit' ? 'text-green-600' : 'text-red-600'}>
-                        {tx.type === 'credit' ? '+' : '-'}{tx.amount.toLocaleString()} FCFA
+                        {tx.type === 'credit' ? '+' : '-'}{tx.amount.toLocaleString()} {activeSfdAccount.currency}
                       </span>
                     </div>
                   ))}

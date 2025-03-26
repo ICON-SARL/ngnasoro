@@ -37,6 +37,57 @@ export const apiClient = {
     }
   },
   
+  async getSfdBalance(userId: string, sfdId: string) {
+    try {
+      // In a real app, this would fetch from a sfd_accounts table
+      // For now we'll simulate with fixed data based on the SFD
+      const { data, error } = await supabase
+        .from('user_sfds')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('sfd_id', sfdId)
+        .single();
+        
+      if (error) throw error;
+      
+      // Return mock data based on SFD ID
+      if (sfdId.includes('1') || sfdId === 'sfd1') {
+        return { balance: 250000, currency: 'FCFA' };
+      } else {
+        return { balance: 175000, currency: 'FCFA' };
+      }
+    } catch (error) {
+      handleError(error);
+      return { balance: 0, currency: 'FCFA' };
+    }
+  },
+  
+  async getSfdLoans(userId: string, sfdId: string) {
+    try {
+      // Simulated loans data
+      if (sfdId.includes('1') || sfdId === 'sfd1') {
+        return [{
+          id: 'loan1',
+          amount: 500000,
+          remainingAmount: 350000,
+          nextDueDate: '2023-05-15',
+          isLate: false
+        }];
+      } else {
+        return [{
+          id: 'loan2',
+          amount: 300000,
+          remainingAmount: 100000,
+          nextDueDate: '2023-05-02',
+          isLate: true
+        }];
+      }
+    } catch (error) {
+      handleError(error);
+      return [];
+    }
+  },
+  
   // User profile methods
   async getUserProfile(userId: string) {
     try {

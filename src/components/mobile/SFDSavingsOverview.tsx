@@ -5,14 +5,19 @@ import { RefreshCw, ArrowUpRight, ArrowDownRight, Eye, EyeOff, Building } from '
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { useAuth } from '@/hooks/useAuth';
 
 const SFDSavingsOverview = () => {
   const navigate = useNavigate();
+  const { activeSfdAccount, isLoading, refetch } = useSfdAccounts();
+  const { activeSfdId } = useAuth();
   const [isHidden, setIsHidden] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   
   const refreshBalance = () => {
     setIsUpdating(true);
+    refetch();
     setTimeout(() => {
       setIsUpdating(false);
     }, 1500);
@@ -22,6 +27,16 @@ const SFDSavingsOverview = () => {
     setIsHidden(!isHidden);
   };
   
+  if (!activeSfdAccount && isLoading) {
+    return (
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
+        <CardContent className="p-4 text-center py-10">
+          <p>Chargement des informations du compte...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   return (
     <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
       <CardContent className="p-4">
@@ -30,7 +45,7 @@ const SFDSavingsOverview = () => {
             Aperçu compte épargne
             <Badge className="ml-2 bg-[#0D6A51]/10 text-[#0D6A51] text-xs border-0">
               <Building className="h-3 w-3 mr-1" />
-              SFD Nyèsigiso
+              {activeSfdAccount?.name || "SFD Nyèsigiso"}
             </Badge>
           </h3>
           <Button variant="ghost" size="icon" onClick={toggleVisibility} className="h-7 w-7">
@@ -47,7 +62,7 @@ const SFDSavingsOverview = () => {
               </div>
             </div>
             <p className="text-xl font-semibold text-gray-800">
-              {isHidden ? '•••••' : '+125.000 FCFA'}
+              {isHidden ? '•••••' : `+${Math.floor(activeSfdAccount?.balance || 125000 / 2).toLocaleString()} FCFA`}
             </p>
             <p className="text-xs text-gray-500 mt-1">Derniers 3 mois</p>
           </div>
@@ -60,7 +75,7 @@ const SFDSavingsOverview = () => {
               </div>
             </div>
             <p className="text-xl font-semibold text-gray-800">
-              {isHidden ? '•••••' : '+3.750 FCFA'}
+              {isHidden ? '•••••' : `+${Math.floor((activeSfdAccount?.balance || 125000) * 0.03).toLocaleString()} FCFA`}
             </p>
             <p className="text-xs text-gray-500 mt-1">Taux 3% annuel</p>
           </div>
@@ -71,7 +86,7 @@ const SFDSavingsOverview = () => {
             <div>
               <p className="text-sm text-gray-500">Solde total épargne</p>
               <p className="text-lg font-semibold">
-                {isHidden ? '••••••••' : '128.750 FCFA'}
+                {isHidden ? '••••••••' : `${(activeSfdAccount?.balance || 0).toLocaleString()} FCFA`}
               </p>
             </div>
             <Button 

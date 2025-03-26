@@ -1,8 +1,11 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAccount } from '@/hooks/useAccount';
 import { Calendar, Clock, CreditCard, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { useAuth } from '@/hooks/useAuth';
 
 interface FinancialSnapshotProps {
   loanId?: string;
@@ -12,10 +15,12 @@ interface FinancialSnapshotProps {
 
 const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
   loanId,
-  nextPaymentDate = "2023-07-15",
-  nextPaymentAmount = 25000
+  nextPaymentDate,
+  nextPaymentAmount
 }) => {
   const { account } = useAccount();
+  const { activeSfdId } = useAuth();
+  const { activeSfdAccount, isLoading, refetch } = useSfdAccounts();
   const { toast } = useToast();
   const [timeRemaining, setTimeRemaining] = useState({
     days: 0,
@@ -26,18 +31,28 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   
+  // Determine which loan has the nearest due date
+  const nearestLoan = activeSfdAccount?.loans?.sort((a, b) => {
+    const dateA = new Date(a.nextDueDate).getTime();
+    const dateB = new Date(b.nextDueDate).getTime();
+    return dateA - dateB;
+  })[0];
+  
+  const actualNextPaymentDate = nextPaymentDate || nearestLoan?.nextDueDate;
+  const actualNextPaymentAmount = nextPaymentAmount || (nearestLoan?.remainingAmount || 0) / 4; // Simulate a quarterly payment
+  
   // Format currency
   const formatCurrency = (amount: number) => {
-    return amount.toLocaleString('fr-FR') + ' ' + (account?.currency || 'FCFA');
+    return amount.toLocaleString('fr-FR') + ' ' + (activeSfdAccount?.currency || account?.currency || 'FCFA');
   };
   
   // Calculate time remaining until next payment
   useEffect(() => {
-    if (!nextPaymentDate) return;
+    if (!actualNextPaymentDate) return;
     
     const calculateTimeRemaining = () => {
       const now = new Date();
-      const paymentDate = new Date(nextPaymentDate);
+      const paymentDate = new Date(actualNextPaymentDate);
       const diffTime = paymentDate.getTime() - now.getTime();
       
       if (diffTime <= 0) {
@@ -57,14 +72,15 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
     const intervalId = setInterval(calculateTimeRemaining, 1000); // Update every second for smoother countdown
     
     return () => clearInterval(intervalId);
-  }, [nextPaymentDate]);
+  }, [actualNextPaymentDate]);
   
   // Manual refresh function for balance
   const refreshBalance = useCallback(() => {
     if (isRefreshing) return;
     
     setIsRefreshing(true);
-    // Simulate an API call to refresh balance
+    refetch();
+    
     setTimeout(() => {
       setLastUpdated(new Date());
       setIsRefreshing(false);
@@ -73,7 +89,7 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
         description: "Votre solde a été mis à jour avec succès",
       });
     }, 1500);
-  }, [isRefreshing, toast]);
+  }, [isRefreshing, toast, refetch]);
   
   // Simulate balance update every 2 hours
   useEffect(() => {
@@ -95,7 +111,9 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
               Solde disponible
             </h3>
             <p className="text-2xl font-bold">
-              {formatCurrency(account?.balance || 0)}
+              {isLoading 
+                ? "Chargement..." 
+                : formatCurrency(activeSfdId ? (activeSfdAccount?.balance || 0) : (account?.balance || 0))}
             </p>
             <div className="flex items-center justify-between">
               <p className="text-xs text-gray-400">
@@ -112,14 +130,14 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
             </div>
           </div>
           
-          {loanId && (
+          {(loanId || nearestLoan) && (
             <div className="space-y-2">
               <h3 className="text-sm text-gray-500 flex items-center">
                 <Calendar className="h-4 w-4 mr-1 text-[#FFAB2E]" />
                 Prochain paiement
               </h3>
               <p className="text-2xl font-bold text-[#FFAB2E]">
-                {formatCurrency(nextPaymentAmount)}
+                {formatCurrency(actualNextPaymentAmount)}
               </p>
               <div className="flex items-center text-xs text-gray-500">
                 <Clock className="h-3 w-3 mr-1" />
