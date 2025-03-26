@@ -38,7 +38,7 @@ const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
       toast({
         title: "Plafond journalier presque atteint",
         description: `Il vous reste ${remainingLimit.toLocaleString()} FCFA sur votre plafond quotidien de ${mockDailyLimit.toLocaleString()} FCFA`,
-        variant: "warning",
+        variant: "destructive", // Changed from "warning" to "destructive"
       });
       // Still allow the action, but with a warning
       setTimeout(() => {
@@ -65,7 +65,7 @@ const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
         <h3 className="text-lg font-medium mb-4">Actions Rapides</h3>
         
         {showLimitWarning && (
-          <Alert variant="warning" className="mb-4">
+          <Alert variant="destructive" className="mb-4"> {/* Changed from "warning" to "destructive" */}
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               Attention: Vous approchez de votre plafond journalier de transactions Mobile Money.
