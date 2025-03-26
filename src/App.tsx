@@ -17,6 +17,7 @@ import InfrastructurePage from "./pages/InfrastructurePage";
 import SFDSelector from "./pages/SFDSelector";
 import MultiSFDDashboard from "./pages/MultiSFDDashboard";
 import SolvencyEngine from "./pages/SolvencyEngine";
+import LoanSystemPage from "./pages/LoanSystemPage";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/sfd-selector" element={<SFDSelector />} />
           <Route path="/multi-sfd" element={<MultiSFDDashboard />} />
           <Route path="/solvency-engine" element={<SolvencyEngine />} />
+          <Route path="/loan-system" element={<LoanSystemPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

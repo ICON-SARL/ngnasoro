@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
-import { BellRing, File, Users, AlertTriangle, MonitorSmartphone, BarChart, UserCog, Database, MessageCircle, Server } from 'lucide-react';
+import { BellRing, File, Users, AlertTriangle, MonitorSmartphone, BarChart, UserCog, Database, MessageCircle, Server, CreditCard } from 'lucide-react';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { AgencyOnboarding } from '@/components/AgencyOnboarding';
 import { TransactionMonitoring } from '@/components/TransactionMonitoring';
@@ -71,6 +70,21 @@ const SuperAdminDashboard = () => {
               </div>
             </div>
           </div>
+        </div>
+        
+        <div className="flex justify-end gap-2 mb-4">
+          <Link to="/solvency-engine">
+            <Button variant="outline" className="gap-2">
+              <BarChart className="h-4 w-4" />
+              Moteur de Solvabilité
+            </Button>
+          </Link>
+          <Link to="/loan-system">
+            <Button className="gap-2 bg-[#0D6A51] hover:bg-[#0D6A51]/90">
+              <CreditCard className="h-4 w-4" />
+              Système de Prêt
+            </Button>
+          </Link>
         </div>
         
         <Tabs defaultValue="agencies" className="mb-8">
