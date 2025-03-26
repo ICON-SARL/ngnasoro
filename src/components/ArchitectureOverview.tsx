@@ -9,13 +9,13 @@ const ArchitectureOverview = () => {
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center space-y-4 mb-14">
           <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium text-primary">
-            Architecture
+            Architecture Technique
           </div>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">
-            Scalable Microservices Architecture
+            Architecture Microservices Évolutive
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            A highly scalable and secure architecture designed for financial applications with isolated components and end-to-end encryption.
+            Une architecture hautement évolutive et sécurisée, conçue pour les applications financières avec des composants isolés et un chiffrement de bout en bout.
           </p>
         </div>
         
@@ -32,10 +32,10 @@ const ArchitectureOverview = () => {
                           <line x1="2" x2="22" y1="10" y2="10" />
                         </svg>
                       </div>
-                      <h3 className="font-medium">React Native Frontend</h3>
+                      <h3 className="font-medium">Plateforme N'GNA SÔRÔ!</h3>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Cross-platform application with shared codebase between web and mobile, secure API communication, and offline capabilities.
+                      Application multiplateforme avec une base de code partagée entre web et mobile, communications API sécurisées et fonctionnalités hors ligne.
                     </p>
                   </div>
                 </div>
@@ -50,10 +50,10 @@ const ArchitectureOverview = () => {
                           <path d="M5 6h2c.5327 0 .935.4537.9945.9961L8 7v10c0 .5327-.4537.935-.9961.9945L7 18H5c-.5327 0-.935-.4537-.9945-.9961L4 17V7c0-.5327.4537-.935.9961-.9945L5 6Z" />
                         </svg>
                       </div>
-                      <h3 className="font-medium">API Gateway</h3>
+                      <h3 className="font-medium">Système MEREF de Subventionnement</h3>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Centralized security layer handling authentication, rate limiting, request validation, and routing to appropriate microservices.
+                      Couche centralisée de gestion des subventions aux institutions de microfinance, avec analyse des performances, gestion des fonds et suivi des résultats.
                     </p>
                   </div>
                 </div>
@@ -68,10 +68,10 @@ const ArchitectureOverview = () => {
                           <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                         </svg>
                       </div>
-                      <h3 className="font-medium">Isolated Database Clusters</h3>
+                      <h3 className="font-medium">Isolation des Données SFD</h3>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Agency-specific database isolation with PostgreSQL for structured data and MongoDB for analytics, ensuring data segregation.
+                      Isolation des bases de données par institution financière avec PostgreSQL pour les données structurées et MongoDB pour l'analytique, garantissant la ségrégation des données.
                     </p>
                   </div>
                 </div>
@@ -82,64 +82,96 @@ const ArchitectureOverview = () => {
               <div className="rounded-lg border shadow-sm p-2 bg-white dark:bg-gray-900">
                 <div className="w-full aspect-square md:aspect-auto md:h-[400px] relative bg-secondary/30 rounded overflow-hidden">
                   <svg className="w-full h-full" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    {/* Client Devices */}
-                    <rect x="150" y="20" width="100" height="40" rx="4" fill="#E0F2FE" stroke="#0284C7" strokeWidth="1.5"/>
-                    <text x="200" y="45" textAnchor="middle" fill="#0284C7" fontSize="14" fontWeight="500">Client Devices</text>
+                    {/* MEREF Layer */}
+                    <rect x="140" y="20" width="120" height="40" rx="4" fill="#FCF3D9" stroke="#FFAB2E" strokeWidth="1.5"/>
+                    <text x="200" y="45" textAnchor="middle" fill="#FFAB2E" fontSize="14" fontWeight="500">MEREF Initiative</text>
                     
-                    {/* API Gateway */}
-                    <rect x="150" y="100" width="100" height="40" rx="4" fill="#EFF6FF" stroke="#1E40AF" strokeWidth="1.5"/>
-                    <text x="200" y="125" textAnchor="middle" fill="#1E40AF" fontSize="14" fontWeight="500">API Gateway</text>
+                    {/* SFD Layer */}
+                    <rect x="140" y="100" width="120" height="40" rx="4" fill="#D6EFEA" stroke="#0D6A51" strokeWidth="1.5"/>
+                    <text x="200" y="125" textAnchor="middle" fill="#0D6A51" fontSize="14" fontWeight="500">SFD Institutions</text>
                     
                     {/* Connection lines */}
                     <line x1="200" y1="60" x2="200" y2="100" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
                     
-                    {/* Microservices */}
-                    <rect x="60" y="180" width="80" height="40" rx="4" fill="#F0F9FF" stroke="#0EA5E9" strokeWidth="1.5"/>
-                    <text x="100" y="205" textAnchor="middle" fill="#0EA5E9" fontSize="12" fontWeight="500">SFDAuth</text>
+                    {/* Client Services */}
+                    <rect x="40" y="180" width="80" height="40" rx="4" fill="#F0F9FF" stroke="#0EA5E9" strokeWidth="1.5"/>
+                    <text x="80" y="205" textAnchor="middle" fill="#0EA5E9" fontSize="12" fontWeight="500">Prêts Ruraux</text>
                     
                     <rect x="160" y="180" width="80" height="40" rx="4" fill="#F0F9FF" stroke="#0EA5E9" strokeWidth="1.5"/>
-                    <text x="200" y="205" textAnchor="middle" fill="#0EA5E9" fontSize="12" fontWeight="500">SFDTransactions</text>
+                    <text x="200" y="205" textAnchor="middle" fill="#0EA5E9" fontSize="12" fontWeight="500">Prêts Urbains</text>
                     
-                    <rect x="260" y="180" width="80" height="40" rx="4" fill="#F0F9FF" stroke="#0EA5E9" strokeWidth="1.5"/>
-                    <text x="300" y="205" textAnchor="middle" fill="#0EA5E9" fontSize="12" fontWeight="500">SFDAnalytics</text>
+                    <rect x="280" y="180" width="80" height="40" rx="4" fill="#F0F9FF" stroke="#0EA5E9" strokeWidth="1.5"/>
+                    <text x="320" y="205" textAnchor="middle" fill="#0EA5E9" fontSize="12" fontWeight="500">Épargne</text>
                     
-                    {/* Connection lines from Gateway to Microservices */}
-                    <line x1="200" y1="140" x2="100" y2="180" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
+                    {/* Connection lines from SFDs to Services */}
+                    <line x1="180" y1="140" x2="80" y2="180" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
                     <line x1="200" y1="140" x2="200" y2="180" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
-                    <line x1="200" y1="140" x2="300" y2="180" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
+                    <line x1="220" y1="140" x2="320" y2="180" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
                     
-                    {/* Databases */}
-                    <rect x="60" y="260" width="80" height="40" rx="4" fill="#F1F5F9" stroke="#64748B" strokeWidth="1.5"/>
-                    <text x="100" y="285" textAnchor="middle" fill="#64748B" fontSize="12" fontWeight="500">Auth DB</text>
+                    {/* Beneficiaries */}
+                    <rect x="40" y="260" width="80" height="40" rx="4" fill="#F1F5F9" stroke="#64748B" strokeWidth="1.5"/>
+                    <text x="80" y="285" textAnchor="middle" fill="#64748B" fontSize="12" fontWeight="500">Agriculteurs</text>
                     
                     <rect x="160" y="260" width="80" height="40" rx="4" fill="#F1F5F9" stroke="#64748B" strokeWidth="1.5"/>
-                    <text x="200" y="285" textAnchor="middle" fill="#64748B" fontSize="12" fontWeight="500">Transactions DB</text>
+                    <text x="200" y="285" textAnchor="middle" fill="#64748B" fontSize="12" fontWeight="500">Entrepreneurs</text>
                     
-                    <rect x="260" y="260" width="80" height="40" rx="4" fill="#F1F5F9" stroke="#64748B" strokeWidth="1.5"/>
-                    <text x="300" y="285" textAnchor="middle" fill="#64748B" fontSize="12" fontWeight="500">Analytics DB</text>
+                    <rect x="280" y="260" width="80" height="40" rx="4" fill="#F1F5F9" stroke="#64748B" strokeWidth="1.5"/>
+                    <text x="320" y="285" textAnchor="middle" fill="#64748B" fontSize="12" fontWeight="500">Particuliers</text>
                     
-                    {/* Connections from Microservices to Databases */}
-                    <line x1="100" y1="220" x2="100" y2="260" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
+                    {/* Connections from Services to Beneficiaries */}
+                    <line x1="80" y1="220" x2="80" y2="260" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
                     <line x1="200" y1="220" x2="200" y2="260" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
-                    <line x1="300" y1="220" x2="300" y2="260" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
+                    <line x1="320" y1="220" x2="320" y2="260" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
                     
-                    {/* Encryption Layer */}
-                    <rect x="30" y="320" width="340" height="30" rx="4" fill="#F0FDF4" stroke="#059669" strokeWidth="1.5"/>
-                    <text x="200" y="340" textAnchor="middle" fill="#059669" fontSize="12" fontWeight="500">AES-256 Encryption Layer</text>
+                    {/* Platform Layer */}
+                    <rect x="30" y="330" width="340" height="30" rx="4" fill="#F0FDF4" stroke="#059669" strokeWidth="1.5"/>
+                    <text x="200" y="350" textAnchor="middle" fill="#059669" fontSize="12" fontWeight="500">Plateforme N'GNA SÔRÔ!</text>
                     
-                    {/* Connection to Encryption Layer */}
-                    <line x1="100" y1="300" x2="100" y2="320" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
-                    <line x1="200" y1="300" x2="200" y2="320" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
-                    <line x1="300" y1="300" x2="300" y2="320" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
+                    {/* Connection to Platform Layer */}
+                    <line x1="80" y1="300" x2="80" y2="330" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
+                    <line x1="200" y1="300" x2="200" y2="330" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
+                    <line x1="320" y1="300" x2="320" y2="330" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 2"/>
                     
                     {/* Animated dots to show data flow */}
-                    <circle className="animate-pulse" cx="200" cy="80" r="3" fill="#0EA5E9" opacity="0.8"/>
-                    <circle className="animate-pulse" cx="150" cy="150" r="3" fill="#0EA5E9" opacity="0.8" style={{ animationDelay: '300ms' }}/>
-                    <circle className="animate-pulse" cx="250" cy="150" r="3" fill="#0EA5E9" opacity="0.8" style={{ animationDelay: '600ms' }}/>
-                    <circle className="animate-pulse" cx="100" cy="240" r="3" fill="#0EA5E9" opacity="0.8" style={{ animationDelay: '900ms' }}/>
+                    <circle className="animate-pulse" cx="200" cy="80" r="3" fill="#FFAB2E" opacity="0.8"/>
+                    <circle className="animate-pulse" cx="150" cy="150" r="3" fill="#0D6A51" opacity="0.8" style={{ animationDelay: '300ms' }}/>
+                    <circle className="animate-pulse" cx="250" cy="150" r="3" fill="#0D6A51" opacity="0.8" style={{ animationDelay: '600ms' }}/>
+                    <circle className="animate-pulse" cx="80" cy="240" r="3" fill="#0EA5E9" opacity="0.8" style={{ animationDelay: '900ms' }}/>
                     <circle className="animate-pulse" cx="200" cy="240" r="3" fill="#0EA5E9" opacity="0.8" style={{ animationDelay: '1200ms' }}/>
-                    <circle className="animate-pulse" cx="300" cy="240" r="3" fill="#0EA5E9" opacity="0.8" style={{ animationDelay: '1500ms' }}/>
+                    <circle className="animate-pulse" cx="320" cy="240" r="3" fill="#0EA5E9" opacity="0.8" style={{ animationDelay: '1500ms' }}/>
                   </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* New MEREF Initiative Description */}
+        <div className="mt-12 max-w-4xl mx-auto bg-white rounded-lg border border-amber-200 p-6 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="h-12 w-12 rounded-full bg-[#FFAB2E]/20 flex items-center justify-center text-[#FFAB2E] flex-shrink-0">
+              <BadgeDollarSign className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-medium text-lg mb-2">MEREF - Initiative Gouvernementale</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Le MEREF (Mécanisme de Refinancement et de Garantie) est une initiative développée par le Gouvernement du Mali 
+                et le Fonds International de Développement Agricole (FIDA), à la suite du Programme Microfinance Rural (PMR). 
+                À travers la plateforme N'GNA SÔRÔ!, le MEREF subventionne des institutions de microfinance (SFDs) afin que 
+                celles-ci octroient des prêts via le système à des conditions avantageuses pour les populations rurales et urbaines.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="bg-amber-50 p-3 rounded border border-amber-100">
+                  <h4 className="font-medium text-amber-800">Subventionnement</h4>
+                  <p className="text-amber-700 mt-1">Allocation stratégique des fonds aux SFDs selon les besoins régionaux</p>
+                </div>
+                <div className="bg-green-50 p-3 rounded border border-green-100">
+                  <h4 className="font-medium text-green-800">Institutions SFD</h4>
+                  <p className="text-green-700 mt-1">Distribution des prêts et services financiers aux bénéficiaires finaux</p>
+                </div>
+                <div className="bg-blue-50 p-3 rounded border border-blue-100">
+                  <h4 className="font-medium text-blue-800">Plateforme N'GNA SÔRÔ!</h4>
+                  <p className="text-blue-700 mt-1">Technologie facilitant le processus et permettant la transparence</p>
                 </div>
               </div>
             </div>

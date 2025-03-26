@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
-import { BellRing, File, Users, AlertTriangle, MonitorSmartphone, BarChart, UserCog, Database, MessageCircle, Server, CreditCard } from 'lucide-react';
+import { BellRing, File, Users, AlertTriangle, MonitorSmartphone, BarChart, UserCog, Database, MessageCircle, Server, CreditCard, BadgeDollarSign } from 'lucide-react';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { AgencyOnboarding } from '@/components/AgencyOnboarding';
 import { TransactionMonitoring } from '@/components/TransactionMonitoring';
@@ -18,15 +19,15 @@ const SuperAdminDashboard = () => {
       
       <div className="container mx-auto py-6 px-4">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Super Admin Dashboard</h1>
-          <p className="text-muted-foreground">Gestion centralisée du système de finance décentralisé</p>
+          <h1 className="text-2xl font-bold">Tableau de Bord MEREF</h1>
+          <p className="text-muted-foreground">Gestion des subventions et supervision des institutions de microfinance (SFDs)</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Total Agences</p>
+                <p className="text-muted-foreground text-sm">SFDs subventionnées</p>
                 <h3 className="text-2xl font-semibold">42</h3>
               </div>
               <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
@@ -62,11 +63,11 @@ const SuperAdminDashboard = () => {
           <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Alertes</p>
-                <h3 className="text-2xl font-semibold">7</h3>
+                <p className="text-muted-foreground text-sm">Subventions (M FCFA)</p>
+                <h3 className="text-2xl font-semibold">750</h3>
               </div>
-              <div className="h-10 w-10 rounded-full bg-red-50 flex items-center justify-center text-red-500">
-                <AlertTriangle className="h-5 w-5" />
+              <div className="h-10 w-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
+                <BadgeDollarSign className="h-5 w-5" />
               </div>
             </div>
           </div>
@@ -76,13 +77,13 @@ const SuperAdminDashboard = () => {
           <Link to="/solvency-engine">
             <Button variant="outline" className="gap-2">
               <BarChart className="h-4 w-4" />
-              Moteur de Solvabilité
+              Analyse de Solvabilité
             </Button>
           </Link>
           <Link to="/loan-system">
             <Button className="gap-2 bg-[#0D6A51] hover:bg-[#0D6A51]/90">
               <CreditCard className="h-4 w-4" />
-              Système de Prêt
+              Système de Subventions
             </Button>
           </Link>
         </div>
@@ -91,7 +92,7 @@ const SuperAdminDashboard = () => {
           <TabsList className="mb-4 bg-white">
             <TabsTrigger value="agencies" className="data-[state=active]:bg-[#FFAB2E]/10 data-[state=active]:text-[#FFAB2E]">
               <Users className="h-4 w-4 mr-2" />
-              Agences
+              SFDs
             </TabsTrigger>
             <TabsTrigger value="monitoring" className="data-[state=active]:bg-[#FFAB2E]/10 data-[state=active]:text-[#FFAB2E]">
               <MonitorSmartphone className="h-4 w-4 mr-2" />
@@ -133,11 +134,11 @@ const SuperAdminDashboard = () => {
           
           <TabsContent value="support" className="bg-white p-6 rounded-lg shadow border border-gray-100">
             <div className="mb-4 flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Support System</h2>
+              <h2 className="text-xl font-semibold">Système de Support</h2>
               <Link to="/support">
                 <Button>
                   <MessageCircle className="h-4 w-4 mr-2" />
-                  Système de support complet
+                  Plateforme de support
                 </Button>
               </Link>
             </div>
@@ -155,6 +156,22 @@ const SuperAdminDashboard = () => {
             <InfrastructureMonitoring />
           </TabsContent>
         </Tabs>
+        
+        <div className="bg-[#0D6A51]/5 border border-[#0D6A51]/20 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-4">
+            <div className="h-10 w-10 rounded-full bg-[#FFAB2E]/20 flex items-center justify-center text-[#FFAB2E] flex-shrink-0">
+              <BadgeDollarSign className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="font-medium text-lg text-[#0D6A51]">Mécanisme de Refinancement et de Garantie</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Le MEREF est une initiative développée par le Gouvernement du Mali et le Fonds International de Développement Agricole (FIDA), 
+                à la suite du Programme Microfinance Rural (PMR). La plateforme N'GNA SÔRÔ! permet au MEREF de subventionner des institutions 
+                de microfinance (SFDs) afin que celles-ci octroient des prêts aux bénéficiaires via le système.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

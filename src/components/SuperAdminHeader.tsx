@@ -10,7 +10,8 @@ import {
   MessageCircle, 
   ChevronDown, 
   Building,
-  Shield
+  Shield,
+  CreditCard
 } from 'lucide-react';
 import { 
   DropdownMenu,
@@ -58,24 +59,29 @@ export const SuperAdminHeader = () => {
               alt="NGNA SÔRÔ! Logo" 
               className="h-8"
             />
-            <span className="font-medium text-lg">
-              <span className="text-[#FFAB2E]">{activeSfd.name.split(' ')[0]}</span> 
-              <span className="text-[#0D6A51]">{activeSfd.name.split(' ')[1] || ''}</span>
-            </span>
+            <div className="flex flex-col">
+              <span className="font-medium text-lg">
+                <span className="text-[#FFAB2E]">MEREF</span> 
+                <span className="text-[#0D6A51]">-Mali</span>
+              </span>
+              <span className="text-xs text-gray-500">
+                Mécanisme de Refinancement et de Garantie
+              </span>
+            </div>
           </Link>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="bg-[#FFAB2E]/10 text-[#FFAB2E] px-2 py-1 rounded text-xs font-medium ml-2 flex items-center cursor-pointer">
                 <Building className="h-3 w-3 mr-1" />
-                Super Admin - {activeSfd.region}
+                Super Admin - MEREF
                 <ChevronDown className="h-3 w-3 ml-1" />
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
               <div className="p-2">
-                <div className="text-sm font-medium">Changer d'institution</div>
-                <div className="text-xs text-muted-foreground mb-2">Connexion sécurisée multi-SFD</div>
+                <div className="text-sm font-medium">Gestion des institutions</div>
+                <div className="text-xs text-muted-foreground mb-2">Supervision des SFDs subventionnés</div>
                 <div className="flex items-center space-x-2 mb-2">
                   <Switch 
                     id="biometric" 
@@ -108,19 +114,19 @@ export const SuperAdminHeader = () => {
 
         <nav className="hidden md:flex items-center space-x-6">
           <Link to="/super-admin" className="text-sm font-medium hover:text-[#FFAB2E] transition-colors">
-            Dashboard
+            Tableau de bord
           </Link>
           <Link to="/agency-dashboard" className="text-sm font-medium hover:text-[#FFAB2E] transition-colors">
-            Agences
+            SFDs
+          </Link>
+          <Link to="/loan-system" className="text-sm font-medium hover:text-[#FFAB2E] transition-colors">
+            Subventions
           </Link>
           <Link to="/support" className="text-sm font-medium hover:text-[#FFAB2E] transition-colors">
             Support
           </Link>
           <Link to="/security" className="text-sm font-medium hover:text-[#FFAB2E] transition-colors">
             Sécurité
-          </Link>
-          <Link to="/settings" className="text-sm font-medium hover:text-[#FFAB2E] transition-colors">
-            Paramètres
           </Link>
         </nav>
 
@@ -135,8 +141,8 @@ export const SuperAdminHeader = () => {
               <User className="h-4 w-4" />
             </div>
             <div className="text-sm">
-              <div className="font-medium">Admin</div>
-              <div className="text-xs text-muted-foreground">admin@ngnasoro.ml</div>
+              <div className="font-medium">Admin MEREF</div>
+              <div className="text-xs text-muted-foreground">admin@meref-mali.ml</div>
             </div>
           </div>
           

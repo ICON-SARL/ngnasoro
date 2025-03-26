@@ -1,12 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Send, User, PlusCircle, Clock, Users } from 'lucide-react';
+import { ChevronLeft, Send, User, PlusCircle, Clock, Users, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { useAccount } from '@/hooks/useAccount';
 import { useToast } from '@/hooks/use-toast';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
 interface PaymentTabContentProps {
   onBack: () => void;
@@ -25,6 +27,7 @@ const PaymentTabContent = ({ onBack, onSubmit }: PaymentTabContentProps) => {
   const [isFocused, setIsFocused] = useState<string | null>(null);
   const { account } = useAccount();
   const { toast } = useToast();
+  const { activeSfdId } = useSfdDataAccess();
   
   // Mock recent contacts
   const recentContacts: RecentContact[] = [
@@ -89,6 +92,18 @@ const PaymentTabContent = ({ onBack, onSubmit }: PaymentTabContentProps) => {
           </Button>
           <h2 className="text-xl font-semibold">Envoyer de l'argent</h2>
         </div>
+      </div>
+      
+      {/* MEREF Initiative Banner */}
+      <div className="mx-4 my-2">
+        <Card className="border-[#FFAB2E]/30 bg-[#FFAB2E]/5">
+          <CardContent className="p-3 flex items-center space-x-3">
+            <Info className="h-5 w-5 text-[#FFAB2E]" />
+            <div className="text-xs text-gray-700">
+              <span className="font-medium">Service MEREF:</span> Transferts à tarif subventionné via le programme N'GNA SÔRÔ!
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
       <form onSubmit={handleSubmit} className="p-4 space-y-6">
@@ -164,12 +179,19 @@ const PaymentTabContent = ({ onBack, onSubmit }: PaymentTabContentProps) => {
           </div>
           
           {account && (
-            <p className="text-sm text-gray-600 flex items-center">
-              <span>Solde disponible:</span> 
-              <span className="font-medium ml-1">
-                {formatCurrency(account.balance)} FCFA
-              </span>
-            </p>
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-gray-600 flex items-center">
+                <span>Solde disponible:</span> 
+                <span className="font-medium ml-1">
+                  {formatCurrency(account.balance)} FCFA
+                </span>
+              </p>
+              {activeSfdId && (
+                <Badge variant="outline" className="text-xs bg-[#0D6A51]/5 text-[#0D6A51] border-[#0D6A51]/20">
+                  Via SFD subventionnée
+                </Badge>
+              )}
+            </div>
           )}
         </div>
         
@@ -214,6 +236,15 @@ const PaymentTabContent = ({ onBack, onSubmit }: PaymentTabContentProps) => {
               onBlur={() => setIsFocused(null)}
             />
           </div>
+        </div>
+        
+        {/* Rates information */}
+        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+          <h4 className="text-sm font-medium text-gray-700 mb-1">Transfert MEREF à taux réduit</h4>
+          <p className="text-xs text-gray-600">
+            Les frais de transfert sont subventionnés par le programme MEREF pour encourager l'inclusion financière.
+            <br />Taux: <span className="font-medium text-[#0D6A51]">1.2%</span> (tarif standard: 2.5%)
+          </p>
         </div>
         
         {/* Recent transactions */}

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Building, Users, CreditCard, Clock, Bell, User, LogOut, ArrowRight, BarChart } from 'lucide-react';
+import { Building, Users, CreditCard, Clock, Bell, User, LogOut, ArrowRight, BarChart, BadgeDollarSign, Info } from 'lucide-react';
 import MultiSFDAccounts from '@/components/MultiSFDAccounts';
 import { LoanWorkflow } from '@/components/LoanWorkflow';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +27,9 @@ const MultiSFDDashboard = () => {
                 <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-[#0D6A51]">SÔRÔ!</span>
                 <Badge className="ml-2 bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-xs">Multi-SFD</Badge>
               </h1>
+              <span className="text-xs text-gray-500">
+                Initiative MEREF - Gouvernement du Mali & FIDA
+              </span>
             </div>
           </div>
           
@@ -54,7 +57,7 @@ const MultiSFDDashboard = () => {
           <div>
             <h2 className="text-2xl font-bold">Tableau de bord multi-institutions</h2>
             <p className="text-muted-foreground">
-              Gérez vos comptes et prêts à travers différentes institutions financières
+              Gérez vos comptes et prêts à travers différentes institutions financières subventionnées par MEREF
             </p>
           </div>
           
@@ -63,7 +66,7 @@ const MultiSFDDashboard = () => {
             onClick={() => navigate('/solvency-engine')}
           >
             <BarChart className="h-4 w-4 mr-1" />
-            Moteur de Solvabilité
+            Analyse de Solvabilité
           </Button>
         </div>
         
@@ -159,18 +162,23 @@ const MultiSFDDashboard = () => {
         <Card className="bg-[#0D6A51]/5 border-[#0D6A51]/20">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center text-[#0D6A51]">
-              <Users className="h-4 w-4 mr-2" />
-              Synchronisation Multi-SFD
+              <BadgeDollarSign className="h-4 w-4 mr-2" />
+              Initiative MEREF - Accès aux services financiers
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">
-              Vos données KYC sont synchronisées et partagées de manière sécurisée entre les institutions connectées, 
-              dans le respect du cadre réglementaire des services financiers décentralisés.
-            </p>
+            <div className="flex items-start gap-3">
+              <Info className="h-5 w-5 text-[#0D6A51] flex-shrink-0 mt-0.5" />
+              <p className="text-sm">
+                N'GNA SÔRÔ! fait partie d'une initiative du MEREF (Mécanisme de Refinancement et de Garantie), 
+                développée par le Gouvernement du Mali et le Fonds International de Développement Agricole (FIDA). 
+                À travers cette plateforme, le MEREF subventionne des institutions de microfinance (SFDs) pour qu'elles 
+                puissent octroyer des prêts accessibles aux populations rurales et urbaines.
+              </p>
+            </div>
             <div className="mt-2">
               <Button variant="outline" size="sm" className="text-[#0D6A51] border-[#0D6A51]/30">
-                Gérer les permissions
+                En savoir plus sur le MEREF
               </Button>
             </div>
           </CardContent>
