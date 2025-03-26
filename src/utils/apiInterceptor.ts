@@ -20,10 +20,8 @@ sfdApiClient.interceptors.request.use(
     }
     
     // Set the Authorization header with the SFD context token
-    config.headers = {
-      ...config.headers,
-      'Authorization': `Bearer ${sfdToken}`
-    };
+    // Use the set method of AxiosHeaders instead of direct assignment
+    config.headers.set('Authorization', `Bearer ${sfdToken}`);
     
     // Check if the request can be served from cache
     if (config.method?.toLowerCase() === 'get' && config.url) {
@@ -31,10 +29,9 @@ sfdApiClient.interceptors.request.use(
       const cachedData = sfdCache.get(sfdId, cacheKey);
       
       if (cachedData) {
-        // Cancel the request and return the cached data
-        // We'll handle this in the response interceptor
-        config.headers['X-From-Cache'] = 'true';
-        config.headers['X-Cache-Data'] = JSON.stringify(cachedData);
+        // Set cache headers
+        config.headers.set('X-From-Cache', 'true');
+        config.headers.set('X-Cache-Data', JSON.stringify(cachedData));
       }
     }
     

@@ -8,18 +8,18 @@ const JWT_SECRET = 'your-very-secure-secret-key-for-sfd-context';
 const secretKey = new TextEncoder().encode(JWT_SECRET);
 
 // Payload type for the SFD JWT
-interface SfdJwtPayload {
+export interface SfdJwtPayload {
   userId: string;
   sfdId: string;
-  exp: number; // Expiration timestamp
-  iat: number; // Issued at timestamp
+  exp?: number; // Expiration timestamp
+  iat?: number; // Issued at timestamp
 }
 
 /**
  * Generate a JWT token with SFD context
  */
 export const generateSfdContextToken = async (userId: string, sfdId: string): Promise<string> => {
-  const payload = {
+  const payload: SfdJwtPayload = {
     userId,
     sfdId
   };
@@ -38,7 +38,19 @@ export const generateSfdContextToken = async (userId: string, sfdId: string): Pr
 export const decodeSfdContextToken = async (token: string): Promise<SfdJwtPayload | null> => {
   try {
     const { payload } = await jose.jwtVerify(token, secretKey);
-    return payload as SfdJwtPayload;
+    
+    // Add proper type assertion after verifying the payload structure
+    if (typeof payload.userId === 'string' && typeof payload.sfdId === 'string') {
+      return {
+        userId: payload.userId,
+        sfdId: payload.sfdId,
+        exp: payload.exp,
+        iat: payload.iat
+      };
+    }
+    
+    console.error('Invalid payload structure:', payload);
+    return null;
   } catch (error) {
     console.error('Error decoding SFD JWT token:', error);
     return null;
