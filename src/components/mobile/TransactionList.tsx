@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { CircleDollarSign } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar } from '@/components/ui/avatar';
 
 interface Transaction {
   id: number;
@@ -17,35 +18,45 @@ interface TransactionListProps {
 
 const TransactionList = ({ transactions }: TransactionListProps) => {
   return (
-    <div className="px-4">
-      <h2 className="font-medium text-lg mb-3">Transactions</h2>
-      <div className="bg-white rounded-xl shadow-sm p-4 border-0">
-        <div className="space-y-4">
+    <div className="mx-4 mt-3 mb-20">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-medium">Recent Transactions</h3>
+        <button className="text-sm text-blue-600">See All</button>
+      </div>
+      
+      <Card className="border-0 shadow-sm bg-white rounded-2xl overflow-hidden">
+        <CardContent className="p-0">
           {transactions.map((transaction) => (
-            <div key={transaction.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center text-black">
+            <div 
+              key={transaction.id}
+              className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0"
+            >
+              <div className="flex items-center">
+                <Avatar className="h-10 w-10 mr-3 bg-gray-100">
                   {transaction.avatar ? (
-                    <img src={transaction.avatar} alt={transaction.name} className="h-10 w-10 rounded-full" />
+                    <img src={transaction.avatar} alt={transaction.name} />
                   ) : (
-                    <CircleDollarSign className="h-5 w-5" />
+                    <span className="text-sm font-medium">{transaction.name.charAt(0)}</span>
                   )}
-                </div>
+                </Avatar>
                 <div>
-                  <p className="text-sm font-medium">{transaction.name}</p>
-                  <p className="text-xs text-gray-500">{transaction.type}</p>
+                  <p className="font-medium">{transaction.name}</p>
+                  <p className="text-xs text-gray-500">{transaction.date}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className={`text-sm font-medium ${transaction.amount.startsWith('+') ? 'text-green-600' : 'text-gray-800'}`}>
-                  {transaction.amount} FCFA
-                </p>
-                <p className="text-xs text-gray-500">{transaction.date}</p>
-              </div>
+              <p 
+                className={`font-semibold ${
+                  transaction.amount.startsWith('+') 
+                    ? 'text-green-600' 
+                    : 'text-gray-800'
+                }`}
+              >
+                {transaction.amount}
+              </p>
             </div>
           ))}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

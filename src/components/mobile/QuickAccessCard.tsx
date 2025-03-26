@@ -1,34 +1,68 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ChevronRight, DollarSign } from 'lucide-react';
+import { Avatar } from '@/components/ui/avatar';
+import { Calendar, Plus } from 'lucide-react';
 
 interface QuickAccessCardProps {
   onAction: (action: string) => void;
 }
 
 const QuickAccessCard = ({ onAction }: QuickAccessCardProps) => {
+  const quickContacts = [
+    {
+      name: 'Nguyen',
+      avatar: '/lovable-uploads/d416de2f-f3d5-4977-a429-b73a0c892013.png'
+    },
+    {
+      name: 'Darrell',
+      avatar: '/lovable-uploads/d416de2f-f3d5-4977-a429-b73a0c892013.png'
+    },
+    {
+      name: 'Annette',
+      avatar: '/lovable-uploads/d416de2f-f3d5-4977-a429-b73a0c892013.png'
+    }
+  ];
+
   return (
-    <div className="mx-4 -mt-2">
-      <Card className="border-0 shadow-sm bg-white rounded-xl overflow-hidden">
+    <div className="mx-4 -mt-10">
+      <Card className="border-0 shadow-md bg-white rounded-2xl overflow-hidden">
         <CardContent className="p-4">
-          <p className="text-sm font-medium mb-1">Accès rapide</p>
-          <p className="text-xs text-gray-500 mb-3">100 000 FCFA disponible</p>
-          
-          <Button 
-            onClick={() => onAction('Float me cash')} 
-            variant="outline"
-            className="w-full justify-between bg-gray-50 hover:bg-gray-100 border-0 rounded-xl py-5 mb-2"
-          >
-            <div className="flex items-center">
-              <div className="bg-black text-white p-2 rounded-full mr-3">
-                <DollarSign className="h-5 w-5" />
+          <div className="mb-6">
+            <p className="text-gray-500 mb-3">Quick transfer</p>
+            <div className="flex space-x-4">
+              <div 
+                className="flex flex-col items-center"
+                onClick={() => onAction('Add new')}
+              >
+                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-1">
+                  <Plus className="h-5 w-5 text-gray-600" />
+                </div>
+                <span className="text-xs">Add new</span>
               </div>
-              <span>Obtenir un prêt rapide</span>
+              
+              {quickContacts.map((contact, index) => (
+                <div 
+                  key={index}
+                  className="flex flex-col items-center" 
+                  onClick={() => onAction('Transfer to ' + contact.name)}
+                >
+                  <Avatar className="w-12 h-12 mb-1">
+                    <img src={contact.avatar} alt={contact.name} />
+                  </Avatar>
+                  <span className="text-xs">{contact.name}</span>
+                </div>
+              ))}
             </div>
-            <ChevronRight className="h-5 w-5" />
-          </Button>
+          </div>
+          
+          <div 
+            className="flex flex-col items-center p-4 rounded-xl bg-blue-50 mb-4"
+            onClick={() => onAction('Schedule transfer')}
+          >
+            <Calendar className="text-blue-600 mb-2 h-6 w-6" />
+            <p className="text-blue-600 font-medium">Schedule transfer</p>
+          </div>
         </CardContent>
       </Card>
     </div>
