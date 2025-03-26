@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Home, Wallet, User, Plus, CreditCard } from 'lucide-react';
+import { Home, Wallet, User, Plus, CreditCard, BarChart3 } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavigationItem {
@@ -43,14 +43,6 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
       window.removeEventListener('lovable:action', handleCustomAction);
     };
   }, [onAction]);
-
-  const handleNavItemClick = (value: string, path: string, action: string) => {
-    setActiveTab(value);
-    navigate(path);
-    if (onAction) {
-      onAction(action);
-    }
-  };
 
   const navigationItems: NavigationItem[] = [
     {
@@ -95,7 +87,7 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
             return (
               <div key={index} className="relative -top-5">
                 <button 
-                  className="bg-black text-white p-4 rounded-full shadow-lg"
+                  className="bg-[#0D6A51] text-white p-4 rounded-full shadow-lg"
                   onClick={() => navigate('/mobile-flow/loan-application')}
                 >
                   <Plus className="h-6 w-6" />
@@ -109,7 +101,7 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
               key={index}
               className={`flex flex-col items-center justify-center py-3 px-3 ${
                 activeTab === item.value 
-                  ? 'text-black font-medium' 
+                  ? 'text-[#0D6A51] font-medium' 
                   : 'text-gray-400'
               }`}
               onClick={() => navigate(item.path)}

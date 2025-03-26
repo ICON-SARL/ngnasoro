@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  User, Zap, Shield, Clock, ChevronRight, ChevronDown, 
+  User, Zap, Shield, Clock, ChevronRight, ChevronDown, ChevronUp,
   CreditCard, PieChart, CheckCircle, Plus, Bell
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';

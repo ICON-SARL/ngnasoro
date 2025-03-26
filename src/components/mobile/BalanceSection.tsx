@@ -56,38 +56,39 @@ const BalanceSection = ({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR').format(amount);
+    return amount.toLocaleString();
   };
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-white/70 uppercase tracking-wide mb-1">
-          APPROVED LIMIT UP TO <span>↗</span>
-        </p>
-        <div className="flex items-center bg-white/20 rounded-full px-3 py-1 text-xs text-white">
-          <Building className="h-3 w-3 mr-1" />
-          <span>SFD Primaire</span>
+      <div className="flex justify-between items-center">
+        <div>
+          <p className="text-sm text-white/80 uppercase tracking-wide mb-1">
+            APPROVED LIMIT UP TO <span>↗</span>
+          </p>
+          <h1 className="text-4xl font-bold text-white mb-4">
+            {currency} {formatCurrency(maxApprovedLimit)}
+          </h1>
+        </div>
+        <div className="bg-white/20 rounded-full px-3 py-1.5 flex items-center">
+          <Building className="h-4 w-4 mr-1.5 text-white" />
+          <span className="text-sm text-white">SFD Primaire</span>
         </div>
       </div>
       
-      <h1 className="text-4xl font-bold text-white mb-3">
-        {currency} {formatCurrency(maxApprovedLimit)}
-      </h1>
-      
-      <div className="p-4 bg-white/10 rounded-xl backdrop-blur-sm mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-sm text-white/90">I want money</p>
-          <div className="h-6 w-6 bg-blue-300/30 rounded-full flex items-center justify-center">
+      <div className="p-4 bg-white/10 backdrop-blur-sm rounded-xl mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-white text-base">I want money</p>
+          <div className="h-6 w-6 bg-blue-400/50 rounded-full flex items-center justify-center">
             <div className="h-3 w-3 bg-blue-400 rounded-full"></div>
           </div>
         </div>
         
-        <div className="flex items-center text-white mb-2">
-          <span className="text-xl font-bold">{currency} {formatCurrency(amountNeeded)}</span>
-        </div>
+        <h2 className="text-3xl font-bold text-white mb-3">
+          {currency} {formatCurrency(amountNeeded)}
+        </h2>
         
-        <div className="mb-1.5">
+        <div className="mb-3">
           <Slider 
             value={[sliderValue]} 
             onValueChange={handleSliderChange}
@@ -98,7 +99,7 @@ const BalanceSection = ({
           />
         </div>
         
-        <div className="flex justify-between text-xs text-white/60">
+        <div className="flex justify-between text-xs text-white">
           <span>1000</span>
           <span>2500</span>
           <span>3000</span>
@@ -107,10 +108,10 @@ const BalanceSection = ({
         </div>
       </div>
       
-      <div className="grid grid-cols-3 gap-3 mb-2">
+      <div className="grid grid-cols-3 gap-3">
         <Button 
           variant="outline" 
-          className="flex items-center justify-center py-3 bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm"
+          className="flex items-center justify-center py-5 bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm"
           onClick={handleSendClick}
         >
           <ArrowUp className="mr-2 h-5 w-5" />
@@ -118,7 +119,7 @@ const BalanceSection = ({
         </Button>
         <Button 
           variant="outline" 
-          className="flex items-center justify-center py-3 bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm"
+          className="flex items-center justify-center py-5 bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm"
           onClick={handleReceiveClick}
         >
           <ArrowDown className="mr-2 h-5 w-5" />
@@ -126,7 +127,7 @@ const BalanceSection = ({
         </Button>
         <Button 
           variant="outline" 
-          className="flex items-center justify-center py-3 bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm"
+          className="flex items-center justify-center py-5 bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm"
           onClick={handleLoansClick}
         >
           <Building className="mr-2 h-5 w-5" />
