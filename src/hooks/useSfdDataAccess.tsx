@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { generateSfdContextToken } from '@/utils/sfdJwtContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
 
 export interface SfdData {
@@ -26,19 +27,37 @@ export function useSfdDataAccess() {
       setLoading(true);
       setError(null);
       
-      // For this example, we'll use mock data
-      // In a real app, this would fetch from a 'user_sfds' table
-      const mockSfdData: SfdData[] = [
-        { id: 'sfd1', name: 'Premier SFD', token: null, lastFetched: null },
-        { id: 'sfd2', name: 'Deuxième SFD', token: null, lastFetched: null },
-        { id: 'sfd3', name: 'Troisième SFD', token: null, lastFetched: null }
-      ];
+      // Fetch SFDs from the database using the user_sfds join table
+      const { data, error } = await supabase
+        .from('user_sfds')
+        .select(`
+          id,
+          is_default,
+          sfds:sfd_id(id, name, code, region)
+        `)
+        .eq('user_id', user.id);
+        
+      if (error) throw error;
       
-      setSfdData(mockSfdData);
-      
-      // If we have SFDs but no active one is set, set the first one as active
-      if (mockSfdData.length > 0 && !activeSfdId) {
-        setActiveSfdId(mockSfdData[0].id);
+      if (data) {
+        const sfdList: SfdData[] = data.map(item => ({
+          id: item.sfds.id,
+          name: item.sfds.name,
+          token: null,
+          lastFetched: null
+        }));
+        
+        setSfdData(sfdList);
+        
+        // If we have SFDs but no active one is set, set the default one (or first) as active
+        if (sfdList.length > 0 && !activeSfdId) {
+          const defaultSfd = data.find(item => item.is_default);
+          if (defaultSfd) {
+            setActiveSfdId(defaultSfd.sfds.id);
+          } else {
+            setActiveSfdId(sfdList[0].id);
+          }
+        }
       }
     } catch (err: any) {
       console.error('Error fetching SFDs:', err);

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { Bell, User, BarChart3, Building, ChevronDown } from 'lucide-react';
@@ -23,6 +22,7 @@ const MobileHeader = () => {
   const activeSFD = sfdData.find(sfd => sfd.id === activeSfdId)?.name || 'SFD non sélectionnée';
 
   return (
+    
     <div className="flex justify-between items-center mb-3">
       <div className="flex items-center">
         <div className="w-8 h-8 rounded-full bg-lime-200 flex items-center justify-center mr-2">

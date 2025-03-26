@@ -54,6 +54,36 @@ export type Database = {
         }
         Relationships: []
       }
+      sfds: {
+        Row: {
+          code: string
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          region: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          region?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          region?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -86,6 +116,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_sfds: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          sfd_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          sfd_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          sfd_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sfds_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
