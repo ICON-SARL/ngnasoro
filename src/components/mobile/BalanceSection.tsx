@@ -31,9 +31,9 @@ const BalanceSection = ({
     setAmountNeeded(calculatedAmount);
   };
   
-  const handleSendClick = () => {
+  const handleRepaymentClick = () => {
     if (onAction) {
-      onAction('Send');
+      onAction('Repayment', { amount: 3500 });
     } else {
       navigate('/mobile-flow/payment');
     }
@@ -112,10 +112,10 @@ const BalanceSection = ({
         <Button 
           variant="outline" 
           className="flex items-center justify-center py-5 bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm"
-          onClick={handleSendClick}
+          onClick={handleRepaymentClick}
         >
           <ArrowUp className="mr-2 h-5 w-5" />
-          Envoyer
+          Rembourser
         </Button>
         <Button 
           variant="outline" 
