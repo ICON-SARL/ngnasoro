@@ -1,14 +1,28 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { Bell, Plus, ArrowUp } from 'lucide-react';
+import { Bell, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import HomeLoanHeader from './loan/HomeLoanHeader';
+import TransactionList from './TransactionList';
+import { useTransactions } from '@/hooks/useTransactions';
 
 const HomeLoanPage = () => {
   const navigate = useNavigate();
+  const { transactions, isLoading } = useTransactions();
+  
+  // Transforme les données de transaction pour les adapter au composant TransactionList
+  const formattedTransactions = transactions.map(transaction => ({
+    id: transaction.id,
+    name: transaction.name,
+    type: transaction.type,
+    amount: `${transaction.amount > 0 ? '+' : ''}${transaction.amount.toLocaleString('fr-FR')} FCFA`,
+    date: new Date(transaction.date).toLocaleDateString('fr-FR'),
+    avatar: transaction.avatar_url,
+    sfdName: transaction.type === 'loan' ? 'SFD' : undefined
+  }));
   
   const viewLoanProcess = () => {
     if (typeof window !== 'undefined') {
@@ -46,7 +60,7 @@ const HomeLoanPage = () => {
         </Card>
         
         {/* Prêts actifs */}
-        <div className="mb-4">
+        <div className="mb-6">
           <h3 className="text-lg font-bold mb-3">Mes prêts actifs</h3>
           
           <Card className="mb-3 border-0 shadow-sm overflow-hidden">
@@ -114,7 +128,21 @@ const HomeLoanPage = () => {
               </div>
             </CardContent>
           </Card>
+          
+          <Button 
+            className="w-full border border-gray-200 bg-white text-blue-600 hover:bg-gray-50" 
+            onClick={() => navigate('/mobile-flow/loan-activity')}
+          >
+            Voir tous les prêts
+          </Button>
         </div>
+        
+        {/* Liste des transactions récentes */}
+        <TransactionList 
+          transactions={formattedTransactions} 
+          isLoading={isLoading}
+          onViewAll={() => navigate('/mobile-flow/loan-activity')}
+        />
       </div>
     </div>
   );
