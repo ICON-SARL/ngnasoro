@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -43,7 +42,6 @@ const App = () => (
             <Route path="/multi-sfd" element={<MultiSFDDashboard />} />
             <Route path="/solvency-engine" element={<SolvencyEngine />} />
             <Route path="/loan-system" element={<LoanSystemPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

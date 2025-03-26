@@ -1,11 +1,14 @@
 
 import React from 'react';
 import { Avatar } from '@/components/ui/avatar';
-import { Bell, User } from 'lucide-react';
+import { Bell, User, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 const MobileHeader = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Utilisateur';
 
   return (
@@ -20,6 +23,14 @@ const MobileHeader = () => {
         </div>
       </div>
       <div className="flex items-center gap-2">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="p-1 text-white" 
+          onClick={() => navigate('/solvency-engine')}
+        >
+          <BarChart3 className="h-5 w-5 text-lime-300" />
+        </Button>
         <Bell className="h-6 w-6 text-white" />
         <Avatar className="h-8 w-8 bg-white/20 border border-white/30">
           <User className="h-4 w-4 text-white" />
