@@ -47,6 +47,14 @@ const BalanceSection = ({
     }
   };
 
+  const handleLoansClick = () => {
+    if (onAction) {
+      onAction('Loans');
+    } else {
+      navigate('/mobile-flow/home-loan');
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-FR').format(amount);
   };
@@ -99,7 +107,7 @@ const BalanceSection = ({
         </div>
       </div>
       
-      <div className="grid grid-cols-2 gap-3 mb-2">
+      <div className="grid grid-cols-3 gap-3 mb-2">
         <Button 
           variant="outline" 
           className="flex items-center justify-center py-3 bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm"
@@ -115,6 +123,14 @@ const BalanceSection = ({
         >
           <ArrowDown className="mr-2 h-5 w-5" />
           Receive
+        </Button>
+        <Button 
+          variant="outline" 
+          className="flex items-center justify-center py-3 bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm"
+          onClick={handleLoansClick}
+        >
+          <Building className="mr-2 h-5 w-5" />
+          Loans
         </Button>
       </div>
     </div>
