@@ -27,6 +27,7 @@ import { SecurePaymentLayer } from '@/components/SecurePaymentLayer';
 import FinancialSnapshot from '@/components/mobile/FinancialSnapshot';
 import QuickActionsCard from '@/components/mobile/QuickActionsCard';
 import SFDSavingsOverview from '@/components/mobile/SFDSavingsOverview';
+import ProfilePage from '@/components/mobile/profile/ProfilePage';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useAccount } from '@/hooks/useAccount';
@@ -402,17 +403,7 @@ const MobileFlow = () => {
           <LoanProcessFlow onBack={() => navigate('/mobile-flow/main')} />
         } />
         <Route path="profile" element={
-          <div className="p-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="mb-4" 
-              onClick={() => navigate('/mobile-flow/main')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" /> Retour
-            </Button>
-            <MultiSFDAccounts />
-          </div>
+          <ProfilePage />
         } />
         <Route path="" element={<Navigate to="/mobile-flow/welcome" replace />} />
         <Route path="*" element={<Navigate to="/mobile-flow/welcome" replace />} />
