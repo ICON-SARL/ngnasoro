@@ -2,128 +2,16 @@
 project_id = "xnqysvnychmsockivqhb"
 
 [api]
+enabled = true
 port = 54321
-schemas = ["public", "storage"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
+schemas = ["public", "storage", "graphql_public"]
 
 [db]
 port = 54322
 
-[studio]
-port = 54323
+[realtime]
+enabled = true
 
-[inbucket]
-port = 54324
-smtp_port = 54325
-pop3_port = 54326
-
-[auth]
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://localhost:3000"]
-jwt_expiry = 3600
-enable_signup = true
-
-[auth.email]
-enable_signup = true
-enable_confirmations = false
-
-[auth.sms]
-enable_signup = true
-enable_confirmations = false
-
-[functions]
-[functions.mobile-money-webhook]
+[[functions]]
+name = "process-repayment"
 verify_jwt = false
-[functions.qr-code-verification]
-verify_jwt = false
-
-[auth.external.google]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-url = ""
-
-[auth.external.apple]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.azure]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-url = ""
-
-[auth.external.bitbucket]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.discord]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.facebook]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-url = ""
-
-[auth.external.github]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-url = ""
-
-[auth.external.gitlab]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-url = ""
-
-[auth.external.twitch]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.twitter]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.slack]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.spotify]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.kakao]
-enabled = false
-client_id = ""
-redirect_uri = ""
-
-[analytics]
-enabled = false
-port = 54327
-vector_port = 54328
-gcp_project_id = ""
-gcp_project_number = ""
-gcp_jwt_path = ""

@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, Building, Smartphone } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DialogTrigger } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface PaymentHistory {
   id: number;
@@ -16,13 +18,28 @@ interface LoanRepaymentTabProps {
   nextPaymentDue: string;
   paymentHistory: PaymentHistory[];
   onMobileMoneyPayment: () => void;
+  loanId?: string;
 }
 
 const LoanRepaymentTab = ({ 
   nextPaymentDue, 
   paymentHistory, 
-  onMobileMoneyPayment 
+  onMobileMoneyPayment,
+  loanId = 'LOAN123'
 }: LoanRepaymentTabProps) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  const handleRepayment = (method: 'mobile' | 'agency') => {
+    if (method === 'mobile') {
+      navigate('/mobile-flow/secure-payment', { state: { isRepayment: true, loanId } });
+    } else {
+      // Agency QR code payment
+      onMobileMoneyPayment();
+    }
+  };
+  
   return (
     <div className="mt-2 space-y-4">
       <Card className="bg-blue-50 border-blue-100">
@@ -48,7 +65,7 @@ const LoanRepaymentTab = ({
         <h3 className="text-lg font-semibold">Options de paiement</h3>
         
         <Card className="border hover:border-teal-500 transition-colors cursor-pointer">
-          <CardContent className="p-4" onClick={onMobileMoneyPayment}>
+          <CardContent className="p-4" onClick={() => handleRepayment('mobile')}>
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center mr-3">
@@ -68,7 +85,7 @@ const LoanRepaymentTab = ({
         
         <DialogTrigger asChild>
           <Card className="border hover:border-teal-500 transition-colors cursor-pointer">
-            <CardContent className="p-4">
+            <CardContent className="p-4" onClick={() => handleRepayment('agency')}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">

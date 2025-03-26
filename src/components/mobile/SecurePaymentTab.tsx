@@ -10,13 +10,15 @@ import { ReconciliationSection } from './secure-payment/ReconciliationSection';
 import MobileMoneyModal from './loan/MobileMoneyModal';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import QRCodePaymentDialog from './loan/QRCodePaymentDialog';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SecurePaymentTabProps {
   onBack: () => void;
   isWithdrawal?: boolean;
+  loanId?: string;
 }
 
-const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ onBack, isWithdrawal = false }) => {
+const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ onBack, isWithdrawal = false, loanId }) => {
   const { toast } = useToast();
   const [paymentMethod, setPaymentMethod] = useState('sfd');
   const [balanceStatus, setBalanceStatus] = useState<'sufficient' | 'insufficient'>('sufficient');
@@ -48,10 +50,40 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ onBack, isWithdrawa
     detectPrimaryAccount();
   }, [toast]);
   
-  const handlePayment = () => {
+  const validateRepayment = (amount: number, method: string) => {
+    if (!amount || amount <= 0) {
+      toast({
+        title: "Montant invalide",
+        description: "Veuillez entrer un montant valide",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    if (!method) {
+      toast({
+        title: "Méthode de paiement requise",
+        description: "Veuillez sélectionner une méthode de paiement",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    return true;
+  };
+  
+  const handlePayment = async () => {
     if (paymentMethod === 'sfd' && Math.random() > 0.5) {
       // Simulate QR code payment
       setQrDialogOpen(true);
+      return;
+    }
+    
+    const amount = isWithdrawal ? 25000 : 3500;
+    const method = paymentMethod === 'mobile' ? 'mobile_money' : 'agency_qr';
+    
+    // Validate repayment data
+    if (!isWithdrawal && !validateRepayment(amount, method)) {
       return;
     }
     
@@ -69,32 +101,71 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ onBack, isWithdrawa
       });
     }, 100);
     
-    // Simulate payment processing
-    setTimeout(() => {
-      clearInterval(interval);
-      setProgress(100);
-      
-      const success = Math.random() > 0.2;
-      
-      if (success) {
-        setPaymentStatus('success');
-        setPaymentSuccess(true);
-        toast({
-          title: isWithdrawal ? "Retrait réussi" : "Remboursement réussi",
-          description: isWithdrawal 
-            ? "Votre retrait a été traité avec succès." 
-            : "Votre remboursement de prêt a été traité avec succès.",
-          variant: "default",
+    try {
+      if (!isWithdrawal && loanId) {
+        // Process loan repayment
+        const { data, error } = await supabase.functions.invoke('process-repayment', {
+          body: {
+            loan_id: loanId || 'LOAN123',
+            amount: amount,
+            method: method
+          }
         });
-      } else {
-        setPaymentStatus('failed');
-        toast({
-          title: isWithdrawal ? "Échec du retrait" : "Échec du remboursement",
-          description: "Veuillez réessayer ou sélectionner une autre méthode.",
-          variant: "destructive",
-        });
+        
+        if (error) throw error;
+        
+        // Add transaction record if payment successful
+        if (data?.success) {
+          const { error: txError } = await supabase
+            .from('transactions')
+            .insert([
+              {
+                name: isWithdrawal ? 'Retrait de fonds' : 'Remboursement de prêt',
+                type: isWithdrawal ? 'withdrawal' : 'repayment',
+                amount: isWithdrawal ? -amount : -amount,
+                date: new Date().toISOString()
+              }
+            ]);
+          
+          if (txError) console.error('Transaction record error:', txError);
+        }
       }
-    }, 2000);
+      
+      // Simulating API response time
+      setTimeout(() => {
+        clearInterval(interval);
+        setProgress(100);
+        
+        const success = Math.random() > 0.2;
+        
+        if (success) {
+          setPaymentStatus('success');
+          setPaymentSuccess(true);
+          toast({
+            title: isWithdrawal ? "Retrait réussi" : "Remboursement réussi",
+            description: isWithdrawal 
+              ? "Votre retrait a été traité avec succès." 
+              : "Votre remboursement de prêt a été traité avec succès.",
+            variant: "default",
+          });
+        } else {
+          setPaymentStatus('failed');
+          toast({
+            title: isWithdrawal ? "Échec du retrait" : "Échec du remboursement",
+            description: "Veuillez réessayer ou sélectionner une autre méthode.",
+            variant: "destructive",
+          });
+        }
+      }, 2000);
+    } catch (error: any) {
+      clearInterval(interval);
+      setPaymentStatus('failed');
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors du traitement",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleMobileMoneyPayment = () => {
