@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,7 +12,6 @@ const HomeLoanPage = () => {
   const navigate = useNavigate();
   const { transactions, isLoading } = useTransactions();
   
-  // Transforme les données de transaction pour les adapter au composant TransactionList
   const formattedTransactions = transactions.map(transaction => ({
     id: transaction.id,
     name: transaction.name,
@@ -59,7 +57,6 @@ const HomeLoanPage = () => {
           </CardContent>
         </Card>
         
-        {/* Prêts actifs */}
         <div className="mb-6">
           <h3 className="text-lg font-bold mb-3">Mes prêts actifs</h3>
           
@@ -137,7 +134,6 @@ const HomeLoanPage = () => {
           </Button>
         </div>
         
-        {/* Liste des transactions récentes */}
         <TransactionList 
           transactions={formattedTransactions} 
           isLoading={isLoading}
