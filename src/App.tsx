@@ -32,6 +32,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/mobile-flow" element={<MobileFlow />} />
+            <Route path="/mobile-flow/*" element={<MobileFlow />} />
             <Route path="/premium-dashboard" element={<PremiumDashboard />} />
             <Route path="/super-admin" element={<SuperAdminDashboard />} />
             <Route path="/agency-dashboard" element={<AgencyDashboard />} />

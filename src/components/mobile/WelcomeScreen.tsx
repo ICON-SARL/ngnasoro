@@ -11,7 +11,7 @@ const WelcomeScreen = () => {
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'User';
 
   const handleStart = () => {
-    navigate('/mobile-flow/home-loan');
+    navigate('/mobile-flow/main');
   };
 
   return (
@@ -25,8 +25,8 @@ const WelcomeScreen = () => {
               className="h-12 w-12 mr-2" 
             />
             <div className="flex flex-col items-start">
-              <p className="text-white text-sm">Hi, {firstName}!</p>
-              <p className="text-white/80 text-xs">I've got something special for you!</p>
+              <p className="text-white text-sm">Bonjour, {firstName}!</p>
+              <p className="text-white/80 text-xs">J'ai quelque chose de spécial pour vous!</p>
             </div>
           </div>
         </div>
@@ -34,41 +34,41 @@ const WelcomeScreen = () => {
         <div className="bg-white rounded-xl p-6 w-full mb-8 shadow-lg">
           <div className="bg-blue-50 rounded-lg px-3 py-1 inline-block mb-2">
             <span className="text-blue-600 text-xs font-medium flex items-center">
-              BEST OFFER ONLY TODAY 🔥
+              OFFRE SPÉCIALE AUJOURD'HUI 🔥
             </span>
           </div>
           
-          <p className="text-gray-700 text-left text-sm mb-1">Get line of credit up to ↗</p>
-          <h2 className="text-4xl font-bold text-gray-900 mb-4 text-left">₹ 25,000</h2>
+          <p className="text-gray-700 text-left text-sm mb-1">Obtenez une ligne de crédit jusqu'à ↗</p>
+          <h2 className="text-4xl font-bold text-gray-900 mb-4 text-left">25,000 FCFA</h2>
           
           <Button 
             onClick={handleStart}
             className="w-full bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-bold"
           >
-            GET FIRST LOAN
+            OBTENIR MON PREMIER PRÊT
           </Button>
           
           <div className="grid grid-cols-2 gap-4 mt-6">
             <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-              <p className="text-xs text-gray-600 mb-1 text-left">Online purchase loan</p>
-              <h4 className="text-sm font-semibold mb-4 text-left">E-voucher with limit up to ₹25,000</h4>
+              <p className="text-xs text-gray-600 mb-1 text-left">Prêt pour achats en ligne</p>
+              <h4 className="text-sm font-semibold mb-4 text-left">E-voucher avec limite jusqu'à 25,000 FCFA</h4>
               <div className="flex justify-end">
                 <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
                   <div className="h-6 w-6 bg-blue-400 rounded-full"></div>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-1 text-left">Coming soon...</p>
+              <p className="text-xs text-gray-500 mt-1 text-left">Bientôt disponible...</p>
             </div>
             
             <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-              <p className="text-xs text-gray-600 mb-1 text-left">POP lending</p>
-              <h4 className="text-sm font-semibold mb-4 text-left">Personal loans with personlised interest</h4>
+              <p className="text-xs text-gray-600 mb-1 text-left">Prêt POP</p>
+              <h4 className="text-sm font-semibold mb-4 text-left">Prêts personnels avec intérêt personnalisé</h4>
               <div className="flex justify-end">
                 <div className="h-10 w-10 bg-yellow-100 rounded-full flex items-center justify-center">
                   <div className="h-6 w-6 bg-yellow-400 rounded-full"></div>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-1 text-left">Coming soon...</p>
+              <p className="text-xs text-gray-500 mt-1 text-left">Bientôt disponible...</p>
             </div>
           </div>
           
@@ -77,8 +77,8 @@ const WelcomeScreen = () => {
               <div className="h-6 w-6 bg-green-400 rounded-full"></div>
             </div>
             <div className="text-left">
-              <h4 className="text-sm font-semibold">Invite friends - get bonus points!</h4>
-              <p className="text-xs text-gray-500">Coming soon...</p>
+              <h4 className="text-sm font-semibold">Invitez des amis - gagnez des points bonus!</h4>
+              <p className="text-xs text-gray-500">Bientôt disponible...</p>
             </div>
           </div>
         </div>
@@ -88,12 +88,12 @@ const WelcomeScreen = () => {
         <div className="flex items-center mb-4">
           <img 
             src="/lovable-uploads/006177a9-5cd7-4b31-9abb-0760a787e66f.png" 
-            alt="RupeeRedee Logo" 
+            alt="N'GNA SÔRÔ Logo" 
             className="h-12 w-12 mr-4" 
           />
           <div className="text-left">
-            <h2 className="text-2xl font-bold text-white">RupeeRedee</h2>
-            <p className="text-white/70 text-sm">Instant personal loans at your fingertips</p>
+            <h2 className="text-2xl font-bold text-white">N'GNA SÔRÔ</h2>
+            <p className="text-white/70 text-sm">Prêts personnels instantanés à portée de main</p>
           </div>
         </div>
         
@@ -101,7 +101,7 @@ const WelcomeScreen = () => {
           onClick={handleStart}
           className="w-full bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-bold flex items-center justify-center"
         >
-          START <ArrowRight className="ml-2 h-5 w-5" />
+          COMMENCER <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </div>
     </div>

@@ -1,4 +1,6 @@
+
 import React, { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Home, Wallet, User, Plus, CreditCard } from 'lucide-react';
 import { useState } from 'react';
@@ -7,7 +9,7 @@ interface NavigationItem {
   icon: React.ReactNode;
   label: string;
   value: string;
-  action: () => void;
+  path: string;
 }
 
 interface MobileNavigationProps {
@@ -16,7 +18,17 @@ interface MobileNavigationProps {
 
 const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState('home');
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Extract current path from location
+  const currentPath = location.pathname.split('/').pop() || '';
+  const [activeTab, setActiveTab] = useState(currentPath || 'main');
+
+  useEffect(() => {
+    const pathSegment = location.pathname.split('/').pop() || '';
+    setActiveTab(pathSegment || 'main');
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleCustomAction = (event: any) => {
@@ -32,8 +44,9 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
     };
   }, [onAction]);
 
-  const handleNavItemClick = (value: string, action: string) => {
+  const handleNavItemClick = (value: string, path: string, action: string) => {
     setActiveTab(value);
+    navigate(path);
     if (onAction) {
       onAction(action);
     }
@@ -42,33 +55,33 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
   const navigationItems: NavigationItem[] = [
     {
       icon: <Home className="h-6 w-6" />,
-      label: "Home",
-      value: 'home',
-      action: () => handleNavItemClick('home', 'Home')
+      label: "Accueil",
+      value: 'main',
+      path: '/mobile-flow/main'
     },
     {
       icon: <CreditCard className="h-6 w-6" />,
-      label: "Loans",
-      value: 'loans',
-      action: () => handleNavItemClick('loans', 'Loans')
+      label: "Prêts",
+      value: 'home-loan',
+      path: '/mobile-flow/home-loan'
     },
     {
       icon: null,
       label: "",
       value: 'action',
-      action: () => handleNavItemClick('action', 'Loan Activity')
+      path: '/mobile-flow/loan-activity'
     },
     {
       icon: <Wallet className="h-6 w-6" />,
-      label: "Loan",
-      value: 'loan',
-      action: () => handleNavItemClick('loan', 'Loan Details')
+      label: "Paiement",
+      value: 'payment',
+      path: '/mobile-flow/payment'
     },
     {
       icon: <User className="h-6 w-6" />,
-      label: "Profile",
+      label: "Profil",
       value: 'profile',
-      action: () => handleNavItemClick('profile', 'Loan Setup')
+      path: '/mobile-flow/loan-setup'
     }
   ];
 
@@ -83,7 +96,7 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
               <div key={index} className="relative -top-5">
                 <button 
                   className="bg-black text-white p-4 rounded-full shadow-lg"
-                  onClick={item.action}
+                  onClick={() => navigate('/mobile-flow/loan-application')}
                 >
                   <Plus className="h-6 w-6" />
                 </button>
@@ -99,7 +112,7 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
                   ? 'text-black font-medium' 
                   : 'text-gray-400'
               }`}
-              onClick={item.action}
+              onClick={() => navigate(item.path)}
             >
               {item.icon}
               <span className="text-xs mt-1">{item.label}</span>

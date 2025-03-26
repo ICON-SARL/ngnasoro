@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
@@ -50,22 +51,85 @@ import {
   ActivitySquare
 } from 'lucide-react';
 
+// Main Dashboard Component
+const MainDashboard = ({ onAction, account, transactions, transactionsLoading, toggleMenu }) => {
+  return (
+    <div className="space-y-4 mt-0 p-0">
+      <div className="bg-blue-600 text-white p-4 rounded-b-3xl relative">
+        <div className="absolute top-4 right-4">
+          <Button variant="ghost" size="sm" className="text-white p-1" onClick={toggleMenu}>
+            <Menu className="h-5 w-5" />
+          </Button>
+        </div>
+        <MobileHeader />
+        <BalanceSection currency={account?.currency || 'FCFA'} balance={account?.balance || 0} />
+      </div>
+      
+      <div className="mx-4 -mt-10">
+        <FinancialSnapshot 
+          loanId="LOAN123" 
+          nextPaymentDate="2023-07-15" 
+          nextPaymentAmount={25000} 
+        />
+      </div>
+      
+      <div className="mx-4">
+        <QuickActionsCard 
+          onAction={onAction} 
+          loanId="LOAN123" 
+          paymentDue={25000} 
+        />
+      </div>
+      
+      <QuickAccessCard onAction={onAction} />
+      
+      <FinancialOverview />
+      
+      <TransactionList 
+        transactions={transactions.map(tx => ({
+          id: tx.id,
+          name: tx.name,
+          type: tx.type,
+          amount: tx.amount.toString(),
+          date: new Date(tx.date).toLocaleDateString(),
+          avatar: tx.avatar_url
+        }))}
+        isLoading={transactionsLoading}
+        onViewAll={() => onAction('Loans')}
+      />
+    </div>
+  );
+};
+
 const MobileFlow = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('welcome');
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   
   const { user, loading, signOut } = useAuth();
   const { account, isLoading: accountLoading, updateBalance } = useAccount();
   const { transactions, isLoading: transactionsLoading, addTransaction } = useTransactions();
 
+  // Check if it's a first visit or if coming from welcome route
+  const [showWelcome, setShowWelcome] = useState(() => {
+    const hasVisited = localStorage.getItem('hasVisitedApp');
+    return !hasVisited;
+  });
+
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
+
+  // Mark as visited after welcome screen is shown
+  useEffect(() => {
+    if (!showWelcome) {
+      localStorage.setItem('hasVisitedApp', 'true');
+    }
+  }, [showWelcome]);
 
   const handleAction = async (action: string, data?: any) => {
     toast({
@@ -74,40 +138,43 @@ const MobileFlow = () => {
     });
     
     if (action === 'Send' || action === 'Receive') {
-      setActiveTab('payment');
+      navigate('/mobile-flow/payment');
     } else if (action === 'Float me cash') {
-      setActiveTab('secure-payment');
+      navigate('/mobile-flow/secure-payment');
     } else if (action === 'Schedule transfer') {
-      setActiveTab('schedule-transfer');
+      navigate('/mobile-flow/schedule-transfer');
     } else if (action.startsWith('Transfer to')) {
-      setActiveTab('payment');
+      navigate('/mobile-flow/payment');
     } else if (action === 'Loans') {
-      setActiveTab('home-loan');
+      navigate('/mobile-flow/home-loan');
     } else if (action === 'Loan Activity') {
-      setActiveTab('loan-activity');
+      navigate('/mobile-flow/loan-activity');
     } else if (action === 'Loan Details') {
-      setActiveTab('loan-details');
+      navigate('/mobile-flow/loan-details');
     } else if (action === 'Loan Setup') {
-      setActiveTab('loan-setup');
+      navigate('/mobile-flow/loan-setup');
     } else if (action === 'Payment Options') {
-      setActiveTab('payment-options');
+      navigate('/mobile-flow/payment-options');
     } else if (action === 'Late Payments') {
-      setActiveTab('late-payments');
+      navigate('/mobile-flow/late-payments');
     } else if (action === 'Loan Application') {
-      setActiveTab('loan-application');
+      navigate('/mobile-flow/loan-application');
     } else if (action === 'Multi SFD') {
-      setActiveTab('multi-sfd');
+      navigate('/mobile-flow/multi-sfd');
     } else if (action === 'Secure Layer') {
-      setActiveTab('secure-layer');
+      navigate('/mobile-flow/secure-layer');
     } else if (action === 'Loan Process') {
-      setActiveTab('loan-process');
+      navigate('/mobile-flow/loan-process');
     } else if (action === 'Start') {
-      setActiveTab('home-loan');
+      navigate('/mobile-flow/main');
+      setShowWelcome(false);
     } else if (action === 'Repayment') {
-      setActiveTab('payment');
+      navigate('/mobile-flow/payment');
       if (data && data.amount) {
         // You would handle setting repayment amount here
       }
+    } else if (action === 'Home') {
+      navigate('/mobile-flow/main');
     }
   };
 
@@ -123,7 +190,7 @@ const MobileFlow = () => {
         avatar_url: null
       });
       
-      setActiveTab('main');
+      navigate('/mobile-flow/main');
       
       toast({
         title: 'Paiement réussi',
@@ -147,6 +214,17 @@ const MobileFlow = () => {
     }
   };
 
+  // Redirect to welcome if it's the first visit
+  useEffect(() => {
+    if (showWelcome && location.pathname === '/mobile-flow') {
+      navigate('/mobile-flow/welcome');
+    }
+    // If coming directly to a subpath and it's not the welcome page, mark as visited
+    else if (location.pathname !== '/mobile-flow/welcome' && location.pathname !== '/mobile-flow') {
+      setShowWelcome(false);
+    }
+  }, [showWelcome, location.pathname, navigate]);
+
   if (loading || accountLoading) {
     return <div className="p-8 text-center">Chargement...</div>;
   }
@@ -166,35 +244,35 @@ const MobileFlow = () => {
             <div className="space-y-4">
               <div className="flex flex-col space-y-1">
                 <h3 className="text-sm font-medium text-gray-500 mb-2">Opérations bancaires</h3>
-                <Button variant="ghost" className="justify-start" onClick={() => { setActiveTab('payment'); toggleMenu(); }}>
+                <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/payment'); toggleMenu(); }}>
                   <CreditCard className="h-5 w-5 mr-2" /> Paiements et transferts
                 </Button>
-                <Button variant="ghost" className="justify-start" onClick={() => { setActiveTab('secure-payment'); toggleMenu(); }}>
+                <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/secure-payment'); toggleMenu(); }}>
                   <ShieldCheck className="h-5 w-5 mr-2" /> Paiement sécurisé
                 </Button>
-                <Button variant="ghost" className="justify-start" onClick={() => { setActiveTab('schedule-transfer'); toggleMenu(); }}>
+                <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/schedule-transfer'); toggleMenu(); }}>
                   <Calendar className="h-5 w-5 mr-2" /> Transferts programmés
                 </Button>
-                <Button variant="ghost" className="justify-start" onClick={() => { setActiveTab('multi-sfd'); toggleMenu(); }}>
+                <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/multi-sfd'); toggleMenu(); }}>
                   <Building className="h-5 w-5 mr-2" /> Gestion Multi-SFD
                 </Button>
-                <Button variant="ghost" className="justify-start" onClick={() => { setActiveTab('secure-layer'); toggleMenu(); }}>
+                <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/secure-layer'); toggleMenu(); }}>
                   <ShieldCheck className="h-5 w-5 mr-2" /> Sécurité avancée
                 </Button>
               </div>
               
               <div className="flex flex-col space-y-1">
                 <h3 className="text-sm font-medium text-gray-500 mb-2">Prêts et financements</h3>
-                <Button variant="ghost" className="justify-start" onClick={() => { setActiveTab('home-loan'); toggleMenu(); }}>
+                <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/home-loan'); toggleMenu(); }}>
                   <Wallet className="h-5 w-5 mr-2" /> Mes prêts
                 </Button>
-                <Button variant="ghost" className="justify-start" onClick={() => { setActiveTab('loan-application'); toggleMenu(); }}>
+                <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/loan-application'); toggleMenu(); }}>
                   <HandCoins className="h-5 w-5 mr-2" /> Demander un prêt
                 </Button>
-                <Button variant="ghost" className="justify-start" onClick={() => { setActiveTab('payment-options'); toggleMenu(); }}>
+                <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/payment-options'); toggleMenu(); }}>
                   <CreditCard className="h-5 w-5 mr-2" /> Options de paiement
                 </Button>
-                <Button variant="ghost" className="justify-start" onClick={() => { setActiveTab('late-payments'); toggleMenu(); }}>
+                <Button variant="ghost" className="justify-start" onClick={() => { navigate('/mobile-flow/late-payments'); toggleMenu(); }}>
                   <Bell className="h-5 w-5 mr-2" /> Alertes retards
                 </Button>
               </div>
@@ -222,161 +300,109 @@ const MobileFlow = () => {
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsContent value="welcome" className="m-0 p-0 h-screen">
-          <WelcomeScreen />
-        </TabsContent>
-        
-        <TabsContent value="main" className="space-y-4 mt-0 p-0">
-          <div className="bg-blue-600 text-white p-4 rounded-b-3xl relative">
-            <div className="absolute top-4 right-4">
-              <Button variant="ghost" size="sm" className="text-white p-1" onClick={toggleMenu}>
-                <Menu className="h-5 w-5" />
-              </Button>
-            </div>
-            <MobileHeader />
-            <BalanceSection currency={account?.currency || 'FCFA'} balance={account?.balance || 0} />
-          </div>
-          
-          <div className="mx-4 -mt-10">
-            <FinancialSnapshot 
-              loanId="LOAN123" 
-              nextPaymentDate="2023-07-15" 
-              nextPaymentAmount={25000} 
-            />
-          </div>
-          
-          <div className="mx-4">
-            <QuickActionsCard 
-              onAction={handleAction} 
-              loanId="LOAN123" 
-              paymentDue={25000} 
-            />
-          </div>
-          
-          <QuickAccessCard onAction={handleAction} />
-          
-          <FinancialOverview />
-          
-          <TransactionList 
-            transactions={transactions.map(tx => ({
-              id: tx.id,
-              name: tx.name,
-              type: tx.type,
-              amount: tx.amount.toString(),
-              date: new Date(tx.date).toLocaleDateString(),
-              avatar: tx.avatar_url
-            }))}
-            isLoading={transactionsLoading}
-            onViewAll={() => handleAction('Loans')}
+      <Routes>
+        <Route path="welcome" element={<WelcomeScreen />} />
+        <Route path="main" element={
+          <MainDashboard 
+            onAction={handleAction}
+            account={account}
+            transactions={transactions}
+            transactionsLoading={transactionsLoading}
+            toggleMenu={toggleMenu}
           />
-        </TabsContent>
-        
-        <TabsContent value="payment" className="space-y-4 mt-0">
+        } />
+        <Route path="payment" element={
           <PaymentTabContent 
-            onBack={() => setActiveTab('main')} 
+            onBack={() => navigate('/mobile-flow/main')} 
             onSubmit={handlePaymentSubmit}
           />
-        </TabsContent>
-
-        <TabsContent value="secure-payment" className="space-y-4 mt-0">
-          <SecurePaymentTab onBack={() => setActiveTab('main')} />
-        </TabsContent>
-        
-        <TabsContent value="schedule-transfer" className="space-y-4 mt-0">
-          <ScheduleTransferTab onBack={() => setActiveTab('main')} />
-        </TabsContent>
-        
-        <TabsContent value="home-loan" className="space-y-4 mt-0 p-0 h-screen">
-          <HomeLoanPage />
-        </TabsContent>
-        
-        <TabsContent value="loan-activity" className="space-y-4 mt-0 p-0">
-          <LoanActivityPage />
-        </TabsContent>
-        
-        <TabsContent value="loan-details" className="space-y-4 mt-0 p-0">
-          <LoanDetailsPage onBack={() => setActiveTab('home-loan')} />
-        </TabsContent>
-        
-        <TabsContent value="loan-setup" className="space-y-4 mt-0 p-0">
-          <LoanSetupPage />
-        </TabsContent>
-
-        <TabsContent value="loan-disbursement" className="space-y-4 mt-0 p-0 h-screen">
-          <LoanDisbursementPage />
-        </TabsContent>
-
-        <TabsContent value="loan-agreement" className="space-y-4 mt-0 p-0 h-screen">
-          <LoanAgreementPage />
-        </TabsContent>
-
-        <TabsContent value="payment-options" className="space-y-4 mt-0 p-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mb-4" 
-            onClick={() => setActiveTab('main')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" /> Retour
-          </Button>
-          <PaymentOptions />
-        </TabsContent>
-
-        <TabsContent value="late-payments" className="space-y-4 mt-0 p-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mb-4" 
-            onClick={() => setActiveTab('main')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" /> Retour
-          </Button>
-          <LatePaymentAlerts />
-        </TabsContent>
-
-        <TabsContent value="loan-application" className="space-y-4 mt-0 p-0">
-          <div className="bg-white py-2">
+        } />
+        <Route path="secure-payment" element={
+          <SecurePaymentTab onBack={() => navigate('/mobile-flow/main')} />
+        } />
+        <Route path="schedule-transfer" element={
+          <ScheduleTransferTab onBack={() => navigate('/mobile-flow/main')} />
+        } />
+        <Route path="home-loan" element={<HomeLoanPage />} />
+        <Route path="loan-activity" element={<LoanActivityPage />} />
+        <Route path="loan-details" element={
+          <LoanDetailsPage onBack={() => navigate('/mobile-flow/home-loan')} />
+        } />
+        <Route path="loan-setup" element={<LoanSetupPage />} />
+        <Route path="loan-disbursement" element={<LoanDisbursementPage />} />
+        <Route path="loan-agreement" element={<LoanAgreementPage />} />
+        <Route path="payment-options" element={
+          <div className="p-4">
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="sm" 
-              className="ml-4" 
-              onClick={() => setActiveTab('main')}
+              className="mb-4" 
+              onClick={() => navigate('/mobile-flow/main')}
             >
               <ArrowLeft className="h-4 w-4 mr-1" /> Retour
             </Button>
+            <PaymentOptions />
           </div>
-          <LoanApplicationFlow />
-        </TabsContent>
-
-        <TabsContent value="multi-sfd" className="space-y-4 mt-0 p-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mb-4" 
-            onClick={() => setActiveTab('main')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" /> Retour
-          </Button>
-          <MultiSFDAccounts />
-        </TabsContent>
-
-        <TabsContent value="secure-layer" className="space-y-4 mt-0 p-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mb-4" 
-            onClick={() => setActiveTab('main')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" /> Retour
-          </Button>
-          <SecurePaymentLayer />
-        </TabsContent>
-
-        <TabsContent value="loan-process" className="space-y-4 mt-0 p-0">
-          <LoanProcessFlow onBack={() => setActiveTab('main')} />
-        </TabsContent>
-      </Tabs>
+        } />
+        <Route path="late-payments" element={
+          <div className="p-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mb-4" 
+              onClick={() => navigate('/mobile-flow/main')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+            </Button>
+            <LatePaymentAlerts />
+          </div>
+        } />
+        <Route path="loan-application" element={
+          <div>
+            <div className="bg-white py-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="ml-4" 
+                onClick={() => navigate('/mobile-flow/main')}
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+              </Button>
+            </div>
+            <LoanApplicationFlow />
+          </div>
+        } />
+        <Route path="multi-sfd" element={
+          <div className="p-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mb-4" 
+              onClick={() => navigate('/mobile-flow/main')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+            </Button>
+            <MultiSFDAccounts />
+          </div>
+        } />
+        <Route path="secure-layer" element={
+          <div className="p-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mb-4" 
+              onClick={() => navigate('/mobile-flow/main')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+            </Button>
+            <SecurePaymentLayer />
+          </div>
+        } />
+        <Route path="loan-process" element={
+          <LoanProcessFlow onBack={() => navigate('/mobile-flow/main')} />
+        } />
+        <Route path="*" element={<Navigate to="/mobile-flow/welcome" replace />} />
+      </Routes>
       
       <MobileNavigation onAction={handleAction} />
     </div>
