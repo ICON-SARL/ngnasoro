@@ -8,6 +8,9 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import MobileFlow from "./pages/MobileFlow";
 import PremiumDashboard from "./pages/PremiumDashboard";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import AgencyDashboard from "./pages/AgencyDashboard";
+import AuthUI from "./components/AuthUI";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +24,9 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/mobile-flow" element={<MobileFlow />} />
           <Route path="/premium-dashboard" element={<PremiumDashboard />} />
+          <Route path="/super-admin" element={<SuperAdminDashboard />} />
+          <Route path="/agency-dashboard" element={<AgencyDashboard />} />
+          <Route path="/auth" element={<AuthUI />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

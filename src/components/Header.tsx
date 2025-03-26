@@ -53,8 +53,14 @@ const Header = () => {
           <Link to="/mobile-flow" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
             App Mobile
           </Link>
-          <Link to="/premium-dashboard" className="hidden md:inline-flex h-9 px-4 py-2 rounded-md bg-[#0D6A51] text-white text-sm font-medium hover:bg-[#0D6A51]/90 transition-colors">
+          <Link to="/premium-dashboard" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
             Tableau de Bord
+          </Link>
+          <Link to="/super-admin" className="hidden md:inline-flex h-9 px-4 py-2 rounded-md bg-[#0D6A51] text-white text-sm font-medium hover:bg-[#0D6A51]/90 transition-colors">
+            Admin
+          </Link>
+          <Link to="/auth" className="hidden md:inline-flex h-9 px-4 py-2 rounded-md bg-[#FFAB2E] text-white text-sm font-medium hover:bg-[#FFAB2E]/90 transition-colors">
+            Connexion
           </Link>
           <button className="md:hidden">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
