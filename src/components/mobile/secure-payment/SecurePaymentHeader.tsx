@@ -13,7 +13,7 @@ export const SecurePaymentHeader: React.FC<SecurePaymentHeaderProps> = ({ onBack
       <Button 
         variant="ghost" 
         size="sm" 
-        className="mb-4" 
+        className="mb-4 text-white" 
         onClick={onBack}
       >
         <ArrowLeft className="h-4 w-4 mr-1" /> Retour
@@ -21,11 +21,11 @@ export const SecurePaymentHeader: React.FC<SecurePaymentHeaderProps> = ({ onBack
       
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
-          <Shield className="h-5 w-5 mr-2 text-[#0D6A51]" />
-          <h2 className="text-lg font-medium">Paiement Sécurisé</h2>
+          <Shield className="h-5 w-5 mr-2 text-lime-300" />
+          <h2 className="text-lg font-medium text-white">Paiement Sécurisé Multi-SFD</h2>
         </div>
-        <Button variant="ghost" size="sm" className="p-1">
-          <Info className="h-4 w-4 text-[#0D6A51]" />
+        <Button variant="ghost" size="sm" className="p-1 text-white">
+          <Info className="h-4 w-4 text-lime-300" />
         </Button>
       </div>
     </>

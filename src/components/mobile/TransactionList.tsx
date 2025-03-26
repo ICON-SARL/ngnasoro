@@ -4,6 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Building } from 'lucide-react';
 
 interface Transaction {
   id: number | string;
@@ -12,6 +14,7 @@ interface Transaction {
   amount: string;
   date: string;
   avatar: string | null;
+  sfdName?: string; // Added SFD information
 }
 
 interface TransactionListProps {
@@ -24,13 +27,13 @@ const TransactionList = ({ transactions, isLoading = false, onViewAll }: Transac
   return (
     <div className="mx-4 mt-3 mb-20">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-medium">Recent Transactions</h3>
+        <h3 className="text-lg font-medium">Transactions Récentes</h3>
         <Button 
           variant="link" 
           className="text-sm text-lime-600 p-0 h-auto"
           onClick={onViewAll}
         >
-          View Loans
+          Voir Prêts
         </Button>
       </div>
       
@@ -70,7 +73,15 @@ const TransactionList = ({ transactions, isLoading = false, onViewAll }: Transac
                   </Avatar>
                   <div>
                     <p className="font-medium">{transaction.name}</p>
-                    <p className="text-xs text-gray-500">{transaction.date}</p>
+                    <div className="flex items-center">
+                      <p className="text-xs text-gray-500 mr-2">{transaction.date}</p>
+                      {transaction.sfdName && (
+                        <Badge variant="outline" className="text-xs px-1 py-0 h-4 flex items-center">
+                          <Building className="h-2 w-2 mr-1" />
+                          {transaction.sfdName}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <p 

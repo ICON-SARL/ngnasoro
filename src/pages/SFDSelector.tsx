@@ -7,7 +7,7 @@ import AuthenticationSystem from '@/components/AuthenticationSystem';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Building, ArrowRight, Shield, Clock } from 'lucide-react';
+import { Building, ArrowRight, Shield, Clock, MapPin, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const SFDSelector = () => {
@@ -43,7 +43,7 @@ const SFDSelector = () => {
           </h1>
           <p className="text-sm text-[#0D6A51] mb-1">MEREF - Système Financier Décentralisé</p>
           
-          <Badge className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">Multi-SFD Platform</Badge>
+          <Badge className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">Plateforme Multi-SFD</Badge>
         </div>
 
         <Card className="max-w-3xl mx-auto">
@@ -64,14 +64,26 @@ const SFDSelector = () => {
               <div className="space-y-6">
                 <GeoAgencySelector onSelectAgency={(agency) => handleSFDSelection(agency.name)} />
                 
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
-                  <h3 className="font-medium flex items-center text-amber-800">
-                    <Clock className="h-4 w-4 mr-2" />
-                    Taux et offres en temps réel
-                  </h3>
-                  <p className="text-sm text-amber-700 mt-1">
-                    Les taux d'intérêt et offres spéciales sont spécifiques à chaque SFD et mis à jour en temps réel.
-                  </p>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="font-medium flex items-center text-blue-800">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Géolocalisation API
+                    </h3>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Recherche dynamique des agences dans un rayon de 50km autour de votre position.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <h3 className="font-medium flex items-center text-amber-800">
+                      <Wifi className="h-4 w-4 mr-2" />
+                      Cache Redis Temps Réel
+                    </h3>
+                    <p className="text-sm text-amber-700 mt-1">
+                      Les taux d'intérêt et offres spéciales sont spécifiques à chaque SFD et mis à jour en temps réel.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -84,6 +96,16 @@ const SFDSelector = () => {
                     Inscription en cours pour <strong>{selectedSFD}</strong>
                   </AlertDescription>
                 </Alert>
+                
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <h3 className="font-medium flex items-center text-green-800">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Enregistrement Biométrique Facial
+                  </h3>
+                  <p className="text-sm text-green-700 mt-1">
+                    Votre identité biométrique sera enregistrée dans la base de données de {selectedSFD} et partageable de manière sécurisée entre SFDs.
+                  </p>
+                </div>
                 
                 <AuthenticationSystem onComplete={handleAuthenticationComplete} />
                 
