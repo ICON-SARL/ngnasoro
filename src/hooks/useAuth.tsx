@@ -13,6 +13,7 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
+  isAdmin: () => boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -136,6 +137,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Helper function to check if user is an admin
+  const isAdmin = () => {
+    if (!user) return false;
+    
+    // Check if email domain is meref-mali.ml (admin domain)
+    return user.email?.endsWith('@meref-mali.ml') || false;
+  };
+
   return (
     <AuthContext.Provider value={{ 
       session, 
@@ -145,7 +154,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setActiveSfdId, 
       signIn, 
       signUp, 
-      signOut 
+      signOut,
+      isAdmin
     }}>
       {children}
     </AuthContext.Provider>

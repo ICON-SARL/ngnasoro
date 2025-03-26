@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
+import { useEffect } from "react";
+import { initializeSupabase } from "./utils/initSupabase";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import MobileFlow from "./pages/MobileFlow";
@@ -20,7 +22,18 @@ import MultiSFDDashboard from "./pages/MultiSFDDashboard";
 import SolvencyEngine from "./pages/SolvencyEngine";
 import LoanSystemPage from "./pages/LoanSystemPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
+
+// Initialize Supabase when the app loads
+initializeSupabase().catch(console.error);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

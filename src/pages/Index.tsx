@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Building, Smartphone, Shield, Users, ArrowRight, CreditCard, BanknoteIcon, BarChart } from 'lucide-react';
+import Header from '@/components/Header';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -30,6 +31,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f8fafc] to-white dark:from-gray-950 dark:to-gray-900">
+      {/* Add Header Component */}
+      <Header />
+      
       {/* Hero Section */}
       <section className="relative pt-20 pb-16 md:pt-32 md:pb-24">
         <div className="absolute inset-0 -z-10 overflow-hidden">
