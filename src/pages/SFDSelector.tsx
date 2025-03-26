@@ -42,44 +42,58 @@ const SFDSelector = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="fixed top-0 left-0 right-0 bg-white p-2 z-10 shadow-sm flex items-center">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      {/* Fixed header with back button */}
+      <div className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-sm p-3 z-10 shadow-sm flex items-center">
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={handleGoBack}
-          className="mr-2"
+          className="mr-2 hover:bg-gray-100"
         >
-          <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+          <ArrowLeft className="h-4 w-4 mr-1" /> 
+          <span className="text-sm">Retour</span>
         </Button>
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={() => navigate('/')}
-          className="ml-auto"
+          className="ml-auto hover:bg-gray-100"
         >
-          <Home className="h-4 w-4 mr-1" /> Accueil
+          <Home className="h-4 w-4 mr-1" /> 
+          <span className="text-sm">Accueil</span>
         </Button>
       </div>
       
-      <div className="container mx-auto pt-14 max-w-xl">
-        <div className="text-center mb-8">
-          <img 
-            src="/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png" 
-            alt="NGNA SÔRÔ! Logo" 
-            className="h-14 mx-auto"
-          />
-          <h1 className="text-xl sm:text-2xl font-bold mt-2">
+      <div className="container mx-auto p-4 pt-20 pb-16 max-w-lg">
+        <div className="text-center mb-6 animate-fade-in">
+          <div className="inline-block p-3 rounded-full bg-white shadow-sm mb-3">
+            <img 
+              src="/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png" 
+              alt="NGNA SÔRÔ! Logo" 
+              className="h-14 w-auto"
+            />
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold">
             <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-[#0D6A51]">SÔRÔ!</span>
           </h1>
-          <p className="text-xs sm:text-sm text-[#0D6A51] mb-1">MEREF - Système Financier Décentralisé</p>
+          <p className="text-xs sm:text-sm text-[#0D6A51]/80 mb-2">MEREF - Système Financier Décentralisé</p>
           
-          <Badge className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">Plateforme Multi-SFD</Badge>
+          <Badge className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 py-0.5">Plateforme Multi-SFD</Badge>
         </div>
 
-        <Card className="w-full mx-auto">
-          <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">
+        {/* Progress indicator */}
+        <div className="flex justify-center items-center mb-6">
+          <div className={`h-2 w-2 rounded-full ${currentStep === 'selection' ? 'bg-[#0D6A51]' : 'bg-gray-300'} mr-1`}></div>
+          <div className={`h-0.5 w-6 ${currentStep !== 'selection' ? 'bg-[#0D6A51]' : 'bg-gray-300'}`}></div>
+          <div className={`h-2 w-2 rounded-full ${currentStep === 'authentication' ? 'bg-[#0D6A51]' : 'bg-gray-300'} mr-1`}></div>
+          <div className={`h-0.5 w-6 ${currentStep === 'confirmation' ? 'bg-[#0D6A51]' : 'bg-gray-300'}`}></div>
+          <div className={`h-2 w-2 rounded-full ${currentStep === 'confirmation' ? 'bg-[#0D6A51]' : 'bg-gray-300'}`}></div>
+        </div>
+
+        <Card className="w-full mx-auto border-none shadow-lg rounded-xl overflow-hidden animate-scale-in">
+          <CardHeader className="bg-gradient-to-r from-[#0D6A51]/5 to-[#FFAB2E]/5 pb-4">
+            <CardTitle className="text-lg sm:text-xl text-[#0D6A51]">
               {currentStep === 'selection' && "Sélectionnez votre SFD"}
               {currentStep === 'authentication' && "Vérification d'identité"}
               {currentStep === 'confirmation' && "Confirmation d'inscription"}
@@ -90,13 +104,13 @@ const SFDSelector = () => {
               {currentStep === 'confirmation' && "Vérifiez les détails de votre sélection avant de continuer"}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
             {currentStep === 'selection' && (
               <div className="space-y-6">
                 <GeoAgencySelector onSelectAgency={(agency) => handleSFDSelection(agency.name)} />
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                  <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 transition-transform hover:scale-102 hover:shadow-sm">
                     <h3 className="font-medium flex items-center text-blue-800">
                       <MapPin className="h-4 w-4 mr-2" />
                       Géolocalisation API
@@ -106,7 +120,7 @@ const SFDSelector = () => {
                     </p>
                   </div>
                   
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 transition-transform hover:scale-102 hover:shadow-sm">
                     <h3 className="font-medium flex items-center text-amber-800">
                       <Wifi className="h-4 w-4 mr-2" />
                       Cache Redis Temps Réel
@@ -121,14 +135,14 @@ const SFDSelector = () => {
             
             {currentStep === 'authentication' && (
               <div className="space-y-6">
-                <Alert className="mb-4">
+                <Alert className="mb-4 bg-[#0D6A51]/5 border-[#0D6A51]/20 text-[#0D6A51]">
                   <Building className="h-4 w-4 mr-2" />
                   <AlertDescription>
                     Inscription en cours pour <strong>{selectedSFD}</strong>
                   </AlertDescription>
                 </Alert>
                 
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div className="bg-green-50 border border-green-100 rounded-lg p-4 mb-4">
                   <h3 className="font-medium flex items-center text-green-800">
                     <Shield className="h-4 w-4 mr-2" />
                     Enregistrement Biométrique Facial
@@ -141,7 +155,8 @@ const SFDSelector = () => {
                 <AuthenticationSystem onComplete={handleAuthenticationComplete} />
                 
                 <div className="flex justify-between mt-6">
-                  <Button variant="outline" onClick={() => setCurrentStep('selection')}>
+                  <Button variant="outline" onClick={() => setCurrentStep('selection')} 
+                    className="hover:bg-gray-50 transition-colors">
                     Retour
                   </Button>
                 </div>
@@ -150,7 +165,7 @@ const SFDSelector = () => {
             
             {currentStep === 'confirmation' && (
               <div className="space-y-6">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="bg-green-50 border border-green-100 rounded-lg p-4">
                   <h3 className="font-medium flex items-center text-green-800">
                     <Shield className="h-4 w-4 mr-2" />
                     Inscription validée
@@ -160,33 +175,35 @@ const SFDSelector = () => {
                   </p>
                 </div>
                 
-                <div className="border rounded-lg p-4 mt-4">
-                  <h3 className="font-medium">Détails de votre compte</h3>
-                  <div className="mt-2 space-y-2">
-                    <div className="flex justify-between">
+                <div className="border rounded-lg p-4 mt-4 bg-white shadow-sm">
+                  <h3 className="font-medium text-[#0D6A51]">Détails de votre compte</h3>
+                  <div className="mt-2 space-y-3">
+                    <div className="flex justify-between items-center py-1.5 border-b border-gray-100">
                       <span className="text-sm text-muted-foreground">Institution</span>
                       <span className="font-medium">{selectedSFD}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center py-1.5 border-b border-gray-100">
                       <span className="text-sm text-muted-foreground">Type de compte</span>
                       <span className="font-medium">Compte d'épargne</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center py-1.5 border-b border-gray-100">
                       <span className="text-sm text-muted-foreground">Taux d'épargne</span>
-                      <span className="font-medium">3.5%</span>
+                      <span className="font-medium text-green-600">3.5%</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center py-1.5">
                       <span className="text-sm text-muted-foreground">Frais mensuels</span>
-                      <span className="font-medium">0 FCFA</span>
+                      <span className="font-medium text-green-600">0 FCFA</span>
                     </div>
                   </div>
                 </div>
                 
                 <div className="flex justify-between mt-6">
-                  <Button variant="outline" onClick={() => setCurrentStep('authentication')}>
+                  <Button variant="outline" onClick={() => setCurrentStep('authentication')}
+                    className="hover:bg-gray-50 transition-colors">
                     Retour
                   </Button>
-                  <Button onClick={handleConfirmSelection} className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">
+                  <Button onClick={handleConfirmSelection} 
+                    className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white shadow-md hover:shadow-lg transition-all">
                     Finaliser l'inscription
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
