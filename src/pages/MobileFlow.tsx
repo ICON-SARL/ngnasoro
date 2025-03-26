@@ -30,6 +30,8 @@ import MultiSFDAccounts from '@/components/MultiSFDAccounts';
 import { SecurePaymentLayer } from '@/components/SecurePaymentLayer';
 import FinancialSnapshot from '@/components/mobile/FinancialSnapshot';
 import QuickActionsCard from '@/components/mobile/QuickActionsCard';
+import RealTimeSavingsWidget from '@/components/RealTimeSavingsWidget';
+import SFDSavingsOverview from '@/components/mobile/SFDSavingsOverview';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useAccount } from '@/hooks/useAccount';
@@ -55,10 +57,10 @@ import {
 // Main Dashboard Component
 const MainDashboard = ({ onAction, account, transactions, transactionsLoading, toggleMenu }) => {
   return (
-    <div className="space-y-4 mt-0 p-0">
-      <div className="bg-blue-600 text-white p-4 rounded-b-3xl relative">
+    <div className="space-y-4 mt-0 p-0 pb-20">
+      <div className="bg-gradient-to-b from-[#0D6A51] to-[#0D6A51]/90 text-white p-4 rounded-b-3xl relative">
         <div className="absolute top-4 right-4">
-          <Button variant="ghost" size="sm" className="text-white p-1" onClick={toggleMenu}>
+          <Button variant="ghost" size="sm" className="text-white p-1 hover:bg-white/10" onClick={toggleMenu}>
             <Menu className="h-5 w-5" />
           </Button>
         </div>
@@ -84,6 +86,11 @@ const MainDashboard = ({ onAction, account, transactions, transactionsLoading, t
           loanId="LOAN123" 
           paymentDue={25000} 
         />
+      </div>
+      
+      {/* New SFD Savings Overview Component */}
+      <div className="mx-4">
+        <SFDSavingsOverview />
       </div>
       
       <QuickAccessCard onAction={onAction} />

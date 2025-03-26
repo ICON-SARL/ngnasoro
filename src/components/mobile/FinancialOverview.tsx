@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowUpRight, ArrowDownRight, Building } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Building, BarChart3 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 
@@ -55,9 +55,10 @@ const FinancialOverview = () => {
           </div>
           
           <button 
-            className="mt-3 w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white py-2 rounded-xl font-medium transition-colors"
+            className="mt-3 w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white py-2 rounded-xl font-medium transition-colors flex items-center justify-center"
             onClick={() => navigate('/solvency-engine')}
           >
+            <BarChart3 className="h-4 w-4 mr-2" />
             Analyser maintenant
           </button>
         </CardContent>
