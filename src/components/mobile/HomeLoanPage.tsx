@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, DollarSign, Wallet, Clock, ArrowRight, User, Bell, ActivitySquare, ExternalLink, CheckCircle } from 'lucide-react';
+import { ChevronLeft, DollarSign, Wallet, Clock, ArrowRight, User, Bell, ActivitySquare, ExternalLink, CheckCircle, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
