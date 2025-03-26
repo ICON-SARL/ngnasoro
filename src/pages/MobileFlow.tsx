@@ -16,8 +16,7 @@ import {
   Settings,
   Bitcoin,
   CircleDollarSign,
-  Plus,
-  Phone as Smartphone // Added Phone icon as a replacement for Smartphone
+  Plus
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
