@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MobileNavigation from '@/components/MobileNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -16,7 +15,8 @@ import {
   Settings,
   Bitcoin,
   CircleDollarSign,
-  Plus
+  Plus,
+  Phone
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
@@ -68,7 +68,6 @@ const MobileFlow = () => {
       description: `Vous avez choisi de ${action.toLowerCase()}`,
     });
     
-    // Switch to the corresponding tab when action is clicked
     if (action === 'Déposer' || action === 'Retirer' || action === 'Transférer') {
       setActiveTab('payment');
     }
@@ -77,7 +76,6 @@ const MobileFlow = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto pt-4 px-4 pb-20">
-        {/* Header with user info */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 border-2 border-[#0D6A51]">
@@ -95,7 +93,6 @@ const MobileFlow = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="main" className="space-y-4 mt-0">
-            {/* Main balance card */}
             <Card className="border-0 shadow-sm">
               <CardContent className="p-5">
                 <p className="text-sm text-gray-600 mb-1">Solde total</p>
@@ -129,7 +126,6 @@ const MobileFlow = () => {
               </CardContent>
             </Card>
 
-            {/* Transactions section */}
             <div className="bg-white rounded-lg shadow-sm p-4 border-0">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="font-medium">Transactions</h2>
@@ -166,7 +162,6 @@ const MobileFlow = () => {
               </div>
             </div>
 
-            {/* Goals section */}
             <div className="grid grid-cols-2 gap-4">
               <Card className="border shadow-sm">
                 <CardContent className="p-4">
@@ -192,7 +187,6 @@ const MobileFlow = () => {
           </TabsContent>
           
           <TabsContent value="payment" className="space-y-4 mt-0">
-            {/* Payment Tab Content */}
             <div className="bg-white rounded-lg shadow-sm p-4">
               <Button 
                 variant="outline" 
@@ -204,7 +198,6 @@ const MobileFlow = () => {
               </Button>
               <h2 className="text-lg font-medium mb-4">Options de paiement</h2>
               
-              {/* Reuse the SecurePaymentLayer component */}
               <div className="bg-white p-4 rounded-lg">
                 <h3 className="text-md font-medium mb-4">Choisissez votre méthode</h3>
                 <div className="space-y-3">
@@ -213,7 +206,7 @@ const MobileFlow = () => {
                     Compte SFD
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
-                    <Smartphone className="mr-2 h-4 w-4" />
+                    <Phone className="mr-2 h-4 w-4" />
                     Mobile Money
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
