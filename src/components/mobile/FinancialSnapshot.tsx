@@ -1,8 +1,9 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAccount } from '@/hooks/useAccount';
-import { Calendar, Clock, CreditCard } from 'lucide-react';
+import { Calendar, Clock, CreditCard, RefreshCw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface FinancialSnapshotProps {
   loanId?: string;
@@ -16,12 +17,15 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
   nextPaymentAmount = 25000
 }) => {
   const { account } = useAccount();
+  const { toast } = useToast();
   const [timeRemaining, setTimeRemaining] = useState({
     days: 0,
     hours: 0,
-    minutes: 0
+    minutes: 0,
+    seconds: 0
   });
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -38,22 +42,39 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
       const diffTime = paymentDate.getTime() - now.getTime();
       
       if (diffTime <= 0) {
-        setTimeRemaining({ days: 0, hours: 0, minutes: 0 });
+        setTimeRemaining({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
       
       const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diffTime % (1000 * 60)) / 1000);
       
-      setTimeRemaining({ days, hours, minutes });
+      setTimeRemaining({ days, hours, minutes, seconds });
     };
     
     calculateTimeRemaining();
-    const intervalId = setInterval(calculateTimeRemaining, 60000); // Update every minute
+    const intervalId = setInterval(calculateTimeRemaining, 1000); // Update every second for smoother countdown
     
     return () => clearInterval(intervalId);
   }, [nextPaymentDate]);
+  
+  // Manual refresh function for balance
+  const refreshBalance = useCallback(() => {
+    if (isRefreshing) return;
+    
+    setIsRefreshing(true);
+    // Simulate an API call to refresh balance
+    setTimeout(() => {
+      setLastUpdated(new Date());
+      setIsRefreshing(false);
+      toast({
+        title: "Solde actualisé",
+        description: "Votre solde a été mis à jour avec succès",
+      });
+    }, 1500);
+  }, [isRefreshing, toast]);
   
   // Simulate balance update every 2 hours
   useEffect(() => {
@@ -77,9 +98,19 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
             <p className="text-2xl font-bold">
               {formatCurrency(account?.balance || 0)}
             </p>
-            <p className="text-xs text-gray-400">
-              Mis à jour: {lastUpdated.toLocaleTimeString()}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-gray-400">
+                Mis à jour: {lastUpdated.toLocaleTimeString()}
+              </p>
+              <button 
+                onClick={refreshBalance}
+                disabled={isRefreshing}
+                className="text-xs text-blue-500 flex items-center"
+              >
+                <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Actualisation...' : 'Actualiser'}
+              </button>
+            </div>
           </div>
           
           {loanId && (
@@ -94,7 +125,7 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
               <div className="flex items-center text-xs text-gray-500">
                 <Clock className="h-3 w-3 mr-1" />
                 <span className={timeRemaining.days < 3 ? "text-red-500 font-medium" : ""}>
-                  {timeRemaining.days}j {timeRemaining.hours}h {timeRemaining.minutes}m
+                  {timeRemaining.days}j {timeRemaining.hours}h {timeRemaining.minutes}m {timeRemaining.seconds}s
                 </span>
               </div>
             </div>

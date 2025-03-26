@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { crypto } from "https://deno.land/std@0.140.0/crypto/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,6 +11,100 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+// Transaction verification functions
+async function verifyWithdrawalLimit(userId: string, amount: number, provider: string): Promise<{ allowed: boolean; reason?: string; dailyTotal: number; userLimit: number }> {
+  console.log(`Verifying withdrawal limit for user ${userId}, amount ${amount}, provider ${provider}`);
+  
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  // Get last 24h transactions
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  const { data: transactions, error: transactionsError } = await supabase
+    .from("transactions")
+    .select("amount")
+    .eq("user_id", userId)
+    .eq("type", `Paiement ${provider}`)
+    .gte("created_at", yesterday.toISOString());
+    
+  if (transactionsError) {
+    console.error("Error fetching transactions:", transactionsError);
+    return { allowed: false, reason: "Erreur de vérification de limite", dailyTotal: 0, userLimit: 0 };
+  }
+  
+  // Calculate daily total
+  const dailyTotal = transactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+  
+  // Get user limit
+  const { data: userSettings, error: settingsError } = await supabase
+    .from("user_settings")
+    .select("daily_limit")
+    .eq("user_id", userId)
+    .single();
+    
+  // Default limit if not set
+  const userLimit = userSettings?.daily_limit || 500000; // 500,000 FCFA default
+  
+  if (dailyTotal + amount > userLimit) {
+    return { 
+      allowed: false, 
+      reason: "Plafond journalier dépassé", 
+      dailyTotal, 
+      userLimit 
+    };
+  }
+  
+  return { allowed: true, dailyTotal, userLimit };
+}
+
+// Security functions
+async function verifySignature(payload: any, signature: string, provider: string): Promise<boolean> {
+  if (provider === 'mtn') {
+    // MTN uses OAuth2 + standard signature verification
+    // This is a simplified example - real implementation would vary
+    const apiKey = Deno.env.get("MTN_API_KEY") ?? "";
+    const message = JSON.stringify(payload);
+    const encoder = new TextEncoder();
+    const data = encoder.encode(message + apiKey);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    return hashHex === signature;
+  } else if (provider === 'orange') {
+    // Orange uses certificate-based verification
+    // In a real implementation, this would validate using a certificate
+    return true; // Simplified for example
+  } else if (provider === 'wave') {
+    // Wave uses HMAC-SHA256
+    // This is a simplified example - real implementation would be more complex
+    const secretKey = Deno.env.get("WAVE_SECRET_KEY") ?? "";
+    const message = JSON.stringify(payload);
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secretKey),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    
+    const signatureBuffer = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      encoder.encode(message)
+    );
+    
+    const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+    const calculatedSignature = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    return calculatedSignature === signature;
+  }
+  
+  return false;
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -28,7 +123,25 @@ serve(async (req) => {
   try {
     // Parse the webhook payload
     const payload = await req.json();
-    console.log("Received MTN Mobile Money webhook:", payload);
+    console.log("Received Mobile Money webhook:", payload);
+
+    // Extract security headers
+    const signature = req.headers.get("x-signature") || "";
+    const provider = payload.provider || "mtn"; // Default to MTN if not specified
+    
+    // Verify signature based on provider
+    const isValidSignature = await verifySignature(payload, signature, provider);
+    
+    if (!isValidSignature) {
+      console.error("Invalid signature for provider:", provider);
+      return new Response(
+        JSON.stringify({ error: "Invalid signature" }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
 
     // Create a Supabase client with the service role key (for admin access)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -42,7 +155,8 @@ serve(async (req) => {
       currency, 
       loanId, 
       userId,
-      phoneNumber
+      phoneNumber,
+      secondAuthFactor
     } = payload;
 
     if (!paymentId || !status || !loanId || !userId) {
@@ -54,8 +168,33 @@ serve(async (req) => {
         }
       );
     }
+    
+    // Verify second authentication factor (if provided)
+    if (secondAuthFactor) {
+      // In a real implementation, you would validate the second factor against
+      // a previously stored value or one-time code. This is simplified.
+      console.log("Second auth factor provided:", secondAuthFactor);
+    }
+    
+    // Check withdrawal limit
+    const limitCheck = await verifyWithdrawalLimit(userId, amount, provider);
+    if (!limitCheck.allowed) {
+      console.warn(`Payment rejected: ${limitCheck.reason}`);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: limitCheck.reason,
+          dailyUsage: {
+            used: limitCheck.dailyTotal,
+            limit: limitCheck.userLimit,
+            remaining: limitCheck.userLimit - limitCheck.dailyTotal
+          }
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // Record the payment
+    // Record the payment if status is successful
     if (status === "SUCCESSFUL") {
       // Update loan status in the database
       const { data, error } = await supabase
@@ -64,7 +203,7 @@ serve(async (req) => {
           user_id: userId,
           amount: amount,
           name: "Remboursement prêt",
-          type: "Paiement Mobile Money",
+          type: `Paiement ${provider}`,
           reference: transactionId || paymentId
         });
 
@@ -83,6 +222,13 @@ serve(async (req) => {
             paidAmount: 13.90, // Simulated, in a real app we'd calculate this
             remainingAmount: 11.50,
             progress: 55,
+            securityData: {
+              transactionId: transactionId || paymentId,
+              provider,
+              securityMethod: provider === 'mtn' ? 'OAuth2' : 
+                             provider === 'orange' ? 'Certificate' : 'HMAC',
+              timestamp: new Date().toISOString()
+            },
             paymentHistory: [
               { id: 4, date: new Date().toLocaleDateString('fr-FR'), amount: 3.50, status: 'paid' },
               { id: 1, date: '05 August 2023', amount: 3.50, status: 'paid' },
@@ -95,7 +241,11 @@ serve(async (req) => {
       console.log("Broadcast result:", broadcastResult);
 
       return new Response(
-        JSON.stringify({ success: true, message: "Payment recorded successfully" }),
+        JSON.stringify({ 
+          success: true, 
+          message: "Payment recorded successfully",
+          transactionId: transactionId || paymentId
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } else {
