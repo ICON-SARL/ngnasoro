@@ -1,11 +1,10 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Progress } from './ui/progress';
-import { CheckCircle2, ArrowRight, Landmark, Calendar, CreditCard, User, Home, ShoppingBag, BadgeEuro, ShieldCheck, Wallet } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Landmark, Calendar, CreditCard, User, Home, ShoppingBag, BadgeEuro, ShieldCheck, Wallet, Info } from 'lucide-react';
 import VoiceAssistant from './VoiceAssistant';
 import GeoAgencySelector from './GeoAgencySelector';
 import IconographicUI from './IconographicUI';
@@ -40,7 +39,6 @@ const LoanApplicationFlow = () => {
   const [animateNext, setAnimateNext] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   
-  // Définition des options d'objet de prêt avec icônes et descriptions
   const purposeOptions: PurposeOption[] = [
     { id: 'agriculture', name: 'Agriculture', icon: <ShoppingBag className="h-6 w-6 mb-2 text-green-500" />, description: "Financement agricole" },
     { id: 'commerce', name: 'Commerce', icon: <BadgeEuro className="h-6 w-6 mb-2 text-blue-500" />, description: "Développement commercial" },
@@ -107,7 +105,6 @@ const LoanApplicationFlow = () => {
     }
   };
 
-  // Effet pour faire défiler vers le haut lors du changement d'étape
   useEffect(() => {
     if (contentRef.current) {
       contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
