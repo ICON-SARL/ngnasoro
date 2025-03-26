@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Home, Wallet, User, Plus, Activity } from 'lucide-react';
+import { Home, Wallet, User, Plus, Activity, CreditCard } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavigationItem {
@@ -11,40 +11,51 @@ interface NavigationItem {
   action: () => void;
 }
 
-const MobileNavigation = () => {
+interface MobileNavigationProps {
+  onAction?: (action: string) => void;
+}
+
+const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('home');
+
+  const handleNavItemClick = (value: string, action: string) => {
+    setActiveTab(value);
+    if (onAction) {
+      onAction(action);
+    }
+  };
 
   const navigationItems: NavigationItem[] = [
     {
       icon: <Home className="h-6 w-6" />,
       label: "Accueil",
       value: 'home',
-      action: () => setActiveTab('home')
+      action: () => handleNavItemClick('home', 'Home')
     },
     {
-      icon: <Activity className="h-6 w-6" />,
-      label: "Activité",
-      value: 'activity',
-      action: () => setActiveTab('activity')
+      icon: <CreditCard className="h-6 w-6" />,
+      label: "Prêts",
+      value: 'loans',
+      action: () => handleNavItemClick('loans', 'Loans')
     },
     {
       icon: null,
       label: "",
       value: 'action',
-      action: () => console.log('Action button')
+      action: () => handleNavItemClick('action', 'Loan Activity')
     },
     {
       icon: <Wallet className="h-6 w-6" />,
-      label: "Cartes",
+      label: "Paiements",
       value: 'cards',
-      action: () => setActiveTab('cards')
+      action: () => handleNavItemClick('cards', 'Loan Details')
     },
     {
       icon: <User className="h-6 w-6" />,
       label: "Profil",
       value: 'profile',
-      action: () => setActiveTab('profile')
+      action: () => handleNavItemClick('profile', 'Loan Setup')
     }
   ];
 
@@ -59,7 +70,7 @@ const MobileNavigation = () => {
             return (
               <div key={index} className="relative -top-5">
                 <button 
-                  className="bg-black text-white p-4 rounded-full shadow-lg"
+                  className="bg-green-900 text-white p-4 rounded-full shadow-lg"
                   onClick={item.action}
                 >
                   <Plus className="h-6 w-6" />
@@ -74,7 +85,7 @@ const MobileNavigation = () => {
               key={index}
               className={`flex flex-col items-center justify-center py-3 px-3 ${
                 activeTab === item.value 
-                  ? 'text-black' 
+                  ? 'text-green-900' 
                   : 'text-gray-400'
               }`}
               onClick={item.action}

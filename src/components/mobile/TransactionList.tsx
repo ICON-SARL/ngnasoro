@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 
 interface Transaction {
   id: number | string;
@@ -16,14 +17,21 @@ interface Transaction {
 interface TransactionListProps {
   transactions: Transaction[];
   isLoading?: boolean;
+  onViewAll?: () => void;
 }
 
-const TransactionList = ({ transactions, isLoading = false }: TransactionListProps) => {
+const TransactionList = ({ transactions, isLoading = false, onViewAll }: TransactionListProps) => {
   return (
     <div className="mx-4 mt-3 mb-20">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-medium">Recent Transactions</h3>
-        <button className="text-sm text-blue-600">See All</button>
+        <Button 
+          variant="link" 
+          className="text-sm text-blue-600 p-0 h-auto"
+          onClick={onViewAll}
+        >
+          View Loans
+        </Button>
       </div>
       
       <Card className="border-0 shadow-sm bg-white rounded-2xl overflow-hidden">

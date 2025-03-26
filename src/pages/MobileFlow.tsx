@@ -14,6 +14,11 @@ import TransactionList from '@/components/mobile/TransactionList';
 import PaymentTabContent from '@/components/mobile/PaymentTabContent';
 import SecurePaymentTab from '@/components/mobile/SecurePaymentTab';
 import ScheduleTransferTab from '@/components/mobile/ScheduleTransferTab';
+import HomeLoanPage from '@/components/mobile/HomeLoanPage';
+import LoanActivityPage from '@/components/mobile/LoanActivityPage';
+import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
+import LoanSetupPage from '@/components/mobile/LoanSetupPage';
+
 import { useAuth } from '@/hooks/useAuth';
 import { useAccount } from '@/hooks/useAccount';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -50,6 +55,14 @@ const MobileFlow = () => {
       setActiveTab('schedule-transfer');
     } else if (action.startsWith('Transfer to')) {
       setActiveTab('payment');
+    } else if (action === 'Loans') {
+      setActiveTab('home-loan');
+    } else if (action === 'Loan Activity') {
+      setActiveTab('loan-activity');
+    } else if (action === 'Loan Details') {
+      setActiveTab('loan-details');
+    } else if (action === 'Loan Setup') {
+      setActiveTab('loan-setup');
     }
   };
 
@@ -110,6 +123,7 @@ const MobileFlow = () => {
               avatar: tx.avatar_url
             }))}
             isLoading={transactionsLoading}
+            onViewAll={() => handleAction('Loans')}
           />
         </TabsContent>
           
@@ -127,9 +141,25 @@ const MobileFlow = () => {
         <TabsContent value="schedule-transfer" className="space-y-4 mt-0">
           <ScheduleTransferTab onBack={() => setActiveTab('main')} />
         </TabsContent>
+        
+        <TabsContent value="home-loan" className="space-y-4 mt-0 p-0">
+          <HomeLoanPage />
+        </TabsContent>
+        
+        <TabsContent value="loan-activity" className="space-y-4 mt-0 p-0">
+          <LoanActivityPage />
+        </TabsContent>
+        
+        <TabsContent value="loan-details" className="space-y-4 mt-0 p-0">
+          <LoanDetailsPage onBack={() => setActiveTab('home-loan')} />
+        </TabsContent>
+        
+        <TabsContent value="loan-setup" className="space-y-4 mt-0 p-0">
+          <LoanSetupPage />
+        </TabsContent>
       </Tabs>
       
-      <MobileNavigation />
+      <MobileNavigation onAction={handleAction} />
     </div>
   );
 };

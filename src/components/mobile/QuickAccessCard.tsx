@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
-import { Calendar, Plus } from 'lucide-react';
+import { Calendar, Plus, CreditCard, Wallet } from 'lucide-react';
 
 interface QuickAccessCardProps {
   onAction: (action: string) => void;
@@ -56,12 +56,22 @@ const QuickAccessCard = ({ onAction }: QuickAccessCardProps) => {
             </div>
           </div>
           
-          <div 
-            className="flex flex-col items-center p-4 rounded-xl bg-blue-50 mb-4"
-            onClick={() => onAction('Schedule transfer')}
-          >
-            <Calendar className="text-blue-600 mb-2 h-6 w-6" />
-            <p className="text-blue-600 font-medium">Schedule transfer</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div 
+              className="flex flex-col items-center p-4 rounded-xl bg-blue-50 cursor-pointer"
+              onClick={() => onAction('Schedule transfer')}
+            >
+              <Calendar className="text-blue-600 mb-2 h-6 w-6" />
+              <p className="text-blue-600 font-medium">Schedule transfer</p>
+            </div>
+            
+            <div 
+              className="flex flex-col items-center p-4 rounded-xl bg-green-50 cursor-pointer"
+              onClick={() => onAction('Loans')}
+            >
+              <CreditCard className="text-green-600 mb-2 h-6 w-6" />
+              <p className="text-green-600 font-medium">View Loans</p>
+            </div>
           </div>
         </CardContent>
       </Card>
