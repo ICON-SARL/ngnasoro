@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -26,7 +27,7 @@ const Header = () => {
           <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-white font-medium">
             S
           </div>
-          <span className="font-medium text-lg">SecureFlux</span>
+          <Link to="/" className="font-medium text-lg">SecureFlux</Link>
         </div>
         
         <nav className="hidden md:flex space-x-8">
@@ -45,9 +46,12 @@ const Header = () => {
         </nav>
         
         <div className="flex items-center space-x-4">
-          <button className="hidden md:inline-flex h-9 px-4 py-2 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors">
-            Get Started
-          </button>
+          <Link to="/mobile-flow" className="text-sm font-medium hover:text-primary transition-colors">
+            Mobile Flow
+          </Link>
+          <Link to="/premium-dashboard" className="hidden md:inline-flex h-9 px-4 py-2 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors">
+            Dashboard
+          </Link>
           <button className="md:hidden">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
