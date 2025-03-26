@@ -11,6 +11,7 @@ import QuickAccessCard from '@/components/mobile/QuickAccessCard';
 import FinancialOverview from '@/components/mobile/FinancialOverview';
 import TransactionList from '@/components/mobile/TransactionList';
 import PaymentTabContent from '@/components/mobile/PaymentTabContent';
+import SecurePaymentTab from '@/components/mobile/SecurePaymentTab';
 
 const MobileFlow = () => {
   const isMobile = useIsMobile();
@@ -60,7 +61,11 @@ const MobileFlow = () => {
     });
     
     // Switch to the corresponding tab when action is clicked
-    if (action === 'Déposer' || action === 'Retirer' || action === 'Transférer') {
+    if (action === 'Déposer' || action === 'Retirer') {
+      setActiveTab('payment');
+    } else if (action === 'Float me cash') {
+      setActiveTab('secure-payment');
+    } else if (action === 'Transférer') {
       setActiveTab('payment');
     }
   };
@@ -87,6 +92,10 @@ const MobileFlow = () => {
           
         <TabsContent value="payment" className="space-y-4 mt-0">
           <PaymentTabContent onBack={() => setActiveTab('main')} />
+        </TabsContent>
+
+        <TabsContent value="secure-payment" className="space-y-4 mt-0">
+          <SecurePaymentTab onBack={() => setActiveTab('main')} />
         </TabsContent>
       </Tabs>
       
