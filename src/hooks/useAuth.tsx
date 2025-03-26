@@ -8,6 +8,8 @@ type AuthContextType = {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  activeSfdId: string | null;
+  setActiveSfdId: (sfdId: string) => void;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -19,7 +21,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Initialize activeSfdId from localStorage if available
+  useEffect(() => {
+    const storedSfdId = localStorage.getItem('activeSfdId');
+    if (storedSfdId) {
+      setActiveSfdId(storedSfdId);
+    }
+  }, []);
+
+  // Store activeSfdId in localStorage whenever it changes
+  useEffect(() => {
+    if (activeSfdId) {
+      localStorage.setItem('activeSfdId', activeSfdId);
+    }
+  }, [activeSfdId]);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -101,6 +119,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setLoading(true);
       await supabase.auth.signOut();
+      // Clear the active SFD ID when signing out
+      setActiveSfdId(null);
+      localStorage.removeItem('activeSfdId');
       toast({
         title: "Déconnexion réussie",
       });
@@ -116,7 +137,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ 
+      session, 
+      user, 
+      loading, 
+      activeSfdId, 
+      setActiveSfdId, 
+      signIn, 
+      signUp, 
+      signOut 
+    }}>
       {children}
     </AuthContext.Provider>
   );

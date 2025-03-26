@@ -1,19 +1,26 @@
 
 import React from 'react';
 import { Avatar } from '@/components/ui/avatar';
-import { Bell, User, BarChart3, Building } from 'lucide-react';
+import { Bell, User, BarChart3, Building, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const MobileHeader = () => {
   const { user } = useAuth();
+  const { sfdData, activeSfdId, switchActiveSfd } = useSfdDataAccess();
   const navigate = useNavigate();
-  const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Utilisateur';
   
-  // On pourrait stocker l'institution SFD active dans le localStorage ou dans le profil utilisateur
-  const activeSFD = localStorage.getItem('activeSFD') || 'Microfinance Bamako';
+  const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Utilisateur';
+  const activeSFD = sfdData.find(sfd => sfd.id === activeSfdId)?.name || 'SFD non sélectionnée';
 
   return (
     <div className="flex justify-between items-center mb-3">
@@ -25,10 +32,27 @@ const MobileHeader = () => {
           <h1 className="text-xl font-bold text-white">InstingLoan</h1>
           <div className="flex items-center">
             <p className="text-xs text-white/70">Multi-SFD Platform</p>
-            <Badge className="ml-1 bg-white/20 text-white text-[0.6rem] py-0 h-4">
-              <Building className="h-2 w-2 mr-1" />
-              {activeSFD}
-            </Badge>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Badge className="ml-1 bg-white/20 text-white text-[0.6rem] py-0 h-4 cursor-pointer hover:bg-white/30">
+                  <Building className="h-2 w-2 mr-1" />
+                  {activeSFD}
+                  <ChevronDown className="h-2 w-2 ml-1" />
+                </Badge>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {sfdData.map((sfd) => (
+                  <DropdownMenuItem 
+                    key={sfd.id}
+                    className={sfd.id === activeSfdId ? "bg-lime-50" : ""}
+                    onClick={() => switchActiveSfd(sfd.id)}
+                  >
+                    <Building className="h-4 w-4 mr-2 text-lime-600" />
+                    {sfd.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
