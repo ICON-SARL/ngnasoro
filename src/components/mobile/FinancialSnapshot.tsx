@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAccount } from '@/hooks/useAccount';
@@ -93,7 +92,7 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
           <div className="space-y-2">
             <h3 className="text-sm text-gray-500 flex items-center">
               <CreditCard className="h-4 w-4 mr-1 text-[#0D6A51]" />
-              Montant du prêt disponible
+              Solde disponible
             </h3>
             <p className="text-2xl font-bold">
               {formatCurrency(account?.balance || 0)}
