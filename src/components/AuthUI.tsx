@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import { AuthenticationSystem } from '@/components/AuthenticationSystem';
+import AuthenticationSystem from '@/components/AuthenticationSystem';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Phone, Lock, Mail, User, RefreshCw } from 'lucide-react';
 
