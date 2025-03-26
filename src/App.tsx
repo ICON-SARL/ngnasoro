@@ -13,6 +13,7 @@ import AgencyDashboard from "./pages/AgencyDashboard";
 import AuthUI from "./components/AuthUI";
 import KYCVerification from "./pages/KYCVerification";
 import SupportPage from "./pages/SupportPage";
+import InfrastructurePage from "./pages/InfrastructurePage";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/auth" element={<AuthUI />} />
           <Route path="/kyc" element={<KYCVerification />} />
           <Route path="/support" element={<SupportPage />} />
+          <Route path="/infrastructure" element={<InfrastructurePage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

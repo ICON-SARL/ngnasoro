@@ -2,7 +2,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
-import { BellRing, File, Users, AlertTriangle, MonitorSmartphone, BarChart, UserCog, Database, MessageCircle } from 'lucide-react';
+import { BellRing, File, Users, AlertTriangle, MonitorSmartphone, BarChart, UserCog, Database, MessageCircle, Server } from 'lucide-react';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { AgencyOnboarding } from '@/components/AgencyOnboarding';
 import { TransactionMonitoring } from '@/components/TransactionMonitoring';
@@ -10,6 +10,7 @@ import { ReportGenerator } from '@/components/ReportGenerator';
 import { FraudAlerts } from '@/components/FraudAlerts';
 import { Link } from 'react-router-dom';
 import SupportSystem from '@/components/SupportSystem';
+import InfrastructureMonitoring from '@/components/InfrastructureMonitoring';
 
 const SuperAdminDashboard = () => {
   return (
@@ -94,6 +95,10 @@ const SuperAdminDashboard = () => {
               <MessageCircle className="h-4 w-4 mr-2" />
               Support
             </TabsTrigger>
+            <TabsTrigger value="infrastructure" className="data-[state=active]:bg-[#FFAB2E]/10 data-[state=active]:text-[#FFAB2E]">
+              <Server className="h-4 w-4 mr-2" />
+              Infrastructure
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="agencies" className="bg-white p-6 rounded-lg shadow border border-gray-100">
@@ -123,6 +128,17 @@ const SuperAdminDashboard = () => {
               </Link>
             </div>
             <SupportSystem />
+          </TabsContent>
+          
+          <TabsContent value="infrastructure" className="bg-white p-6 rounded-lg shadow border border-gray-100">
+            <div className="mb-4 flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Infrastructure Cloud</h2>
+              <Button>
+                <Server className="h-4 w-4 mr-2" />
+                Configurer
+              </Button>
+            </div>
+            <InfrastructureMonitoring />
           </TabsContent>
         </Tabs>
       </div>
