@@ -26,6 +26,8 @@ import { LatePaymentAlerts } from '@/components/LatePaymentAlerts';
 import LoanApplicationFlow from '@/components/LoanApplicationFlow';
 import MultiSFDAccounts from '@/components/MultiSFDAccounts';
 import { SecurePaymentLayer } from '@/components/SecurePaymentLayer';
+import FinancialSnapshot from '@/components/mobile/FinancialSnapshot';
+import QuickActionsCard from '@/components/mobile/QuickActionsCard';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useAccount } from '@/hooks/useAccount';
@@ -65,7 +67,7 @@ const MobileFlow = () => {
     }
   }, [user, loading, navigate]);
 
-  const handleAction = async (action: string) => {
+  const handleAction = async (action: string, data?: any) => {
     toast({
       title: `Action ${action}`,
       description: `Vous avez choisi de ${action.toLowerCase()}`,
@@ -92,7 +94,7 @@ const MobileFlow = () => {
     } else if (action === 'Late Payments') {
       setActiveTab('late-payments');
     } else if (action === 'Loan Application') {
-      setActiveTab('loan-agreement');
+      setActiveTab('loan-application');
     } else if (action === 'Multi SFD') {
       setActiveTab('multi-sfd');
     } else if (action === 'Secure Layer') {
@@ -101,6 +103,11 @@ const MobileFlow = () => {
       setActiveTab('loan-process');
     } else if (action === 'Start') {
       setActiveTab('home-loan');
+    } else if (action === 'Repayment') {
+      setActiveTab('payment');
+      if (data && data.amount) {
+        // You would handle setting repayment amount here
+      }
     }
   };
 
@@ -229,6 +236,22 @@ const MobileFlow = () => {
             </div>
             <MobileHeader />
             <BalanceSection currency={account?.currency || 'FCFA'} balance={account?.balance || 0} />
+          </div>
+          
+          <div className="mx-4 -mt-10">
+            <FinancialSnapshot 
+              loanId="LOAN123" 
+              nextPaymentDate="2023-07-15" 
+              nextPaymentAmount={25000} 
+            />
+          </div>
+          
+          <div className="mx-4">
+            <QuickActionsCard 
+              onAction={handleAction} 
+              loanId="LOAN123" 
+              paymentDue={25000} 
+            />
           </div>
           
           <QuickAccessCard onAction={handleAction} />
