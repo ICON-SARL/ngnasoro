@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, DollarSign, CreditCard, Calendar, Clock, MoreHorizontal, QrCode, Smartphone, Download, Building, Cash } from 'lucide-react';
+import { ArrowLeft, DollarSign, CreditCard, Calendar, Clock, MoreHorizontal, QrCode, Smartphone, Download, Building, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -276,7 +276,7 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
                           <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
-                            <Cash className="h-5 w-5 text-gray-600" />
+                            <Wallet className="h-5 w-5 text-gray-600" />
                           </div>
                           <div>
                             <h4 className="font-medium">Virement bancaire</h4>
