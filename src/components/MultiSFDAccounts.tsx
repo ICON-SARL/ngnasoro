@@ -129,9 +129,9 @@ export const MultiSFDAccounts = () => {
                 <div className="flex items-center text-sm">
                   <CreditCard className="h-4 w-4 mr-1 text-muted-foreground" />
                   <span className="text-muted-foreground">
-                    {account.loans?.length || 1} prêt{(account.loans?.length || 1) !== 1 ? 's' : ''}
+                    {account.id === 'sfd2' ? '1 prêt' : '1 prêt'}
                   </span>
-                  {(account.loans?.some(loan => loan.isLate) || account.id === 'sfd2') && (
+                  {account.id === 'sfd2' && (
                     <Badge variant="destructive" className="ml-2">Échéance proche</Badge>
                   )}
                 </div>
@@ -184,7 +184,7 @@ export const MultiSFDAccounts = () => {
               
               <TabsContent value="loans">
                 <div className="space-y-4">
-                  {activeSfdAccount.loans?.map(loan => (
+                  {activeSfdAccount.loans && activeSfdAccount.loans.map(loan => (
                     <div key={loan.id} className="border rounded-lg p-4">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium">Prêt #{loan.id}</h3>
@@ -221,6 +221,16 @@ export const MultiSFDAccounts = () => {
                       </div>
                     </div>
                   ))}
+                  
+                  {(!activeSfdAccount.loans || activeSfdAccount.loans.length === 0) && (
+                    <div className="text-center p-6 border rounded-lg">
+                      <Database className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                      <p className="text-gray-500">Aucun prêt actif pour ce compte</p>
+                      <Button variant="outline" className="mt-4">
+                        Demander un prêt
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
               

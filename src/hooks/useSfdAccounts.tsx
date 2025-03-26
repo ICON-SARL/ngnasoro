@@ -9,6 +9,10 @@ export interface SfdAccount {
   name: string;
   balance: number;
   currency: string;
+  logoUrl?: string;
+  region?: string;
+  code?: string;
+  isDefault?: boolean;
   loans?: {
     id: string;
     amount: number;

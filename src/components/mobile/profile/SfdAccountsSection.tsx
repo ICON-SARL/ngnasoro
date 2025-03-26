@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,20 +6,37 @@ import { Plus, CheckCircle, AlertCircle, ArrowRightCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { SfdData } from '@/hooks/useSfdDataAccess';
 
-const SfdAccountsSection = () => {
+interface SfdAccountsSectionProps {
+  sfdData?: SfdData[];
+  activeSfdId?: string | null;
+  onSwitchSfd?: (sfdId: string) => Promise<boolean> | void;
+}
+
+const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({ 
+  sfdData: propsSfdData,
+  activeSfdId: propsActiveSfdId,
+  onSwitchSfd
+}) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { activeSfdId, setActiveSfdId } = useAuth();
+  const { activeSfdId: authActiveSfdId, setActiveSfdId } = useAuth();
   const { sfdAccounts, isLoading, refetch } = useSfdAccounts();
   const [switchingId, setSwitchingId] = useState<string | null>(null);
+  
+  const effectiveActiveSfdId = propsActiveSfdId !== undefined ? propsActiveSfdId : authActiveSfdId;
 
   const handleSwitchSfd = async (sfdId: string) => {
     setSwitchingId(sfdId);
     try {
-      // In a real app, this could trigger biometric authentication
-      setActiveSfdId(sfdId);
-      refetch();
+      if (onSwitchSfd) {
+        await onSwitchSfd(sfdId);
+      } else {
+        setActiveSfdId(sfdId);
+        refetch();
+      }
+      
       toast({
         title: "SFD changée avec succès",
         description: "Vous êtes maintenant connecté à une nouvelle SFD",
@@ -51,6 +67,8 @@ const SfdAccountsSection = () => {
     );
   }
 
+  const displayAccounts = propsSfdData || sfdAccounts;
+
   return (
     <div className="space-y-4 mt-4">
       <Card>
@@ -59,7 +77,7 @@ const SfdAccountsSection = () => {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-3">
-            {sfdAccounts.map((sfd) => (
+            {displayAccounts.map((sfd) => (
               <div key={sfd.id} className="flex items-center justify-between border p-3 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center">
@@ -68,7 +86,7 @@ const SfdAccountsSection = () => {
                   <div>
                     <p className="font-medium">{sfd.name}</p>
                     <div className="flex items-center space-x-1">
-                      {sfd.id === activeSfdId ? (
+                      {sfd.id === effectiveActiveSfdId ? (
                         <span className="text-xs text-green-600 flex items-center">
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Compte actif
@@ -82,7 +100,7 @@ const SfdAccountsSection = () => {
                     </div>
                   </div>
                 </div>
-                {sfd.id !== activeSfdId && (
+                {sfd.id !== effectiveActiveSfdId && (
                   <Button 
                     size="sm" 
                     variant="outline"
@@ -93,7 +111,7 @@ const SfdAccountsSection = () => {
                     {switchingId === sfd.id ? 'Changement...' : 'Basculer'}
                   </Button>
                 )}
-                {sfd.id === activeSfdId && (
+                {sfd.id === effectiveActiveSfdId && (
                   <span className="text-xs font-medium text-green-600 px-2 py-1 bg-green-50 rounded-md">
                     Active
                   </span>
