@@ -10,7 +10,6 @@ const ContextualHeader = () => {
   const { activeSfdId, sfdData } = useSfdDataAccess();
   const navigate = useNavigate();
   
-  const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Utilisateur';
   const activeSFD = sfdData.find(sfd => sfd.id === activeSfdId);
   const activeSFDName = activeSFD?.name || 'SFD Primaire';
 

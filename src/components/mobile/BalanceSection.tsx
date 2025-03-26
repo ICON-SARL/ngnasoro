@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Calendar, RefreshCw } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,9 +26,6 @@ const BalanceSection = ({
   const formatCurrency = (amount: number) => {
     return amount.toLocaleString();
   };
-
-  const currentTime = new Date();
-  const formattedTime = `${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}:${currentTime.getSeconds().toString().padStart(2, '0')}`;
 
   return (
     <div className="flex flex-col">
@@ -66,20 +63,6 @@ const BalanceSection = ({
                 0j 0h 0m 0s
               </div>
             </div>
-          </div>
-          
-          <div className="flex justify-between items-center text-sm text-gray-500">
-            <div>
-              Mis à jour: {formattedTime}
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-blue-500 p-0 flex items-center"
-            >
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Actualiser
-            </Button>
           </div>
         </CardContent>
       </Card>
