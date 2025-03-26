@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Building, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -39,10 +39,6 @@ const BalanceSection = ({
           <Badge className="bg-[#FFAB2E]/90 text-white border-none">
             Compte actif
           </Badge>
-        </div>
-        <div className="bg-white/20 rounded-full px-3 py-1.5 flex items-center">
-          <Building className="h-4 w-4 mr-1.5 text-white" />
-          <span className="text-sm text-white">SFD Primaire</span>
         </div>
       </div>
       

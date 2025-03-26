@@ -50,63 +50,13 @@ const ContextualHeader = () => {
         </div>
         <div>
           <h1 className="text-xl font-bold text-white">
-            <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-[#0D6A51]/90">SÔRÔ!</span>
+            <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-white">SÔRÔ!</span>
           </h1>
           <div className="flex items-center">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Badge className="bg-white/20 text-white text-[0.6rem] py-0 h-4 cursor-pointer hover:bg-white/30">
-                  <Building className="h-2 w-2 mr-1" />
-                  {activeSFDName}
-                  <ChevronDown className="h-2 w-2 ml-1" />
-                </Badge>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <div className="p-2">
-                  <div className="text-sm font-medium">Choisir SFD</div>
-                  <div className="text-xs text-muted-foreground mb-2">Sélectionnez votre institution</div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Switch 
-                      id="mobile-biometric" 
-                      checked={biometricEnabled}
-                      onCheckedChange={setBiometricEnabled}
-                    />
-                    <label htmlFor="mobile-biometric" className="text-xs flex items-center">
-                      <Shield className="h-3 w-3 mr-1 text-[#0D6A51]" />
-                      Vérification biométrique
-                    </label>
-                  </div>
-                </div>
-                <DropdownMenuSeparator />
-                {sfdData.length > 0 ? (
-                  sfdData.map((sfd) => (
-                    <DropdownMenuItem 
-                      key={sfd.id}
-                      className={sfd.id === activeSfdId ? "bg-[#0D6A51]/10" : ""}
-                      onClick={() => handleSwitchSfd(sfd.id)}
-                    >
-                      <Building className="h-4 w-4 mr-2 text-[#0D6A51]" />
-                      <span className="flex-1">{sfd.name}</span>
-                      {sfd.id === activeSfdId && (
-                        <Badge className="bg-[#0D6A51]/20 text-[#0D6A51] text-[0.6rem] py-0 px-1">Principal</Badge>
-                      )}
-                    </DropdownMenuItem>
-                  ))
-                ) : (
-                  <>
-                    <DropdownMenuItem className="bg-[#0D6A51]/10">
-                      <Building className="h-4 w-4 mr-2 text-[#0D6A51]" />
-                      <span className="flex-1">SFD Primaire</span>
-                      <Badge className="bg-[#0D6A51]/20 text-[#0D6A51] text-[0.6rem] py-0 px-1">Principal</Badge>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Building className="h-4 w-4 mr-2 text-[#0D6A51]" />
-                      <span className="flex-1">MEREF-SFD</span>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Badge className="bg-white/20 text-white text-[0.6rem] py-0 h-4">
+              <Building className="h-2 w-2 mr-1" />
+              {activeSFDName}
+            </Badge>
           </div>
         </div>
       </div>
