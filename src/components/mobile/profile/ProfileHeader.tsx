@@ -9,16 +9,16 @@ const ProfileHeader = () => {
   const { user } = useAuth();
   
   // Extract user name from metadata if available, or fall back to email
-  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Utilisateur';
+  const userName = user?.user_metadata?.full_name || user?.full_name || user?.email?.split('@')[0] || 'Utilisateur';
   
   // Simulate KYC status for now
   const isKycVerified = true;
-  const phoneNumber = user?.phone || '+223 76 45 32 10';
+  const phoneNumber = user?.phone || user?.user_metadata?.phone || '+223 76 45 32 10';
   
   return (
     <div className="flex flex-col items-center justify-center p-4 bg-gradient-to-b from-[#0D6A51]/80 to-[#0D6A51]/20 text-white">
       <Avatar className="h-24 w-24 border-4 border-white mb-3">
-        <AvatarImage src={user?.user_metadata?.avatar_url} alt={userName} />
+        <AvatarImage src={user?.user_metadata?.avatar_url || user?.avatar_url} alt={userName} />
         <AvatarFallback className="bg-[#0D6A51] text-white text-xl">
           {userName.substring(0, 2).toUpperCase()}
         </AvatarFallback>

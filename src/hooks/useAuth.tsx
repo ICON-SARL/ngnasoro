@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useContext, createContext } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +9,11 @@ interface AuthContextProps {
   signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   isLoading: boolean;
+  loading: boolean; // Alias for isLoading for backward compatibility
+  activeSfdId: string | null;
+  setActiveSfdId: (id: string) => void;
+  isAdmin: boolean;
+  signUp: (email: string, password: string, fullName: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps>({
@@ -16,6 +22,11 @@ const AuthContext = createContext<AuthContextProps>({
   signIn: async () => {},
   signOut: async () => {},
   isLoading: true,
+  loading: true,
+  activeSfdId: null,
+  setActiveSfdId: () => {},
+  isAdmin: false,
+  signUp: async () => {},
 });
 
 export const useAuth = () => {
@@ -29,12 +40,21 @@ export interface User {
   full_name?: string;
   avatar_url?: string;
   sfd_id?: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+    sfd_id?: string;
+    phone?: string;
+  };
+  phone?: string;
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -43,15 +63,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
 
       if (session?.user) {
+        // Check if user has admin role
+        const isAdminUser = session.user.app_metadata?.role === 'admin';
+        setIsAdmin(isAdminUser);
+
         setUser({
           id: session.user.id,
           email: session.user.email ?? '',
           full_name: session.user.user_metadata.full_name as string,
           avatar_url: session.user.user_metadata.avatar_url as string,
           sfd_id: session.user.user_metadata.sfd_id as string,
+          user_metadata: session.user.user_metadata,
+          phone: session.user.user_metadata.phone as string,
         });
+
+        // Set active SFD ID if available
+        if (session.user.user_metadata.sfd_id) {
+          setActiveSfdId(session.user.user_metadata.sfd_id as string);
+        }
       } else {
         setUser(null);
+        setActiveSfdId(null);
       }
       setIsLoading(false);
     };
@@ -61,15 +93,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) {
+        // Check if user has admin role
+        const isAdminUser = session.user.app_metadata?.role === 'admin';
+        setIsAdmin(isAdminUser);
+
         setUser({
           id: session.user.id,
           email: session.user.email ?? '',
           full_name: session.user.user_metadata.full_name as string,
           avatar_url: session.user.user_metadata.avatar_url as string,
           sfd_id: session.user.user_metadata.sfd_id as string,
+          user_metadata: session.user.user_metadata,
+          phone: session.user.user_metadata.phone as string,
         });
+
+        // Set active SFD ID if available
+        if (session.user.user_metadata.sfd_id) {
+          setActiveSfdId(session.user.user_metadata.sfd_id as string);
+        }
       } else {
         setUser(null);
+        setActiveSfdId(null);
       }
     });
   }, []);
@@ -79,6 +123,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signInWithOtp({ email });
       if (error) throw error;
       alert('Check your email for the magic link.');
+    } catch (error: any) {
+      alert(error.error_description || error.message);
+    }
+  };
+
+  const signUp = async (email: string, password: string, fullName: string) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
+      });
+      
+      if (error) throw error;
+      
+      alert('Please check your email to verify your account.');
     } catch (error: any) {
       alert(error.error_description || error.message);
     }
@@ -98,6 +162,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signOut,
     isLoading,
+    loading: isLoading, // Alias for backward compatibility
+    activeSfdId,
+    setActiveSfdId,
+    isAdmin,
+    signUp,
   };
 
   return (

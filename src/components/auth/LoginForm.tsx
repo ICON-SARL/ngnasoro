@@ -12,7 +12,8 @@ const LoginForm = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    await signIn(email, password);
+    // signIn only expects email now
+    await signIn(email);
   };
 
   return (
