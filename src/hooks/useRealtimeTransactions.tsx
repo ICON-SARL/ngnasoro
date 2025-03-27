@@ -58,122 +58,6 @@ export function useRealtimeTransactions() {
     });
   }, []);
   
-  // Fetch initial transactions
-  const fetchTransactions = useCallback(async () => {
-    if (!user || !activeSfdId) return;
-    
-    setIsLoading(true);
-    
-    try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('sfd_id', activeSfdId)
-        .order('created_at', { ascending: false })
-        .limit(50);
-        
-      if (error) throw error;
-      
-      // If we don't have real data in the table, use simulated data for demonstration
-      let txData: Transaction[];
-      if (data && data.length > 0) {
-        txData = convertDatabaseRecordsToTransactions(data as DatabaseTransactionRecord[]);
-      } else {
-        txData = generateMockTransactions(activeSfdId);
-      }
-      
-      setTransactions(txData);
-      setFilteredTransactions(txData);
-      calculateStats(txData);
-    } catch (error) {
-      console.error('Error loading transactions:', error);
-      toast({
-        title: 'Loading Error',
-        description: 'Unable to load transactions. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, activeSfdId, toast, calculateStats]);
-  
-  // Set up realtime subscription
-  useEffect(() => {
-    if (!user || !activeSfdId) return;
-    
-    fetchTransactions();
-    
-    // Configure realtime subscription via Supabase
-    const channel = supabase
-      .channel('public:transactions')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'transactions',
-        filter: `sfd_id=eq.${activeSfdId}`
-      }, (payload) => {
-        handleRealtimeUpdate(payload);
-      })
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, activeSfdId, fetchTransactions]);
-  
-  // Handle realtime updates
-  const handleRealtimeUpdate = (payload: any) => {
-    const { eventType, new: newRecord, old: oldRecord } = payload;
-    
-    let updatedTransactions = [...transactions];
-    
-    if (eventType === 'INSERT') {
-      // Convert the new record to a Transaction object
-      const newTransaction = convertDatabaseRecordsToTransactions([newRecord as DatabaseTransactionRecord])[0];
-      updatedTransactions = [newTransaction, ...updatedTransactions];
-      toast({
-        title: 'New transaction',
-        description: `${newTransaction.type} of ${newTransaction.amount} FCFA`,
-      });
-    } else if (eventType === 'UPDATE') {
-      // Convert the updated record to a Transaction object
-      const updatedTransaction = convertDatabaseRecordsToTransactions([newRecord as DatabaseTransactionRecord])[0];
-      updatedTransactions = updatedTransactions.map(tx => 
-        tx.id === updatedTransaction.id ? updatedTransaction : tx
-      );
-    } else if (eventType === 'DELETE') {
-      updatedTransactions = updatedTransactions.filter(tx => tx.id !== oldRecord.id);
-    }
-    
-    setTransactions(updatedTransactions);
-    setFilteredTransactions(updatedTransactions);
-    calculateStats(updatedTransactions);
-  };
-  
-  // Filter transactions
-  const filterTransactions = useCallback((searchTerm: string = '', status: string | null = null) => {
-    let filtered = [...transactions];
-    
-    // Apply text search
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(tx => 
-        (tx.description && tx.description.toLowerCase().includes(term)) ||
-        tx.id.toLowerCase().includes(term) ||
-        tx.type.toLowerCase().includes(term) ||
-        (tx.payment_method && tx.payment_method.toLowerCase().includes(term)) ||
-        (tx.name && tx.name.toLowerCase().includes(term))
-      );
-    }
-    
-    // Apply status filter
-    if (status) {
-      filtered = filtered.filter(tx => tx.status === status);
-    }
-    
-    setFilteredTransactions(filtered);
-  }, [transactions]);
-  
   // Generate simulated transactions for demonstration
   const generateMockTransactions = (sfdId: string): Transaction[] => {
     const transactionTypes: Transaction['type'][] = ['deposit', 'withdrawal', 'transfer', 'payment', 'loan_disbursement'];
@@ -202,6 +86,125 @@ export function useRealtimeTransactions() {
     
     return mockTransactions;
   };
+  
+  // Fetch initial transactions
+  const fetchTransactions = useCallback(async () => {
+    if (!user || !activeSfdId) return;
+    
+    setIsLoading(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('sfd_id', activeSfdId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+        
+      if (error) throw error;
+      
+      // Explicitly define the type for txData to avoid deep type instantiation
+      let txData: Transaction[] = [];
+      
+      // If we don't have real data in the table, use simulated data for demonstration
+      if (data && data.length > 0) {
+        txData = convertDatabaseRecordsToTransactions(data as DatabaseTransactionRecord[]);
+      } else {
+        txData = generateMockTransactions(activeSfdId);
+      }
+      
+      setTransactions(txData);
+      setFilteredTransactions(txData);
+      calculateStats(txData);
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+      toast({
+        title: 'Loading Error',
+        description: 'Unable to load transactions. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, activeSfdId, toast, calculateStats]);
+  
+  // Handle realtime updates
+  const handleRealtimeUpdate = useCallback((payload: any) => {
+    const { eventType, new: newRecord, old: oldRecord } = payload;
+    
+    // Create a new array instead of mutating the old one
+    let updatedTransactions = [...transactions];
+    
+    if (eventType === 'INSERT') {
+      // Convert the new record to a Transaction object
+      const newTransaction = convertDatabaseRecordsToTransactions([newRecord as DatabaseTransactionRecord])[0];
+      updatedTransactions = [newTransaction, ...updatedTransactions];
+      toast({
+        title: 'New transaction',
+        description: `${newTransaction.type} of ${newTransaction.amount} FCFA`,
+      });
+    } else if (eventType === 'UPDATE') {
+      // Convert the updated record to a Transaction object
+      const updatedTransaction = convertDatabaseRecordsToTransactions([newRecord as DatabaseTransactionRecord])[0];
+      updatedTransactions = updatedTransactions.map(tx => 
+        tx.id === updatedTransaction.id ? updatedTransaction : tx
+      );
+    } else if (eventType === 'DELETE') {
+      updatedTransactions = updatedTransactions.filter(tx => tx.id !== oldRecord.id);
+    }
+    
+    setTransactions(updatedTransactions);
+    setFilteredTransactions(updatedTransactions);
+    calculateStats(updatedTransactions);
+  }, [transactions, toast, calculateStats]);
+  
+  // Set up realtime subscription
+  useEffect(() => {
+    if (!user || !activeSfdId) return;
+    
+    fetchTransactions();
+    
+    // Configure realtime subscription via Supabase
+    const channel = supabase
+      .channel('public:transactions')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'transactions',
+        filter: `sfd_id=eq.${activeSfdId}`
+      }, (payload) => {
+        handleRealtimeUpdate(payload);
+      })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, activeSfdId, fetchTransactions, handleRealtimeUpdate]);
+  
+  // Filter transactions
+  const filterTransactions = useCallback((searchTerm: string = '', status: string | null = null) => {
+    let filtered = [...transactions];
+    
+    // Apply text search
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(tx => 
+        (tx.description && tx.description.toLowerCase().includes(term)) ||
+        tx.id.toLowerCase().includes(term) ||
+        tx.type.toLowerCase().includes(term) ||
+        (tx.payment_method && tx.payment_method.toLowerCase().includes(term)) ||
+        (tx.name && tx.name.toLowerCase().includes(term))
+      );
+    }
+    
+    // Apply status filter
+    if (status) {
+      filtered = filtered.filter(tx => tx.status === status);
+    }
+    
+    setFilteredTransactions(filtered);
+  }, [transactions]);
   
   return {
     transactions: filteredTransactions,
