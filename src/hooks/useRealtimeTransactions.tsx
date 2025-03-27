@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -186,37 +185,36 @@ export function useRealtimeTransactions() {
     calculateStats(updatedTransactions);
   }, [transactions, toast, calculateStats, activeSfdId]);
   
-  // Set up the channel subscription with fixed typing to prevent recursion
+  // Break deep type inference with a non-typed function
+  function createRealtimeSubscription(sfdId: string) {
+    // Use basic typing without complex interfaces
+    const channel = supabase.channel('public:transactions') as any;
+    
+    // Completely avoid TypeScript inference here
+    channel.on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'transactions',
+      filter: `sfd_id=eq.${sfdId}`
+    }, handleRealtimeUpdate);
+    
+    return channel.subscribe();
+  }
+  
+  // Set up the channel subscription with completely simplified typing
   useEffect(() => {
     if (!user || !activeSfdId) return;
     
     fetchTransactions();
     
-    // Create a simple standalone function to set up the channel
-    // This breaks the complex type inference chain
-    function setupRealtimeChannel() {
-      // Create channel without complex type inference
-      const channel = supabase.channel('public:transactions');
-      
-      // Define filter options separately to avoid deep type inference
-      const filterOptions = {
-        event: '*',
-        schema: 'public',
-        table: 'transactions',
-        filter: `sfd_id=eq.${activeSfdId}`
-      };
-      
-      // Use type assertion to break type inference chain
-      channel.on('postgres_changes', filterOptions as any, handleRealtimeUpdate);
-      
-      return channel.subscribe();
-    }
-    
-    const subscription = setupRealtimeChannel();
+    // Use our non-typed function to create the subscription
+    const subscription = createRealtimeSubscription(activeSfdId);
     
     // Cleanup function
     return () => {
-      supabase.removeChannel(subscription);
+      if (subscription) {
+        supabase.removeChannel(subscription);
+      }
     };
   }, [user, activeSfdId, fetchTransactions, handleRealtimeUpdate]);
   
