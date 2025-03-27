@@ -5,10 +5,13 @@ import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { 
   DashboardWidgets, 
   SuperAdminDashboardHeader, 
-  DashboardTabs 
+  DashboardTabs,
+  DashboardCharts
 } from '@/components/admin/dashboard';
 import { useSubsidies } from '@/hooks/useSubsidies';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { ReportGenerator } from '@/components/ReportGenerator';
+import { DataExport } from '@/components/DataExport';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
@@ -42,6 +45,25 @@ const SuperAdminDashboard = () => {
             subsidies={subsidies} 
             isLoadingSubsidies={isLoadingSubsidies} 
           />
+        )}
+        
+        {/* Charts */}
+        {activeTab === 'charts' && (
+          <DashboardCharts />
+        )}
+        
+        {/* Reports */}
+        {activeTab === 'reports' && (
+          <div className="space-y-6">
+            <ReportGenerator />
+          </div>
+        )}
+        
+        {/* Data Export */}
+        {activeTab === 'export' && (
+          <div className="space-y-6">
+            <DataExport />
+          </div>
         )}
         
         <DashboardTabs 

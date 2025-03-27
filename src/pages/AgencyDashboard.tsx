@@ -7,6 +7,9 @@ import { SfdUserManagement } from '@/components/sfd/SfdUserManagement';
 import { SfdRoleManager } from '@/components/sfd/roles'; // Updated import path
 import { ClientManagement } from '@/components/sfd/ClientManagement';
 import { LoanManagement } from '@/components/sfd/LoanManagement';
+import { ReportGenerator } from '@/components/ReportGenerator';
+import { DataExport } from '@/components/DataExport';
+import { FinancialReporting } from '@/components/FinancialReporting';
 
 const AgencyDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -31,6 +34,7 @@ const AgencyDashboard = () => {
               <TabsTrigger value="loans">Prêts</TabsTrigger>
               <TabsTrigger value="users">Utilisateurs</TabsTrigger>
               <TabsTrigger value="roles">Rôles</TabsTrigger>
+              <TabsTrigger value="reports">Rapports</TabsTrigger>
             </TabsList>
           </div>
           
@@ -86,6 +90,28 @@ const AgencyDashboard = () => {
             
             <TabsContent value="roles">
               <SfdRoleManager />
+            </TabsContent>
+            
+            <TabsContent value="reports">
+              <Tabs defaultValue="generator">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="generator">Rapports automatisés</TabsTrigger>
+                  <TabsTrigger value="trends">Tendances & Graphiques</TabsTrigger>
+                  <TabsTrigger value="export">Export des données</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="generator">
+                  <ReportGenerator />
+                </TabsContent>
+                
+                <TabsContent value="trends">
+                  <FinancialReporting />
+                </TabsContent>
+                
+                <TabsContent value="export">
+                  <DataExport />
+                </TabsContent>
+              </Tabs>
             </TabsContent>
           </div>
         </Tabs>
