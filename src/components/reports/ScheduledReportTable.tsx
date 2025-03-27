@@ -15,9 +15,15 @@ interface ScheduledReport {
 
 interface ScheduledReportTableProps {
   reports: ScheduledReport[];
+  onExport?: (reportId: number) => void;
+  onView?: (reportId: number) => void;
 }
 
-export const ScheduledReportTable: React.FC<ScheduledReportTableProps> = ({ reports }) => {
+export const ScheduledReportTable: React.FC<ScheduledReportTableProps> = ({ 
+  reports,
+  onExport = () => {},
+  onView = () => {}
+}) => {
   return (
     <div className="border rounded-lg overflow-hidden">
       <table className="min-w-full">
@@ -51,13 +57,13 @@ export const ScheduledReportTable: React.FC<ScheduledReportTableProps> = ({ repo
               </td>
               <td className="px-4 py-3 text-sm text-right">
                 {report.status === 'completed' && (
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => onExport(report.id)}>
                     <Download className="h-4 w-4 mr-1" />
                     Télécharger
                   </Button>
                 )}
                 {report.status === 'scheduled' && (
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => onView(report.id)}>
                     Modifier
                   </Button>
                 )}

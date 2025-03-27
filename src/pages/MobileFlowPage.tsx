@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { MainDashboard } from '@/components/mobile/dashboard';
@@ -9,11 +9,13 @@ import SfdSetupPage from '@/pages/SfdSetupPage';
 import SfdClientsPage from '@/pages/SfdClientsPage';
 import { useAuth } from '@/hooks/useAuth';
 import SecurePaymentTab from '@/components/mobile/secure-payment';
+import { Account } from '@/types/transactions';
 
 const MobileFlowPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
   
   // Cette fonction extrait le sous-chemin du path /mobile-flow/X
   const getSubPath = () => {
@@ -50,6 +52,41 @@ const MobileFlowPage: React.FC = () => {
     }
   }, [subPath, navigate]);
   
+  // Handle mock data for dashboard
+  const mockAccount: Account = {
+    id: 'account-1',
+    user_id: user?.id || '',
+    sfd_id: 'default-sfd',
+    account_number: '123456789',
+    balance: 50000,
+    currency: 'FCFA',
+    status: 'active',
+    type: 'savings',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  
+  const mockTransactions = [
+    { id: 1, name: 'Dépôt', type: 'deposit', amount: 10000, date: new Date().toISOString(), avatar_url: '' },
+    { id: 2, name: 'Retrait', type: 'withdrawal', amount: -5000, date: new Date().toISOString(), avatar_url: '' }
+  ];
+  
+  // Toggle menu
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
+  };
+  
+  // Handle logout
+  const handleLogout = () => {
+    // Add logout logic here
+    navigate('/auth');
+  };
+  
+  // Mock action handler
+  const handleAction = (action: string, data?: any) => {
+    console.log('Action:', action, data);
+  };
+  
   // Si chargement en cours ou user null, montrer un loader
   if (isLoading || !user) {
     return (
@@ -62,7 +99,15 @@ const MobileFlowPage: React.FC = () => {
   const renderContent = () => {
     switch (subPath) {
       case 'main':
-        return <MainDashboard />;
+        return (
+          <MainDashboard 
+            onAction={handleAction}
+            account={mockAccount}
+            transactions={mockTransactions}
+            transactionsLoading={false}
+            toggleMenu={toggleMenu}
+          />
+        );
       case 'profile':
         return <ProfilePage />;
       case 'create-sfd':
@@ -72,7 +117,15 @@ const MobileFlowPage: React.FC = () => {
       case 'sfd-clients':
         return <SfdClientsPage />;
       default:
-        return <MainDashboard />;
+        return (
+          <MainDashboard 
+            onAction={handleAction}
+            account={mockAccount}
+            transactions={mockTransactions}
+            transactionsLoading={false}
+            toggleMenu={toggleMenu}
+          />
+        );
     }
   };
   
@@ -84,7 +137,11 @@ const MobileFlowPage: React.FC = () => {
         {renderContent()}
       </main>
       
-      <MobileMenu />
+      <MobileMenu 
+        isOpen={menuOpen} 
+        onClose={toggleMenu} 
+        onLogout={handleLogout}
+      />
     </div>
   );
 };
