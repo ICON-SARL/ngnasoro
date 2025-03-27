@@ -89,14 +89,17 @@ export function useRealtimeTransactions() {
     setIsLoading(true);
     
     try {
-      const query = supabase
+      const queryBuilder = supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
         .limit(50);
-        
-      const { data = [], error } = await query as unknown as { data: any[], error: any };
+      
+      const response = await queryBuilder;
+      
+      const data = response.data as any[] || [];
+      const error = response.error;
         
       if (error) throw error;
       
@@ -187,14 +190,21 @@ export function useRealtimeTransactions() {
       handleRealtimeUpdate(payload);
     };
     
-    const config = {
+    type PostgresChangesFilter = {
+      event: string;
+      schema: string;
+      table: string;
+      filter: string;
+    };
+    
+    const config: PostgresChangesFilter = {
       event: '*',
       schema: 'public',
       table: 'transactions',
       filter: `sfd_id=eq.${sfdId}`
     };
     
-    channel.on('postgres_changes' as any, config as any, handleChanges);
+    (channel as any).on('postgres_changes', config, handleChanges);
     
     return channel.subscribe();
   }
