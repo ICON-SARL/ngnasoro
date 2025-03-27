@@ -46,7 +46,7 @@ const LoanStepContent: React.FC<LoanStepContentProps> = ({
       return (
         <StepPurpose 
           loanPurpose={loanPurpose} 
-          setLoanPurpose={setLoanPurpose} 
+          setPurpose={setLoanPurpose} 
         />
       );
     
@@ -54,7 +54,7 @@ const LoanStepContent: React.FC<LoanStepContentProps> = ({
       return (
         <StepAmount 
           loanAmount={loanAmount} 
-          setLoanAmount={setLoanAmount} 
+          setAmount={setLoanAmount} 
         />
       );
     
@@ -63,7 +63,7 @@ const LoanStepContent: React.FC<LoanStepContentProps> = ({
         <StepDuration 
           loanAmount={loanAmount}
           loanDuration={loanDuration} 
-          setLoanDuration={setLoanDuration} 
+          setDuration={setLoanDuration} 
         />
       );
     

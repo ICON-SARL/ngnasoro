@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ActivitySquare } from 'lucide-react';
@@ -159,14 +160,21 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
                 paymentHistory={loanStatus.paymentHistory}
                 onMobileMoneyPayment={handleMobileMoneyWithdrawal}
               />
-              <QRCodePaymentDialog onClose={() => {}} />
+              <QRCodePaymentDialog 
+                onClose={() => {}} 
+                amount={3500} 
+                isWithdrawal={false}
+              />
             </Dialog>
           </TabsContent>
         </Tabs>
       </div>
       
       {mobileMoneyInitiated && (
-        <MobileMoneyModal onClose={() => setMobileMoneyInitiated(false)} />
+        <MobileMoneyModal 
+          onClose={() => setMobileMoneyInitiated(false)}
+          isWithdrawal={false}
+        />
       )}
     </div>
   );
