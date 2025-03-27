@@ -111,7 +111,7 @@ const MobileFlowPage: React.FC = () => {
       case 'secure-payment':
         return <SecurePaymentTab onBack={() => navigate(-1)} />;
       case 'multi-sfd':
-        return <MultiSFDAccounts />;
+        return <MultiSfdAccounts />;
       default:
         return (
           <MainDashboard 
