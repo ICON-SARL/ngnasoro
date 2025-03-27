@@ -1,7 +1,8 @@
 
 import axios, { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { sfdCache } from './cacheUtils';
-import { refreshSfdContextToken, shouldRefreshSfdToken } from './sfdJwtContext';
+import { refreshSfdContextToken, shouldRefreshSfdToken, decodeSfdContextToken } from './sfdJwtContext';
+import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from './auditLogger';
 
 // Create an axios instance for SFD-specific API calls
 const sfdApiClient = axios.create({
@@ -53,9 +54,51 @@ sfdApiClient.interceptors.request.use(
         }
       }
       
+      // Log the API request
+      const tokenData = await decodeSfdContextToken(tokenToUse);
+      if (tokenData) {
+        await logAuditEvent({
+          user_id: tokenData.userId,
+          action: 'sfd_api_request',
+          category: AuditLogCategory.DATA_ACCESS,
+          severity: AuditLogSeverity.INFO,
+          details: { 
+            sfdId, 
+            method: config.method,
+            url: config.url,
+            fromCache: !!config.headers?.['X-From-Cache']
+          },
+          status: 'success',
+          target_resource: `sfd:${sfdId}:${config.url}`
+        });
+      }
+      
       return config;
     } catch (error) {
       console.error('Token refresh error:', error);
+      
+      // Log the failure
+      try {
+        const tokenData = await decodeSfdContextToken(sfdToken);
+        if (tokenData) {
+          await logAuditEvent({
+            user_id: tokenData.userId,
+            action: 'token_refresh_error',
+            category: AuditLogCategory.TOKEN_MANAGEMENT,
+            severity: AuditLogSeverity.ERROR,
+            details: { 
+              sfdId,
+              error: String(error)
+            },
+            status: 'failure',
+            error_message: String(error),
+            target_resource: `sfd:${sfdId}`
+          });
+        }
+      } catch (e) {
+        // Silently fail if we can't log the audit event
+      }
+      
       return config; // Proceed with original token
     }
   },
@@ -88,7 +131,40 @@ sfdApiClient.interceptors.response.use(
     
     return response;
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
+    // Log API error
+    const config = error.config as InternalAxiosRequestConfig;
+    if (config && config.headers) {
+      const sfdId = config.headers['X-SFD-ID'] as string;
+      const sfdToken = config.headers['X-SFD-TOKEN'] as string;
+      
+      if (sfdId && sfdToken) {
+        try {
+          const tokenData = await decodeSfdContextToken(sfdToken);
+          if (tokenData) {
+            await logAuditEvent({
+              user_id: tokenData.userId,
+              action: 'sfd_api_error',
+              category: AuditLogCategory.DATA_ACCESS,
+              severity: AuditLogSeverity.ERROR,
+              details: { 
+                sfdId, 
+                method: config.method,
+                url: config.url,
+                status: error.response?.status,
+                statusText: error.response?.statusText
+              },
+              status: 'failure',
+              error_message: error.message,
+              target_resource: `sfd:${sfdId}:${config.url}`
+            });
+          }
+        } catch (e) {
+          // Silently fail if we can't log the audit event
+        }
+      }
+    }
+    
     return Promise.reject(error);
   }
 );

@@ -2,6 +2,7 @@
 import * as jose from 'jose';
 import { EncryptionService } from './crypto';
 import { SecureTokenService } from './crypto';
+import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from './auditLogger';
 
 // Set a secure secret key (in production, this would be stored securely)
 const JWT_SECRET = 'your-very-secure-secret-key-for-sfd-context';
@@ -45,9 +46,35 @@ export const generateSfdContextToken = async (
       .sign(secretKey);
       
     // Add an additional layer of AES-256 encryption
-    return EncryptionService.encrypt(jwtToken, AES_ENCRYPTION_KEY);
+    const encryptedToken = EncryptionService.encrypt(jwtToken, AES_ENCRYPTION_KEY);
+    
+    // Log token generation
+    await logAuditEvent({
+      user_id: userId,
+      action: 'generate_sfd_token',
+      category: AuditLogCategory.TOKEN_MANAGEMENT,
+      severity: AuditLogSeverity.INFO,
+      details: { sfdId },
+      status: 'success',
+      target_resource: `sfd:${sfdId}`
+    });
+    
+    return encryptedToken;
   } catch (error) {
     console.error('Error generating SFD context token:', error);
+    
+    // Log token generation failure
+    await logAuditEvent({
+      user_id: userId,
+      action: 'generate_sfd_token',
+      category: AuditLogCategory.TOKEN_MANAGEMENT,
+      severity: AuditLogSeverity.ERROR,
+      details: { sfdId, error: String(error) },
+      status: 'failure',
+      error_message: String(error),
+      target_resource: `sfd:${sfdId}`
+    });
+    
     throw new Error('Failed to generate secure token');
   }
 };
@@ -105,6 +132,28 @@ export const shouldRefreshSfdToken = async (token: string): Promise<boolean> => 
     return expMs - now < TEN_MINUTES;
   } catch (error) {
     console.error('Error checking SFD token refresh status:', error);
+    
+    // Log token check failure
+    if (error instanceof Error) {
+      try {
+        const tokenData = await decodeSfdContextToken(token);
+        if (tokenData) {
+          await logAuditEvent({
+            user_id: tokenData.userId,
+            action: 'check_token_refresh',
+            category: AuditLogCategory.TOKEN_MANAGEMENT,
+            severity: AuditLogSeverity.WARNING,
+            details: { error: error.message },
+            status: 'failure',
+            error_message: error.message,
+            target_resource: `sfd:${tokenData.sfdId}`
+          });
+        }
+      } catch (e) {
+        // Silently fail if we can't log the audit event
+      }
+    }
+    
     return true; // Refresh on error
   }
 };
@@ -127,12 +176,45 @@ export const refreshSfdContextToken = async (token: string): Promise<string | nu
     
     if (needsRefresh && typeof payload.userId === 'string' && typeof payload.sfdId === 'string') {
       // Generate a new token with the same user and SFD information
-      return generateSfdContextToken(payload.userId, payload.sfdId);
+      const newToken = await generateSfdContextToken(payload.userId, payload.sfdId);
+      
+      // Log token refresh
+      await logAuditEvent({
+        user_id: payload.userId,
+        action: 'refresh_sfd_token',
+        category: AuditLogCategory.TOKEN_MANAGEMENT,
+        severity: AuditLogSeverity.INFO,
+        details: { sfdId: payload.sfdId },
+        status: 'success',
+        target_resource: `sfd:${payload.sfdId}`
+      });
+      
+      return newToken;
     }
     
     return token; // Return original token if refresh not needed
   } catch (error) {
     console.error('Error refreshing SFD context token:', error);
+    
+    // Try to log the failure, but don't throw if we can't get the user data
+    try {
+      const tokenData = await decodeSfdContextToken(token);
+      if (tokenData) {
+        await logAuditEvent({
+          user_id: tokenData.userId,
+          action: 'refresh_sfd_token',
+          category: AuditLogCategory.TOKEN_MANAGEMENT,
+          severity: AuditLogSeverity.ERROR,
+          details: { sfdId: tokenData.sfdId, error: String(error) },
+          status: 'failure',
+          error_message: String(error),
+          target_resource: `sfd:${tokenData.sfdId}`
+        });
+      }
+    } catch (e) {
+      // Silently fail if we can't log the audit event
+    }
+    
     return null;
   }
 };
@@ -146,5 +228,23 @@ export const hasAccessToSfd = async (token: string, targetSfdId: string): Promis
   }
   
   const decoded = await decodeSfdContextToken(token);
-  return decoded !== null && decoded.sfdId === targetSfdId;
+  const hasAccess = decoded !== null && decoded.sfdId === targetSfdId;
+  
+  // Log access check
+  if (decoded) {
+    await logAuditEvent({
+      user_id: decoded.userId,
+      action: 'check_sfd_access',
+      category: AuditLogCategory.DATA_ACCESS,
+      severity: AuditLogSeverity.INFO,
+      details: { 
+        sfdId: targetSfdId,
+        hasAccess: hasAccess
+      },
+      status: hasAccess ? 'success' : 'failure',
+      target_resource: `sfd:${targetSfdId}`
+    });
+  }
+  
+  return hasAccess;
 };
