@@ -33,6 +33,82 @@ export type Database = {
         }
         Relationships: []
       }
+      client_activities: {
+        Row: {
+          activity_type: string
+          client_id: string
+          description: string | null
+          id: string
+          performed_at: string | null
+          performed_by: string | null
+        }
+        Insert: {
+          activity_type: string
+          client_id: string
+          description?: string | null
+          id?: string
+          performed_at?: string | null
+          performed_by?: string | null
+        }
+        Update: {
+          activity_type?: string
+          client_id?: string
+          description?: string | null
+          id?: string
+          performed_at?: string | null
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_activities_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_documents: {
+        Row: {
+          client_id: string
+          document_type: string
+          document_url: string
+          id: string
+          uploaded_at: string | null
+          verified: boolean | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          client_id: string
+          document_type: string
+          document_url: string
+          id?: string
+          uploaded_at?: string | null
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          client_id?: string
+          document_type?: string
+          document_url?: string
+          id?: string
+          uploaded_at?: string | null
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -53,6 +129,68 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      sfd_clients: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string
+          id: string
+          id_number: string | null
+          id_type: string | null
+          kyc_level: number | null
+          notes: string | null
+          phone: string | null
+          sfd_id: string
+          status: string
+          user_id: string | null
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          id_number?: string | null
+          id_type?: string | null
+          kyc_level?: number | null
+          notes?: string | null
+          phone?: string | null
+          sfd_id: string
+          status?: string
+          user_id?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          id_number?: string | null
+          id_type?: string | null
+          kyc_level?: number | null
+          notes?: string | null
+          phone?: string | null
+          sfd_id?: string
+          status?: string
+          user_id?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sfd_clients_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sfds: {
         Row: {
