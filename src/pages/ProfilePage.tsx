@@ -93,7 +93,7 @@ const ProfilePage = () => {
                       </div>
                       <Input 
                         id="sfd" 
-                        value="SFD ID: " + (user?.sfd_id || 'Non assigné')
+                        value={"SFD ID: " + (user?.sfd_id || 'Non assigné')}
                         readOnly
                         className="rounded-l-none focus-visible:ring-0"
                       />
