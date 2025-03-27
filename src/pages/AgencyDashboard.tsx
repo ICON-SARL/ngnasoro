@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,8 @@ import {
   UserCog, 
   CreditCard, 
   Building, 
-  Plus
+  Plus,
+  Activity
 } from 'lucide-react';
 import { AgencyHeader } from '@/components/AgencyHeader';
 import { LoanWorkflow } from '@/components/LoanWorkflow';
@@ -28,6 +28,7 @@ import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from 'react-router-dom';
+import { RealTimeTransactions } from '@/components/RealTimeTransactions';
 
 const AgencyDashboard = () => {
   const { loans, isLoading: isLoadingLoans } = useSfdLoans();
@@ -38,19 +39,15 @@ const AgencyDashboard = () => {
   const navigate = useNavigate();
   const [synchronizing, setSynchronizing] = useState(false);
   
-  // Count total active loans and total loan amount
   const activeLoans = !isLoadingLoans ? loans.filter(l => l.status === 'active').length : 0;
   const totalLoanAmount = !isLoadingLoans ? 
     loans.filter(l => l.status === 'active' || l.status === 'completed')
       .reduce((sum, loan) => sum + loan.amount, 0) : 0;
   
-  // Count clients
   const clientCount = !isLoadingClients ? clients.length : 0;
   
-  // Calculate repayment rate (this would typically come from more detailed data)
-  const repaymentRate = 92; // This is a placeholder value
-  
-  // Handle data synchronization
+  const repaymentRate = 92;
+
   const handleSynchronize = async () => {
     try {
       setSynchronizing(true);
@@ -156,6 +153,10 @@ const AgencyDashboard = () => {
               <Workflow className="h-4 w-4 mr-2" />
               Workflow de Prêts
             </TabsTrigger>
+            <TabsTrigger value="transactions" className="data-[state=active]:bg-[#0D6A51]/10 data-[state=active]:text-[#0D6A51]">
+              <Activity className="h-4 w-4 mr-2" />
+              Supervision Transactions
+            </TabsTrigger>
             <TabsTrigger value="api" className="data-[state=active]:bg-[#0D6A51]/10 data-[state=active]:text-[#0D6A51]">
               <Link className="h-4 w-4 mr-2" />
               API Bancaires
@@ -187,6 +188,10 @@ const AgencyDashboard = () => {
           
           <TabsContent value="workflow" className="bg-white p-6 rounded-lg shadow border border-gray-100">
             <LoanWorkflow />
+          </TabsContent>
+          
+          <TabsContent value="transactions" className="bg-white p-6 rounded-lg shadow border border-gray-100">
+            <RealTimeTransactions />
           </TabsContent>
           
           <TabsContent value="api" className="bg-white p-6 rounded-lg shadow border border-gray-100">
