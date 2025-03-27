@@ -8,6 +8,7 @@ import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useMobileDashboard } from '@/hooks/useMobileDashboard';
 
 interface FinancialSnapshotProps {
   loanId?: string;
@@ -25,6 +26,8 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
   const { activeSfdAccount, isLoading, refetch, synchronizeBalances } = useSfdAccounts();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { dashboardData, isLoading: isDashboardLoading, refreshDashboardData } = useMobileDashboard();
+  
   const [timeRemaining, setTimeRemaining] = useState({
     days: 0,
     hours: 0,
@@ -34,19 +37,25 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Determine which loan has the nearest due date
-  const nearestLoan = activeSfdAccount?.loans?.sort((a, b) => {
+  // Use dashboard data if available, otherwise fall back to props or active account
+  const nearestLoan = dashboardData?.nearestLoan || activeSfdAccount?.loans?.sort((a, b) => {
     const dateA = new Date(a.nextDueDate).getTime();
     const dateB = new Date(b.nextDueDate).getTime();
     return dateA - dateB;
   })[0];
   
-  const actualNextPaymentDate = nextPaymentDate || nearestLoan?.nextDueDate;
-  const actualNextPaymentAmount = nextPaymentAmount || (nearestLoan?.remainingAmount || 0) / 4; // Simulate a quarterly payment
+  const actualNextPaymentDate = nextPaymentDate || nearestLoan?.next_payment_date || nearestLoan?.nextDueDate;
+  const actualNextPaymentAmount = nextPaymentAmount || nearestLoan?.monthly_payment || (nearestLoan?.remainingAmount || 0) / 4;
+  
+  // Get balance from dashboard data if available
+  const accountBalance = dashboardData?.account?.balance || 
+                        (activeSfdId ? (activeSfdAccount?.balance || 0) : (account?.balance || 0));
+  const accountCurrency = dashboardData?.account?.currency || 
+                         activeSfdAccount?.currency || account?.currency || 'FCFA';
   
   // Format currency
   const formatCurrency = (amount: number) => {
-    return amount.toLocaleString('fr-FR') + ' ' + (activeSfdAccount?.currency || account?.currency || 'FCFA');
+    return amount.toLocaleString('fr-FR') + ' ' + accountCurrency;
   };
   
   // Calculate time remaining until next payment
@@ -72,7 +81,7 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
     };
     
     calculateTimeRemaining();
-    const intervalId = setInterval(calculateTimeRemaining, 1000); // Update every second for smoother countdown
+    const intervalId = setInterval(calculateTimeRemaining, 1000);
     
     return () => clearInterval(intervalId);
   }, [actualNextPaymentDate]);
@@ -83,19 +92,30 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
     
     setIsRefreshing(true);
     
-    // Use the synchronizeBalances mutation to refresh balance
-    synchronizeBalances.mutate(undefined, {
-      onSettled: () => {
-        refetch();
-        setLastUpdated(new Date());
-        setIsRefreshing(false);
-      }
-    });
-  }, [isRefreshing, synchronizeBalances, refetch]);
+    // Use the refreshDashboardData function if available
+    if (refreshDashboardData) {
+      refreshDashboardData()
+        .then(() => {
+          setLastUpdated(new Date());
+          setIsRefreshing(false);
+        })
+        .catch(() => {
+          setIsRefreshing(false);
+        });
+    } else {
+      // Fall back to synchronizeBalances if no dashboard data
+      synchronizeBalances.mutate(undefined, {
+        onSettled: () => {
+          refetch();
+          setLastUpdated(new Date());
+          setIsRefreshing(false);
+        }
+      });
+    }
+  }, [isRefreshing, synchronizeBalances, refetch, refreshDashboardData]);
   
   // Simulate balance update every 2 hours
   useEffect(() => {
-    // Just updating the lastUpdated timestamp, not the actual balance
     const intervalId = setInterval(() => {
       setLastUpdated(new Date());
     }, 2 * 60 * 60 * 1000); // 2 hours
@@ -104,7 +124,7 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
   }, []);
 
   // Render a message if no SFD account is active
-  if (!activeSfdId && !isLoading) {
+  if (!activeSfdId && !isLoading && !isDashboardLoading) {
     return (
       <Card className="border-0 shadow-md bg-white rounded-2xl overflow-hidden">
         <CardContent className="p-4">
@@ -136,9 +156,9 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
               Solde disponible
             </h3>
             <p className="text-2xl font-bold">
-              {isLoading || synchronizeBalances.isPending
+              {isLoading || isDashboardLoading || synchronizeBalances.isPending
                 ? "Chargement..." 
-                : formatCurrency(activeSfdId ? (activeSfdAccount?.balance || 0) : (account?.balance || 0))}
+                : formatCurrency(accountBalance)}
             </p>
             <div className="flex items-center justify-between">
               <p className="text-xs text-gray-400">

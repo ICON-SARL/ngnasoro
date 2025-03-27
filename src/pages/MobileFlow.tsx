@@ -50,9 +50,13 @@ import {
   ActivitySquare
 } from 'lucide-react';
 
+import { useMobileDashboard } from '@/hooks/useMobileDashboard';
+
 const FundsManagementPage = lazy(() => import('@/components/mobile/FundsManagementPage'));
 
 const MainDashboard = ({ onAction, account, transactions, transactionsLoading, toggleMenu }) => {
+  const { dashboardData, isLoading: dashboardLoading, refreshDashboardData } = useMobileDashboard();
+  
   return (
     <div className="space-y-4 mt-0 p-0 pb-20">
       <div className="bg-gradient-to-b from-[#0D6A51] to-[#0D6A51]/90 text-white p-4 rounded-b-3xl relative">
@@ -66,17 +70,17 @@ const MainDashboard = ({ onAction, account, transactions, transactionsLoading, t
       
       <div className="mx-4 -mt-10">
         <FinancialSnapshot 
-          loanId="LOAN123" 
-          nextPaymentDate="2023-07-15" 
-          nextPaymentAmount={25000} 
+          loanId={dashboardData?.nearestLoan?.id} 
+          nextPaymentDate={dashboardData?.nearestLoan?.next_payment_date} 
+          nextPaymentAmount={dashboardData?.nearestLoan?.monthly_payment} 
         />
       </div>
       
       <div className="mx-4">
         <QuickActionsCard 
           onAction={onAction} 
-          loanId="LOAN123" 
-          paymentDue={25000} 
+          loanId={dashboardData?.nearestLoan?.id || "LOAN123"} 
+          paymentDue={dashboardData?.nearestLoan?.monthly_payment || 25000} 
         />
       </div>
       
@@ -85,7 +89,7 @@ const MainDashboard = ({ onAction, account, transactions, transactionsLoading, t
       </div>
       
       <TransactionList 
-        transactions={transactions.map(tx => ({
+        transactions={(dashboardData?.transactions || transactions).map(tx => ({
           id: tx.id,
           name: tx.name,
           type: tx.type,
@@ -93,7 +97,7 @@ const MainDashboard = ({ onAction, account, transactions, transactionsLoading, t
           date: new Date(tx.date).toLocaleDateString(),
           avatar: tx.avatar_url
         }))}
-        isLoading={transactionsLoading}
+        isLoading={transactionsLoading || dashboardLoading}
         onViewAll={() => onAction('Loans')}
         title="Transactions Récentes"
       />

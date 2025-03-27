@@ -4,9 +4,23 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowUpRight, ArrowDownRight, Building, BarChart3, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
+import { useMobileDashboard } from '@/hooks/useMobileDashboard';
 
 const FinancialOverview = () => {
   const navigate = useNavigate();
+  const { dashboardData, isLoading } = useMobileDashboard();
+  
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('fr-FR') + ' FCFA';
+  };
+  
+  const financialSummary = dashboardData?.financialSummary || {
+    income: 0,
+    expenses: 0,
+    savings: 0,
+    sfdCount: 0
+  };
   
   return (
     <div className="mx-4 mt-3">
@@ -28,8 +42,12 @@ const FinancialOverview = () => {
                   <ArrowUpRight className="h-3 w-3 text-green-600" />
                 </div>
               </div>
-              <p className="text-xl font-semibold text-gray-800">+540.000 FCFA</p>
-              <p className="text-xs text-gray-500 mt-1">Consolidé sur 2 SFDs</p>
+              <p className="text-xl font-semibold text-gray-800">
+                {isLoading ? "..." : formatCurrency(financialSummary.income)}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Consolidé sur {financialSummary.sfdCount || 0} SFDs
+              </p>
             </div>
             
             <div className="bg-red-50 p-3 rounded-xl">
@@ -39,8 +57,12 @@ const FinancialOverview = () => {
                   <ArrowDownRight className="h-3 w-3 text-red-600" />
                 </div>
               </div>
-              <p className="text-xl font-semibold text-gray-800">-354.300 FCFA</p>
-              <p className="text-xs text-gray-500 mt-1">Consolidé sur 2 SFDs</p>
+              <p className="text-xl font-semibold text-gray-800">
+                {isLoading ? "..." : formatCurrency(financialSummary.expenses)}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Consolidé sur {financialSummary.sfdCount || 0} SFDs
+              </p>
             </div>
           </div>
           
@@ -48,7 +70,9 @@ const FinancialOverview = () => {
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-500">Épargne du mois dernier</p>
               <div className="flex items-center">
-                <p className="font-medium">52.000 FCFA</p>
+                <p className="font-medium">
+                  {isLoading ? "..." : formatCurrency(financialSummary.savings)}
+                </p>
                 <TrendingUp className="h-4 w-4 text-green-500 ml-1" />
               </div>
             </div>
