@@ -56,13 +56,8 @@ const MobileFlowPage: React.FC = () => {
   const mockAccount: Account = {
     id: 'account-1',
     user_id: user?.id || '',
-    sfd_id: 'default-sfd',
-    account_number: '123456789',
     balance: 50000,
     currency: 'FCFA',
-    status: 'active',
-    type: 'savings',
-    created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
   
