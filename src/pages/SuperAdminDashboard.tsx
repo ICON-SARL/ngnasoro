@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { UserManagement } from '@/components/UserManagement';
 import SfdAccountRequests from '@/components/admin/SfdAccountRequests';
 import { SubsidyManagement } from '@/components/admin/SubsidyManagement';
+import { SfdManagement } from '@/components/admin/SfdManagement';
 import { BarChart, PieChart, Building, Users, ShieldCheck, Settings, ArrowUpRight, CreditCard, DollarSign, CircleDollarSign } from 'lucide-react';
 import { useSubsidies } from '@/hooks/useSubsidies';
 import { CreditDecisionFlow } from '@/components/CreditDecisionFlow';
@@ -113,14 +113,19 @@ const SuperAdminDashboard = () => {
           </Card>
         </div>
         
-        <Tabs defaultValue="subsidies" className="space-y-6">
+        <Tabs defaultValue="sfds" className="space-y-6">
           <TabsList>
+            <TabsTrigger value="sfds">SFDs Actifs</TabsTrigger>
             <TabsTrigger value="subsidies">Subventions</TabsTrigger>
             <TabsTrigger value="credit-approval">Approbation de Crédit</TabsTrigger>
             <TabsTrigger value="sfd-requests">Demandes SFD</TabsTrigger>
             <TabsTrigger value="user-management">Gestion Utilisateurs</TabsTrigger>
             <TabsTrigger value="analytics">Analytique</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="sfds" className="mt-6">
+            <SfdManagement />
+          </TabsContent>
           
           <TabsContent value="subsidies" className="mt-6">
             <SubsidyManagement />
