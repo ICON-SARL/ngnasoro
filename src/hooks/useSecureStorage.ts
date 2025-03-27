@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { SecureStorage } from '@/utils/encryption';
+import { SecureStorage } from '@/utils/crypto';
 
 /**
  * Custom hook for using secure encrypted storage

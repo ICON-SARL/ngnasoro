@@ -1,6 +1,6 @@
 
 import * as jose from 'jose';
-import { EncryptionService } from './encryption';
+import { EncryptionService } from './crypto';
 
 // Set a secure secret key (in production, this would be stored securely)
 const JWT_SECRET = 'your-very-secure-secret-key-for-sfd-context';
