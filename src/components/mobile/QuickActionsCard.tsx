@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ArrowUpRight, ArrowDownLeft, CalendarClock, CreditCard, Wallet } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, CalendarClock, CreditCard, Wallet, PiggyBank, Receipt } from 'lucide-react';
 
 interface QuickActionProps {
   icon: React.ReactNode;
@@ -26,7 +26,7 @@ const QuickActionsCard: React.FC<{ onAction: (action: string, data?: any) => voi
   return (
     <div className="bg-white rounded-2xl p-4 shadow-sm">
       <h3 className="font-medium mb-3">Actions Rapides</h3>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         <QuickAction
           icon={<ArrowUpRight className="h-5 w-5" />}
           label="Envoyer"
@@ -41,6 +41,13 @@ const QuickActionsCard: React.FC<{ onAction: (action: string, data?: any) => voi
           icon={<CalendarClock className="h-5 w-5" />}
           label="Programmer"
           onClick={() => onAction('Schedule transfer')}
+        />
+        <QuickAction
+          icon={<PiggyBank className="h-5 w-5" />}
+          label="Épargne"
+          onClick={() => onAction('Savings')}
+          bgColor="bg-green-50"
+          iconColor="text-green-500"
         />
         {loanId ? (
           <QuickAction
@@ -59,6 +66,13 @@ const QuickActionsCard: React.FC<{ onAction: (action: string, data?: any) => voi
             iconColor="text-amber-500"
           />
         )}
+        <QuickAction
+          icon={<Receipt className="h-5 w-5" />}
+          label="Factures"
+          onClick={() => onAction('Bills')}
+          bgColor="bg-purple-50"
+          iconColor="text-purple-500"
+        />
       </div>
     </div>
   );

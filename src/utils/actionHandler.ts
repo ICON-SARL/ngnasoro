@@ -45,6 +45,18 @@ export const useActionHandler = () => {
       // You would handle setting repayment amount here if data contains amount
     } else if (action === 'Home') {
       navigate('/mobile-flow/main');
+    } else if (action === 'Savings') {
+      // Navigate to the savings page
+      toast({
+        title: 'Épargne',
+        description: 'Cette fonctionnalité est en cours de développement',
+      });
+    } else if (action === 'Bills') {
+      // Navigate to the bills page
+      toast({
+        title: 'Factures',
+        description: 'Cette fonctionnalité est en cours de développement',
+      });
     }
   };
 
