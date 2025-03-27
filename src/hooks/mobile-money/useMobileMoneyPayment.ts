@@ -10,13 +10,13 @@ import {
 import { MobileMoneyPaymentHook } from './types';
 
 /**
- * Hook pour gérer les paiements Mobile Money
+ * Hook for handling mobile money payment operations
  */
 export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  
+
   const processMobileMoneyPayment = async (
     phoneNumber: string, 
     amount: number, 
@@ -50,7 +50,7 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
       if (response.success) {
         toast({
           title: "Paiement initié",
-          description: "Vérifiez votre téléphone pour confirmer le paiement",
+          description: "Vérifiez votre téléphone pour confirmer la transaction",
         });
       } else {
         toast({

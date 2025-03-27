@@ -35,11 +35,7 @@ const SFDSavingsOverview = () => {
     // Initial synchronization on component mount
     const performInitialSync = async () => {
       if (activeSfdId) {
-        try {
-          await synchronizeWithSfd();
-        } catch (error) {
-          console.error('Synchronization error:', error);
-        }
+        await synchronizeWithSfd();
       }
     };
     

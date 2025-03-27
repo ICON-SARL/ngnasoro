@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 import { PaymentMethodTabs } from './PaymentMethodTabs';
 import { SecurityFeatures } from './SecurityFeatures';
 import { ReconciliationSection } from './ReconciliationSection';
@@ -14,7 +12,7 @@ import PaymentDetails from './PaymentDetails';
 import SuccessView from './SuccessView';
 import MobileMoneyModal from '../loan/MobileMoneyModal';
 import QRCodePaymentDialog from '../loan/QRCodePaymentDialog';
-import { useMobileMoneyOperations } from '@/hooks/useMobileMoneyOperations';
+import { usePaymentProcessor } from './hooks/usePaymentProcessor';
 import { useTransactions } from '@/hooks/useTransactions';
 
 export interface SecurePaymentTabProps {
@@ -31,10 +29,8 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   onComplete
 }) => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
   const { user, activeSfdId } = useAuth();
-  const { synchronizeWithSfd } = useRealtimeSynchronization();
   const [paymentMethod, setPaymentMethod] = useState('sfd');
   const [balanceStatus, setBalanceStatus] = useState<'sufficient' | 'insufficient'>('sufficient');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed' | null>(null);
@@ -42,20 +38,6 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   const [progress, setProgress] = useState(0);
   const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
-  
-  // Définir les montants de transaction par défaut
-  const amount = isWithdrawal ? 25000 : loanId ? 3500 : 10000;
-  
-  // Récupérer les paramètres passés via le state de navigation si disponibles
-  useEffect(() => {
-    if (location.state) {
-      const { isRepayment, isWithdrawalParam, loanIdParam } = location.state as any;
-      if (isRepayment !== undefined) {
-        // Si c'est spécifié dans le state, utiliser cette valeur
-        // Sinon, garder la valeur des props
-      }
-    }
-  }, [location]);
   
   const { 
     makeDeposit, 
@@ -71,14 +53,8 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     }
   };
   
-  // Synchroniser les données au chargement
-  useEffect(() => {
-    if (activeSfdId) {
-      synchronizeWithSfd().catch(err => {
-        console.error('Error synchronizing with SFD:', err);
-      });
-    }
-  }, [activeSfdId, synchronizeWithSfd]);
+  // Définir les montants de transaction par défaut
+  const amount = isWithdrawal ? 25000 : loanId ? 3500 : 10000;
   
   // Gérer le paiement en fonction du type d'opération
   const handlePayment = async () => {
@@ -88,14 +64,6 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
         description: "Utilisateur ou SFD non défini",
         variant: "destructive",
       });
-      return;
-    }
-    
-    if (paymentMethod === 'sfd') {
-      setQrDialogOpen(true);
-      return;
-    } else if (paymentMethod === 'mobile') {
-      setMobileMoneyInitiated(true);
       return;
     }
     
@@ -122,13 +90,6 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       setTimeout(() => setProgress(100), 1500);
       
       if (result) {
-        // Synchroniser avec la SFD après l'opération
-        try {
-          await synchronizeWithSfd();
-        } catch (syncError) {
-          console.error('Error synchronizing after payment:', syncError);
-        }
-        
         setTimeout(() => {
           setPaymentStatus('success');
           setPaymentSuccess(true);
@@ -156,23 +117,6 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     }
   };
   
-  const handleSuccessfulPayment = async () => {
-    setPaymentSuccess(true);
-    
-    // Synchroniser avec la SFD après l'opération
-    if (activeSfdId) {
-      try {
-        await synchronizeWithSfd();
-      } catch (syncError) {
-        console.error('Error synchronizing after successful payment:', syncError);
-      }
-    }
-    
-    if (onComplete) {
-      onComplete();
-    }
-  };
-  
   // Détecter automatiquement le solde suffisant
   useEffect(() => {
     const detectPrimaryAccount = () => {
@@ -194,7 +138,11 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     
     detectPrimaryAccount();
   }, [toast, isWithdrawal]);
-
+  
+  const handleMobileMoneyPayment = () => {
+    setMobileMoneyInitiated(true);
+  };
+  
   return (
     <div className="bg-white h-full pb-24">
       <TabHeader onBack={handleBackAction} isWithdrawal={isWithdrawal} />
@@ -202,14 +150,14 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       {paymentSuccess ? (
         <SuccessView 
           isWithdrawal={isWithdrawal} 
-          amount={amount} 
+          amount={isWithdrawal ? 25000 : loanId ? 3500 : 10000} 
           onBack={handleBackAction} 
         />
       ) : (
         <div className="p-4 space-y-6">
           <PaymentDetails 
             isWithdrawal={isWithdrawal}
-            amount={amount}
+            amount={isWithdrawal ? 25000 : loanId ? 3500 : 10000}
             progress={progress}
             paymentStatus={paymentStatus}
           />
@@ -230,22 +178,12 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       )}
       
       {mobileMoneyInitiated && (
-        <MobileMoneyModal 
-          onClose={() => setMobileMoneyInitiated(false)}
-          isWithdrawal={isWithdrawal}
-          amount={amount}
-          onSuccess={handleSuccessfulPayment}
-        />
+        <MobileMoneyModal onClose={() => setMobileMoneyInitiated(false)} isWithdrawal={isWithdrawal} />
       )}
       
       <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
         <DialogTrigger className="hidden">Open QR Dialog</DialogTrigger>
-        <QRCodePaymentDialog 
-          onClose={() => setQrDialogOpen(false)} 
-          amount={amount} 
-          isWithdrawal={isWithdrawal}
-          onSuccess={handleSuccessfulPayment}
-        />
+        <QRCodePaymentDialog onClose={() => setQrDialogOpen(false)} amount={amount} isWithdrawal={isWithdrawal} />
       </Dialog>
     </div>
   );

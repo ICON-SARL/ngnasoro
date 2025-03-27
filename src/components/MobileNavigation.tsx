@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Home, Wallet, User, Plus, CreditCard } from 'lucide-react';
+import { Home, Wallet, User, Plus, RefreshCw, ArrowUp } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavigationItem {
@@ -35,8 +35,19 @@ const MobileNavigation = ({ onAction, className = "", isHeader = false }: Mobile
     setActiveTab(pathSegment || 'main');
   }, [location.pathname]);
 
-  // Don't render on welcome page or if not mobile
-  if (!isMobile || isWelcomePage) return null;
+  useEffect(() => {
+    const handleCustomAction = (event: any) => {
+      if (event.detail && event.detail.action && onAction) {
+        onAction(event.detail.action);
+      }
+    };
+
+    window.addEventListener('lovable:action', handleCustomAction);
+    
+    return () => {
+      window.removeEventListener('lovable:action', handleCustomAction);
+    };
+  }, [onAction]);
 
   const navigationItems: NavigationItem[] = [
     {
@@ -47,7 +58,7 @@ const MobileNavigation = ({ onAction, className = "", isHeader = false }: Mobile
     },
     {
       icon: <Wallet className="h-6 w-6" />,
-      label: "Fonds",
+      label: "Mes Fonds",
       value: 'funds-management',
       path: '/mobile-flow/funds-management'
     },
@@ -58,9 +69,9 @@ const MobileNavigation = ({ onAction, className = "", isHeader = false }: Mobile
       path: '/mobile-flow/loan-application'
     },
     {
-      icon: <CreditCard className="h-6 w-6" />,
-      label: "Remb.",
-      value: 'secure-payment',
+      icon: <ArrowUp className="h-6 w-6" />,
+      label: "Rembourser",
+      value: 'payment',
       path: '/mobile-flow/secure-payment'
     },
     {
@@ -70,6 +81,48 @@ const MobileNavigation = ({ onAction, className = "", isHeader = false }: Mobile
       path: '/mobile-flow/profile'
     }
   ];
+
+  // Don't render on welcome page or if not mobile
+  if (!isMobile || isWelcomePage) return null;
+
+  // If we're in the header (tablet mode), show horizontal navigation
+  if (isHeader) {
+    return (
+      <div className={`bg-white border-b border-gray-200 py-2 ${className}`}>
+        <div className="flex justify-around items-center px-2 relative">
+          {navigationItems.map((item, index) => {
+            if (index === 2) {
+              return (
+                <div key={index} className="relative">
+                  <button 
+                    className="bg-[#0D6A51] text-white p-3 rounded-full shadow-lg"
+                    onClick={() => navigate('/mobile-flow/loan-application')}
+                  >
+                    <Plus className="h-5 w-5" />
+                  </button>
+                </div>
+              );
+            }
+            
+            return (
+              <button
+                key={index}
+                className={`flex flex-col items-center justify-center py-1 px-2 ${
+                  activeTab === item.value 
+                    ? 'text-[#0D6A51] font-medium' 
+                    : 'text-gray-400'
+                }`}
+                onClick={() => navigate(item.path)}
+              >
+                {item.icon}
+                <span className="text-xs mt-1">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   // Regular mobile footer navigation
   return (

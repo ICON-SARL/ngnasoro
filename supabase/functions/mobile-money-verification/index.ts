@@ -161,46 +161,42 @@ serve(async (req) => {
         );
       }
       
-      // Create a QR code record in the database (this would be a real QR code in production)
+      // Generate a unique QR code (in a real implementation, this would be more secure)
       const qrCodeData = {
         userId: userId,
         amount: amount,
         isWithdrawal: isWithdrawal,
         timestamp: Date.now(),
-        expiresAt: new Date(Date.now() + 30 * 60000).toISOString(), // 30 minutes expiry
-        code: `QR${Math.random().toString(36).substring(2, 8).toUpperCase()}${Date.now().toString().substring(9)}`
+        expiresAt: new Date(Date.now() + 15 * 60000).toISOString(), // 15 minutes expiry
+        code: `QR${Math.random().toString(36).substring(2, 10).toUpperCase()}${Date.now().toString(36)}`
       };
       
-      // In a real implementation, we would store this QR code in the database
-      // For now, just return it
+      // In a production environment, we would store this QR code data in the database
+      // and potentially encrypt sensitive information
       
-      // Return success response with QR code details
+      // Return QR code data
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           qrCode: qrCodeData
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    // If we get here, the action was not recognized
+    // If no valid action specified
     return new Response(
-      JSON.stringify({ error: "Unknown action" }),
+      JSON.stringify({ error: "Invalid action specified" }),
       { 
         status: 400, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
-    
-  } catch (error: any) {
-    console.error("Error processing request:", error);
+  } catch (error) {
+    console.error("Error:", error);
     
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message || "An error occurred processing the request" 
-      }),
+      JSON.stringify({ error: "Internal server error" }),
       { 
         status: 500, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
