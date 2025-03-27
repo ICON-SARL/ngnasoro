@@ -41,7 +41,7 @@ const AuthUI = () => {
   if (authSuccess) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
           <div className="h-16 w-16 bg-green-100 text-green-600 rounded-full mx-auto flex items-center justify-center mb-4">
             <Check className="h-8 w-8" />
           </div>
@@ -57,22 +57,24 @@ const AuthUI = () => {
       <div className="max-w-md w-full">
         <Logo />
         
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="login">Connexion</TabsTrigger>
-              <TabsTrigger value="register">Inscription</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login" className="p-6">
-              <LoginForm />
-            </TabsContent>
-            
-            <TabsContent value="register" className="p-6">
-              <RegisterForm />
-            </TabsContent>
-          </Tabs>
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-2 w-full mb-6 rounded-xl overflow-hidden">
+            <TabsTrigger value="login" className="py-3 data-[state=active]:bg-[#0D6A51] data-[state=active]:text-white">
+              Connexion
+            </TabsTrigger>
+            <TabsTrigger value="register" className="py-3 data-[state=active]:bg-[#0D6A51] data-[state=active]:text-white">
+              Inscription
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="login">
+            <LoginForm />
+          </TabsContent>
+          
+          <TabsContent value="register">
+            <RegisterForm />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

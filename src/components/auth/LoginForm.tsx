@@ -29,30 +29,36 @@ const LoginForm = () => {
 
   return (
     <>
-      <ErrorDisplay message={errorMessage} />
-      <CooldownAlert active={cooldownActive} remainingTime={cooldownTime} />
+      <div className="space-y-4 bg-white shadow-lg rounded-xl p-6">
+        <h2 className="text-2xl font-bold text-[#0D6A51] mb-6 text-center">Connectez-vous</h2>
+        
+        <ErrorDisplay message={errorMessage} />
+        <CooldownAlert active={cooldownActive} remainingTime={cooldownTime} />
 
-      <form onSubmit={handleLogin} className="space-y-4">
-        <EmailInput 
-          email={email}
-          onChange={(e) => setEmail(e.target.value)}
-          disabled={isLoading || cooldownActive}
-        />
-        
-        <AuthModeSwitcher 
-          authMode={authMode}
-          onToggle={toggleAuthMode}
-          disabled={isLoading || cooldownActive}
-        />
-        
-        <LoginButton 
-          isLoading={isLoading}
-          disabled={cooldownActive}
-          authMode={authMode}
-        />
-        
-        <SocialButtons />
-      </form>
+        <form onSubmit={handleLogin} className="space-y-5">
+          <EmailInput 
+            email={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading || cooldownActive}
+          />
+          
+          <AuthModeSwitcher 
+            authMode={authMode}
+            onToggle={toggleAuthMode}
+            disabled={isLoading || cooldownActive}
+          />
+          
+          <div className="pt-2">
+            <LoginButton 
+              isLoading={isLoading}
+              disabled={cooldownActive}
+              authMode={authMode}
+            />
+          </div>
+          
+          <SocialButtons />
+        </form>
+      </div>
       
       <AuthenticationDialog
         open={showAuthDialog}
