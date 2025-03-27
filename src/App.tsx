@@ -14,6 +14,7 @@ import LoansPage from './pages/LoansPage';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import LoanActivityPage from './components/mobile/LoanActivityPage';
 import Index from './pages/Index';
+import AgencyDashboard from './pages/AgencyDashboard';
 
 function App() {
   return (
@@ -25,6 +26,12 @@ function App() {
           <Route path="/auth" element={<LoginPage />} />
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/register" element={<LoginPage />} />
+          
+          {/* Agency Dashboard Route */}
+          <Route 
+            path="/agency-dashboard"
+            element={<ProtectedRoute component={AgencyDashboard} />}
+          />
           
           {/* Mobile Flow Routes */}
           <Route 
