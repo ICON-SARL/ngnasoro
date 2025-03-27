@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,7 +14,7 @@ import PaymentDetails from './PaymentDetails';
 import SuccessView from './SuccessView';
 import MobileMoneyModal from '../loan/MobileMoneyModal';
 import QRCodePaymentDialog from '../loan/QRCodePaymentDialog';
-import { usePaymentProcessor } from './hooks/usePaymentProcessor';
+import { useMobileMoneyOperations } from '@/hooks/useMobileMoneyOperations';
 import { useTransactions } from '@/hooks/useTransactions';
 
 export interface SecurePaymentTabProps {
@@ -31,6 +31,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   onComplete
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { user, activeSfdId } = useAuth();
   const { synchronizeWithSfd } = useRealtimeSynchronization();
@@ -41,6 +42,20 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   const [progress, setProgress] = useState(0);
   const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  
+  // Définir les montants de transaction par défaut
+  const amount = isWithdrawal ? 25000 : loanId ? 3500 : 10000;
+  
+  // Récupérer les paramètres passés via le state de navigation si disponibles
+  useEffect(() => {
+    if (location.state) {
+      const { isRepayment, isWithdrawalParam, loanIdParam } = location.state as any;
+      if (isRepayment !== undefined) {
+        // Si c'est spécifié dans le state, utiliser cette valeur
+        // Sinon, garder la valeur des props
+      }
+    }
+  }, [location]);
   
   const { 
     makeDeposit, 
@@ -55,9 +70,6 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       navigate(-1);
     }
   };
-  
-  // Définir les montants de transaction par défaut
-  const amount = isWithdrawal ? 25000 : loanId ? 3500 : 10000;
   
   // Synchroniser les données au chargement
   useEffect(() => {
@@ -76,6 +88,14 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
         description: "Utilisateur ou SFD non défini",
         variant: "destructive",
       });
+      return;
+    }
+    
+    if (paymentMethod === 'sfd') {
+      setQrDialogOpen(true);
+      return;
+    } else if (paymentMethod === 'mobile') {
+      setMobileMoneyInitiated(true);
       return;
     }
     
@@ -136,6 +156,23 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     }
   };
   
+  const handleSuccessfulPayment = async () => {
+    setPaymentSuccess(true);
+    
+    // Synchroniser avec la SFD après l'opération
+    if (activeSfdId) {
+      try {
+        await synchronizeWithSfd();
+      } catch (syncError) {
+        console.error('Error synchronizing after successful payment:', syncError);
+      }
+    }
+    
+    if (onComplete) {
+      onComplete();
+    }
+  };
+  
   // Détecter automatiquement le solde suffisant
   useEffect(() => {
     const detectPrimaryAccount = () => {
@@ -157,11 +194,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     
     detectPrimaryAccount();
   }, [toast, isWithdrawal]);
-  
-  const handleMobileMoneyPayment = () => {
-    setMobileMoneyInitiated(true);
-  };
-  
+
   return (
     <div className="bg-white h-full pb-24">
       <TabHeader onBack={handleBackAction} isWithdrawal={isWithdrawal} />
@@ -169,14 +202,14 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       {paymentSuccess ? (
         <SuccessView 
           isWithdrawal={isWithdrawal} 
-          amount={isWithdrawal ? 25000 : loanId ? 3500 : 10000} 
+          amount={amount} 
           onBack={handleBackAction} 
         />
       ) : (
         <div className="p-4 space-y-6">
           <PaymentDetails 
             isWithdrawal={isWithdrawal}
-            amount={isWithdrawal ? 25000 : loanId ? 3500 : 10000}
+            amount={amount}
             progress={progress}
             paymentStatus={paymentStatus}
           />
@@ -200,14 +233,8 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
         <MobileMoneyModal 
           onClose={() => setMobileMoneyInitiated(false)}
           isWithdrawal={isWithdrawal}
-          onSuccess={async () => {
-            // Synchroniser après une opération mobile money réussie
-            try {
-              await synchronizeWithSfd();
-            } catch (err) {
-              console.error('Error synchronizing after mobile money payment:', err);
-            }
-          }}
+          amount={amount}
+          onSuccess={handleSuccessfulPayment}
         />
       )}
       
@@ -217,14 +244,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
           onClose={() => setQrDialogOpen(false)} 
           amount={amount} 
           isWithdrawal={isWithdrawal}
-          onSuccess={async () => {
-            // Synchroniser après un paiement QR réussi
-            try {
-              await synchronizeWithSfd();
-            } catch (err) {
-              console.error('Error synchronizing after QR payment:', err);
-            }
-          }}
+          onSuccess={handleSuccessfulPayment}
         />
       </Dialog>
     </div>

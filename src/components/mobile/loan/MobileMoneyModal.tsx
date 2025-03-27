@@ -5,34 +5,50 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { useMobileMoneyOperations } from '@/hooks/useMobileMoneyOperations';
 
 export interface MobileMoneyModalProps {
   isOpen?: boolean;
   onClose: () => void;
   isWithdrawal: boolean;
   onSuccess?: () => Promise<void>;
+  amount?: number;
 }
 
 const MobileMoneyModal: React.FC<MobileMoneyModalProps> = ({ 
   isOpen = true, 
   onClose, 
   isWithdrawal,
-  onSuccess
+  onSuccess,
+  amount = isWithdrawal ? 25000 : 3500
 }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [amount, setAmount] = useState('');
+  const [provider, setProvider] = useState<'orange' | 'mtn' | 'wave'>('orange');
   const [isLoading, setIsLoading] = useState(false);
   const [code, setCode] = useState('');
   const [step, setStep] = useState<'info' | 'verification'>('info');
+  const { processMobileMoneyPayment, processMobileMoneyWithdrawal } = useMobileMoneyOperations();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(() => {
-      setStep('verification');
+    try {
+      if (isWithdrawal) {
+        await processMobileMoneyWithdrawal(phoneNumber, amount, provider);
+      } else {
+        await processMobileMoneyPayment(phoneNumber, amount, provider);
+      }
+      
+      // Simuler l'envoi d'un code de vérification
+      setTimeout(() => {
+        setStep('verification');
+        setIsLoading(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Mobile money error:', error);
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   const handleVerify = async (e: React.FormEvent) => {
@@ -54,12 +70,42 @@ const MobileMoneyModal: React.FC<MobileMoneyModalProps> = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {isWithdrawal ? 'Retrait d\'argent' : 'Dépôt d\'argent'} via Mobile Money
+            {isWithdrawal ? 'Retrait d\'argent' : 'Remboursement de prêt'} via Mobile Money
           </DialogTitle>
         </DialogHeader>
         
         {step === 'info' ? (
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="provider">Opérateur</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant={provider === 'orange' ? 'default' : 'outline'}
+                  onClick={() => setProvider('orange')}
+                  className={provider === 'orange' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+                >
+                  Orange
+                </Button>
+                <Button
+                  type="button"
+                  variant={provider === 'mtn' ? 'default' : 'outline'}
+                  onClick={() => setProvider('mtn')}
+                  className={provider === 'mtn' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
+                >
+                  MTN
+                </Button>
+                <Button
+                  type="button"
+                  variant={provider === 'wave' ? 'default' : 'outline'}
+                  onClick={() => setProvider('wave')}
+                  className={provider === 'wave' ? 'bg-blue-500 hover:bg-blue-600' : ''}
+                >
+                  Wave
+                </Button>
+              </div>
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="phone">Numéro de téléphone</Label>
               <Input
@@ -76,11 +122,9 @@ const MobileMoneyModal: React.FC<MobileMoneyModalProps> = ({
               <Label htmlFor="amount">Montant (FCFA)</Label>
               <Input
                 id="amount"
-                type="number"
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
-                placeholder="10000"
-                required
+                type="text"
+                value={amount.toLocaleString()}
+                readOnly
               />
             </div>
             
@@ -88,7 +132,7 @@ const MobileMoneyModal: React.FC<MobileMoneyModalProps> = ({
               <Button variant="outline" type="button" onClick={onClose} disabled={isLoading}>
                 Annuler
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || !phoneNumber}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Continuer
               </Button>
@@ -115,7 +159,7 @@ const MobileMoneyModal: React.FC<MobileMoneyModalProps> = ({
               <Button variant="outline" type="button" onClick={() => setStep('info')} disabled={isLoading}>
                 Retour
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || !code}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Vérifier
               </Button>

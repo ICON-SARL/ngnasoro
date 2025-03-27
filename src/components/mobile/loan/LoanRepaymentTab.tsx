@@ -18,6 +18,7 @@ interface LoanRepaymentTabProps {
   nextPaymentDue: string;
   paymentHistory: PaymentHistory[];
   onMobileMoneyPayment: () => void;
+  onAgencyQRPayment: () => void;
   loanId?: string;
 }
 
@@ -25,6 +26,7 @@ const LoanRepaymentTab = ({
   nextPaymentDue, 
   paymentHistory, 
   onMobileMoneyPayment,
+  onAgencyQRPayment,
   loanId = 'LOAN123'
 }: LoanRepaymentTabProps) => {
   const navigate = useNavigate();
@@ -33,16 +35,9 @@ const LoanRepaymentTab = ({
   
   const handleRepayment = (method: 'mobile' | 'agency') => {
     if (method === 'mobile') {
-      // Rediriger vers la page de paiement sécurisé avec les paramètres appropriés
-      navigate('/mobile-flow/secure-payment', { 
-        state: { 
-          isRepayment: true, 
-          loanId 
-        } 
-      });
-    } else {
-      // Agency QR code payment
       onMobileMoneyPayment();
+    } else {
+      onAgencyQRPayment();
     }
   };
   
@@ -79,7 +74,7 @@ const LoanRepaymentTab = ({
                 </div>
                 <div>
                   <h4 className="font-medium">Mobile Money</h4>
-                  <p className="text-xs text-gray-500">Paiement via MTN Mobile Money</p>
+                  <p className="text-xs text-gray-500">Paiement via Orange, MTN ou Wave</p>
                 </div>
               </div>
               <Button variant="ghost" size="sm" className="text-teal-500">
@@ -89,26 +84,24 @@ const LoanRepaymentTab = ({
           </CardContent>
         </Card>
         
-        <DialogTrigger asChild>
-          <Card className="border hover:border-teal-500 transition-colors cursor-pointer">
-            <CardContent className="p-4" onClick={() => handleRepayment('agency')}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                    <Building className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Paiement en agence SFD</h4>
-                    <p className="text-xs text-gray-500">Générez un QR code à présenter en agence</p>
-                  </div>
+        <Card className="border hover:border-teal-500 transition-colors cursor-pointer">
+          <CardContent className="p-4" onClick={() => handleRepayment('agency')}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                  <Building className="h-5 w-5 text-blue-600" />
                 </div>
-                <Button variant="ghost" size="sm" className="text-teal-500">
-                  Choisir
-                </Button>
+                <div>
+                  <h4 className="font-medium">Paiement en agence SFD</h4>
+                  <p className="text-xs text-gray-500">Générez un QR code à présenter en agence</p>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </DialogTrigger>
+              <Button variant="ghost" size="sm" className="text-teal-500">
+                Choisir
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
         
         <Card className="border p-4 bg-gray-50">
           <div className="flex items-center mb-2">
