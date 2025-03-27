@@ -6,11 +6,12 @@ import { TransactionFilters } from './types';
  * Builds a Supabase query for fetching transactions with filters
  */
 export function buildTransactionQuery(userId?: string, sfdId?: string, filters?: TransactionFilters) {
-  // Create a base query
-  const query = supabase.from('transactions').select('*');
+  // Create a base query that we'll modify with our filters
+  // We cast to any to avoid TypeScript type depth issues with the query builder
+  const query = supabase.from('transactions').select('*') as any;
   
-  // Apply filters without chaining
-  // The Supabase query builder modifies the query object in-place
+  // Apply filters directly to the query object
+  // By casting to any, we prevent TypeScript from trying to track the complex nested types
   
   // Apply user_id filter if provided
   if (userId) {
@@ -61,6 +62,6 @@ export function buildTransactionQuery(userId?: string, sfdId?: string, filters?:
   // Order by date (newest first)
   query.order('date', { ascending: false });
   
-  // Return the final query
+  // Return the final query, casting back to the appropriate type
   return query;
 }
