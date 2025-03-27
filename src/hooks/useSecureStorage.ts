@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { SecureStorage } from '@/utils/encryption';
 
 /**
@@ -9,10 +9,21 @@ import { SecureStorage } from '@/utils/encryption';
  * @returns Object with methods to interact with secure storage
  */
 export function useSecureStorage<T>(storageKey: string, encryptionKey: string) {
-  const secureStorage = new SecureStorage(storageKey, encryptionKey);
-  const [storedValue, setStoredValue] = useState<T | null>(() => {
-    return secureStorage.getItem<T>();
-  });
+  const [secureStorage] = useState(() => new SecureStorage(storageKey, encryptionKey));
+  const [storedValue, setStoredValue] = useState<T | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Initialize storage value
+  useEffect(() => {
+    try {
+      const value = secureStorage.getItem<T>();
+      setStoredValue(value);
+    } catch (error) {
+      console.error('Error initializing secure storage:', error);
+    } finally {
+      setIsInitialized(true);
+    }
+  }, [secureStorage]);
   
   // Set a new value in secure storage
   const setValue = useCallback((value: T) => {
@@ -38,6 +49,7 @@ export function useSecureStorage<T>(storageKey: string, encryptionKey: string) {
     value: storedValue,
     setValue,
     removeValue,
-    secureStorage
+    secureStorage,
+    isInitialized
   };
 }

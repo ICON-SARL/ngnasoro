@@ -23,26 +23,36 @@ export interface SfdJwtPayload extends jose.JWTPayload {
  * Generate a JWT token with SFD context, enhanced with AES-256 encryption
  */
 export const generateSfdContextToken = async (userId: string, sfdId: string): Promise<string> => {
-  const payload: SfdJwtPayload = {
-    userId,
-    sfdId
-  };
-  
-  // First create the JWT token
-  const jwtToken = await new jose.SignJWT(payload)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('1h')
-    .sign(secretKey);
+  try {
+    const payload: SfdJwtPayload = {
+      userId,
+      sfdId
+    };
     
-  // Add an additional layer of AES-256 encryption
-  return EncryptionService.encrypt(jwtToken, AES_ENCRYPTION_KEY);
+    // First create the JWT token
+    const jwtToken = await new jose.SignJWT(payload)
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(secretKey);
+      
+    // Add an additional layer of AES-256 encryption
+    return EncryptionService.encrypt(jwtToken, AES_ENCRYPTION_KEY);
+  } catch (error) {
+    console.error('Error generating SFD context token:', error);
+    throw new Error('Failed to generate secure token');
+  }
 };
 
 /**
  * Decode and verify a JWT token with SFD context
  */
 export const decodeSfdContextToken = async (token: string): Promise<SfdJwtPayload | null> => {
+  if (!token) {
+    console.error('No token provided for decoding');
+    return null;
+  }
+  
   try {
     // First decrypt the AES layer
     const jwtToken = EncryptionService.decrypt(token, AES_ENCRYPTION_KEY);
@@ -67,6 +77,10 @@ export const decodeSfdContextToken = async (token: string): Promise<SfdJwtPayloa
  * Check if the user has access to a specific SFD
  */
 export const hasAccessToSfd = async (token: string, targetSfdId: string): Promise<boolean> => {
+  if (!token || !targetSfdId) {
+    return false;
+  }
+  
   const decoded = await decodeSfdContextToken(token);
   return decoded !== null && decoded.sfdId === targetSfdId;
 };

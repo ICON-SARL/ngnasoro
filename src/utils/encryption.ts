@@ -1,4 +1,3 @@
-
 import * as crypto from 'crypto-js';
 
 /**
@@ -224,4 +223,5 @@ export class SecureStorage {
   }
 }
 
-// Add crypto-js dependency
+// Explicitly export the EncryptionService class to ensure it's properly accessible
+export { EncryptionService, SecureTokenService, SecureStorage };
