@@ -90,15 +90,18 @@ export function useRealtimeTransactions() {
     setIsLoading(true);
     
     try {
-      // Using explicit type annotation and avoiding complex type inference
+      // Define the explicit return type to prevent deep type instantiation
+      type SupabaseQueryResult = { data: any[] | null; error: any };
+      
+      // Perform the query with a type assertion to avoid complex inference
       const response = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(50) as unknown as SupabaseQueryResult;
         
-      // Explicitly extract data and error
+      // Extract data and error from the response
       const data = response.data || [];
       const error = response.error;
       
@@ -185,7 +188,7 @@ export function useRealtimeTransactions() {
   }, [transactions, toast, calculateStats, activeSfdId]);
   
   function createRealtimeSubscription(sfdId: string) {
-    // Use a simpler type assertion to avoid deep type inference
+    // Use a type assertion to avoid complex type inference
     const channel = supabase.channel('public:transactions') as any;
     
     const handleChanges = (payload: any) => {
