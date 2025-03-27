@@ -89,12 +89,15 @@ export function useRealtimeTransactions() {
     setIsLoading(true);
     
     try {
-      const { data = [], error } = await supabase
+      const result: { data: any[] | null, error: any } = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50) as any;
+        .limit(50);
+      
+      const data = result.data || [];
+      const error = result.error;
       
       if (error) throw error;
       
