@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,7 +27,7 @@ export function useRealtimeTransactions() {
   const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
   
-  // Helper function to convert database records to Transaction objects
+  // Helper function to convert database records to Transaction objects - simplified approach
   const convertDatabaseRecordsToTransactions = useCallback((records: any[]): Transaction[] => {
     return records.map(record => ({
       id: record.id,
@@ -94,13 +93,14 @@ export function useRealtimeTransactions() {
     return mockTransactions;
   }, []);
   
-  // Fetch initial transactions
+  // Fetch initial transactions - simplified with explicit any type
   const fetchTransactions = useCallback(async () => {
     if (!user || !activeSfdId) return;
     
     setIsLoading(true);
     
     try {
+      // Using explicit any type for data to avoid complex inference
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
@@ -112,10 +112,9 @@ export function useRealtimeTransactions() {
       
       let txData: Transaction[] = [];
       
-      // If we don't have real data in the table, use simulated data for demonstration
       if (data && data.length > 0) {
-        // Use a simple array to avoid deep type instantiation completely
-        const rawData = data as any[];
+        // Explicitly type as any[] to avoid deep inference
+        const rawData: any[] = data;
         txData = convertDatabaseRecordsToTransactions(rawData);
       } else {
         txData = generateMockTransactions(activeSfdId);
@@ -136,14 +135,13 @@ export function useRealtimeTransactions() {
     }
   }, [user, activeSfdId, toast, calculateStats, convertDatabaseRecordsToTransactions, generateMockTransactions]);
   
-  // Handle realtime updates with simplified typing
+  // Handle realtime updates with simplified typing - directly create objects
   const handleRealtimeUpdate = useCallback((payload: SimplePayload) => {
     // Create a new array instead of mutating the old one
     let updatedTransactions = [...transactions];
     
     if (payload.eventType === 'INSERT' && payload.new) {
-      // Convert payload to transaction using direct implementation
-      // instead of going through convertDatabaseRecordsToTransactions
+      // Create new transaction object directly without conversion function
       const record = payload.new;
       const newRecord: Transaction = {
         id: record.id,
@@ -166,7 +164,7 @@ export function useRealtimeTransactions() {
         description: `${newRecord.type} of ${newRecord.amount} FCFA`,
       });
     } else if (payload.eventType === 'UPDATE' && payload.new) {
-      // Directly create the updated record without using the conversion function
+      // Create updated transaction object directly
       const record = payload.new;
       const updatedRecord: Transaction = {
         id: record.id,
@@ -198,13 +196,13 @@ export function useRealtimeTransactions() {
     calculateStats(updatedTransactions);
   }, [transactions, toast, calculateStats, activeSfdId]);
   
-  // Set up realtime subscription
+  // Set up realtime subscription with simplified handling
   useEffect(() => {
     if (!user || !activeSfdId) return;
     
     fetchTransactions();
     
-    // Configure realtime subscription via Supabase
+    // Configure realtime subscription via Supabase with explicit any typing
     const channel = supabase
       .channel('public:transactions')
       .on('postgres_changes', {
@@ -213,7 +211,7 @@ export function useRealtimeTransactions() {
         table: 'transactions',
         filter: `sfd_id=eq.${activeSfdId}`
       }, (payload: any) => {
-        // Cast the payload to our simplified type to avoid deep type instantiation
+        // Create a simple payload object to avoid type recursion
         const simplePayload: SimplePayload = {
           eventType: payload.eventType,
           new: payload.new,
