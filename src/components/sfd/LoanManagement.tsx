@@ -55,6 +55,7 @@ import {
 import { useSfdLoans } from '@/hooks/useSfdLoans';
 import { Loan, SfdClient } from '@/types/sfdClients';
 import { useSfdClients } from '@/hooks/useSfdClients';
+import { useAuth } from '@/hooks/useAuth';
 
 export const LoanManagement = () => {
   const [isNewLoanDialogOpen, setIsNewLoanDialogOpen] = useState(false);
@@ -68,6 +69,7 @@ export const LoanManagement = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const { user } = useAuth();
 
   const { 
     loans, 
@@ -104,13 +106,30 @@ export const LoanManagement = () => {
       return;
     }
 
+    if (!user?.sfd_id) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de déterminer votre SFD",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const monthlyPayment = calculateMonthlyPayment(
+      newLoanData.amount,
+      newLoanData.interest_rate,
+      newLoanData.duration_months
+    );
+
     try {
       await createLoan.mutateAsync({
         client_id: selectedClientId,
+        sfd_id: user.sfd_id,
         amount: newLoanData.amount,
         duration_months: newLoanData.duration_months,
         interest_rate: newLoanData.interest_rate,
         purpose: newLoanData.purpose,
+        monthly_payment: parseFloat(monthlyPayment),
         subsidy_amount: newLoanData.subsidy_amount
       });
 

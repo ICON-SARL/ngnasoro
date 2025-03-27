@@ -1,171 +1,108 @@
+import { useState, useEffect, useContext, createContext } from 'react';
+import { Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Session, User } from "@supabase/supabase-js";
-import { useToast } from "./use-toast";
-
-type AuthContextType = {
+interface AuthContextProps {
   session: Session | null;
   user: User | null;
-  loading: boolean;
-  activeSfdId: string | null;
-  setActiveSfdId: (sfdId: string) => void;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName: string) => Promise<void>;
+  signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
-  isAdmin: () => boolean;
+  isLoading: boolean;
+}
+
+const AuthContext = createContext<AuthContextProps>({
+  session: null,
+  user: null,
+  signIn: async () => {},
+  signOut: async () => {},
+  isLoading: true,
+});
+
+export const useAuth = () => {
+  return useContext(AuthContext);
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Make sure to include sfd_id in the user type
+export interface User {
+  id: string;
+  email: string;
+  full_name?: string;
+  avatar_url?: string;
+  sfd_id?: string;
+}
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  // Initialize activeSfdId from localStorage if available
-  useEffect(() => {
-    const storedSfdId = localStorage.getItem('activeSfdId');
-    if (storedSfdId) {
-      setActiveSfdId(storedSfdId);
-    }
-  }, []);
-
-  // Store activeSfdId in localStorage whenever it changes
-  useEffect(() => {
-    if (activeSfdId) {
-      localStorage.setItem('activeSfdId', activeSfdId);
-    }
-  }, [activeSfdId]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const fetchSession = async () => {
+      setIsLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
 
-    return () => subscription.unsubscribe();
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email ?? '',
+          full_name: session.user.user_metadata.full_name as string,
+          avatar_url: session.user.user_metadata.avatar_url as string,
+          sfd_id: session.user.user_metadata.sfd_id as string,
+        });
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    };
+
+    fetchSession();
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email ?? '',
+          full_name: session.user.user_metadata.full_name as string,
+          avatar_url: session.user.user_metadata.avatar_url as string,
+          sfd_id: session.user.user_metadata.sfd_id as string,
+        });
+      } else {
+        setUser(null);
+      }
+    });
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string) => {
     try {
-      setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (error) {
-        throw error;
-      }
-      
-      toast({
-        title: "Connexion réussie",
-        description: "Vous êtes maintenant connecté",
-      });
+      const { error } = await supabase.auth.signInWithOtp({ email });
+      if (error) throw error;
+      alert('Check your email for the magic link.');
     } catch (error: any) {
-      toast({
-        title: "Erreur de connexion",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signUp = async (email: string, password: string, fullName: string) => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          }
-        }
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      toast({
-        title: "Inscription réussie",
-        description: "Vérifiez votre email pour confirmer votre compte",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Erreur d'inscription",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      alert(error.error_description || error.message);
     }
   };
 
   const signOut = async () => {
     try {
-      setLoading(true);
       await supabase.auth.signOut();
-      // Clear the active SFD ID when signing out
-      setActiveSfdId(null);
-      localStorage.removeItem('activeSfdId');
-      toast({
-        title: "Déconnexion réussie",
-      });
     } catch (error: any) {
-      toast({
-        title: "Erreur de déconnexion",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      console.error('Error signing out:', error.message);
     }
   };
 
-  // Helper function to check if user is an admin
-  const isAdmin = () => {
-    if (!user) return false;
-    
-    // Check if email domain is meref-mali.ml (admin domain)
-    return user.email?.endsWith('@meref-mali.ml') || false;
+  const value: AuthContextProps = {
+    session,
+    user,
+    signIn,
+    signOut,
+    isLoading,
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      session, 
-      user, 
-      loading, 
-      activeSfdId, 
-      setActiveSfdId, 
-      signIn, 
-      signUp, 
-      signOut,
-      isAdmin
-    }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!isLoading && children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
 };
