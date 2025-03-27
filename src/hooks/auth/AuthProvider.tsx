@@ -72,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signIn = async (email: string, useOtp: boolean = false) => {
+  const signIn = async (email: string, password: string, useOtp: boolean = false) => {
     try {
       if (useOtp) {
         const { error } = await supabase.auth.signInWithOtp({ 

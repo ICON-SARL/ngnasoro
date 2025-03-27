@@ -27,7 +27,7 @@ export interface User {
 export interface AuthContextProps {
   session: Session | null;
   user: User | null;
-  signIn: (email: string, useOtp?: boolean) => Promise<void>;
+  signIn: (email: string, password: string, useOtp?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
   isLoading: boolean;
   loading: boolean; // Alias for isLoading for backward compatibility

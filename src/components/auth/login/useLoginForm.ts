@@ -76,7 +76,7 @@ export const useLoginForm = () => {
     
     try {
       // Use password authentication (false for magic link)
-      await signIn(email, false);
+      await signIn(email, password, false);
       
       // Log successful authentication attempt
       await logAuditEvent({
