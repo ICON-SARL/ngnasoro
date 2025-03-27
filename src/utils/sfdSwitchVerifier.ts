@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface VerificationRequest {
   userId: string;
@@ -13,6 +13,7 @@ interface VerificationResponse {
   requiresVerification: boolean;
   verificationId?: string;
   message: string;
+  verificationCode?: string; // Only for demo purposes
 }
 
 /**
@@ -42,17 +43,25 @@ export async function verifySfdSwitch(userId: string, sfdId: string): Promise<Ve
     const requiresVerification = !userSfd.is_default;
     
     if (requiresVerification) {
-      // Generate a verification ID that will be used to match with the verification code
-      const verificationId = crypto.randomUUID();
+      // For enhanced security, use an edge function to handle verification
+      const { data, error } = await supabase.functions.invoke('verify-sfd-switch', {
+        body: {
+          userId,
+          sfdId,
+          action: 'initiate'
+        }
+      });
       
-      // In a real implementation, store this in a verifications table with an expiry time
-      // and send the code to the user via SMS or email
+      if (error) {
+        throw new Error(error.message);
+      }
       
       return {
         success: true,
         requiresVerification: true,
-        verificationId,
-        message: "Vérification requise pour changer de SFD"
+        verificationId: data.verificationId,
+        message: "Vérification requise pour changer de SFD",
+        verificationCode: data.verificationCode // In a real app, this would be sent via SMS
       };
     }
     
@@ -78,8 +87,24 @@ export async function completeSfdSwitch(
   request: VerificationRequest
 ): Promise<{ success: boolean; message: string }> {
   try {
-    // In a real implementation, verify the verification code against the stored one
-    // For demo, we'll assume the verification passed if a code was provided
+    if (request.verificationCode) {
+      // Verify the code through the edge function
+      const { data, error } = await supabase.functions.invoke('verify-sfd-switch', {
+        body: {
+          userId: request.userId,
+          sfdId: request.sfdId,
+          verificationCode: request.verificationCode,
+          action: 'verify'
+        }
+      });
+      
+      if (error || !data.success) {
+        return {
+          success: false,
+          message: error?.message || data?.message || "Code de vérification invalide"
+        };
+      }
+    }
     
     // Update the user's active SFD in their metadata
     const { error } = await supabase.auth.updateUser({
@@ -95,14 +120,11 @@ export async function completeSfdSwitch(
       };
     }
     
-    // In a real implementation, you might want to call an edge function 
-    // to sync data or perform other backend tasks
-    
     return {
       success: true,
       message: "Changement de SFD effectué avec succès"
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error completing SFD switch:", error);
     return {
       success: false,

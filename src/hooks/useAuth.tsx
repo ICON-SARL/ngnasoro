@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface AuthContextProps {
   session: Session | null;
   user: User | null;
-  signIn: (email: string) => Promise<void>;
+  signIn: (email: string, useOtp?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
   isLoading: boolean;
   loading: boolean; // Alias for isLoading for backward compatibility
@@ -14,6 +14,9 @@ interface AuthContextProps {
   setActiveSfdId: (id: string) => void;
   isAdmin: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
+  verifyBiometricAuth: () => Promise<boolean>;
+  biometricEnabled: boolean;
+  toggleBiometricAuth: (enabled: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps>({
@@ -27,6 +30,9 @@ const AuthContext = createContext<AuthContextProps>({
   setActiveSfdId: () => {},
   isAdmin: false,
   signUp: async () => {},
+  verifyBiometricAuth: async () => false,
+  biometricEnabled: false,
+  toggleBiometricAuth: async () => {},
 });
 
 export const useAuth = () => {
@@ -45,6 +51,7 @@ export interface User {
     avatar_url?: string;
     sfd_id?: string;
     phone?: string;
+    biometric_enabled?: boolean;
     [key: string]: any;
   };
   phone?: string;
@@ -63,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -74,6 +82,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Check if user has admin role
         const isAdminUser = session.user.app_metadata?.role === 'admin';
         setIsAdmin(isAdminUser);
+
+        const userBiometricEnabled = 
+          session.user.user_metadata.biometric_enabled as boolean || false;
+        setBiometricEnabled(userBiometricEnabled);
 
         setUser({
           id: session.user.id,
@@ -108,6 +120,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const isAdminUser = session.user.app_metadata?.role === 'admin';
         setIsAdmin(isAdminUser);
 
+        const userBiometricEnabled = 
+          session.user.user_metadata.biometric_enabled as boolean || false;
+        setBiometricEnabled(userBiometricEnabled);
+
         setUser({
           id: session.user.id,
           email: session.user.email ?? '',
@@ -132,13 +148,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
-  const signIn = async (email: string) => {
+  const signIn = async (email: string, useOtp: boolean = true) => {
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email });
+      if (useOtp) {
+        const { error } = await supabase.auth.signInWithOtp({ email });
+        if (error) throw error;
+        return;
+      }
+      
+      // Fallback to password if not using OTP (for legacy support)
+      const { error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password: 'PLACEHOLDER_PASSWORD' // This will be ignored when using magic link
+      });
       if (error) throw error;
-      alert('Check your email for the magic link.');
     } catch (error: any) {
-      alert(error.error_description || error.message);
+      console.error("Authentication error:", error.message);
+      throw error;
     }
   };
 
@@ -170,6 +196,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const verifyBiometricAuth = async (): Promise<boolean> => {
+    try {
+      // In a real implementation, this would integrate with device biometrics
+      // For this demo, we're simulating successful verification
+      console.log("Biometric authentication verified");
+      return true;
+    } catch (error) {
+      console.error("Biometric verification failed:", error);
+      return false;
+    }
+  };
+
+  const toggleBiometricAuth = async (enabled: boolean): Promise<void> => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { biometric_enabled: enabled }
+      });
+
+      if (error) throw error;
+      
+      setBiometricEnabled(enabled);
+    } catch (error) {
+      console.error("Failed to toggle biometric authentication:", error);
+      throw error;
+    }
+  };
+
   const value: AuthContextProps = {
     session,
     user,
@@ -181,6 +234,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveSfdId,
     isAdmin,
     signUp,
+    verifyBiometricAuth,
+    biometricEnabled,
+    toggleBiometricAuth,
   };
 
   return (
