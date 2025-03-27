@@ -186,32 +186,27 @@ export function useRealtimeTransactions() {
     calculateStats(updatedTransactions);
   }, [transactions, toast, calculateStats, activeSfdId]);
   
-  // Set up the channel subscription with simplified typing
+  // Set up the channel subscription with maximally simplified typing
   useEffect(() => {
     if (!user || !activeSfdId) return;
     
     fetchTransactions();
     
-    // Simple type-safe function to initialize channel
-    const setupRealtimeChannel = () => {
-      const channel = supabase.channel('public:transactions');
-      
-      // Use explicit typing to avoid deep inference
-      channel.on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'transactions',
-          filter: `sfd_id=eq.${activeSfdId}`
-        } as any,  // Use 'any' to prevent deep type instantiation
-        handleRealtimeUpdate
-      );
-      
-      return channel.subscribe();
+    // Create a basic channel with no complex typing
+    const channel = supabase.channel('public:transactions');
+    
+    // Explicitly use 'any' for filter options to prevent type recursion
+    const filterOptions = {
+      event: '*',
+      schema: 'public',
+      table: 'transactions',
+      filter: `sfd_id=eq.${activeSfdId}`
     };
     
-    const subscription = setupRealtimeChannel();
+    // Manually cast to any to break type inference chain
+    channel.on('postgres_changes', filterOptions as any, handleRealtimeUpdate);
+    
+    const subscription = channel.subscribe();
     
     // Cleanup function
     return () => {
