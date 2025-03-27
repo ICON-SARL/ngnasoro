@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -90,21 +89,18 @@ export function useRealtimeTransactions() {
     setIsLoading(true);
     
     try {
-      // Define the explicit return type to prevent deep type instantiation
-      type SupabaseQueryResult = { data: any[] | null; error: any };
+      interface QueryResponse {
+        data: any[] | null;
+        error: any;
+      }
       
-      // Perform the query with a type assertion to avoid complex inference
-      const response = await supabase
+      const { data, error } = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50) as unknown as SupabaseQueryResult;
+        .limit(50) as unknown as QueryResponse;
         
-      // Extract data and error from the response
-      const data = response.data || [];
-      const error = response.error;
-      
       if (error) throw error;
       
       let txData: Transaction[] = [];
@@ -188,7 +184,6 @@ export function useRealtimeTransactions() {
   }, [transactions, toast, calculateStats, activeSfdId]);
   
   function createRealtimeSubscription(sfdId: string) {
-    // Use a type assertion to avoid complex type inference
     const channel = supabase.channel('public:transactions') as any;
     
     const handleChanges = (payload: any) => {
