@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -90,15 +89,15 @@ export function useRealtimeTransactions() {
     setIsLoading(true);
     
     try {
-      // Use explicit type annotation to prevent deep type inference
-      type QueryResult = { data: any[] | null; error: any };
-      
-      const { data, error } = await supabase
+      const result: any = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50) as unknown as QueryResult;
+        .limit(50);
+      
+      const data = result.data || [];
+      const error = result.error;
       
       if (error) throw error;
       
@@ -189,23 +188,14 @@ export function useRealtimeTransactions() {
       handleRealtimeUpdate(payload);
     };
     
-    // Define the type more explicitly to avoid deep inference
-    type ChannelFilter = {
-      event: string;
-      schema: string;
-      table: string;
-      filter: string;
-    };
-    
-    // Use simpler type assertions
     channel.on(
-      'postgres_changes' as string, 
-      {
+      'postgres_changes', 
+      { 
         event: '*',
         schema: 'public',
         table: 'transactions',
         filter: `sfd_id=eq.${sfdId}`
-      } as ChannelFilter, 
+      }, 
       handleChanges
     );
     
