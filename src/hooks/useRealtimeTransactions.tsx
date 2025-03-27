@@ -1,128 +1,33 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Transaction, TransactionStats } from '@/types/transactions';
+import { Transaction } from '@/types/transactions';
+import { useTransactionsFetch } from '@/hooks/useTransactionsFetch';
+import { useTransactionsStats } from '@/hooks/useTransactionsStats';
+import { useTransactionsFilter } from '@/hooks/useTransactionsFilter';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { convertDatabaseRecordsToTransactions } from '@/utils/transactionUtils';
 
 export function useRealtimeTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState<TransactionStats>({
-    totalCount: 0,
-    totalVolume: 0,
-    averageAmount: 0,
-    successRate: 0,
-    pendingCount: 0,
-    flaggedCount: 0
-  });
-  
   const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
   
-  const convertDatabaseRecordsToTransactions = useCallback((records: any[]): Transaction[] => {
-    return records.map(record => ({
-      id: record.id,
-      user_id: record.user_id,
-      sfd_id: record.sfd_id || activeSfdId,
-      type: record.type as Transaction['type'],
-      amount: record.amount,
-      status: record.status || 'success',
-      created_at: record.created_at || record.date || new Date().toISOString(),
-      name: record.name,
-      date: record.date,
-      avatar_url: record.avatar_url,
-      description: `Transaction for ${record.name}`,
-    }));
-  }, [activeSfdId]);
+  // Use our new modular hooks
+  const { fetchTransactions, isLoading } = useTransactionsFetch({ 
+    activeSfdId, 
+    userId: user?.id, 
+    toast 
+  });
   
-  const calculateStats = useCallback((txList: Transaction[]) => {
-    const totalCount = txList.length;
-    const totalVolume = txList.reduce((sum, tx) => sum + tx.amount, 0);
-    const averageAmount = totalCount > 0 ? totalVolume / totalCount : 0;
-    const successCount = txList.filter(tx => tx.status === 'success').length;
-    const successRate = totalCount > 0 ? (successCount / totalCount) * 100 : 0;
-    const pendingCount = txList.filter(tx => tx.status === 'pending').length;
-    const flaggedCount = txList.filter(tx => tx.status === 'flagged').length;
-    
-    setStats({
-      totalCount,
-      totalVolume,
-      averageAmount,
-      successRate,
-      pendingCount,
-      flaggedCount
-    });
-  }, []);
+  const { stats, calculateStats } = useTransactionsStats({ transactions });
   
-  const generateMockTransactions = useCallback((sfdId: string): Transaction[] => {
-    const transactionTypes: Transaction['type'][] = ['deposit', 'withdrawal', 'transfer', 'payment', 'loan_disbursement'];
-    const statuses: Transaction['status'][] = ['success', 'pending', 'failed', 'flagged'];
-    
-    const mockTransactions: Transaction[] = [];
-    
-    for (let i = 0; i < 20; i++) {
-      const type = transactionTypes[Math.floor(Math.random() * transactionTypes.length)];
-      const status = Math.random() > 0.7 
-        ? statuses[Math.floor(Math.random() * statuses.length)]
-        : 'success';
-      
-      mockTransactions.push({
-        id: `TX${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-        sfd_id: sfdId,
-        type,
-        amount: Math.floor(Math.random() * 9000000) + 10000, // 10K to 9M FCFA
-        currency: 'FCFA',
-        status,
-        description: `Transaction ${type} #${i+1}`,
-        created_at: new Date(Date.now() - Math.floor(Math.random() * 86400000)).toISOString(), // Over the last 24h
-        payment_method: ['cash', 'mobile_money', 'transfer', 'check'][Math.floor(Math.random() * 4)],
-      });
-    }
-    
-    return mockTransactions;
-  }, []);
+  const { filteredTransactions, filterTransactions } = useTransactionsFilter({ 
+    transactions 
+  });
   
-  const fetchTransactions = useCallback(async () => {
-    if (!user || !activeSfdId) return;
-    
-    setIsLoading(true);
-    
-    try {
-      // Avoid type inference by using destructuring with explicit typing
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('sfd_id', activeSfdId)
-        .order('created_at', { ascending: false })
-        .limit(50) as { data: any[] | null, error: any };
-        
-      if (error) throw error;
-      
-      let txData: Transaction[] = [];
-      
-      if (data && data.length > 0) {
-        txData = convertDatabaseRecordsToTransactions(data);
-      } else {
-        txData = generateMockTransactions(activeSfdId);
-      }
-      
-      setTransactions(txData);
-      setFilteredTransactions(txData);
-      calculateStats(txData);
-    } catch (error) {
-      console.error('Loading error:', error);
-      toast({
-        title: 'Loading Error',
-        description: 'Unable to load transactions. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, activeSfdId, toast, calculateStats, convertDatabaseRecordsToTransactions, generateMockTransactions]);
-  
+  // Handle realtime updates
   const handleRealtimeUpdate = useCallback((payload: any) => {
     if (!payload) return;
     
@@ -176,66 +81,30 @@ export function useRealtimeTransactions() {
     }
     
     setTransactions(updatedTransactions);
-    setFilteredTransactions(updatedTransactions);
-    calculateStats(updatedTransactions);
-  }, [transactions, toast, calculateStats, activeSfdId]);
+    calculateStats();
+    filterTransactions();
+  }, [transactions, toast, calculateStats, filterTransactions, activeSfdId]);
   
-  function createRealtimeSubscription(sfdId: string) {
-    // Explicitly type the channel to avoid deep inference
-    const channel = supabase.channel('public:transactions') as any;
-    
-    const handleChanges = (payload: any) => {
-      handleRealtimeUpdate(payload);
-    };
-    
-    channel.on(
-      'postgres_changes', 
-      { 
-        event: '*',
-        schema: 'public',
-        table: 'transactions',
-        filter: `sfd_id=eq.${sfdId}`
-      }, 
-      handleChanges
-    );
-    
-    return channel.subscribe();
-  }
+  // Subscribe to realtime updates
+  useRealtimeSubscription({
+    activeSfdId,
+    onUpdate: handleRealtimeUpdate
+  });
   
+  // Load initial data
+  const refreshTransactions = useCallback(async () => {
+    const { transactions: fetchedTransactions } = await fetchTransactions();
+    setTransactions(fetchedTransactions);
+    calculateStats();
+    filterTransactions();
+  }, [fetchTransactions, calculateStats, filterTransactions]);
+  
+  // Load initial data on mount
   useEffect(() => {
-    if (!user || !activeSfdId) return;
-    
-    fetchTransactions();
-    
-    const subscription = createRealtimeSubscription(activeSfdId);
-    
-    return () => {
-      if (subscription) {
-        supabase.removeChannel(subscription);
-      }
-    };
-  }, [user, activeSfdId, fetchTransactions]);
-  
-  const filterTransactions = useCallback((searchTerm: string = '', status: string | null = null) => {
-    let filtered = [...transactions];
-    
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(tx => 
-        (tx.description && tx.description.toLowerCase().includes(term)) ||
-        tx.id.toLowerCase().includes(term) ||
-        tx.type.toLowerCase().includes(term) ||
-        (tx.payment_method && tx.payment_method.toLowerCase().includes(term)) ||
-        (tx.name && tx.name.toLowerCase().includes(term))
-      );
+    if (user && activeSfdId) {
+      refreshTransactions();
     }
-    
-    if (status) {
-      filtered = filtered.filter(tx => tx.status === status);
-    }
-    
-    setFilteredTransactions(filtered);
-  }, [transactions]);
+  }, [user, activeSfdId, refreshTransactions]);
   
   return {
     transactions: filteredTransactions,
@@ -243,6 +112,6 @@ export function useRealtimeTransactions() {
     isLoading,
     stats,
     filterTransactions,
-    refreshTransactions: fetchTransactions
+    refreshTransactions
   };
 }
