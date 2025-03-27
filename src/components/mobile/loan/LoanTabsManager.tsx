@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog } from '@/components/ui/dialog';
@@ -57,7 +56,7 @@ const LoanTabsManager: React.FC<LoanTabsManagerProps> = ({
           onWithdraw={onMobileMoneyPayment}
         />
       </TabsContent>
-      
+
       <TabsContent value="repayment">
         <Dialog>
           <LoanRepaymentTab 
