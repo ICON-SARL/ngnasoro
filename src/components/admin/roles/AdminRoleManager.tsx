@@ -4,7 +4,7 @@ import { RoleCard } from './RoleCard';
 import { NewRoleDialog } from './NewRoleDialog';
 import { useRoleManager } from './useRoleManager';
 import { Button } from '@/components/ui/button';
-import { Shield, Plus } from 'lucide-react';
+import { Shield, Plus, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -31,9 +31,25 @@ export function AdminRoleManager() {
         description: "Synchronisation des rôles avec la base de données...",
       });
       
-      // In a real implementation, this would sync with Supabase
-      // For this demo, we'll just show a success toast
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call the sync function endpoint
+      const { data, error } = await supabase.functions.invoke('admin-mobile-sync', {
+        body: JSON.stringify({ 
+          endpoint: '/sfds',
+          forceSync: true
+        }),
+      });
+      
+      if (error) throw error;
+      
+      // Log activity in audit logs
+      await supabase.from('audit_logs').insert({
+        user_id: (await supabase.auth.getUser()).data.user?.id,
+        action: 'sync_roles',
+        category: 'ADMIN',
+        severity: 'info',
+        details: { timestamp: new Date().toISOString() },
+        status: 'success'
+      });
       
       toast({
         title: "Synchronisation réussie",
@@ -41,6 +57,18 @@ export function AdminRoleManager() {
       });
     } catch (error) {
       console.error('Error syncing roles:', error);
+      
+      // Log the error
+      await supabase.from('audit_logs').insert({
+        user_id: (await supabase.auth.getUser()).data.user?.id,
+        action: 'sync_roles',
+        category: 'ADMIN',
+        severity: 'error',
+        details: { error: error.message },
+        status: 'failure',
+        error_message: error.message
+      });
+      
       toast({
         title: "Erreur de synchronisation",
         description: "Une erreur est survenue lors de la synchronisation des rôles",
@@ -58,22 +86,16 @@ export function AdminRoleManager() {
             Définissez les différents rôles administratifs et leurs permissions
           </p>
         </div>
+        
         <div className="flex gap-2">
           <Button variant="outline" onClick={syncRolesToDatabase}>
-            <Shield className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-4 w-4 mr-2" />
             Synchroniser
           </Button>
-          <NewRoleDialog
-            isOpen={showNewRoleDialog}
-            onOpenChange={setShowNewRoleDialog}
-            newRole={newRole}
-            permissions={permissions}
-            onNameChange={(name) => setNewRole({ ...newRole, name })}
-            onDescriptionChange={(description) => setNewRole({ ...newRole, description })}
-            onTogglePermission={handleTogglePermission}
-            onSave={handleSaveNewRole}
-            isEditMode={isEditMode}
-          />
+          <Button onClick={() => setShowNewRoleDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouveau Rôle
+          </Button>
         </div>
       </div>
 
@@ -88,6 +110,18 @@ export function AdminRoleManager() {
           />
         ))}
       </div>
+      
+      <NewRoleDialog
+        isOpen={showNewRoleDialog}
+        onOpenChange={setShowNewRoleDialog}
+        newRole={newRole}
+        permissions={permissions}
+        onNameChange={(name) => setNewRole({ ...newRole, name })}
+        onDescriptionChange={(description) => setNewRole({ ...newRole, description })}
+        onTogglePermission={handleTogglePermission}
+        onSave={handleSaveNewRole}
+        isEditMode={isEditMode}
+      />
     </div>
   );
 }
