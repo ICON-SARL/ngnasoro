@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,6 +10,8 @@ import SfdAccountRequests from '@/components/admin/SfdAccountRequests';
 import { SubsidyManagement } from '@/components/admin/SubsidyManagement';
 import { SfdManagement } from '@/components/admin/SfdManagement';
 import { SystemSettings } from '@/components/admin/settings/SystemSettings';
+import { DashboardWidgets } from '@/components/admin/dashboard/DashboardWidgets';
+import { DashboardCharts } from '@/components/admin/dashboard/DashboardCharts';
 import { 
   BarChart, 
   PieChart, 
@@ -21,11 +24,14 @@ import {
 } from 'lucide-react';
 import { useSubsidies } from '@/hooks/useSubsidies';
 import { CreditDecisionFlow } from '@/components/CreditDecisionFlow';
+import { supabase } from '@/integrations/supabase/client';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
+  const { stats, isLoading: isLoadingStats } = useDashboardStats();
   
   // Set the active tab based on query parameter
   useEffect(() => {
@@ -57,83 +63,15 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">SFDs Actives</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="text-2xl font-bold">12</div>
-                <div className="p-2 bg-green-50 rounded-full">
-                  <Building className="h-5 w-5 text-green-500" />
-                </div>
-              </div>
-              <div className="text-xs text-gray-500 mt-1 flex items-center">
-                <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
-                <span>+2 ce mois</span>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Administrateurs</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="text-2xl font-bold">8</div>
-                <div className="p-2 bg-blue-50 rounded-full">
-                  <Users className="h-5 w-5 text-blue-500" />
-                </div>
-              </div>
-              <div className="text-xs text-gray-500 mt-1 flex items-center">
-                <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
-                <span>+1 ce mois</span>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Utilisateurs Totaux</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="text-2xl font-bold">24,581</div>
-                <div className="p-2 bg-purple-50 rounded-full">
-                  <Users className="h-5 w-5 text-purple-500" />
-                </div>
-              </div>
-              <div className="text-xs text-gray-500 mt-1 flex items-center">
-                <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
-                <span>+1,245 ce mois</span>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Subventions Allouées</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="text-2xl font-bold">
-                  {isLoadingSubsidies 
-                    ? "..." 
-                    : `${(subsidies.reduce((sum, subsidy) => sum + subsidy.amount, 0) / 1000000).toFixed(1)}M FCFA`}
-                </div>
-                <div className="p-2 bg-[#0D6A51]/10 rounded-full">
-                  <CircleDollarSign className="h-5 w-5 text-[#0D6A51]" />
-                </div>
-              </div>
-              <div className="text-xs text-gray-500 mt-1 flex items-center">
-                <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
-                <span>+15.2M ce mois</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Dashboard Widgets */}
+        {activeTab === 'dashboard' && (
+          <DashboardWidgets 
+            stats={stats} 
+            isLoading={isLoadingStats} 
+            subsidies={subsidies} 
+            isLoadingSubsidies={isLoadingSubsidies} 
+          />
+        )}
         
         <Tabs value={activeTab} onValueChange={(value) => setSearchParams({ tab: value })} className="space-y-6">
           <TabsList>
@@ -190,29 +128,7 @@ const SuperAdminDashboard = () => {
           </TabsContent>
           
           <TabsContent value="analytics" className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Répartition des Utilisateurs par SFD</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-center">
-                    <PieChart className="h-64 w-64 text-gray-300" />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Croissance Mensuelle des Comptes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-center">
-                    <BarChart className="h-64 w-64 text-gray-300" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <DashboardCharts />
           </TabsContent>
           
           <TabsContent value="settings" className="mt-6">
