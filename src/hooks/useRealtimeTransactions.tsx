@@ -1,14 +1,15 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Transaction, TransactionStats } from '@/types/transactions';
 
-// Define an even simpler type for payload to avoid deep type instantiation
+// Define a completely flat type for payloads to avoid type recursion
 type SimplePayload = {
   eventType: string;
-  new?: Record<string, any> | null;
-  old?: Record<string, any> | null;
+  new: any;
+  old: any;
 };
 
 export function useRealtimeTransactions() {
@@ -93,29 +94,30 @@ export function useRealtimeTransactions() {
     return mockTransactions;
   }, []);
   
-  // Fetch initial transactions - with further simplification to avoid type issues
+  // Simplified fetch function that avoids complex type inference
   const fetchTransactions = useCallback(async () => {
     if (!user || !activeSfdId) return;
     
     setIsLoading(true);
     
     try {
-      // Use any type and avoid destructuring to simplify type inference
-      const result: any = await supabase
+      // Use a minimal approach to data fetching
+      const fetchResult = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
         .limit(50);
         
-      if (result.error) throw result.error;
+      if (fetchResult.error) throw fetchResult.error;
       
       let txData: Transaction[] = [];
       
       // Treat data as a simple array without complex typing
-      if (result.data && result.data.length > 0) {
-        // Use as any[] to completely avoid TypeScript's deep inference
-        txData = convertDatabaseRecordsToTransactions(result.data as any[]);
+      if (fetchResult.data && fetchResult.data.length > 0) {
+        // Cast to any to completely avoid TypeScript's deep inference
+        const simplifiedData = fetchResult.data as any[];
+        txData = convertDatabaseRecordsToTransactions(simplifiedData);
       } else {
         txData = generateMockTransactions(activeSfdId);
       }
@@ -135,13 +137,13 @@ export function useRealtimeTransactions() {
     }
   }, [user, activeSfdId, toast, calculateStats, convertDatabaseRecordsToTransactions, generateMockTransactions]);
   
-  // Handle realtime updates with simplified typing - directly create objects
+  // Simplified handler for realtime updates
   const handleRealtimeUpdate = useCallback((payload: SimplePayload) => {
     // Create a new array instead of mutating the old one
     let updatedTransactions = [...transactions];
     
     if (payload.eventType === 'INSERT' && payload.new) {
-      // Create new transaction object directly without conversion function
+      // Create new transaction object directly
       const record = payload.new;
       const newRecord: Transaction = {
         id: record.id,
@@ -196,13 +198,13 @@ export function useRealtimeTransactions() {
     calculateStats(updatedTransactions);
   }, [transactions, toast, calculateStats, activeSfdId]);
   
-  // Set up realtime subscription with simplified handling
+  // Set up realtime subscription with maximally simplified handling
   useEffect(() => {
     if (!user || !activeSfdId) return;
     
     fetchTransactions();
     
-    // Configure realtime subscription via Supabase with completely simplified approach
+    // Configure realtime subscription with minimal typing
     const channel = supabase
       .channel('public:transactions')
       .on('postgres_changes', {
@@ -210,15 +212,12 @@ export function useRealtimeTransactions() {
         schema: 'public',
         table: 'transactions',
         filter: `sfd_id=eq.${activeSfdId}`
-      }, (rawPayload) => {
-        // Use any typing to avoid deep type instantiation completely
-        const rawPayloadAny: any = rawPayload;
-        
-        // Create a flat simple payload without complex nesting
+      }, (payload) => {
+        // Cast payload as any and create a simple structure
         const simplePayload: SimplePayload = {
-          eventType: rawPayloadAny.eventType,
-          new: rawPayloadAny.new,
-          old: rawPayloadAny.old
+          eventType: (payload as any).eventType,
+          new: (payload as any).new,
+          old: (payload as any).old
         };
         
         handleRealtimeUpdate(simplePayload);
