@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/auditLogger';
 
 export const useLoginForm = () => {
   const [email, setEmail] = useState('');
@@ -12,6 +13,7 @@ export const useLoginForm = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cooldownActive, setCooldownActive] = useState(false);
   const [cooldownTime, setCooldownTime] = useState(0);
+  const [emailSent, setEmailSent] = useState(false);
   
   const { signIn } = useAuth();
   const { toast } = useToast();
@@ -44,6 +46,7 @@ export const useLoginForm = () => {
     
     // Clear previous errors
     setErrorMessage(null);
+    setEmailSent(false);
     
     // Don't allow login during cooldown
     if (cooldownActive) {
@@ -68,17 +71,37 @@ export const useLoginForm = () => {
     try {
       // Use OTP authentication
       await signIn(email);
+      
+      // Log successful authentication attempt
+      await logAuditEvent({
+        action: "magic_link_login_attempt",
+        category: AuditLogCategory.AUTHENTICATION,
+        severity: AuditLogSeverity.INFO,
+        status: 'success',
+        details: { email }
+      });
+      
+      setEmailSent(true);
+      
       toast({
-        title: "Connectez-vous avec le lien magique",
+        title: "Lien magique envoyé",
         description: "Vérifiez votre e-mail pour le lien de connexion.",
       });
       
-      // Redirect to mobile flow after successful magic link send
-      setTimeout(() => {
-        navigate('/mobile-flow');
-      }, 3000);
+      // We don't redirect automatically anymore - user needs to check their email
+      
     } catch (error: any) {
       console.error("Login error:", error);
+      
+      // Log failed authentication attempt
+      await logAuditEvent({
+        action: "magic_link_login_attempt",
+        category: AuditLogCategory.AUTHENTICATION,
+        severity: AuditLogSeverity.WARNING,
+        status: 'failure',
+        error_message: error.message,
+        details: { email }
+      });
       
       // Check for rate limiting errors
       if (error.message && error.message.includes('security purposes') && error.message.includes('seconds')) {
@@ -123,6 +146,7 @@ export const useLoginForm = () => {
     errorMessage,
     cooldownActive,
     cooldownTime,
+    emailSent,
     handleLogin,
     handleAuthComplete,
     toggleAuthMode

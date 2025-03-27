@@ -10,6 +10,7 @@ import {
   AuthenticationDialog,
   useLoginForm
 } from './login';
+import SuccessState from './login/SuccessState';
 
 const LoginForm = () => {
   const {
@@ -22,10 +23,15 @@ const LoginForm = () => {
     errorMessage,
     cooldownActive,
     cooldownTime,
+    emailSent,
     handleLogin,
     handleAuthComplete,
     toggleAuthMode
   } = useLoginForm();
+
+  if (emailSent) {
+    return <SuccessState email={email} />;
+  }
 
   return (
     <>
@@ -63,7 +69,7 @@ const LoginForm = () => {
 
           <div className="text-center text-sm text-gray-500 mt-6">
             Vous n'avez pas de compte ?{' '}
-            <a href="#" className="text-[#FFAB2E] hover:text-[#FFAB2E]/80 font-medium">
+            <a href="/register" className="text-[#FFAB2E] hover:text-[#FFAB2E]/80 font-medium">
               Inscrivez-vous
             </a>
           </div>
