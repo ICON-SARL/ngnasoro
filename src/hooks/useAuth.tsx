@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useContext, createContext } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,27 +33,28 @@ export const useAuth = () => {
   return useContext(AuthContext);
 };
 
-// Make sure to include all required properties in the User type
+// Updated User interface to match Supabase's User type requirements
 export interface User {
   id: string;
   email: string;
   full_name?: string;
   avatar_url?: string;
   sfd_id?: string;
-  user_metadata?: {
+  user_metadata: {
     full_name?: string;
     avatar_url?: string;
     sfd_id?: string;
     phone?: string;
+    [key: string]: any;
   };
   phone?: string;
-  // Adding missing properties required by ProfilePage
-  app_metadata?: {
+  // Making app_metadata required as in Supabase's User type
+  app_metadata: {
     role?: string;
     [key: string]: any;
   };
-  aud?: string;
-  created_at?: string;
+  aud: string;
+  created_at: string;
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -79,11 +81,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           full_name: session.user.user_metadata.full_name as string,
           avatar_url: session.user.user_metadata.avatar_url as string,
           sfd_id: session.user.user_metadata.sfd_id as string,
-          user_metadata: session.user.user_metadata,
+          user_metadata: session.user.user_metadata || {},
           phone: session.user.user_metadata.phone as string,
-          app_metadata: session.user.app_metadata,
-          aud: session.user.aud,
-          created_at: session.user.created_at,
+          app_metadata: session.user.app_metadata || {},
+          aud: session.user.aud || '',
+          created_at: session.user.created_at || '',
         });
 
         // Set active SFD ID if available
@@ -112,11 +114,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           full_name: session.user.user_metadata.full_name as string,
           avatar_url: session.user.user_metadata.avatar_url as string,
           sfd_id: session.user.user_metadata.sfd_id as string,
-          user_metadata: session.user.user_metadata,
+          user_metadata: session.user.user_metadata || {},
           phone: session.user.user_metadata.phone as string,
-          app_metadata: session.user.app_metadata,
-          aud: session.user.aud,
-          created_at: session.user.created_at,
+          app_metadata: session.user.app_metadata || {},
+          aud: session.user.aud || '',
+          created_at: session.user.created_at || '',
         });
 
         // Set active SFD ID if available
