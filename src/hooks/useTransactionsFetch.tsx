@@ -16,22 +16,17 @@ export function useTransactionsFetch({ activeSfdId, userId, toast }: UseTransact
     setIsLoading(true);
     
     try {
-      // Manually construct a fetch request to avoid TypeScript issues
-      const response = await fetch(
-        `${supabase.supabaseUrl}/rest/v1/transactions?sfd_id=eq.${activeSfdId}&order=created_at.desc&limit=50`, 
-        {
-          headers: {
-            'apikey': supabase.supabaseKey,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      // Use the proper Supabase query API to avoid TypeScript errors
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('sfd_id', activeSfdId)
+        .order('created_at', { ascending: false })
+        .limit(50);
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch transactions');
+      if (error) {
+        throw error;
       }
-      
-      const data = await response.json();
       
       let txData: Transaction[] = [];
       
