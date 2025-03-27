@@ -16,13 +16,17 @@ export function useTransactionsFetch({ activeSfdId, userId, toast }: UseTransact
     setIsLoading(true);
     
     try {
-      // Cast the entire query as unknown then as any to break the complex type inference
-      const { data, error } = await (supabase
+      // Bypass TypeScript's deep type inference by using a simpler approach
+      const query = supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50) as unknown as Promise<{ data: any[] | null; error: any | null }>);
+        .limit(50);
+      
+      // Use explicit typing for the query response
+      type QueryResponse = { data: any[] | null; error: any | null };
+      const { data, error } = await query as unknown as QueryResponse;
         
       if (error) throw error;
       
