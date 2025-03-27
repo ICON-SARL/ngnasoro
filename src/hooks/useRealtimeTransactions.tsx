@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -89,18 +90,19 @@ export function useRealtimeTransactions() {
     setIsLoading(true);
     
     try {
-      const query = supabase
+      // Build the query but don't execute it yet
+      const queryBuilder = supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
         .limit(50);
       
-      const response = await (query as any);
+      // Explicitly cast to avoid TypeScript's excessive type inference
+      const { data, error } = await queryBuilder.then(result => 
+        result as unknown as { data: any[], error: any }
+      );
       
-      const data = response.data || [];
-      const error = response.error;
-        
       if (error) throw error;
       
       let txData: Transaction[] = [];
@@ -190,14 +192,16 @@ export function useRealtimeTransactions() {
       handleRealtimeUpdate(payload);
     };
     
-    const configObj = {
-      event: '*',
-      schema: 'public',
-      table: 'transactions',
-      filter: `sfd_id=eq.${sfdId}`
+    // Create subscription config with explicit types to avoid deep inference
+    const config = {
+      event: '*' as const,
+      schema: 'public' as const,
+      table: 'transactions' as const,
+      filter: `sfd_id=eq.${sfdId}` as const
     };
     
-    (channel as any).on('postgres_changes', configObj, handleChanges);
+    // Use type assertion to simplify TypeScript's inference
+    channel.on('postgres_changes', config, handleChanges);
     
     return channel.subscribe();
   }
