@@ -34,8 +34,6 @@ export const useActionHandler = () => {
       navigate('/mobile-flow/late-payments');
     } else if (action === 'Loan Application') {
       navigate('/mobile-flow/loan-application');
-    } else if (action === 'Multi SFD') {
-      navigate('/mobile-flow/multi-sfd');
     } else if (action === 'Secure Layer') {
       navigate('/mobile-flow/secure-layer');
     } else if (action === 'Loan Process') {

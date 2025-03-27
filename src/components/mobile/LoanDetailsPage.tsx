@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ActivitySquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -13,11 +13,12 @@ import LoanRepaymentTab from './loan/LoanRepaymentTab';
 import QRCodePaymentDialog from './loan/QRCodePaymentDialog';
 import MobileMoneyModal from './loan/MobileMoneyModal';
 
-interface LoanDetailsPageProps {
-  onBack: () => void;
+export interface LoanDetailsPageProps {
+  onBack?: () => void;
 }
 
 const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
   const [activeTab, setActiveTab] = useState('tracking');
@@ -38,7 +39,14 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
   });
   const { getActiveSfdData } = useSfdDataAccess();
   
-  // Setup real-time subscription for loan status updates
+  const handleBackAction = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate(-1);
+    }
+  };
+  
   useEffect(() => {
     const setupRealtimeSubscription = async () => {
       const channel = supabase
@@ -111,7 +119,7 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
   return (
     <div className="h-full bg-white">
       <div className="p-4 flex items-center justify-between">
-        <Button variant="ghost" onClick={onBack} className="p-1">
+        <Button variant="ghost" onClick={handleBackAction} className="p-1">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-lg font-bold">Détails du prêt</h1>

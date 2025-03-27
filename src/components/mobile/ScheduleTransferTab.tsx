@@ -1,16 +1,26 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar } from '@/components/ui/avatar';
 import { Calendar, Clock, ChevronDown, ArrowLeft } from 'lucide-react';
 
-interface ScheduleTransferTabProps {
-  onBack: () => void;
+export interface ScheduleTransferTabProps {
+  onBack?: () => void;
 }
 
 const ScheduleTransferTab = ({ onBack }: ScheduleTransferTabProps) => {
+  const navigate = useNavigate();
   const [amount, setAmount] = useState('840');
+  
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate(-1);
+    }
+  };
   
   const recentContacts = [
     { name: 'Nguyen', avatar: '/lovable-uploads/d416de2f-f3d5-4977-a429-b73a0c892013.png' },
@@ -28,7 +38,7 @@ const ScheduleTransferTab = ({ onBack }: ScheduleTransferTabProps) => {
             variant="ghost" 
             size="sm" 
             className="p-0 mr-2" 
-            onClick={onBack}
+            onClick={handleBack}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>

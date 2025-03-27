@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,8 +15,8 @@ import QRCodePaymentDialog from '../loan/QRCodePaymentDialog';
 import { usePaymentProcessor } from './hooks/usePaymentProcessor';
 import { useTransactions } from '@/hooks/useTransactions';
 
-interface SecurePaymentTabProps {
-  onBack: () => void;
+export interface SecurePaymentTabProps {
+  onBack?: () => void;
   isWithdrawal?: boolean;
   loanId?: string;
   onComplete?: () => void;
@@ -28,6 +28,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   loanId,
   onComplete
 }) => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { user, activeSfdId } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState('sfd');
@@ -43,6 +44,14 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     makeWithdrawal,
     makeLoanRepayment
   } = useTransactions(user?.id, activeSfdId);
+  
+  const handleBackAction = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate(-1);
+    }
+  };
   
   // Définir les montants de transaction par défaut
   const amount = isWithdrawal ? 25000 : loanId ? 3500 : 10000;
@@ -136,19 +145,19 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   
   return (
     <div className="bg-white h-full pb-24">
-      <TabHeader onBack={onBack} isWithdrawal={isWithdrawal} />
+      <TabHeader onBack={handleBackAction} isWithdrawal={isWithdrawal} />
       
       {paymentSuccess ? (
         <SuccessView 
           isWithdrawal={isWithdrawal} 
-          amount={amount} 
-          onBack={onBack} 
+          amount={isWithdrawal ? 25000 : loanId ? 3500 : 10000} 
+          onBack={handleBackAction} 
         />
       ) : (
         <div className="p-4 space-y-6">
           <PaymentDetails 
             isWithdrawal={isWithdrawal}
-            amount={amount}
+            amount={isWithdrawal ? 25000 : loanId ? 3500 : 10000}
             progress={progress}
             paymentStatus={paymentStatus}
           />
