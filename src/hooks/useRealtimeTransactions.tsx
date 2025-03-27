@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -89,12 +90,17 @@ export function useRealtimeTransactions() {
     setIsLoading(true);
     
     try {
-      const { data, error } = await supabase
+      // Explicitly type the result to avoid deep type inference
+      type SupabaseResponse = { data: any[]; error: any };
+      
+      const result = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50) as { data: any; error: any };
+        .limit(50);
+        
+      const { data, error } = result as SupabaseResponse;
         
       if (error) throw error;
       
@@ -178,22 +184,24 @@ export function useRealtimeTransactions() {
     calculateStats(updatedTransactions);
   }, [transactions, toast, calculateStats, activeSfdId]);
   
+  // Simplify channel creation to avoid deep type inference
   function createRealtimeSubscription(sfdId: string) {
+    // Create the channel without complex typing
     const channel = supabase.channel('public:transactions');
     
-    const handleChange = (payload: any) => {
-      handleRealtimeUpdate(payload);
+    // Define filter options separately to avoid nested type inference
+    const filterOptions = {
+      event: '*',
+      schema: 'public',
+      table: 'transactions',
+      filter: `sfd_id=eq.${sfdId}`
     };
     
+    // Use type assertions to avoid TypeScript going into deep inference
     channel.on(
-      'postgres_changes' as any,
-      {
-        event: '*',
-        schema: 'public',
-        table: 'transactions',
-        filter: `sfd_id=eq.${sfdId}`
-      } as any,
-      handleChange
+      'postgres_changes' as string,
+      filterOptions as any,
+      (payload: any) => handleRealtimeUpdate(payload)
     );
     
     return channel.subscribe();
@@ -211,7 +219,7 @@ export function useRealtimeTransactions() {
         supabase.removeChannel(subscription);
       }
     };
-  }, [user, activeSfdId, fetchTransactions, handleRealtimeUpdate]);
+  }, [user, activeSfdId, fetchTransactions]);
   
   const filterTransactions = useCallback((searchTerm: string = '', status: string | null = null) => {
     let filtered = [...transactions];
