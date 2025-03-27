@@ -20,8 +20,9 @@ export const transactionService = {
         if (filters.type) {
           if (Array.isArray(filters.type)) {
             // Handle array of transaction types using in() operator
-            const typeArray = [...filters.type]; // Create a copy to avoid modifying the original
-            query = query.in('type', typeArray);
+            // Use type assertion to avoid excessive type instantiation
+            const typeArray = filters.type.slice(); // Create a copy with slice()
+            query = query.in('type', typeArray as string[]);
           } else {
             // Handle single transaction type
             query = query.eq('type', filters.type);
