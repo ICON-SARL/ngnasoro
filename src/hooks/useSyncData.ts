@@ -31,7 +31,7 @@ export function useSyncData() {
       ...dateFilter,
       ...sfdFilter
     }),
-    keepPreviousData: true
+    placeholderData: (previousData) => previousData
   });
   
   // Query for loans with pagination and filters
@@ -43,7 +43,7 @@ export function useSyncData() {
       ...sfdFilter,
       status: statusFilter
     }),
-    keepPreviousData: true
+    placeholderData: (previousData) => previousData
   });
   
   // Query for subsidy requests with pagination and filters
@@ -56,7 +56,7 @@ export function useSyncData() {
       status: statusFilter,
       priority: priorityFilter
     }),
-    keepPreviousData: true
+    placeholderData: (previousData) => previousData
   });
   
   // Helpers to change the filters
