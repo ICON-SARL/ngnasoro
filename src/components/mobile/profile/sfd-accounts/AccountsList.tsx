@@ -1,14 +1,25 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import SfdAccountItem from './SfdAccountItem';
-import { SfdData } from '@/hooks/useSfdDataAccess';
+
+// Define a more generic account type that works with both data sources
+export interface SfdAccountDisplay {
+  id: string;
+  name: string;
+  logoUrl?: string;
+  region?: string;
+  code?: string;
+  isDefault?: boolean;
+  balance: number;
+  currency: string;
+}
 
 interface AccountsListProps {
-  accounts: SfdData[];
+  accounts: SfdAccountDisplay[];
   activeSfdId: string | null;
   onSwitchSfd: (sfdId: string) => Promise<void>;
   switchingId: string | null;

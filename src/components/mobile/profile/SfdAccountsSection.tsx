@@ -8,7 +8,7 @@ import { useSfdSwitch } from '@/hooks/useSfdSwitch';
 import SfdSwitchVerification from '@/components/SfdSwitchVerification';
 import LoadingState from './sfd-accounts/LoadingState';
 import EmptyAccountsState from './sfd-accounts/EmptyAccountsState';
-import AccountsList from './sfd-accounts/AccountsList';
+import AccountsList, { SfdAccountDisplay } from './sfd-accounts/AccountsList';
 import { useToast } from '@/hooks/use-toast';
 
 interface SfdAccountsSectionProps {
@@ -38,10 +38,39 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
   
   const effectiveActiveSfdId = propsActiveSfdId !== undefined ? propsActiveSfdId : authActiveSfdId;
 
+  // Transform SfdData to SfdAccountDisplay
+  const transformSfdData = (data: SfdData[]): SfdAccountDisplay[] => {
+    return data.map(sfd => ({
+      id: sfd.id,
+      name: sfd.name,
+      balance: 0, // Default values since SfdData doesn't include these
+      currency: 'FCFA',
+    }));
+  };
+
+  // Transform sfdAccounts to SfdAccountDisplay
+  const transformSfdAccounts = (accounts: any[]): SfdAccountDisplay[] => {
+    return accounts.map(acc => ({
+      id: acc.id,
+      name: acc.name,
+      logoUrl: acc.logoUrl,
+      region: acc.region,
+      code: acc.code,
+      isDefault: acc.isDefault,
+      balance: acc.balance,
+      currency: acc.currency
+    }));
+  };
+
   const pendingSfdName = React.useMemo(() => {
     if (!pendingSfdId) return '';
-    const displayAccounts = propsSfdData || sfdAccounts;
-    const pendingSfd = displayAccounts.find(sfd => sfd.id === pendingSfdId);
+    
+    // Use the right data source based on what's provided
+    const accounts = propsSfdData 
+      ? transformSfdData(propsSfdData)
+      : transformSfdAccounts(sfdAccounts);
+      
+    const pendingSfd = accounts.find(sfd => sfd.id === pendingSfdId);
     return pendingSfd?.name || '';
   }, [pendingSfdId, propsSfdData, sfdAccounts]);
 
@@ -81,7 +110,10 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
     return success;
   };
 
-  const displayAccounts = propsSfdData || sfdAccounts;
+  // Transform the data to our common format
+  const displayAccounts: SfdAccountDisplay[] = propsSfdData 
+    ? transformSfdData(propsSfdData)
+    : transformSfdAccounts(sfdAccounts);
 
   return (
     <>
