@@ -11,7 +11,16 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Shield, Users, LogOut, Building, CircleDollarSign, CreditCard, FileText } from 'lucide-react';
+import { 
+  Shield, 
+  Users, 
+  LogOut, 
+  Settings, 
+  LayoutDashboard,
+  UserCog,
+  Building,
+  CircleDollarSign
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -50,27 +59,38 @@ export const SuperAdminHeader = () => {
             <nav className="hidden md:flex space-x-6">
               <NavLink 
                 to="/super-admin-dashboard" 
-                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#FFAB2E]' : 'text-gray-600 hover:text-gray-900'}`}
+                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#FFAB2E]' : 'text-gray-600 hover:text-gray-900'} flex items-center`}
               >
+                <LayoutDashboard className="h-4 w-4 mr-1" />
                 Dashboard
               </NavLink>
               <NavLink 
-                to="/loans" 
-                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#FFAB2E]' : 'text-gray-600 hover:text-gray-900'}`}
+                to="/super-admin-dashboard?tab=user-management" 
+                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#FFAB2E]' : 'text-gray-600 hover:text-gray-900'} flex items-center`}
               >
-                Prêts
+                <UserCog className="h-4 w-4 mr-1" />
+                Administrateurs
               </NavLink>
               <NavLink 
-                to="/clients" 
-                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#FFAB2E]' : 'text-gray-600 hover:text-gray-900'}`}
+                to="/super-admin-dashboard?tab=sfds" 
+                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#FFAB2E]' : 'text-gray-600 hover:text-gray-900'} flex items-center`}
               >
-                SFDs
+                <Building className="h-4 w-4 mr-1" />
+                Gestion SFDs
               </NavLink>
               <NavLink 
-                to="/transactions" 
-                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#FFAB2E]' : 'text-gray-600 hover:text-gray-900'}`}
+                to="/super-admin-dashboard?tab=subsidies" 
+                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#FFAB2E]' : 'text-gray-600 hover:text-gray-900'} flex items-center`}
               >
-                Transactions
+                <CircleDollarSign className="h-4 w-4 mr-1" />
+                Subventions
+              </NavLink>
+              <NavLink 
+                to="/super-admin-dashboard?tab=settings" 
+                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#FFAB2E]' : 'text-gray-600 hover:text-gray-900'} flex items-center`}
+              >
+                <Settings className="h-4 w-4 mr-1" />
+                Paramètres
               </NavLink>
             </nav>
           </div>
