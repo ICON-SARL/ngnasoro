@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Shield, LockKeyhole } from 'lucide-react';
+import { Shield, LockKeyhole, Mail } from 'lucide-react';
 
 interface AuthModeSwitcherProps {
   authMode: 'simple' | 'advanced';
