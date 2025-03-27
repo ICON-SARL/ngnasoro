@@ -114,7 +114,7 @@ const MobileFlow = () => {
   
   const { user, loading, signOut } = useAuth();
   const { account, isLoading: accountLoading, updateBalance } = useAccount();
-  const { transactions, isLoading: transactionsLoading, addTransaction } = useTransactions();
+  const { transactions, isLoading: transactionsLoading, addTransaction } = useTransactions(user?.id);
 
   const [showWelcome, setShowWelcome] = useState(() => {
     const hasVisited = localStorage.getItem('hasVisitedApp');
@@ -184,13 +184,15 @@ const MobileFlow = () => {
     try {
       await updateBalance.mutateAsync({ amount: -data.amount });
       
-      await addTransaction.mutateAsync({
-        name: data.recipient,
-        type: 'Envoi',
-        amount: -data.amount,
-        date: new Date().toISOString(),
-        avatar_url: null
-      });
+      if (addTransaction) {
+        await addTransaction.mutateAsync({
+          name: data.recipient,
+          type: 'payment',
+          amount: -data.amount,
+          date: new Date().toISOString(),
+          avatar_url: null
+        });
+      }
       
       navigate('/mobile-flow/main');
       

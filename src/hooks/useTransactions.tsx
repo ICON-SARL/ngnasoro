@@ -15,18 +15,18 @@ export interface Transaction {
   created_at: string;
 }
 
-export function useTransactions() {
+export function useTransactions(userId?: string, sfdId?: string) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
   const fetchTransactions = async (): Promise<Transaction[]> => {
-    if (!user) return [];
+    if (!user && !userId) return [];
     
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId || user?.id)
       .order('date', { ascending: false });
       
     if (error) {
@@ -43,20 +43,20 @@ export function useTransactions() {
   };
   
   const transactionsQuery = useQuery({
-    queryKey: ['transactions', user?.id],
+    queryKey: ['transactions', userId || user?.id, sfdId],
     queryFn: fetchTransactions,
-    enabled: !!user,
+    enabled: !!(userId || user),
   });
   
   const addTransaction = useMutation({
     mutationFn: async (transaction: Omit<Transaction, 'id' | 'user_id' | 'created_at'>) => {
-      if (!user) throw new Error('User not logged in');
+      if (!user && !userId) throw new Error('User not logged in');
       
       const { data, error } = await supabase
         .from('transactions')
         .insert([
           {
-            user_id: user.id,
+            user_id: userId || user?.id,
             ...transaction,
           },
         ])
@@ -67,7 +67,7 @@ export function useTransactions() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', userId || user?.id, sfdId] });
       toast({
         title: 'Transaction réussie',
         description: 'Votre transaction a été enregistrée avec succès',

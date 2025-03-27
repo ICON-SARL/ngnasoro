@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SecurePaymentTab from '../secure-payment';
 import { useTransactions } from '@/hooks/useTransactions';
+import { useAuth } from '@/hooks/useAuth';
 import FundsHeader from './FundsHeader';
 import FundsBalanceSection from './FundsBalanceSection';
 import TransferOptions from './TransferOptions';
@@ -13,8 +14,9 @@ import TransactionList from '../TransactionList';
 
 const FundsManagementPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeView, setActiveView] = useState<'main' | 'withdraw' | 'deposit'>('main');
-  const { transactions, isLoading: transactionsLoading } = useTransactions();
+  const { transactions, isLoading: transactionsLoading } = useTransactions(user?.id);
   
   const handleBack = () => {
     if (activeView !== 'main') {

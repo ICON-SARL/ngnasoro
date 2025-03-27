@@ -7,10 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import HomeLoanHeader from './loan/HomeLoanHeader';
 import TransactionList from './TransactionList';
 import { useTransactions } from '@/hooks/useTransactions';
+import { useAuth } from '@/hooks/useAuth';
 
 const HomeLoanPage = () => {
   const navigate = useNavigate();
-  const { transactions, isLoading } = useTransactions();
+  const { user } = useAuth();
+  const { transactions, isLoading } = useTransactions(user?.id);
   
   const formattedTransactions = transactions.map(transaction => ({
     id: transaction.id,
@@ -19,7 +21,7 @@ const HomeLoanPage = () => {
     amount: `${transaction.amount > 0 ? '+' : ''}${transaction.amount.toLocaleString('fr-FR')} FCFA`,
     date: new Date(transaction.date).toLocaleDateString('fr-FR'),
     avatar: transaction.avatar_url,
-    sfdName: transaction.type === 'loan' ? 'SFD' : undefined
+    sfdName: transaction.type === 'loan_disbursement' ? 'SFD' : undefined
   }));
   
   const viewLoanProcess = () => {

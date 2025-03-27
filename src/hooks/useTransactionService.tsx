@@ -7,7 +7,8 @@ import {
   TransactionType, 
   TransactionStatus, 
   TransactionFilters,
-  CreateTransactionOptions 
+  CreateTransactionOptions,
+  PaymentMethod
 } from '@/services/transactions';
 import { Transaction } from '@/types/transactions';
 import { transactionStatisticsService } from '@/services/transactions/transactionStatisticsService';
@@ -19,7 +20,7 @@ interface CreateTransactionParams {
   sfdId?: string;
   status?: TransactionStatus;
   description?: string;
-  paymentMethod?: string;
+  paymentMethod?: PaymentMethod;
   metadata?: Record<string, any>;
   referenceId?: string;
 }
@@ -53,7 +54,7 @@ export function useTransactionService() {
         type: params.type,
         status: params.status,
         description: params.description,
-        paymentMethod: params.paymentMethod,
+        paymentMethod: params.paymentMethod || 'sfd_account',
         metadata: params.metadata,
         referenceId: params.referenceId
       });

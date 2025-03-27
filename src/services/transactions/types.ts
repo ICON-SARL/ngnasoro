@@ -17,6 +17,14 @@ export interface TransactionFilters {
   paymentMethod?: PaymentMethod;
 }
 
+export interface TransactionStatistics {
+  totalVolume: number;
+  transactionCount: number;
+  averageAmount: number;
+  depositVolume: number;
+  withdrawalVolume: number;
+}
+
 export interface CreateTransactionOptions {
   userId: string;
   sfdId: string;
