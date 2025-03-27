@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ActivitySquare } from 'lucide-react';
@@ -21,6 +22,7 @@ export interface LoanDetailsPageProps {
 const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { getActiveSfdData } = useSfdDataAccess();
   const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
   const [activeTab, setActiveTab] = useState('tracking');
   const [loanStatus, setLoanStatus] = useState({
@@ -35,6 +37,17 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => 
       { id: 2, date: '05 July 2023', amount: 3.50, status: 'paid' as 'paid' | 'pending' | 'late' },
       { id: 3, date: '05 June 2023', amount: 3.50, status: 'paid' as 'paid' | 'pending' | 'late' }
     ],
+    disbursed: true,
+    withdrawn: false
+  });
+  
+  const [loanDetails, setLoanDetails] = useState({
+    loanType: "Microcrédit",
+    loanPurpose: "Achat de matériel",
+    disbursalDate: "5 janvier 2023",
+    endDate: "5 juillet 2023",
+    interestRate: 2.5,
+    status: "actif",
     disbursed: true,
     withdrawn: false
   });
