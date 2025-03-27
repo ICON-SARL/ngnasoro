@@ -33,6 +33,51 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          category: string
+          created_at: string
+          details: Json | null
+          device_info: string | null
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          severity: string
+          status: string
+          target_resource: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          category: string
+          created_at?: string
+          details?: Json | null
+          device_info?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          severity: string
+          status: string
+          target_resource?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          category?: string
+          created_at?: string
+          details?: Json | null
+          device_info?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          severity?: string
+          status?: string
+          target_resource?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       client_activities: {
         Row: {
           activity_type: string

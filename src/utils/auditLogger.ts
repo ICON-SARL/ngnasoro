@@ -37,8 +37,9 @@ export interface AuditLogEntry {
  */
 export const logAuditEvent = async (entry: AuditLogEntry): Promise<void> => {
   try {
+    // Using 'from' with the table name as a string literal type
     const { error } = await supabase
-      .from('audit_logs')
+      .from('audit_logs' as any)
       .insert({
         user_id: entry.user_id,
         action: entry.action,
@@ -77,7 +78,7 @@ export const getAuditLogs = async (
 ): Promise<any[]> => {
   try {
     let query = supabase
-      .from('audit_logs')
+      .from('audit_logs' as any)
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -110,7 +111,7 @@ export const getAuditLogs = async (
       query = query.limit(options.limit);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query as any;
 
     if (error) {
       console.error('Failed to retrieve audit logs:', error);
