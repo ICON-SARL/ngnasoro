@@ -49,8 +49,8 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
   };
 
   // Transform sfdAccounts to SfdAccountDisplay
-  const transformSfdAccounts = (accounts: any[]): SfdAccountDisplay[] => {
-    return accounts.map(acc => ({
+  const transformSfdAccounts = (): SfdAccountDisplay[] => {
+    return sfdAccounts.map(acc => ({
       id: acc.id,
       name: acc.name,
       logoUrl: acc.logoUrl,
@@ -68,7 +68,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
     // Use the right data source based on what's provided
     const accounts = propsSfdData 
       ? transformSfdData(propsSfdData)
-      : transformSfdAccounts(sfdAccounts);
+      : transformSfdAccounts();
       
     const pendingSfd = accounts.find(sfd => sfd.id === pendingSfdId);
     return pendingSfd?.name || '';
@@ -113,7 +113,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
   // Transform the data to our common format
   const displayAccounts: SfdAccountDisplay[] = propsSfdData 
     ? transformSfdData(propsSfdData)
-    : transformSfdAccounts(sfdAccounts);
+    : transformSfdAccounts();
 
   return (
     <>
