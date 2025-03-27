@@ -57,6 +57,21 @@ export function buildTransactionQuery(userId?: string, sfdId?: string, filters?:
       // Use ilike for case-insensitive search
       query.ilike('name', `%${filters.searchTerm}%`);
     }
+    
+    // Category filter
+    if (filters.category) {
+      query.eq('category', filters.category);
+    }
+    
+    // Status filter
+    if (filters.status) {
+      query.eq('status', filters.status);
+    }
+    
+    // Payment method filter
+    if (filters.paymentMethod) {
+      query.eq('payment_method', filters.paymentMethod);
+    }
   }
   
   // Order by date (newest first)
