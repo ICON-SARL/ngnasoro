@@ -16,7 +16,9 @@ export enum AuditLogCategory {
   USER_MANAGEMENT = 'user_management',
   SFD_OPERATIONS = 'sfd_operations',
   CLIENT_MANAGEMENT = 'client_management',
-  LOAN_MANAGEMENT = 'loan_management'
+  LOAN_MANAGEMENT = 'loan_management',
+  SUBSIDY_MANAGEMENT = 'subsidy_management',
+  ADMIN_ACTION = 'admin_action'
 }
 
 export interface AuditLogEntry {
@@ -37,6 +39,9 @@ export interface AuditLogEntry {
  */
 export const logAuditEvent = async (entry: AuditLogEntry): Promise<void> => {
   try {
+    // Ensure details is a valid JSON object
+    const sanitizedDetails = entry.details ? entry.details : null;
+    
     // Use a type assertion to bypass the TypeScript error
     const { error } = await (supabase
       .from('audit_logs' as any)
@@ -45,7 +50,7 @@ export const logAuditEvent = async (entry: AuditLogEntry): Promise<void> => {
         action: entry.action,
         category: entry.category,
         severity: entry.severity,
-        details: entry.details,
+        details: sanitizedDetails,
         ip_address: entry.ip_address,
         device_info: entry.device_info,
         target_resource: entry.target_resource,
@@ -74,14 +79,24 @@ export const getAuditLogs = async (
     endDate?: string;
     limit?: number;
     status?: 'success' | 'failure';
+    page?: number;
+    pageSize?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   }
 ): Promise<any[]> => {
   try {
     // Use a type assertion to bypass the TypeScript error
     let query = (supabase
       .from('audit_logs' as any)
-      .select('*')
-      .order('created_at', { ascending: false }) as any);
+      .select('*') as any);
+    
+    // Default sort order
+    const sortBy = options?.sortBy || 'created_at';
+    const sortOrder = options?.sortOrder || { ascending: false };
+    
+    // Apply ordering
+    query = query.order(sortBy, sortOrder);
 
     // Apply filters
     if (options?.userId) {
@@ -108,7 +123,12 @@ export const getAuditLogs = async (
       query = query.lte('created_at', options.endDate);
     }
     
-    if (options?.limit) {
+    // Apply pagination if specified
+    if (options?.page && options?.pageSize) {
+      const from = (options.page - 1) * options.pageSize;
+      const to = from + options.pageSize - 1;
+      query = query.range(from, to);
+    } else if (options?.limit) {
       query = query.limit(options.limit);
     }
 
@@ -123,5 +143,130 @@ export const getAuditLogs = async (
   } catch (err) {
     console.error('Error retrieving audit logs:', err);
     return [];
+  }
+};
+
+/**
+ * Count total audit logs with the given filters
+ */
+export const countAuditLogs = async (
+  options?: {
+    userId?: string;
+    category?: AuditLogCategory;
+    severity?: AuditLogSeverity;
+    startDate?: string;
+    endDate?: string;
+    status?: 'success' | 'failure';
+  }
+): Promise<number> => {
+  try {
+    // Use a type assertion to bypass the TypeScript error
+    let query = (supabase
+      .from('audit_logs' as any)
+      .select('id', { count: 'exact', head: true }) as any);
+
+    // Apply filters
+    if (options?.userId) {
+      query = query.eq('user_id', options.userId);
+    }
+    
+    if (options?.category) {
+      query = query.eq('category', options.category);
+    }
+    
+    if (options?.severity) {
+      query = query.eq('severity', options.severity);
+    }
+    
+    if (options?.status) {
+      query = query.eq('status', options.status);
+    }
+    
+    if (options?.startDate) {
+      query = query.gte('created_at', options.startDate);
+    }
+    
+    if (options?.endDate) {
+      query = query.lte('created_at', options.endDate);
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+      console.error('Failed to count audit logs:', error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (err) {
+    console.error('Error counting audit logs:', err);
+    return 0;
+  }
+};
+
+/**
+ * Export audit logs to CSV format
+ */
+export const exportAuditLogsToCSV = async (
+  options?: {
+    userId?: string;
+    category?: AuditLogCategory;
+    severity?: AuditLogSeverity;
+    startDate?: string;
+    endDate?: string;
+    status?: 'success' | 'failure';
+  }
+): Promise<string> => {
+  try {
+    // Get filtered logs
+    const logs = await getAuditLogs({
+      ...options,
+      limit: 10000 // Set a reasonable limit for export
+    });
+    
+    if (logs.length === 0) {
+      return 'No data to export';
+    }
+    
+    // CSV headers
+    const headers = [
+      'ID',
+      'Timestamp',
+      'Action',
+      'User ID',
+      'Category',
+      'Severity',
+      'Status',
+      'Target Resource',
+      'IP Address',
+      'Details',
+      'Error Message'
+    ];
+    
+    // Format data rows
+    const rows = logs.map(log => [
+      log.id,
+      log.created_at,
+      log.action,
+      log.user_id || '',
+      log.category,
+      log.severity,
+      log.status,
+      log.target_resource || '',
+      log.ip_address || '',
+      JSON.stringify(log.details || {}),
+      log.error_message || ''
+    ]);
+    
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+    
+    return csvContent;
+  } catch (err) {
+    console.error('Error exporting audit logs to CSV:', err);
+    throw err;
   }
 };

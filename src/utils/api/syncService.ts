@@ -32,6 +32,14 @@ export interface PaginatedResponse<T> {
   message?: string;
 }
 
+// Additional filter for audit logs
+export interface AuditLogFilter {
+  userId?: string;
+  category?: string;
+  severity?: string;
+  status?: 'success' | 'failure';
+}
+
 // Main API Service
 export const syncService = {
   /**
@@ -113,6 +121,54 @@ export const syncService = {
       return data;
     } catch (error) {
       console.error('Error fetching subsidy requests:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Fetch audit logs with pagination and filters
+   */
+  async getAuditLogs(
+    params: PaginationParams & DateFilter & AuditLogFilter = {}
+  ): Promise<PaginatedResponse<any>> {
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-mobile-sync', {
+        body: JSON.stringify({ 
+          endpoint: '/audit-logs',
+          ...params
+        }),
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching audit logs:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Export audit logs as CSV
+   */
+  async exportAuditLogs(
+    params: DateFilter & AuditLogFilter = {}
+  ): Promise<Blob> {
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-mobile-sync', {
+        body: JSON.stringify({ 
+          endpoint: '/audit-logs/export',
+          ...params
+        }),
+      });
+      
+      if (error) throw error;
+      
+      // Convert the data to a CSV blob
+      const csvContent = data.csvContent;
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      return blob;
+    } catch (error) {
+      console.error('Error exporting audit logs:', error);
       throw error;
     }
   }

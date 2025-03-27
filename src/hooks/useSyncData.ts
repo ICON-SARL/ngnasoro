@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { syncService, PaginationParams, DateFilter, SfdFilter } from '@/utils/api/syncService';
+import { syncService, PaginationParams, DateFilter, SfdFilter, AuditLogFilter } from '@/utils/api/syncService';
 import { useState } from 'react';
 
 export function useSyncData() {
@@ -16,6 +16,7 @@ export function useSyncData() {
   const [sfdFilter, setSfdFilter] = useState<SfdFilter>({});
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined);
+  const [auditFilter, setAuditFilter] = useState<AuditLogFilter>({});
   
   // Query for active SFDs
   const sfdsQuery = useQuery({
@@ -59,6 +60,17 @@ export function useSyncData() {
     placeholderData: (previousData) => previousData
   });
   
+  // Query for audit logs with pagination and filters
+  const auditLogsQuery = useQuery({
+    queryKey: ['audit-logs', pagination, dateFilter, auditFilter],
+    queryFn: () => syncService.getAuditLogs({
+      ...pagination,
+      ...dateFilter,
+      ...auditFilter
+    }),
+    placeholderData: (previousData) => previousData
+  });
+  
   // Helpers to change the filters
   const goToPage = (page: number) => {
     setPagination(prev => ({ ...prev, page }));
@@ -92,11 +104,17 @@ export function useSyncData() {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
   
+  const applyAuditFilter = (filter: AuditLogFilter) => {
+    setAuditFilter(filter);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+  
   const resetFilters = () => {
     setDateFilter({});
     setSfdFilter({});
     setStatusFilter(undefined);
     setPriorityFilter(undefined);
+    setAuditFilter({});
     setPagination({
       page: 1,
       pageSize: 10,
@@ -111,6 +129,7 @@ export function useSyncData() {
     subsidiesQuery,
     loansQuery,
     subsidyRequestsQuery,
+    auditLogsQuery,
     
     // Filter states
     pagination,
@@ -118,6 +137,7 @@ export function useSyncData() {
     sfdFilter,
     statusFilter,
     priorityFilter,
+    auditFilter,
     
     // Filter methods
     goToPage,
@@ -127,6 +147,7 @@ export function useSyncData() {
     applySfdFilter,
     applyStatusFilter,
     applyPriorityFilter,
+    applyAuditFilter,
     resetFilters
   };
 }

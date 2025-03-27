@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Shield, Plus, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/auditLogger';
 
 export function AdminRoleManager() {
   const {
@@ -42,11 +43,11 @@ export function AdminRoleManager() {
       if (error) throw error;
       
       // Log activity in audit logs
-      await supabase.from('audit_logs').insert({
+      await logAuditEvent({
         user_id: (await supabase.auth.getUser()).data.user?.id,
         action: 'sync_roles',
-        category: 'ADMIN',
-        severity: 'info',
+        category: AuditLogCategory.ADMIN_ACTION,
+        severity: AuditLogSeverity.INFO,
         details: { timestamp: new Date().toISOString() },
         status: 'success'
       });
@@ -59,11 +60,11 @@ export function AdminRoleManager() {
       console.error('Error syncing roles:', error);
       
       // Log the error
-      await supabase.from('audit_logs').insert({
+      await logAuditEvent({
         user_id: (await supabase.auth.getUser()).data.user?.id,
         action: 'sync_roles',
-        category: 'ADMIN',
-        severity: 'error',
+        category: AuditLogCategory.ADMIN_ACTION,
+        severity: AuditLogSeverity.ERROR,
         details: { error: error.message },
         status: 'failure',
         error_message: error.message
