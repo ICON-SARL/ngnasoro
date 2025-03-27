@@ -1,21 +1,45 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Info, Calendar, ChevronDown, ExternalLink, CheckCircle, Shield, Clock, CreditCard, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import VoiceAssistant from '@/components/VoiceAssistant';
+import { useSfdLoans } from '@/hooks/useSfdLoans';
+import { useAuth } from '@/hooks/useAuth';
+import { useLocalization } from '@/contexts/LocalizationContext';
 
 const LoanAgreementPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const { user, activeSfdId } = useAuth();
+  const { language } = useLocalization();
+  const { createLoan } = useSfdLoans();
+  
   const [otpCode, setOtpCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [countdown, setCountdown] = useState(600); // 10 minutes in seconds
   const [showTerms, setShowTerms] = useState(false);
+  
+  // Get loan data from location state or use defaults
+  const loanData = location.state?.loanData || {
+    amount: 250000,
+    duration: 12,
+    purpose: 'commerce',
+    totalRepayment: 263750,
+    monthlyPayment: 21980,
+    interestRate: 5.5
+  };
+  
+  // Voice assistant messages
+  const voiceMessage = language === 'bambara' 
+    ? "I ni ce. I ka juru daani kunnafoni filɛ nin ye. I ka juru daani sugandi, bonya ani waati. I ka OTP wɛrɛ don walasa ka i ka juru daani kɛ. Juru daani waati man jan."
+    : "Bienvenue dans la confirmation de prêt. Veuillez vérifier les détails de votre demande et entrer le code OTP reçu par SMS pour confirmer votre prêt. L'approbation sera traitée rapidement.";
 
   useEffect(() => {
     // Countdown timer for OTP expiration
@@ -35,19 +59,60 @@ const LoanAgreementPage = () => {
     navigate('/mobile-flow');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (otpCode.length < 4) {
+      toast({
+        title: "Code incomplet",
+        description: "Veuillez entrer un code OTP valide",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
-    // Simulation d'un traitement
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      // Create loan in database if we have user and SFD
+      if (user?.id && activeSfdId) {
+        await createLoan.mutateAsync({
+          client_id: user.id, // In a real app, you'd use the actual client_id
+          sfd_id: activeSfdId,
+          amount: loanData.amount,
+          duration_months: loanData.duration,
+          interest_rate: loanData.interestRate,
+          purpose: loanData.purpose,
+          monthly_payment: loanData.monthlyPayment,
+          subsidy_amount: 0, // No subsidy in this example
+          subsidy_rate: 0
+        });
+        
+        toast({
+          title: "Confirmation réussie",
+          description: "Votre prêt a été approuvé et sera déboursé sous peu",
+        });
+        navigate('/mobile-flow/loan-disbursement', { state: { loanData } });
+      } else {
+        // Demo mode - just simulate success
+        setTimeout(() => {
+          toast({
+            title: "Confirmation réussie",
+            description: "Votre prêt a été approuvé et sera déboursé sous peu",
+          });
+          navigate('/mobile-flow/loan-disbursement', { state: { loanData } });
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Error creating loan:", error);
       toast({
-        title: "Confirmation réussie",
-        description: "Votre prêt a été approuvé et sera déboursé sous peu",
+        title: "Erreur de confirmation",
+        description: "Une erreur est survenue lors de la confirmation du prêt",
+        variant: "destructive"
       });
-      navigate('/mobile-flow/loan-disbursement');
-    }, 1500);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resendOTP = () => {
@@ -58,9 +123,16 @@ const LoanAgreementPage = () => {
     });
   };
 
+  // Calculate payment dates
+  const getPaymentDate = (monthsFromNow: number) => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + monthsFromNow);
+    return `15/${date.getMonth() + 1}/${date.getFullYear()}`;
+  };
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Header with gradient background similar to the blue screen */}
+      {/* Header with gradient background */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-5 px-4 rounded-b-3xl shadow-md">
         <div className="flex items-center mb-2">
           <Button variant="ghost" className="p-1 mr-2 text-white" onClick={goBack}>
@@ -78,11 +150,11 @@ const LoanAgreementPage = () => {
           </div>
         </div>
         
-        {/* Header card showing approved amount - inspired by second image */}
+        {/* Header card showing approved amount */}
         <div className="mt-4 mb-2">
           <h2 className="text-xl font-semibold">Montant approuvé jusqu'à</h2>
           <div className="flex items-baseline">
-            <span className="text-5xl font-bold">250.000</span>
+            <span className="text-5xl font-bold">{loanData.amount.toLocaleString()}</span>
             <span className="text-xl ml-1">FCFA</span>
           </div>
         </div>
@@ -102,7 +174,7 @@ const LoanAgreementPage = () => {
                 <div className="bg-blue-50 p-4 rounded-xl">
                   <p className="text-sm text-gray-600 mb-1">Montant du prêt</p>
                   <div className="flex items-center justify-between">
-                    <p className="text-2xl font-semibold text-gray-800">250.000 FCFA</p>
+                    <p className="text-2xl font-semibold text-gray-800">{loanData.amount.toLocaleString()} FCFA</p>
                     <div className="h-6 w-6 bg-blue-100 rounded-full flex items-center justify-center">
                       <div className="h-3 w-3 bg-blue-400 rounded-full"></div>
                     </div>
@@ -122,7 +194,7 @@ const LoanAgreementPage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-blue-50 p-3 rounded-xl">
                     <p className="text-sm text-gray-600 mb-1">Durée du prêt</p>
-                    <p className="text-xl font-semibold text-gray-800">12 mois</p>
+                    <p className="text-xl font-semibold text-gray-800">{loanData.duration} mois</p>
                     <div className="flex items-center mt-1">
                       <Calendar className="h-3.5 w-3.5 text-blue-500 mr-1" />
                       <span className="text-xs text-blue-500">Mensualités fixes</span>
@@ -131,10 +203,10 @@ const LoanAgreementPage = () => {
                   
                   <div className="bg-amber-50 p-3 rounded-xl">
                     <p className="text-sm text-gray-600 mb-1">À rembourser</p>
-                    <p className="text-xl font-semibold text-gray-800">263.750 FCFA</p>
+                    <p className="text-xl font-semibold text-gray-800">{loanData.totalRepayment.toLocaleString()} FCFA</p>
                     <div className="flex items-center mt-1">
                       <Info className="h-3.5 w-3.5 text-amber-500 mr-1" />
-                      <span className="text-xs text-amber-500">Taux: 5.5%</span>
+                      <span className="text-xs text-amber-500">Taux: {loanData.interestRate}%</span>
                     </div>
                   </div>
                 </div>
@@ -143,14 +215,14 @@ const LoanAgreementPage = () => {
                   <div className="flex justify-between items-center p-3 border-b border-gray-100">
                     <p className="text-gray-600">Première échéance</p>
                     <div className="flex items-center">
-                      <span className="font-semibold mr-1">15/06/2023</span>
+                      <span className="font-semibold mr-1">{getPaymentDate(1)}</span>
                       <Calendar className="h-4 w-4 text-blue-500" />
                     </div>
                   </div>
                   
                   <div className="flex justify-between items-center p-3 border-b border-gray-100">
                     <p className="text-gray-600">Mensualité</p>
-                    <span className="font-semibold">21.980 FCFA</span>
+                    <span className="font-semibold">{loanData.monthlyPayment.toLocaleString()} FCFA</span>
                   </div>
                   
                   <Button 
@@ -172,8 +244,8 @@ const LoanAgreementPage = () => {
                     {[1, 2, 3].map((month) => (
                       <div key={month} className="flex justify-between py-2 border-b border-dashed border-gray-200">
                         <span className="text-sm">Échéance {month}</span>
-                        <span className="text-sm font-medium">21.980 FCFA</span>
-                        <span className="text-xs text-gray-500">15/{month+5}/2023</span>
+                        <span className="text-sm font-medium">{loanData.monthlyPayment.toLocaleString()} FCFA</span>
+                        <span className="text-xs text-gray-500">{getPaymentDate(month)}</span>
                       </div>
                     ))}
                     <div className="text-center">
@@ -262,7 +334,7 @@ const LoanAgreementPage = () => {
           </form>
         </div>
         
-        {/* Added "Apply Now" button inspired by the second image */}
+        {/* Fixed bottom card */}
         <div className="fixed bottom-20 inset-x-0 px-4">
           <Card className="border-0 shadow-lg bg-white rounded-xl p-3">
             <div className="flex items-center">
@@ -274,6 +346,15 @@ const LoanAgreementPage = () => {
             </div>
           </Card>
         </div>
+      </div>
+      
+      {/* Voice assistant */}
+      <div className="fixed bottom-24 right-4 z-50">
+        <VoiceAssistant 
+          message={voiceMessage}
+          autoPlay={true}
+          language={language === 'bambara' ? 'bambara' : 'french'}
+        />
       </div>
     </div>
   );

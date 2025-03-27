@@ -125,6 +125,31 @@ export function useSfdLoans() {
     }
   });
 
+  // Confirm loan agreement (OTP confirmation)
+  const confirmLoanAgreement = useMutation({
+    mutationFn: ({ loanId, otpCode }: { loanId: string, otpCode: string }) => {
+      if (!user?.id) throw new Error("Utilisateur non authentifié");
+      // In a real implementation, this would verify the OTP before confirming
+      console.log(`Confirming loan ${loanId} with OTP code ${otpCode}`);
+      // For demo, we'll just approve the loan directly
+      return sfdLoanApi.approveLoan(loanId, user.id);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Prêt confirmé",
+        description: "Votre accord de prêt a été confirmé avec succès",
+      });
+      queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur de confirmation",
+        description: error.message || "Une erreur est survenue lors de la confirmation",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Get loan details
   const getLoanById = async (loanId: string) => {
     return sfdLoanApi.getLoanById(loanId);
@@ -144,6 +169,7 @@ export function useSfdLoans() {
     rejectLoan,
     disburseLoan,
     recordPayment,
+    confirmLoanAgreement,
     getLoanById,
     getLoanPayments,
     refetch: loansQuery.refetch

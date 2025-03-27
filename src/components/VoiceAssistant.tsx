@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 import { Button } from './ui/button';
+import { useToast } from '@/hooks/use-toast';
 import { useLocalization } from '@/contexts/LocalizationContext';
 
 interface VoiceAssistantProps {
@@ -13,11 +14,23 @@ interface VoiceAssistantProps {
 const VoiceAssistant = ({ message, autoPlay = false, language = 'bambara' }: VoiceAssistantProps) => {
   const { voiceOverEnabled, toggleVoiceOver } = useLocalization();
   const [isPlaying, setIsPlaying] = useState(false);
+  const { toast } = useToast();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const playbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (autoPlay && voiceOverEnabled && message) {
       playMessage();
     }
+    
+    return () => {
+      if (playbackTimeoutRef.current) {
+        clearTimeout(playbackTimeoutRef.current);
+      }
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
   }, [message, autoPlay, voiceOverEnabled]);
 
   const playMessage = () => {
@@ -27,11 +40,23 @@ const VoiceAssistant = ({ message, autoPlay = false, language = 'bambara' }: Voi
     console.log(`Playing message in ${language}: ${message}`);
     setIsPlaying(true);
     
-    // Simulate audio duration based on message length
-    const duration = message.length * 100;
-    setTimeout(() => {
+    // Simulate audio playback completion
+    const duration = message.length * 80; // Adjust timing based on message length
+    
+    if (playbackTimeoutRef.current) {
+      clearTimeout(playbackTimeoutRef.current);
+    }
+    
+    playbackTimeoutRef.current = setTimeout(() => {
       setIsPlaying(false);
     }, duration);
+    
+    // For testing purposes, show a toast to indicate voice is playing
+    toast({
+      title: `${language === 'bambara' ? 'Kuma Baara' : 'Audio en cours'}`,
+      description: message.substring(0, 70) + (message.length > 70 ? '...' : ''),
+      duration: 3000,
+    });
   };
 
   if (!message) return null;
