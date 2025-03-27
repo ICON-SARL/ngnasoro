@@ -1,6 +1,3 @@
 
-import { toast } from "@/components/ui/toast";
-import { useToast as useToastOriginal } from "@/components/ui/use-toast";
-
-export const useToast = useToastOriginal;
-export { toast };
+// Re-export from the ui component to avoid circular dependencies
+export { useToast, toast } from "@/components/ui/use-toast";
