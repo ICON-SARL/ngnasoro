@@ -11,6 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { AuditLogSeverity } from '@/utils/auditLogger';
 import { AuditLogTableProps } from './types';
+import { UserDetails } from './UserDetails';
 
 export function AuditLogTable({ logs, isLoading }: AuditLogTableProps) {
   // Get severity badge styling
@@ -75,7 +76,9 @@ export function AuditLogTable({ logs, isLoading }: AuditLogTableProps) {
                 {new Date(log.created_at).toLocaleString()}
               </TableCell>
               <TableCell className="font-medium">{log.action}</TableCell>
-              <TableCell className="truncate max-w-[100px]">{log.user_id}</TableCell>
+              <TableCell className="truncate max-w-[100px]">
+                <UserDetails userId={log.user_id} />
+              </TableCell>
               <TableCell>{log.category}</TableCell>
               <TableCell>{getSeverityBadge(log.severity)}</TableCell>
               <TableCell>{getStatusBadge(log.status)}</TableCell>
