@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
@@ -9,6 +8,7 @@ import { UserManagement } from '@/components/UserManagement';
 import SfdAccountRequests from '@/components/admin/SfdAccountRequests';
 import { SubsidyManagement } from '@/components/admin/SubsidyManagement';
 import { SfdManagement } from '@/components/admin/SfdManagement';
+import { SystemSettings } from '@/components/admin/settings/SystemSettings';
 import { 
   BarChart, 
   PieChart, 
@@ -216,14 +216,7 @@ const SuperAdminDashboard = () => {
           </TabsContent>
           
           <TabsContent value="settings" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Paramètres Système</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-500">Paramètres du système MEREF...</p>
-              </CardContent>
-            </Card>
+            <SystemSettings />
           </TabsContent>
         </Tabs>
       </main>
