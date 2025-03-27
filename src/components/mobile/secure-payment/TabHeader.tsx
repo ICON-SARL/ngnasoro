@@ -1,14 +1,14 @@
 
 import React from 'react';
-import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 interface TabHeaderProps {
   onBack: () => void;
-  isWithdrawal: boolean;
+  isWithdrawal?: boolean;
 }
 
-const TabHeader: React.FC<TabHeaderProps> = ({ onBack, isWithdrawal }) => {
+const TabHeader: React.FC<TabHeaderProps> = ({ onBack, isWithdrawal = false }) => {
   return (
     <div className="p-4 flex items-center justify-between border-b">
       <Button variant="ghost" onClick={onBack} className="p-1">
