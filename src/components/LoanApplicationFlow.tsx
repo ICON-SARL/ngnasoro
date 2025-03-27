@@ -1,15 +1,17 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Progress } from './ui/progress';
-import { CheckCircle2, ArrowRight, Landmark, Calendar, CreditCard, User, Home, ShoppingBag, BadgeEuro, ShieldCheck, Wallet, Info } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Landmark, Calendar, CreditCard, User, Home, ShoppingBag, BadgeEuro, ShieldCheck, Wallet, Info, Volume2, VolumeX } from 'lucide-react';
 import VoiceAssistant from './VoiceAssistant';
 import GeoAgencySelector from './GeoAgencySelector';
 import IconographicUI from './IconographicUI';
 import RealTimeSavingsWidget from './RealTimeSavingsWidget';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { useLocalization } from '@/contexts/LocalizationContext';
 
 type LoanApplicationStep = 'start' | 'purpose' | 'amount' | 'duration' | 'location' | 'review' | 'complete';
 
@@ -31,12 +33,14 @@ interface PurposeOption {
 
 const LoanApplicationFlow = () => {
   const { toast } = useToast();
+  const { language, t, voiceOverEnabled, toggleVoiceOver } = useLocalization();
   const [currentStep, setCurrentStep] = useState<LoanApplicationStep>('start');
   const [loanPurpose, setLoanPurpose] = useState<string>('');
   const [loanAmount, setLoanAmount] = useState<string>('');
   const [loanDuration, setLoanDuration] = useState<string>('6');
   const [isLoading, setIsLoading] = useState(false);
   const [animateNext, setAnimateNext] = useState(false);
+  const [currentVoiceMessage, setCurrentVoiceMessage] = useState<string>('');
   const contentRef = useRef<HTMLDivElement>(null);
   
   const purposeOptions: PurposeOption[] = [
@@ -51,14 +55,18 @@ const LoanApplicationFlow = () => {
   const stepConfig: Record<LoanApplicationStep, StepConfig> = {
     start: {
       title: "Demande de prêt",
-      voiceMessage: "Bienvenue dans l'assistant de demande de prêt. Appuyez sur commencer pour débuter votre demande.",
+      voiceMessage: language === 'bambara' 
+        ? "I ni ce. I ka juru daani na mɛnɛ. Juru daani ko la nɔgɔn. A daminɛ walasa ka i ka juru daani kɛ."
+        : "Bienvenue dans l'assistant de demande de prêt. Appuyez sur commencer pour débuter votre demande.",
       nextLabel: "Commencer",
       icon: <CreditCard className="h-6 w-6" />,
       progress: 0
     },
     purpose: {
       title: "Objet du prêt",
-      voiceMessage: "Veuillez sélectionner l'objet de votre prêt. Pour quoi souhaitez-vous emprunter?",
+      voiceMessage: language === 'bambara' 
+        ? "I ka juru nafa sugandi. I mako bɛ juru in na mun na?"
+        : "Veuillez sélectionner l'objet de votre prêt. Pour quoi souhaitez-vous emprunter?",
       nextLabel: "Continuer",
       prevLabel: "Retour",
       icon: <Landmark className="h-6 w-6" />,
@@ -66,7 +74,9 @@ const LoanApplicationFlow = () => {
     },
     amount: {
       title: "Montant du prêt",
-      voiceMessage: "Entrez le montant que vous souhaitez emprunter.",
+      voiceMessage: language === 'bambara' 
+        ? "I bɛ wari hakɛ min fɛ sɛbɛn. I mako bɛ juru hakɛ min na?"
+        : "Entrez le montant que vous souhaitez emprunter. Quel montant vous convient?",
       nextLabel: "Continuer",
       prevLabel: "Retour",
       icon: <CreditCard className="h-6 w-6" />,
@@ -74,7 +84,9 @@ const LoanApplicationFlow = () => {
     },
     duration: {
       title: "Durée du prêt",
-      voiceMessage: "Sélectionnez la durée de remboursement de votre prêt.",
+      voiceMessage: language === 'bambara' 
+        ? "I ka juru kɛ waati jantɛ sugandi. I bɛ juru sara waati hakɛ min kɔnɔ?"
+        : "Sélectionnez la durée de remboursement de votre prêt. Sur quelle période souhaitez-vous rembourser?",
       nextLabel: "Continuer",
       prevLabel: "Retour",
       icon: <Calendar className="h-6 w-6" />,
@@ -82,7 +94,9 @@ const LoanApplicationFlow = () => {
     },
     location: {
       title: "Agence SFD",
-      voiceMessage: "Sélectionnez l'agence SFD la plus proche de vous pour le traitement de votre demande.",
+      voiceMessage: language === 'bambara' 
+        ? "I ka SFD yɔrɔ min ka kan i la sugandi. Min bɛ i dɛmɛ ka juru ko ɲɛnabɔ."
+        : "Sélectionnez l'agence SFD la plus proche de vous pour le traitement de votre demande.",
       nextLabel: "Continuer",
       prevLabel: "Retour",
       icon: <Landmark className="h-6 w-6" />,
@@ -90,7 +104,9 @@ const LoanApplicationFlow = () => {
     },
     review: {
       title: "Récapitulatif",
-      voiceMessage: "Vérifiez les détails de votre demande de prêt avant de soumettre.",
+      voiceMessage: language === 'bambara' 
+        ? "I ka juru daani kunnafoni lajɛ. Yala i bɛ sɔn ka juru daani kɛ tan wa?"
+        : "Vérifiez les détails de votre demande de prêt avant de soumettre. Tout est-il correct?",
       nextLabel: "Soumettre",
       prevLabel: "Retour",
       icon: <CheckCircle2 className="h-6 w-6" />,
@@ -98,7 +114,9 @@ const LoanApplicationFlow = () => {
     },
     complete: {
       title: "Demande envoyée",
-      voiceMessage: "Félicitations! Votre demande de prêt a été envoyée avec succès. Vous recevrez une notification dès qu'elle sera traitée.",
+      voiceMessage: language === 'bambara' 
+        ? "I ni ce! I ka juru daani sɛbɛnna ka ɲɛ. I bɛna kunnafoni sɔrɔ ni a labɛnna."
+        : "Félicitations! Votre demande de prêt a été envoyée avec succès. Vous recevrez une notification dès qu'elle sera traitée.",
       nextLabel: "Terminer",
       icon: <CheckCircle2 className="h-6 w-6" />,
       progress: 100
@@ -110,6 +128,11 @@ const LoanApplicationFlow = () => {
       contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [currentStep]);
+
+  useEffect(() => {
+    // Update the current voice message when step changes
+    setCurrentVoiceMessage(stepConfig[currentStep].voiceMessage);
+  }, [currentStep, language]);
 
   const handleNext = () => {
     setAnimateNext(true);
@@ -386,9 +409,22 @@ const LoanApplicationFlow = () => {
               {stepConfig[currentStep].icon}
               {stepConfig[currentStep].title}
             </CardTitle>
-            <span className="text-xs bg-white/20 py-1 px-2 rounded-full">
-              Étape {['start', 'purpose', 'amount', 'duration', 'location', 'review', 'complete'].indexOf(currentStep) + 1} sur 7
-            </span>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={toggleVoiceOver}
+                className="text-white hover:bg-white/20"
+              >
+                {voiceOverEnabled ? 
+                  <Volume2 className="h-4 w-4" /> : 
+                  <VolumeX className="h-4 w-4" />
+                }
+              </Button>
+              <span className="text-xs bg-white/20 py-1 px-2 rounded-full">
+                Étape {['start', 'purpose', 'amount', 'duration', 'location', 'review', 'complete'].indexOf(currentStep) + 1} sur 7
+              </span>
+            </div>
           </div>
           <Progress 
             value={stepConfig[currentStep].progress} 
@@ -436,11 +472,13 @@ const LoanApplicationFlow = () => {
         </CardFooter>
       </Card>
       
-      <VoiceAssistant 
-        message={stepConfig[currentStep].voiceMessage} 
-        autoPlay={true}
-        language="bambara"
-      />
+      <div className="fixed bottom-24 right-4 z-50">
+        <VoiceAssistant 
+          message={currentVoiceMessage} 
+          autoPlay={true}
+          language={language === 'bambara' ? 'bambara' : 'french'}
+        />
+      </div>
     </div>
   );
 };
