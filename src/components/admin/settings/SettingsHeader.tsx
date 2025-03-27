@@ -1,18 +1,22 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Cog } from 'lucide-react';
+import { Cog, Download, Upload } from 'lucide-react';
 
 interface SettingsHeaderProps {
   isEditing: boolean;
   setIsEditing: (value: boolean) => void;
   onSave: () => void;
+  onExport: () => void;
+  onImport: () => void;
 }
 
 export const SettingsHeader: React.FC<SettingsHeaderProps> = ({ 
   isEditing, 
   setIsEditing, 
-  onSave 
+  onSave,
+  onExport,
+  onImport
 }) => {
   return (
     <div className="flex items-center justify-between">
@@ -34,10 +38,20 @@ export const SettingsHeader: React.FC<SettingsHeaderProps> = ({
             </Button>
           </>
         ) : (
-          <Button onClick={() => setIsEditing(true)}>
-            <Cog className="mr-2 h-4 w-4" />
-            Modifier
-          </Button>
+          <>
+            <Button variant="outline" onClick={onExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Exporter
+            </Button>
+            <Button variant="outline" onClick={onImport}>
+              <Upload className="mr-2 h-4 w-4" />
+              Importer
+            </Button>
+            <Button onClick={() => setIsEditing(true)}>
+              <Cog className="mr-2 h-4 w-4" />
+              Modifier
+            </Button>
+          </>
         )}
       </div>
     </div>
