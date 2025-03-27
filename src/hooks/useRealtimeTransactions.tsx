@@ -76,9 +76,12 @@ export function useRealtimeTransactions() {
       if (error) throw error;
       
       // Si nous n'avons pas de données réelles dans la table, utilisons des données simulées pour la démonstration
-      const txData = data && data.length > 0 
-        ? convertDatabaseRecordsToTransactions(data as DatabaseTransactionRecord[])
-        : generateMockTransactions(activeSfdId);
+      let txData: Transaction[];
+      if (data && data.length > 0) {
+        txData = convertDatabaseRecordsToTransactions(data as DatabaseTransactionRecord[]);
+      } else {
+        txData = generateMockTransactions(activeSfdId);
+      }
       
       setTransactions(txData);
       setFilteredTransactions(txData);
