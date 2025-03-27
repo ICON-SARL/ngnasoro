@@ -186,27 +186,33 @@ export function useRealtimeTransactions() {
     calculateStats(updatedTransactions);
   }, [transactions, toast, calculateStats, activeSfdId]);
   
-  // Set up the channel subscription with maximally simplified typing
+  // Set up the channel subscription with fixed typing to prevent recursion
   useEffect(() => {
     if (!user || !activeSfdId) return;
     
     fetchTransactions();
     
-    // Create a basic channel with no complex typing
-    const channel = supabase.channel('public:transactions');
+    // Create a simple standalone function to set up the channel
+    // This breaks the complex type inference chain
+    function setupRealtimeChannel() {
+      // Create channel without complex type inference
+      const channel = supabase.channel('public:transactions');
+      
+      // Define filter options separately to avoid deep type inference
+      const filterOptions = {
+        event: '*',
+        schema: 'public',
+        table: 'transactions',
+        filter: `sfd_id=eq.${activeSfdId}`
+      };
+      
+      // Use type assertion to break type inference chain
+      channel.on('postgres_changes', filterOptions as any, handleRealtimeUpdate);
+      
+      return channel.subscribe();
+    }
     
-    // Explicitly use 'any' for filter options to prevent type recursion
-    const filterOptions = {
-      event: '*',
-      schema: 'public',
-      table: 'transactions',
-      filter: `sfd_id=eq.${activeSfdId}`
-    };
-    
-    // Manually cast to any to break type inference chain
-    channel.on('postgres_changes', filterOptions as any, handleRealtimeUpdate);
-    
-    const subscription = channel.subscribe();
+    const subscription = setupRealtimeChannel();
     
     // Cleanup function
     return () => {
