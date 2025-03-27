@@ -1,143 +1,188 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdClients } from '@/hooks/useSfdClients';
-import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
 interface NewClientFormProps {
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
-interface FormValues {
-  full_name: string;
-  email: string;
-  phone: string;
-  address: string;
-  id_type: string;
-  id_number: string;
-}
-
-const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>();
+export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
   const { activeSfdId } = useAuth();
   const { createClient } = useSfdClients();
   
-  const onSubmit = async (data: FormValues) => {
-    if (!activeSfdId) {
-      alert("Aucun SFD actif sélectionné");
-      return;
+  const form = useForm({
+    defaultValues: {
+      fullName: '',
+      email: '',
+      phone: '',
+      address: '',
+      idNumber: '',
+      idType: '',
+      notes: '',
     }
-    
+  });
+
+  const onSubmit = async (data: any) => {
     try {
       await createClient.mutateAsync({
-        sfd_id: activeSfdId,
-        ...data
+        full_name: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        id_number: data.idNumber,
+        id_type: data.idType,
+        notes: data.notes,
       });
       
-      onSuccess();
+      form.reset();
+      if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Error creating client:', error);
     }
   };
-  
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="full_name">Nom complet <span className="text-red-500">*</span></Label>
-        <Input
-          id="full_name"
-          {...register('full_name', { required: "Le nom complet est requis" })}
-          placeholder="Nom complet du client"
-          className={errors.full_name ? "border-red-500" : ""}
-        />
-        {errors.full_name && (
-          <p className="text-xs text-red-500">{errors.full_name.message}</p>
-        )}
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            {...register('email', { 
-              pattern: {
-                value: /\S+@\S+\.\S+/,
-                message: "Format d'email invalide"
-              }
-            })}
-            placeholder="Email du client"
-            className={errors.email ? "border-red-500" : ""}
-          />
-          {errors.email && (
-            <p className="text-xs text-red-500">{errors.email.message}</p>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="fullName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nom complet</FormLabel>
+              <FormControl>
+                <Input placeholder="Nom et prénom" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="phone">Téléphone</Label>
-          <Input
-            id="phone"
-            {...register('phone')}
-            placeholder="+223 XX XX XX XX"
-          />
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="address">Adresse</Label>
-        <Input
-          id="address"
-          {...register('address')}
-          placeholder="Adresse du client"
         />
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="id_type">Type de pièce d'identité</Label>
-          <select
-            id="id_type"
-            {...register('id_type')}
-            className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-          >
-            <option value="">Sélectionner un type</option>
-            <option value="Carte d'identité">Carte d'identité</option>
-            <option value="Passeport">Passeport</option>
-            <option value="Permis de conduire">Permis de conduire</option>
-            <option value="NINA">NINA</option>
-          </select>
-        </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="id_number">Numéro de pièce d'identité</Label>
-          <Input
-            id="id_number"
-            {...register('id_number')}
-            placeholder="Numéro de la pièce d'identité"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="email@example.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Téléphone</FormLabel>
+                <FormControl>
+                  <Input placeholder="+223 XX XX XX XX" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
-      </div>
-      
-      <div className="pt-4 flex justify-end space-x-2">
-        <Button type="button" variant="outline" onClick={onSuccess}>
-          Annuler
-        </Button>
-        <Button 
-          type="submit" 
-          disabled={isSubmitting}
-          className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-        >
-          {isSubmitting ? 'Enregistrement...' : 'Enregistrer le client'}
-        </Button>
-      </div>
-    </form>
+        
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Adresse</FormLabel>
+              <FormControl>
+                <Input placeholder="Adresse du client" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="idType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Type de pièce d'identité</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="cni">Carte Nationale d'Identité</SelectItem>
+                    <SelectItem value="passport">Passeport</SelectItem>
+                    <SelectItem value="driver">Permis de conduire</SelectItem>
+                    <SelectItem value="voter">Carte d'électeur</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="idNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Numéro de pièce d'identité</FormLabel>
+                <FormControl>
+                  <Input placeholder="Numéro de la pièce" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Informations supplémentaires" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="flex justify-end pt-4">
+          <Button type="submit" disabled={createClient.isPending}>
+            {createClient.isPending ? 'Création...' : 'Créer le client'}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 };
-
-export default NewClientForm;

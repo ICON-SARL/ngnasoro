@@ -1,143 +1,118 @@
 
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  BellRing, 
-  LogOut, 
-  Settings, 
-  User, 
-  ChevronDown, 
-  Building,
-  Shield 
-} from 'lucide-react';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-
-interface Agency {
-  id: string;
-  name: string;
-  region: string;
-}
+import { Building, CreditCard, Users, FileText, LogOut } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 export const AgencyHeader = () => {
-  const [activeAgency, setActiveAgency] = useState<Agency>({
-    id: '1',
-    name: 'Agence Bamako',
-    region: 'Bamako'
-  });
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   
-  const [biometricEnabled, setBiometricEnabled] = useState(true);
-  
-  const mockAgencies: Agency[] = [
-    { id: '1', name: 'Agence Bamako', region: 'Bamako' },
-    { id: '2', name: 'Agence Sikasso', region: 'Sikasso' },
-    { id: '3', name: 'Agence Ségou', region: 'Ségou' },
-    { id: '4', name: 'Agence Kayes', region: 'Kayes' }
-  ];
-  
-  const handleSwitchAgency = (agency: Agency) => {
-    setActiveAgency(agency);
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Déconnecté",
+        description: "Vous avez été déconnecté avec succès",
+      });
+      navigate('/login');
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la déconnexion",
+        variant: "destructive",
+      });
+    }
   };
   
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
-      <div className="container mx-auto flex justify-between items-center h-16 px-4">
-        <div className="flex items-center space-x-2">
-          <Link to="/" className="flex items-center space-x-2">
-            <img 
-              src="/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png" 
-              alt="NGNA SÔRÔ! Logo" 
-              className="h-8"
-            />
-            <span className="font-medium text-lg">
-              <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-[#0D6A51]">SÔRÔ!</span>
-            </span>
-          </Link>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <div className="bg-[#0D6A51]/10 text-[#0D6A51] px-2 py-1 rounded text-xs font-medium ml-2 flex items-center cursor-pointer">
-                <Building className="h-3 w-3 mr-1" />
-                {activeAgency.name}
-                <ChevronDown className="h-3 w-3 ml-1" />
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              <div className="p-2">
-                <div className="text-sm font-medium">Changer d'agence</div>
-                <div className="text-xs text-muted-foreground mb-2">Connexion sécurisée</div>
-                <div className="flex items-center space-x-2 mb-2">
-                  <Switch 
-                    id="agency-biometric" 
-                    checked={biometricEnabled}
-                    onCheckedChange={setBiometricEnabled}
-                  />
-                  <label htmlFor="agency-biometric" className="text-xs flex items-center">
-                    <Shield className="h-3 w-3 mr-1 text-[#0D6A51]" />
-                    Vérification biométrique
-                  </label>
-                </div>
-              </div>
-              <DropdownMenuSeparator />
-              {mockAgencies.map(agency => (
-                <DropdownMenuItem 
-                  key={agency.id}
-                  className={agency.id === activeAgency.id ? "bg-[#0D6A51]/10" : ""}
-                  onClick={() => handleSwitchAgency(agency)}
-                >
-                  <Building className="h-4 w-4 mr-2 text-[#0D6A51]" />
-                  <span className="flex-1">{agency.name}</span>
-                  {agency.id === activeAgency.id && (
-                    <Badge className="bg-[#0D6A51] text-white text-[0.6rem] py-0 px-1">Actif</Badge>
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <nav className="hidden md:flex items-center space-x-6">
-          <Link to="/agency-dashboard" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
-            Dashboard
-          </Link>
-          <Link to="/loans" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
-            Prêts
-          </Link>
-          <Link to="/clients" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
-            Clients
-          </Link>
-          <Link to="/transactions" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
-            Transactions
-          </Link>
-        </nav>
-
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" className="relative">
-            <BellRing className="h-5 w-5" />
-            <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-          </Button>
-          
-          <div className="hidden md:flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-full bg-[#0D6A51]/10 flex items-center justify-center text-[#0D6A51]">
-              <User className="h-4 w-4" />
+    <header className="bg-white border-b border-gray-200">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-8">
+            <div className="flex items-center">
+              <Building className="h-6 w-6 text-[#0D6A51] mr-2" />
+              <span className="font-bold text-xl">SFD Portal</span>
             </div>
-            <div className="text-sm">
-              <div className="font-medium">Amadou Traoré</div>
-              <div className="text-xs text-muted-foreground">agent@bamako.sfd</div>
-            </div>
+            
+            <nav className="hidden md:flex space-x-6">
+              <NavLink 
+                to="/agency-dashboard" 
+                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#0D6A51]' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                Tableau de Bord
+              </NavLink>
+              <NavLink 
+                to="/loans" 
+                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#0D6A51]' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                Prêts
+              </NavLink>
+              <NavLink 
+                to="/clients" 
+                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#0D6A51]' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                Clients
+              </NavLink>
+              <NavLink 
+                to="/transactions" 
+                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#0D6A51]' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                Transactions
+              </NavLink>
+            </nav>
           </div>
           
-          <Button variant="ghost" size="icon">
-            <LogOut className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center space-x-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.avatar_url} alt={user?.full_name || 'User'} />
+                    <AvatarFallback className="bg-[#0D6A51] text-white">
+                      {user?.full_name?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user?.full_name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Profil</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/agency-dashboard')}>
+                  <Building className="mr-2 h-4 w-4" />
+                  <span>SFD Dashboard</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Déconnexion</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </header>

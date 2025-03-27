@@ -1,112 +1,176 @@
 
-import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { sfdClientApi } from '@/utils/sfdClientApi';
-import { SfdClient } from '@/types/sfdClients';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
+export interface SfdClient {
+  id: string;
+  sfd_id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  id_number: string | null;
+  id_type: string | null;
+  status: string;
+  kyc_level: number;
+  notes: string | null;
+  created_at: string;
+  validated_at: string | null;
+  validated_by: string | null;
+  user_id: string | null;
+}
+
 export function useSfdClients() {
-  const { user } = useAuth();
+  const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
   // Fetch all clients for the current SFD
+  const fetchClients = async (): Promise<SfdClient[]> => {
+    if (!activeSfdId) return [];
+    
+    const { data, error } = await supabase
+      .from('sfd_clients')
+      .select('*')
+      .eq('sfd_id', activeSfdId)
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching clients:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer les clients",
+        variant: "destructive",
+      });
+      return [];
+    }
+    
+    return data || [];
+  };
+  
   const clientsQuery = useQuery({
-    queryKey: ['sfd-clients'],
-    queryFn: sfdClientApi.getSfdClients,
-    enabled: !!user
+    queryKey: ['sfd-clients', activeSfdId],
+    queryFn: fetchClients,
+    enabled: !!activeSfdId,
   });
   
   // Create a new client
   const createClient = useMutation({
-    mutationFn: sfdClientApi.createClient,
+    mutationFn: async (clientData: {
+      full_name: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      id_number?: string;
+      id_type?: string;
+      notes?: string;
+    }) => {
+      if (!activeSfdId) throw new Error("SFD ID non défini");
+      
+      const { data, error } = await supabase
+        .from('sfd_clients')
+        .insert({
+          sfd_id: activeSfdId,
+          full_name: clientData.full_name,
+          email: clientData.email || null,
+          phone: clientData.phone || null,
+          address: clientData.address || null,
+          id_number: clientData.id_number || null,
+          id_type: clientData.id_type || null,
+          notes: clientData.notes || null,
+          status: 'pending',
+          kyc_level: 0
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sfd-clients', activeSfdId] });
       toast({
-        title: "Client créé avec succès",
-        description: "Le nouveau client a été ajouté à votre SFD",
+        title: "Client créé",
+        description: "Le client a été créé avec succès",
       });
-      queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
     },
     onError: (error: any) => {
       toast({
-        title: "Erreur lors de la création",
-        description: error.message || "Une erreur est survenue",
+        title: "Erreur",
+        description: `Impossible de créer le client: ${error.message}`,
         variant: "destructive",
       });
     }
   });
-
-  // Validate a client account
+  
+  // Validate a client
   const validateClient = useMutation({
-    mutationFn: ({ clientId, notes }: { clientId: string, notes?: string }) => {
+    mutationFn: async ({ clientId }: { clientId: string }) => {
       if (!user?.id) throw new Error("Utilisateur non authentifié");
-      return sfdClientApi.validateClientAccount(clientId, user.id, notes);
+      
+      const { data, error } = await supabase
+        .from('sfd_clients')
+        .update({
+          status: 'validated',
+          validated_at: new Date().toISOString(),
+          validated_by: user.id
+        })
+        .eq('id', clientId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sfd-clients', activeSfdId] });
       toast({
-        title: "Compte validé",
-        description: "Le compte client a été validé avec succès",
+        title: "Client validé",
+        description: "Le client a été validé avec succès",
       });
-      queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
     },
     onError: (error: any) => {
       toast({
-        title: "Erreur de validation",
-        description: error.message || "Une erreur est survenue",
+        title: "Erreur",
+        description: `Impossible de valider le client: ${error.message}`,
         variant: "destructive",
       });
     }
   });
-
-  // Reject a client account
+  
+  // Reject a client
   const rejectClient = useMutation({
-    mutationFn: ({ clientId, notes }: { clientId: string, notes?: string }) => {
-      if (!user?.id) throw new Error("Utilisateur non authentifié");
-      return sfdClientApi.rejectClientAccount(clientId, user.id, notes);
+    mutationFn: async ({ clientId }: { clientId: string }) => {
+      const { data, error } = await supabase
+        .from('sfd_clients')
+        .update({
+          status: 'rejected'
+        })
+        .eq('id', clientId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sfd-clients', activeSfdId] });
       toast({
-        title: "Compte rejeté",
-        description: "Le compte client a été rejeté",
+        title: "Client rejeté",
+        description: "Le client a été rejeté",
       });
-      queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
     },
     onError: (error: any) => {
       toast({
-        title: "Erreur de rejet",
-        description: error.message || "Une erreur est survenue",
+        title: "Erreur",
+        description: `Impossible de rejeter le client: ${error.message}`,
         variant: "destructive",
       });
     }
   });
-
-  // Update client data
-  const updateClient = useMutation({
-    mutationFn: ({ clientId, updates }: { clientId: string, updates: Partial<SfdClient> }) => {
-      return sfdClientApi.updateClient(clientId, updates);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Client mis à jour",
-        description: "Les informations du client ont été mises à jour",
-      });
-      queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur de mise à jour",
-        description: error.message || "Une erreur est survenue",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Get client by ID
-  const getClientById = async (clientId: string) => {
-    return sfdClientApi.getClientById(clientId);
-  };
-
+  
   return {
     clients: clientsQuery.data || [],
     isLoading: clientsQuery.isLoading,
@@ -114,8 +178,5 @@ export function useSfdClients() {
     createClient,
     validateClient,
     rejectClient,
-    updateClient,
-    getClientById,
-    refetch: clientsQuery.refetch
   };
 }
