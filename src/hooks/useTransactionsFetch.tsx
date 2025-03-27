@@ -16,17 +16,14 @@ export function useTransactionsFetch({ activeSfdId, userId, toast }: UseTransact
     setIsLoading(true);
     
     try {
-      // Avoid deep type inference by using type assertions after the query
-      const result = await supabase
+      // Use explicit any to break deep type inference
+      const { data, error } = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(50) as { data: any[] | null; error: any | null };
         
-      const data = result.data;
-      const error = result.error;
-      
       if (error) throw error;
       
       let txData: Transaction[] = [];
