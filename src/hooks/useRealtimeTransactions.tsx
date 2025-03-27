@@ -5,9 +5,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Transaction, TransactionStats } from '@/types/transactions';
 
-// Use an even simpler type - avoiding Record which can sometimes cause inference issues
-type SimplePayload = any;
-
 export function useRealtimeTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
@@ -24,7 +21,7 @@ export function useRealtimeTransactions() {
   const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
   
-  // Helper function to convert database records to Transaction objects - simplified approach
+  // Helper function to convert database records to Transaction objects
   const convertDatabaseRecordsToTransactions = useCallback((records: any[]): Transaction[] => {
     return records.map(record => ({
       id: record.id,
@@ -32,7 +29,7 @@ export function useRealtimeTransactions() {
       sfd_id: record.sfd_id || activeSfdId,
       type: record.type as Transaction['type'],
       amount: record.amount,
-      status: record.status || 'success', // Default to success if not specified
+      status: record.status || 'success',
       created_at: record.created_at || record.date || new Date().toISOString(),
       name: record.name,
       date: record.date,
@@ -90,29 +87,27 @@ export function useRealtimeTransactions() {
     return mockTransactions;
   }, []);
   
-  // Extremely simplified fetch function using any types to avoid type inference issues
+  // Fetch transactions function
   const fetchTransactions = useCallback(async () => {
     if (!user || !activeSfdId) return;
     
     setIsLoading(true);
     
     try {
-      // Use explicit any typing throughout to avoid TypeScript inference depth
-      const result: any = await supabase
+      // Avoid excessive type inference by using any for the result
+      const { data, error } = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(50) as { data: any; error: any };
         
-      if (result.error) throw result.error;
+      if (error) throw error;
       
       let txData: Transaction[] = [];
       
-      // Explicitly treat data as any[] to avoid deep inference
-      if (result.data && result.data.length > 0) {
-        const rawData: any[] = result.data;
-        txData = convertDatabaseRecordsToTransactions(rawData);
+      if (data && data.length > 0) {
+        txData = convertDatabaseRecordsToTransactions(data);
       } else {
         txData = generateMockTransactions(activeSfdId);
       }
@@ -132,18 +127,19 @@ export function useRealtimeTransactions() {
     }
   }, [user, activeSfdId, toast, calculateStats, convertDatabaseRecordsToTransactions, generateMockTransactions]);
   
-  // Extremely simplified handler for realtime updates - avoiding any type inference
+  // Simple handler for realtime updates with minimal typing
   const handleRealtimeUpdate = useCallback((payload: any) => {
-    // Explicitly create a new array without using spread operations
-    let updatedTransactions = transactions.slice();
+    if (!payload) return;
     
-    // Access payload properties directly without destructuring
-    const eventType = payload.eventType;
-    const newRecord = payload.new;
-    const oldRecord = payload.old;
+    const eventType = payload.eventType as string;
+    const newRecord = payload.new as any;
+    const oldRecord = payload.old as any;
+    
+    // Create a copy of transactions to modify
+    const currentTransactions = [...transactions];
+    let updatedTransactions = currentTransactions;
     
     if (eventType === 'INSERT' && newRecord) {
-      // Create new transaction object without type inference
       const newTx: Transaction = {
         id: newRecord.id,
         user_id: newRecord.user_id,
@@ -158,42 +154,31 @@ export function useRealtimeTransactions() {
         description: `Transaction for ${newRecord.name}`,
       };
       
-      // Use array methods instead of spread for insertion
-      updatedTransactions.unshift(newTx);
+      updatedTransactions = [newTx, ...currentTransactions];
       
       toast({
         title: 'New transaction',
         description: `${newTx.type} of ${newTx.amount} FCFA`,
       });
     } else if (eventType === 'UPDATE' && newRecord) {
-      // Create updated transaction object
-      const updatedTx: Transaction = {
-        id: newRecord.id,
-        user_id: newRecord.user_id,
-        sfd_id: newRecord.sfd_id || activeSfdId,
-        type: newRecord.type as Transaction['type'],
-        amount: newRecord.amount,
-        status: newRecord.status || 'success',
-        created_at: newRecord.created_at || newRecord.date || new Date().toISOString(),
-        name: newRecord.name,
-        date: newRecord.date,
-        avatar_url: newRecord.avatar_url,
-        description: `Transaction for ${newRecord.name}`,
-      };
-      
-      // Use loop instead of map for updating
-      for (let i = 0; i < updatedTransactions.length; i++) {
-        if (updatedTransactions[i].id === updatedTx.id) {
-          updatedTransactions[i] = updatedTx;
-          break;
+      updatedTransactions = currentTransactions.map(tx => {
+        if (tx.id === newRecord.id) {
+          return {
+            ...tx,
+            type: newRecord.type as Transaction['type'],
+            amount: newRecord.amount,
+            status: newRecord.status || 'success',
+            name: newRecord.name,
+            avatar_url: newRecord.avatar_url,
+            description: `Transaction for ${newRecord.name}`,
+          };
         }
-      }
+        return tx;
+      });
     } else if (eventType === 'DELETE' && oldRecord) {
-      // Filter array directly
-      const oldId = oldRecord.id;
-      if (oldId) {
-        updatedTransactions = updatedTransactions.filter(tx => tx.id !== oldId);
-      }
+      updatedTransactions = currentTransactions.filter(tx => 
+        tx.id !== oldRecord.id
+      );
     }
     
     setTransactions(updatedTransactions);
@@ -201,28 +186,43 @@ export function useRealtimeTransactions() {
     calculateStats(updatedTransactions);
   }, [transactions, toast, calculateStats, activeSfdId]);
   
-  // Extremely simplified channel subscription to avoid type inference issues
+  // Set up the channel subscription with minimal type dependencies
   useEffect(() => {
     if (!user || !activeSfdId) return;
     
     fetchTransactions();
     
-    // Explicit any types for the channel to avoid TypeScript inference depth issues
-    const channel: any = supabase
-      .channel('public:transactions')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'transactions',
-        filter: `sfd_id=eq.${activeSfdId}`
-      }, (payload: any) => {
-        // Pass the payload directly without type casting
-        handleRealtimeUpdate(payload);
-      })
-      .subscribe();
+    // Create the channel with minimal typing to avoid deep instantiation
+    let channelRef: any = null;
+    
+    // Simple typed function to process channel events
+    function setupChannel() {
+      // Using any types to avoid excessive type inference
+      const channel = supabase.channel('public:transactions') as any;
       
+      channel.on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'transactions',
+          filter: `sfd_id=eq.${activeSfdId}`
+        } as any, 
+        handleRealtimeUpdate
+      );
+      
+      const subscription = channel.subscribe();
+      channelRef = subscription;
+      
+      return subscription;
+    }
+    
+    const subscription = setupChannel();
+    
+    // Cleanup function
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef) {
+        supabase.removeChannel(channelRef);
+      }
     };
   }, [user, activeSfdId, fetchTransactions, handleRealtimeUpdate]);
   
