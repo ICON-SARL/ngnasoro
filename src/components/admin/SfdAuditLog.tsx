@@ -296,8 +296,8 @@ export function SfdAuditLog() {
               <div>
                 <label className="text-sm font-medium mb-1 block">Date de début</label>
                 <DatePicker
-                  selected={startDate}
-                  onSelect={setStartDate}
+                  date={startDate}
+                  setDate={setStartDate}
                   placeholder="Choisir une date"
                 />
               </div>
@@ -305,8 +305,8 @@ export function SfdAuditLog() {
               <div>
                 <label className="text-sm font-medium mb-1 block">Date de fin</label>
                 <DatePicker
-                  selected={endDate}
-                  onSelect={setEndDate}
+                  date={endDate}
+                  setDate={setEndDate}
                   placeholder="Choisir une date"
                 />
               </div>
