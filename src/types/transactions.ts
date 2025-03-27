@@ -20,6 +20,14 @@ export interface Transaction {
   avatar_url?: string;
 }
 
+export interface Account {
+  id: string;
+  user_id: string;
+  balance: number;
+  currency: string;
+  updated_at: string;
+}
+
 export interface TransactionStats {
   totalCount: number;
   totalVolume: number;
