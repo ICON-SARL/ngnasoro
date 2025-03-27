@@ -16,13 +16,15 @@ export function useTransactionsFetch({ activeSfdId, userId, toast }: UseTransact
     setIsLoading(true);
     
     try {
-      // Use the proper Supabase query API to avoid TypeScript errors
-      const { data, error } = await supabase
+      // Cast to any to bypass TypeScript's complex type inference
+      const result = await (supabase as any)
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
         .limit(50);
+      
+      const { data, error } = result;
       
       if (error) {
         throw error;
