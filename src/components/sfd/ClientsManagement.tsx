@@ -46,7 +46,7 @@ import { SfdClient } from '@/types/sfdClients';
 import { useToast } from '@/hooks/use-toast';
 import ClientDetails from './ClientDetails';
 import ClientDocuments from './ClientDocuments';
-import NewClientForm from './NewClientForm';
+import { NewClientForm } from './NewClientForm';
 
 const ClientsManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -71,8 +71,7 @@ const ClientsManagement = () => {
     if (!selectedClient) return;
     
     validateClient.mutate({
-      clientId: selectedClient.id,
-      notes: validationNotes
+      clientId: selectedClient.id
     }, {
       onSuccess: () => {
         setIsDialogOpen(false);
@@ -88,8 +87,7 @@ const ClientsManagement = () => {
     if (!selectedClient) return;
     
     rejectClient.mutate({
-      clientId: selectedClient.id,
-      notes: validationNotes
+      clientId: selectedClient.id
     }, {
       onSuccess: () => {
         setIsDialogOpen(false);
