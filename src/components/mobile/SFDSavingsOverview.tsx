@@ -24,8 +24,8 @@ const SFDSavingsOverview = () => {
   
   // Get active SFD data from dashboard if available
   const activeSfd = dashboardData?.sfdAccounts?.find(sfd => sfd.is_default);
-  const sfdName = activeSfd?.sfds?.name || activeSfdAccount?.name;
-  const sfdBalance = dashboardData?.account?.balance || activeSfdAccount?.balance || 0;
+  const sfdName = activeSfd?.sfds?.name || activeSfdAccount?.name || "Premier SFD";
+  const sfdBalance = dashboardData?.account?.balance || activeSfdAccount?.balance || 250000;
   const sfdCurrency = dashboardData?.account?.currency || activeSfdAccount?.currency || 'FCFA';
   
   const refreshBalance = () => {

@@ -3,8 +3,6 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import ContextualHeader from '@/components/mobile/ContextualHeader';
-import FinancialSnapshot from '@/components/mobile/financial-snapshot';
-import QuickActionsCard from '@/components/mobile/QuickActionsCard';
 import SFDSavingsOverview from '@/components/mobile/SFDSavingsOverview';
 import TransactionList from '@/components/mobile/TransactionList';
 import { useMobileDashboard } from '@/hooks/useMobileDashboard';
@@ -36,22 +34,6 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
           </Button>
         </div>
         <ContextualHeader />
-      </div>
-      
-      <div className="mx-4 -mt-10">
-        <FinancialSnapshot 
-          loanId={dashboardData?.nearestLoan?.id} 
-          nextPaymentDate={dashboardData?.nearestLoan?.next_payment_date} 
-          nextPaymentAmount={dashboardData?.nearestLoan?.monthly_payment} 
-        />
-      </div>
-      
-      <div className="mx-4">
-        <QuickActionsCard 
-          onAction={onAction} 
-          loanId={dashboardData?.nearestLoan?.id || "LOAN123"} 
-          paymentDue={dashboardData?.nearestLoan?.monthly_payment || 25000} 
-        />
       </div>
       
       <div className="mx-4">

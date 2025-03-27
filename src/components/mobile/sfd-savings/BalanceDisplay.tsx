@@ -14,7 +14,7 @@ interface BalanceDisplayProps {
 
 const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
   isHidden,
-  balance = 0,
+  balance = 250000,
   currency = 'FCFA',
   isUpdating,
   refreshBalance,
@@ -25,7 +25,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-500">Solde total épargne</p>
-          <p className="text-lg font-semibold">
+          <p className="text-2xl font-bold">
             {isHidden ? '••••••••' : `${balance.toLocaleString()} ${currency}`}
           </p>
         </div>
@@ -34,10 +34,10 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
           size="sm"
           onClick={refreshBalance}
           disabled={isUpdating || isPending}
-          className="text-xs"
+          className="h-9 px-3"
         >
           <RefreshCw className={`h-3 w-3 mr-1 ${isUpdating || isPending ? 'animate-spin' : ''}`} />
-          {isUpdating || isPending ? 'Actualisation...' : 'Actualiser'}
+          Actualiser
         </Button>
       </div>
     </div>

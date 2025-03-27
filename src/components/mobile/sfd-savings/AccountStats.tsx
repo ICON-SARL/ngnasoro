@@ -7,7 +7,12 @@ interface AccountStatsProps {
   balance: number | undefined;
 }
 
-const AccountStats: React.FC<AccountStatsProps> = ({ isHidden, balance = 125000 }) => {
+const AccountStats: React.FC<AccountStatsProps> = ({ isHidden, balance = 250000 }) => {
+  // Calcul des intérêts (3% annuel)
+  const interests = Math.floor(balance * 0.03);
+  // Montant des dépôts (calculé arbitrairement à 50% du solde total)
+  const deposits = Math.floor(balance / 2);
+
   return (
     <div className="grid grid-cols-2 gap-4 mb-4">
       <div className="bg-green-50 p-3 rounded-xl">
@@ -18,7 +23,7 @@ const AccountStats: React.FC<AccountStatsProps> = ({ isHidden, balance = 125000 
           </div>
         </div>
         <p className="text-xl font-semibold text-gray-800">
-          {isHidden ? '•••••' : `+${Math.floor(balance / 2).toLocaleString()} FCFA`}
+          {isHidden ? '•••••' : `+${deposits.toLocaleString()} FCFA`}
         </p>
         <p className="text-xs text-gray-500 mt-1">Derniers 3 mois</p>
       </div>
@@ -31,7 +36,7 @@ const AccountStats: React.FC<AccountStatsProps> = ({ isHidden, balance = 125000 
           </div>
         </div>
         <p className="text-xl font-semibold text-gray-800">
-          {isHidden ? '•••••' : `+${Math.floor(balance * 0.03).toLocaleString()} FCFA`}
+          {isHidden ? '•••••' : `+${interests.toLocaleString()} FCFA`}
         </p>
         <p className="text-xs text-gray-500 mt-1">Taux 3% annuel</p>
       </div>

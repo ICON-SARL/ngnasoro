@@ -28,14 +28,6 @@ export const useActionHandler = () => {
       navigate('/mobile-flow/loan-details');
     } else if (action === 'Loan Setup') {
       navigate('/mobile-flow/loan-setup');
-    } else if (action === 'Payment Options') {
-      navigate('/mobile-flow/payment-options');
-    } else if (action === 'Late Payments') {
-      navigate('/mobile-flow/late-payments');
-    } else if (action === 'Loan Application') {
-      navigate('/mobile-flow/loan-application');
-    } else if (action === 'Secure Layer') {
-      navigate('/mobile-flow/secure-layer');
     } else if (action === 'Loan Process') {
       navigate('/mobile-flow/loan-process');
     } else if (action === 'Start') {
@@ -45,18 +37,6 @@ export const useActionHandler = () => {
       // You would handle setting repayment amount here if data contains amount
     } else if (action === 'Home') {
       navigate('/mobile-flow/main');
-    } else if (action === 'Savings') {
-      // Navigate to the savings page
-      toast({
-        title: 'Épargne',
-        description: 'Cette fonctionnalité est en cours de développement',
-      });
-    } else if (action === 'Bills') {
-      // Navigate to the bills page
-      toast({
-        title: 'Factures',
-        description: 'Cette fonctionnalité est en cours de développement',
-      });
     }
   };
 
