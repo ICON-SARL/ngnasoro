@@ -10,9 +10,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus } from 'lucide-react';
+import { Plus, Edit } from 'lucide-react';
 import { PermissionList } from './PermissionList';
 import { Permission } from './types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface NewRoleDialogProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ interface NewRoleDialogProps {
   onDescriptionChange: (description: string) => void;
   onTogglePermission: (permissionId: string) => void;
   onSave: () => void;
+  isEditMode?: boolean;
 }
 
 export function NewRoleDialog({
@@ -37,19 +39,29 @@ export function NewRoleDialog({
   onNameChange,
   onDescriptionChange,
   onTogglePermission,
-  onSave
+  onSave,
+  isEditMode = false
 }: NewRoleDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouveau Rôle
+          {isEditMode ? (
+            <>
+              <Edit className="h-4 w-4 mr-2" />
+              Modifier Rôle
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-2" />
+              Nouveau Rôle
+            </>
+          )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Créer un nouveau rôle</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Modifier un rôle' : 'Créer un nouveau rôle'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-4">
           <div className="grid gap-2">
@@ -70,14 +82,35 @@ export function NewRoleDialog({
           </div>
           <div className="grid gap-2">
             <Label>Permissions</Label>
-            <PermissionList 
-              permissions={permissions}
-              selectedPermissions={newRole.permissions || []}
-              onTogglePermission={onTogglePermission}
-            />
+            <Tabs defaultValue="list">
+              <TabsList className="mb-4">
+                <TabsTrigger value="list">Liste</TabsTrigger>
+                <TabsTrigger value="drag">Glisser-déposer</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="list">
+                <PermissionList 
+                  permissions={permissions}
+                  selectedPermissions={newRole.permissions || []}
+                  onTogglePermission={onTogglePermission}
+                  draggable={false}
+                />
+              </TabsContent>
+              
+              <TabsContent value="drag">
+                <PermissionList 
+                  permissions={permissions}
+                  selectedPermissions={newRole.permissions || []}
+                  onTogglePermission={onTogglePermission}
+                  draggable={true}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
           <div className="flex justify-end">
-            <Button onClick={onSave}>Enregistrer</Button>
+            <Button onClick={onSave}>
+              {isEditMode ? 'Mettre à jour' : 'Enregistrer'}
+            </Button>
           </div>
         </div>
       </DialogContent>

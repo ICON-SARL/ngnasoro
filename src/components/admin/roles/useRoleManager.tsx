@@ -26,6 +26,9 @@ export function useRoleManager() {
   ]);
 
   const [showNewRoleDialog, setShowNewRoleDialog] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editRoleId, setEditRoleId] = useState<string | null>(null);
+  
   // Fix the type definition here to ensure 'name' is a required property
   const [newRole, setNewRole] = useState<{
     name: string;
@@ -46,7 +49,10 @@ export function useRoleManager() {
     { id: 'view_subsidies', name: 'Afficher les subventions', description: 'Voir les subventions sans pouvoir les modifier' },
     { id: 'manage_audit_logs', name: 'Gestion des journaux d\'audit', description: 'Configurer et gérer les journaux d\'audit' },
     { id: 'view_audit_logs', name: 'Afficher les journaux d\'audit', description: 'Voir les journaux d\'audit sans pouvoir les modifier' },
-    { id: 'manage_settings', name: 'Gestion des paramètres', description: 'Configurer les paramètres système' }
+    { id: 'manage_settings', name: 'Gestion des paramètres', description: 'Configurer les paramètres système' },
+    { id: 'approve_credits', name: 'Approuver des crédits', description: 'Approuver ou rejeter des demandes de crédit' },
+    { id: 'manage_reports', name: 'Gestion des rapports', description: 'Créer et modifier des rapports' },
+    { id: 'export_data', name: 'Exporter des données', description: 'Exporter des données du système' }
   ];
 
   const handleTogglePermission = (permissionId: string) => {
@@ -69,20 +75,67 @@ export function useRoleManager() {
       return;
     }
 
-    const role: Role = {
-      id: Date.now().toString(),
-      name: newRole.name,
-      description: newRole.description || '',
-      permissions: newRole.permissions || []
-    };
+    if (isEditMode && editRoleId) {
+      // Update existing role
+      setRoles(prevRoles => 
+        prevRoles.map(role => 
+          role.id === editRoleId 
+            ? {
+                ...role,
+                name: newRole.name,
+                description: newRole.description || '',
+                permissions: newRole.permissions || []
+              }
+            : role
+        )
+      );
+      
+      toast({
+        title: 'Rôle mis à jour',
+        description: `Le rôle ${newRole.name} a été mis à jour avec succès`,
+        variant: 'default'
+      });
+    } else {
+      // Create new role
+      const role: Role = {
+        id: Date.now().toString(),
+        name: newRole.name,
+        description: newRole.description || '',
+        permissions: newRole.permissions || []
+      };
 
-    setRoles([...roles, role]);
+      setRoles([...roles, role]);
+      
+      toast({
+        title: 'Rôle ajouté',
+        description: `Le rôle ${role.name} a été créé avec succès`,
+        variant: 'default'
+      });
+    }
+
     setNewRole({ name: '', description: '', permissions: [] });
     setShowNewRoleDialog(false);
+    setIsEditMode(false);
+    setEditRoleId(null);
+  };
+
+  const handleEditRole = (role: Role) => {
+    setNewRole({
+      name: role.name,
+      description: role.description,
+      permissions: [...role.permissions]
+    });
+    setEditRoleId(role.id);
+    setIsEditMode(true);
+    setShowNewRoleDialog(true);
+  };
+
+  const handleDeleteRole = (roleId: string) => {
+    setRoles(prevRoles => prevRoles.filter(role => role.id !== roleId));
     
     toast({
-      title: 'Rôle ajouté',
-      description: `Le rôle ${role.name} a été créé avec succès`,
+      title: 'Rôle supprimé',
+      description: 'Le rôle a été supprimé avec succès',
       variant: 'default'
     });
   };
@@ -95,6 +148,10 @@ export function useRoleManager() {
     newRole,
     setNewRole,
     handleTogglePermission,
-    handleSaveNewRole
+    handleSaveNewRole,
+    handleDeleteRole,
+    handleEditRole,
+    isEditMode,
+    setIsEditMode
   };
 }

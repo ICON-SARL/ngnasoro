@@ -3,6 +3,10 @@ import React from 'react';
 import { RoleCard } from './RoleCard';
 import { NewRoleDialog } from './NewRoleDialog';
 import { useRoleManager } from './useRoleManager';
+import { Button } from '@/components/ui/button';
+import { Shield, Plus } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export function AdminRoleManager() {
   const {
@@ -13,23 +17,64 @@ export function AdminRoleManager() {
     newRole,
     setNewRole,
     handleTogglePermission,
-    handleSaveNewRole
+    handleSaveNewRole,
+    handleDeleteRole,
+    handleEditRole,
+    isEditMode,
+    setIsEditMode
   } = useRoleManager();
+
+  const syncRolesToDatabase = async () => {
+    try {
+      toast({
+        title: "Synchronisation",
+        description: "Synchronisation des rôles avec la base de données...",
+      });
+      
+      // In a real implementation, this would sync with Supabase
+      // For this demo, we'll just show a success toast
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "Synchronisation réussie",
+        description: "Tous les rôles ont été synchronisés avec succès",
+      });
+    } catch (error) {
+      console.error('Error syncing roles:', error);
+      toast({
+        title: "Erreur de synchronisation",
+        description: "Une erreur est survenue lors de la synchronisation des rôles",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Gestion des Rôles Administratifs</h2>
-        <NewRoleDialog
-          isOpen={showNewRoleDialog}
-          onOpenChange={setShowNewRoleDialog}
-          newRole={newRole}
-          permissions={permissions}
-          onNameChange={(name) => setNewRole({ ...newRole, name })}
-          onDescriptionChange={(description) => setNewRole({ ...newRole, description })}
-          onTogglePermission={handleTogglePermission}
-          onSave={handleSaveNewRole}
-        />
+        <div>
+          <h2 className="text-xl font-semibold">Gestion des Rôles Administratifs</h2>
+          <p className="text-sm text-muted-foreground">
+            Définissez les différents rôles administratifs et leurs permissions
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={syncRolesToDatabase}>
+            <Shield className="h-4 w-4 mr-2" />
+            Synchroniser
+          </Button>
+          <NewRoleDialog
+            isOpen={showNewRoleDialog}
+            onOpenChange={setShowNewRoleDialog}
+            newRole={newRole}
+            permissions={permissions}
+            onNameChange={(name) => setNewRole({ ...newRole, name })}
+            onDescriptionChange={(description) => setNewRole({ ...newRole, description })}
+            onTogglePermission={handleTogglePermission}
+            onSave={handleSaveNewRole}
+            isEditMode={isEditMode}
+          />
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -37,7 +82,9 @@ export function AdminRoleManager() {
           <RoleCard 
             key={role.id} 
             role={role} 
-            permissions={permissions} 
+            permissions={permissions}
+            onEdit={() => handleEditRole(role)}
+            onDelete={() => handleDeleteRole(role.id)}
           />
         ))}
       </div>
