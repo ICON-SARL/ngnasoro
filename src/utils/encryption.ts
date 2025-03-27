@@ -224,4 +224,4 @@ export class SecureStorage {
   }
 }
 
-// Do not duplicate exports at the end of the file, since classes are already exported above
+// No duplicate exports needed - classes are already exported with the export keyword
