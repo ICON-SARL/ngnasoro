@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,9 +40,18 @@ export function useSfdManagement() {
   // Add SFD mutation
   const addSfdMutation = useMutation({
     mutationFn: async (sfdData: SfdFormValues) => {
+      // Ensure required fields are provided
+      const newSfd = {
+        name: sfdData.name,
+        code: sfdData.code,
+        region: sfdData.region || null,
+        status: sfdData.status || 'active',
+        logo_url: sfdData.logo_url || null
+      };
+
       const { data, error } = await supabase
         .from('sfds')
-        .insert([sfdData])
+        .insert([newSfd])
         .select();
 
       if (error) throw error;

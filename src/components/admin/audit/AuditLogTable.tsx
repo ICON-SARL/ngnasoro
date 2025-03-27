@@ -14,7 +14,7 @@ import { AuditLogTableProps } from './types';
 
 export function AuditLogTable({ logs, isLoading }: AuditLogTableProps) {
   // Get severity badge styling
-  const getSeverityBadge = (severity: AuditLogSeverity) => {
+  const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case AuditLogSeverity.INFO:
         return <Badge variant="outline" className="bg-blue-50 text-blue-600">Info</Badge>;
