@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AuditLogCategory, AuditLogSeverity, getAuditLogs } from '@/utils/auditLogger';
+import { AuditLogCategory, AuditLogSeverity, getAuditLogs } from '@/utils/audit';
 import { User } from '@/hooks/useAuth';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -116,9 +116,7 @@ export const AuditLogs = () => {
 
   const exportLogs = () => {
     const csv = [
-      // CSV headers
       ['Timestamp', 'Action', 'Category', 'Severity', 'Status', 'User ID', 'Target', 'Details'].join(','),
-      // CSV data rows
       ...logs.map(log => [
         log.created_at,
         log.action,
@@ -127,11 +125,10 @@ export const AuditLogs = () => {
         log.status,
         log.user_id || '',
         log.target_resource || '',
-        JSON.stringify(log.details || {}).replace(/,/g, ';') // Replace commas in JSON to avoid breaking CSV
+        JSON.stringify(log.details || {}).replace(/,/g, ';')
       ].join(','))
     ].join('\n');
 
-    // Create download link
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');

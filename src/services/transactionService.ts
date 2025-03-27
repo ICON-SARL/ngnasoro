@@ -1,5 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
+import { AuditLogSeverity, AuditLogCategory, AuditLogEntry } from '@/utils/audit';
 
 export enum AuditLogSeverity {
   INFO = 'info',

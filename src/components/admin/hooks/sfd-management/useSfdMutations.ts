@@ -1,10 +1,9 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SfdFormValues } from '../../sfd/SfdForm';
 import { useAuth } from '@/hooks/useAuth';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/auditLogger';
+import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 
 export function useSfdMutations() {
   const { toast } = useToast();

@@ -1,9 +1,8 @@
-
 import { useCallback } from 'react';
 import { useFinancialExport } from '@/hooks/useFinancialExport';
 import { Sfd } from '../../types/sfd-types';
 import { useAuth } from '@/hooks/useAuth';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/auditLogger';
+import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 
 export function useSfdExport(filteredSfds: Sfd[], statusFilter: string) {
   const { exportToPDF, exportToExcel, isExporting } = useFinancialExport();

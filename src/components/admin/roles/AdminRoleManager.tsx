@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RoleCard } from './RoleCard';
 import { NewRoleDialog } from './NewRoleDialog';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Shield, Plus, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/auditLogger';
+import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 
 export function AdminRoleManager() {
   const {
