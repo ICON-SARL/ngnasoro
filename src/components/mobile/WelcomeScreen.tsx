@@ -11,6 +11,14 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart }) => {
   return (
     <div className="h-screen flex flex-col bg-gradient-to-b from-[#0D6A51] to-[#064335]">
       <div className="flex-1 flex flex-col items-center justify-center text-white p-6 text-center">
+        <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center mb-6 animate-fade-in shadow-lg">
+          <img 
+            src="/lovable-uploads/2941965d-fd44-4815-bb4a-2c77549e1380.png" 
+            alt="N'GNA SÔRÔ! Logo" 
+            className="h-20 w-20 object-contain"
+          />
+        </div>
+        
         <div className="mb-8 animate-fade-in">
           <h1 className="text-4xl font-bold mb-2">NGNA SÔRÔ</h1>
           <p className="text-lg opacity-80">Votre partenaire financier de confiance</p>

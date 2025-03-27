@@ -15,11 +15,11 @@ const ContextualHeader = () => {
   return (
     <div className="flex justify-between items-center mb-3">
       <div className="flex items-center">
-        <div className="w-8 h-8 rounded-full bg-[#FFAB2E]/80 flex items-center justify-center mr-2">
+        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mr-2 shadow-sm">
           <img 
-            src="/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png" 
+            src="/lovable-uploads/2941965d-fd44-4815-bb4a-2c77549e1380.png" 
             alt="Logo SFD" 
-            className="h-6 w-6 object-contain"
+            className="h-10 w-10 object-contain"
           />
         </div>
         <div>
