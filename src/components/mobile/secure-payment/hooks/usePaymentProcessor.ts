@@ -68,14 +68,14 @@ export const usePaymentProcessor = ({
     setProgress(0);
     
     // Simulate payment processing with progress
+    let currentProgress = 0;
     const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + 5;
-      });
+      currentProgress += 5;
+      if (currentProgress >= 100) {
+        clearInterval(interval);
+        currentProgress = 100;
+      }
+      setProgress(currentProgress);
     }, 100);
     
     try {
