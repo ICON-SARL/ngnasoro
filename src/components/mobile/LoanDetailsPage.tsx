@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ActivitySquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -19,10 +19,15 @@ export interface LoanDetailsPageProps {
   loanId?: string;
 }
 
-const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => {
+const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId: propLoanId }) => {
   const navigate = useNavigate();
+  const params = useParams<{ loanId?: string }>();
   const { toast } = useToast();
   const { getActiveSfdData } = useSfdDataAccess();
+  
+  // Use loanId from props or from URL params
+  const loanId = propLoanId || params.loanId;
+  
   const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
   const [activeTab, setActiveTab] = useState('tracking');
   const [loanStatus, setLoanStatus] = useState({
@@ -308,8 +313,9 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => 
                 nextPaymentDue={loanStatus.nextPaymentDue}
                 paymentHistory={loanStatus.paymentHistory}
                 onMobileMoneyPayment={handleMobileMoneyWithdrawal}
+                loanId={loanId}
               />
-              <QRCodePaymentDialog onClose={() => {}} />
+              <QRCodePaymentDialog onClose={() => {}} amount={loanStatus.remainingAmount} isWithdrawal={false} />
             </Dialog>
           </TabsContent>
         </Tabs>

@@ -33,7 +33,7 @@ const LoanRepaymentTab = ({
   
   const handleRepayment = (method: 'mobile' | 'agency') => {
     if (method === 'mobile') {
-      // Corrigé pour utiliser le bon chemin
+      // Pass the loanId in state so the payment page knows it's for a loan repayment
       navigate('/mobile-flow/secure-payment', { 
         state: { 
           isRepayment: true, 

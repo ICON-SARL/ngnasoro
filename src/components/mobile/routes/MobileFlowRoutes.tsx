@@ -72,8 +72,14 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       <Route path="/loan-details" element={
         <LoanDetailsPage onBack={handleBack} />
       } />
+      <Route path="/loan-details/:loanId" element={
+        <LoanDetailsPage onBack={handleBack} />
+      } />
       <Route path="/loan-setup" element={<LoanSetupPage />} />
       <Route path="/loan-process" element={
+        <LoanProcessFlow onBack={handleBack} />
+      } />
+      <Route path="/loan-process/:loanId" element={
         <LoanProcessFlow onBack={handleBack} />
       } />
       
