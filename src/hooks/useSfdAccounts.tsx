@@ -34,19 +34,39 @@ export function useSfdAccounts() {
       if (!user?.id) return [];
       const sfdsList = await apiClient.getUserSfds(user.id);
       
+      if (sfdsList.length === 0) {
+        console.log('User has no SFD accounts');
+        return [];
+      }
+      
       // Transform the data format
       return Promise.all(sfdsList.map(async (sfd) => {
-        const balanceData = await apiClient.getSfdBalance(user.id, sfd.sfds.id);
-        return {
-          id: sfd.sfds.id,
-          name: sfd.sfds.name,
-          logoUrl: sfd.sfds.logo_url,
-          region: sfd.sfds.region,
-          code: sfd.sfds.code,
-          isDefault: sfd.is_default,
-          balance: balanceData.balance,
-          currency: balanceData.currency
-        };
+        try {
+          const balanceData = await apiClient.getSfdBalance(user.id, sfd.sfds.id);
+          return {
+            id: sfd.sfds.id,
+            name: sfd.sfds.name,
+            logoUrl: sfd.sfds.logo_url,
+            region: sfd.sfds.region,
+            code: sfd.sfds.code,
+            isDefault: sfd.is_default,
+            balance: balanceData.balance,
+            currency: balanceData.currency
+          };
+        } catch (error) {
+          console.error(`Failed to fetch balance for SFD ${sfd.sfds.name}:`, error);
+          // Return account with zero balance in case of error
+          return {
+            id: sfd.sfds.id,
+            name: sfd.sfds.name,
+            logoUrl: sfd.sfds.logo_url,
+            region: sfd.sfds.region,
+            code: sfd.sfds.code,
+            isDefault: sfd.is_default,
+            balance: 0,
+            currency: 'FCFA'
+          };
+        }
       }));
     },
     enabled: !!user?.id,
@@ -63,28 +83,77 @@ export function useSfdAccounts() {
       const activeSfd = sfdsList.find(sfd => sfd.sfds.id === activeSfdId);
       
       if (!activeSfd) {
-        throw new Error('Active SFD not found for this user');
+        console.error('Active SFD not found for this user');
+        return null;
       }
       
-      // Get balance data
-      const balanceData = await apiClient.getSfdBalance(user.id, activeSfdId);
-      
-      // Get loans data
-      const loansData = await apiClient.getSfdLoans(user.id, activeSfdId);
-      
-      return {
-        id: activeSfd.sfds.id,
-        name: activeSfd.sfds.name,
-        logoUrl: activeSfd.sfds.logo_url,
-        region: activeSfd.sfds.region,
-        code: activeSfd.sfds.code,
-        isDefault: activeSfd.is_default,
-        balance: balanceData.balance,
-        currency: balanceData.currency,
-        loans: loansData
-      };
+      try {
+        // Get balance data
+        const balanceData = await apiClient.getSfdBalance(user.id, activeSfdId);
+        
+        // Get loans data
+        const loansData = await apiClient.getSfdLoans(user.id, activeSfdId);
+        
+        return {
+          id: activeSfd.sfds.id,
+          name: activeSfd.sfds.name,
+          logoUrl: activeSfd.sfds.logo_url,
+          region: activeSfd.sfds.region,
+          code: activeSfd.sfds.code,
+          isDefault: activeSfd.is_default,
+          balance: balanceData.balance,
+          currency: balanceData.currency,
+          loans: loansData
+        };
+      } catch (error) {
+        console.error('Failed to fetch SFD account details:', error);
+        toast({
+          title: 'Erreur de synchronisation',
+          description: 'Impossible de synchroniser les données avec votre SFD',
+          variant: 'destructive',
+        });
+        return null;
+      }
     },
     enabled: !!user?.id && !!activeSfdId,
+  });
+  
+  // Synchronize account balances from SFD
+  const synchronizeBalances = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) {
+        throw new Error('Utilisateur non connecté');
+      }
+      
+      // In a real app, this would call an API to sync balances from SFD systems
+      try {
+        await apiClient.callEdgeFunction('synchronize-sfd-accounts', {
+          userId: user.id
+        });
+        return { success: true };
+      } catch (error) {
+        console.error('Failed to synchronize SFD accounts:', error);
+        throw new Error('Échec de la synchronisation');
+      }
+    },
+    onSuccess: () => {
+      // Invalidate relevant queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['user-sfds'] });
+      queryClient.invalidateQueries({ queryKey: ['active-sfd'] });
+      queryClient.invalidateQueries({ queryKey: ['account'] });
+      
+      toast({
+        title: 'Synchronisation réussie',
+        description: 'Vos soldes ont été mis à jour avec succès',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur de synchronisation',
+        description: error.message || 'Une erreur est survenue lors de la synchronisation',
+        variant: 'destructive',
+      });
+    }
   });
   
   // Make a payment on a loan
@@ -93,9 +162,6 @@ export function useSfdAccounts() {
       if (!user?.id || !activeSfdId) {
         throw new Error('User or active SFD not set');
       }
-      
-      // In a real app, this would call an edge function to process the payment
-      // For demo purposes, just simulate a successful payment
       
       // Add a transaction record
       await apiClient.callEdgeFunction('process-repayment', {
@@ -133,6 +199,7 @@ export function useSfdAccounts() {
     isLoading: sfdsQuery.isLoading || activeSfdQuery.isLoading,
     isError: sfdsQuery.isError || activeSfdQuery.isError,
     makeLoanPayment,
+    synchronizeBalances,
     refetch: () => {
       sfdsQuery.refetch();
       activeSfdQuery.refetch();

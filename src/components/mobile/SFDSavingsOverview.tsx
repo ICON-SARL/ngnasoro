@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { RefreshCw, ArrowUpRight, ArrowDownRight, Eye, EyeOff, Building } from 'lucide-react';
+import { RefreshCw, ArrowUpRight, ArrowDownRight, Eye, EyeOff, Building, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -10,27 +10,57 @@ import { useAuth } from '@/hooks/useAuth';
 
 const SFDSavingsOverview = () => {
   const navigate = useNavigate();
-  const { activeSfdAccount, isLoading, refetch } = useSfdAccounts();
+  const { activeSfdAccount, isLoading, refetch, synchronizeBalances } = useSfdAccounts();
   const { activeSfdId } = useAuth();
   const [isHidden, setIsHidden] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   
   const refreshBalance = () => {
     setIsUpdating(true);
-    refetch();
-    setTimeout(() => {
-      setIsUpdating(false);
-    }, 1500);
+    
+    // Use the synchronizeBalances mutation
+    synchronizeBalances.mutate(undefined, {
+      onSettled: () => {
+        refetch();
+        setTimeout(() => {
+          setIsUpdating(false);
+        }, 1000);
+      }
+    });
   };
   
   const toggleVisibility = () => {
     setIsHidden(!isHidden);
   };
   
+  // Show a "no account" message if the user doesn't have an active SFD
+  if (!activeSfdId && !isLoading) {
+    return (
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-2 mb-4">
+            <AlertCircle className="h-5 w-5 text-amber-500" />
+            <h3 className="font-medium">Aucun compte SFD connecté</h3>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            Pour accéder à votre épargne et vos prêts, vous devez connecter un compte auprès d'une institution SFD.
+          </p>
+          <Button 
+            className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white"
+            onClick={() => navigate('/sfd-selector')}
+          >
+            Connecter un compte SFD
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   if (!activeSfdAccount && isLoading) {
     return (
       <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
         <CardContent className="p-4 text-center py-10">
+          <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-[#0D6A51]" />
           <p>Chargement des informations du compte...</p>
         </CardContent>
       </Card>
@@ -93,11 +123,11 @@ const SFDSavingsOverview = () => {
               variant="outline" 
               size="sm"
               onClick={refreshBalance}
-              disabled={isUpdating}
+              disabled={isUpdating || synchronizeBalances.isLoading}
               className="text-xs"
             >
-              <RefreshCw className={`h-3 w-3 mr-1 ${isUpdating ? 'animate-spin' : ''}`} />
-              {isUpdating ? 'Actualisation...' : 'Actualiser'}
+              <RefreshCw className={`h-3 w-3 mr-1 ${isUpdating || synchronizeBalances.isLoading ? 'animate-spin' : ''}`} />
+              {isUpdating || synchronizeBalances.isLoading ? 'Actualisation...' : 'Actualiser'}
             </Button>
           </div>
         </div>

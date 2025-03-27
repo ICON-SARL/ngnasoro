@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +23,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { activeSfdId: authActiveSfdId, setActiveSfdId } = useAuth();
-  const { sfdAccounts, isLoading, refetch } = useSfdAccounts();
+  const { sfdAccounts, isLoading, refetch, synchronizeBalances } = useSfdAccounts();
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   
   const effectiveActiveSfdId = propsActiveSfdId !== undefined ? propsActiveSfdId : authActiveSfdId;
@@ -34,6 +35,8 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
         await onSwitchSfd(sfdId);
       } else {
         setActiveSfdId(sfdId);
+        // Sync balances when switching SFDs
+        await synchronizeBalances.mutateAsync();
         refetch();
       }
       
@@ -68,6 +71,36 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
   }
 
   const displayAccounts = propsSfdData || sfdAccounts;
+
+  // If no SFD accounts are available
+  if (displayAccounts.length === 0) {
+    return (
+      <div className="space-y-4 mt-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Mes Comptes SFD</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="text-center py-6">
+              <AlertCircle className="h-12 w-12 mx-auto text-amber-500 mb-3" />
+              <h3 className="text-lg font-medium mb-2">Aucun compte SFD</h3>
+              <p className="text-gray-500 mb-4">
+                Vous n'avez pas encore connecté de compte auprès d'une institution SFD.
+                Connectez un compte pour accéder à vos soldes et prêts.
+              </p>
+              <Button 
+                className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+                onClick={() => navigate('/sfd-selector')}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Ajouter une SFD
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 mt-4">
@@ -106,7 +139,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
                     variant="outline"
                     className="text-xs"
                     onClick={() => handleSwitchSfd(sfd.id)}
-                    disabled={switchingId === sfd.id}
+                    disabled={switchingId === sfd.id || synchronizeBalances.isLoading}
                   >
                     {switchingId === sfd.id ? 'Changement...' : 'Basculer'}
                   </Button>

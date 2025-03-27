@@ -2,10 +2,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAccount } from '@/hooks/useAccount';
-import { Calendar, Clock, CreditCard, RefreshCw } from 'lucide-react';
+import { Calendar, Clock, CreditCard, RefreshCw, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface FinancialSnapshotProps {
   loanId?: string;
@@ -20,8 +22,9 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
 }) => {
   const { account } = useAccount();
   const { activeSfdId } = useAuth();
-  const { activeSfdAccount, isLoading, refetch } = useSfdAccounts();
+  const { activeSfdAccount, isLoading, refetch, synchronizeBalances } = useSfdAccounts();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [timeRemaining, setTimeRemaining] = useState({
     days: 0,
     hours: 0,
@@ -79,17 +82,16 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
     if (isRefreshing) return;
     
     setIsRefreshing(true);
-    refetch();
     
-    setTimeout(() => {
-      setLastUpdated(new Date());
-      setIsRefreshing(false);
-      toast({
-        title: "Solde actualisé",
-        description: "Votre solde a été mis à jour avec succès",
-      });
-    }, 1500);
-  }, [isRefreshing, toast, refetch]);
+    // Use the synchronizeBalances mutation to refresh balance
+    synchronizeBalances.mutate(undefined, {
+      onSettled: () => {
+        refetch();
+        setLastUpdated(new Date());
+        setIsRefreshing(false);
+      }
+    });
+  }, [isRefreshing, synchronizeBalances, refetch]);
   
   // Simulate balance update every 2 hours
   useEffect(() => {
@@ -101,6 +103,29 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
     return () => clearInterval(intervalId);
   }, []);
 
+  // Render a message if no SFD account is active
+  if (!activeSfdId && !isLoading) {
+    return (
+      <Card className="border-0 shadow-md bg-white rounded-2xl overflow-hidden">
+        <CardContent className="p-4">
+          <div className="flex flex-col items-center text-center py-4">
+            <AlertCircle className="h-12 w-12 text-amber-500 mb-2" />
+            <h3 className="text-lg font-medium mb-2">Aucun compte SFD connecté</h3>
+            <p className="text-gray-500 mb-4">
+              Vous devez connecter un compte auprès d'une institution SFD pour accéder à vos soldes et prêts.
+            </p>
+            <Button 
+              className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+              onClick={() => navigate('/sfd-selector')}
+            >
+              Connecter un compte SFD
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-0 shadow-md bg-white rounded-2xl overflow-hidden">
       <CardContent className="p-4">
@@ -111,7 +136,7 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
               Solde disponible
             </h3>
             <p className="text-2xl font-bold">
-              {isLoading 
+              {isLoading || synchronizeBalances.isLoading
                 ? "Chargement..." 
                 : formatCurrency(activeSfdId ? (activeSfdAccount?.balance || 0) : (account?.balance || 0))}
             </p>
@@ -121,11 +146,11 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
               </p>
               <button 
                 onClick={refreshBalance}
-                disabled={isRefreshing}
+                disabled={isRefreshing || synchronizeBalances.isLoading}
                 className="text-xs text-blue-500 flex items-center"
               >
-                <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-                {isRefreshing ? 'Actualisation...' : 'Actualiser'}
+                <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing || synchronizeBalances.isLoading ? 'animate-spin' : ''}`} />
+                {isRefreshing || synchronizeBalances.isLoading ? 'Actualisation...' : 'Actualiser'}
               </button>
             </div>
           </div>
