@@ -12,13 +12,16 @@ import NotFound from './pages/NotFound';
 import ClientsPage from './pages/ClientsPage';
 import LoansPage from './pages/LoansPage';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import LoanActivityPage from './components/mobile/LoanActivityPage';
+import Index from './pages/Index';
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<Navigate to="/auth" replace />} />
+          {/* Landing et Auth Routes */}
+          <Route path="/" element={<Index />} />
           <Route path="/auth" element={<LoginPage />} />
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/register" element={<LoginPage />} />
@@ -64,6 +67,22 @@ function App() {
             element={<ProtectedRoute component={MobileFlowPage} />}
           />
           
+          <Route 
+            path="/mobile-flow/loan-activity"
+            element={<ProtectedRoute component={LoanActivityPage} />}
+          />
+          
+          {/* SFD Admin Routes */}
+          <Route 
+            path="/sfd-admin"
+            element={<ProtectedRoute component={ClientsPage} />}
+          />
+          
+          <Route 
+            path="/sfd-dashboard"
+            element={<ProtectedRoute component={LoansPage} />}
+          />
+          
           {/* Admin Routes */}
           <Route 
             path="/super-admin-dashboard"
@@ -83,6 +102,12 @@ function App() {
           <Route 
             path="/transactions"
             element={<ProtectedRoute component={TransactionsPage} />}
+          />
+          
+          {/* Multi-SFD Routes */}
+          <Route 
+            path="/multi-sfd"
+            element={<ProtectedRoute component={MobileFlowPage} />}
           />
           
           {/* 404 Page */}
