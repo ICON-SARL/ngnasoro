@@ -20,7 +20,6 @@ export function useRealtimeTransactions() {
   const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
   
-  // Helper function to convert database records to Transaction objects
   const convertDatabaseRecordsToTransactions = useCallback((records: any[]): Transaction[] => {
     return records.map(record => ({
       id: record.id,
@@ -37,7 +36,6 @@ export function useRealtimeTransactions() {
     }));
   }, [activeSfdId]);
   
-  // Calculate statistics for transactions
   const calculateStats = useCallback((txList: Transaction[]) => {
     const totalCount = txList.length;
     const totalVolume = txList.reduce((sum, tx) => sum + tx.amount, 0);
@@ -57,7 +55,6 @@ export function useRealtimeTransactions() {
     });
   }, []);
   
-  // Generate simulated transactions for demonstration
   const generateMockTransactions = useCallback((sfdId: string): Transaction[] => {
     const transactionTypes: Transaction['type'][] = ['deposit', 'withdrawal', 'transfer', 'payment', 'loan_disbursement'];
     const statuses: Transaction['status'][] = ['success', 'pending', 'failed', 'flagged'];
@@ -86,14 +83,12 @@ export function useRealtimeTransactions() {
     return mockTransactions;
   }, []);
   
-  // Fetch transactions function
   const fetchTransactions = useCallback(async () => {
     if (!user || !activeSfdId) return;
     
     setIsLoading(true);
     
     try {
-      // Avoid excessive type inference by using any for the result
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
@@ -126,7 +121,6 @@ export function useRealtimeTransactions() {
     }
   }, [user, activeSfdId, toast, calculateStats, convertDatabaseRecordsToTransactions, generateMockTransactions]);
   
-  // Simple handler for realtime updates with minimal typing
   const handleRealtimeUpdate = useCallback((payload: any) => {
     if (!payload) return;
     
@@ -134,7 +128,6 @@ export function useRealtimeTransactions() {
     const newRecord = payload.new as any;
     const oldRecord = payload.old as any;
     
-    // Create a copy of transactions to modify
     const currentTransactions = [...transactions];
     let updatedTransactions = currentTransactions;
     
@@ -185,32 +178,34 @@ export function useRealtimeTransactions() {
     calculateStats(updatedTransactions);
   }, [transactions, toast, calculateStats, activeSfdId]);
   
-  // Break deep type inference with a non-typed function
   function createRealtimeSubscription(sfdId: string) {
-    // Use basic typing without complex interfaces
-    const channel = supabase.channel('public:transactions') as any;
+    const channel = supabase.channel('public:transactions');
     
-    // Completely avoid TypeScript inference here
-    channel.on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'transactions',
-      filter: `sfd_id=eq.${sfdId}`
-    }, handleRealtimeUpdate);
+    const handleChange = (payload: any) => {
+      handleRealtimeUpdate(payload);
+    };
+    
+    channel.on(
+      'postgres_changes' as any,
+      {
+        event: '*',
+        schema: 'public',
+        table: 'transactions',
+        filter: `sfd_id=eq.${sfdId}`
+      } as any,
+      handleChange
+    );
     
     return channel.subscribe();
   }
   
-  // Set up the channel subscription with completely simplified typing
   useEffect(() => {
     if (!user || !activeSfdId) return;
     
     fetchTransactions();
     
-    // Use our non-typed function to create the subscription
     const subscription = createRealtimeSubscription(activeSfdId);
     
-    // Cleanup function
     return () => {
       if (subscription) {
         supabase.removeChannel(subscription);
@@ -218,11 +213,9 @@ export function useRealtimeTransactions() {
     };
   }, [user, activeSfdId, fetchTransactions, handleRealtimeUpdate]);
   
-  // Filter transactions
   const filterTransactions = useCallback((searchTerm: string = '', status: string | null = null) => {
     let filtered = [...transactions];
     
-    // Apply text search
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(tx => 
@@ -234,7 +227,6 @@ export function useRealtimeTransactions() {
       );
     }
     
-    // Apply status filter
     if (status) {
       filtered = filtered.filter(tx => tx.status === status);
     }
