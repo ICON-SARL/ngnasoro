@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -89,15 +90,16 @@ export function useRealtimeTransactions() {
     setIsLoading(true);
     
     try {
-      const response: any = await supabase
+      // Explicitly cast the query result to avoid TypeScript's deep type inference
+      const result = await (supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(50)) as unknown as { data: any[] | null, error: any };
       
-      const data = response.data || [];
-      const error = response.error;
+      const data = result.data || [];
+      const error = result.error;
       
       if (error) throw error;
       
@@ -188,6 +190,7 @@ export function useRealtimeTransactions() {
       handleRealtimeUpdate(payload);
     };
     
+    // Use type assertions to simplify the callback and avoid deep inference
     channel.on(
       'postgres_changes' as any, 
       {
