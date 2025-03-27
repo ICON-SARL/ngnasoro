@@ -3,24 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-
-export interface SfdClient {
-  id: string;
-  sfd_id: string;
-  full_name: string;
-  email: string | null;
-  phone: string | null;
-  address: string | null;
-  id_number: string | null;
-  id_type: string | null;
-  status: string;
-  kyc_level: number;
-  notes: string | null;
-  created_at: string;
-  validated_at: string | null;
-  validated_by: string | null;
-  user_id: string | null;
-}
+import { SfdClient } from '@/types/sfdClients';
 
 export function useSfdClients() {
   const { user, activeSfdId } = useAuth();
@@ -80,14 +63,14 @@ export function useSfdClients() {
           id_number: clientData.id_number || null,
           id_type: clientData.id_type || null,
           notes: clientData.notes || null,
-          status: 'pending',
+          status: 'pending' as const,
           kyc_level: 0
         })
         .select()
         .single();
         
       if (error) throw error;
-      return data;
+      return data as SfdClient;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sfd-clients', activeSfdId] });
@@ -113,7 +96,7 @@ export function useSfdClients() {
       const { data, error } = await supabase
         .from('sfd_clients')
         .update({
-          status: 'validated',
+          status: 'validated' as const,
           validated_at: new Date().toISOString(),
           validated_by: user.id
         })
@@ -122,7 +105,7 @@ export function useSfdClients() {
         .single();
         
       if (error) throw error;
-      return data;
+      return data as SfdClient;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sfd-clients', activeSfdId] });
@@ -146,14 +129,14 @@ export function useSfdClients() {
       const { data, error } = await supabase
         .from('sfd_clients')
         .update({
-          status: 'rejected'
+          status: 'rejected' as const
         })
         .eq('id', clientId)
         .select()
         .single();
         
       if (error) throw error;
-      return data;
+      return data as SfdClient;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sfd-clients', activeSfdId] });
