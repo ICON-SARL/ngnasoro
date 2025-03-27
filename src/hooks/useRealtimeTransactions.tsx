@@ -114,9 +114,9 @@ export function useRealtimeTransactions() {
       
       // If we don't have real data in the table, use simulated data for demonstration
       if (data && data.length > 0) {
-        // Use a simple array type to avoid deep type instantiation issues
-        const safeData: any[] = data as any[];
-        txData = convertDatabaseRecordsToTransactions(safeData);
+        // Use a simple array to avoid deep type instantiation completely
+        const rawData = data as any[];
+        txData = convertDatabaseRecordsToTransactions(rawData);
       } else {
         txData = generateMockTransactions(activeSfdId);
       }
@@ -142,9 +142,23 @@ export function useRealtimeTransactions() {
     let updatedTransactions = [...transactions];
     
     if (payload.eventType === 'INSERT' && payload.new) {
-      // Add new transaction with simplified typing
-      const newRecords = convertDatabaseRecordsToTransactions([payload.new]);
-      const newRecord = newRecords[0];
+      // Convert payload to transaction using direct implementation
+      // instead of going through convertDatabaseRecordsToTransactions
+      const record = payload.new;
+      const newRecord: Transaction = {
+        id: record.id,
+        user_id: record.user_id,
+        sfd_id: record.sfd_id || activeSfdId,
+        type: record.type as Transaction['type'],
+        amount: record.amount,
+        status: record.status || 'success',
+        created_at: record.created_at || record.date || new Date().toISOString(),
+        name: record.name,
+        date: record.date,
+        avatar_url: record.avatar_url,
+        description: `Transaction for ${record.name}`,
+      };
+      
       updatedTransactions = [newRecord, ...updatedTransactions];
       
       toast({
@@ -152,9 +166,21 @@ export function useRealtimeTransactions() {
         description: `${newRecord.type} of ${newRecord.amount} FCFA`,
       });
     } else if (payload.eventType === 'UPDATE' && payload.new) {
-      // Update existing transaction with simplified typing
-      const updatedRecords = convertDatabaseRecordsToTransactions([payload.new]);
-      const updatedRecord = updatedRecords[0];
+      // Directly create the updated record without using the conversion function
+      const record = payload.new;
+      const updatedRecord: Transaction = {
+        id: record.id,
+        user_id: record.user_id,
+        sfd_id: record.sfd_id || activeSfdId,
+        type: record.type as Transaction['type'],
+        amount: record.amount,
+        status: record.status || 'success',
+        created_at: record.created_at || record.date || new Date().toISOString(),
+        name: record.name,
+        date: record.date,
+        avatar_url: record.avatar_url,
+        description: `Transaction for ${record.name}`,
+      };
       
       updatedTransactions = updatedTransactions.map(tx => 
         tx.id === updatedRecord.id ? updatedRecord : tx
@@ -170,7 +196,7 @@ export function useRealtimeTransactions() {
     setTransactions(updatedTransactions);
     setFilteredTransactions(updatedTransactions);
     calculateStats(updatedTransactions);
-  }, [transactions, toast, calculateStats, convertDatabaseRecordsToTransactions]);
+  }, [transactions, toast, calculateStats, activeSfdId]);
   
   // Set up realtime subscription
   useEffect(() => {
@@ -186,9 +212,14 @@ export function useRealtimeTransactions() {
         schema: 'public',
         table: 'transactions',
         filter: `sfd_id=eq.${activeSfdId}`
-      }, (payload) => {
+      }, (payload: any) => {
         // Cast the payload to our simplified type to avoid deep type instantiation
-        handleRealtimeUpdate(payload as SimplePayload);
+        const simplePayload: SimplePayload = {
+          eventType: payload.eventType,
+          new: payload.new,
+          old: payload.old
+        };
+        handleRealtimeUpdate(simplePayload);
       })
       .subscribe();
       
