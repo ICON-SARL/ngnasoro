@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useContext, createContext } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,7 +32,7 @@ export const useAuth = () => {
   return useContext(AuthContext);
 };
 
-// Make sure to include sfd_id in the user type
+// Make sure to include all required properties in the User type
 export interface User {
   id: string;
   email: string;
@@ -47,6 +46,13 @@ export interface User {
     phone?: string;
   };
   phone?: string;
+  // Adding missing properties required by ProfilePage
+  app_metadata?: {
+    role?: string;
+    [key: string]: any;
+  };
+  aud?: string;
+  created_at?: string;
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -75,6 +81,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           sfd_id: session.user.user_metadata.sfd_id as string,
           user_metadata: session.user.user_metadata,
           phone: session.user.user_metadata.phone as string,
+          app_metadata: session.user.app_metadata,
+          aud: session.user.aud,
+          created_at: session.user.created_at,
         });
 
         // Set active SFD ID if available
@@ -105,6 +114,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           sfd_id: session.user.user_metadata.sfd_id as string,
           user_metadata: session.user.user_metadata,
           phone: session.user.user_metadata.phone as string,
+          app_metadata: session.user.app_metadata,
+          aud: session.user.aud,
+          created_at: session.user.created_at,
         });
 
         // Set active SFD ID if available
