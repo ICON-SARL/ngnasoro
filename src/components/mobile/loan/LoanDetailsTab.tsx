@@ -5,9 +5,30 @@ import { Card, CardContent } from '@/components/ui/card';
 
 interface LoanDetailsTabProps {
   totalAmount: number;
+  loanType?: string;
+  loanPurpose?: string;
+  disbursalDate?: string;
+  endDate?: string;
+  loanAmount?: number;
+  interestRate?: number;
+  status?: string;
+  disbursed?: boolean;
+  withdrawn?: boolean;
+  onWithdraw?: () => void;
 }
 
-const LoanDetailsTab = ({ totalAmount }: LoanDetailsTabProps) => {
+const LoanDetailsTab = ({ 
+  totalAmount,
+  loanType = "Microcrédit",
+  loanPurpose = "Achat de matériel",
+  disbursalDate = "5 janvier 2023",
+  endDate = "5 juillet 2023",
+  interestRate = 2.5,
+  status = "actif",
+  disbursed = true,
+  withdrawn = false,
+  onWithdraw
+}: LoanDetailsTabProps) => {
   return (
     <div className="space-y-4">
       <Card>
@@ -24,7 +45,7 @@ const LoanDetailsTab = ({ totalAmount }: LoanDetailsTabProps) => {
             </div>
             <div>
               <p className="text-sm text-gray-500">Taux d'intérêt</p>
-              <p className="font-bold">2.5%</p>
+              <p className="font-bold">{interestRate}%</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Mensualité</p>
@@ -38,7 +59,7 @@ const LoanDetailsTab = ({ totalAmount }: LoanDetailsTabProps) => {
         <CardContent className="p-4">
           <h3 className="font-bold mb-2">Détails de l'achat</h3>
           <p className="text-sm text-gray-500">Date d'achat</p>
-          <p className="font-bold mb-2">5 janvier 2023</p>
+          <p className="font-bold mb-2">{disbursalDate}</p>
           
           <p className="text-sm text-gray-500">Boutique</p>
           <p className="font-bold">Insting Store</p>
