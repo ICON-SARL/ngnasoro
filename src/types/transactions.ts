@@ -14,6 +14,10 @@ export interface Transaction {
   reference_id?: string;
   created_at: string;
   updated_at?: string;
+  // Add fields that exist in the database table but aren't in our type
+  date?: string;
+  name?: string;
+  avatar_url?: string;
 }
 
 export interface TransactionStats {
@@ -23,4 +27,17 @@ export interface TransactionStats {
   successRate: number;
   pendingCount: number;
   flaggedCount: number;
+}
+
+// Database record interface to help with type conversion
+export interface DatabaseTransactionRecord {
+  id: string;
+  amount: number;
+  avatar_url?: string;
+  created_at?: string;
+  date?: string;
+  name: string;
+  type: string;
+  user_id: string;
+  sfd_id?: string;
 }

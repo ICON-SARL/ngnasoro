@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Transaction, TransactionStats } from '@/types/transactions';
+import { Transaction, TransactionStats, DatabaseTransactionRecord } from '@/types/transactions';
 
 export function useRealtimeTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -20,6 +20,23 @@ export function useRealtimeTransactions() {
   
   const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
+  
+  // Helper function to convert database records to Transaction objects
+  const convertDatabaseRecordsToTransactions = (records: DatabaseTransactionRecord[]): Transaction[] => {
+    return records.map(record => ({
+      id: record.id,
+      user_id: record.user_id,
+      sfd_id: record.sfd_id,
+      type: record.type as Transaction['type'],
+      amount: record.amount,
+      status: 'success', // Default to success if not specified
+      created_at: record.created_at || record.date || new Date().toISOString(),
+      name: record.name,
+      date: record.date,
+      avatar_url: record.avatar_url,
+      description: `Transaction for ${record.name}`,
+    }));
+  };
   
   // Calcule les statistiques des transactions
   const calculateStats = useCallback((txList: Transaction[]) => {
@@ -59,7 +76,9 @@ export function useRealtimeTransactions() {
       if (error) throw error;
       
       // Si nous n'avons pas de données réelles dans la table, utilisons des données simulées pour la démonstration
-      const txData = data && data.length > 0 ? data : generateMockTransactions(activeSfdId);
+      const txData = data && data.length > 0 
+        ? convertDatabaseRecordsToTransactions(data as DatabaseTransactionRecord[])
+        : generateMockTransactions(activeSfdId);
       
       setTransactions(txData);
       setFilteredTransactions(txData);
@@ -107,14 +126,18 @@ export function useRealtimeTransactions() {
     let updatedTransactions = [...transactions];
     
     if (eventType === 'INSERT') {
-      updatedTransactions = [newRecord as Transaction, ...updatedTransactions];
+      // Convert the new record to a Transaction object
+      const newTransaction = convertDatabaseRecordsToTransactions([newRecord as DatabaseTransactionRecord])[0];
+      updatedTransactions = [newTransaction, ...updatedTransactions];
       toast({
         title: 'Nouvelle transaction',
-        description: `${newRecord.type} de ${newRecord.amount} FCFA`,
+        description: `${newTransaction.type} de ${newTransaction.amount} FCFA`,
       });
     } else if (eventType === 'UPDATE') {
+      // Convert the updated record to a Transaction object
+      const updatedTransaction = convertDatabaseRecordsToTransactions([newRecord as DatabaseTransactionRecord])[0];
       updatedTransactions = updatedTransactions.map(tx => 
-        tx.id === newRecord.id ? (newRecord as Transaction) : tx
+        tx.id === updatedTransaction.id ? updatedTransaction : tx
       );
     } else if (eventType === 'DELETE') {
       updatedTransactions = updatedTransactions.filter(tx => tx.id !== oldRecord.id);
@@ -136,7 +159,8 @@ export function useRealtimeTransactions() {
         (tx.description && tx.description.toLowerCase().includes(term)) ||
         tx.id.toLowerCase().includes(term) ||
         tx.type.toLowerCase().includes(term) ||
-        (tx.payment_method && tx.payment_method.toLowerCase().includes(term))
+        (tx.payment_method && tx.payment_method.toLowerCase().includes(term)) ||
+        (tx.name && tx.name.toLowerCase().includes(term))
       );
     }
     
