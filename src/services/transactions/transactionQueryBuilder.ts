@@ -6,8 +6,10 @@ import { TransactionFilters } from './types';
  * Builds a Supabase query for fetching transactions with filters
  */
 export function buildTransactionQuery(userId?: string, sfdId?: string, filters?: TransactionFilters) {
-  // Build the query
-  const query = supabase.from('transactions').select('*');
+  // Build the query with type cast to avoid excessive type instantiation
+  const query = supabase
+    .from('transactions')
+    .select('*');
   
   // Apply user_id filter if provided
   if (userId) {
