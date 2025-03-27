@@ -16,21 +16,19 @@ export function useTransactionsFetch({ activeSfdId, userId, toast }: UseTransact
     setIsLoading(true);
     
     try {
-      // Break the chain to avoid deep type instantiation
-      const query = supabase
+      // Use a more direct approach to bypass TypeScript's deep type inference
+      // Create the query using a type assertion to avoid TypeScript analyzing the chain too deeply
+      const response = await supabase
         .from('transactions')
-        .select('*');
-      
-      // Apply filters separately to avoid deep nesting of types
-      const filteredQuery = query
+        .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(50) as unknown as { 
+          data: any[] | null; 
+          error: any | null 
+        };
       
-      // Use a simple type assertion to avoid TypeScript's complex type inference
-      const result = await filteredQuery;
-      const data = result.data;
-      const error = result.error;
+      const { data, error } = response;
         
       if (error) throw error;
       
