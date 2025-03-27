@@ -12,49 +12,122 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-// AES encryption for QR code payloads
+// AES-256 encryption for QR code payloads
 const encryptionKey = Deno.env.get("QR_ENCRYPTION_KEY") ?? "default-key-replace-in-production";
+
+// AES-256 encryption function
+async function aesEncrypt(data: string, key: string): Promise<{ encrypted: string, iv: string }> {
+  // Convert data to Uint8Array
+  const encoder = new TextEncoder();
+  const dataBytes = encoder.encode(data);
+  
+  // Derive a key from the passphrase
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(key),
+    { name: "PBKDF2" },
+    false,
+    ["deriveKey"]
+  );
+  
+  // Generate random salt
+  const salt = crypto.randomBytes(16);
+  
+  // Derive the actual encryption key
+  const derivedKey = await crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: 100000,
+      hash: "SHA-256"
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt"]
+  );
+  
+  // Generate a random IV (Initialization Vector)
+  const iv = crypto.randomBytes(12);
+  
+  // Encrypt the data
+  const ciphertext = await crypto.subtle.encrypt(
+    {
+      name: "AES-GCM",
+      iv
+    },
+    derivedKey,
+    dataBytes
+  );
+  
+  // Combine salt + iv + ciphertext and convert to base64
+  const combined = new Uint8Array(salt.length + iv.length + ciphertext.byteLength);
+  combined.set(salt, 0);
+  combined.set(iv, salt.length);
+  combined.set(new Uint8Array(ciphertext), salt.length + iv.length);
+  
+  return {
+    encrypted: btoa(String.fromCharCode(...combined)),
+    iv: btoa(String.fromCharCode(...iv))
+  };
+}
+
+// AES-256 decryption function
+async function aesDecrypt(encryptedData: string, key: string): Promise<string> {
+  // Decode the base64 string to binary
+  const encryptedBytes = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
+  
+  // Extract salt, iv and ciphertext
+  const salt = encryptedBytes.slice(0, 16);
+  const iv = encryptedBytes.slice(16, 16 + 12);
+  const ciphertext = encryptedBytes.slice(16 + 12);
+  
+  // Derive the key from the passphrase
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(key),
+    { name: "PBKDF2" },
+    false,
+    ["deriveKey"]
+  );
+  
+  // Derive the decryption key
+  const derivedKey = await crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: 100000,
+      hash: "SHA-256"
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["decrypt"]
+  );
+  
+  // Decrypt the data
+  const decrypted = await crypto.subtle.decrypt(
+    {
+      name: "AES-GCM",
+      iv
+    },
+    derivedKey,
+    ciphertext
+  );
+  
+  // Convert the decrypted data back to a string
+  const decoder = new TextDecoder();
+  return decoder.decode(decrypted);
+}
 
 // Generate a secure QR code
 async function generateSecureQrCode(data: any): Promise<{ code: string, encryptedData: string, expiresAt: Date }> {
   // Convert data to JSON string
   const jsonData = JSON.stringify(data);
   
-  // Generate a random nonce
-  const nonce = crypto.randomBytes(16);
-  
-  // Create a text encoder
-  const encoder = new TextEncoder();
-  
-  // Convert encryption key to bytes
-  const keyBytes = encoder.encode(encryptionKey);
-  const key = await crypto.subtle.importKey(
-    "raw",
-    keyBytes,
-    { name: "AES-GCM" },
-    false,
-    ["encrypt"]
-  );
-  
-  // Encrypt the data
-  const encryptedBuffer = await crypto.subtle.encrypt(
-    {
-      name: "AES-GCM",
-      iv: nonce
-    },
-    key,
-    encoder.encode(jsonData)
-  );
-  
-  // Convert encrypted data to base64
-  const encryptedArray = new Uint8Array(encryptedBuffer);
-  const encryptedBase64 = btoa(String.fromCharCode(...encryptedArray));
-  
-  // Convert nonce to base64
-  const nonceBase64 = btoa(String.fromCharCode(...nonce));
-  
-  // Combine nonce and encrypted data
-  const encryptedData = `${nonceBase64}.${encryptedBase64}`;
+  // Encrypt the data with AES-256
+  const { encrypted } = await aesEncrypt(jsonData, encryptionKey);
   
   // Generate a unique code
   const code = crypto.randomUUID();
@@ -63,56 +136,17 @@ async function generateSecureQrCode(data: any): Promise<{ code: string, encrypte
   const expiresAt = new Date();
   expiresAt.setMinutes(expiresAt.getMinutes() + 15);
   
-  return { code, encryptedData, expiresAt };
+  return { code, encryptedData: encrypted, expiresAt };
 }
 
 // Verify and decrypt a QR code
 async function verifyQrCode(encryptedData: string): Promise<any | null> {
   try {
-    // Split the data
-    const [nonceBase64, encryptedBase64] = encryptedData.split('.');
+    // Decrypt the data using AES-256
+    const decryptedJson = await aesDecrypt(encryptedData, encryptionKey);
     
-    // Decode the nonce
-    const nonceString = atob(nonceBase64);
-    const nonce = new Uint8Array(nonceString.length);
-    for (let i = 0; i < nonceString.length; i++) {
-      nonce[i] = nonceString.charCodeAt(i);
-    }
-    
-    // Decode the encrypted data
-    const encryptedString = atob(encryptedBase64);
-    const encryptedArray = new Uint8Array(encryptedString.length);
-    for (let i = 0; i < encryptedString.length; i++) {
-      encryptedArray[i] = encryptedString.charCodeAt(i);
-    }
-    
-    // Create a text encoder and decoder
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
-    
-    // Convert encryption key to bytes
-    const keyBytes = encoder.encode(encryptionKey);
-    const key = await crypto.subtle.importKey(
-      "raw",
-      keyBytes,
-      { name: "AES-GCM" },
-      false,
-      ["decrypt"]
-    );
-    
-    // Decrypt the data
-    const decryptedBuffer = await crypto.subtle.decrypt(
-      {
-        name: "AES-GCM",
-        iv: nonce
-      },
-      key,
-      encryptedArray
-    );
-    
-    // Convert decrypted data to JSON
-    const decryptedText = decoder.decode(decryptedBuffer);
-    return JSON.parse(decryptedText);
+    // Parse the JSON data
+    return JSON.parse(decryptedJson);
   } catch (error) {
     console.error("Error verifying QR code:", error);
     return null;
