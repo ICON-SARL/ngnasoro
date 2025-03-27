@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,6 +7,8 @@ import LoginForm from './auth/LoginForm';
 import RegisterForm from './auth/RegisterForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Check } from 'lucide-react';
+import VoiceAssistant from './auth/VoiceAssistant';
+import LanguageSelector from './auth/LanguageSelector';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
@@ -16,13 +17,11 @@ const AuthUI = () => {
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
   
-  // Check if the URL contains a session hash which indicates a magic link login
   useEffect(() => {
     const hash = location.hash;
     if (hash && hash.includes('access_token')) {
       setAuthSuccess(true);
       
-      // Redirect after showing success message
       const timer = setTimeout(() => {
         navigate('/mobile-flow');
       }, 2000);
@@ -31,7 +30,6 @@ const AuthUI = () => {
     }
   }, [location, navigate]);
   
-  // Redirect if already logged in
   useEffect(() => {
     if (user && session) {
       navigate('/mobile-flow');
@@ -47,6 +45,12 @@ const AuthUI = () => {
           </div>
           <h1 className="text-2xl font-bold text-green-700">Connexion réussie!</h1>
           <p className="mt-2 text-gray-600">Vous allez être redirigé vers l'application...</p>
+          <div className="mt-4">
+            <VoiceAssistant 
+              message="Connexion réussie! Vous allez être redirigé vers l'application." 
+              autoPlay={true} 
+            />
+          </div>
         </div>
       </div>
     );
@@ -63,13 +67,13 @@ const AuthUI = () => {
           <TabsList className="grid grid-cols-2 w-full mb-6 rounded-xl overflow-hidden shadow-sm">
             <TabsTrigger 
               value="login" 
-              className="py-3 font-medium data-[state=active]:bg-[#0D6A51] data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:text-gray-700"
+              className="py-4 text-lg font-medium data-[state=active]:bg-[#0D6A51] data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:text-gray-700"
             >
               Connexion
             </TabsTrigger>
             <TabsTrigger 
               value="register" 
-              className="py-3 font-medium data-[state=active]:bg-[#0D6A51] data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:text-gray-700"
+              className="py-4 text-lg font-medium data-[state=active]:bg-[#0D6A51] data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:text-gray-700"
             >
               Inscription
             </TabsTrigger>
@@ -85,8 +89,8 @@ const AuthUI = () => {
         </Tabs>
       </div>
       
-      <div className="w-full max-w-md mt-6 text-center text-xs text-gray-500">
-        © 2024 MEREF - SFD. Tous droits réservés.
+      <div className="w-full max-w-md mt-6 flex justify-center">
+        <LanguageSelector />
       </div>
     </div>
   );
