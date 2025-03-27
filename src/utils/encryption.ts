@@ -1,3 +1,4 @@
+
 import * as crypto from 'crypto-js';
 
 /**
@@ -223,5 +224,4 @@ export class SecureStorage {
   }
 }
 
-// Explicitly export the EncryptionService class to ensure it's properly accessible
-export { EncryptionService, SecureTokenService, SecureStorage };
+// Do not duplicate exports at the end of the file, since classes are already exported above
