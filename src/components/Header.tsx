@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Menu, X } from 'lucide-react';
@@ -11,12 +11,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import MobileNavigation from './MobileNavigation';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check if this is a mobile flow page
+  const isMobileFlowPage = location.pathname.includes('/mobile-flow');
   
   useEffect(() => {
     const handleScroll = () => {
@@ -112,6 +117,13 @@ const Header = () => {
           </button>
         </div>
       </div>
+
+      {/* Mobile Navigation in Header for Tablet */}
+      {isMobileFlowPage && (
+        <div className="hidden sm:block md:hidden">
+          <MobileNavigation isHeader={true} className="mt-2" />
+        </div>
+      )}
 
       {/* Mobile Navigation Menu */}
       {mobileMenuOpen && (

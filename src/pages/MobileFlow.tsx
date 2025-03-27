@@ -411,7 +411,7 @@ const MobileFlow = () => {
         <Route path="*" element={<Navigate to="/mobile-flow/welcome" replace />} />
       </Routes>
       
-      {!isWelcomePage && <MobileNavigation onAction={handleAction} />}
+      {!isWelcomePage && <div className="sm:hidden"><MobileNavigation onAction={handleAction} /></div>}
     </div>
   );
 };

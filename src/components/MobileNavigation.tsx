@@ -14,9 +14,11 @@ interface NavigationItem {
 
 interface MobileNavigationProps {
   onAction?: (action: string) => void;
+  className?: string;
+  isHeader?: boolean;
 }
 
-const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
+const MobileNavigation = ({ onAction, className = "", isHeader = false }: MobileNavigationProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
@@ -83,6 +85,46 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
   // Don't render on welcome page or if not mobile
   if (!isMobile || isWelcomePage) return null;
 
+  // If we're in the header (tablet mode), show horizontal navigation
+  if (isHeader) {
+    return (
+      <div className={`bg-white border-b border-gray-200 py-2 ${className}`}>
+        <div className="flex justify-around items-center px-2 relative">
+          {navigationItems.map((item, index) => {
+            if (index === 2) {
+              return (
+                <div key={index} className="relative">
+                  <button 
+                    className="bg-[#0D6A51] text-white p-3 rounded-full shadow-lg"
+                    onClick={() => navigate('/mobile-flow/loan-application')}
+                  >
+                    <Plus className="h-5 w-5" />
+                  </button>
+                </div>
+              );
+            }
+            
+            return (
+              <button
+                key={index}
+                className={`flex flex-col items-center justify-center py-1 px-2 ${
+                  activeTab === item.value 
+                    ? 'text-[#0D6A51] font-medium' 
+                    : 'text-gray-400'
+                }`}
+                onClick={() => navigate(item.path)}
+              >
+                {item.icon}
+                <span className="text-xs mt-1">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Regular mobile footer navigation
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 z-50">
       <div className="flex justify-around items-center px-2 relative">
