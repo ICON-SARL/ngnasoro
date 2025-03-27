@@ -1,10 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Loan, LoanPayment } from "@/types/sfdClients";
+import { useAuth } from "@/hooks/useAuth";
 
 // SFD Loan Management API functions
 export const sfdLoanApi = {
-  // Get loans for current SFD
+  // Get all loans for the current SFD user
   async getSfdLoans() {
     try {
       const { data, error } = await supabase
@@ -13,14 +14,14 @@ export const sfdLoanApi = {
         .order('created_at', { ascending: false });
         
       if (error) throw error;
-      return data as Loan[];
+      return data as unknown as Loan[];
     } catch (error) {
-      console.error('Error fetching SFD loans:', error);
+      console.error('Error fetching loans:', error);
       return [];
     }
   },
   
-  // Get loan by ID
+  // Get a specific loan by ID
   async getLoanById(loanId: string) {
     try {
       const { data, error } = await supabase
@@ -30,74 +31,62 @@ export const sfdLoanApi = {
         .single();
         
       if (error) throw error;
-      return data as Loan;
+      return data as unknown as Loan;
     } catch (error) {
       console.error('Error fetching loan details:', error);
       return null;
     }
   },
   
-  // Create new loan
-  async createLoan(loan: {
+  // Create a new loan
+  async createLoan(loanData: {
     client_id: string;
+    sfd_id: string;
     amount: number;
     duration_months: number;
     interest_rate: number;
     purpose: string;
+    monthly_payment: number;
     subsidy_amount?: number;
+    subsidy_rate?: number;
   }) {
     try {
-      // First get the client to fetch the SFD ID
-      const { data: clientData, error: clientError } = await supabase
-        .from('sfd_clients')
-        .select('sfd_id')
-        .eq('id', loan.client_id)
-        .single();
-      
-      if (clientError) throw clientError;
-      
-      // Calculate monthly payment using formula
-      const monthlyInterest = loan.interest_rate / 100 / 12;
-      const monthlyPayment = 
-        (loan.amount * monthlyInterest * Math.pow(1 + monthlyInterest, loan.duration_months)) / 
-        (Math.pow(1 + monthlyInterest, loan.duration_months) - 1);
-      
       const { data, error } = await supabase
         .from('sfd_loans')
         .insert({
-          client_id: loan.client_id,
-          sfd_id: clientData.sfd_id,
-          amount: loan.amount,
-          duration_months: loan.duration_months,
-          interest_rate: loan.interest_rate,
+          client_id: loanData.client_id,
+          sfd_id: loanData.sfd_id,
+          amount: loanData.amount,
+          duration_months: loanData.duration_months,
+          interest_rate: loanData.interest_rate,
+          purpose: loanData.purpose,
+          monthly_payment: loanData.monthly_payment,
           status: 'pending',
-          purpose: loan.purpose,
-          monthly_payment: Math.round(monthlyPayment * 100) / 100,
-          subsidy_amount: loan.subsidy_amount || 0,
-          subsidy_rate: loan.subsidy_amount ? (loan.subsidy_amount / loan.amount) * 100 : 0
+          subsidy_amount: loanData.subsidy_amount || 0,
+          subsidy_rate: loanData.subsidy_rate || 0
         })
         .select()
         .single();
         
       if (error) throw error;
       
-      // Add activity record
+      // Add loan creation activity
       await supabase
         .from('loan_activities')
         .insert({
           loan_id: data.id,
           activity_type: 'loan_created',
-          description: `Nouveau prêt créé pour un montant de ${loan.amount} FCFA`
+          description: `Prêt de ${loanData.amount} FCFA créé pour le client`
         });
         
-      return data as Loan;
+      return data as unknown as Loan;
     } catch (error) {
       console.error('Error creating loan:', error);
       throw error;
     }
   },
   
-  // Approve loan
+  // Approve a loan
   async approveLoan(loanId: string, approvedBy: string) {
     try {
       const { data, error } = await supabase
@@ -113,32 +102,30 @@ export const sfdLoanApi = {
         
       if (error) throw error;
       
-      // Add activity record
+      // Add loan approval activity
       await supabase
         .from('loan_activities')
         .insert({
           loan_id: loanId,
           activity_type: 'loan_approved',
-          description: 'Prêt approuvé',
+          description: 'Prêt approuvé par un agent SFD',
           performed_by: approvedBy
         });
         
-      return data as Loan;
+      return data as unknown as Loan;
     } catch (error) {
       console.error('Error approving loan:', error);
       throw error;
     }
   },
   
-  // Reject loan
+  // Reject a loan
   async rejectLoan(loanId: string, rejectedBy: string) {
     try {
       const { data, error } = await supabase
         .from('sfd_loans')
         .update({
-          status: 'rejected',
-          approved_at: new Date().toISOString(), // Using same field, just to track when the decision was made
-          approved_by: rejectedBy
+          status: 'rejected'
         })
         .eq('id', loanId)
         .select()
@@ -146,28 +133,28 @@ export const sfdLoanApi = {
         
       if (error) throw error;
       
-      // Add activity record
+      // Add loan rejection activity
       await supabase
         .from('loan_activities')
         .insert({
           loan_id: loanId,
           activity_type: 'loan_rejected',
-          description: 'Prêt rejeté',
+          description: 'Prêt rejeté par un agent SFD',
           performed_by: rejectedBy
         });
         
-      return data as Loan;
+      return data as unknown as Loan;
     } catch (error) {
       console.error('Error rejecting loan:', error);
       throw error;
     }
   },
   
-  // Disburse loan
+  // Disburse a loan - this will also apply any subsidy
   async disburseLoan(loanId: string, disbursedBy: string) {
     try {
-      // First get the loan details
-      const { data: loanData, error: loanError } = await supabase
+      // First get the loan to check if it has a subsidy
+      const { data: loan, error: loanError } = await supabase
         .from('sfd_loans')
         .select('*')
         .eq('id', loanId)
@@ -175,17 +162,25 @@ export const sfdLoanApi = {
         
       if (loanError) throw loanError;
       
-      // Calculate next payment date (1 month from now)
-      const nextPaymentDate = new Date();
-      nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+      // Apply subsidy if needed
+      if (loan.subsidy_amount > 0) {
+        // Call the RPC function to update subsidy usage
+        const { error: rpcError } = await supabase
+          .rpc('update_subsidy_usage', {
+            p_sfd_id: loan.sfd_id,
+            p_amount: loan.subsidy_amount
+          });
+          
+        if (rpcError) throw rpcError;
+      }
       
-      // Update loan status
+      // Update the loan to disbursed status
       const { data, error } = await supabase
         .from('sfd_loans')
         .update({
           status: 'active',
           disbursed_at: new Date().toISOString(),
-          next_payment_date: nextPaymentDate.toISOString()
+          next_payment_date: getNextPaymentDate()
         })
         .eq('id', loanId)
         .select()
@@ -193,89 +188,66 @@ export const sfdLoanApi = {
         
       if (error) throw error;
       
-      // Record activity
+      // Add loan disbursement activity
       await supabase
         .from('loan_activities')
         .insert({
           loan_id: loanId,
           activity_type: 'loan_disbursed',
-          description: `Prêt décaissé pour un montant de ${loanData.amount} FCFA`,
+          description: 'Prêt décaissé et fonds transférés au client',
           performed_by: disbursedBy
         });
         
-      // If there's a subsidy, update the subsidy usage in the SFD subsidies table
-      if (loanData.subsidy_amount && loanData.subsidy_amount > 0) {
-        const { error: subsidyError } = await supabase.rpc('update_subsidy_usage', { 
-          p_sfd_id: loanData.sfd_id,
-          p_amount: loanData.subsidy_amount
-        });
-        
-        if (subsidyError) {
-          console.error('Error updating subsidy:', subsidyError);
-          // Don't throw here, we still want to disburse the loan
-        }
-      }
-        
-      return data as Loan;
+      return data as unknown as Loan;
     } catch (error) {
       console.error('Error disbursing loan:', error);
       throw error;
     }
   },
   
-  // Record loan payment
+  // Record a loan payment
   async recordLoanPayment(loanId: string, amount: number, paymentMethod: string, recordedBy: string) {
     try {
-      // Get the loan first
-      const { data: loanData, error: loanError } = await supabase
-        .from('sfd_loans')
-        .select('*')
-        .eq('id', loanId)
-        .single();
-        
-      if (loanError) throw loanError;
-      
-      // Create payment record
-      const { data, error } = await supabase
+      // Create the payment record
+      const { data: paymentData, error: paymentError } = await supabase
         .from('loan_payments')
         .insert({
           loan_id: loanId,
           amount: amount,
           payment_method: paymentMethod,
-          status: 'completed',
-          payment_date: new Date().toISOString()
+          status: 'completed'
         })
+        .select()
+        .single();
+        
+      if (paymentError) throw paymentError;
+      
+      // Update the loan to reflect the payment
+      const { data, error } = await supabase
+        .from('sfd_loans')
+        .update({
+          last_payment_date: new Date().toISOString(),
+          next_payment_date: getNextPaymentDate(30) // Set next payment 30 days from now
+        })
+        .eq('id', loanId)
         .select()
         .single();
         
       if (error) throw error;
       
-      // Calculate next payment date (1 month from last payment date)
-      const nextPaymentDate = new Date();
-      nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
-      
-      // Update the loan last payment and next payment dates
-      await supabase
-        .from('sfd_loans')
-        .update({
-          last_payment_date: new Date().toISOString(),
-          next_payment_date: nextPaymentDate.toISOString()
-        })
-        .eq('id', loanId);
-      
-      // Record activity
+      // Add loan payment activity
       await supabase
         .from('loan_activities')
         .insert({
           loan_id: loanId,
-          activity_type: 'payment_received',
-          description: `Paiement reçu pour un montant de ${amount} FCFA via ${paymentMethod}`,
+          activity_type: 'payment_recorded',
+          description: `Paiement de ${amount} FCFA enregistré`,
           performed_by: recordedBy
         });
         
-      return data as LoanPayment;
+      return paymentData as unknown as LoanPayment;
     } catch (error) {
-      console.error('Error recording loan payment:', error);
+      console.error('Error recording payment:', error);
       throw error;
     }
   },
@@ -290,10 +262,17 @@ export const sfdLoanApi = {
         .order('payment_date', { ascending: false });
         
       if (error) throw error;
-      return data as LoanPayment[];
+      return data as unknown as LoanPayment[];
     } catch (error) {
       console.error('Error fetching loan payments:', error);
       return [];
     }
   }
 };
+
+// Helper function to calculate next payment date
+function getNextPaymentDate(daysFromNow = 30) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromNow);
+  return date.toISOString();
+}

@@ -109,6 +109,82 @@ export type Database = {
           },
         ]
       }
+      loan_activities: {
+        Row: {
+          activity_type: string
+          description: string | null
+          id: string
+          loan_id: string
+          performed_at: string
+          performed_by: string | null
+        }
+        Insert: {
+          activity_type: string
+          description?: string | null
+          id?: string
+          loan_id: string
+          performed_at?: string
+          performed_by?: string | null
+        }
+        Update: {
+          activity_type?: string
+          description?: string | null
+          id?: string
+          loan_id?: string
+          performed_at?: string
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_activities_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loan_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          loan_id: string
+          payment_date: string
+          payment_method: string
+          status: string
+          transaction_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          loan_id: string
+          payment_date?: string
+          payment_method: string
+          status?: string
+          transaction_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          loan_id?: string
+          payment_date?: string
+          payment_method?: string
+          status?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_payments_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -192,6 +268,128 @@ export type Database = {
           },
         ]
       }
+      sfd_loans: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          client_id: string
+          created_at: string
+          disbursed_at: string | null
+          duration_months: number
+          id: string
+          interest_rate: number
+          last_payment_date: string | null
+          monthly_payment: number
+          next_payment_date: string | null
+          purpose: string
+          sfd_id: string
+          status: string
+          subsidy_amount: number | null
+          subsidy_rate: number | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          client_id: string
+          created_at?: string
+          disbursed_at?: string | null
+          duration_months: number
+          id?: string
+          interest_rate: number
+          last_payment_date?: string | null
+          monthly_payment: number
+          next_payment_date?: string | null
+          purpose: string
+          sfd_id: string
+          status?: string
+          subsidy_amount?: number | null
+          subsidy_rate?: number | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          client_id?: string
+          created_at?: string
+          disbursed_at?: string | null
+          duration_months?: number
+          id?: string
+          interest_rate?: number
+          last_payment_date?: string | null
+          monthly_payment?: number
+          next_payment_date?: string | null
+          purpose?: string
+          sfd_id?: string
+          status?: string
+          subsidy_amount?: number | null
+          subsidy_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sfd_loans_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sfd_loans_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sfd_subsidies: {
+        Row: {
+          allocated_at: string
+          allocated_by: string
+          amount: number
+          description: string | null
+          end_date: string | null
+          id: string
+          remaining_amount: number
+          sfd_id: string
+          status: string
+          used_amount: number
+        }
+        Insert: {
+          allocated_at?: string
+          allocated_by: string
+          amount: number
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          remaining_amount: number
+          sfd_id: string
+          status?: string
+          used_amount?: number
+        }
+        Update: {
+          allocated_at?: string
+          allocated_by?: string
+          amount?: number
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          remaining_amount?: number
+          sfd_id?: string
+          status?: string
+          used_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sfd_subsidies_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sfds: {
         Row: {
           code: string
@@ -221,6 +419,41 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      subsidy_activities: {
+        Row: {
+          activity_type: string
+          description: string | null
+          id: string
+          performed_at: string
+          performed_by: string | null
+          subsidy_id: string
+        }
+        Insert: {
+          activity_type: string
+          description?: string | null
+          id?: string
+          performed_at?: string
+          performed_by?: string | null
+          subsidy_id: string
+        }
+        Update: {
+          activity_type?: string
+          description?: string | null
+          id?: string
+          performed_at?: string
+          performed_by?: string | null
+          subsidy_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subsidy_activities_subsidy_id_fkey"
+            columns: ["subsidy_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_subsidies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {
@@ -294,6 +527,13 @@ export type Database = {
     Functions: {
       create_sample_transactions: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_subsidy_usage: {
+        Args: {
+          p_sfd_id: string
+          p_amount: number
+        }
         Returns: undefined
       }
     }

@@ -13,7 +13,7 @@ export const subsidyApi = {
         .order('allocated_at', { ascending: false });
         
       if (error) throw error;
-      return data as SfdSubsidy[];
+      return data as unknown as SfdSubsidy[];
     } catch (error) {
       console.error('Error fetching subsidies:', error);
       return [];
@@ -46,7 +46,7 @@ export const subsidyApi = {
         .single();
         
       if (error) throw error;
-      return data as SfdSubsidy;
+      return data as unknown as SfdSubsidy;
     } catch (error) {
       console.error('Error fetching subsidy details:', error);
       return null;
@@ -63,7 +63,7 @@ export const subsidyApi = {
         .order('allocated_at', { ascending: false });
         
       if (error) throw error;
-      return data as SfdSubsidy[];
+      return data as unknown as SfdSubsidy[];
     } catch (error) {
       console.error('Error fetching SFD subsidies:', error);
       return [];
@@ -106,7 +106,7 @@ export const subsidyApi = {
           performed_by: subsidy.allocated_by
         });
         
-      return data as SfdSubsidy;
+      return data as unknown as SfdSubsidy;
     } catch (error) {
       console.error('Error creating subsidy:', error);
       throw error;
@@ -137,7 +137,7 @@ export const subsidyApi = {
           performed_by: revokedBy
         });
         
-      return data as SfdSubsidy;
+      return data as unknown as SfdSubsidy;
     } catch (error) {
       console.error('Error revoking subsidy:', error);
       throw error;
