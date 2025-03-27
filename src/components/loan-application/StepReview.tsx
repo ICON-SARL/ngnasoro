@@ -8,15 +8,28 @@ interface StepReviewProps {
   loanPurpose: string;
   loanAmount: string;
   loanDuration: string;
-  purposeOptions: PurposeOption[];
+  purposeOptions?: PurposeOption[];
 }
 
 const StepReview: React.FC<StepReviewProps> = ({ 
   loanPurpose, 
   loanAmount, 
   loanDuration,
-  purposeOptions 
+  purposeOptions = []
 }) => {
+  // Default purpose options if none provided
+  const defaultPurposeOptions: PurposeOption[] = [
+    { id: 'agriculture', name: 'Agriculture', icon: null, description: "Financement agricole" },
+    { id: 'commerce', name: 'Commerce', icon: null, description: "Développement commercial" },
+    { id: 'education', name: 'Éducation', icon: null, description: "Frais de scolarité" },
+    { id: 'sante', name: 'Santé', icon: null, description: "Dépenses médicales" },
+    { id: 'logement', name: 'Logement', icon: null, description: "Amélioration habitat" },
+    { id: 'autre', name: 'Autre', icon: null, description: "Autre besoin" },
+  ];
+  
+  const options = purposeOptions.length > 0 ? purposeOptions : defaultPurposeOptions;
+  const purposeName = options.find(p => p.id === loanPurpose)?.name || loanPurpose;
+
   return (
     <div className="space-y-5">
       <Card className="border shadow-sm rounded-xl overflow-hidden">
@@ -27,10 +40,10 @@ const StepReview: React.FC<StepReviewProps> = ({
           <div className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b border-dashed border-gray-200">
               <div className="flex items-center">
-                {purposeOptions.find(p => p.id === loanPurpose)?.icon || <Landmark className="h-5 w-5 mr-2 text-[#0D6A51]" />}
+                <Landmark className="h-5 w-5 mr-2 text-[#0D6A51]" />
                 <span className="text-gray-600 ml-2">Objet</span>
               </div>
-              <span className="font-medium">{purposeOptions.find(p => p.id === loanPurpose)?.name || loanPurpose}</span>
+              <span className="font-medium">{purposeName}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-dashed border-gray-200">
               <div className="flex items-center">

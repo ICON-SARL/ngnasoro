@@ -6,10 +6,10 @@ import { Label } from '@/components/ui/label';
 
 interface StepAmountProps {
   loanAmount: string;
-  setLoanAmount: (amount: string) => void;
+  setAmount: (amount: string) => void;
 }
 
-const StepAmount: React.FC<StepAmountProps> = ({ loanAmount, setLoanAmount }) => {
+const StepAmount: React.FC<StepAmountProps> = ({ loanAmount, setAmount }) => {
   return (
     <div className="space-y-4">
       <Label htmlFor="amount" className="text-lg font-medium">Montant du prêt</Label>
@@ -21,7 +21,7 @@ const StepAmount: React.FC<StepAmountProps> = ({ loanAmount, setLoanAmount }) =>
           type="number"
           placeholder="50000"
           value={loanAmount}
-          onChange={(e) => setLoanAmount(e.target.value)}
+          onChange={(e) => setAmount(e.target.value)}
           className="text-2xl py-6 text-center font-bold border-0 bg-white shadow focus-visible:ring-[#0D6A51]"
         />
         <p className="text-xs text-center mt-2 text-gray-500">FCFA</p>
@@ -33,7 +33,7 @@ const StepAmount: React.FC<StepAmountProps> = ({ loanAmount, setLoanAmount }) =>
           <Button
             key={amount}
             variant="outline"
-            onClick={() => setLoanAmount(amount.toString())}
+            onClick={() => setAmount(amount.toString())}
             className={`flex-1 hover:border-[#0D6A51]/40 hover:bg-[#0D6A51]/5 ${
               parseInt(loanAmount) === amount ? 'border-[#0D6A51] bg-[#0D6A51]/10' : ''
             }`}

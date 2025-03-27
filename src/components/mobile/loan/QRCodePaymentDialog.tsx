@@ -1,132 +1,98 @@
 
 import React, { useState, useEffect } from 'react';
-import { Download, QrCode } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { useMobileMoneyOperations } from '@/hooks/useMobileMoneyOperations';
+import { Loader2, CheckCircle2 } from 'lucide-react';
 
-interface QRCodePaymentDialogProps {
+export interface QRCodePaymentDialogProps {
+  isOpen?: boolean;
   onClose: () => void;
-  amount?: number;
-  isWithdrawal?: boolean;
+  amount: number;
+  isWithdrawal: boolean;
+  onSuccess?: () => Promise<void>;
 }
 
-const QRCodePaymentDialog = ({ onClose, amount = 3500, isWithdrawal = false }: QRCodePaymentDialogProps) => {
-  const { toast } = useToast();
-  const { isProcessing, generatePaymentQRCode, generateWithdrawalQRCode } = useMobileMoneyOperations();
-  const [qrGenerated, setQrGenerated] = useState(false);
-  const [qrExpiry, setQrExpiry] = useState<Date | null>(null);
-  const [countdown, setCountdown] = useState('');
-  const [qrCode, setQrCode] = useState('');
+const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ 
+  isOpen = true, 
+  onClose, 
+  amount, 
+  isWithdrawal,
+  onSuccess
+}) => {
+  const [status, setStatus] = useState<'pending' | 'success'>('pending');
+  const [isVerifying, setIsVerifying] = useState(false);
 
-  // Countdown timer for QR code expiry
+  // Simulate QR code scanning
   useEffect(() => {
-    if (!qrExpiry) return;
-    
-    const interval = setInterval(() => {
-      const now = new Date();
-      const diff = qrExpiry.getTime() - now.getTime();
-      
-      if (diff <= 0) {
-        setCountdown('Expiré');
-        setQrGenerated(false);
-        clearInterval(interval);
-        return;
+    const timer = setTimeout(() => {
+      if (isOpen && status === 'pending') {
+        setStatus('success');
       }
-      
-      const minutes = Math.floor(diff / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      setCountdown(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, [qrExpiry]);
+    }, 10000);
 
-  const handleGenerateQrCode = async () => {
-    try {
-      const generateFunction = isWithdrawal ? generateWithdrawalQRCode : generatePaymentQRCode;
-      const result = await generateFunction(amount);
-      
-      if (result.success && result.qrCode) {
-        const expiryDate = new Date(result.qrCode.expiresAt);
-        setQrExpiry(expiryDate);
-        setQrGenerated(true);
-        setQrCode(result.qrCode.code);
-        
-        toast({
-          title: "QR Code généré",
-          description: "Ce code est valable pendant 15 minutes. Présentez-le à l'agent SFD pour effectuer votre opération.",
-        });
-      } else {
-        toast({
-          title: "Erreur",
-          description: "Impossible de générer le QR code",
-          variant: "destructive",
-        });
+    return () => clearTimeout(timer);
+  }, [isOpen, status]);
+
+  const handleComplete = async () => {
+    setIsVerifying(true);
+    
+    // Simulate processing
+    setTimeout(async () => {
+      setIsVerifying(false);
+      if (onSuccess) {
+        await onSuccess();
       }
-    } catch (error) {
-      console.error('Error generating QR code:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la génération du QR code",
-        variant: "destructive",
-      });
-    }
+      onClose();
+    }, 1500);
   };
 
   return (
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>
-          {isWithdrawal ? "Retrait en agence SFD" : "Paiement en agence SFD"}
-        </DialogTitle>
-      </DialogHeader>
-      <div className="space-y-4">
-        {!qrGenerated ? (
-          <>
-            <p className="text-sm">
-              {isWithdrawal 
-                ? "Générez un QR code unique que vous présenterez à l'agent SFD pour effectuer votre retrait."
-                : "Générez un QR code unique que vous présenterez à l'agent SFD pour effectuer votre paiement."
-              } Le code est valable 15 minutes.
-            </p>
-            <Button 
-              onClick={handleGenerateQrCode} 
-              className="w-full"
-              disabled={isProcessing}
-            >
-              {isProcessing ? "Génération..." : "Générer le QR code"}
-            </Button>
-          </>
-        ) : (
-          <div className="text-center">
-            <div className="mx-auto h-48 w-48 bg-white border-2 border-gray-200 rounded-md flex flex-col items-center justify-center mb-4">
-              <QrCode className="h-32 w-32 text-teal-600 mb-2" />
-              <div className="text-sm font-medium bg-yellow-100 px-3 py-1 rounded-full text-yellow-800">
-                Expire dans: {countdown}
+    <Dialog open={isOpen} onOpenChange={() => !isVerifying && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            Paiement par QR Code
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="flex flex-col items-center py-4">
+          {status === 'pending' ? (
+            <>
+              <div className="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center mb-4">
+                <div className="text-center">
+                  <Loader2 className="h-10 w-10 animate-spin mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm text-gray-500">Génération du QR Code...</p>
+                </div>
               </div>
-            </div>
-            <p className="text-sm font-medium text-green-600 mb-2">QR Code généré avec succès</p>
-            <p className="text-xs text-gray-500 mb-4">
-              {isWithdrawal 
-                ? `Présentez ce code à l'agent SFD pour effectuer votre retrait de ${amount.toLocaleString()} FCFA`
-                : `Présentez ce code à l'agent SFD pour effectuer votre paiement de ${amount.toLocaleString()} FCFA`
-              }
-            </p>
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={() => setQrGenerated(false)} className="flex-1">
-                Annuler
+              <p className="text-center text-sm text-gray-600 mb-2">
+                Scannez ce code avec votre application mobile money pour {isWithdrawal ? 'retirer' : 'déposer'} <strong>{amount.toLocaleString('fr-FR')} FCFA</strong>
+              </p>
+              <p className="text-xs text-gray-500 text-center">
+                Le paiement par QR code est rapide et sécurisé
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="mb-4 text-center">
+                <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-2" />
+                <h3 className="text-lg font-medium">QR Code scanné avec succès!</h3>
+              </div>
+              <p className="text-center text-sm text-gray-600 mb-6">
+                Votre transaction de <strong>{amount.toLocaleString('fr-FR')} FCFA</strong> a été autorisée.
+              </p>
+              <Button 
+                onClick={handleComplete} 
+                className="w-full" 
+                disabled={isVerifying}
+              >
+                {isVerifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Terminer
               </Button>
-              <Button onClick={() => window.print()} className="flex-1">
-                <Download className="h-4 w-4 mr-2" />
-                Télécharger
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-    </DialogContent>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

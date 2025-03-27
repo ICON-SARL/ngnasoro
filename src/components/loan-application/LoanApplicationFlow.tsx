@@ -140,19 +140,23 @@ const LoanApplicationFlow: React.FC = () => {
       case 'start':
         return <StepStart />;
       case 'purpose':
-        return <StepPurpose purpose={loanPurpose} setPurpose={setLoanPurpose} />;
+        return <StepPurpose loanPurpose={loanPurpose} setPurpose={setLoanPurpose} />;
       case 'amount':
-        return <StepAmount amount={loanAmount} setAmount={setLoanAmount} />;
+        return <StepAmount loanAmount={loanAmount} setAmount={setLoanAmount} />;
       case 'duration':
-        return <StepDuration duration={loanDuration} setDuration={setLoanDuration} />;
+        return <StepDuration 
+                loanAmount={loanAmount} 
+                loanDuration={loanDuration} 
+                setDuration={setLoanDuration} 
+               />;
       case 'location':
         return <StepLocation />;
       case 'review':
         return (
           <StepReview 
-            purpose={loanPurpose}
-            amount={loanAmount}
-            duration={loanDuration}
+            loanPurpose={loanPurpose}
+            loanAmount={loanAmount}
+            loanDuration={loanDuration}
           />
         );
       case 'complete':

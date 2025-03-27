@@ -7,10 +7,10 @@ import { Info } from 'lucide-react';
 interface StepDurationProps {
   loanAmount: string;
   loanDuration: string;
-  setLoanDuration: (duration: string) => void;
+  setDuration: (duration: string) => void;
 }
 
-const StepDuration: React.FC<StepDurationProps> = ({ loanAmount, loanDuration, setLoanDuration }) => {
+const StepDuration: React.FC<StepDurationProps> = ({ loanAmount, loanDuration, setDuration }) => {
   return (
     <div className="space-y-4">
       <Label htmlFor="duration" className="text-lg font-medium">Durée du prêt</Label>
@@ -26,7 +26,7 @@ const StepDuration: React.FC<StepDurationProps> = ({ loanAmount, loanDuration, s
                 ? 'bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white shadow-md scale-105' 
                 : 'hover:border-[#0D6A51]/40 hover:bg-[#0D6A51]/5'
             }`}
-            onClick={() => setLoanDuration(months.toString())}
+            onClick={() => setDuration(months.toString())}
           >
             <div className="flex flex-col">
               <span className="text-lg font-bold">{months}</span>

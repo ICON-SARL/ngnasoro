@@ -7,10 +7,10 @@ import { PurposeOption } from './types';
 
 interface StepPurposeProps {
   loanPurpose: string;
-  setLoanPurpose: (purpose: string) => void;
+  setPurpose: (purpose: string) => void;
 }
 
-const StepPurpose: React.FC<StepPurposeProps> = ({ loanPurpose, setLoanPurpose }) => {
+const StepPurpose: React.FC<StepPurposeProps> = ({ loanPurpose, setPurpose }) => {
   const purposeOptions: PurposeOption[] = [
     { id: 'agriculture', name: 'Agriculture', icon: <ShoppingBag className="h-6 w-6 mb-2 text-green-500" />, description: "Financement agricole" },
     { id: 'commerce', name: 'Commerce', icon: <BadgeEuro className="h-6 w-6 mb-2 text-blue-500" />, description: "Développement commercial" },
@@ -35,7 +35,7 @@ const StepPurpose: React.FC<StepPurposeProps> = ({ loanPurpose, setLoanPurpose }
                 ? 'bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white shadow-md scale-105' 
                 : 'hover:border-[#0D6A51]/40 hover:bg-[#0D6A51]/5'
             }`}
-            onClick={() => setLoanPurpose(option.id)}
+            onClick={() => setPurpose(option.id)}
           >
             {option.icon}
             <span className="font-medium">{option.name}</span>
