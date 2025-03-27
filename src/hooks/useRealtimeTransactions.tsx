@@ -186,43 +186,36 @@ export function useRealtimeTransactions() {
     calculateStats(updatedTransactions);
   }, [transactions, toast, calculateStats, activeSfdId]);
   
-  // Set up the channel subscription with minimal type dependencies
+  // Set up the channel subscription with simplified typing
   useEffect(() => {
     if (!user || !activeSfdId) return;
     
     fetchTransactions();
     
-    // Create the channel with minimal typing to avoid deep instantiation
-    let channelRef: any = null;
-    
-    // Simple typed function to process channel events
-    function setupChannel() {
-      // Using any types to avoid excessive type inference
-      const channel = supabase.channel('public:transactions') as any;
+    // Simple type-safe function to initialize channel
+    const setupRealtimeChannel = () => {
+      const channel = supabase.channel('public:transactions');
       
-      channel.on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
+      // Use explicit typing to avoid deep inference
+      channel.on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
           table: 'transactions',
           filter: `sfd_id=eq.${activeSfdId}`
-        } as any, 
+        } as any,  // Use 'any' to prevent deep type instantiation
         handleRealtimeUpdate
       );
       
-      const subscription = channel.subscribe();
-      channelRef = subscription;
-      
-      return subscription;
-    }
+      return channel.subscribe();
+    };
     
-    const subscription = setupChannel();
+    const subscription = setupRealtimeChannel();
     
     // Cleanup function
     return () => {
-      if (channelRef) {
-        supabase.removeChannel(channelRef);
-      }
+      supabase.removeChannel(subscription);
     };
   }, [user, activeSfdId, fetchTransactions, handleRealtimeUpdate]);
   
