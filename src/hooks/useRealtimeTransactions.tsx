@@ -1,26 +1,12 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Transaction, TransactionStats } from '@/types/transactions';
-import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 // Define simple types for realtime events
 type RealtimeEventType = 'INSERT' | 'UPDATE' | 'DELETE';
-
-// Define a simple interface for database records to avoid deep nesting
-interface SimpleDatabaseRecord {
-  id: string;
-  amount: number;
-  name: string;
-  type: string;
-  user_id: string;
-  sfd_id?: string;
-  created_at?: string;
-  date?: string;
-  avatar_url?: string;
-  [key: string]: any; // Allow other properties
-}
 
 export function useRealtimeTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -124,8 +110,8 @@ export function useRealtimeTransactions() {
       
       // If we don't have real data in the table, use simulated data for demonstration
       if (data && data.length > 0) {
-        // Completely avoid complex typing by using any
-        txData = convertDatabaseRecordsToTransactions(data);
+        // Use a very explicit type assertion to avoid instantiation issues
+        txData = convertDatabaseRecordsToTransactions(data as any[]);
       } else {
         txData = generateMockTransactions(activeSfdId);
       }
@@ -153,8 +139,8 @@ export function useRealtimeTransactions() {
     let updatedTransactions = [...transactions];
     
     if (eventType === 'INSERT' && payload.new) {
-      // Avoid type instantiation completely
-      const newTransaction = convertDatabaseRecordsToTransactions([payload.new])[0];
+      // Use an explicit type cast to avoid deep instantiation
+      const newTransaction = convertDatabaseRecordsToTransactions([payload.new as any])[0];
       
       updatedTransactions = [newTransaction, ...updatedTransactions];
       toast({
@@ -162,16 +148,17 @@ export function useRealtimeTransactions() {
         description: `${newTransaction.type} of ${newTransaction.amount} FCFA`,
       });
     } else if (eventType === 'UPDATE' && payload.new) {
-      // Avoid type instantiation completely
-      const updatedTransaction = convertDatabaseRecordsToTransactions([payload.new])[0];
+      // Use an explicit type cast to avoid deep instantiation
+      const updatedTransaction = convertDatabaseRecordsToTransactions([payload.new as any])[0];
       
       updatedTransactions = updatedTransactions.map(tx => 
         tx.id === updatedTransaction.id ? updatedTransaction : tx
       );
     } else if (eventType === 'DELETE' && payload.old) {
-      // Simple null check without complex typing
-      if (payload.old && payload.old.id) {
-        updatedTransactions = updatedTransactions.filter(tx => tx.id !== payload.old.id);
+      // Simple null check with type assertion
+      const oldRecord = payload.old as any;
+      if (oldRecord && oldRecord.id) {
+        updatedTransactions = updatedTransactions.filter(tx => tx.id !== oldRecord.id);
       }
     }
     
