@@ -21,7 +21,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/mobile" element={<MobileFlow />} />
+          <Route path="/mobile-flow/*" element={<MobileFlow />} />
           <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
           <Route path="/agency-dashboard" element={<AgencyDashboard />} />
           <Route path="/clients" element={<ClientsPage />} />
