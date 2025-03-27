@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AuditLogCategory, AuditLogSeverity, getAuditLogs } from '@/utils/auditLogger';
 import { User } from '@/hooks/useAuth';
