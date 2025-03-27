@@ -55,7 +55,7 @@ const LoanDisbursementPage = () => {
   };
   
   const goHome = () => {
-    navigate('/mobile-flow');
+    navigate('/mobile-flow/main');
     toast({
       title: "Navigation terminée",
       description: "Vous avez été redirigé vers la page d'accueil"
