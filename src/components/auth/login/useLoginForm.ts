@@ -66,33 +66,32 @@ export const useLoginForm = () => {
       return;
     }
 
-    // Password validation - Skip for magic link mode
-    if (!password) {
-      setErrorMessage('Veuillez entrer un mot de passe.');
+    // Password validation
+    if (!password || password.length < 6) {
+      setErrorMessage('Veuillez entrer un mot de passe valide (minimum 6 caractères).');
       return;
     }
     
     setIsLoading(true);
     
     try {
-      // Use magic link authentication instead of password
-      await signIn(email, true);
-      
-      // Set email sent state to true
-      setEmailSent(true);
+      // Use password authentication (false for magic link)
+      await signIn(email, false);
       
       // Log successful authentication attempt
       await logAuditEvent({
-        action: "magic_link_sent",
+        action: "password_login_attempt",
         category: AuditLogCategory.AUTHENTICATION,
         severity: AuditLogSeverity.INFO,
         status: 'success',
         details: { email }
       });
       
+      navigate('/mobile-flow');
+      
       toast({
-        title: "Email envoyé",
-        description: "Veuillez vérifier votre email pour continuer la connexion.",
+        title: "Connexion réussie",
+        description: "Vous êtes maintenant connecté.",
       });
       
     } catch (error: any) {
@@ -100,7 +99,7 @@ export const useLoginForm = () => {
       
       // Log failed authentication attempt
       await logAuditEvent({
-        action: "magic_link_attempt",
+        action: "password_login_attempt",
         category: AuditLogCategory.AUTHENTICATION,
         severity: AuditLogSeverity.WARNING,
         status: 'failure',

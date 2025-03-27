@@ -72,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signIn = async (email: string, useOtp: boolean = true) => {
+  const signIn = async (email: string, useOtp: boolean = false) => {
     try {
       if (useOtp) {
         const { error } = await supabase.auth.signInWithOtp({ 
@@ -86,10 +86,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Fallback to password if not using OTP (for legacy support)
+      // Use password authentication by default
       const { error } = await supabase.auth.signInWithPassword({ 
         email, 
-        password: 'PLACEHOLDER_PASSWORD' // This will be ignored when using magic link
+        password 
       });
       if (error) throw error;
     } catch (error: any) {

@@ -8,12 +8,16 @@ import {
 import SuccessState from './login/SuccessState';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Eye, EyeOff } from 'lucide-react';
+import { Mail, Eye, EyeOff, Lock } from 'lucide-react';
 
 const LoginForm = () => {
   const {
     email,
     setEmail,
+    password,
+    setPassword,
+    showPassword,
+    toggleShowPassword,
     isLoading,
     errorMessage,
     cooldownActive,
@@ -50,6 +54,31 @@ const LoginForm = () => {
               />
             </div>
           </div>
+          
+          <div>
+            <Label htmlFor="password" className="text-gray-700 font-medium mb-1 block">Mot de passe</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••••••••"
+                className="pl-10 pr-10 h-12 text-base border border-gray-300 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-md"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading || cooldownActive}
+                autoComplete="current-password"
+              />
+              <button 
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                onClick={toggleShowPassword}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+          </div>
         </div>
         
         <div className="pt-3 space-y-3">
@@ -66,7 +95,7 @@ const LoginForm = () => {
                 </svg>
                 Chargement...
               </span>
-            ) : "Connexion avec lien magique"}
+            ) : "Connexion"}
           </button>
         </div>
       </form>
