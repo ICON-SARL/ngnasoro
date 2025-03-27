@@ -3,17 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Transaction, TransactionStats, DatabaseTransactionRecord } from '@/types/transactions';
-
-// Define simple types for realtime events
-type RealtimeEventType = 'INSERT' | 'UPDATE' | 'DELETE';
-
-// Define a simplified type for Supabase realtime payloads
-interface SimplifiedRealtimePayload {
-  eventType: RealtimeEventType;
-  new: Record<string, any> | null;
-  old: Record<string, any> | null;
-}
+import { Transaction, TransactionStats } from '@/types/transactions';
 
 export function useRealtimeTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -32,7 +22,6 @@ export function useRealtimeTransactions() {
   const { toast } = useToast();
   
   // Helper function to convert database records to Transaction objects
-  // Using a simple array type to avoid complex type instantiation
   const convertDatabaseRecordsToTransactions = useCallback((records: any[]): Transaction[] => {
     return records.map(record => ({
       id: record.id,
@@ -118,9 +107,7 @@ export function useRealtimeTransactions() {
       
       // If we don't have real data in the table, use simulated data for demonstration
       if (data && data.length > 0) {
-        // Explicitly cast data as any[] to avoid deep type instantiation
-        const rawData: any[] = data;
-        txData = convertDatabaseRecordsToTransactions(rawData);
+        txData = convertDatabaseRecordsToTransactions(data as any[]);
       } else {
         txData = generateMockTransactions(activeSfdId);
       }
@@ -140,34 +127,32 @@ export function useRealtimeTransactions() {
     }
   }, [user, activeSfdId, toast, calculateStats, convertDatabaseRecordsToTransactions, generateMockTransactions]);
   
-  // Handle realtime updates with simplified typing
+  // Handle realtime updates
   const handleRealtimeUpdate = useCallback((payload: any) => {
-    // Extract eventType and cast to our known type
-    const eventType = payload.eventType as RealtimeEventType;
+    // Extract event type
+    const eventType = payload.eventType as string;
     
     // Create a new array instead of mutating the old one
     let updatedTransactions = [...transactions];
     
     if (eventType === 'INSERT' && payload.new) {
-      // Create a simple object for the new record to avoid complex type issues
-      const newData = payload.new as Record<string, any>;
-      const newTransaction = convertDatabaseRecordsToTransactions([newData])[0];
+      // Add new transaction
+      const newRecord = convertDatabaseRecordsToTransactions([payload.new])[0];
+      updatedTransactions = [newRecord, ...updatedTransactions];
       
-      updatedTransactions = [newTransaction, ...updatedTransactions];
       toast({
         title: 'New transaction',
-        description: `${newTransaction.type} of ${newTransaction.amount} FCFA`,
+        description: `${newRecord.type} of ${newRecord.amount} FCFA`,
       });
     } else if (eventType === 'UPDATE' && payload.new) {
-      // Create a simple object for the updated record to avoid complex type issues
-      const updatedData = payload.new as Record<string, any>;
-      const updatedTransaction = convertDatabaseRecordsToTransactions([updatedData])[0];
+      // Update existing transaction
+      const updatedRecord = convertDatabaseRecordsToTransactions([payload.new])[0];
       
       updatedTransactions = updatedTransactions.map(tx => 
-        tx.id === updatedTransaction.id ? updatedTransaction : tx
+        tx.id === updatedRecord.id ? updatedRecord : tx
       );
     } else if (eventType === 'DELETE' && payload.old) {
-      // Get ID from old record and filter it out
+      // Remove deleted transaction
       const oldId = payload.old.id;
       if (oldId) {
         updatedTransactions = updatedTransactions.filter(tx => tx.id !== oldId);
@@ -194,7 +179,6 @@ export function useRealtimeTransactions() {
         table: 'transactions',
         filter: `sfd_id=eq.${activeSfdId}`
       }, (payload) => {
-        // Pass payload directly without complex type checking
         handleRealtimeUpdate(payload);
       })
       .subscribe();
