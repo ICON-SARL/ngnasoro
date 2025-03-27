@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
@@ -31,11 +30,6 @@ const ContextualHeader = () => {
             <span className="text-white/80 text-xs">{activeSFDName}</span>
           </div>
         </div>
-      </div>
-      <div className="flex items-center">
-        <Bell className="h-6 w-6 text-white cursor-pointer relative">
-          <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></div>
-        </Bell>
       </div>
     </div>
   );
