@@ -13,7 +13,7 @@ const LoginButton = ({ isLoading, disabled, authMode }: LoginButtonProps) => {
   return (
     <Button 
       type="submit" 
-      className="w-full h-12 rounded-xl font-medium text-base bg-[#0D6A51] hover:bg-[#0D6A51]/90 transition-all"
+      className="w-full h-12 rounded-xl font-medium text-base bg-[#0D6A51] hover:bg-[#0D6A51]/90 transition-all shadow-sm"
       disabled={isLoading || disabled}
     >
       {isLoading ? (
@@ -25,7 +25,7 @@ const LoginButton = ({ isLoading, disabled, authMode }: LoginButtonProps) => {
           Chargement...
         </span>
       ) : (
-        <span className="flex items-center gap-2">
+        <span className="flex items-center justify-center gap-2 w-full">
           {authMode === 'simple' ? (
             <>
               Se connecter

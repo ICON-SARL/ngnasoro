@@ -53,28 +53,40 @@ const AuthUI = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md mb-8">
         <Logo />
-        
+      </div>
+      
+      <div className="w-full max-w-md">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-2 w-full mb-6 rounded-xl overflow-hidden">
-            <TabsTrigger value="login" className="py-3 data-[state=active]:bg-[#0D6A51] data-[state=active]:text-white">
+          <TabsList className="grid grid-cols-2 w-full mb-6 rounded-xl overflow-hidden shadow-sm">
+            <TabsTrigger 
+              value="login" 
+              className="py-3 font-medium data-[state=active]:bg-[#0D6A51] data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:text-gray-700"
+            >
               Connexion
             </TabsTrigger>
-            <TabsTrigger value="register" className="py-3 data-[state=active]:bg-[#0D6A51] data-[state=active]:text-white">
+            <TabsTrigger 
+              value="register" 
+              className="py-3 font-medium data-[state=active]:bg-[#0D6A51] data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:text-gray-700"
+            >
               Inscription
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="login">
+          <TabsContent value="login" className="focus-visible:outline-none focus-visible:ring-0">
             <LoginForm />
           </TabsContent>
           
-          <TabsContent value="register">
+          <TabsContent value="register" className="focus-visible:outline-none focus-visible:ring-0">
             <RegisterForm />
           </TabsContent>
         </Tabs>
+      </div>
+      
+      <div className="w-full max-w-md mt-6 text-center text-xs text-gray-500">
+        © 2024 MEREF - SFD. Tous droits réservés.
       </div>
     </div>
   );
