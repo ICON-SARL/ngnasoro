@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -6,10 +5,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Transaction, TransactionStats } from '@/types/transactions';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
-// Define simpler types for realtime payloads
+// Define simple types for realtime events
 type RealtimeEventType = 'INSERT' | 'UPDATE' | 'DELETE';
 
-// Define a simple interface for database records
+// Define a simple interface for database records to avoid deep nesting
 interface SimpleDatabaseRecord {
   id: string;
   amount: number;
@@ -21,13 +20,6 @@ interface SimpleDatabaseRecord {
   date?: string;
   avatar_url?: string;
   [key: string]: any; // Allow other properties
-}
-
-// Define a simplified type for realtime payload
-interface RealtimePayload {
-  eventType: RealtimeEventType;
-  new: SimpleDatabaseRecord | null;
-  old: SimpleDatabaseRecord | null;
 }
 
 export function useRealtimeTransactions() {
@@ -132,8 +124,8 @@ export function useRealtimeTransactions() {
       
       // If we don't have real data in the table, use simulated data for demonstration
       if (data && data.length > 0) {
-        // Cast data to our simplified type for safety
-        const simpleData = data as SimpleDatabaseRecord[];
+        // Use type assertion without complex type instantiation
+        const simpleData = data as any[];
         txData = convertDatabaseRecordsToTransactions(simpleData);
       } else {
         txData = generateMockTransactions(activeSfdId);
@@ -154,7 +146,7 @@ export function useRealtimeTransactions() {
     }
   }, [user, activeSfdId, toast, calculateStats, convertDatabaseRecordsToTransactions, generateMockTransactions]);
   
-  // Handle realtime updates with proper typing
+  // Handle realtime updates
   const handleRealtimeUpdate = useCallback((payload: RealtimePostgresChangesPayload<any>) => {
     const eventType = payload.eventType as RealtimeEventType;
     
@@ -162,8 +154,8 @@ export function useRealtimeTransactions() {
     let updatedTransactions = [...transactions];
     
     if (eventType === 'INSERT' && payload.new) {
-      // Safely cast to the simplified database record
-      const newRecord = payload.new as SimpleDatabaseRecord;
+      // Use type assertion to avoid complex type instantiation
+      const newRecord = payload.new as any;
       const newTransaction = convertDatabaseRecordsToTransactions([newRecord])[0];
       
       updatedTransactions = [newTransaction, ...updatedTransactions];
@@ -172,16 +164,16 @@ export function useRealtimeTransactions() {
         description: `${newTransaction.type} of ${newTransaction.amount} FCFA`,
       });
     } else if (eventType === 'UPDATE' && payload.new) {
-      // Safely cast to the simplified database record
-      const updatedRecord = payload.new as SimpleDatabaseRecord;
+      // Use type assertion to avoid complex type instantiation
+      const updatedRecord = payload.new as any;
       const updatedTransaction = convertDatabaseRecordsToTransactions([updatedRecord])[0];
       
       updatedTransactions = updatedTransactions.map(tx => 
         tx.id === updatedTransaction.id ? updatedTransaction : tx
       );
     } else if (eventType === 'DELETE' && payload.old) {
-      // Handle delete operation with proper null checking and type assertion
-      const oldRecord = payload.old as SimpleDatabaseRecord;
+      // Use type assertion with null check
+      const oldRecord = payload.old as any;
       if (oldRecord && oldRecord.id) {
         updatedTransactions = updatedTransactions.filter(tx => tx.id !== oldRecord.id);
       }
