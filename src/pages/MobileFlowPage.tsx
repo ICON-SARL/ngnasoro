@@ -9,6 +9,7 @@ import SfdClientsPage from '@/pages/SfdClientsPage';
 import { useAuth } from '@/hooks/auth';
 import SecurePaymentTab from '@/components/mobile/secure-payment';
 import { Account } from '@/types/transactions';
+import MobileNavigation from '@/components/MobileNavigation';
 
 const MobileFlowPage: React.FC = () => {
   const location = useLocation();
@@ -131,6 +132,8 @@ const MobileFlowPage: React.FC = () => {
       <main className="flex-1 w-full h-full">
         {renderContent()}
       </main>
+      
+      <MobileNavigation onAction={handleAction} />
       
       <MobileMenu 
         isOpen={menuOpen} 
