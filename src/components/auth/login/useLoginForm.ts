@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -65,32 +66,33 @@ export const useLoginForm = () => {
       return;
     }
 
-    // Password validation
-    if (!password || password.length < 6) {
-      setErrorMessage('Veuillez entrer un mot de passe valide (minimum 6 caractères).');
+    // Password validation - Skip for magic link mode
+    if (!password) {
+      setErrorMessage('Veuillez entrer un mot de passe.');
       return;
     }
     
     setIsLoading(true);
     
     try {
-      // Use password authentication
-      await signIn(email, false);
+      // Use magic link authentication instead of password
+      await signIn(email, true);
+      
+      // Set email sent state to true
+      setEmailSent(true);
       
       // Log successful authentication attempt
       await logAuditEvent({
-        action: "password_login_attempt",
+        action: "magic_link_sent",
         category: AuditLogCategory.AUTHENTICATION,
         severity: AuditLogSeverity.INFO,
         status: 'success',
         details: { email }
       });
       
-      navigate('/mobile-flow');
-      
       toast({
-        title: "Connexion réussie",
-        description: "Vous êtes maintenant connecté.",
+        title: "Email envoyé",
+        description: "Veuillez vérifier votre email pour continuer la connexion.",
       });
       
     } catch (error: any) {
@@ -98,7 +100,7 @@ export const useLoginForm = () => {
       
       // Log failed authentication attempt
       await logAuditEvent({
-        action: "password_login_attempt",
+        action: "magic_link_attempt",
         category: AuditLogCategory.AUTHENTICATION,
         severity: AuditLogSeverity.WARNING,
         status: 'failure',
