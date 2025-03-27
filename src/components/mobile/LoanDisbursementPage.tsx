@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Bank, Calendar, CreditCard, DownloadCloud, Share2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Landmark, Calendar, CreditCard, DownloadCloud, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -161,7 +161,7 @@ const LoanDisbursementPage = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-center p-3 border-b border-gray-100">
                 <div className="flex items-center">
-                  <Bank className="h-5 w-5 text-blue-500 mr-2" />
+                  <Landmark className="h-5 w-5 text-blue-500 mr-2" />
                   <p className="text-gray-600">Compte de réception</p>
                 </div>
                 <span className="font-medium">**** 7890</span>
