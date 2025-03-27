@@ -7,7 +7,8 @@ import {
   FileText, 
   Download, 
   LayoutDashboard,
-  Users
+  Users,
+  CreditCard
 } from 'lucide-react';
 
 interface DashboardTabsProps {
@@ -36,6 +37,11 @@ export function DashboardTabs({ activeTab, onTabChange }: DashboardTabsProps) {
       id: 'export',
       label: 'Exportation',
       icon: <Download className="h-4 w-4 mr-2" />
+    },
+    {
+      id: 'subsidy_requests',
+      label: 'Demandes de subvention',
+      icon: <CreditCard className="h-4 w-4 mr-2" />
     },
     {
       id: 'admins',

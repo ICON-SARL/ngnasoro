@@ -36,6 +36,60 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          permissions: string[]
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          permissions?: string[]
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          permissions?: string[]
+        }
+        Relationships: []
+      }
+      admin_users: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          has_2fa: boolean | null
+          id: string
+          last_sign_in_at: string | null
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          has_2fa?: boolean | null
+          id: string
+          last_sign_in_at?: string | null
+          role: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          has_2fa?: boolean | null
+          id?: string
+          last_sign_in_at?: string | null
+          role?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -506,6 +560,139 @@ export type Database = {
           },
         ]
       }
+      subsidy_alert_thresholds: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          notification_emails: string[] | null
+          threshold_amount: number
+          threshold_name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          notification_emails?: string[] | null
+          threshold_amount: number
+          threshold_name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          notification_emails?: string[] | null
+          threshold_amount?: number
+          threshold_name?: string
+        }
+        Relationships: []
+      }
+      subsidy_request_activities: {
+        Row: {
+          activity_type: string
+          description: string | null
+          details: Json | null
+          id: string
+          performed_at: string
+          performed_by: string
+          request_id: string
+        }
+        Insert: {
+          activity_type: string
+          description?: string | null
+          details?: Json | null
+          id?: string
+          performed_at?: string
+          performed_by: string
+          request_id: string
+        }
+        Update: {
+          activity_type?: string
+          description?: string | null
+          details?: Json | null
+          id?: string
+          performed_at?: string
+          performed_by?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subsidy_request_activities_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "subsidy_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subsidy_requests: {
+        Row: {
+          alert_triggered: boolean | null
+          amount: number
+          created_at: string
+          decision_comments: string | null
+          expected_impact: string | null
+          id: string
+          justification: string | null
+          priority: string
+          purpose: string
+          region: string | null
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sfd_id: string
+          status: string
+          supporting_documents: string[] | null
+        }
+        Insert: {
+          alert_triggered?: boolean | null
+          amount: number
+          created_at?: string
+          decision_comments?: string | null
+          expected_impact?: string | null
+          id?: string
+          justification?: string | null
+          priority?: string
+          purpose: string
+          region?: string | null
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sfd_id: string
+          status?: string
+          supporting_documents?: string[] | null
+        }
+        Update: {
+          alert_triggered?: boolean | null
+          amount?: number
+          created_at?: string
+          decision_comments?: string | null
+          expected_impact?: string | null
+          id?: string
+          justification?: string | null
+          priority?: string
+          purpose?: string
+          region?: string | null
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sfd_id?: string
+          status?: string
+          supporting_documents?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subsidy_requests_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transaction_types: {
         Row: {
           code: string
@@ -574,6 +761,27 @@ export type Database = {
           sfd_id?: string | null
           status?: string | null
           type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_2fa: {
+        Row: {
+          created_at: string
+          id: string
+          secret_key: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          secret_key: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          secret_key?: string
           user_id?: string
         }
         Relationships: []

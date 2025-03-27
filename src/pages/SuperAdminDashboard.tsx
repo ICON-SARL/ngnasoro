@@ -15,6 +15,7 @@ import { DataExport } from '@/components/DataExport';
 import { Button } from '@/components/ui/button';
 import { FileText, CreditCard, Building, Users } from 'lucide-react';
 import { AdminManagement } from '@/components/admin/AdminManagement';
+import { SubsidyRequestManagement } from '@/components/admin/subsidy';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
@@ -106,6 +107,13 @@ const SuperAdminDashboard = () => {
         {activeTab === 'export' && (
           <div className="space-y-6">
             <DataExport />
+          </div>
+        )}
+        
+        {/* Subsidy Requests */}
+        {activeTab === 'subsidy_requests' && (
+          <div className="space-y-6">
+            <SubsidyRequestManagement />
           </div>
         )}
         
