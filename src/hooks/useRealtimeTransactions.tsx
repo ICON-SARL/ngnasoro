@@ -75,7 +75,7 @@ export function useRealtimeTransactions() {
       if (error) throw error;
       
       // If we don't have real data in the table, use simulated data for demonstration
-      let txData: Transaction[] = [];
+      let txData: Transaction[];
       if (data && data.length > 0) {
         txData = convertDatabaseRecordsToTransactions(data as DatabaseTransactionRecord[]);
       } else {
