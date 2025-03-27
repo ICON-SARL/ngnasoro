@@ -1,94 +1,88 @@
 
 import React from 'react';
-import { Clock, Bell } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle, Clock } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
-interface PaymentHistory {
-  id: number;
-  date: string;
-  amount: number;
-  status: string;
+export interface LoanTrackingTabProps {
+  loanStatus: {
+    nextPaymentDue: string;
+    paidAmount: number;
+    totalAmount: number;
+    remainingAmount: number;
+    progress: number;
+    lateFees: number;
+    paymentHistory: Array<{
+      id: number;
+      date: string;
+      amount: number;
+      status: 'paid' | 'pending' | 'late';
+    }>;
+    disbursed: boolean;
+    withdrawn: boolean;
+  };
 }
 
-interface LoanStatus {
-  nextPaymentDue: string;
-  paidAmount: number;
-  totalAmount: number;
-  remainingAmount: number;
-  progress: number;
-  lateFees: number;
-  paymentHistory: PaymentHistory[];
-  disbursed: boolean;
-  withdrawn: boolean;
-}
-
-interface LoanTrackingTabProps {
-  loanStatus: LoanStatus;
-}
-
-const LoanTrackingTab = ({ loanStatus }: LoanTrackingTabProps) => {
+const LoanTrackingTab: React.FC<LoanTrackingTabProps> = ({ loanStatus }) => {
   return (
-    <div className="mt-2 space-y-4">
-      <div className="flex justify-between items-center mb-2">
-        <div>
-          <p className="text-sm text-gray-500">Payé à ce jour</p>
-          <p className="text-xl font-bold">{loanStatus.paidAmount} FCFA</p>
-        </div>
-        <div className="text-right">
-          <p className="text-sm text-gray-500">Restant</p>
-          <p className="text-xl font-bold">{loanStatus.remainingAmount} FCFA</p>
-        </div>
-      </div>
-      
-      <Progress value={loanStatus.progress} className="h-2 bg-gray-100" />
-      
-      <div className="flex justify-between items-center text-sm mt-2">
-        <span className="font-medium">{loanStatus.progress}% remboursé</span>
-        <span className="text-gray-500">Prochain paiement: {loanStatus.nextPaymentDue}</span>
-      </div>
-      
-      <div className="mt-8">
-        <h3 className="text-lg font-semibold flex items-center mb-4">
-          <Clock className="h-5 w-5 mr-2" /> Historique des paiements
-        </h3>
-        
-        {loanStatus.paymentHistory.map((payment, index) => (
-          <div key={payment.id} className="mb-4 relative pl-6">
-            <div className={`absolute top-1.5 left-0 w-3 h-3 rounded-full ${index === 0 ? 'bg-teal-500' : index === 1 ? 'bg-purple-400' : 'bg-teal-300'}`}></div>
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="font-medium">Paiement automatique</p>
-                <p className="text-xs text-gray-500">{payment.date}</p>
-              </div>
-              <p className="font-bold">{payment.amount.toFixed(2)} FCFA</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      {loanStatus.lateFees > 0 && (
-        <Alert variant="destructive" className="mt-4">
-          <Bell className="h-4 w-4" />
-          <AlertTitle>Paiement en retard</AlertTitle>
-          <AlertDescription>
-            Des frais de retard de {loanStatus.lateFees} FCFA ont été appliqués à votre prêt.
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      <Card className="bg-purple-100 border-0 rounded-xl mt-6">
+    <div className="space-y-4">
+      <Card>
         <CardContent className="p-4">
-          <div className="flex">
-            <div className="flex-shrink-0 mr-4">
-              <img src="/lovable-uploads/ef525c3f-3c63-46c2-a852-9c93524d29df.png" alt="Processing" className="w-16 h-16" />
-            </div>
-            <div>
-              <h3 className="font-bold">Votre prêt est actif</h3>
-              <p className="text-sm mt-1">Prochain paiement le {loanStatus.nextPaymentDue}</p>
-            </div>
+          <h3 className="font-bold mb-2">Prochain paiement</h3>
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="h-4 w-4 text-[#0D6A51]" />
+            <p className="font-bold">{loanStatus.nextPaymentDue}</p>
           </div>
+          {loanStatus.lateFees > 0 && (
+            <div className="flex items-start gap-2 mt-3 rounded bg-red-50 p-2 text-sm">
+              <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5" />
+              <div>
+                <p className="font-semibold text-red-600">Frais de retard</p>
+                <p className="text-red-600">{loanStatus.lateFees.toFixed(2)} FCFA</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="font-bold mb-2">Progression</h3>
+          <div className="flex justify-between text-sm mb-1">
+            <span>Payé: {loanStatus.paidAmount.toFixed(2)} FCFA</span>
+            <span>Restant: {loanStatus.remainingAmount.toFixed(2)} FCFA</span>
+          </div>
+          <Progress value={loanStatus.progress} className="h-2 mb-3" />
+          <p className="text-xs text-gray-500 text-center mt-1">
+            {loanStatus.progress}% du total de {loanStatus.totalAmount.toFixed(2)} FCFA
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="font-bold mb-2">Historique des paiements</h3>
+          <div className="space-y-3">
+            {loanStatus.paymentHistory.map(payment => (
+              <div key={payment.id} className="flex justify-between items-center py-1 border-b border-gray-100">
+                <div>
+                  <p className="font-medium">{payment.date}</p>
+                  <p className="text-xs text-gray-500">Paiement mensuel</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium">{payment.amount.toFixed(2)} FCFA</p>
+                  <p className={`text-xs ${payment.status === 'paid' ? 'text-green-600' : payment.status === 'late' ? 'text-red-600' : 'text-orange-600'}`}>
+                    {payment.status === 'paid' ? 'Payé' : payment.status === 'late' ? 'En retard' : 'En attente'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {loanStatus.paymentHistory.length === 0 && (
+            <p className="text-center text-gray-500 py-2">Aucun paiement effectué</p>
+          )}
         </CardContent>
       </Card>
     </div>

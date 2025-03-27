@@ -16,9 +16,10 @@ import MobileMoneyModal from './loan/MobileMoneyModal';
 
 export interface LoanDetailsPageProps {
   onBack?: () => void;
+  loanId?: string;
 }
 
-const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
+const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
@@ -38,6 +39,16 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
     disbursed: true,
     withdrawn: false
   });
+  const [loanDetails, setLoanDetails] = useState({
+    loanType: "Microcrédit",
+    loanPurpose: "Achat de matériel",
+    disbursalDate: "5 janvier 2023",
+    endDate: "5 juillet 2023",
+    interestRate: 2.5,
+    status: "actif",
+    disbursed: true,
+    withdrawn: false
+  });
   const { getActiveSfdData } = useSfdDataAccess();
   
   const handleBackAction = () => {
@@ -48,7 +59,117 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
     }
   };
   
+  // Fonction pour récupérer les détails du prêt depuis Supabase
+  const fetchLoanDetails = async () => {
+    try {
+      if (!loanId) return;
+      
+      const { data, error } = await supabase
+        .from('sfd_loans')
+        .select(`
+          id, 
+          amount, 
+          interest_rate, 
+          duration_months, 
+          monthly_payment,
+          purpose,
+          disbursed_at,
+          status,
+          next_payment_date,
+          last_payment_date,
+          sfd_id,
+          client_id
+        `)
+        .eq('id', loanId)
+        .single();
+        
+      if (error) throw error;
+      
+      if (data) {
+        // Mise à jour des détails du prêt
+        setLoanDetails({
+          loanType: data.purpose.includes('Micro') ? 'Microcrédit' : 'Prêt standard',
+          loanPurpose: data.purpose,
+          disbursalDate: new Date(data.disbursed_at || Date.now()).toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          endDate: new Date(new Date(data.disbursed_at || Date.now()).setMonth(
+            new Date(data.disbursed_at || Date.now()).getMonth() + data.duration_months
+          )).toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          interestRate: data.interest_rate,
+          status: data.status,
+          disbursed: !!data.disbursed_at,
+          withdrawn: data.status === 'withdrawn'
+        });
+        
+        // Récupération des paiements pour ce prêt
+        const { data: paymentsData, error: paymentsError } = await supabase
+          .from('loan_payments')
+          .select('*')
+          .eq('loan_id', loanId)
+          .order('payment_date', { ascending: false });
+          
+        if (paymentsError) throw paymentsError;
+        
+        // Calcul des montants payés et restants
+        const paidAmount = paymentsData?.reduce((total, payment) => total + payment.amount, 0) || 0;
+        const totalAmount = data.amount + (data.amount * data.interest_rate / 100);
+        const remainingAmount = totalAmount - paidAmount;
+        const progress = Math.min(100, Math.round((paidAmount / totalAmount) * 100));
+        
+        // Détermination des frais de retard
+        const now = new Date();
+        const nextPaymentDate = data.next_payment_date ? new Date(data.next_payment_date) : null;
+        const lateFees = (nextPaymentDate && nextPaymentDate < now) ? data.monthly_payment * 0.05 : 0;
+        
+        // Mise en forme de l'historique des paiements
+        const paymentHistory = paymentsData?.map((payment, index) => ({
+          id: index + 1,
+          date: new Date(payment.payment_date).toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+          }),
+          amount: payment.amount,
+          status: payment.status === 'completed' ? 'paid' : 'pending'
+        })) || [];
+        
+        // Mise à jour du statut du prêt
+        setLoanStatus({
+          nextPaymentDue: nextPaymentDate ? nextPaymentDate.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+          }) : 'Non défini',
+          paidAmount,
+          totalAmount,
+          remainingAmount,
+          progress,
+          lateFees,
+          paymentHistory,
+          disbursed: !!data.disbursed_at,
+          withdrawn: data.status === 'withdrawn'
+        });
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des détails du prêt:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer les détails du prêt",
+        variant: "destructive",
+      });
+    }
+  };
+  
   useEffect(() => {
+    fetchLoanDetails();
+    
     const setupRealtimeSubscription = async () => {
       const channel = supabase
         .channel('loan-status-changes')
@@ -81,23 +202,39 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
     };
     
     setupRealtimeSubscription();
-  }, [toast]);
+  }, [loanId, toast]);
 
   const handleMobileMoneyWithdrawal = async () => {
     try {
       setMobileMoneyInitiated(true);
       
-      // Simulating API call to MTN Mobile Money
+      // Connexion avec l'API de Mobile Money
       const activeSfd = await getActiveSfdData();
       
       if (!activeSfd) {
         throw new Error("Impossible de récupérer les données SFD");
       }
       
-      toast({
-        title: "Paiement Mobile Money initié",
-        description: "Vérifiez votre téléphone pour confirmer le paiement",
+      // Vérification des autorisations avec l'admin SFD
+      const { data, error } = await supabase.functions.invoke('mobile-money-authorization', {
+        body: {
+          sfdId: activeSfd.id,
+          loanId: loanId,
+          action: 'payment',
+          amount: loanStatus.remainingAmount > 0 ? loanStatus.remainingAmount : 0
+        }
       });
+      
+      if (error) throw error;
+      
+      if (data?.authorized) {
+        toast({
+          title: "Paiement Mobile Money initié",
+          description: "Vérifiez votre téléphone pour confirmer le paiement",
+        });
+      } else {
+        throw new Error("Paiement non autorisé par le SFD");
+      }
     } catch (error) {
       console.error('Mobile Money error:', error);
       toast({
@@ -115,6 +252,9 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
       });
       window.dispatchEvent(event);
     }
+    
+    // Redirection vers le processus administratif du prêt
+    navigate(`/mobile-flow/loan-process/${loanId}`);
   };
 
   return (
@@ -150,7 +290,18 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
           </TabsContent>
           
           <TabsContent value="details">
-            <LoanDetailsTab totalAmount={loanStatus.totalAmount} />
+            <LoanDetailsTab 
+              totalAmount={loanStatus.totalAmount}
+              loanType={loanDetails.loanType}
+              loanPurpose={loanDetails.loanPurpose}
+              disbursalDate={loanDetails.disbursalDate}
+              endDate={loanDetails.endDate}
+              interestRate={loanDetails.interestRate}
+              status={loanDetails.status}
+              disbursed={loanDetails.disbursed}
+              withdrawn={loanDetails.withdrawn}
+              onWithdraw={handleMobileMoneyWithdrawal}
+            />
           </TabsContent>
           
           <TabsContent value="repayment">

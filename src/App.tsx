@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import AuthProvider from './hooks/auth/AuthProvider';
@@ -12,6 +13,7 @@ import ClientsPage from './pages/ClientsPage';
 import LoansPage from './pages/LoansPage';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import LoanActivityPage from './components/mobile/LoanActivityPage';
+import LoanProcessPage from './components/mobile/LoanProcessPage';
 import Index from './pages/Index';
 import AgencyDashboard from './pages/AgencyDashboard';
 import CreditApprovalPage from './pages/CreditApprovalPage';
@@ -77,6 +79,11 @@ function App() {
           <Route 
             path="/mobile-flow/loan-activity"
             element={<ProtectedRoute component={LoanActivityPage} />}
+          />
+          
+          <Route 
+            path="/mobile-flow/loan-process/:loanId"
+            element={<ProtectedRoute component={LoanProcessPage} />}
           />
           
           {/* SFD Admin Routes */}
