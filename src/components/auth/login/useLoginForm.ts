@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -7,6 +6,8 @@ import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit
 
 export const useLoginForm = () => {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [authMode, setAuthMode] = useState<'simple' | 'advanced'>('simple');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,6 +42,10 @@ export const useLoginForm = () => {
     return 60; // Default cooldown
   };
 
+  const toggleShowPassword = () => {
+    setShowPassword(prev => !prev);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -59,43 +64,41 @@ export const useLoginForm = () => {
       setErrorMessage('Veuillez entrer une adresse e-mail valide.');
       return;
     }
-    
-    setIsLoading(true);
-    
-    if (authMode === 'advanced') {
-      setShowAuthDialog(true);
-      setIsLoading(false);
+
+    // Password validation
+    if (!password || password.length < 6) {
+      setErrorMessage('Veuillez entrer un mot de passe valide (minimum 6 caractères).');
       return;
     }
     
+    setIsLoading(true);
+    
     try {
-      // Use OTP authentication
-      await signIn(email);
+      // Use password authentication
+      await signIn(email, false);
       
       // Log successful authentication attempt
       await logAuditEvent({
-        action: "magic_link_login_attempt",
+        action: "password_login_attempt",
         category: AuditLogCategory.AUTHENTICATION,
         severity: AuditLogSeverity.INFO,
         status: 'success',
         details: { email }
       });
       
-      setEmailSent(true);
+      navigate('/mobile-flow');
       
       toast({
-        title: "Lien magique envoyé",
-        description: "Vérifiez votre e-mail pour le lien de connexion.",
+        title: "Connexion réussie",
+        description: "Vous êtes maintenant connecté.",
       });
-      
-      // We don't redirect automatically anymore - user needs to check their email
       
     } catch (error: any) {
       console.error("Login error:", error);
       
       // Log failed authentication attempt
       await logAuditEvent({
-        action: "magic_link_login_attempt",
+        action: "password_login_attempt",
         category: AuditLogCategory.AUTHENTICATION,
         severity: AuditLogSeverity.WARNING,
         status: 'failure',
@@ -139,6 +142,10 @@ export const useLoginForm = () => {
   return {
     email,
     setEmail,
+    password,
+    setPassword,
+    showPassword,
+    toggleShowPassword,
     authMode,
     showAuthDialog,
     setShowAuthDialog,
