@@ -5,17 +5,13 @@ import WelcomeScreen from '@/components/mobile/WelcomeScreen';
 import MainDashboard from '@/components/mobile/dashboard/MainDashboard';
 import PaymentTabContent from '@/components/mobile/PaymentTabContent';
 import ScheduleTransferTab from '@/components/mobile/ScheduleTransferTab';
-import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
+import { Button } from '@/components/ui/button';
 import SecurePaymentTab from '@/components/mobile/secure-payment';
 import HomeLoanPage from '@/components/mobile/HomeLoanPage';
 import LoanActivityPage from '@/components/mobile/LoanActivityPage';
 import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
 import LoanSetupPage from '@/components/mobile/LoanSetupPage';
 import LoanProcessFlow from '@/components/mobile/LoanProcessFlow';
-import { Button } from '@/components/ui/button';
-import SfdSetupPage from '@/pages/SfdSetupPage';
-import SfdClientsPage from '@/pages/SfdClientsPage';
-import NewClientPage from '@/pages/NewClientPage';
 
 interface MobileFlowRoutesProps {
   onAction: (action: string, data?: any) => void;
@@ -68,7 +64,6 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       <Route path="/schedule-transfer" element={
         <ScheduleTransferTab onBack={handleBack} />
       } />
-      <Route path="/funds-management" element={<FundsManagementPage />} />
       <Route path="/secure-payment" element={
         <SecurePaymentTab onBack={handleBack} />
       } />
@@ -81,11 +76,6 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       <Route path="/loan-process" element={
         <LoanProcessFlow onBack={handleBack} />
       } />
-      
-      {/* New routes for SFD account management */}
-      <Route path="/create-sfd" element={<SfdSetupPage />} />
-      <Route path="/clients" element={<SfdClientsPage />} />
-      <Route path="/client/new" element={<NewClientPage />} />
       
       <Route path="*" element={
         <div className="flex flex-col items-center justify-center h-screen">

@@ -14,8 +14,8 @@ export const useActionHandler = () => {
     
     if (action === 'Send' || action === 'Receive') {
       navigate('/mobile-flow/payment');
-    } else if (action === 'Float me cash' || action === 'Funds Management') {
-      navigate('/mobile-flow/funds-management');
+    } else if (action === 'Float me cash') {
+      navigate('/mobile-flow/secure-payment');
     } else if (action === 'Schedule transfer') {
       navigate('/mobile-flow/schedule-transfer');
     } else if (action.startsWith('Transfer to')) {
@@ -45,10 +45,6 @@ export const useActionHandler = () => {
       // You would handle setting repayment amount here if data contains amount
     } else if (action === 'Home') {
       navigate('/mobile-flow/main');
-    } else if (action === 'Manage SFD') {
-      navigate('/mobile-flow/create-sfd');
-    } else if (action === 'Manage Clients') {
-      navigate('/mobile-flow/clients');
     }
   };
 

@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { ArrowUpRight, ArrowDownLeft, CalendarClock, CreditCard, Wallet, Building, Users } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, CalendarClock, CreditCard, Wallet } from 'lucide-react';
 
 interface QuickActionProps {
   icon: React.ReactNode;
@@ -40,20 +41,6 @@ const QuickActionsCard: React.FC<{ onAction: (action: string, data?: any) => voi
           icon={<CalendarClock className="h-5 w-5" />}
           label="Programmer"
           onClick={() => onAction('Schedule transfer')}
-        />
-        <QuickAction
-          icon={<Building className="h-5 w-5" />}
-          label="Gérer SFD"
-          onClick={() => onAction('Manage SFD')}
-          bgColor="bg-purple-50"
-          iconColor="text-purple-500"
-        />
-        <QuickAction
-          icon={<Users className="h-5 w-5" />}
-          label="Clients"
-          onClick={() => onAction('Manage Clients')}
-          bgColor="bg-cyan-50"
-          iconColor="text-cyan-500"
         />
         {loanId ? (
           <QuickAction
