@@ -7,10 +7,12 @@ export const transactionService = {
   // Récupérer les transactions d'un utilisateur
   async getUserTransactions(userId: string, sfdId: string, filters?: TransactionFilters): Promise<Transaction[]> {
     try {
+      // Cast to any to avoid type recursion issues with the query builder
       let query = supabase
         .from('transactions')
-        .select('*')
-        .eq('user_id', userId);
+        .select('*') as any;
+      
+      query = query.eq('user_id', userId);
       
       if (sfdId) {
         query = query.eq('sfd_id', sfdId);
@@ -20,9 +22,9 @@ export const transactionService = {
         if (filters.type) {
           if (Array.isArray(filters.type)) {
             // Handle array of transaction types using in() operator
-            // Use type assertion to avoid excessive type instantiation
-            const typeArray = filters.type.slice(); // Create a copy with slice()
-            query = query.in('type', typeArray as string[]);
+            // Make a basic copy and cast to string[] to avoid excessive type instantiation
+            const typeArray = [...filters.type] as string[];
+            query = query.in('type', typeArray);
           } else {
             // Handle single transaction type
             query = query.eq('type', filters.type);
