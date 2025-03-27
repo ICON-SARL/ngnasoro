@@ -13,15 +13,18 @@ import {
 
 interface QRCodePaymentDialogProps {
   onClose: () => void;
+  amount?: number;
+  isWithdrawal?: boolean;
 }
 
-const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose }) => {
+const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose, amount, isWithdrawal }) => {
   return (
     <DialogContent className="sm:max-w-md">
       <DialogHeader>
         <DialogTitle>Paiement par QR Code</DialogTitle>
         <DialogDescription>
-          Scannez ce QR code en agence pour effectuer votre paiement.
+          Scannez ce QR code en agence pour {isWithdrawal ? 'effectuer votre retrait' : 'effectuer votre paiement'}.
+          {amount && <span className="font-semibold block mt-1">{amount.toLocaleString()} FCFA</span>}
         </DialogDescription>
       </DialogHeader>
       <div className="flex items-center justify-center py-6">

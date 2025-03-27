@@ -1,26 +1,36 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { PaymentMethodTabs } from './secure-payment/PaymentMethodTabs';
 import { SecurityFeatures } from './secure-payment/SecurityFeatures';
 import { ReconciliationSection } from './secure-payment/ReconciliationSection';
+import TabHeader from './secure-payment/TabHeader';
+import PaymentDetails from './secure-payment/PaymentDetails';
+import SuccessView from './secure-payment/SuccessView';
 import MobileMoneyModal from './loan/MobileMoneyModal';
-import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import QRCodePaymentDialog from './loan/QRCodePaymentDialog';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { usePaymentProcessor } from './secure-payment/hooks/usePaymentProcessor';
+import { useTransactions } from '@/hooks/useTransactions';
 
-interface SecurePaymentTabProps {
-  onBack: () => void;
+export interface SecurePaymentTabProps {
+  onBack?: () => void;
   isWithdrawal?: boolean;
   loanId?: string;
+  onComplete?: () => void;
 }
 
-const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ onBack, isWithdrawal = false, loanId }) => {
+const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ 
+  onBack, 
+  isWithdrawal = false, 
+  loanId,
+  onComplete
+}) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState('sfd');
   const [balanceStatus, setBalanceStatus] = useState<'sufficient' | 'insufficient'>('sufficient');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed' | null>(null);
@@ -28,6 +38,9 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ onBack, isWithdrawa
   const [progress, setProgress] = useState(0);
   const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  
+  // Définir les montants de transaction par défaut
+  const amount = isWithdrawal ? 25000 : loanId ? 3500 : 10000;
   
   // Simulate automatic detection of the main SFD account
   useEffect(() => {
@@ -80,7 +93,6 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ onBack, isWithdrawa
       return;
     }
     
-    const amount = isWithdrawal ? 25000 : 3500;
     const method = paymentMethod === 'mobile' ? 'mobile_money' : 'agency_qr';
     
     // Validate repayment data
@@ -172,19 +184,17 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ onBack, isWithdrawa
     setMobileMoneyInitiated(true);
   };
   
-  const amount = isWithdrawal ? 25000 : 3500;
+  const handleBackAction = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate(-1);
+    }
+  };
   
   return (
     <div className="bg-white h-full pb-24">
-      <div className="p-4 flex items-center justify-between border-b">
-        <Button variant="ghost" onClick={onBack} className="p-1">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-lg font-bold">
-          {isWithdrawal ? "Retrait de fonds" : "Remboursement de prêt"}
-        </h1>
-        <div className="w-5"></div>
-      </div>
+      <TabHeader onBack={handleBackAction} isWithdrawal={isWithdrawal} />
       
       {paymentSuccess ? (
         <div className="p-6 flex flex-col items-center justify-center text-center">
@@ -296,7 +306,11 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ onBack, isWithdrawa
       
       <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
         <DialogTrigger className="hidden">Open QR Dialog</DialogTrigger>
-        <QRCodePaymentDialog onClose={() => setQrDialogOpen(false)} amount={amount} isWithdrawal={isWithdrawal} />
+        <QRCodePaymentDialog 
+          onClose={() => setQrDialogOpen(false)} 
+          amount={amount} 
+          isWithdrawal={isWithdrawal} 
+        />
       </Dialog>
     </div>
   );

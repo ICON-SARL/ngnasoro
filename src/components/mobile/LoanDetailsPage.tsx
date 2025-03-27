@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ActivitySquare } from 'lucide-react';
@@ -32,9 +31,9 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => 
     progress: 40,
     lateFees: 0,
     paymentHistory: [
-      { id: 1, date: '05 August 2023', amount: 3.50, status: 'paid' },
-      { id: 2, date: '05 July 2023', amount: 3.50, status: 'paid' },
-      { id: 3, date: '05 June 2023', amount: 3.50, status: 'paid' }
+      { id: 1, date: '05 August 2023', amount: 3.50, status: 'paid' as 'paid' },
+      { id: 2, date: '05 July 2023', amount: 3.50, status: 'paid' as 'paid' },
+      { id: 3, date: '05 June 2023', amount: 3.50, status: 'paid' as 'paid' }
     ],
     disbursed: true,
     withdrawn: false
@@ -59,7 +58,6 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => 
     }
   };
   
-  // Fonction pour récupérer les détails du prêt depuis Supabase
   const fetchLoanDetails = async () => {
     try {
       if (!loanId) return;
@@ -86,7 +84,6 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => 
       if (error) throw error;
       
       if (data) {
-        // Mise à jour des détails du prêt
         setLoanDetails({
           loanType: data.purpose.includes('Micro') ? 'Microcrédit' : 'Prêt standard',
           loanPurpose: data.purpose,
@@ -108,7 +105,6 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => 
           withdrawn: data.status === 'withdrawn'
         });
         
-        // Récupération des paiements pour ce prêt
         const { data: paymentsData, error: paymentsError } = await supabase
           .from('loan_payments')
           .select('*')
@@ -117,30 +113,32 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => 
           
         if (paymentsError) throw paymentsError;
         
-        // Calcul des montants payés et restants
         const paidAmount = paymentsData?.reduce((total, payment) => total + payment.amount, 0) || 0;
         const totalAmount = data.amount + (data.amount * data.interest_rate / 100);
         const remainingAmount = totalAmount - paidAmount;
         const progress = Math.min(100, Math.round((paidAmount / totalAmount) * 100));
         
-        // Détermination des frais de retard
         const now = new Date();
         const nextPaymentDate = data.next_payment_date ? new Date(data.next_payment_date) : null;
         const lateFees = (nextPaymentDate && nextPaymentDate < now) ? data.monthly_payment * 0.05 : 0;
         
-        // Mise en forme de l'historique des paiements
-        const paymentHistory = paymentsData?.map((payment, index) => ({
-          id: index + 1,
-          date: new Date(payment.payment_date).toLocaleDateString('fr-FR', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric'
-          }),
-          amount: payment.amount,
-          status: payment.status === 'completed' ? 'paid' : 'pending'
-        })) || [];
+        const paymentHistory = paymentsData?.map((payment, index) => {
+          let status: 'paid' | 'pending' | 'late' = 'pending';
+          if (payment.status === 'completed') status = 'paid';
+          else if (payment.status === 'late') status = 'late';
+          
+          return {
+            id: index + 1,
+            date: new Date(payment.payment_date).toLocaleDateString('fr-FR', {
+              day: '2-digit',
+              month: 'long',
+              year: 'numeric'
+            }),
+            amount: payment.amount,
+            status
+          };
+        }) || [];
         
-        // Mise à jour du statut du prêt
         setLoanStatus({
           nextPaymentDue: nextPaymentDate ? nextPaymentDate.toLocaleDateString('fr-FR', {
             day: '2-digit',
@@ -208,14 +206,12 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => 
     try {
       setMobileMoneyInitiated(true);
       
-      // Connexion avec l'API de Mobile Money
       const activeSfd = await getActiveSfdData();
       
       if (!activeSfd) {
         throw new Error("Impossible de récupérer les données SFD");
       }
       
-      // Vérification des autorisations avec l'admin SFD
       const { data, error } = await supabase.functions.invoke('mobile-money-authorization', {
         body: {
           sfdId: activeSfd.id,
@@ -253,7 +249,6 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => 
       window.dispatchEvent(event);
     }
     
-    // Redirection vers le processus administratif du prêt
     navigate(`/mobile-flow/loan-process/${loanId}`);
   };
 
