@@ -4,7 +4,7 @@ import { Download, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useMobileMoneyOperations } from '@/hooks/useMobileMoneyOperations';
 
 interface QRCodePaymentDialogProps {
   onClose: () => void;
@@ -14,6 +14,7 @@ interface QRCodePaymentDialogProps {
 
 const QRCodePaymentDialog = ({ onClose, amount = 3500, isWithdrawal = false }: QRCodePaymentDialogProps) => {
   const { toast } = useToast();
+  const { isProcessing, generatePaymentQRCode, generateWithdrawalQRCode } = useMobileMoneyOperations();
   const [qrGenerated, setQrGenerated] = useState(false);
   const [qrExpiry, setQrExpiry] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState('');
@@ -44,48 +45,26 @@ const QRCodePaymentDialog = ({ onClose, amount = 3500, isWithdrawal = false }: Q
 
   const handleGenerateQrCode = async () => {
     try {
-      // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const generateFunction = isWithdrawal ? generateWithdrawalQRCode : generatePaymentQRCode;
+      const result = await generateFunction(amount);
       
-      if (!user) {
+      if (result.success && result.qrCode) {
+        const expiryDate = new Date(result.qrCode.expiresAt);
+        setQrExpiry(expiryDate);
+        setQrGenerated(true);
+        setQrCode(result.qrCode.code);
+        
         toast({
-          title: "Erreur d'authentification",
-          description: "Veuillez vous connecter pour générer un QR code",
-          variant: "destructive",
+          title: "QR Code généré",
+          description: "Ce code est valable pendant 15 minutes. Présentez-le à l'agent SFD pour effectuer votre opération.",
         });
-        return;
-      }
-      
-      // Call the Edge Function to generate a QR code
-      const { data, error } = await supabase.functions.invoke('qr-code-verification/generate', {
-        method: 'POST',
-        body: {
-          userId: user.id,
-          loanId: "LOAN123", // Placeholder - would be real loan ID in production
-          amount: amount,
-          isWithdrawal: isWithdrawal
-        },
-      });
-      
-      if (error) {
-        console.error('QR Code generation error:', error);
+      } else {
         toast({
           title: "Erreur",
           description: "Impossible de générer le QR code",
           variant: "destructive",
         });
-        return;
       }
-      
-      const expiryDate = new Date(data.expiresAt);
-      setQrExpiry(expiryDate);
-      setQrGenerated(true);
-      setQrCode(data.code);
-      
-      toast({
-        title: "QR Code généré",
-        description: "Ce code est valable pendant 15 minutes. Présentez-le à l'agent SFD pour effectuer votre opération.",
-      });
     } catch (error) {
       console.error('Error generating QR code:', error);
       toast({
@@ -112,8 +91,12 @@ const QRCodePaymentDialog = ({ onClose, amount = 3500, isWithdrawal = false }: Q
                 : "Générez un QR code unique que vous présenterez à l'agent SFD pour effectuer votre paiement."
               } Le code est valable 15 minutes.
             </p>
-            <Button onClick={handleGenerateQrCode} className="w-full">
-              Générer le QR code
+            <Button 
+              onClick={handleGenerateQrCode} 
+              className="w-full"
+              disabled={isProcessing}
+            >
+              {isProcessing ? "Génération..." : "Générer le QR code"}
             </Button>
           </>
         ) : (

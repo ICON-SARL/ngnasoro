@@ -5,19 +5,47 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { RotateCw, Smartphone } from 'lucide-react';
+import { useMobileMoneyOperations } from '@/hooks/useMobileMoneyOperations';
+import { useAuth } from '@/hooks/useAuth';
 
 interface MobileMoneyTabProps {
   paymentStatus: 'pending' | 'success' | 'failed' | null;
   handlePayment: () => void;
   isWithdrawal?: boolean;
+  amount?: number;
 }
 
 export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({ 
   paymentStatus, 
   handlePayment,
-  isWithdrawal = false
+  isWithdrawal = false,
+  amount = isWithdrawal ? 25000 : 3500
 }) => {
   const [selected, setSelected] = useState("orange");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const { user } = useAuth();
+  const { isProcessing, processMobileMoneyPayment, processMobileMoneyWithdrawal } = useMobileMoneyOperations();
+  
+  const handleMobileMoneyTransaction = async () => {
+    if (!phoneNumber) {
+      return;
+    }
+    
+    try {
+      const provider = selected as "orange" | "mtn" | "wave";
+      
+      if (isWithdrawal) {
+        await processMobileMoneyWithdrawal(phoneNumber, amount, provider);
+      } else {
+        await processMobileMoneyPayment(phoneNumber, amount, provider);
+      }
+      
+      // Call the parent component's handler
+      handlePayment();
+    } catch (error) {
+      console.error('Mobile money transaction error:', error);
+    }
+  };
   
   return (
     <>
@@ -63,7 +91,12 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
         
         <div>
           <Label htmlFor="phone">Numéro de téléphone</Label>
-          <Input id="phone" placeholder="+223 XX XX XX XX" />
+          <Input 
+            id="phone" 
+            placeholder="+223 XX XX XX XX" 
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+          />
           <div className="mt-1 text-xs text-muted-foreground">
             {isWithdrawal ? 
               "Le montant sera envoyé à ce numéro" : 
@@ -74,7 +107,7 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
         
         <div>
           <Label>Montant</Label>
-          <Input type="text" value={isWithdrawal ? "25 000 FCFA" : "3 500 FCFA"} readOnly />
+          <Input type="text" value={`${amount.toLocaleString()} FCFA`} readOnly />
           <div className="flex items-center mt-1 text-xs text-green-600">
             <Smartphone className="h-3 w-3 mr-1" />
             {isWithdrawal ? 
@@ -84,7 +117,7 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
           </div>
         </div>
         
-        {paymentStatus === 'pending' ? (
+        {paymentStatus === 'pending' || isProcessing ? (
           <Button disabled className="w-full">
             <RotateCw className="mr-2 h-4 w-4 animate-spin" />
             Traitement en cours...
@@ -92,7 +125,8 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
         ) : (
           <Button 
             className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-            onClick={handlePayment}
+            onClick={handleMobileMoneyTransaction}
+            disabled={!phoneNumber}
           >
             {isWithdrawal ? "Retirer maintenant" : "Rembourser maintenant"}
           </Button>
