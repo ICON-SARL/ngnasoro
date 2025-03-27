@@ -9,7 +9,7 @@ import MobileHeader from '@/components/mobile/MobileHeader';
 import ContextualHeader from '@/components/mobile/ContextualHeader';
 import TransactionList from '@/components/mobile/TransactionList';
 import PaymentTabContent from '@/components/mobile/PaymentTabContent';
-import SecurePaymentTab from '@/components/mobile/SecurePaymentTab';
+import SecurePaymentTab from '@/components/mobile/secure-payment';
 import ScheduleTransferTab from '@/components/mobile/ScheduleTransferTab';
 import InstantLoanPage from '@/components/mobile/InstantLoanPage';
 import LoanActivityPage from '@/components/mobile/LoanActivityPage';
