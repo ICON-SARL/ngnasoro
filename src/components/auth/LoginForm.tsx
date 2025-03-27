@@ -1,13 +1,14 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, Lock, Shield } from 'lucide-react';
+import { Mail, Lock, Shield, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import AuthenticationSystem from '@/components/AuthenticationSystem';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -15,12 +16,53 @@ const LoginForm = () => {
   const [authMode, setAuthMode] = useState<'simple' | 'advanced'>('simple');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [cooldownActive, setCooldownActive] = useState(false);
+  const [cooldownTime, setCooldownTime] = useState(0);
   const { signIn } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Handle cooldown timer
+  useEffect(() => {
+    if (cooldownTime <= 0) {
+      setCooldownActive(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCooldownTime(prev => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [cooldownTime]);
+
+  const extractCooldownTime = (errorMessage: string): number => {
+    const match = errorMessage.match(/after (\d+) seconds/);
+    if (match && match[1]) {
+      return parseInt(match[1], 10);
+    }
+    return 60; // Default cooldown
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear previous errors
+    setErrorMessage(null);
+    
+    // Don't allow login during cooldown
+    if (cooldownActive) {
+      setErrorMessage(`Veuillez attendre ${cooldownTime} secondes avant de réessayer.`);
+      return;
+    }
+
+    // Email validation
+    if (!email || !email.includes('@')) {
+      setErrorMessage('Veuillez entrer une adresse e-mail valide.');
+      return;
+    }
+    
     setIsLoading(true);
     
     if (authMode === 'advanced') {
@@ -43,11 +85,21 @@ const LoginForm = () => {
       }, 3000);
     } catch (error: any) {
       console.error("Login error:", error);
-      toast({
-        title: "Erreur de connexion",
-        description: error.message || "Une erreur s'est produite lors de la connexion.",
-        variant: "destructive",
-      });
+      
+      // Check for rate limiting errors
+      if (error.message && error.message.includes('security purposes') && error.message.includes('seconds')) {
+        const waitTime = extractCooldownTime(error.message);
+        setCooldownTime(waitTime);
+        setCooldownActive(true);
+        setErrorMessage(`Limite de tentatives atteinte. Veuillez attendre ${waitTime} secondes avant de réessayer.`);
+      } else {
+        setErrorMessage(error.message || "Une erreur s'est produite lors de la connexion.");
+        toast({
+          title: "Erreur de connexion",
+          description: error.message || "Une erreur s'est produite lors de la connexion.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -64,10 +116,29 @@ const LoginForm = () => {
 
   const toggleAuthMode = () => {
     setAuthMode(prev => prev === 'simple' ? 'advanced' : 'simple');
+    setErrorMessage(null);
   };
 
   return (
     <>
+      {errorMessage && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erreur</AlertTitle>
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
+
+      {cooldownActive && (
+        <Alert className="mb-4 bg-amber-50 border-amber-200">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-800">Délai d'attente</AlertTitle>
+          <AlertDescription className="text-amber-700">
+            Vous pourrez réessayer dans {cooldownTime} secondes
+          </AlertDescription>
+        </Alert>
+      )}
+
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium mb-1">
@@ -83,6 +154,7 @@ const LoginForm = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={isLoading || cooldownActive}
             />
           </div>
         </div>
@@ -97,6 +169,7 @@ const LoginForm = () => {
               className="p-0 h-auto text-primary" 
               type="button"
               onClick={toggleAuthMode}
+              disabled={isLoading || cooldownActive}
             >
               Méthode avancée
             </Button>
@@ -114,6 +187,7 @@ const LoginForm = () => {
               className="p-0 h-auto text-muted-foreground" 
               type="button"
               onClick={toggleAuthMode}
+              disabled={isLoading}
             >
               Méthode simple
             </Button>
@@ -123,7 +197,7 @@ const LoginForm = () => {
         <Button 
           type="submit" 
           className="w-full"
-          disabled={isLoading}
+          disabled={isLoading || cooldownActive}
         >
           {isLoading ? 'Chargement...' : (authMode === 'simple' ? 'Se connecter' : 'Authentification sécurisée')}
         </Button>

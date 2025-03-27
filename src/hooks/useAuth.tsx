@@ -55,7 +55,6 @@ export interface User {
     [key: string]: any;
   };
   phone?: string;
-  // Making app_metadata required as in Supabase's User type
   app_metadata: {
     role?: string;
     [key: string]: any;
@@ -75,46 +74,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const fetchSession = async () => {
       setIsLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // Set session first to avoid race conditions
+        setSession(session);
 
-      if (session?.user) {
-        // Check if user has admin role
-        const isAdminUser = session.user.app_metadata?.role === 'admin';
-        setIsAdmin(isAdminUser);
+        if (session?.user) {
+          // Check if user has admin role
+          const isAdminUser = session.user.app_metadata?.role === 'admin';
+          setIsAdmin(isAdminUser);
 
-        const userBiometricEnabled = 
-          session.user.user_metadata.biometric_enabled as boolean || false;
-        setBiometricEnabled(userBiometricEnabled);
+          const userBiometricEnabled = 
+            session.user.user_metadata.biometric_enabled as boolean || false;
+          setBiometricEnabled(userBiometricEnabled);
 
-        setUser({
-          id: session.user.id,
-          email: session.user.email ?? '',
-          full_name: session.user.user_metadata.full_name as string,
-          avatar_url: session.user.user_metadata.avatar_url as string,
-          sfd_id: session.user.user_metadata.sfd_id as string,
-          user_metadata: session.user.user_metadata || {},
-          phone: session.user.user_metadata.phone as string,
-          app_metadata: session.user.app_metadata || {},
-          aud: session.user.aud || '',
-          created_at: session.user.created_at || '',
-        });
+          setUser({
+            id: session.user.id,
+            email: session.user.email ?? '',
+            full_name: session.user.user_metadata.full_name as string,
+            avatar_url: session.user.user_metadata.avatar_url as string,
+            sfd_id: session.user.user_metadata.sfd_id as string,
+            user_metadata: session.user.user_metadata || {},
+            phone: session.user.user_metadata.phone as string,
+            app_metadata: session.user.app_metadata || {},
+            aud: session.user.aud || '',
+            created_at: session.user.created_at || '',
+          });
 
-        // Set active SFD ID if available
-        if (session.user.user_metadata.sfd_id) {
-          setActiveSfdId(session.user.user_metadata.sfd_id as string);
+          // Set active SFD ID if available
+          if (session.user.user_metadata.sfd_id) {
+            setActiveSfdId(session.user.user_metadata.sfd_id as string);
+          }
+        } else {
+          setUser(null);
+          setActiveSfdId(null);
         }
-      } else {
+      } catch (error) {
+        console.error("Error fetching session:", error);
         setUser(null);
-        setActiveSfdId(null);
+        setSession(null);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     fetchSession();
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      
       if (session?.user) {
         // Check if user has admin role
         const isAdminUser = session.user.app_metadata?.role === 'admin';
@@ -146,12 +156,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setActiveSfdId(null);
       }
     });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, useOtp: boolean = true) => {
     try {
       if (useOtp) {
-        const { error } = await supabase.auth.signInWithOtp({ email });
+        const { error } = await supabase.auth.signInWithOtp({ 
+          email,
+          options: {
+            // This ensures we always get a fresh email
+            emailRedirectTo: window.location.origin + '/auth'
+          }
+        });
         if (error) throw error;
         return;
       }
@@ -177,12 +197,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             full_name: fullName,
           },
+          emailRedirectTo: window.location.origin + '/auth'
         },
       });
       
       if (error) throw error;
       
-      alert('Please check your email to verify your account.');
+      alert('Veuillez vérifier votre e-mail pour confirmer votre compte.');
     } catch (error: any) {
       alert(error.error_description || error.message);
     }
