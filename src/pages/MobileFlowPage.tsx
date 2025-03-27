@@ -11,6 +11,8 @@ import { Account } from '@/types/transactions';
 import MobileNavigation from '@/components/MobileNavigation';
 import { useActionHandler } from '@/utils/actionHandler';
 import MultiSfdAccounts from '@/components/MultiSFDAccounts';
+import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
+import LoanApplicationFlow from '@/components/LoanApplicationFlow';
 
 const MobileFlowPage: React.FC = () => {
   const location = useLocation();
@@ -47,7 +49,11 @@ const MobileFlowPage: React.FC = () => {
   
   // Rediriger les chemins inconnus vers le dashboard
   useEffect(() => {
-    const validPaths = ['main', 'profile', 'create-sfd', 'secure-payment', 'funds-management', 'loan-application', 'multi-sfd'];
+    const validPaths = [
+      'main', 'profile', 'create-sfd', 'secure-payment', 
+      'funds-management', 'loan-application', 'multi-sfd',
+      'loan-details', 'savings', 'transactions', 'support', 'clients'
+    ];
     if (!validPaths.includes(subPath)) {
       console.log(`Redirecting from unknown path: ${subPath} to main dashboard`);
       navigate('/mobile-flow/main');
@@ -112,6 +118,12 @@ const MobileFlowPage: React.FC = () => {
         return <SecurePaymentTab onBack={() => navigate(-1)} />;
       case 'multi-sfd':
         return <MultiSfdAccounts />;
+      case 'loan-details':
+        return <LoanDetailsPage onBack={() => navigate(-1)} />;
+      case 'loan-application':
+        return <LoanApplicationFlow />;
+      // You can add other case handlers for 'savings', 'transactions', 'support', 'clients'
+      // For now, we'll redirect to the main dashboard for these paths
       default:
         return (
           <MainDashboard 

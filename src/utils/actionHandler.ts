@@ -52,6 +52,16 @@ export const useActionHandler = () => {
         navigate('/mobile-flow/main');
       } else if (action === 'View All SFDs') {
         navigate('/mobile-flow/multi-sfd');
+      } else if (action === 'Transactions') {
+        navigate('/mobile-flow/transactions');
+      } else if (action === 'Savings') {
+        navigate('/mobile-flow/savings');
+      } else if (action === 'Profile') {
+        navigate('/mobile-flow/profile');
+      } else if (action === 'Support') {
+        navigate('/mobile-flow/support');
+      } else if (action === 'Clients') {
+        navigate('/mobile-flow/clients');
       }
     } catch (error) {
       console.error('Error handling action:', error);

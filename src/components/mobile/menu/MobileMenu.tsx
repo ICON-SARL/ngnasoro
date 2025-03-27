@@ -10,7 +10,11 @@ import {
   HelpCircle, 
   Settings,
   User,
-  Shield
+  Shield,
+  Users,
+  CreditCard,
+  PiggyBank,
+  BarChart
 } from 'lucide-react';
 
 interface MobileMenuProps {
@@ -48,6 +52,9 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen = false, onClose = () =>
             <Button variant="ghost" className="justify-start" onClick={() => navigateAndClose('/mobile-flow/multi-sfd')}>
               <Building className="h-5 w-5 mr-2 text-[#0D6A51]" /> Tous mes comptes SFD
             </Button>
+            <Button variant="ghost" className="justify-start" onClick={() => navigateAndClose('/mobile-flow/clients')}>
+              <Users className="h-5 w-5 mr-2 text-[#0D6A51]" /> Clients SFD
+            </Button>
           </div>
           
           <div className="flex flex-col space-y-1">
@@ -61,6 +68,15 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen = false, onClose = () =>
             <Button variant="ghost" className="justify-start" onClick={() => navigateAndClose('/mobile-flow/secure-payment')}>
               <Shield className="h-5 w-5 mr-2 text-[#FFAB2E]" /> Remboursement
             </Button>
+            <Button variant="ghost" className="justify-start" onClick={() => navigateAndClose('/mobile-flow/loan-details')}>
+              <CreditCard className="h-5 w-5 mr-2 text-[#FFAB2E]" /> Détails des prêts
+            </Button>
+            <Button variant="ghost" className="justify-start" onClick={() => navigateAndClose('/mobile-flow/savings')}>
+              <PiggyBank className="h-5 w-5 mr-2 text-[#FFAB2E]" /> Historique épargne
+            </Button>
+            <Button variant="ghost" className="justify-start" onClick={() => navigateAndClose('/mobile-flow/transactions')}>
+              <BarChart className="h-5 w-5 mr-2 text-[#FFAB2E]" /> Transactions
+            </Button>
           </div>
 
           <div className="flex flex-col space-y-1 border-t border-gray-200 pt-4 mt-4">
@@ -68,7 +84,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen = false, onClose = () =>
             <Button variant="ghost" className="justify-start" onClick={() => navigateAndClose('/mobile-flow/profile')}>
               <User className="h-5 w-5 mr-2 text-[#0D6A51]" /> Mon profil
             </Button>
-            <Button variant="ghost" className="justify-start">
+            <Button variant="ghost" className="justify-start" onClick={() => navigateAndClose('/mobile-flow/support')}>
               <HelpCircle className="h-5 w-5 mr-2 text-[#0D6A51]" /> Assistance
             </Button>
             <Button 
