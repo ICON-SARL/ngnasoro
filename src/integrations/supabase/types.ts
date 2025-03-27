@@ -14,6 +14,7 @@ export type Database = {
           balance: number | null
           currency: string | null
           id: string
+          last_updated: string | null
           updated_at: string | null
           user_id: string
         }
@@ -21,6 +22,7 @@ export type Database = {
           balance?: number | null
           currency?: string | null
           id?: string
+          last_updated?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -28,6 +30,7 @@ export type Database = {
           balance?: number | null
           currency?: string | null
           id?: string
+          last_updated?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -500,14 +503,43 @@ export type Database = {
           },
         ]
       }
+      transaction_types: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
           avatar_url: string | null
           created_at: string | null
           date: string | null
+          description: string | null
           id: string
           name: string
+          payment_method: string | null
+          reference_id: string | null
+          sfd_id: string | null
+          status: string | null
           type: string
           user_id: string
         }
@@ -516,8 +548,13 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           date?: string | null
+          description?: string | null
           id?: string
           name: string
+          payment_method?: string | null
+          reference_id?: string | null
+          sfd_id?: string | null
+          status?: string | null
           type: string
           user_id: string
         }
@@ -526,8 +563,13 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           date?: string | null
+          description?: string | null
           id?: string
           name?: string
+          payment_method?: string | null
+          reference_id?: string | null
+          sfd_id?: string | null
+          status?: string | null
           type?: string
           user_id?: string
         }

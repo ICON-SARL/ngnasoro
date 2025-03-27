@@ -13,20 +13,23 @@ import SuccessView from './SuccessView';
 import MobileMoneyModal from '../loan/MobileMoneyModal';
 import QRCodePaymentDialog from '../loan/QRCodePaymentDialog';
 import { usePaymentProcessor } from './hooks/usePaymentProcessor';
+import { useTransactions } from '@/hooks/useTransactions';
 
 interface SecurePaymentTabProps {
   onBack: () => void;
   isWithdrawal?: boolean;
   loanId?: string;
+  onComplete?: () => void;
 }
 
 const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ 
   onBack, 
   isWithdrawal = false, 
-  loanId 
+  loanId,
+  onComplete
 }) => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, activeSfdId } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState('sfd');
   const [balanceStatus, setBalanceStatus] = useState<'sufficient' | 'insufficient'>('sufficient');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed' | null>(null);
@@ -35,24 +38,82 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   
-  const { handlePayment, validateRepayment } = usePaymentProcessor({
-    paymentMethod,
-    setQrDialogOpen,
-    setPaymentStatus,
-    setProgress,
-    toast,
-    user,
-    setPaymentSuccess,
-    isWithdrawal,
-    loanId
-  });
+  const { 
+    makeDeposit, 
+    makeWithdrawal,
+    makeLoanRepayment
+  } = useTransactions(user?.id, activeSfdId);
   
-  // Simulate automatic detection of the main SFD account
+  // Définir les montants de transaction par défaut
+  const amount = isWithdrawal ? 25000 : loanId ? 3500 : 10000;
+  
+  // Gérer le paiement en fonction du type d'opération
+  const handlePayment = async () => {
+    if (!user || !activeSfdId) {
+      toast({
+        title: "Erreur",
+        description: "Utilisateur ou SFD non défini",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setPaymentStatus('pending');
+    setProgress(10);
+    
+    setTimeout(() => setProgress(30), 500);
+    setTimeout(() => setProgress(60), 1000);
+    
+    try {
+      let result;
+      
+      if (isWithdrawal) {
+        // Cas d'un retrait
+        result = await makeWithdrawal(amount, `Retrait via ${paymentMethod}`);
+      } else if (loanId) {
+        // Cas d'un remboursement de prêt
+        result = await makeLoanRepayment(loanId, amount, `Remboursement de prêt via ${paymentMethod}`);
+      } else {
+        // Cas d'un dépôt
+        result = await makeDeposit(amount, `Dépôt via ${paymentMethod}`);
+      }
+      
+      setTimeout(() => setProgress(100), 1500);
+      
+      if (result) {
+        setTimeout(() => {
+          setPaymentStatus('success');
+          setPaymentSuccess(true);
+          if (onComplete) {
+            onComplete();
+          }
+        }, 2000);
+      } else {
+        setTimeout(() => {
+          setPaymentStatus('failed');
+          toast({
+            title: "Erreur",
+            description: "La transaction a échoué. Veuillez réessayer.",
+            variant: "destructive",
+          });
+        }, 2000);
+      }
+    } catch (error: any) {
+      setPaymentStatus('failed');
+      toast({
+        title: "Erreur",
+        description: error.message || "La transaction a échoué. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Détecter automatiquement le solde suffisant
   useEffect(() => {
     const detectPrimaryAccount = () => {
-      // Simulate an API check for balance
+      // Simuler une vérification de solde
       const randomBalance = Math.random();
-      if (randomBalance < 0.3) {
+      if (isWithdrawal && randomBalance < 0.3) {
         setBalanceStatus('insufficient');
         setPaymentMethod('mobile');
         toast({
@@ -67,13 +128,11 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     };
     
     detectPrimaryAccount();
-  }, [toast]);
+  }, [toast, isWithdrawal]);
   
   const handleMobileMoneyPayment = () => {
     setMobileMoneyInitiated(true);
   };
-  
-  const amount = isWithdrawal ? 25000 : 3500;
   
   return (
     <div className="bg-white h-full pb-24">
@@ -105,7 +164,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
           
           <SecurityFeatures isWithdrawal={isWithdrawal} />
           
-          {!isWithdrawal && <ReconciliationSection />}
+          {!isWithdrawal && !loanId && <ReconciliationSection />}
         </div>
       )}
       

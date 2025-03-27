@@ -1,21 +1,36 @@
 
 import React from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface FundsHeaderProps {
   onBack: () => void;
+  onRefresh?: () => void;
 }
 
-const FundsHeader: React.FC<FundsHeaderProps> = ({ onBack }) => {
+const FundsHeader: React.FC<FundsHeaderProps> = ({ onBack, onRefresh }) => {
   return (
-    <div className="bg-gradient-to-r from-[#0D6A51] to-[#0D6A51]/90 text-white p-4">
-      <div className="flex items-center mb-2">
-        <Button variant="ghost" className="p-1 text-white" onClick={onBack}>
-          <ArrowLeft className="h-6 w-6" />
+    <div className="bg-white pt-4 px-4 flex items-center justify-between">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={onBack}
+        className="h-10 w-10"
+      >
+        <ArrowLeft className="h-6 w-6" />
+      </Button>
+      <h1 className="text-xl font-semibold">Gestion des Fonds</h1>
+      {onRefresh && (
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onRefresh}
+          className="h-10 w-10"
+        >
+          <RefreshCw className="h-5 w-5" />
         </Button>
-        <h1 className="text-lg font-bold ml-2">Gestion des Fonds</h1>
-      </div>
+      )}
+      {!onRefresh && <div className="w-10"></div>}
     </div>
   );
 };
