@@ -26,7 +26,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   const { dashboardData, isLoading: dashboardLoading, refreshDashboardData } = useMobileDashboard();
   
   return (
-    <div className="space-y-4 pb-20">
+    <div className="space-y-4 pb-24">
       <div className="bg-gradient-to-b from-[#0D6A51] to-[#0D6A51]/90 text-white p-4 rounded-b-3xl shadow-md relative">
         <div className="absolute top-4 right-4">
           <Button variant="ghost" size="sm" className="text-white p-1 hover:bg-white/10" onClick={toggleMenu}>

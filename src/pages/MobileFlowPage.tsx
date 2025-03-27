@@ -10,12 +10,14 @@ import { useAuth } from '@/hooks/auth';
 import SecurePaymentTab from '@/components/mobile/secure-payment';
 import { Account } from '@/types/transactions';
 import MobileNavigation from '@/components/MobileNavigation';
+import { useActionHandler } from '@/utils/actionHandler';
 
 const MobileFlowPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { handleAction } = useActionHandler();
   
   // Cette fonction extrait le sous-chemin du path /mobile-flow/X
   const getSubPath = () => {
@@ -45,7 +47,7 @@ const MobileFlowPage: React.FC = () => {
   
   // Rediriger les chemins inconnus vers le dashboard
   useEffect(() => {
-    const validPaths = ['main', 'profile', 'create-sfd', 'secure-payment', 'sfd-clients'];
+    const validPaths = ['main', 'profile', 'create-sfd', 'secure-payment', 'sfd-clients', 'funds-management', 'loan-application'];
     if (!validPaths.includes(subPath)) {
       console.log(`Redirecting from unknown path: ${subPath} to main dashboard`);
       navigate('/mobile-flow/main');
@@ -77,14 +79,6 @@ const MobileFlowPage: React.FC = () => {
     navigate('/auth');
   };
   
-  // Mock action handler
-  const handleAction = (action: string, data?: any) => {
-    console.log('Action:', action, data);
-    if (action === 'Loans') {
-      navigate('/mobile-flow/secure-payment');
-    }
-  };
-  
   // Si chargement en cours ou user null, montrer un loader
   if (isLoading || !user) {
     return (
@@ -94,12 +88,16 @@ const MobileFlowPage: React.FC = () => {
     );
   }
   
+  const onAction = (action: string, data?: any) => {
+    handleAction(action, data);
+  };
+  
   const renderContent = () => {
     switch (subPath) {
       case 'main':
         return (
           <MainDashboard 
-            onAction={handleAction}
+            onAction={onAction}
             account={mockAccount}
             transactions={mockTransactions}
             transactionsLoading={false}
@@ -117,7 +115,7 @@ const MobileFlowPage: React.FC = () => {
       default:
         return (
           <MainDashboard 
-            onAction={handleAction}
+            onAction={onAction}
             account={mockAccount}
             transactions={mockTransactions}
             transactionsLoading={false}
@@ -133,7 +131,7 @@ const MobileFlowPage: React.FC = () => {
         {renderContent()}
       </main>
       
-      <MobileNavigation onAction={handleAction} />
+      <MobileNavigation onAction={onAction} />
       
       <MobileMenu 
         isOpen={menuOpen} 
