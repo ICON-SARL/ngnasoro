@@ -26,7 +26,12 @@ export function useRoleManager() {
   ]);
 
   const [showNewRoleDialog, setShowNewRoleDialog] = useState(false);
-  const [newRole, setNewRole] = useState<Partial<Role>>({
+  // Fix the type definition here to ensure 'name' is a required property
+  const [newRole, setNewRole] = useState<{
+    name: string;
+    description?: string;
+    permissions?: string[];
+  }>({
     name: '',
     description: '',
     permissions: []
