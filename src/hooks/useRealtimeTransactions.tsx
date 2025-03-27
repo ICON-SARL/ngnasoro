@@ -1,16 +1,11 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Transaction, TransactionStats } from '@/types/transactions';
 
-// Define a completely flat type for payloads to avoid type recursion
-type SimplePayload = {
-  eventType: string;
-  new: any;
-  old: any;
-};
+// Create a maximally simple type that avoids any complex type inference
+type SimplePayload = Record<string, any>;
 
 export function useRealtimeTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -94,30 +89,30 @@ export function useRealtimeTransactions() {
     return mockTransactions;
   }, []);
   
-  // Simplified fetch function that avoids complex type inference
+  // Extremely simplified fetch function using any types to avoid type inference issues
   const fetchTransactions = useCallback(async () => {
     if (!user || !activeSfdId) return;
     
     setIsLoading(true);
     
     try {
-      // Use a minimal approach to data fetching
-      const fetchResult = await supabase
+      // Use any typing throughout to avoid TypeScript inference issues
+      const result = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(50) as any;
         
-      if (fetchResult.error) throw fetchResult.error;
+      if (result.error) throw result.error;
       
       let txData: Transaction[] = [];
       
-      // Treat data as a simple array without complex typing
-      if (fetchResult.data && fetchResult.data.length > 0) {
-        // Cast to any to completely avoid TypeScript's deep inference
-        const simplifiedData = fetchResult.data as any[];
-        txData = convertDatabaseRecordsToTransactions(simplifiedData);
+      // Treat data as a raw array completely
+      if (result.data && result.data.length > 0) {
+        // Avoid any type inference by the compiler
+        const rawData: any[] = result.data;
+        txData = convertDatabaseRecordsToTransactions(rawData);
       } else {
         txData = generateMockTransactions(activeSfdId);
       }
@@ -137,57 +132,60 @@ export function useRealtimeTransactions() {
     }
   }, [user, activeSfdId, toast, calculateStats, convertDatabaseRecordsToTransactions, generateMockTransactions]);
   
-  // Simplified handler for realtime updates
+  // Maximally simplified handler for realtime updates
   const handleRealtimeUpdate = useCallback((payload: SimplePayload) => {
     // Create a new array instead of mutating the old one
     let updatedTransactions = [...transactions];
     
-    if (payload.eventType === 'INSERT' && payload.new) {
+    // Use basic string access instead of complex object destructuring
+    const eventType = payload.eventType as string;
+    const newRecord = payload.new as any;
+    const oldRecord = payload.old as any;
+    
+    if (eventType === 'INSERT' && newRecord) {
       // Create new transaction object directly
-      const record = payload.new;
-      const newRecord: Transaction = {
-        id: record.id,
-        user_id: record.user_id,
-        sfd_id: record.sfd_id || activeSfdId,
-        type: record.type as Transaction['type'],
-        amount: record.amount,
-        status: record.status || 'success',
-        created_at: record.created_at || record.date || new Date().toISOString(),
-        name: record.name,
-        date: record.date,
-        avatar_url: record.avatar_url,
-        description: `Transaction for ${record.name}`,
+      const newTx: Transaction = {
+        id: newRecord.id,
+        user_id: newRecord.user_id,
+        sfd_id: newRecord.sfd_id || activeSfdId,
+        type: newRecord.type as Transaction['type'],
+        amount: newRecord.amount,
+        status: newRecord.status || 'success',
+        created_at: newRecord.created_at || newRecord.date || new Date().toISOString(),
+        name: newRecord.name,
+        date: newRecord.date,
+        avatar_url: newRecord.avatar_url,
+        description: `Transaction for ${newRecord.name}`,
       };
       
-      updatedTransactions = [newRecord, ...updatedTransactions];
+      updatedTransactions = [newTx, ...updatedTransactions];
       
       toast({
         title: 'New transaction',
-        description: `${newRecord.type} of ${newRecord.amount} FCFA`,
+        description: `${newTx.type} of ${newTx.amount} FCFA`,
       });
-    } else if (payload.eventType === 'UPDATE' && payload.new) {
+    } else if (eventType === 'UPDATE' && newRecord) {
       // Create updated transaction object directly
-      const record = payload.new;
-      const updatedRecord: Transaction = {
-        id: record.id,
-        user_id: record.user_id,
-        sfd_id: record.sfd_id || activeSfdId,
-        type: record.type as Transaction['type'],
-        amount: record.amount,
-        status: record.status || 'success',
-        created_at: record.created_at || record.date || new Date().toISOString(),
-        name: record.name,
-        date: record.date,
-        avatar_url: record.avatar_url,
-        description: `Transaction for ${record.name}`,
+      const updatedTx: Transaction = {
+        id: newRecord.id,
+        user_id: newRecord.user_id,
+        sfd_id: newRecord.sfd_id || activeSfdId,
+        type: newRecord.type as Transaction['type'],
+        amount: newRecord.amount,
+        status: newRecord.status || 'success',
+        created_at: newRecord.created_at || newRecord.date || new Date().toISOString(),
+        name: newRecord.name,
+        date: newRecord.date,
+        avatar_url: newRecord.avatar_url,
+        description: `Transaction for ${newRecord.name}`,
       };
       
       updatedTransactions = updatedTransactions.map(tx => 
-        tx.id === updatedRecord.id ? updatedRecord : tx
+        tx.id === updatedTx.id ? updatedTx : tx
       );
-    } else if (payload.eventType === 'DELETE' && payload.old) {
+    } else if (eventType === 'DELETE' && oldRecord) {
       // Remove deleted transaction
-      const oldId = payload.old.id;
+      const oldId = oldRecord.id;
       if (oldId) {
         updatedTransactions = updatedTransactions.filter(tx => tx.id !== oldId);
       }
@@ -198,13 +196,13 @@ export function useRealtimeTransactions() {
     calculateStats(updatedTransactions);
   }, [transactions, toast, calculateStats, activeSfdId]);
   
-  // Set up realtime subscription with maximally simplified handling
+  // Set up realtime subscription with maximum type simplification
   useEffect(() => {
     if (!user || !activeSfdId) return;
     
     fetchTransactions();
     
-    // Configure realtime subscription with minimal typing
+    // Radically simplify the channel subscription to avoid any complex types
     const channel = supabase
       .channel('public:transactions')
       .on('postgres_changes', {
@@ -212,15 +210,9 @@ export function useRealtimeTransactions() {
         schema: 'public',
         table: 'transactions',
         filter: `sfd_id=eq.${activeSfdId}`
-      }, (payload) => {
-        // Cast payload as any and create a simple structure
-        const simplePayload: SimplePayload = {
-          eventType: (payload as any).eventType,
-          new: (payload as any).new,
-          old: (payload as any).old
-        };
-        
-        handleRealtimeUpdate(simplePayload);
+      }, (payload: any) => {
+        // Pass the raw payload directly to the handler with simple type
+        handleRealtimeUpdate(payload);
       })
       .subscribe();
       
