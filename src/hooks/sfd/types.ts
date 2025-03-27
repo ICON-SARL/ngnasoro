@@ -1,47 +1,20 @@
 
 import { User } from "@/hooks/useAuth";
 
-export interface SfdAccount {
+export interface SfdData {
   id: string;
   name: string;
-  balance: number;
-  currency: string;
-  logoUrl?: string;
-  region?: string;
-  code?: string;
-  isDefault?: boolean;
-  loans?: SfdLoan[];
+  token: string | null;
+  lastFetched: Date | null;
 }
 
-export interface SfdLoan {
-  id: string;
-  amount: number;
-  remainingAmount: number;
-  nextDueDate: string;
-  isLate: boolean;
-}
-
-export interface SfdBalanceData {
-  balance: number;
-  currency: string;
-}
-
-export interface UserSfd {
-  sfds: {
-    id: string;
-    name: string;
-    logo_url?: string;
-    region?: string;
-    code?: string;
-  };
-  is_default: boolean;
-}
-
-export interface SyncResult {
-  success: boolean;
-}
-
-export interface LoanPaymentParams {
-  loanId: string;
-  amount: number;
+export interface SfdDataAccess {
+  sfdData: SfdData[];
+  loading: boolean;
+  error: string | null;
+  activeSfdId: string | null;
+  fetchUserSfds: () => Promise<void>;
+  switchActiveSfd: (sfdId: string) => Promise<boolean>;
+  getActiveSfdData: () => Promise<SfdData | null>;
+  getCurrentSfdToken: () => Promise<string | null>;
 }
