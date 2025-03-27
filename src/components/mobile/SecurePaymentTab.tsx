@@ -1,9 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Check } from 'lucide-react';
 import { PaymentMethodTabs } from './secure-payment/PaymentMethodTabs';
 import { SecurityFeatures } from './secure-payment/SecurityFeatures';
 import { ReconciliationSection } from './secure-payment/ReconciliationSection';

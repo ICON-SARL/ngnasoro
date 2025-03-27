@@ -31,25 +31,14 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => 
     progress: 40,
     lateFees: 0,
     paymentHistory: [
-      { id: 1, date: '05 August 2023', amount: 3.50, status: 'paid' as 'paid' },
-      { id: 2, date: '05 July 2023', amount: 3.50, status: 'paid' as 'paid' },
-      { id: 3, date: '05 June 2023', amount: 3.50, status: 'paid' as 'paid' }
+      { id: 1, date: '05 August 2023', amount: 3.50, status: 'paid' as 'paid' | 'pending' | 'late' },
+      { id: 2, date: '05 July 2023', amount: 3.50, status: 'paid' as 'paid' | 'pending' | 'late' },
+      { id: 3, date: '05 June 2023', amount: 3.50, status: 'paid' as 'paid' | 'pending' | 'late' }
     ],
     disbursed: true,
     withdrawn: false
   });
-  const [loanDetails, setLoanDetails] = useState({
-    loanType: "Microcrédit",
-    loanPurpose: "Achat de matériel",
-    disbursalDate: "5 janvier 2023",
-    endDate: "5 juillet 2023",
-    interestRate: 2.5,
-    status: "actif",
-    disbursed: true,
-    withdrawn: false
-  });
-  const { getActiveSfdData } = useSfdDataAccess();
-  
+
   const handleBackAction = () => {
     if (onBack) {
       onBack();
@@ -57,7 +46,7 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => 
       navigate(-1);
     }
   };
-  
+
   const fetchLoanDetails = async () => {
     try {
       if (!loanId) return;
@@ -123,9 +112,10 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => 
         const lateFees = (nextPaymentDate && nextPaymentDate < now) ? data.monthly_payment * 0.05 : 0;
         
         const paymentHistory = paymentsData?.map((payment, index) => {
-          let status: 'paid' | 'pending' | 'late' = 'pending';
+          let status: 'paid' | 'pending' | 'late';
           if (payment.status === 'completed') status = 'paid';
           else if (payment.status === 'late') status = 'late';
+          else status = 'pending';
           
           return {
             id: index + 1,
@@ -164,7 +154,7 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId }) => 
       });
     }
   };
-  
+
   useEffect(() => {
     fetchLoanDetails();
     
