@@ -1,6 +1,7 @@
 
 import axios, { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { sfdCache } from './cacheUtils';
+import { refreshSfdContextToken, shouldRefreshSfdToken } from './sfdJwtContext';
 
 // Create an axios instance for SFD-specific API calls
 const sfdApiClient = axios.create({
@@ -10,7 +11,7 @@ const sfdApiClient = axios.create({
 
 // Add a request interceptor to include the SFD context token
 sfdApiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  async (config: InternalAxiosRequestConfig) => {
     // Get the SFD ID from the config (must be provided in each call)
     const sfdId = config.headers?.['X-SFD-ID'] as string;
     const sfdToken = config.headers?.['X-SFD-TOKEN'] as string;
@@ -19,23 +20,44 @@ sfdApiClient.interceptors.request.use(
       throw new Error('SFD ID and token are required for API calls');
     }
     
-    // Set the Authorization header with the SFD context token
-    // Use the set method of AxiosHeaders instead of direct assignment
-    config.headers.set('Authorization', `Bearer ${sfdToken}`);
-    
-    // Check if the request can be served from cache
-    if (config.method?.toLowerCase() === 'get' && config.url) {
-      const cacheKey = `${config.url}${JSON.stringify(config.params || {})}`;
-      const cachedData = sfdCache.get(sfdId, cacheKey);
+    try {
+      // Check if the token needs to be refreshed
+      const needsRefresh = await shouldRefreshSfdToken(sfdToken);
       
-      if (cachedData) {
-        // Set cache headers
-        config.headers.set('X-From-Cache', 'true');
-        config.headers.set('X-Cache-Data', JSON.stringify(cachedData));
+      let tokenToUse = sfdToken;
+      
+      if (needsRefresh) {
+        // Refresh the token
+        const refreshedToken = await refreshSfdContextToken(sfdToken);
+        
+        if (refreshedToken) {
+          tokenToUse = refreshedToken;
+          // Signal that the token has been refreshed (for the caller to update)
+          config.headers?.set('X-Token-Refreshed', 'true');
+          config.headers?.set('X-Refreshed-Token', refreshedToken);
+        }
       }
+      
+      // Set the Authorization header with the SFD context token
+      config.headers?.set('Authorization', `Bearer ${tokenToUse}`);
+      
+      // Check if the request can be served from cache
+      if (config.method?.toLowerCase() === 'get' && config.url) {
+        const cacheKey = `${config.url}${JSON.stringify(config.params || {})}`;
+        const cachedData = sfdCache.get(sfdId, cacheKey);
+        
+        if (cachedData) {
+          // Set cache headers
+          config.headers?.set('X-From-Cache', 'true');
+          config.headers?.set('X-Cache-Data', JSON.stringify(cachedData));
+        }
+      }
+      
+      return config;
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      return config; // Proceed with original token
     }
-    
-    return config;
   },
   (error: AxiosError) => {
     return Promise.reject(error);
@@ -78,7 +100,8 @@ export const callSfdApi = async <T>(
   method: string, 
   endpoint: string, 
   data?: any, 
-  params?: any
+  params?: any,
+  tokenRefreshCallback?: (newToken: string) => void // Callback for token refresh
 ): Promise<T> => {
   try {
     const response = await sfdApiClient({
@@ -91,6 +114,16 @@ export const callSfdApi = async <T>(
         'X-SFD-TOKEN': sfdToken
       }
     });
+    
+    // Check if the token was refreshed during the request
+    if (
+      response.config.headers?.['X-Token-Refreshed'] === 'true' && 
+      response.config.headers?.['X-Refreshed-Token'] && 
+      tokenRefreshCallback
+    ) {
+      const newToken = response.config.headers['X-Refreshed-Token'] as string;
+      tokenRefreshCallback(newToken);
+    }
     
     return response.data;
   } catch (error) {

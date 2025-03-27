@@ -1,6 +1,7 @@
 
 import * as jose from 'jose';
 import { EncryptionService } from './crypto';
+import { SecureTokenService } from './crypto';
 
 // Set a secure secret key (in production, this would be stored securely)
 const JWT_SECRET = 'your-very-secure-secret-key-for-sfd-context';
@@ -10,6 +11,9 @@ const secretKey = new TextEncoder().encode(JWT_SECRET);
 
 // Encryption key for additional AES-256 encryption layer
 const AES_ENCRYPTION_KEY = 'sfd-secure-aes-256-encryption-key-do-not-share';
+
+// Default token expiration time: 1 hour
+const DEFAULT_TOKEN_EXPIRY = 60 * 60 * 1000; // 1 hour in milliseconds
 
 // Payload type for the SFD JWT
 export interface SfdJwtPayload extends jose.JWTPayload {
@@ -22,7 +26,11 @@ export interface SfdJwtPayload extends jose.JWTPayload {
 /**
  * Generate a JWT token with SFD context, enhanced with AES-256 encryption
  */
-export const generateSfdContextToken = async (userId: string, sfdId: string): Promise<string> => {
+export const generateSfdContextToken = async (
+  userId: string, 
+  sfdId: string, 
+  expiryMs = DEFAULT_TOKEN_EXPIRY
+): Promise<string> => {
   try {
     const payload: SfdJwtPayload = {
       userId,
@@ -69,6 +77,62 @@ export const decodeSfdContextToken = async (token: string): Promise<SfdJwtPayloa
     return null;
   } catch (error) {
     console.error('Error decoding SFD JWT token:', error);
+    return null;
+  }
+};
+
+/**
+ * Check if the SFD context token needs to be refreshed
+ */
+export const shouldRefreshSfdToken = async (token: string): Promise<boolean> => {
+  if (!token) return true;
+  
+  try {
+    // First decrypt the AES layer
+    const jwtToken = EncryptionService.decrypt(token, AES_ENCRYPTION_KEY);
+    
+    // Extract payload without verification to check expiration
+    const { payload } = jose.decodeJwt(jwtToken);
+    
+    if (!payload.exp) return true;
+    
+    // Convert exp to milliseconds (JWT exp is in seconds)
+    const expMs = payload.exp * 1000;
+    const now = Date.now();
+    
+    // Refresh if less than 10 minutes remaining
+    const TEN_MINUTES = 10 * 60 * 1000;
+    return expMs - now < TEN_MINUTES;
+  } catch (error) {
+    console.error('Error checking SFD token refresh status:', error);
+    return true; // Refresh on error
+  }
+};
+
+/**
+ * Refresh an SFD context token if needed
+ */
+export const refreshSfdContextToken = async (token: string): Promise<string | null> => {
+  if (!token) return null;
+  
+  try {
+    // First decrypt the AES layer
+    const jwtToken = EncryptionService.decrypt(token, AES_ENCRYPTION_KEY);
+    
+    // Then verify the JWT token
+    const { payload } = await jose.jwtVerify(jwtToken, secretKey);
+    
+    // Check if need to refresh
+    const needsRefresh = await shouldRefreshSfdToken(token);
+    
+    if (needsRefresh && typeof payload.userId === 'string' && typeof payload.sfdId === 'string') {
+      // Generate a new token with the same user and SFD information
+      return generateSfdContextToken(payload.userId, payload.sfdId);
+    }
+    
+    return token; // Return original token if refresh not needed
+  } catch (error) {
+    console.error('Error refreshing SFD context token:', error);
     return null;
   }
 };

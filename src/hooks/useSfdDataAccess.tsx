@@ -1,7 +1,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
-import { generateSfdContextToken } from '@/utils/sfdJwtContext';
+import { 
+  generateSfdContextToken, 
+  refreshSfdContextToken, 
+  shouldRefreshSfdToken 
+} from '@/utils/sfdJwtContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
 
@@ -93,6 +97,44 @@ export function useSfdDataAccess() {
     }
   }, [user]);
 
+  // Refresh a token if needed
+  const refreshTokenIfNeeded = useCallback(async (sfdId: string): Promise<string | null> => {
+    const sfd = sfdData.find(s => s.id === sfdId);
+    if (!sfd || !sfd.token) {
+      return generateTokenForSfd(sfdId);
+    }
+    
+    try {
+      // Check if token needs refresh
+      const needsRefresh = await shouldRefreshSfdToken(sfd.token);
+      
+      if (needsRefresh) {
+        // Token needs refresh, get a new one
+        const refreshedToken = await refreshSfdContextToken(sfd.token);
+        
+        if (refreshedToken) {
+          // Update token in state
+          setSfdData(prev => prev.map(s => 
+            s.id === sfdId 
+              ? { ...s, token: refreshedToken, lastFetched: new Date() } 
+              : s
+          ));
+          
+          return refreshedToken;
+        } else {
+          // If refresh failed, generate a new token
+          return generateTokenForSfd(sfdId);
+        }
+      }
+      
+      // Token is still valid
+      return sfd.token;
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      return generateTokenForSfd(sfdId);
+    }
+  }, [sfdData, generateTokenForSfd]);
+
   // Switch the active SFD
   const switchActiveSfd = useCallback(async (sfdId: string) => {
     const sfd = sfdData.find(s => s.id === sfdId);
@@ -107,10 +149,8 @@ export function useSfdDataAccess() {
     
     setActiveSfdId(sfdId);
     
-    // Generate a new token for this SFD if needed
-    if (!sfd.token || isTokenExpired(sfd.lastFetched)) {
-      await generateTokenForSfd(sfdId);
-    }
+    // Ensure we have a valid token for this SFD
+    await refreshTokenIfNeeded(sfdId);
     
     toast({
       title: "SFD changé",
@@ -118,17 +158,7 @@ export function useSfdDataAccess() {
     });
     
     return true;
-  }, [sfdData, setActiveSfdId, generateTokenForSfd, toast]);
-
-  // Check if a token is expired (older than 50 minutes)
-  const isTokenExpired = (lastFetched: Date | null): boolean => {
-    if (!lastFetched) return true;
-    
-    const fiftyMinutesAgo = new Date();
-    fiftyMinutesAgo.setMinutes(fiftyMinutesAgo.getMinutes() - 50);
-    
-    return lastFetched < fiftyMinutesAgo;
-  };
+  }, [sfdData, setActiveSfdId, refreshTokenIfNeeded, toast]);
 
   // Get current active SFD data
   const getActiveSfdData = useCallback(async (): Promise<SfdData | null> => {
@@ -137,19 +167,19 @@ export function useSfdDataAccess() {
     const sfd = sfdData.find(s => s.id === activeSfdId);
     if (!sfd) return null;
     
-    // Regenerate token if needed
-    if (!sfd.token || isTokenExpired(sfd.lastFetched)) {
-      await generateTokenForSfd(activeSfdId);
-    }
+    // Ensure we have a valid token
+    await refreshTokenIfNeeded(activeSfdId);
     
-    return sfd;
-  }, [activeSfdId, sfdData, generateTokenForSfd]);
+    // Return the possibly updated SFD data
+    return sfdData.find(s => s.id === activeSfdId) || null;
+  }, [activeSfdId, sfdData, refreshTokenIfNeeded]);
 
   // Get the current token for API calls
   const getCurrentSfdToken = useCallback(async (): Promise<string | null> => {
-    const activeSfd = await getActiveSfdData();
-    return activeSfd?.token || null;
-  }, [getActiveSfdData]);
+    if (!activeSfdId) return null;
+    
+    return refreshTokenIfNeeded(activeSfdId);
+  }, [activeSfdId, refreshTokenIfNeeded]);
 
   // Load SFDs on component mount
   useEffect(() => {
