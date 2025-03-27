@@ -1,13 +1,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import MobileHeader from '@/components/mobile/MobileHeader';
 import { MainDashboard } from '@/components/mobile/dashboard';
 import MobileMenu from '@/components/mobile/menu/MobileMenu';
 import ProfilePage from '@/components/mobile/profile/ProfilePage';
 import SfdSetupPage from '@/pages/SfdSetupPage';
 import SfdClientsPage from '@/pages/SfdClientsPage';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth';
 import SecurePaymentTab from '@/components/mobile/secure-payment';
 import { Account } from '@/types/transactions';
 
@@ -126,8 +125,6 @@ const MobileFlowPage: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <MobileHeader />
-      
       <main className="flex-1 container mx-auto max-w-md pb-16">
         {renderContent()}
       </main>
