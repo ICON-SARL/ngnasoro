@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
@@ -16,7 +15,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
   transaction, 
   onClick 
 }) => {
-  const { type, amount, name, date, status, avatar_url, created_at } = transaction;
+  const { type, amount, name, date, status, avatar_url } = transaction;
   
   const formatDate = (dateString: string) => {
     try {
@@ -121,7 +120,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
               </p>
             </div>
             <div className="flex justify-between mt-1">
-              <p className="text-xs text-gray-500">{formatDate(date || created_at || '')}</p>
+              <p className="text-xs text-gray-500">{formatDate(date || transaction.created_at || '')}</p>
               <p className="text-xs text-gray-500 capitalize">{type.replace('_', ' ')}</p>
             </div>
           </div>

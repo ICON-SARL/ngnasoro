@@ -6,9 +6,11 @@ import {
   transactionService, 
   TransactionType, 
   TransactionStatus, 
-  TransactionFilters 
-} from '@/services/transactionService';
+  TransactionFilters,
+  CreateTransactionOptions 
+} from '@/services/transactions';
 import { Transaction } from '@/types/transactions';
+import { transactionStatisticsService } from '@/services/transactions/transactionStatisticsService';
 
 interface CreateTransactionParams {
   amount: number;
@@ -114,7 +116,7 @@ export function useTransactionService() {
     setError(null);
     
     try {
-      const stats = await transactionService.generateTransactionStatistics(
+      const stats = await transactionStatisticsService.generateTransactionStatistics(
         user.id,
         activeSfdId,
         period
