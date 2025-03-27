@@ -13,12 +13,12 @@ const EmailInput = ({ email, onChange, disabled }: EmailInputProps) => {
   return (
     <div>
       <div className="relative">
-        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#0D6A51]" />
+        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-6 w-6 text-[#0D6A51]" />
         <Input
           id="email"
           type="email"
           placeholder="Entrez votre email ici"
-          className="pl-10 h-14 text-base border-[#0D6A51]/30 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-xl"
+          className="pl-12 h-16 text-lg border-2 border-[#0D6A51]/30 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-xl bg-white/90"
           value={email}
           onChange={onChange}
           required

@@ -3,16 +3,18 @@ import React from 'react';
 
 const Logo = () => {
   return (
-    <div className="text-center mb-6">
-      <img 
-        src="/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png" 
-        alt="NGNA SÔRÔ! Logo" 
-        className="h-16 mx-auto"
-      />
-      <h1 className="text-2xl font-bold mt-2">
-        <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-[#0D6A51]">SÔRÔ!</span>
+    <div className="text-center">
+      <div className="bg-white/90 p-4 rounded-full inline-block mb-3 shadow-lg">
+        <img 
+          src="/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png" 
+          alt="NGNA SÔRÔ! Logo" 
+          className="h-20 mx-auto"
+        />
+      </div>
+      <h1 className="text-3xl font-bold mt-2 text-white">
+        <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-white">SÔRÔ!</span>
       </h1>
-      <p className="text-sm text-[#0D6A51]">MEREF - SFD</p>
+      <p className="text-base text-white/80 mt-1">MEREF - SFD</p>
     </div>
   );
 };

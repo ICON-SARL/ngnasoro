@@ -35,13 +35,13 @@ const LoginForm = () => {
 
   return (
     <>
-      <div className="space-y-6 bg-white shadow-lg rounded-2xl p-8 border border-gray-100">
+      <div className="space-y-6 bg-white shadow-lg rounded-2xl p-6 border border-white/20">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-[#0D6A51] mb-2">Bienvenue</h2>
-          <p className="text-gray-600 text-sm">Entrez votre adresse e-mail pour continuer</p>
-          <div className="mt-2 flex justify-center">
+          <p className="text-gray-600">Entrez votre adresse e-mail</p>
+          <div className="mt-3 flex justify-center">
             <VoiceAssistant 
-              message="Bienvenue. Pour vous connecter, entrez votre adresse e-mail et cliquez sur le bouton Se connecter."
+              message="Bienvenue. Pour vous connecter, entrez votre adresse e-mail et cliquez sur le bouton."
               autoPlay={true}
             />
           </div>
@@ -57,18 +57,22 @@ const LoginForm = () => {
             disabled={isLoading || cooldownActive}
           />
           
-          <div className="pt-3">
+          <div className="pt-4">
             <LoginButton 
               isLoading={isLoading}
               disabled={cooldownActive}
-              authMode="simple"
+              authMode={authMode}
             />
           </div>
           
-          <SocialButtons />
+          <div className="pt-2">
+            <SocialButtons />
+          </div>
 
-          <div className="text-center text-sm text-gray-500 mt-6">
-            Pas de compte ? <a href="/register" className="text-[#FFAB2E] hover:text-[#FFAB2E]/80 font-medium">Inscrivez-vous ici</a>
+          <div className="text-center text-base text-white mt-6 bg-[#FFAB2E]/80 p-3 rounded-xl shadow-md">
+            <a href="/register" className="font-medium hover:underline">
+              Pas de compte ? Inscrivez-vous ici
+            </a>
           </div>
         </form>
       </div>

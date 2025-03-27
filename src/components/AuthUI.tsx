@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
@@ -38,14 +39,14 @@ const AuthUI = () => {
 
   if (authSuccess) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
-          <div className="h-16 w-16 bg-green-100 text-green-600 rounded-full mx-auto flex items-center justify-center mb-4">
-            <Check className="h-8 w-8" />
+      <div className="min-h-screen bg-gradient-to-b from-[#0D6A51] to-[#064335] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-xl p-8 text-center">
+          <div className="h-20 w-20 bg-green-100 text-green-600 rounded-full mx-auto flex items-center justify-center mb-6">
+            <Check className="h-10 w-10" />
           </div>
-          <h1 className="text-2xl font-bold text-green-700">Connexion réussie!</h1>
-          <p className="mt-2 text-gray-600">Vous allez être redirigé vers l'application...</p>
-          <div className="mt-4">
+          <h1 className="text-3xl font-bold text-green-700 mb-3">Connexion réussie!</h1>
+          <p className="mt-2 text-gray-600 text-lg">Vous allez être redirigé vers l'application...</p>
+          <div className="mt-6">
             <VoiceAssistant 
               message="Connexion réussie! Vous allez être redirigé vers l'application." 
               autoPlay={true} 
@@ -57,23 +58,23 @@ const AuthUI = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md mb-8">
-        <Logo />
-      </div>
-      
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-b from-[#0D6A51] to-[#064335] flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white/10 backdrop-blur-md rounded-xl p-8 shadow-xl">
+        <div className="w-full mb-6">
+          <Logo />
+        </div>
+        
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-2 w-full mb-6 rounded-xl overflow-hidden shadow-sm">
+          <TabsList className="grid grid-cols-2 w-full mb-8 rounded-xl overflow-hidden shadow-lg">
             <TabsTrigger 
               value="login" 
-              className="py-4 text-lg font-medium data-[state=active]:bg-[#0D6A51] data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:text-gray-700"
+              className="py-5 text-xl font-medium data-[state=active]:bg-[#0D6A51] data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:text-gray-700"
             >
               Connexion
             </TabsTrigger>
             <TabsTrigger 
               value="register" 
-              className="py-4 text-lg font-medium data-[state=active]:bg-[#0D6A51] data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:text-gray-700"
+              className="py-5 text-xl font-medium data-[state=active]:bg-[#0D6A51] data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:text-gray-700"
             >
               Inscription
             </TabsTrigger>
@@ -87,10 +88,10 @@ const AuthUI = () => {
             <RegisterForm />
           </TabsContent>
         </Tabs>
-      </div>
       
-      <div className="w-full max-w-md mt-6 flex justify-center">
-        <LanguageSelector />
+        <div className="w-full mt-6 flex justify-center">
+          <LanguageSelector />
+        </div>
       </div>
     </div>
   );
