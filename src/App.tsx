@@ -12,9 +12,8 @@ import ProfilePage from '@/pages/ProfilePage';
 import NotFound from '@/pages/NotFound';
 import LoansPage from '@/pages/LoansPage';
 import TransactionsPage from '@/pages/TransactionsPage';
-import LoanAgreementPage from '@/components/mobile/LoanAgreementPage';
-import LoanDisbursementPage from '@/components/mobile/LoanDisbursementPage';
 import LoanAgreementManagement from '@/components/sfd/LoanAgreementManagement';
+import SFDSelector from '@/pages/SFDSelector';
 
 function App() {
   return (
@@ -32,6 +31,7 @@ function App() {
           <Route path="/loans" element={<LoansPage />} />
           <Route path="/loans/agreements" element={<LoanAgreementManagement />} />
           <Route path="/transactions" element={<TransactionsPage />} />
+          <Route path="/sfd-selector" element={<SFDSelector />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />
