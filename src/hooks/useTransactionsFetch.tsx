@@ -17,19 +17,22 @@ export function useTransactionsFetch({ activeSfdId, userId, toast }: UseTransact
     
     try {
       // Using type assertion to avoid deep inference
-      const response: { data: any[] | null; error: any } = await supabase
+      const response = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
         .limit(50);
       
-      if (response.error) throw response.error;
+      const data = response.data as any[] | null;
+      const error = response.error;
+      
+      if (error) throw error;
       
       let txData: Transaction[] = [];
       
-      if (response.data && response.data.length > 0) {
-        txData = convertDatabaseRecordsToTransactions(response.data, activeSfdId);
+      if (data && data.length > 0) {
+        txData = convertDatabaseRecordsToTransactions(data, activeSfdId);
       } else {
         txData = generateMockTransactions(activeSfdId);
       }

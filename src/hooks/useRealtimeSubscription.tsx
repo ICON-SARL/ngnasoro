@@ -5,8 +5,8 @@ import { UseRealtimeSubscriptionProps } from '@/types/realtimeTransactions';
 
 export function useRealtimeSubscription({ activeSfdId, onUpdate }: UseRealtimeSubscriptionProps) {
   const createRealtimeSubscription = useCallback((sfdId: string) => {
-    // Use any type to avoid deep inference issues
-    const channel: any = supabase.channel('public:transactions');
+    // Use explicit typing to avoid deep inference issues
+    const channel = supabase.channel('public:transactions');
     
     channel.on(
       'postgres_changes', 
