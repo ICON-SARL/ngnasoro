@@ -52,7 +52,7 @@ import {
 
 import { useMobileDashboard } from '@/hooks/useMobileDashboard';
 
-const FundsManagementPage = lazy(() => import('@/components/mobile/FundsManagementPage'));
+const FundsManagementPage = lazy(() => import('@/components/mobile/funds-management'));
 
 const MainDashboard = ({ onAction, account, transactions, transactionsLoading, toggleMenu }) => {
   const { dashboardData, isLoading: dashboardLoading, refreshDashboardData } = useMobileDashboard();
