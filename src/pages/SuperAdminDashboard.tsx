@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { 
   DashboardWidgets, 
@@ -12,12 +12,15 @@ import { useSubsidies } from '@/hooks/useSubsidies';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { ReportGenerator } from '@/components/ReportGenerator';
 import { DataExport } from '@/components/DataExport';
+import { Button } from '@/components/ui/button';
+import { FileText, CreditCard } from 'lucide-react';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
   const { stats, isLoading: isLoadingStats } = useDashboardStats();
+  const navigate = useNavigate();
   
   // Set the active tab based on query parameter
   useEffect(() => {
@@ -36,6 +39,27 @@ const SuperAdminDashboard = () => {
       
       <main className="flex-1 container mx-auto p-4 md:p-6">
         <SuperAdminDashboardHeader />
+        
+        {/* Quick Actions */}
+        <div className="mb-6 flex flex-wrap gap-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center bg-white" 
+            onClick={() => navigate('/credit-approval')}
+          >
+            <CreditCard className="h-4 w-4 mr-2 text-[#0D6A51]" />
+            Approbation de Crédit
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="flex items-center bg-white"
+            onClick={() => setSearchParams({ tab: 'reports' })}
+          >
+            <FileText className="h-4 w-4 mr-2 text-[#0D6A51]" />
+            Générer des Rapports
+          </Button>
+        </div>
         
         {/* Dashboard Widgets */}
         {activeTab === 'dashboard' && (

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import AuthProvider from './hooks/auth/AuthProvider';
@@ -15,6 +14,7 @@ import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import LoanActivityPage from './components/mobile/LoanActivityPage';
 import Index from './pages/Index';
 import AgencyDashboard from './pages/AgencyDashboard';
+import CreditApprovalPage from './pages/CreditApprovalPage';
 
 function App() {
   return (
@@ -116,6 +116,9 @@ function App() {
             path="/multi-sfd"
             element={<ProtectedRoute component={MobileFlowPage} />}
           />
+          
+          {/* Credit Approval Route */}
+          <Route path="/credit-approval" element={<CreditApprovalPage />} />
           
           {/* 404 Page */}
           <Route path="*" element={<NotFound />} />
