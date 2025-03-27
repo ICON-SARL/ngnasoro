@@ -1,49 +1,91 @@
 
-import { Transaction } from '@/types/transactions';
+import { Transaction, DatabaseTransactionRecord } from '@/types/transactions';
 
-export const convertDatabaseRecordsToTransactions = (
-  records: any[], 
-  activeSfdId?: string
-): Transaction[] => {
+/**
+ * Converts database records to the Transaction interface format
+ */
+export function convertDatabaseRecordsToTransactions(
+  records: DatabaseTransactionRecord[], 
+  sfdId?: string
+): Transaction[] {
   return records.map(record => ({
     id: record.id,
     user_id: record.user_id,
-    sfd_id: record.sfd_id || activeSfdId,
-    type: record.type as Transaction['type'],
+    sfd_id: record.sfd_id || sfdId,
+    type: convertTransactionType(record.type),
     amount: record.amount,
-    status: record.status || 'success',
-    created_at: record.created_at || record.date || new Date().toISOString(),
+    status: 'success',
+    created_at: record.created_at || new Date().toISOString(),
+    date: record.date || record.created_at,
     name: record.name,
-    date: record.date,
-    avatar_url: record.avatar_url,
-    description: `Transaction for ${record.name}`,
+    avatar_url: record.avatar_url
   }));
-};
+}
 
-export const generateMockTransactions = (sfdId?: string): Transaction[] => {
-  const transactionTypes: Transaction['type'][] = ['deposit', 'withdrawal', 'transfer', 'payment', 'loan_disbursement'];
-  const statuses: Transaction['status'][] = ['success', 'pending', 'failed', 'flagged'];
+/**
+ * Converts various transaction type strings to standardized types
+ */
+function convertTransactionType(type: string): Transaction['type'] {
+  const typeMap: Record<string, Transaction['type']> = {
+    'deposit': 'deposit',
+    'withdrawal': 'withdrawal',
+    'versement': 'deposit',
+    'retrait': 'withdrawal',
+    'transfert': 'transfer',
+    'transfer': 'transfer',
+    'payment': 'payment',
+    'paiement': 'payment',
+    'loan_disbursement': 'loan_disbursement',
+    'remboursement': 'payment'
+  };
+
+  return typeMap[type.toLowerCase()] || 'other';
+}
+
+/**
+ * Generates mock transactions for testing purposes
+ */
+export function generateMockTransactions(sfdId: string): Transaction[] {
+  const types: Transaction['type'][] = ['deposit', 'withdrawal', 'transfer', 'payment'];
+  const names = ['Transfert vers Amadou', 'Versement épargne', 'Retrait', 'Paiement de prêt'];
   
-  const mockTransactions: Transaction[] = [];
-  
-  for (let i = 0; i < 20; i++) {
-    const type = transactionTypes[Math.floor(Math.random() * transactionTypes.length)];
-    const status = Math.random() > 0.7 
-      ? statuses[Math.floor(Math.random() * statuses.length)]
-      : 'success';
+  return Array.from({ length: 10 }, (_, i) => {
+    const type = types[i % types.length];
+    const isIncoming = type === 'deposit' || (type === 'transfer' && i % 2 === 0);
     
-    mockTransactions.push({
-      id: `TX${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+    return {
+      id: `tx-${Date.now()}-${i}`,
+      user_id: 'mock-user',
       sfd_id: sfdId,
-      type,
-      amount: Math.floor(Math.random() * 9000000) + 10000, // 10K to 9M FCFA
-      currency: 'FCFA',
-      status,
-      description: `Transaction ${type} #${i+1}`,
-      created_at: new Date(Date.now() - Math.floor(Math.random() * 86400000)).toISOString(), // Over the last 24h
-      payment_method: ['cash', 'mobile_money', 'transfer', 'check'][Math.floor(Math.random() * 4)],
-    });
-  }
+      type: type,
+      amount: isIncoming ? 25000 + (i * 5000) : -(15000 + (i * 2500)),
+      status: 'success',
+      created_at: new Date(Date.now() - i * 86400000).toISOString(),
+      date: new Date(Date.now() - i * 86400000).toISOString(),
+      name: names[i % names.length],
+      description: `Transaction ${i + 1}`,
+      avatar_url: null
+    };
+  });
+}
+
+/**
+ * Format currency amount for display
+ */
+export function formatCurrencyAmount(amount: number, currency: string = 'FCFA'): string {
+  const formatter = new Intl.NumberFormat('fr-FR', {
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  });
   
-  return mockTransactions;
-};
+  return `${formatter.format(Math.abs(amount))} ${currency}`;
+}
+
+/**
+ * Format transaction amount for display with + or - prefix
+ */
+export function formatTransactionAmount(amount: number, currency: string = 'FCFA'): string {
+  const formatted = formatCurrencyAmount(amount, currency);
+  return amount >= 0 ? `+${formatted}` : `-${formatted}`;
+}

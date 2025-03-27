@@ -1,11 +1,5 @@
 
-import { Transaction, TransactionStats } from '@/types/transactions';
-
-export interface UseTransactionsFetchProps {
-  activeSfdId?: string;
-  userId?: string;
-  toast: any;
-}
+import { Transaction, TransactionStats } from './transactions';
 
 export interface UseTransactionsFilterProps {
   transactions: Transaction[];
@@ -13,6 +7,12 @@ export interface UseTransactionsFilterProps {
 
 export interface UseTransactionsStatsProps {
   transactions: Transaction[];
+}
+
+export interface UseTransactionsFetchProps {
+  activeSfdId?: string;
+  userId?: string;
+  toast: any;
 }
 
 export interface UseRealtimeSubscriptionProps {
