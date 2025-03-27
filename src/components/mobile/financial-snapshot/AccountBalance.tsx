@@ -1,0 +1,94 @@
+
+import React, { useState, useCallback, useEffect } from 'react';
+import { CreditCard, RefreshCw } from 'lucide-react';
+import { useAccount } from '@/hooks/useAccount';
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { useAuth } from '@/hooks/useAuth';
+import { useMobileDashboard } from '@/hooks/useMobileDashboard';
+
+const AccountBalance: React.FC = () => {
+  const { account } = useAccount();
+  const { activeSfdId } = useAuth();
+  const { activeSfdAccount, isLoading, refetch, synchronizeBalances } = useSfdAccounts();
+  const { dashboardData, isLoading: isDashboardLoading, refreshDashboardData } = useMobileDashboard();
+  
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Get balance from dashboard data if available
+  const accountBalance = dashboardData?.account?.balance || 
+                        (activeSfdId ? (activeSfdAccount?.balance || 0) : (account?.balance || 0));
+  const accountCurrency = dashboardData?.account?.currency || 
+                         activeSfdAccount?.currency || account?.currency || 'FCFA';
+  
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('fr-FR') + ' ' + accountCurrency;
+  };
+  
+  // Manual refresh function for balance
+  const refreshBalance = useCallback(() => {
+    if (isRefreshing) return;
+    
+    setIsRefreshing(true);
+    
+    // Use the refreshDashboardData function if available
+    if (refreshDashboardData) {
+      refreshDashboardData()
+        .then(() => {
+          setLastUpdated(new Date());
+          setIsRefreshing(false);
+        })
+        .catch(() => {
+          setIsRefreshing(false);
+        });
+    } else {
+      // Fall back to synchronizeBalances if no dashboard data
+      synchronizeBalances.mutate(undefined, {
+        onSettled: () => {
+          refetch();
+          setLastUpdated(new Date());
+          setIsRefreshing(false);
+        }
+      });
+    }
+  }, [isRefreshing, synchronizeBalances, refetch, refreshDashboardData]);
+  
+  // Simulate balance update every 2 hours
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setLastUpdated(new Date());
+    }, 2 * 60 * 60 * 1000); // 2 hours
+    
+    return () => clearInterval(intervalId);
+  }, []);
+
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm text-gray-500 flex items-center">
+        <CreditCard className="h-4 w-4 mr-1 text-[#0D6A51]" />
+        Solde disponible
+      </h3>
+      <p className="text-2xl font-bold">
+        {isLoading || isDashboardLoading || synchronizeBalances.isPending
+          ? "Chargement..." 
+          : formatCurrency(accountBalance)}
+      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-gray-400">
+          Mis à jour: {lastUpdated.toLocaleTimeString()}
+        </p>
+        <button 
+          onClick={refreshBalance}
+          disabled={isRefreshing || synchronizeBalances.isPending}
+          className="text-xs text-blue-500 flex items-center"
+        >
+          <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing || synchronizeBalances.isPending ? 'animate-spin' : ''}`} />
+          {isRefreshing || synchronizeBalances.isPending ? 'Actualisation...' : 'Actualiser'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default AccountBalance;

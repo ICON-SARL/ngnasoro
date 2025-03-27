@@ -24,7 +24,7 @@ import { LatePaymentAlerts } from '@/components/LatePaymentAlerts';
 import LoanApplicationFlow from '@/components/LoanApplicationFlow';
 import MultiSFDAccounts from '@/components/MultiSFDAccounts';
 import { SecurePaymentLayer } from '@/components/SecurePaymentLayer';
-import FinancialSnapshot from '@/components/mobile/FinancialSnapshot';
+import FinancialSnapshot from '@/components/mobile/financial-snapshot';
 import QuickActionsCard from '@/components/mobile/QuickActionsCard';
 import SFDSavingsOverview from '@/components/mobile/SFDSavingsOverview';
 import ProfilePage from '@/components/mobile/profile/ProfilePage';
