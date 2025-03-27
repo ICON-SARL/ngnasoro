@@ -13,7 +13,8 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { ReportGenerator } from '@/components/ReportGenerator';
 import { DataExport } from '@/components/DataExport';
 import { Button } from '@/components/ui/button';
-import { FileText, CreditCard, Building } from 'lucide-react';
+import { FileText, CreditCard, Building, Users } from 'lucide-react';
+import { AdminManagement } from '@/components/admin/AdminManagement';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
@@ -68,6 +69,15 @@ const SuperAdminDashboard = () => {
             <FileText className="h-4 w-4 mr-2 text-[#0D6A51]" />
             Générer des Rapports
           </Button>
+          
+          <Button 
+            variant="outline" 
+            className="flex items-center bg-white"
+            onClick={() => setSearchParams({ tab: 'admins' })}
+          >
+            <Users className="h-4 w-4 mr-2 text-[#0D6A51]" />
+            Gestion Administrateurs
+          </Button>
         </div>
         
         {/* Dashboard Widgets */}
@@ -96,6 +106,13 @@ const SuperAdminDashboard = () => {
         {activeTab === 'export' && (
           <div className="space-y-6">
             <DataExport />
+          </div>
+        )}
+        
+        {/* Admin Management */}
+        {activeTab === 'admins' && (
+          <div className="space-y-6">
+            <AdminManagement />
           </div>
         )}
         

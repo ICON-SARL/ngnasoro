@@ -5,6 +5,16 @@ import { supabase } from '@/integrations/supabase/client';
 import AuthContext from './AuthContext';
 import { User } from './types';
 import { createUserFromSupabaseUser, isUserAdmin, getBiometricStatus } from './authUtils';
+import { toast } from '@/hooks/use-toast';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { TwoFactorAuth } from '@/components/auth/TwoFactorAuth';
+import { AuditLogCategory, AuditLogSeverity, logAuditEvent } from '@/utils/auditLogger';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -13,6 +23,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [showTwoFactorDialog, setShowTwoFactorDialog] = useState(false);
+  const [isTwoFactorVerified, setIsTwoFactorVerified] = useState(false);
+  const [twoFactorSecret, setTwoFactorSecret] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -32,6 +45,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Set active SFD ID if available
           if (session.user.user_metadata.sfd_id) {
             setActiveSfdId(session.user.user_metadata.sfd_id as string);
+          }
+
+          // Check if user is admin and if 2FA is required
+          if (isAdmin && !isTwoFactorVerified) {
+            // Check if admin has 2FA enabled
+            const { data: adminData } = await supabase
+              .from('admin_users')
+              .select('has_2fa')
+              .eq('id', session.user.id)
+              .single();
+
+            if (adminData?.has_2fa) {
+              // Fetch admin's 2FA secret
+              const { data: twoFactorData } = await supabase
+                .from('user_2fa')
+                .select('secret_key')
+                .eq('user_id', session.user.id)
+                .single();
+
+              if (twoFactorData?.secret_key) {
+                setTwoFactorSecret(twoFactorData.secret_key);
+                setShowTwoFactorDialog(true);
+              }
+            }
           }
         } else {
           setUser(null);
@@ -64,13 +101,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setUser(null);
         setActiveSfdId(null);
+        setIsTwoFactorVerified(false);
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isTwoFactorVerified]);
 
   const signIn = async (email: string, password: string, useOtp: boolean = false) => {
     try {
@@ -87,13 +125,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // Use password authentication by default
-      const { error } = await supabase.auth.signInWithPassword({ 
+      const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
         password 
       });
+      
       if (error) throw error;
+      
+      // Log successful login
+      await logAuditEvent({
+        user_id: data.user?.id,
+        action: 'user_login',
+        category: AuditLogCategory.AUTHENTICATION,
+        severity: AuditLogSeverity.INFO,
+        status: 'success'
+      });
+      
+      // Check if this user is an admin and requires 2FA
+      const { data: adminData } = await supabase
+        .from('admin_users')
+        .select('has_2fa')
+        .eq('id', data.user?.id)
+        .single();
+
+      if (adminData?.has_2fa) {
+        // Fetch admin's 2FA secret
+        const { data: twoFactorData } = await supabase
+          .from('user_2fa')
+          .select('secret_key')
+          .eq('user_id', data.user?.id)
+          .single();
+
+        if (twoFactorData?.secret_key) {
+          setTwoFactorSecret(twoFactorData.secret_key);
+          setShowTwoFactorDialog(true);
+        }
+      }
     } catch (error: any) {
       console.error("Authentication error:", error.message);
+      
+      // Log failed login attempt
+      await logAuditEvent({
+        action: 'user_login_failed',
+        category: AuditLogCategory.AUTHENTICATION,
+        severity: AuditLogSeverity.WARNING,
+        details: { email },
+        status: 'failure',
+        error_message: error.message
+      });
+      
       throw error;
     }
   };
@@ -113,15 +193,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      alert('Veuillez vérifier votre e-mail pour confirmer votre compte.');
+      // Log signup
+      await logAuditEvent({
+        user_id: data.user?.id,
+        action: 'user_signup',
+        category: AuditLogCategory.AUTHENTICATION,
+        severity: AuditLogSeverity.INFO,
+        status: 'success'
+      });
+      
+      toast({
+        title: 'Compte créé',
+        description: 'Veuillez vérifier votre e-mail pour confirmer votre compte.',
+      });
     } catch (error: any) {
-      alert(error.error_description || error.message);
+      toast({
+        title: 'Erreur',
+        description: error.error_description || error.message,
+        variant: 'destructive'
+      });
+      
+      // Log failed signup
+      await logAuditEvent({
+        action: 'user_signup_failed',
+        category: AuditLogCategory.AUTHENTICATION,
+        severity: AuditLogSeverity.WARNING,
+        details: { email },
+        status: 'failure',
+        error_message: error.message
+      });
     }
   };
 
   const signOut = async () => {
     try {
+      // Log the user out action before actually signing out
+      if (user) {
+        await logAuditEvent({
+          user_id: user.id,
+          action: 'user_logout',
+          category: AuditLogCategory.AUTHENTICATION,
+          severity: AuditLogSeverity.INFO,
+          status: 'success'
+        });
+      }
+      
       await supabase.auth.signOut();
+      setIsTwoFactorVerified(false);
     } catch (error: any) {
       console.error('Error signing out:', error.message);
     }
@@ -153,6 +271,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     }
   };
+  
+  const handleTwoFactorComplete = (success: boolean) => {
+    setShowTwoFactorDialog(false);
+    
+    if (success) {
+      setIsTwoFactorVerified(true);
+      toast({
+        title: 'Vérification réussie',
+        description: 'Authentification à deux facteurs validée',
+      });
+    } else {
+      // If 2FA verification fails, sign the user out
+      signOut();
+      toast({
+        title: 'Vérification échouée',
+        description: 'La vérification a échoué. Veuillez réessayer.',
+        variant: 'destructive'
+      });
+    }
+  };
 
   const value = {
     session,
@@ -172,7 +310,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={value}>
-      {!isLoading && children}
+      {/* 2FA Dialog */}
+      <Dialog open={showTwoFactorDialog} onOpenChange={(open) => {
+        // Only allow closing if 2FA is verified or we're not signed in
+        if (!open && (!session || isTwoFactorVerified)) {
+          setShowTwoFactorDialog(false);
+        } else if (!open && session && !isTwoFactorVerified) {
+          // If trying to close without verification, show a message and sign out
+          toast({
+            title: 'Vérification requise',
+            description: 'L\'authentification à deux facteurs est requise pour les administrateurs',
+            variant: 'destructive'
+          });
+          signOut();
+        }
+      }}>
+        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>Authentification à deux facteurs</DialogTitle>
+            <DialogDescription>
+              Veuillez compléter l'authentification à deux facteurs pour continuer
+            </DialogDescription>
+          </DialogHeader>
+          
+          {session?.user && twoFactorSecret && (
+            <TwoFactorAuth 
+              userId={session.user.id}
+              onComplete={handleTwoFactorComplete}
+              mode="verify"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {(!isLoading && (!isAdmin || isAdmin && (isTwoFactorVerified || !showTwoFactorDialog))) && children}
     </AuthContext.Provider>
   );
 };

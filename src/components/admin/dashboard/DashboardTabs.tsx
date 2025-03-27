@@ -1,17 +1,13 @@
 
 import React from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { 
-  LayoutDashboard, 
-  Users, 
-  Building, 
-  CreditCard, 
-  FileBarChart, 
-  Settings,
-  PieChart,
-  BarChart,
-  FileSpreadsheet,
-  FileText
+  BarChart4, 
+  FileText, 
+  Download, 
+  LayoutDashboard,
+  Users
 } from 'lucide-react';
 
 interface DashboardTabsProps {
@@ -20,68 +16,54 @@ interface DashboardTabsProps {
 }
 
 export function DashboardTabs({ activeTab, onTabChange }: DashboardTabsProps) {
+  const tabs = [
+    {
+      id: 'dashboard',
+      label: 'Tableau de bord',
+      icon: <LayoutDashboard className="h-4 w-4 mr-2" />
+    },
+    {
+      id: 'charts',
+      label: 'Graphiques',
+      icon: <BarChart4 className="h-4 w-4 mr-2" />
+    },
+    {
+      id: 'reports',
+      label: 'Rapports',
+      icon: <FileText className="h-4 w-4 mr-2" />
+    },
+    {
+      id: 'export',
+      label: 'Exportation',
+      icon: <Download className="h-4 w-4 mr-2" />
+    },
+    {
+      id: 'admins',
+      label: 'Administrateurs',
+      icon: <Users className="h-4 w-4 mr-2" />
+    }
+  ];
+  
   return (
-    <div className="fixed bottom-0 left-0 right-0 border-t bg-white lg:sticky lg:bottom-auto lg:left-auto lg:right-auto lg:mt-6">
-      <div className="container mx-auto">
-        <Tabs value={activeTab} onValueChange={onTabChange} className="lg:w-fit">
-          <TabsList className="w-full h-16 lg:h-auto lg:w-auto">
-            <TabsTrigger value="dashboard" className="flex-1 data-[state=active]:bg-muted">
-              <div className="flex flex-col items-center lg:flex-row lg:gap-2">
-                <LayoutDashboard className="h-5 w-5" />
-                <span className="mt-1 text-xs font-normal lg:mt-0 lg:text-sm">Tableau de bord</span>
-              </div>
-            </TabsTrigger>
-            
-            <TabsTrigger value="sfds" className="flex-1 data-[state=active]:bg-muted">
-              <div className="flex flex-col items-center lg:flex-row lg:gap-2">
-                <Building className="h-5 w-5" />
-                <span className="mt-1 text-xs font-normal lg:mt-0 lg:text-sm">SFDs</span>
-              </div>
-            </TabsTrigger>
-            
-            <TabsTrigger value="subsidies" className="flex-1 data-[state=active]:bg-muted">
-              <div className="flex flex-col items-center lg:flex-row lg:gap-2">
-                <CreditCard className="h-5 w-5" />
-                <span className="mt-1 text-xs font-normal lg:mt-0 lg:text-sm">Subventions</span>
-              </div>
-            </TabsTrigger>
-            
-            <TabsTrigger value="users" className="flex-1 data-[state=active]:bg-muted">
-              <div className="flex flex-col items-center lg:flex-row lg:gap-2">
-                <Users className="h-5 w-5" />
-                <span className="mt-1 text-xs font-normal lg:mt-0 lg:text-sm">Utilisateurs</span>
-              </div>
-            </TabsTrigger>
-            
-            <TabsTrigger value="charts" className="flex-1 data-[state=active]:bg-muted">
-              <div className="flex flex-col items-center lg:flex-row lg:gap-2">
-                <BarChart className="h-5 w-5" />
-                <span className="mt-1 text-xs font-normal lg:mt-0 lg:text-sm">Graphiques</span>
-              </div>
-            </TabsTrigger>
-            
-            <TabsTrigger value="reports" className="flex-1 data-[state=active]:bg-muted">
-              <div className="flex flex-col items-center lg:flex-row lg:gap-2">
-                <FileText className="h-5 w-5" />
-                <span className="mt-1 text-xs font-normal lg:mt-0 lg:text-sm">Rapports</span>
-              </div>
-            </TabsTrigger>
-            
-            <TabsTrigger value="export" className="flex-1 data-[state=active]:bg-muted">
-              <div className="flex flex-col items-center lg:flex-row lg:gap-2">
-                <FileSpreadsheet className="h-5 w-5" />
-                <span className="mt-1 text-xs font-normal lg:mt-0 lg:text-sm">Export</span>
-              </div>
-            </TabsTrigger>
-            
-            <TabsTrigger value="settings" className="flex-1 data-[state=active]:bg-muted">
-              <div className="flex flex-col items-center lg:flex-row lg:gap-2">
-                <Settings className="h-5 w-5" />
-                <span className="mt-1 text-xs font-normal lg:mt-0 lg:text-sm">Paramètres</span>
-              </div>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+    <div className="fixed bottom-4 left-0 right-0 flex justify-center z-50">
+      <div className="bg-white rounded-full shadow-lg border px-2 py-1.5">
+        <ScrollArea className="w-full whitespace-nowrap">
+          <div className="flex space-x-1 p-1">
+            {tabs.map((tab) => (
+              <Button
+                key={tab.id}
+                variant={activeTab === tab.id ? "default" : "ghost"}
+                size="sm"
+                className="rounded-full"
+                onClick={() => onTabChange(tab.id)}
+              >
+                {tab.icon}
+                {tab.label}
+              </Button>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       </div>
     </div>
   );
