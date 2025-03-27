@@ -7,8 +7,8 @@ import LoginForm from './auth/LoginForm';
 import RegisterForm from './auth/RegisterForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Check } from 'lucide-react';
-import VoiceAssistant from './auth/VoiceAssistant';
-import LanguageSelector from './auth/LanguageSelector';
+import VoiceAssistant from './VoiceAssistant';
+import LanguageSelector from './LanguageSelector';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
