@@ -3,9 +3,7 @@ import { useAuth } from './useAuth';
 import { useSfdList } from './sfd/useSfdList';
 import { useActiveSfd } from './sfd/useActiveSfd';
 import { useSfdAccountActions } from './sfd/useSfdAccountActions';
-import { SfdAccount } from './sfd/types';
-
-// Change this line to use 'export type'
+// Use export type for TypeScript types
 export type { SfdAccount } from './sfd/types';
 
 export function useSfdAccounts() {
