@@ -1,138 +1,117 @@
 
 declare module 'crypto-js' {
-  namespace crypto {
-    export interface WordArray {
+  namespace lib {
+    interface WordArray {
       words: number[];
       sigBytes: number;
-      toString(encoder?: Encoder): string;
+      toString(encoder?: any): string;
       concat(wordArray: WordArray): WordArray;
       clamp(): void;
       clone(): WordArray;
+      slice(start?: number, end?: number): WordArray;
     }
 
-    export interface Encoder {
-      stringify(wordArray: WordArray): string;
-      parse(str: string): WordArray;
-    }
-
-    export interface Hasher {
-      reset(): Hasher;
-      update(messageUpdate: WordArray | string): Hasher;
-      finalize(messageUpdate?: WordArray | string): WordArray;
-    }
-
-    export interface Cipher {
-      encrypt(message: WordArray | string, key: WordArray | string, cfg?: CipherOption): CipherParams;
-      decrypt(ciphertext: CipherParams, key: WordArray | string, cfg?: CipherOption): WordArray;
-    }
-
-    export interface CipherParams {
+    interface CipherParams {
       ciphertext: WordArray;
       key: WordArray;
       iv: WordArray;
       salt?: WordArray;
-      algorithm?: Object;
-      mode?: Object;
-      padding?: Object;
+      algorithm?: any;
+      mode?: any;
+      padding?: any;
       blockSize?: number;
-      formatter?: Object;
+      formatter?: any;
     }
 
-    export interface CipherOption {
-      iv?: WordArray | string;
-      mode?: Object;
-      padding?: Object;
-      blockSize?: number;
-      formatter?: Object;
+    namespace WordArray {
+      function create(words?: number[] | ArrayBuffer, sigBytes?: number): WordArray;
+      function random(nBytes: number): WordArray;
     }
 
-    export interface Library {
-      WordArray: {
-        create(words?: number[] | ArrayBuffer, sigBytes?: number): WordArray;
-        random(nBytes: number): WordArray;
-      };
-      CipherParams: {
-        create(cipherParams: any): CipherParams;
-      };
+    namespace CipherParams {
+      function create(cipherParams: any): CipherParams;
     }
   }
 
-  export const lib: crypto.Library;
-  
-  export const enc: {
-    Hex: crypto.Encoder;
-    Latin1: crypto.Encoder;
-    Utf8: crypto.Encoder;
-    Utf16: crypto.Encoder;
-    Utf16LE: crypto.Encoder;
-    Utf16BE: crypto.Encoder;
-    Base64: crypto.Encoder;
-  };
-  
-  export const algo: {
-    AES: Object;
-    DES: Object;
-    TripleDES: Object;
-    RC4: Object;
-    RC4Drop: Object;
-    Rabbit: Object;
-    RabbitLegacy: Object;
-    HMAC: Object;
-    PBKDF2: Object;
-    SHA1: Object;
-    SHA256: Object;
-    SHA224: Object;
-    SHA512: Object;
-    SHA384: Object;
-    SHA3: Object;
-    RIPEMD160: Object;
-    MD5: Object;
-  };
-  export const mode: {
-    CBC: Object;
-    CFB: Object;
-    CTR: Object;
-    ECB: Object;
-    OFB: Object;
-  };
-  export const pad: {
-    Pkcs7: Object;
-    AnsiX923: Object;
-    Iso10126: Object;
-    Iso97971: Object;
-    ZeroPadding: Object;
-    NoPadding: Object;
-  };
-  export const format: {
-    OpenSSL: Object;
-    Hex: Object;
-  };
-
-  export function AES(
-    message: crypto.WordArray | string,
-    key: crypto.WordArray | string,
-    cfg?: crypto.CipherOption
-  ): crypto.CipherParams;
-
-  export namespace AES {
-    export function encrypt(
-      message: crypto.WordArray | string,
-      key: crypto.WordArray | string,
-      cfg?: crypto.CipherOption
-    ): crypto.CipherParams;
-    export function decrypt(
-      ciphertext: crypto.CipherParams | string,
-      key: crypto.WordArray | string,
-      cfg?: crypto.CipherOption
-    ): crypto.WordArray;
+  interface Encoder {
+    stringify(wordArray: lib.WordArray): string;
+    parse(str: string): lib.WordArray;
   }
 
-  export function PBKDF2(
-    password: crypto.WordArray | string,
-    salt: crypto.WordArray | string,
-    cfg?: { keySize?: number; iterations?: number; hasher?: Object }
-  ): crypto.WordArray;
+  namespace enc {
+    const Hex: Encoder;
+    const Latin1: Encoder;
+    const Utf8: Encoder;
+    const Utf16: Encoder;
+    const Utf16LE: Encoder;
+    const Utf16BE: Encoder;
+    const Base64: Encoder;
+  }
 
-  export function randomBytes(nBytes: number): crypto.WordArray;
-  export function enc(data: crypto.WordArray): string;
+  namespace mode {
+    const CBC: any;
+    const CFB: any;
+    const CTR: any;
+    const ECB: any;
+    const OFB: any;
+  }
+
+  namespace pad {
+    const Pkcs7: any;
+    const AnsiX923: any;
+    const Iso10126: any;
+    const Iso97971: any;
+    const ZeroPadding: any;
+    const NoPadding: any;
+  }
+
+  namespace format {
+    const OpenSSL: any;
+    const Hex: any;
+  }
+
+  namespace algo {
+    const AES: any;
+    const DES: any;
+    const TripleDES: any;
+    const RC4: any;
+    const RC4Drop: any;
+    const Rabbit: any;
+    const RabbitLegacy: any;
+    const HMAC: any;
+    const PBKDF2: any;
+    const SHA1: any;
+    const SHA256: any;
+    const SHA224: any;
+    const SHA512: any;
+    const SHA384: any;
+    const SHA3: any;
+    const RIPEMD160: any;
+    const MD5: any;
+  }
+
+  function AES(
+    message: lib.WordArray | string,
+    key: lib.WordArray | string,
+    cfg?: any
+  ): lib.CipherParams;
+
+  namespace AES {
+    function encrypt(
+      message: lib.WordArray | string,
+      key: lib.WordArray | string,
+      cfg?: any
+    ): lib.CipherParams;
+    function decrypt(
+      ciphertext: lib.CipherParams | string,
+      key: lib.WordArray | string,
+      cfg?: any
+    ): lib.WordArray;
+  }
+
+  function PBKDF2(
+    password: lib.WordArray | string,
+    salt: lib.WordArray | string,
+    cfg?: { keySize?: number; iterations?: number; hasher?: any }
+  ): lib.WordArray;
 }
