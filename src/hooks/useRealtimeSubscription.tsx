@@ -3,10 +3,16 @@ import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UseRealtimeSubscriptionProps } from '@/types/realtimeTransactions';
 
+// Define interface for channel to avoid deep inference
+interface SupabaseChannel {
+  on: (event: string, config: any, callback: (payload: any) => void) => SupabaseChannel;
+  subscribe: () => SupabaseChannel;
+}
+
 export function useRealtimeSubscription({ activeSfdId, onUpdate }: UseRealtimeSubscriptionProps) {
   const createRealtimeSubscription = useCallback((sfdId: string) => {
-    // Create a channel with explicit type cast to avoid deep type inference
-    const channel = supabase.channel('public:transactions');
+    // Cast the channel to our simple interface
+    const channel = supabase.channel('public:transactions') as unknown as SupabaseChannel;
     
     channel.on(
       'postgres_changes', 
@@ -17,8 +23,8 @@ export function useRealtimeSubscription({ activeSfdId, onUpdate }: UseRealtimeSu
         filter: `sfd_id=eq.${sfdId}`
       }, 
       (payload) => {
-        // Type the payload as any to avoid deep inference issues
-        onUpdate(payload as any);
+        // Pass the payload directly without type inference
+        onUpdate(payload);
       }
     );
     

@@ -5,6 +5,12 @@ import { Transaction } from '@/types/transactions';
 import { UseTransactionsFetchProps } from '@/types/realtimeTransactions';
 import { convertDatabaseRecordsToTransactions, generateMockTransactions } from '@/utils/transactionUtils';
 
+// Define a minimal interface for the query result to avoid deep inference
+interface SupabaseQueryResult {
+  data: any[] | null;
+  error: any | null;
+}
+
 export function useTransactionsFetch({ activeSfdId, userId, toast }: UseTransactionsFetchProps) {
   const [isLoading, setIsLoading] = useState(true);
   
@@ -16,13 +22,17 @@ export function useTransactionsFetch({ activeSfdId, userId, toast }: UseTransact
     setIsLoading(true);
     
     try {
-      // Explicitly define the result type without inference
-      const { data, error } = await supabase
+      // Use manual type casting to avoid excessive type inference
+      const response = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
         .limit(50);
+        
+      // Explicitly cast the response to our simple interface
+      const result = response as unknown as SupabaseQueryResult;
+      const { data, error } = result;
       
       if (error) throw error;
       
@@ -30,7 +40,7 @@ export function useTransactionsFetch({ activeSfdId, userId, toast }: UseTransact
       
       if (data && data.length > 0) {
         // Type casting here to avoid deep inference
-        txData = convertDatabaseRecordsToTransactions(data as any[], activeSfdId);
+        txData = convertDatabaseRecordsToTransactions(data, activeSfdId);
       } else {
         txData = generateMockTransactions(activeSfdId);
       }
