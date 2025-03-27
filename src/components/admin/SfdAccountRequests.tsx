@@ -22,8 +22,23 @@ import {
 import { CheckCircle, XCircle, Eye, Building, Calendar, Mail, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+// Define a proper type for our request object
+type SfdRequest = {
+  id: string;
+  institutionName: string;
+  region: string;
+  contactPerson: string;
+  contactEmail: string;
+  contactPhone: string;
+  description: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+};
+
 // Mock data for demonstration
-const mockRequests = [
+const mockRequests: SfdRequest[] = [
   {
     id: '1',
     institutionName: 'Kafo Jiginew',
@@ -73,19 +88,21 @@ const mockRequests = [
 ];
 
 const SfdAccountRequests = () => {
-  const [requests, setRequests] = useState(mockRequests);
-  const [selectedRequest, setSelectedRequest] = useState<typeof mockRequests[0] | null>(null);
+  const [requests, setRequests] = useState<SfdRequest[]>(mockRequests);
+  const [selectedRequest, setSelectedRequest] = useState<SfdRequest | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   
-  const handleViewRequest = (request: typeof mockRequests[0]) => {
+  const handleViewRequest = (request: SfdRequest) => {
     setSelectedRequest(request);
     setIsDialogOpen(true);
   };
   
   const handleApproveRequest = (id: string) => {
     setRequests(requests.map(req => 
-      req.id === id ? { ...req, status: 'approved', approvedAt: new Date().toISOString() } : req
+      req.id === id 
+        ? { ...req, status: 'approved' as const, approvedAt: new Date().toISOString() } 
+        : req
     ));
     
     setIsDialogOpen(false);
@@ -98,7 +115,9 @@ const SfdAccountRequests = () => {
   
   const handleRejectRequest = (id: string) => {
     setRequests(requests.map(req => 
-      req.id === id ? { ...req, status: 'rejected', rejectedAt: new Date().toISOString() } : req
+      req.id === id 
+        ? { ...req, status: 'rejected' as const, rejectedAt: new Date().toISOString() } 
+        : req
     ));
     
     setIsDialogOpen(false);
@@ -262,27 +281,27 @@ const SfdAccountRequests = () => {
                 <p className="text-sm">{selectedRequest.description}</p>
               </div>
               
-              {selectedRequest.status === 'approved' && (
+              {selectedRequest.status === 'approved' && selectedRequest.approvedAt && (
                 <div className="flex items-center space-x-2 bg-green-50 p-3 rounded-md text-green-700">
                   <CheckCircle className="h-5 w-5" />
                   <div>
                     <p className="text-sm font-medium">Demande approuvée</p>
                     <p className="text-xs">
-                      Le {new Date(selectedRequest.approvedAt!).toLocaleDateString()} 
-                      à {new Date(selectedRequest.approvedAt!).toLocaleTimeString()}
+                      Le {new Date(selectedRequest.approvedAt).toLocaleDateString()} 
+                      à {new Date(selectedRequest.approvedAt).toLocaleTimeString()}
                     </p>
                   </div>
                 </div>
               )}
               
-              {selectedRequest.status === 'rejected' && (
+              {selectedRequest.status === 'rejected' && selectedRequest.rejectedAt && (
                 <div className="flex items-center space-x-2 bg-red-50 p-3 rounded-md text-red-700">
                   <XCircle className="h-5 w-5" />
                   <div>
                     <p className="text-sm font-medium">Demande rejetée</p>
                     <p className="text-xs">
-                      Le {new Date(selectedRequest.rejectedAt!).toLocaleDateString()} 
-                      à {new Date(selectedRequest.rejectedAt!).toLocaleTimeString()}
+                      Le {new Date(selectedRequest.rejectedAt).toLocaleDateString()} 
+                      à {new Date(selectedRequest.rejectedAt).toLocaleTimeString()}
                     </p>
                   </div>
                 </div>
