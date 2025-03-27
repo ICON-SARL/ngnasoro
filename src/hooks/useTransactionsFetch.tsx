@@ -5,6 +5,12 @@ import { Transaction } from '@/types/transactions';
 import { UseTransactionsFetchProps } from '@/types/realtimeTransactions';
 import { convertDatabaseRecordsToTransactions, generateMockTransactions } from '@/utils/transactionUtils';
 
+// Define a simple interface for the query response
+interface QueryResponse {
+  data: any[] | null;
+  error: any | null;
+}
+
 export function useTransactionsFetch({ activeSfdId, userId, toast }: UseTransactionsFetchProps) {
   const [isLoading, setIsLoading] = useState(true);
   
@@ -16,18 +22,16 @@ export function useTransactionsFetch({ activeSfdId, userId, toast }: UseTransact
     setIsLoading(true);
     
     try {
-      // Use a more direct approach to bypass TypeScript's deep type inference
-      // Create the query using a type assertion to avoid TypeScript analyzing the chain too deeply
-      const response = await supabase
+      // Completely bypass TypeScript inference by storing the query as any
+      const query: any = supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50) as unknown as { 
-          data: any[] | null; 
-          error: any | null 
-        };
+        .limit(50);
       
+      // Execute the query and cast the result to our simple interface
+      const response = await query as QueryResponse;
       const { data, error } = response;
         
       if (error) throw error;
