@@ -3,15 +3,15 @@ import React from 'react';
 
 const Logo = () => {
   return (
-    <div className="flex flex-col items-center justify-center py-3">
-      <div className="bg-white p-4 rounded-lg inline-block mb-3 shadow-md">
+    <div className="flex flex-col items-center justify-center py-4">
+      <div className="bg-white p-4 rounded-lg inline-block mb-4 shadow-md">
         <img 
-          src="/lovable-uploads/cb7bbf5f-00ce-4584-a259-df0f14dc7d98.png" 
-          alt="Logo" 
-          className="h-14 mx-auto"
+          src="/lovable-uploads/1fd2272c-2539-4f58-9841-15710204f204.png" 
+          alt="N'GNA SÔRÔ Logo" 
+          className="h-24 mx-auto"
         />
       </div>
-      <h1 className="text-2xl font-bold text-center text-gray-800">
+      <h1 className="text-2xl font-bold text-center text-[#0D6A51]">
         Identifiez-vous
       </h1>
     </div>

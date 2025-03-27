@@ -72,125 +72,127 @@ const RegisterForm = () => {
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="fullName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="name" className="block text-sm font-medium mb-1">
-                Nom complet
-              </FormLabel>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <FormControl>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Nom et prénom"
-                    className="pl-10"
-                    {...field}
-                  />
-                </FormControl>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="reg-email" className="block text-sm font-medium mb-1">
-                Email
-              </FormLabel>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <FormControl>
-                  <Input
-                    id="reg-email"
-                    type="email"
-                    placeholder="email@example.com"
-                    className="pl-10"
-                    {...field}
-                  />
-                </FormControl>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="phoneNumber"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="phone-reg" className="block text-sm font-medium mb-1">
-                Numéro de téléphone
-              </FormLabel>
-              <div className="relative">
-                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <FormControl>
-                  <Input
-                    id="phone-reg"
-                    type="tel"
-                    placeholder="+223 00 00 00 00"
-                    className="pl-10"
-                    {...field}
-                  />
-                </FormControl>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="reg-password" className="block text-sm font-medium mb-1">
-                Mot de passe
-              </FormLabel>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <FormControl>
-                  <Input
-                    id="reg-password"
-                    type="password"
-                    placeholder="••••••••"
-                    className="pl-10"
-                    {...field}
-                  />
-                </FormControl>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Inscription en cours..." : "Créer un compte"}
-        </Button>
-        
-        <p className="text-center text-xs text-muted-foreground">
-          En créant un compte, vous acceptez nos{" "}
-          <a href="#" className="underline">
-            Conditions d'utilisation
-          </a>{" "}
-          et notre{" "}
-          <a href="#" className="underline">
-            Politique de confidentialité
-          </a>
-          .
-        </p>
-      </form>
-    </Form>
+    <div className="p-6">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="fullName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel htmlFor="name" className="block text-sm font-medium mb-1">
+                  Nom complet
+                </FormLabel>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <FormControl>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Nom et prénom"
+                      className="pl-10"
+                      {...field}
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel htmlFor="reg-email" className="block text-sm font-medium mb-1">
+                  Email
+                </FormLabel>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <FormControl>
+                    <Input
+                      id="reg-email"
+                      type="email"
+                      placeholder="email@example.com"
+                      className="pl-10"
+                      {...field}
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="phoneNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel htmlFor="phone-reg" className="block text-sm font-medium mb-1">
+                  Numéro de téléphone
+                </FormLabel>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <FormControl>
+                    <Input
+                      id="phone-reg"
+                      type="tel"
+                      placeholder="+223 00 00 00 00"
+                      className="pl-10"
+                      {...field}
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel htmlFor="reg-password" className="block text-sm font-medium mb-1">
+                  Mot de passe
+                </FormLabel>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <FormControl>
+                    <Input
+                      id="reg-password"
+                      type="password"
+                      placeholder="••••••••"
+                      className="pl-10"
+                      {...field}
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <Button type="submit" className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90" disabled={isSubmitting}>
+            {isSubmitting ? "Inscription en cours..." : "Créer un compte"}
+          </Button>
+          
+          <p className="text-center text-xs text-muted-foreground">
+            En créant un compte, vous acceptez nos{" "}
+            <a href="#" className="underline text-[#0D6A51]">
+              Conditions d'utilisation
+            </a>{" "}
+            et notre{" "}
+            <a href="#" className="underline text-[#0D6A51]">
+              Politique de confidentialité
+            </a>
+            .
+          </p>
+        </form>
+      </Form>
+    </div>
   );
 };
 
