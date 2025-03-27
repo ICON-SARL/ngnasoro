@@ -17,11 +17,17 @@ Deno.serve(async (req) => {
   // Get environment variables
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
+  const supabaseServiceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+  
+  // Create Supabase client with anon key (for user-level access)
   const supabase = createClient(supabaseUrl, supabaseAnonKey)
+  
+  // Create admin Supabase client with service role (for admin-level access)
+  const adminSupabase = createClient(supabaseUrl, supabaseServiceRole)
 
   try {
     // Get the request body
-    const { userId } = await req.json()
+    const { userId, sfdId } = await req.json()
 
     if (!userId) {
       throw new Error('User ID is required')
@@ -44,74 +50,96 @@ Deno.serve(async (req) => {
       throw sfdsError
     }
 
-    // For each SFD, update the account balance
-    // In a real app, this would call external APIs for each SFD
-    for (const userSfd of userSfds) {
-      // Simulate balance update - in production, this would call SFD API
-      const mockBalance = Math.floor(Math.random() * (300000 - 150000) + 150000)
-      
-      // Update the user's account
-      if (userSfd.is_default) {
-        const { error: updateError } = await supabase
-          .from('accounts')
-          .update({ 
-            balance: 250000, // Fixed balance as in the screenshot
-            last_updated: new Date().toISOString() 
-          })
-          .eq('user_id', userId)
-          
-        if (updateError) {
-          throw updateError
-        }
+    let targetSfdId = sfdId
+    if (!targetSfdId && userSfds && userSfds.length > 0) {
+      // If no specific SFD was provided, use the default one
+      const defaultSfd = userSfds.find(sfd => sfd.is_default)
+      if (defaultSfd) {
+        targetSfdId = defaultSfd.sfd_id
+      } else {
+        targetSfdId = userSfds[0].sfd_id
       }
-      
-      // Log the synchronization
-      await supabase
-        .from('audit_logs')
-        .insert({
-          user_id: userId,
-          action: 'synchronize_sfd_account',
-          category: 'ACCOUNT_SYNC',
-          status: 'success',
-          severity: 'info',
-          details: { 
-            sfd_id: userSfd.sfd_id,
-            sfd_name: userSfd.sfds?.name,
-            synchronized_at: new Date().toISOString()
-          }
-        })
     }
 
-    // Create transaction records
-    const { error: transactionError } = await supabase
+    // For the targeted SFD, update the account balance
+    // In a real app, this would fetch data from the SFD's API
+    // Here we simulate this with existing data from the admin panel
+    
+    // First, check if there's any admin data for this SFD and user combination
+    const { data: adminData, error: adminError } = await adminSupabase
+      .from('sfd_clients')
+      .select(`
+        id,
+        full_name,
+        sfd_loans(id, amount, status, next_payment_date, disbursed_at, monthly_payment) 
+      `)
+      .eq('user_id', userId)
+      .eq('sfd_id', targetSfdId)
+      .single()
+
+    if (adminError && adminError.code !== 'PGRST116') { // Not found is ok
+      console.warn('Admin data fetch error:', adminError)
+    }
+
+    // Update the user's account - using fixed value for demonstration
+    // In production this would come from the SFD's actual data
+    const balance = adminData ? 250000 : 150000 + Math.floor(Math.random() * 100000)
+    
+    const { error: updateError } = await supabase
+      .from('accounts')
+      .update({ 
+        balance: balance,
+        last_updated: new Date().toISOString() 
+      })
+      .eq('user_id', userId)
+      
+    if (updateError) {
+      throw updateError
+    }
+    
+    // Create transaction records for synchronization
+    const { error: transactionError } = await adminSupabase
       .from('transactions')
       .upsert([
         {
           user_id: userId,
-          name: 'Dépôt',
+          sfd_id: targetSfdId,
+          name: 'Synchronisation compte',
           type: 'deposit',
-          amount: 125000,
+          amount: 0, // Just a marker transaction, no real amount change
           date: new Date().toISOString(),
-          status: 'success'
-        },
-        {
-          user_id: userId,
-          name: 'Intérêts',
-          type: 'deposit',
-          amount: 7500,
-          date: new Date().toISOString(),
-          status: 'success'
+          status: 'success',
+          description: 'Synchronisation du compte avec la SFD'
         }
       ])
 
     if (transactionError) {
-      throw transactionError
+      console.error('Transaction record error:', transactionError)
     }
+
+    // Log the synchronization
+    await adminSupabase
+      .from('audit_logs')
+      .insert({
+        user_id: userId,
+        action: 'synchronize_sfd_account',
+        category: 'ACCOUNT_SYNC',
+        status: 'success',
+        severity: 'info',
+        details: { 
+          sfd_id: targetSfdId,
+          synchronized_at: new Date().toISOString()
+        }
+      })
 
     return new Response(
       JSON.stringify({
         success: true,
         message: 'SFD accounts synchronized successfully',
+        data: {
+          sfdId: targetSfdId,
+          balance: balance
+        }
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -15,12 +15,25 @@ export function useRealtimeSynchronization() {
       return false;
     }
 
+    if (!activeSfdId) {
+      console.error('Cannot synchronize: No active SFD selected');
+      toast({
+        title: 'Synchronisation impossible',
+        description: 'Veuillez sélectionner une SFD active',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
     try {
       setIsSyncing(true);
       
       // Call the edge function to synchronize SFD accounts
       const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({ 
+          userId: user.id,
+          sfdId: activeSfdId
+        }),
       });
       
       if (error) {
@@ -50,7 +63,7 @@ export function useRealtimeSynchronization() {
     } finally {
       setIsSyncing(false);
     }
-  }, [user, toast]);
+  }, [user, activeSfdId, toast]);
 
   return {
     isSyncing,

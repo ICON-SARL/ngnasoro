@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 import { PaymentMethodTabs } from './PaymentMethodTabs';
 import { SecurityFeatures } from './SecurityFeatures';
 import { ReconciliationSection } from './ReconciliationSection';
@@ -31,6 +33,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, activeSfdId } = useAuth();
+  const { synchronizeWithSfd } = useRealtimeSynchronization();
   const [paymentMethod, setPaymentMethod] = useState('sfd');
   const [balanceStatus, setBalanceStatus] = useState<'sufficient' | 'insufficient'>('sufficient');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed' | null>(null);
@@ -55,6 +58,15 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   
   // Définir les montants de transaction par défaut
   const amount = isWithdrawal ? 25000 : loanId ? 3500 : 10000;
+  
+  // Synchroniser les données au chargement
+  useEffect(() => {
+    if (activeSfdId) {
+      synchronizeWithSfd().catch(err => {
+        console.error('Error synchronizing with SFD:', err);
+      });
+    }
+  }, [activeSfdId, synchronizeWithSfd]);
   
   // Gérer le paiement en fonction du type d'opération
   const handlePayment = async () => {
@@ -90,6 +102,13 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       setTimeout(() => setProgress(100), 1500);
       
       if (result) {
+        // Synchroniser avec la SFD après l'opération
+        try {
+          await synchronizeWithSfd();
+        } catch (syncError) {
+          console.error('Error synchronizing after payment:', syncError);
+        }
+        
         setTimeout(() => {
           setPaymentStatus('success');
           setPaymentSuccess(true);
@@ -178,12 +197,35 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       )}
       
       {mobileMoneyInitiated && (
-        <MobileMoneyModal onClose={() => setMobileMoneyInitiated(false)} isWithdrawal={isWithdrawal} />
+        <MobileMoneyModal 
+          onClose={() => setMobileMoneyInitiated(false)}
+          isWithdrawal={isWithdrawal}
+          onSuccess={async () => {
+            // Synchroniser après une opération mobile money réussie
+            try {
+              await synchronizeWithSfd();
+            } catch (err) {
+              console.error('Error synchronizing after mobile money payment:', err);
+            }
+          }}
+        />
       )}
       
       <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
         <DialogTrigger className="hidden">Open QR Dialog</DialogTrigger>
-        <QRCodePaymentDialog onClose={() => setQrDialogOpen(false)} amount={amount} isWithdrawal={isWithdrawal} />
+        <QRCodePaymentDialog 
+          onClose={() => setQrDialogOpen(false)} 
+          amount={amount} 
+          isWithdrawal={isWithdrawal}
+          onSuccess={async () => {
+            // Synchroniser après un paiement QR réussi
+            try {
+              await synchronizeWithSfd();
+            } catch (err) {
+              console.error('Error synchronizing after QR payment:', err);
+            }
+          }}
+        />
       </Dialog>
     </div>
   );
