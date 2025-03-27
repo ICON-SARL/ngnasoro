@@ -13,7 +13,7 @@ const LoginButton = ({ isLoading, disabled, authMode }: LoginButtonProps) => {
   return (
     <Button 
       type="submit" 
-      className="w-full h-16 rounded-xl font-bold text-xl bg-[#0D6A51] hover:bg-[#0D6A51]/90 transition-all shadow-lg"
+      className="w-full h-16 rounded-xl font-extrabold text-xl bg-[#0D6A51] hover:bg-[#0D6A51]/90 transition-all shadow-lg border-2 border-white/20"
       disabled={isLoading || disabled}
     >
       {isLoading ? (

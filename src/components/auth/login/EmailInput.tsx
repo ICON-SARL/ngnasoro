@@ -18,7 +18,7 @@ const EmailInput = ({ email, onChange, disabled }: EmailInputProps) => {
           id="email"
           type="email"
           placeholder="Entrez votre email ici"
-          className="pl-12 h-16 text-lg border-2 border-[#0D6A51]/30 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-xl bg-white/90"
+          className="pl-12 h-16 text-lg border-2 border-[#0D6A51]/30 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-xl bg-white/90 font-medium shadow-md"
           value={email}
           onChange={onChange}
           required
