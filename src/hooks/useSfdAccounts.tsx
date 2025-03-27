@@ -5,7 +5,8 @@ import { useActiveSfd } from './sfd/useActiveSfd';
 import { useSfdAccountActions } from './sfd/useSfdAccountActions';
 import { SfdAccount } from './sfd/types';
 
-export { SfdAccount } from './sfd/types';
+// Change this line to use 'export type'
+export type { SfdAccount } from './sfd/types';
 
 export function useSfdAccounts() {
   const { user, activeSfdId } = useAuth();
