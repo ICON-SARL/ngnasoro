@@ -38,7 +38,7 @@ export function useRealtimeTransactions() {
     }));
   };
   
-  // Calcule les statistiques des transactions
+  // Calculate statistics for transactions
   const calculateStats = useCallback((txList: Transaction[]) => {
     const totalCount = txList.length;
     const totalVolume = txList.reduce((sum, tx) => sum + tx.amount, 0);
@@ -58,14 +58,13 @@ export function useRealtimeTransactions() {
     });
   }, []);
   
-  // Récupère les transactions initiales
+  // Fetch initial transactions
   const fetchTransactions = useCallback(async () => {
     if (!user || !activeSfdId) return;
     
     setIsLoading(true);
     
     try {
-      // En production, ce serait un appel à Supabase
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
@@ -75,8 +74,8 @@ export function useRealtimeTransactions() {
         
       if (error) throw error;
       
-      // Si nous n'avons pas de données réelles dans la table, utilisons des données simulées pour la démonstration
-      let txData: Transaction[];
+      // If we don't have real data in the table, use simulated data for demonstration
+      let txData: Transaction[] = [];
       if (data && data.length > 0) {
         txData = convertDatabaseRecordsToTransactions(data as DatabaseTransactionRecord[]);
       } else {
@@ -87,10 +86,10 @@ export function useRealtimeTransactions() {
       setFilteredTransactions(txData);
       calculateStats(txData);
     } catch (error) {
-      console.error('Erreur lors du chargement des transactions:', error);
+      console.error('Error loading transactions:', error);
       toast({
-        title: 'Erreur de chargement',
-        description: 'Impossible de charger les transactions. Veuillez réessayer.',
+        title: 'Loading Error',
+        description: 'Unable to load transactions. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -98,13 +97,13 @@ export function useRealtimeTransactions() {
     }
   }, [user, activeSfdId, toast, calculateStats]);
   
-  // Configure l'abonnement en temps réel
+  // Set up realtime subscription
   useEffect(() => {
     if (!user || !activeSfdId) return;
     
     fetchTransactions();
     
-    // Configuration de l'abonnement en temps réel via Supabase
+    // Configure realtime subscription via Supabase
     const channel = supabase
       .channel('public:transactions')
       .on('postgres_changes', {
@@ -122,7 +121,7 @@ export function useRealtimeTransactions() {
     };
   }, [user, activeSfdId, fetchTransactions]);
   
-  // Gère les mises à jour en temps réel
+  // Handle realtime updates
   const handleRealtimeUpdate = (payload: any) => {
     const { eventType, new: newRecord, old: oldRecord } = payload;
     
@@ -133,8 +132,8 @@ export function useRealtimeTransactions() {
       const newTransaction = convertDatabaseRecordsToTransactions([newRecord as DatabaseTransactionRecord])[0];
       updatedTransactions = [newTransaction, ...updatedTransactions];
       toast({
-        title: 'Nouvelle transaction',
-        description: `${newTransaction.type} de ${newTransaction.amount} FCFA`,
+        title: 'New transaction',
+        description: `${newTransaction.type} of ${newTransaction.amount} FCFA`,
       });
     } else if (eventType === 'UPDATE') {
       // Convert the updated record to a Transaction object
@@ -151,11 +150,11 @@ export function useRealtimeTransactions() {
     calculateStats(updatedTransactions);
   };
   
-  // Filtrer les transactions
+  // Filter transactions
   const filterTransactions = useCallback((searchTerm: string = '', status: string | null = null) => {
     let filtered = [...transactions];
     
-    // Appliquer la recherche textuelle
+    // Apply text search
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(tx => 
@@ -167,7 +166,7 @@ export function useRealtimeTransactions() {
       );
     }
     
-    // Appliquer le filtre de statut
+    // Apply status filter
     if (status) {
       filtered = filtered.filter(tx => tx.status === status);
     }
@@ -175,29 +174,33 @@ export function useRealtimeTransactions() {
     setFilteredTransactions(filtered);
   }, [transactions]);
   
-  // Génère des transactions simulées pour la démonstration
+  // Generate simulated transactions for demonstration
   const generateMockTransactions = (sfdId: string): Transaction[] => {
     const transactionTypes: Transaction['type'][] = ['deposit', 'withdrawal', 'transfer', 'payment', 'loan_disbursement'];
     const statuses: Transaction['status'][] = ['success', 'pending', 'failed', 'flagged'];
     
-    return Array.from({ length: 20 }, (_, i) => {
+    const mockTransactions: Transaction[] = [];
+    
+    for (let i = 0; i < 20; i++) {
       const type = transactionTypes[Math.floor(Math.random() * transactionTypes.length)];
       const status = Math.random() > 0.7 
         ? statuses[Math.floor(Math.random() * statuses.length)]
         : 'success';
       
-      return {
+      mockTransactions.push({
         id: `TX${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
         sfd_id: sfdId,
         type,
-        amount: Math.floor(Math.random() * 9000000) + 10000, // 10K à 9M FCFA
+        amount: Math.floor(Math.random() * 9000000) + 10000, // 10K to 9M FCFA
         currency: 'FCFA',
         status,
         description: `Transaction ${type} #${i+1}`,
-        created_at: new Date(Date.now() - Math.floor(Math.random() * 86400000)).toISOString(), // Sur les dernières 24h
-        payment_method: ['espèces', 'mobile_money', 'virement', 'chèque'][Math.floor(Math.random() * 4)],
-      };
-    });
+        created_at: new Date(Date.now() - Math.floor(Math.random() * 86400000)).toISOString(), // Over the last 24h
+        payment_method: ['cash', 'mobile_money', 'transfer', 'check'][Math.floor(Math.random() * 4)],
+      });
+    }
+    
+    return mockTransactions;
   };
   
   return {
