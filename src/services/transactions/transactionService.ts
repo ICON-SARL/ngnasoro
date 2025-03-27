@@ -1,145 +1,95 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction } from '@/types/transactions';
-import { 
-  CreateTransactionOptions, 
-  TransactionFilters, 
-  TransactionType, 
-  TransactionStatus 
-} from './types';
-import { buildTransactionQuery } from './transactionQueryBuilder';
-import { formatTransaction } from './transactionFormatter';
+import { CreateTransactionOptions, TransactionFilters } from './types';
 
-class TransactionService {
-  /**
-   * Create a new transaction
-   */
-  async createTransaction(options: CreateTransactionOptions): Promise<Transaction | null> {
+export const transactionService = {
+  // Récupérer les transactions d'un utilisateur
+  async getUserTransactions(userId: string, sfdId: string, filters?: TransactionFilters): Promise<Transaction[]> {
     try {
-      const {
-        userId,
-        sfdId,
-        name,
-        amount,
-        type,
-        description,
-        paymentMethod,
-        referenceId
-      } = options;
-
-      // Prepare the data object to match the expected table schema
-      const transactionData = {
-        user_id: userId,
-        sfd_id: sfdId,
-        name: name,
-        amount: amount,
-        type: type,
-        date: new Date().toISOString(),
-        description,
-        payment_method: paymentMethod,
-        reference_id: referenceId
-      };
-
-      // Insert into the transactions table
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert(transactionData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating transaction:', error);
-        return null;
-      }
-
-      return formatTransaction(data);
-    } catch (error) {
-      console.error('Transaction creation failed:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Get transactions for a specific user
-   */
-  async getUserTransactions(userId: string, sfdId?: string, filters?: TransactionFilters): Promise<Transaction[]> {
-    try {
-      const query = buildTransactionQuery(userId, sfdId, filters);
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching transactions:', error);
-        return [];
-      }
-
-      // Map the database records to our Transaction type
-      return data.map(record => formatTransaction(record));
-    } catch (error) {
-      console.error('Failed to fetch user transactions:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Get transactions for a specific SFD
-   */
-  async getSfdTransactions(sfdId: string, filters?: TransactionFilters): Promise<Transaction[]> {
-    try {
-      const query = buildTransactionQuery(undefined, sfdId, filters);
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching SFD transactions:', error);
-        return [];
-      }
-
-      return data.map(record => formatTransaction(record));
-    } catch (error) {
-      console.error('Failed to fetch SFD transactions:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Get a transaction by ID
-   */
-  async getTransactionById(transactionId: string): Promise<Transaction | null> {
-    try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('transactions')
         .select('*')
-        .eq('id', transactionId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching transaction by ID:', error);
-        return null;
+        .eq('user_id', userId);
+      
+      if (sfdId) {
+        query = query.eq('sfd_id', sfdId);
       }
 
-      return formatTransaction(data);
-    } catch (error) {
-      console.error('Failed to fetch transaction by ID:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Flag a transaction for review
-   * Note: Currently just logs the action since status field isn't in the schema
-   */
-  async flagTransaction(transactionId: string, reason: string): Promise<boolean> {
-    try {
-      // Since our schema doesn't have a status field, we'll use metadata
-      // For now, we'll just log the action since we don't have a status or metadata field
-      console.log(`Transaction ${transactionId} would be flagged with reason: ${reason}`);
+      if (filters) {
+        if (filters.type) {
+          query = query.eq('type', filters.type);
+        }
+        
+        if (filters.startDate) {
+          query = query.gte('created_at', filters.startDate);
+        }
+        
+        if (filters.endDate) {
+          query = query.lte('created_at', filters.endDate);
+        }
+        
+        if (filters.limit) {
+          query = query.limit(filters.limit);
+        }
+      }
       
-      // In a real implementation with a proper schema, we would update the transaction
-      return true;
+      query = query.order('created_at', { ascending: false });
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      return data as Transaction[];
     } catch (error) {
-      console.error('Failed to flag transaction:', error);
-      return false;
+      console.error('Error fetching transactions:', error);
+      return [];
+    }
+  },
+
+  // Créer une nouvelle transaction
+  async createTransaction(options: CreateTransactionOptions): Promise<Transaction> {
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: options.userId,
+          sfd_id: options.sfdId,
+          name: options.name,
+          amount: options.amount,
+          type: options.type,
+          status: options.status || 'success',
+          description: options.description,
+          payment_method: options.paymentMethod,
+          reference_id: options.referenceId,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return data as Transaction;
+    } catch (error) {
+      console.error('Error creating transaction:', error);
+      throw new Error('Failed to create transaction');
+    }
+  },
+
+  // Récupérer le solde du compte
+  async getAccountBalance(userId: string, sfdId: string): Promise<number> {
+    try {
+      const { data, error } = await supabase
+        .from('accounts')
+        .select('balance')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error) throw error;
+      
+      return data.balance || 0;
+    } catch (error) {
+      console.error('Error fetching account balance:', error);
+      return 0;
     }
   }
-}
-
-export const transactionService = new TransactionService();
+};
