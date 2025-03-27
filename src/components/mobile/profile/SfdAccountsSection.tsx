@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { SfdData } from '@/hooks/useSfdDataAccess';
+import { useSfdSwitch } from '@/hooks/useSfdSwitch';
+import SfdSwitchVerification from '@/components/SfdSwitchVerification';
 
 interface SfdAccountsSectionProps {
   sfdData?: SfdData[];
@@ -24,27 +25,41 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
   const { toast } = useToast();
   const { activeSfdId: authActiveSfdId, setActiveSfdId, isAdmin } = useAuth();
   const { sfdAccounts, isLoading, refetch, synchronizeBalances } = useSfdAccounts();
+  const { 
+    isVerifying, 
+    pendingSfdId, 
+    verificationRequired, 
+    initiateSwitch, 
+    completeSwitch, 
+    cancelSwitch 
+  } = useSfdSwitch();
+  
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [otpData, setOtpData] = useState<{[key: string]: {code: string, expiresAt: Date}} | null>(null);
   
   const effectiveActiveSfdId = propsActiveSfdId !== undefined ? propsActiveSfdId : authActiveSfdId;
 
+  const pendingSfdName = React.useMemo(() => {
+    if (!pendingSfdId) return '';
+    const displayAccounts = propsSfdData || sfdAccounts;
+    const pendingSfd = displayAccounts.find(sfd => sfd.id === pendingSfdId);
+    return pendingSfd?.name || '';
+  }, [pendingSfdId, propsSfdData, sfdAccounts]);
+
   const handleSwitchSfd = async (sfdId: string) => {
     setSwitchingId(sfdId);
+    
     try {
       if (onSwitchSfd) {
         await onSwitchSfd(sfdId);
       } else {
-        setActiveSfdId(sfdId);
-        // Sync balances when switching SFDs
-        await synchronizeBalances.mutateAsync();
-        refetch();
+        const initiated = await initiateSwitch(sfdId);
+        
+        if (initiated && !verificationRequired) {
+          await synchronizeBalances.mutateAsync();
+          refetch();
+        }
       }
-      
-      toast({
-        title: "SFD changée avec succès",
-        description: "Vous êtes maintenant connecté à une nouvelle SFD",
-      });
     } catch (error) {
       toast({
         title: "Erreur de changement",
@@ -56,28 +71,29 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
     }
   };
 
-  // Function to determine account status
+  const handleVerificationComplete = async (code: string) => {
+    const success = await completeSwitch(code);
+    
+    if (success) {
+      await synchronizeBalances.mutateAsync();
+      refetch();
+    }
+    
+    return success;
+  };
+
   const getAccountStatus = (sfdId: string) => {
-    // In a real app, this would come from the API
-    // For demo, we'll consider all active accounts verified, others may be pending
     if (sfdId === effectiveActiveSfdId) {
       return 'verified';
     }
     
-    // For demo, randomly mark some accounts as pending
     return sfdId.startsWith('1') ? 'pending' : 'verified';
   };
 
-  // Function to generate OTP for SFD account verification
   const generateOTP = (sfdId: string) => {
-    // Generate a 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // Set expiry for 15 minutes from now
     const expiryTime = new Date();
     expiryTime.setMinutes(expiryTime.getMinutes() + 15);
-    
-    // Store OTP data
     setOtpData({
       ...otpData,
       [sfdId]: {
@@ -85,15 +101,12 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
         expiresAt: expiryTime
       }
     });
-    
-    // Show a success toast
     toast({
       title: "Code OTP généré",
       description: "Partagez ce code avec votre agent SFD pour valider votre compte",
     });
   };
 
-  // Function to copy OTP to clipboard
   const copyOTP = (sfdId: string) => {
     if (otpData && otpData[sfdId]) {
       navigator.clipboard.writeText(otpData[sfdId].code);
@@ -121,7 +134,6 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
 
   const displayAccounts = propsSfdData || sfdAccounts;
 
-  // If no SFD accounts are available
   if (displayAccounts.length === 0) {
     return (
       <div className="space-y-4 mt-4">
@@ -152,124 +164,133 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
   }
 
   return (
-    <div className="space-y-4 mt-4">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Mes Comptes SFD</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="space-y-3">
-            {displayAccounts.map((sfd) => {
-              const status = getAccountStatus(sfd.id);
-              const hasOtp = otpData && otpData[sfd.id];
-              
-              return (
-                <div key={sfd.id} className="flex items-center justify-between border p-3 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center">
-                      {sfd.name.substring(0, 2)}
-                    </div>
-                    <div>
-                      <p className="font-medium">{sfd.name}</p>
-                      <div className="flex items-center space-x-1">
-                        {sfd.id === effectiveActiveSfdId ? (
-                          <span className="text-xs text-green-600 flex items-center">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Compte actif
-                          </span>
-                        ) : status === 'pending' ? (
-                          <span className="text-xs text-amber-600 flex items-center">
-                            <Clock className="h-3 w-3 mr-1" />
-                            En attente de validation
-                          </span>
-                        ) : (
-                          <span className="text-xs text-gray-500 flex items-center">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Inactif
-                          </span>
-                        )}
+    <>
+      <div className="space-y-4 mt-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Mes Comptes SFD</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-3">
+              {displayAccounts.map((sfd) => {
+                const status = getAccountStatus(sfd.id);
+                const hasOtp = otpData && otpData[sfd.id];
+                
+                return (
+                  <div key={sfd.id} className="flex items-center justify-between border p-3 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center">
+                        {sfd.name.substring(0, 2)}
+                      </div>
+                      <div>
+                        <p className="font-medium">{sfd.name}</p>
+                        <div className="flex items-center space-x-1">
+                          {sfd.id === effectiveActiveSfdId ? (
+                            <span className="text-xs text-green-600 flex items-center">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Compte actif
+                            </span>
+                          ) : status === 'pending' ? (
+                            <span className="text-xs text-amber-600 flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              En attente de validation
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-500 flex items-center">
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              Inactif
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Button controls based on status */}
-                  <div className="flex items-center space-x-2">
-                    {sfd.id !== effectiveActiveSfdId && status === 'verified' && (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="text-xs"
-                        onClick={() => handleSwitchSfd(sfd.id)}
-                        disabled={switchingId === sfd.id || synchronizeBalances.isPending}
-                      >
-                        {switchingId === sfd.id ? 'Changement...' : 'Basculer'}
-                      </Button>
-                    )}
                     
-                    {sfd.id !== effectiveActiveSfdId && status === 'pending' && (
-                      <>
-                        {hasOtp ? (
-                          <div className="flex flex-col space-y-1">
-                            <div className="flex items-center space-x-1">
-                              <div className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">
-                                {otpData[sfd.id].code}
+                    <div className="flex items-center space-x-2">
+                      {sfd.id !== effectiveActiveSfdId && status === 'verified' && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="text-xs"
+                          onClick={() => handleSwitchSfd(sfd.id)}
+                          disabled={switchingId === sfd.id || isVerifying || synchronizeBalances.isPending}
+                        >
+                          {switchingId === sfd.id ? 'Changement...' : 'Basculer'}
+                        </Button>
+                      )}
+                      
+                      {sfd.id !== effectiveActiveSfdId && status === 'pending' && (
+                        <>
+                          {hasOtp ? (
+                            <div className="flex flex-col space-y-1">
+                              <div className="flex items-center space-x-1">
+                                <div className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">
+                                  {otpData[sfd.id].code}
+                                </div>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="h-6 w-6 p-0" 
+                                  onClick={() => copyOTP(sfd.id)}
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="h-6 w-6 p-0" 
+                                  onClick={() => generateOTP(sfd.id)}
+                                >
+                                  <RefreshCw className="h-3 w-3" />
+                                </Button>
                               </div>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="h-6 w-6 p-0" 
-                                onClick={() => copyOTP(sfd.id)}
-                              >
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="h-6 w-6 p-0" 
-                                onClick={() => generateOTP(sfd.id)}
-                              >
-                                <RefreshCw className="h-3 w-3" />
-                              </Button>
+                              <span className="text-[10px] text-gray-500">
+                                Valide jusqu'à {otpData[sfd.id].expiresAt.toLocaleTimeString()}
+                              </span>
                             </div>
-                            <span className="text-[10px] text-gray-500">
-                              Valide jusqu'à {otpData[sfd.id].expiresAt.toLocaleTimeString()}
-                            </span>
-                          </div>
-                        ) : (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="text-xs text-amber-600"
-                            onClick={() => generateOTP(sfd.id)}
-                          >
-                            Générer OTP
-                          </Button>
-                        )}
-                      </>
-                    )}
-                    
-                    {sfd.id === effectiveActiveSfdId && (
-                      <span className="text-xs font-medium text-green-600 px-2 py-1 bg-green-50 rounded-md">
-                        Active
-                      </span>
-                    )}
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="text-xs text-amber-600"
+                              onClick={() => generateOTP(sfd.id)}
+                            >
+                              Générer OTP
+                            </Button>
+                          )}
+                        </>
+                      )}
+                      
+                      {sfd.id === effectiveActiveSfdId && (
+                        <span className="text-xs font-medium text-green-600 px-2 py-1 bg-green-50 rounded-md">
+                          Active
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
-            <Button 
-              variant="outline" 
-              className="w-full mt-3 border-dashed"
-              onClick={() => navigate('/sfd-selector')}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Ajouter une SFD
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+              <Button 
+                variant="outline" 
+                className="w-full mt-3 border-dashed"
+                onClick={() => navigate('/sfd-selector')}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Ajouter une SFD
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <SfdSwitchVerification 
+        isOpen={verificationRequired && !!pendingSfdId}
+        onClose={cancelSwitch}
+        onVerify={handleVerificationComplete}
+        sfdName={pendingSfdName}
+        isLoading={isVerifying}
+      />
+    </>
   );
 };
 
