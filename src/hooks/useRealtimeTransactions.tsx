@@ -1,11 +1,12 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Transaction, TransactionStats } from '@/types/transactions';
 
-// Create a maximally simple type that avoids any complex type inference
-type SimplePayload = Record<string, any>;
+// Use an even simpler type - avoiding Record which can sometimes cause inference issues
+type SimplePayload = any;
 
 export function useRealtimeTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -96,21 +97,20 @@ export function useRealtimeTransactions() {
     setIsLoading(true);
     
     try {
-      // Use any typing throughout to avoid TypeScript inference issues
-      const result = await supabase
+      // Use explicit any typing throughout to avoid TypeScript inference depth
+      const result: any = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50) as any;
+        .limit(50);
         
       if (result.error) throw result.error;
       
       let txData: Transaction[] = [];
       
-      // Treat data as a raw array completely
+      // Explicitly treat data as any[] to avoid deep inference
       if (result.data && result.data.length > 0) {
-        // Avoid any type inference by the compiler
         const rawData: any[] = result.data;
         txData = convertDatabaseRecordsToTransactions(rawData);
       } else {
@@ -132,18 +132,18 @@ export function useRealtimeTransactions() {
     }
   }, [user, activeSfdId, toast, calculateStats, convertDatabaseRecordsToTransactions, generateMockTransactions]);
   
-  // Maximally simplified handler for realtime updates
-  const handleRealtimeUpdate = useCallback((payload: SimplePayload) => {
-    // Create a new array instead of mutating the old one
-    let updatedTransactions = [...transactions];
+  // Extremely simplified handler for realtime updates - avoiding any type inference
+  const handleRealtimeUpdate = useCallback((payload: any) => {
+    // Explicitly create a new array without using spread operations
+    let updatedTransactions = transactions.slice();
     
-    // Use basic string access instead of complex object destructuring
-    const eventType = payload.eventType as string;
-    const newRecord = payload.new as any;
-    const oldRecord = payload.old as any;
+    // Access payload properties directly without destructuring
+    const eventType = payload.eventType;
+    const newRecord = payload.new;
+    const oldRecord = payload.old;
     
     if (eventType === 'INSERT' && newRecord) {
-      // Create new transaction object directly
+      // Create new transaction object without type inference
       const newTx: Transaction = {
         id: newRecord.id,
         user_id: newRecord.user_id,
@@ -158,14 +158,15 @@ export function useRealtimeTransactions() {
         description: `Transaction for ${newRecord.name}`,
       };
       
-      updatedTransactions = [newTx, ...updatedTransactions];
+      // Use array methods instead of spread for insertion
+      updatedTransactions.unshift(newTx);
       
       toast({
         title: 'New transaction',
         description: `${newTx.type} of ${newTx.amount} FCFA`,
       });
     } else if (eventType === 'UPDATE' && newRecord) {
-      // Create updated transaction object directly
+      // Create updated transaction object
       const updatedTx: Transaction = {
         id: newRecord.id,
         user_id: newRecord.user_id,
@@ -180,11 +181,15 @@ export function useRealtimeTransactions() {
         description: `Transaction for ${newRecord.name}`,
       };
       
-      updatedTransactions = updatedTransactions.map(tx => 
-        tx.id === updatedTx.id ? updatedTx : tx
-      );
+      // Use loop instead of map for updating
+      for (let i = 0; i < updatedTransactions.length; i++) {
+        if (updatedTransactions[i].id === updatedTx.id) {
+          updatedTransactions[i] = updatedTx;
+          break;
+        }
+      }
     } else if (eventType === 'DELETE' && oldRecord) {
-      // Remove deleted transaction
+      // Filter array directly
       const oldId = oldRecord.id;
       if (oldId) {
         updatedTransactions = updatedTransactions.filter(tx => tx.id !== oldId);
@@ -196,14 +201,14 @@ export function useRealtimeTransactions() {
     calculateStats(updatedTransactions);
   }, [transactions, toast, calculateStats, activeSfdId]);
   
-  // Set up realtime subscription with maximum type simplification
+  // Extremely simplified channel subscription to avoid type inference issues
   useEffect(() => {
     if (!user || !activeSfdId) return;
     
     fetchTransactions();
     
-    // Radically simplify the channel subscription to avoid any complex types
-    const channel = supabase
+    // Explicit any types for the channel to avoid TypeScript inference depth issues
+    const channel: any = supabase
       .channel('public:transactions')
       .on('postgres_changes', {
         event: '*',
@@ -211,7 +216,7 @@ export function useRealtimeTransactions() {
         table: 'transactions',
         filter: `sfd_id=eq.${activeSfdId}`
       }, (payload: any) => {
-        // Pass the raw payload directly to the handler with simple type
+        // Pass the payload directly without type casting
         handleRealtimeUpdate(payload);
       })
       .subscribe();
