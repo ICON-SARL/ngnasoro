@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, CheckCircle, AlertCircle, ArrowRightCircle } from 'lucide-react';
+import { Plus, CheckCircle, AlertCircle, ArrowRightCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
@@ -53,6 +53,18 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
     } finally {
       setSwitchingId(null);
     }
+  };
+
+  // Function to determine account status
+  const getAccountStatus = (sfdId: string) => {
+    // In a real app, this would come from the API
+    // For demo, we'll consider all active accounts verified, others may be pending
+    if (sfdId === effectiveActiveSfdId) {
+      return 'verified';
+    }
+    
+    // For demo, randomly mark some accounts as pending
+    return sfdId.startsWith('1') ? 'pending' : 'verified';
   };
 
   if (isLoading) {
@@ -110,47 +122,66 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-3">
-            {displayAccounts.map((sfd) => (
-              <div key={sfd.id} className="flex items-center justify-between border p-3 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center">
-                    {sfd.name.substring(0, 2)}
-                  </div>
-                  <div>
-                    <p className="font-medium">{sfd.name}</p>
-                    <div className="flex items-center space-x-1">
-                      {sfd.id === effectiveActiveSfdId ? (
-                        <span className="text-xs text-green-600 flex items-center">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Compte actif
-                        </span>
-                      ) : (
-                        <span className="text-xs text-gray-500 flex items-center">
-                          <AlertCircle className="h-3 w-3 mr-1" />
-                          En attente
-                        </span>
-                      )}
+            {displayAccounts.map((sfd) => {
+              const status = getAccountStatus(sfd.id);
+              
+              return (
+                <div key={sfd.id} className="flex items-center justify-between border p-3 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center">
+                      {sfd.name.substring(0, 2)}
+                    </div>
+                    <div>
+                      <p className="font-medium">{sfd.name}</p>
+                      <div className="flex items-center space-x-1">
+                        {sfd.id === effectiveActiveSfdId ? (
+                          <span className="text-xs text-green-600 flex items-center">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Compte actif
+                          </span>
+                        ) : status === 'pending' ? (
+                          <span className="text-xs text-amber-600 flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            En attente de validation
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-500 flex items-center">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Inactif
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
+                  {sfd.id !== effectiveActiveSfdId && status === 'verified' && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => handleSwitchSfd(sfd.id)}
+                      disabled={switchingId === sfd.id || synchronizeBalances.isPending}
+                    >
+                      {switchingId === sfd.id ? 'Changement...' : 'Basculer'}
+                    </Button>
+                  )}
+                  {sfd.id !== effectiveActiveSfdId && status === 'pending' && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="text-xs text-amber-600"
+                      onClick={() => navigate('/sfd-selector')}
+                    >
+                      Valider
+                    </Button>
+                  )}
+                  {sfd.id === effectiveActiveSfdId && (
+                    <span className="text-xs font-medium text-green-600 px-2 py-1 bg-green-50 rounded-md">
+                      Active
+                    </span>
+                  )}
                 </div>
-                {sfd.id !== effectiveActiveSfdId && (
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="text-xs"
-                    onClick={() => handleSwitchSfd(sfd.id)}
-                    disabled={switchingId === sfd.id || synchronizeBalances.isPending}
-                  >
-                    {switchingId === sfd.id ? 'Changement...' : 'Basculer'}
-                  </Button>
-                )}
-                {sfd.id === effectiveActiveSfdId && (
-                  <span className="text-xs font-medium text-green-600 px-2 py-1 bg-green-50 rounded-md">
-                    Active
-                  </span>
-                )}
-              </div>
-            ))}
+              );
+            })}
 
             <Button 
               variant="outline" 
