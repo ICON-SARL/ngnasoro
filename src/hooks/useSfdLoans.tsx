@@ -1,0 +1,151 @@
+
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { sfdLoanApi } from '@/utils/sfdLoanApi';
+import { Loan } from '@/types/sfdClients';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+
+export function useSfdLoans() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Fetch all loans for the current SFD
+  const loansQuery = useQuery({
+    queryKey: ['sfd-loans'],
+    queryFn: sfdLoanApi.getSfdLoans,
+    enabled: !!user
+  });
+  
+  // Create a new loan
+  const createLoan = useMutation({
+    mutationFn: sfdLoanApi.createLoan,
+    onSuccess: () => {
+      toast({
+        title: "Prêt créé avec succès",
+        description: "Le prêt a été créé et est en attente d'approbation",
+      });
+      queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur lors de la création",
+        description: error.message || "Une erreur est survenue",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Approve a loan
+  const approveLoan = useMutation({
+    mutationFn: ({ loanId }: { loanId: string }) => {
+      if (!user?.id) throw new Error("Utilisateur non authentifié");
+      return sfdLoanApi.approveLoan(loanId, user.id);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Prêt approuvé",
+        description: "Le prêt a été approuvé avec succès",
+      });
+      queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur d'approbation",
+        description: error.message || "Une erreur est survenue",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Reject a loan
+  const rejectLoan = useMutation({
+    mutationFn: ({ loanId }: { loanId: string }) => {
+      if (!user?.id) throw new Error("Utilisateur non authentifié");
+      return sfdLoanApi.rejectLoan(loanId, user.id);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Prêt rejeté",
+        description: "Le prêt a été rejeté",
+      });
+      queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur de rejet",
+        description: error.message || "Une erreur est survenue",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Disburse a loan
+  const disburseLoan = useMutation({
+    mutationFn: ({ loanId }: { loanId: string }) => {
+      if (!user?.id) throw new Error("Utilisateur non authentifié");
+      return sfdLoanApi.disburseLoan(loanId, user.id);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Prêt décaissé",
+        description: "Le prêt a été décaissé avec succès",
+      });
+      queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur de décaissement",
+        description: error.message || "Une erreur est survenue",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Record a loan payment
+  const recordPayment = useMutation({
+    mutationFn: ({ loanId, amount, paymentMethod }: { loanId: string, amount: number, paymentMethod: string }) => {
+      if (!user?.id) throw new Error("Utilisateur non authentifié");
+      return sfdLoanApi.recordLoanPayment(loanId, amount, paymentMethod, user.id);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Paiement enregistré",
+        description: "Le paiement a été enregistré avec succès",
+      });
+      queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur d'enregistrement",
+        description: error.message || "Une erreur est survenue",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Get loan details
+  const getLoanById = async (loanId: string) => {
+    return sfdLoanApi.getLoanById(loanId);
+  };
+
+  // Get loan payments
+  const getLoanPayments = async (loanId: string) => {
+    return sfdLoanApi.getLoanPayments(loanId);
+  };
+
+  return {
+    loans: loansQuery.data || [],
+    isLoading: loansQuery.isLoading,
+    isError: loansQuery.isError,
+    createLoan,
+    approveLoan,
+    rejectLoan,
+    disburseLoan,
+    recordPayment,
+    getLoanById,
+    getLoanPayments,
+    refetch: loansQuery.refetch
+  };
+}

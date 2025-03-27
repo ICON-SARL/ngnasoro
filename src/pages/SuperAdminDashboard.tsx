@@ -6,9 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { UserManagement } from '@/components/UserManagement';
 import SfdAccountRequests from '@/components/admin/SfdAccountRequests';
-import { BarChart, PieChart, Building, Users, ShieldCheck, Settings, ArrowUpRight } from 'lucide-react';
+import { SubsidyManagement } from '@/components/admin/SubsidyManagement';
+import { BarChart, PieChart, Building, Users, ShieldCheck, Settings, ArrowUpRight, CreditCard, DollarSign, CircleDollarSign } from 'lucide-react';
+import { useSubsidies } from '@/hooks/useSubsidies';
+import { CreditDecisionFlow } from '@/components/CreditDecisionFlow';
 
 const SuperAdminDashboard = () => {
+  const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <SuperAdminHeader />
@@ -30,7 +35,7 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">SFDs Actives</CardTitle>
@@ -69,13 +74,35 @@ const SuperAdminDashboard = () => {
           
           <Card>
             <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">Prêts Subventionnés</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="text-2xl font-bold">1,284</div>
+                <div className="p-2 bg-purple-50 rounded-full">
+                  <CreditCard className="h-5 w-5 text-purple-500" />
+                </div>
+              </div>
+              <div className="text-xs text-gray-500 mt-1 flex items-center">
+                <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
+                <span>+52 ce mois</span>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">Subventions Allouées</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div className="text-2xl font-bold">120.5M FCFA</div>
-                <div className="p-2 bg-amber-50 rounded-full">
-                  <Settings className="h-5 w-5 text-amber-500" />
+                <div className="text-2xl font-bold">
+                  {isLoadingSubsidies 
+                    ? "..." 
+                    : `${(subsidies.reduce((sum, subsidy) => sum + subsidy.amount, 0) / 1000000).toFixed(1)}M FCFA`}
+                </div>
+                <div className="p-2 bg-[#0D6A51]/10 rounded-full">
+                  <CircleDollarSign className="h-5 w-5 text-[#0D6A51]" />
                 </div>
               </div>
               <div className="text-xs text-gray-500 mt-1 flex items-center">
@@ -86,13 +113,22 @@ const SuperAdminDashboard = () => {
           </Card>
         </div>
         
-        <Tabs defaultValue="sfd-requests" className="space-y-6">
+        <Tabs defaultValue="subsidies" className="space-y-6">
           <TabsList>
+            <TabsTrigger value="subsidies">Subventions</TabsTrigger>
+            <TabsTrigger value="credit-approval">Approbation de Crédit</TabsTrigger>
             <TabsTrigger value="sfd-requests">Demandes SFD</TabsTrigger>
             <TabsTrigger value="user-management">Gestion Utilisateurs</TabsTrigger>
-            <TabsTrigger value="subsidies">Subventions</TabsTrigger>
             <TabsTrigger value="analytics">Analytique</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="subsidies" className="mt-6">
+            <SubsidyManagement />
+          </TabsContent>
+          
+          <TabsContent value="credit-approval" className="mt-6">
+            <CreditDecisionFlow />
+          </TabsContent>
           
           <TabsContent value="sfd-requests" className="mt-6">
             <SfdAccountRequests />
@@ -100,23 +136,6 @@ const SuperAdminDashboard = () => {
           
           <TabsContent value="user-management" className="mt-6">
             <UserManagement />
-          </TabsContent>
-          
-          <TabsContent value="subsidies" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Gestion des Subventions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-500">
-                  Gérez ici les subventions accordées aux différentes institutions SFD.
-                  Suivez les allocations, les décaissements et la performance des fonds.
-                </p>
-                <div className="h-80 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg mt-6">
-                  <p className="text-gray-400">Module de gestion des subventions en cours de développement</p>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
           
           <TabsContent value="analytics" className="mt-6">

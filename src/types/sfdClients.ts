@@ -36,3 +36,47 @@ export interface ClientActivity {
   performed_by?: string;
   performed_at: string;
 }
+
+export interface Loan {
+  id: string;
+  client_id: string;
+  sfd_id: string;
+  amount: number;
+  duration_months: number;
+  interest_rate: number;
+  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'defaulted';
+  purpose: string;
+  monthly_payment: number;
+  disbursed_at?: string;
+  created_at: string;
+  approved_at?: string;
+  approved_by?: string;
+  last_payment_date?: string;
+  next_payment_date?: string;
+  subsidy_amount?: number;
+  subsidy_rate?: number;
+}
+
+export interface LoanPayment {
+  id: string;
+  loan_id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: string;
+  status: 'pending' | 'completed' | 'failed';
+  transaction_id?: string;
+  created_at: string;
+}
+
+export interface SfdSubsidy {
+  id: string;
+  sfd_id: string;
+  amount: number;
+  allocated_at: string;
+  allocated_by: string;
+  status: 'pending' | 'active' | 'revoked' | 'depleted';
+  used_amount: number;
+  remaining_amount: number;
+  description?: string;
+  end_date?: string;
+}
