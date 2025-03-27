@@ -1,0 +1,67 @@
+
+import { apiClient } from '@/utils/apiClient';
+import { User } from '@/hooks/useAuth';
+import { SfdAccount, SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from './types';
+
+export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
+  if (!userId) return [];
+  
+  const sfdsList = await apiClient.getUserSfds(userId);
+  return sfdsList;
+}
+
+export async function fetchSfdBalance(userId: string, sfdId: string): Promise<SfdBalanceData> {
+  try {
+    const balanceData = await apiClient.getSfdBalance(userId, sfdId);
+    return balanceData;
+  } catch (error) {
+    console.error(`Failed to fetch balance for SFD ${sfdId}:`, error);
+    return { balance: 0, currency: 'FCFA' };
+  }
+}
+
+export async function fetchSfdLoans(userId: string, sfdId: string) {
+  try {
+    const loansData = await apiClient.getSfdLoans(userId, sfdId);
+    return loansData;
+  } catch (error) {
+    console.error('Failed to fetch SFD loans:', error);
+    return [];
+  }
+}
+
+export async function synchronizeAccounts(userId: string): Promise<SyncResult> {
+  if (!userId) {
+    throw new Error('Utilisateur non connecté');
+  }
+  
+  try {
+    await apiClient.callEdgeFunction('synchronize-sfd-accounts', {
+      userId: userId
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to synchronize SFD accounts:', error);
+    throw new Error('Échec de la synchronisation');
+  }
+}
+
+export async function processLoanPayment(
+  userId: string, 
+  activeSfdId: string, 
+  params: LoanPaymentParams
+): Promise<SyncResult> {
+  if (!userId || !activeSfdId) {
+    throw new Error('User or active SFD not set');
+  }
+  
+  // Add a transaction record
+  await apiClient.callEdgeFunction('process-repayment', {
+    userId: userId,
+    sfdId: activeSfdId,
+    loanId: params.loanId,
+    amount: params.amount
+  });
+  
+  return { success: true };
+}
