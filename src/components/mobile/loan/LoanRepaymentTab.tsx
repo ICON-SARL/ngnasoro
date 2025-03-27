@@ -33,7 +33,13 @@ const LoanRepaymentTab = ({
   
   const handleRepayment = (method: 'mobile' | 'agency') => {
     if (method === 'mobile') {
-      navigate('/mobile-flow/secure-payment', { state: { isRepayment: true, loanId } });
+      // Corrigé pour utiliser le bon chemin
+      navigate('/mobile-flow/secure-payment', { 
+        state: { 
+          isRepayment: true, 
+          loanId 
+        } 
+      });
     } else {
       // Agency QR code payment
       onMobileMoneyPayment();

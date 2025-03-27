@@ -1,55 +1,101 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Calendar } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ReportTemplateCard } from './ReportTemplateCard';
 import { ScheduledReportTable } from './ScheduledReportTable';
 import { ReportVisualization } from './ReportVisualization';
 import { reportTemplates, scheduledReports } from './data';
+import { Download, FileText, PlusCircle } from 'lucide-react';
 
-export const ReportGenerator = () => {
+export const ReportGenerator: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('templates');
+
+  const handleGenerateReport = (templateId: number) => {
+    console.log('Generating report with template ID:', templateId);
+    // Génération du rapport (à implémenter)
+  };
+
+  const handleExportScheduled = (reportId: number) => {
+    console.log('Exporting scheduled report ID:', reportId);
+    // Téléchargement du rapport planifié (à implémenter)
+  };
+
+  const handleViewScheduled = (reportId: number) => {
+    console.log('Viewing scheduled report ID:', reportId);
+    // Affichage du rapport planifié (à implémenter)
+  };
+
+  const handleCreateTemplate = () => {
+    console.log('Creating new report template');
+    // Création d'un nouveau modèle (à implémenter)
+  };
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-xl font-semibold">Générateur de Rapports</h2>
-          <p className="text-sm text-muted-foreground">
-            Génération automatisée de rapports au format PDF et Excel
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Calendar className="h-4 w-4 mr-1" />
-            Planifier
-          </Button>
-          <Button>
-            <FileText className="h-4 w-4 mr-1" />
-            Nouveau Rapport
-          </Button>
-        </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Générateur de Rapports</h1>
+        <Button onClick={handleCreateTemplate}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Nouveau Modèle
+        </Button>
       </div>
       
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-medium mb-4">Modèles de Rapports</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {reportTemplates.map((template) => (
-              <ReportTemplateCard key={template.id} template={template} />
-            ))}
-          </div>
-        </div>
-        
-        <div>
-          <h3 className="text-lg font-medium mb-4">Rapports récents & programmés</h3>
-          <ScheduledReportTable reports={scheduledReports} />
-        </div>
-        
-        <div>
-          <h3 className="text-lg font-medium mb-4">Visualisation des données</h3>
-          <ReportVisualization />
-        </div>
-      </div>
+      <Card>
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Rapports & Analyses</CardTitle>
+                <CardDescription>
+                  Créez, planifiez et téléchargez des rapports pour votre organisation
+                </CardDescription>
+              </div>
+              <TabsList>
+                <TabsTrigger value="templates">Modèles</TabsTrigger>
+                <TabsTrigger value="scheduled">Planifiés</TabsTrigger>
+                <TabsTrigger value="visualizations">Visualisations</TabsTrigger>
+              </TabsList>
+            </div>
+          </CardHeader>
+          
+          <CardContent>
+            <TabsContent value="templates" className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                {reportTemplates.map((template) => (
+                  <ReportTemplateCard key={template.id} template={template} />
+                ))}
+              </div>
+              
+              <div className="flex justify-end">
+                <Button variant="outline" className="ml-auto">
+                  <Download className="mr-2 h-4 w-4" />
+                  Exporter tous les rapports
+                </Button>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="scheduled">
+              <ScheduledReportTable 
+                reports={scheduledReports} 
+                onExport={handleExportScheduled}
+                onView={handleViewScheduled}
+              />
+            </TabsContent>
+            
+            <TabsContent value="visualizations">
+              <ReportVisualization />
+            </TabsContent>
+          </CardContent>
+        </Tabs>
+      </Card>
     </div>
   );
 };

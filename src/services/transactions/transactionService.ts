@@ -5,7 +5,7 @@ import { CreateTransactionOptions, TransactionFilters } from './types';
 
 export const transactionService = {
   // Récupérer les transactions d'un utilisateur
-  async getUserTransactions(userId: string, sfdId: string, filters?: TransactionFilters): Promise<Transaction[]> {
+  async getUserTransactions(userId: string, sfdId: string | null, filters?: TransactionFilters): Promise<Transaction[]> {
     try {
       // Cast to any to avoid type recursion issues with the query builder
       let query = supabase
@@ -14,7 +14,8 @@ export const transactionService = {
       
       query = query.eq('user_id', userId);
       
-      if (sfdId) {
+      // Ne pas filtrer par SFD si c'est "default-sfd" ou null/undefined
+      if (sfdId && sfdId !== 'default-sfd' && sfdId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)) {
         query = query.eq('sfd_id', sfdId);
       }
 
