@@ -38,10 +38,8 @@ class TransactionService {
         name,
         amount,
         type,
-        status = 'success',
         description,
         paymentMethod,
-        metadata,
         referenceId
       } = options;
 
@@ -57,12 +55,6 @@ class TransactionService {
         payment_method: paymentMethod,
         reference_id: referenceId
       };
-
-      // Add metadata if provided
-      if (metadata) {
-        // @ts-ignore - We know this is valid for our use case even if TypeScript doesn't
-        transactionData.metadata = metadata;
-      }
 
       // Insert into the transactions table
       const { data, error } = await supabase
@@ -85,17 +77,27 @@ class TransactionService {
 
   async getUserTransactions(userId: string, sfdId?: string, filters?: TransactionFilters): Promise<Transaction[]> {
     try {
-      let query = supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', userId);
+      // Build the query parameters
+      const queryParams: Record<string, any> = { user_id: userId };
       
+      if (sfdId) {
+        queryParams.sfd_id = sfdId;
+      }
+      
+      // Start with a basic query
+      let query = supabase.from('transactions').select('*');
+      
+      // Apply user_id filter (always required)
+      query = query.eq('user_id', userId);
+      
+      // Apply sfd_id filter if provided
       if (sfdId) {
         query = query.eq('sfd_id', sfdId);
       }
-
+      
+      // Apply optional filters
       if (filters) {
-        // Apply any filters
+        // Filter by type
         if (filters.type) {
           if (Array.isArray(filters.type)) {
             query = query.in('type', filters.type);
@@ -103,39 +105,44 @@ class TransactionService {
             query = query.eq('type', filters.type);
           }
         }
-
-        // Don't filter by status for now since it's not in the schema
-        // We'll handle status mapping after fetching
-
+        
+        // Date range filters
         if (filters.startDate) {
           query = query.gte('date', filters.startDate);
         }
-
+        
         if (filters.endDate) {
           query = query.lte('date', filters.endDate);
         }
-
+        
+        // Amount range filters
         if (filters.minAmount) {
           query = query.gte('amount', filters.minAmount);
         }
-
+        
         if (filters.maxAmount) {
           query = query.lte('amount', filters.maxAmount);
         }
-
-        if (filters.searchTerm) {
-          query = query.or(`name.ilike.%${filters.searchTerm}%,description.ilike.%${filters.searchTerm}%`);
+        
+        // Search term
+        if (filters.searchTerm && filters.searchTerm.trim() !== '') {
+          // Use ilike for case-insensitive search
+          query = query.ilike('name', `%${filters.searchTerm}%`);
         }
       }
-
+      
       // Order by date (newest first)
-      const { data, error } = await query.order('date', { ascending: false });
+      query = query.order('date', { ascending: false });
+      
+      // Execute the query
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching transactions:', error);
         return [];
       }
 
+      // Map the database records to our Transaction type
       return data.map(record => this.formatTransaction(record));
     } catch (error) {
       console.error('Failed to fetch user transactions:', error);
@@ -145,17 +152,42 @@ class TransactionService {
 
   async getSfdTransactions(sfdId: string, filters?: TransactionFilters): Promise<Transaction[]> {
     try {
-      let query = supabase
-        .from('transactions')
-        .select('*')
-        .eq('sfd_id', sfdId);
-
-      // Apply filters similarly to getUserTransactions
+      // Start with a basic query
+      let query = supabase.from('transactions').select('*');
+      
+      // Apply sfd_id filter (always required)
+      query = query.eq('sfd_id', sfdId);
+      
+      // Apply filters if provided (reuse similar logic as getUserTransactions)
       if (filters) {
-        // Apply the same filter logic as in getUserTransactions
+        // Type filter
+        if (filters.type) {
+          if (Array.isArray(filters.type)) {
+            query = query.in('type', filters.type);
+          } else {
+            query = query.eq('type', filters.type);
+          }
+        }
+        
+        // Date filters
+        if (filters.startDate) query = query.gte('date', filters.startDate);
+        if (filters.endDate) query = query.lte('date', filters.endDate);
+        
+        // Amount filters
+        if (filters.minAmount) query = query.gte('amount', filters.minAmount);
+        if (filters.maxAmount) query = query.lte('amount', filters.maxAmount);
+        
+        // Search
+        if (filters.searchTerm && filters.searchTerm.trim() !== '') {
+          query = query.ilike('name', `%${filters.searchTerm}%`);
+        }
       }
-
-      const { data, error } = await query.order('date', { ascending: false });
+      
+      // Order by date (newest first)
+      query = query.order('date', { ascending: false });
+      
+      // Execute the query
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching SFD transactions:', error);
@@ -191,12 +223,11 @@ class TransactionService {
 
   async flagTransaction(transactionId: string, reason: string): Promise<boolean> {
     try {
-      // Since our schema doesn't have a status field, we'll use a different approach
-      // We can store the flag data in a custom field or implement a different mechanism
-      // For now, we'll simulate this operation
+      // Since our schema doesn't have a status field, we'll use metadata
+      // For now, we'll just log the action since we don't have a status or metadata field
       console.log(`Transaction ${transactionId} would be flagged with reason: ${reason}`);
       
-      // In a real implementation, this would update the transaction or create a flag record
+      // In a real implementation with a proper schema, we would update the transaction
       return true;
     } catch (error) {
       console.error('Failed to flag transaction:', error);
