@@ -58,7 +58,8 @@ export const CreditApplicationList = () => {
     if (!selectedApplication) return;
     
     try {
-      await approveApplication({ 
+      // Fix: Use .mutate() method instead of calling the mutation object directly
+      approveApplication.mutate({ 
         applicationId: selectedApplication.id,
         comments: additionalComments
       });
@@ -85,7 +86,8 @@ export const CreditApplicationList = () => {
     if (!selectedApplication || !rejectionReason) return;
     
     try {
-      await rejectApplication({ 
+      // Fix: Use .mutate() method instead of calling the mutation object directly
+      rejectApplication.mutate({ 
         applicationId: selectedApplication.id,
         rejectionReason,
         comments: additionalComments
