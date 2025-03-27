@@ -92,7 +92,7 @@ export const shouldRefreshSfdToken = async (token: string): Promise<boolean> => 
     const jwtToken = EncryptionService.decrypt(token, AES_ENCRYPTION_KEY);
     
     // Extract payload without verification to check expiration
-    const { payload } = jose.decodeJwt(jwtToken);
+    const payload = jose.decodeJwt(jwtToken) as SfdJwtPayload;
     
     if (!payload.exp) return true;
     
