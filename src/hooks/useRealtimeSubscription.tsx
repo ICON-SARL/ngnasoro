@@ -5,7 +5,7 @@ import { UseRealtimeSubscriptionProps } from '@/types/realtimeTransactions';
 
 export function useRealtimeSubscription({ activeSfdId, onUpdate }: UseRealtimeSubscriptionProps) {
   const createRealtimeSubscription = useCallback((sfdId: string) => {
-    // Use explicit typing to avoid deep inference issues
+    // Create a channel with explicit type cast to avoid deep type inference
     const channel = supabase.channel('public:transactions');
     
     channel.on(
@@ -16,7 +16,10 @@ export function useRealtimeSubscription({ activeSfdId, onUpdate }: UseRealtimeSu
         table: 'transactions',
         filter: `sfd_id=eq.${sfdId}`
       }, 
-      onUpdate
+      (payload) => {
+        // Type the payload as any to avoid deep inference issues
+        onUpdate(payload as any);
+      }
     );
     
     return channel.subscribe();
