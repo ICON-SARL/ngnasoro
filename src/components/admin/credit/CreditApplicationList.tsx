@@ -58,26 +58,21 @@ export const CreditApplicationList = () => {
     if (!selectedApplication) return;
     
     try {
-      // Fix: Use .mutate() method instead of calling the mutation object directly
-      approveApplication.mutate({ 
+      await approveApplication.mutateAsync({
         applicationId: selectedApplication.id,
         comments: additionalComments
       });
       
       toast({
         title: "Demande approuvée",
-        description: `La demande de ${selectedApplication.sfd_name} a été approuvée avec succès`,
+        description: `La demande de crédit de ${selectedApplication.sfd_name} a été approuvée`,
       });
       
       setIsApprovalDialogOpen(false);
       setSelectedApplication(null);
       setAdditionalComments('');
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de l'approbation",
-        variant: "destructive",
-      });
+      console.error('Error approving application:', error);
     }
   };
 
@@ -86,8 +81,7 @@ export const CreditApplicationList = () => {
     if (!selectedApplication || !rejectionReason) return;
     
     try {
-      // Fix: Use .mutate() method instead of calling the mutation object directly
-      rejectApplication.mutate({ 
+      await rejectApplication.mutateAsync({
         applicationId: selectedApplication.id,
         rejectionReason,
         comments: additionalComments
@@ -95,7 +89,7 @@ export const CreditApplicationList = () => {
       
       toast({
         title: "Demande rejetée",
-        description: `La demande de ${selectedApplication.sfd_name} a été rejetée`,
+        description: `La demande de crédit de ${selectedApplication.sfd_name} a été rejetée`,
       });
       
       setIsRejectionDialogOpen(false);
@@ -103,283 +97,247 @@ export const CreditApplicationList = () => {
       setRejectionReason('');
       setAdditionalComments('');
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors du rejet",
-        variant: "destructive",
-      });
+      console.error('Error rejecting application:', error);
     }
   };
 
-  // Render status badge
-  const renderStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="bg-amber-50 text-amber-700">En attente</Badge>;
-      case 'approved':
-        return <Badge variant="outline" className="bg-green-50 text-green-700">Approuvée</Badge>;
-      case 'rejected':
-        return <Badge variant="outline" className="bg-red-50 text-red-700">Rejetée</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  // Render score badge
+  const renderScoreBadge = (score: number) => {
+    if (score >= 80) {
+      return <Badge className="bg-green-100 text-green-800">Score: {score}</Badge>;
+    } else if (score >= 60) {
+      return <Badge className="bg-blue-100 text-blue-800">Score: {score}</Badge>;
+    } else if (score >= 40) {
+      return <Badge className="bg-amber-100 text-amber-800">Score: {score}</Badge>;
+    } else {
+      return <Badge className="bg-red-100 text-red-800">Score: {score}</Badge>;
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center p-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0D6A51]"></div>
-      </div>
-    );
-  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Demandes de Crédit</span>
-          <div className="flex items-center space-x-2">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-[#0D6A51]" />
+            Demandes de Crédit
+          </CardTitle>
+        </CardHeader>
+        
+        <CardContent>
+          <div className="flex justify-between mb-4">
             <div className="relative w-64">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Rechercher une SFD ou référence..."
+                placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8"
               />
             </div>
-            <Button variant="outline" size="sm">
-              <ArrowUpDown className="h-4 w-4 mr-1" />
-              Trier
-            </Button>
+            
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="flex items-center">
+                <ArrowUpDown className="h-4 w-4 mr-1" />
+                Trier
+              </Button>
+              <Button variant="outline" size="sm" className="flex items-center">
+                <Star className="h-4 w-4 mr-1" />
+                Filtrer par score
+              </Button>
+            </div>
           </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Référence</TableHead>
-              <TableHead>SFD</TableHead>
-              <TableHead>Montant</TableHead>
-              <TableHead>Envoyée le</TableHead>
-              <TableHead>Score</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredApplications.length > 0 ? (
-              filteredApplications.map((app) => (
-                <TableRow key={app.id}>
-                  <TableCell className="font-medium">{app.reference}</TableCell>
-                  <TableCell>{app.sfd_name}</TableCell>
-                  <TableCell>{new Intl.NumberFormat('fr-FR').format(app.amount)} FCFA</TableCell>
-                  <TableCell>{new Date(app.created_at).toLocaleDateString('fr-FR')}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
-                        app.score >= 70 ? 'bg-green-100 text-green-700' : 
-                        app.score >= 50 ? 'bg-amber-100 text-amber-700' : 
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {app.score}
-                      </div>
-                      <Star 
-                        className={
-                          app.score >= 70 ? 'text-green-500 h-4 w-4' : 
-                          app.score >= 50 ? 'text-amber-500 h-4 w-4' : 
-                          'text-red-500 h-4 w-4'
-                        } 
-                        fill="currentColor" 
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell>{renderStatusBadge(app.status)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end items-center space-x-1">
-                      {app.status === 'pending' && (
-                        <>
+          
+          {isLoading ? (
+            <div className="py-8 text-center">
+              <div className="h-8 w-8 mx-auto animate-spin rounded-full border-b-2 border-[#0D6A51]"></div>
+              <p className="mt-2 text-muted-foreground">Chargement des demandes...</p>
+            </div>
+          ) : filteredApplications.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Référence</TableHead>
+                  <TableHead>SFD</TableHead>
+                  <TableHead>Montant</TableHead>
+                  <TableHead>Objet</TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredApplications.map((application) => (
+                  <TableRow key={application.id}>
+                    <TableCell className="font-medium">{application.reference}</TableCell>
+                    <TableCell>{application.sfd_name}</TableCell>
+                    <TableCell>{application.amount.toLocaleString()} FCFA</TableCell>
+                    <TableCell>{application.purpose}</TableCell>
+                    <TableCell>{renderScoreBadge(application.score)}</TableCell>
+                    <TableCell>{new Date(application.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {application.status === 'pending' && (
+                        <Badge className="bg-amber-100 text-amber-800">En attente</Badge>
+                      )}
+                      {application.status === 'approved' && (
+                        <Badge className="bg-green-100 text-green-800">Approuvée</Badge>
+                      )}
+                      {application.status === 'rejected' && (
+                        <Badge className="bg-red-100 text-red-800">Rejetée</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {application.status === 'pending' && (
+                        <div className="flex justify-end gap-2">
                           <Button 
-                            variant="ghost" 
                             size="sm" 
+                            variant="ghost" 
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
                             onClick={() => {
-                              setSelectedApplication(app);
+                              setSelectedApplication(application);
                               setIsApprovalDialogOpen(true);
                             }}
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
                           >
-                            <Check className="h-4 w-4 mr-1" /> Approuver
+                            <Check className="h-4 w-4 mr-1" />
+                            Approuver
                           </Button>
                           <Button 
-                            variant="ghost" 
                             size="sm" 
+                            variant="ghost" 
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             onClick={() => {
-                              setSelectedApplication(app);
+                              setSelectedApplication(application);
                               setIsRejectionDialogOpen(true);
                             }}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
-                            <X className="h-4 w-4 mr-1" /> Rejeter
+                            <X className="h-4 w-4 mr-1" />
+                            Rejeter
                           </Button>
-                        </>
+                        </div>
                       )}
-                      <Button variant="ghost" size="sm">
-                        <FileText className="h-4 w-4 mr-1" /> Détails
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-6 text-gray-500">
-                  Aucune demande de crédit trouvée
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-
-        {/* Approval Dialog */}
-        <Dialog open={isApprovalDialogOpen} onOpenChange={setIsApprovalDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Approuver la demande de crédit</DialogTitle>
-            </DialogHeader>
-            
-            {selectedApplication && (
-              <>
-                <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">SFD:</span>
-                    <span className="font-medium">{selectedApplication.sfd_name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Référence:</span>
-                    <span className="font-medium">{selectedApplication.reference}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Montant:</span>
-                    <span className="font-medium">{new Intl.NumberFormat('fr-FR').format(selectedApplication.amount)} FCFA</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Score:</span>
-                    <span className={`font-medium ${
-                      selectedApplication.score >= 70 ? 'text-green-600' : 
-                      selectedApplication.score >= 50 ? 'text-amber-600' : 
-                      'text-red-600'
-                    }`}>{selectedApplication.score}/100</span>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">
-                    Commentaires additionnels (optionnel)
-                  </label>
-                  <Textarea
-                    value={additionalComments}
-                    onChange={(e) => setAdditionalComments(e.target.value)}
-                    placeholder="Ajouter des notes ou des commentaires à cette approbation..."
-                    rows={3}
-                  />
-                </div>
-
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsApprovalDialogOpen(false)}>
-                    Annuler
-                  </Button>
-                  <Button onClick={handleApprove} className="bg-green-600 hover:bg-green-700">
-                    <Check className="h-4 w-4 mr-1" />
-                    Confirmer l'approbation
-                  </Button>
-                </DialogFooter>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Rejection Dialog */}
-        <Dialog open={isRejectionDialogOpen} onOpenChange={setIsRejectionDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Rejeter la demande de crédit</DialogTitle>
-            </DialogHeader>
-            
-            {selectedApplication && (
-              <>
-                <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">SFD:</span>
-                    <span className="font-medium">{selectedApplication.sfd_name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Référence:</span>
-                    <span className="font-medium">{selectedApplication.reference}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Montant:</span>
-                    <span className="font-medium">{new Intl.NumberFormat('fr-FR').format(selectedApplication.amount)} FCFA</span>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">
-                    Motif de rejet <span className="text-red-500">*</span>
-                  </label>
-                  <Select value={rejectionReason} onValueChange={setRejectionReason} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionnez un motif" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {rejectionReasons.map(reason => (
-                        <SelectItem key={reason} value={reason}>
-                          {getRejectionReasonLabel(reason)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  <label className="text-sm font-medium pt-2">
-                    Commentaires additionnels
-                  </label>
-                  <Textarea
-                    value={additionalComments}
-                    onChange={(e) => setAdditionalComments(e.target.value)}
-                    placeholder="Détaillez la raison du rejet..."
-                    rows={3}
-                  />
-
-                  <div className="flex items-start p-3 bg-amber-50 rounded-lg mt-2">
-                    <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 mr-2 flex-shrink-0" />
-                    <div className="text-sm text-amber-800">
-                      <p className="font-medium">Important</p>
-                      <p className="text-amber-700">
-                        Le rejet sera communiqué à la SFD avec le motif sélectionné. 
-                        Assurez-vous que les commentaires fournissent suffisamment d'informations.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsRejectionDialogOpen(false)}>
-                    Annuler
-                  </Button>
-                  <Button 
-                    onClick={handleReject} 
-                    className="bg-red-600 hover:bg-red-700"
-                    disabled={!rejectionReason}
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Confirmer le rejet
-                  </Button>
-                </DialogFooter>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
-      </CardContent>
-    </Card>
+                      {(application.status === 'approved' || application.status === 'rejected') && (
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                        >
+                          <FileText className="h-4 w-4 mr-1" />
+                          Détails
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground">Aucune demande de crédit trouvée.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Approval Dialog */}
+      <Dialog open={isApprovalDialogOpen} onOpenChange={setIsApprovalDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Approuver la demande de crédit</DialogTitle>
+          </DialogHeader>
+          
+          {selectedApplication && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-md">
+                <p className="font-medium text-blue-900">{selectedApplication.sfd_name}</p>
+                <p className="text-blue-800">Montant: {selectedApplication.amount.toLocaleString()} FCFA</p>
+                <p className="text-blue-800">Objet: {selectedApplication.purpose}</p>
+                <p className="text-blue-800">Score: {selectedApplication.score}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Commentaires (optionnel)</label>
+                <Textarea
+                  placeholder="Ajouter des commentaires pour cette approbation..."
+                  value={additionalComments}
+                  onChange={(e) => setAdditionalComments(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsApprovalDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleApprove} className="bg-green-600 hover:bg-green-700">
+              <Check className="h-4 w-4 mr-1" />
+              Confirmer l'approbation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Rejection Dialog */}
+      <Dialog open={isRejectionDialogOpen} onOpenChange={setIsRejectionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rejeter la demande de crédit</DialogTitle>
+          </DialogHeader>
+          
+          {selectedApplication && (
+            <div className="space-y-4">
+              <div className="bg-red-50 p-4 rounded-md">
+                <p className="font-medium text-red-900">{selectedApplication.sfd_name}</p>
+                <p className="text-red-800">Montant: {selectedApplication.amount.toLocaleString()} FCFA</p>
+                <p className="text-red-800">Objet: {selectedApplication.purpose}</p>
+                <p className="text-red-800">Score: {selectedApplication.score}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Motif de rejet <span className="text-red-500">*</span></label>
+                <Select
+                  value={rejectionReason}
+                  onValueChange={setRejectionReason}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez un motif de rejet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rejectionReasons.map((reason) => (
+                      <SelectItem key={reason} value={reason}>
+                        {getRejectionReasonLabel(reason)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Commentaires supplémentaires</label>
+                <Textarea
+                  placeholder="Détaillez la raison du rejet..."
+                  value={additionalComments}
+                  onChange={(e) => setAdditionalComments(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRejectionDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleReject} 
+              className="bg-red-600 hover:bg-red-700" 
+              disabled={!rejectionReason}
+            >
+              <X className="h-4 w-4 mr-1" />
+              Confirmer le rejet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
