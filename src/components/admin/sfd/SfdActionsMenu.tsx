@@ -16,9 +16,17 @@ interface SfdActionsMenuProps {
   sfd: Sfd;
   onSuspend: (sfd: Sfd) => void;
   onReactivate: (sfd: Sfd) => void;
+  onEdit: (sfd: Sfd) => void;
+  onViewDetails?: (sfd: Sfd) => void;
 }
 
-export function SfdActionsMenu({ sfd, onSuspend, onReactivate }: SfdActionsMenuProps) {
+export function SfdActionsMenu({ 
+  sfd, 
+  onSuspend, 
+  onReactivate, 
+  onEdit,
+  onViewDetails 
+}: SfdActionsMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -30,14 +38,19 @@ export function SfdActionsMenu({ sfd, onSuspend, onReactivate }: SfdActionsMenuP
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => {}}>
-          <Eye className="mr-2 h-4 w-4" />
-          <span>Voir les détails</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => {}}>
+        
+        {onViewDetails && (
+          <DropdownMenuItem onClick={() => onViewDetails(sfd)}>
+            <Eye className="mr-2 h-4 w-4" />
+            <span>Voir les détails</span>
+          </DropdownMenuItem>
+        )}
+        
+        <DropdownMenuItem onClick={() => onEdit(sfd)}>
           <Pencil className="mr-2 h-4 w-4" />
           <span>Modifier</span>
         </DropdownMenuItem>
+        
         {(!sfd.status || sfd.status === 'active') ? (
           <DropdownMenuItem 
             onClick={() => onSuspend(sfd)}

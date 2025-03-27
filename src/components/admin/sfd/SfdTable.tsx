@@ -13,6 +13,7 @@ import { Sfd } from '../types/sfd-types';
 import { SfdLogo } from './SfdLogo';
 import { SfdStatusBadge } from './SfdStatusBadge';
 import { SfdActionsMenu } from './SfdActionsMenu';
+import { Progress } from '@/components/ui/progress';
 
 interface SfdTableProps {
   sfds: Sfd[] | null;
@@ -20,6 +21,8 @@ interface SfdTableProps {
   isError: boolean;
   onSuspend: (sfd: Sfd) => void;
   onReactivate: (sfd: Sfd) => void;
+  onEdit: (sfd: Sfd) => void;
+  onViewDetails?: (sfd: Sfd) => void;
 }
 
 export function SfdTable({ 
@@ -27,7 +30,9 @@ export function SfdTable({
   isLoading, 
   isError, 
   onSuspend, 
-  onReactivate 
+  onReactivate,
+  onEdit,
+  onViewDetails
 }: SfdTableProps) {
   if (isLoading) {
     return (
@@ -46,6 +51,14 @@ export function SfdTable({
     return (
       <div className="p-4 text-center text-red-500">
         Une erreur est survenue lors de la récupération des SFDs.
+      </div>
+    );
+  }
+
+  if (!sfds || sfds.length === 0) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        Aucune SFD trouvée avec les critères de filtrage actuels.
       </div>
     );
   }
@@ -79,7 +92,9 @@ export function SfdTable({
                 <SfdActionsMenu 
                   sfd={sfd} 
                   onSuspend={onSuspend} 
-                  onReactivate={onReactivate} 
+                  onReactivate={onReactivate}
+                  onEdit={onEdit}
+                  onViewDetails={onViewDetails}
                 />
               </TableCell>
             </TableRow>

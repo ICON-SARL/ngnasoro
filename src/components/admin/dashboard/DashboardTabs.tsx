@@ -9,6 +9,7 @@ import { UserManagement } from '@/components/UserManagement';
 import { SystemSettings } from '@/components/admin/settings/SystemSettings';
 import { DashboardCharts } from '@/components/admin/dashboard/DashboardCharts';
 import { CreditDecisionFlow } from '@/components/CreditDecisionFlow';
+import { SfdAuditLog } from '@/components/admin/SfdAuditLog';
 
 interface DashboardTabsProps {
   activeTab: string;
@@ -29,6 +30,7 @@ export const DashboardTabs: React.FC<DashboardTabsProps> = ({
         <TabsTrigger value="user-management">Administrateurs</TabsTrigger>
         <TabsTrigger value="credit-approval">Approbation de Crédit</TabsTrigger>
         <TabsTrigger value="analytics">Analytique</TabsTrigger>
+        <TabsTrigger value="audit-logs">Journaux d'audit</TabsTrigger>
         <TabsTrigger value="settings">Paramètres</TabsTrigger>
       </TabsList>
       
@@ -78,9 +80,13 @@ export const DashboardTabs: React.FC<DashboardTabsProps> = ({
         <DashboardCharts />
       </TabsContent>
       
+      <TabsContent value="audit-logs" className="mt-6">
+        <SfdAuditLog />
+      </TabsContent>
+      
       <TabsContent value="settings" className="mt-6">
         <SystemSettings />
       </TabsContent>
     </Tabs>
   );
-};
+}
