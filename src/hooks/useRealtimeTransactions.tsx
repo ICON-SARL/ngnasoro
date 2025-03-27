@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -90,18 +89,15 @@ export function useRealtimeTransactions() {
     setIsLoading(true);
     
     try {
-      // Build the query but don't execute it yet
-      const queryBuilder = supabase
+      const response: any = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
         .limit(50);
       
-      // Explicitly cast to avoid TypeScript's excessive type inference
-      const { data, error } = await queryBuilder.then(result => 
-        result as unknown as { data: any[], error: any }
-      );
+      const data = response.data || [];
+      const error = response.error;
       
       if (error) throw error;
       
@@ -192,16 +188,16 @@ export function useRealtimeTransactions() {
       handleRealtimeUpdate(payload);
     };
     
-    // Create subscription config with explicit types to avoid deep inference
-    const config = {
-      event: '*' as const,
-      schema: 'public' as const,
-      table: 'transactions' as const,
-      filter: `sfd_id=eq.${sfdId}` as const
-    };
-    
-    // Use type assertion to simplify TypeScript's inference
-    channel.on('postgres_changes', config, handleChanges);
+    channel.on(
+      'postgres_changes' as any, 
+      {
+        event: '*',
+        schema: 'public',
+        table: 'transactions',
+        filter: `sfd_id=eq.${sfdId}`
+      } as any, 
+      handleChanges
+    );
     
     return channel.subscribe();
   }
