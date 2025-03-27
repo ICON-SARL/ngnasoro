@@ -77,14 +77,6 @@ class TransactionService {
 
   async getUserTransactions(userId: string, sfdId?: string, filters?: TransactionFilters): Promise<Transaction[]> {
     try {
-      // Build the query parameters
-      const queryParams: Record<string, any> = { user_id: userId };
-      
-      if (sfdId) {
-        queryParams.sfd_id = sfdId;
-      }
-      
-      // Start with a basic query
       let query = supabase.from('transactions').select('*');
       
       // Apply user_id filter (always required)
@@ -95,7 +87,7 @@ class TransactionService {
         query = query.eq('sfd_id', sfdId);
       }
       
-      // Apply optional filters
+      // Apply optional filters separately (without chaining)
       if (filters) {
         // Filter by type
         if (filters.type) {
@@ -126,7 +118,6 @@ class TransactionService {
         
         // Search term
         if (filters.searchTerm && filters.searchTerm.trim() !== '') {
-          // Use ilike for case-insensitive search
           query = query.ilike('name', `%${filters.searchTerm}%`);
         }
       }
