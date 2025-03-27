@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -89,7 +90,8 @@ export function useRealtimeTransactions() {
     setIsLoading(true);
     
     try {
-      const result = await supabase
+      // Use any type for the result to avoid deep type inference
+      const result: any = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
@@ -181,18 +183,25 @@ export function useRealtimeTransactions() {
     calculateStats(updatedTransactions);
   }, [transactions, toast, calculateStats, activeSfdId]);
   
+  // Simplified function to avoid deep type inference issues
   function createRealtimeSubscription(sfdId: string) {
     const channel = supabase.channel('public:transactions');
     
+    // Create event handler function outside of method call to simplify types
+    const handleChanges = (payload: any) => {
+      handleRealtimeUpdate(payload);
+    };
+    
+    // Use type assertion to avoid TypeScript going into deep inference
     channel.on(
-      'postgres_changes', 
+      'postgres_changes' as any,
       { 
         event: '*',
         schema: 'public',
         table: 'transactions',
         filter: `sfd_id=eq.${sfdId}`
-      },
-      (payload) => handleRealtimeUpdate(payload)
+      } as any,
+      handleChanges
     );
     
     return channel.subscribe();
