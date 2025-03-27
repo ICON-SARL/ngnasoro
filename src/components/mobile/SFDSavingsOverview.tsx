@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { useAuth } from '@/hooks/useAuth';
 import { useMobileDashboard } from '@/hooks/useMobileDashboard';
+import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 import { 
   SavingsHeader, 
   AccountStats, 
@@ -16,9 +17,10 @@ import {
 
 const SFDSavingsOverview = () => {
   const navigate = useNavigate();
-  const { activeSfdAccount, isLoading, refetch, synchronizeBalances } = useSfdAccounts();
+  const { activeSfdAccount, isLoading, refetch } = useSfdAccounts();
   const { activeSfdId } = useAuth();
   const { dashboardData, isLoading: isDashboardLoading, refreshDashboardData } = useMobileDashboard();
+  const { isSyncing, synchronizeWithSfd } = useRealtimeSynchronization();
   const [isHidden, setIsHidden] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   
@@ -28,31 +30,47 @@ const SFDSavingsOverview = () => {
   const sfdBalance = dashboardData?.account?.balance || activeSfdAccount?.balance || 250000;
   const sfdCurrency = dashboardData?.account?.currency || activeSfdAccount?.currency || 'FCFA';
   
+  // Check for updates from admin panel or SFD
+  useEffect(() => {
+    // Initial synchronization on component mount
+    const performInitialSync = async () => {
+      if (activeSfdId) {
+        await synchronizeWithSfd();
+      }
+    };
+    
+    performInitialSync();
+    
+    // Set up a timer to periodically check for updates (every 5 minutes)
+    const syncInterval = setInterval(() => {
+      if (activeSfdId) {
+        synchronizeWithSfd();
+      }
+    }, 5 * 60 * 1000);
+    
+    return () => {
+      clearInterval(syncInterval);
+    };
+  }, [activeSfdId, synchronizeWithSfd]);
+  
   const refreshBalance = () => {
     setIsUpdating(true);
     
-    // Use the refreshDashboardData function if available
-    if (refreshDashboardData) {
-      refreshDashboardData()
-        .then(() => {
-          setTimeout(() => {
-            setIsUpdating(false);
-          }, 1000);
-        })
-        .catch(() => {
-          setIsUpdating(false);
-        });
-    } else {
-      // Fall back to synchronizeBalances if no dashboard data
-      synchronizeBalances.mutate(undefined, {
-        onSettled: () => {
-          refetch();
-          setTimeout(() => {
-            setIsUpdating(false);
-          }, 1000);
-        }
-      });
-    }
+    // Use the synchronizeWithSfd function for more reliable updates
+    synchronizeWithSfd().then(() => {
+      // Refresh local data as well
+      if (refreshDashboardData) {
+        refreshDashboardData();
+      }
+      refetch();
+      
+      // Add a slight delay before removing the loading state
+      setTimeout(() => {
+        setIsUpdating(false);
+      }, 1000);
+    }).catch(() => {
+      setIsUpdating(false);
+    });
   };
   
   const toggleVisibility = () => {
@@ -86,9 +104,9 @@ const SFDSavingsOverview = () => {
           isHidden={isHidden}
           balance={sfdBalance}
           currency={sfdCurrency}
-          isUpdating={isUpdating}
+          isUpdating={isUpdating || isSyncing}
           refreshBalance={refreshBalance}
-          isPending={synchronizeBalances.isPending || (isUpdating && refreshDashboardData !== undefined)}
+          isPending={isSyncing}
         />
         
         <Button 
