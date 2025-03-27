@@ -13,15 +13,11 @@ export const useActionHandler = () => {
     });
     
     if (action === 'Send' || action === 'Receive') {
-      navigate('/mobile-flow/payment');
+      navigate('/mobile-flow/secure-payment');
     } else if (action === 'Float me cash') {
       navigate('/mobile-flow/secure-payment');
-    } else if (action === 'Schedule transfer') {
-      navigate('/mobile-flow/schedule-transfer');
-    } else if (action.startsWith('Transfer to')) {
-      navigate('/mobile-flow/payment');
     } else if (action === 'Loans') {
-      navigate('/mobile-flow/home-loan');
+      navigate('/mobile-flow/loan-application');
     } else if (action === 'Loan Activity') {
       navigate('/mobile-flow/loan-activity');
     } else if (action === 'Loan Details') {

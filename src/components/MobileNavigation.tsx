@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Home, Wallet, User, Plus, ArrowUp } from 'lucide-react';
+import { Home, Wallet, User, Plus } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavigationItem {
@@ -56,12 +56,6 @@ const MobileNavigation = ({ onAction, className = "", isHeader = false }: Mobile
       label: "",
       value: 'action',
       path: '/mobile-flow/loan-application'
-    },
-    {
-      icon: <ArrowUp className="h-6 w-6" />,
-      label: "Paiement",
-      value: 'secure-payment',
-      path: '/mobile-flow/secure-payment'
     },
     {
       icon: <User className="h-6 w-6" />,

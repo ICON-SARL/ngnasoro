@@ -5,7 +5,6 @@ import { MainDashboard } from '@/components/mobile/dashboard';
 import MobileMenu from '@/components/mobile/menu/MobileMenu';
 import ProfilePage from '@/components/mobile/profile/ProfilePage';
 import SfdSetupPage from '@/pages/SfdSetupPage';
-import SfdClientsPage from '@/pages/SfdClientsPage';
 import { useAuth } from '@/hooks/auth';
 import SecurePaymentTab from '@/components/mobile/secure-payment';
 import { Account } from '@/types/transactions';
@@ -47,7 +46,7 @@ const MobileFlowPage: React.FC = () => {
   
   // Rediriger les chemins inconnus vers le dashboard
   useEffect(() => {
-    const validPaths = ['main', 'profile', 'create-sfd', 'secure-payment', 'sfd-clients', 'funds-management', 'loan-application'];
+    const validPaths = ['main', 'profile', 'create-sfd', 'secure-payment', 'funds-management', 'loan-application'];
     if (!validPaths.includes(subPath)) {
       console.log(`Redirecting from unknown path: ${subPath} to main dashboard`);
       navigate('/mobile-flow/main');
@@ -110,8 +109,6 @@ const MobileFlowPage: React.FC = () => {
         return <SfdSetupPage />;
       case 'secure-payment':
         return <SecurePaymentTab onBack={() => navigate(-1)} />;
-      case 'sfd-clients':
-        return <SfdClientsPage />;
       default:
         return (
           <MainDashboard 

@@ -7,12 +7,10 @@ import {
   Building, 
   Wallet, 
   HandCoins, 
-  Bell, 
-  CreditCard, 
-  Calendar, 
   ShieldCheck,
   HelpCircle, 
-  Settings
+  Settings,
+  User
 } from 'lucide-react';
 
 interface MobileMenuProps {
@@ -50,9 +48,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen = false, onClose = () =>
             <Button variant="ghost" className="justify-start" onClick={() => navigateAndClose('/mobile-flow/multi-sfd')}>
               <Building className="h-5 w-5 mr-2 text-[#0D6A51]" /> Gestion Multi-SFD
             </Button>
-            <Button variant="ghost" className="justify-start" onClick={() => navigateAndClose('/mobile-flow/sfd-clients')}>
-              <Building className="h-5 w-5 mr-2 text-[#0D6A51]" /> Clients SFD
-            </Button>
           </div>
           
           <div className="flex flex-col space-y-1">
@@ -66,23 +61,21 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen = false, onClose = () =>
             <Button variant="ghost" className="justify-start" onClick={() => navigateAndClose('/mobile-flow/secure-payment')}>
               <ShieldCheck className="h-5 w-5 mr-2 text-[#FFAB2E]" /> Paiement sécurisé
             </Button>
-            <Button variant="ghost" className="justify-start" onClick={() => navigateAndClose('/mobile-flow/schedule-transfer')}>
-              <Calendar className="h-5 w-5 mr-2 text-[#FFAB2E]" /> Transferts programmés
-            </Button>
           </div>
 
-          <div className="flex flex-col space-y-1">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Aide et Compte</h3>
+          <div className="flex flex-col space-y-1 border-t border-gray-200 pt-4 mt-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Aide et Compte</h3>
             <Button variant="ghost" className="justify-start" onClick={() => navigateAndClose('/mobile-flow/profile')}>
-              <Settings className="h-5 w-5 mr-2" /> Mon profil
+              <User className="h-5 w-5 mr-2 text-[#0D6A51]" /> Mon profil
             </Button>
             <Button variant="ghost" className="justify-start">
-              <HelpCircle className="h-5 w-5 mr-2" /> Assistance
+              <HelpCircle className="h-5 w-5 mr-2 text-[#0D6A51]" /> Assistance
             </Button>
-          </div>
-          
-          <div className="pt-4 border-t border-gray-200">
-            <Button variant="ghost" className="justify-start w-full" onClick={onLogout}>
+            <Button 
+              variant="ghost" 
+              className="justify-start text-red-600" 
+              onClick={onLogout}
+            >
               <Settings className="h-5 w-5 mr-2" /> Déconnexion
             </Button>
           </div>
