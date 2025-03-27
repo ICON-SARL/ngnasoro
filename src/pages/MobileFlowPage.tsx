@@ -79,6 +79,9 @@ const MobileFlowPage: React.FC = () => {
   // Mock action handler
   const handleAction = (action: string, data?: any) => {
     console.log('Action:', action, data);
+    if (action === 'Loans') {
+      navigate('/mobile-flow/secure-payment');
+    }
   };
   
   // Si chargement en cours ou user null, montrer un loader
@@ -125,7 +128,7 @@ const MobileFlowPage: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <main className="flex-1 container mx-auto max-w-md pb-16">
+      <main className="flex-1 w-full h-full">
         {renderContent()}
       </main>
       

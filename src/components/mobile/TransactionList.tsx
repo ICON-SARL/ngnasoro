@@ -26,7 +26,7 @@ interface TransactionListProps {
 
 const TransactionList = ({ transactions, isLoading = false, onViewAll, title = "Transactions Récentes" }: TransactionListProps) => {
   return (
-    <div className="mx-4 mt-3 mb-20">
+    <div className="px-4 mt-3 mb-20">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-medium">{title}</h3>
         <Button 

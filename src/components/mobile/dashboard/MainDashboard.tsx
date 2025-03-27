@@ -7,7 +7,6 @@ import SFDSavingsOverview from '@/components/mobile/SFDSavingsOverview';
 import TransactionList from '@/components/mobile/TransactionList';
 import { useMobileDashboard } from '@/hooks/useMobileDashboard';
 import { Account } from '@/types/transactions';
-import FinancialOverview from '@/components/mobile/FinancialOverview';
 
 interface MainDashboardProps {
   onAction: (action: string, data?: any) => void;
@@ -37,11 +36,9 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
         <ContextualHeader />
       </div>
       
-      <div className="mx-4">
+      <div className="px-4 py-2">
         <SFDSavingsOverview />
       </div>
-      
-      <FinancialOverview />
       
       <TransactionList 
         transactions={(dashboardData?.transactions || transactions).map(tx => ({
