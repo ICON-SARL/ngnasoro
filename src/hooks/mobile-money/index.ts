@@ -35,4 +35,10 @@ export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
   };
 }
 
-export * from './types';
+// Export types properly with 'export type'
+export type { 
+  MobileMoneyOperationsHook,
+  MobileMoneyPaymentHook,
+  MobileMoneyWithdrawalHook,
+  QRCodeGenerationHook
+} from './types';
