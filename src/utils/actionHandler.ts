@@ -47,6 +47,10 @@ export const useActionHandler = () => {
       // You would handle setting repayment amount here if data contains amount
     } else if (action === 'Home') {
       navigate('/mobile-flow/main');
+    } else if (action === 'Manage SFD') {
+      navigate('/mobile-flow/create-sfd');
+    } else if (action === 'Manage Clients') {
+      navigate('/mobile-flow/clients');
     }
   };
 

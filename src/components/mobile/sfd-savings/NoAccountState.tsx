@@ -20,9 +20,9 @@ const NoAccountState: React.FC = () => {
         </p>
         <Button 
           className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white"
-          onClick={() => navigate('/sfd-selector')}
+          onClick={() => navigate('/mobile-flow/create-sfd')}
         >
-          Connecter un compte SFD
+          Créer/Connecter un compte SFD
         </Button>
       </CardContent>
     </Card>
