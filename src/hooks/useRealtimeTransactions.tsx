@@ -90,16 +90,15 @@ export function useRealtimeTransactions() {
     setIsLoading(true);
     
     try {
-      // Explicitly cast the query result to avoid TypeScript's deep type inference
-      const result = await (supabase
+      // Use explicit type annotation to prevent deep type inference
+      type QueryResult = { data: any[] | null; error: any };
+      
+      const { data, error } = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50)) as unknown as { data: any[] | null, error: any };
-      
-      const data = result.data || [];
-      const error = result.error;
+        .limit(50) as unknown as QueryResult;
       
       if (error) throw error;
       
@@ -190,15 +189,23 @@ export function useRealtimeTransactions() {
       handleRealtimeUpdate(payload);
     };
     
-    // Use type assertions to simplify the callback and avoid deep inference
+    // Define the type more explicitly to avoid deep inference
+    type ChannelFilter = {
+      event: string;
+      schema: string;
+      table: string;
+      filter: string;
+    };
+    
+    // Use simpler type assertions
     channel.on(
-      'postgres_changes' as any, 
+      'postgres_changes' as string, 
       {
         event: '*',
         schema: 'public',
         table: 'transactions',
         filter: `sfd_id=eq.${sfdId}`
-      } as any, 
+      } as ChannelFilter, 
       handleChanges
     );
     
