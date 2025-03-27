@@ -89,15 +89,12 @@ export function useRealtimeTransactions() {
     setIsLoading(true);
     
     try {
-      const result: any = await supabase
+      const { data = [], error } = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50);
-      
-      const data = result.data || [];
-      const error = result.error;
+        .limit(50) as any;
       
       if (error) throw error;
       
@@ -113,7 +110,7 @@ export function useRealtimeTransactions() {
       setFilteredTransactions(txData);
       calculateStats(txData);
     } catch (error) {
-      console.error('Error loading transactions:', error);
+      console.error('Loading error:', error);
       toast({
         title: 'Loading Error',
         description: 'Unable to load transactions. Please try again.',
@@ -195,7 +192,7 @@ export function useRealtimeTransactions() {
         schema: 'public',
         table: 'transactions',
         filter: `sfd_id=eq.${sfdId}`
-      }, 
+      } as any, 
       handleChanges
     );
     
