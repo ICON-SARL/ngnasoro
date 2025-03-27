@@ -123,11 +123,11 @@ const SFDSavingsOverview = () => {
               variant="outline" 
               size="sm"
               onClick={refreshBalance}
-              disabled={isUpdating || synchronizeBalances.isLoading}
+              disabled={isUpdating || synchronizeBalances.isPending}
               className="text-xs"
             >
-              <RefreshCw className={`h-3 w-3 mr-1 ${isUpdating || synchronizeBalances.isLoading ? 'animate-spin' : ''}`} />
-              {isUpdating || synchronizeBalances.isLoading ? 'Actualisation...' : 'Actualiser'}
+              <RefreshCw className={`h-3 w-3 mr-1 ${isUpdating || synchronizeBalances.isPending ? 'animate-spin' : ''}`} />
+              {isUpdating || synchronizeBalances.isPending ? 'Actualisation...' : 'Actualiser'}
             </Button>
           </div>
         </div>

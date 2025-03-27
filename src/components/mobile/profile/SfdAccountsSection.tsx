@@ -139,7 +139,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
                     variant="outline"
                     className="text-xs"
                     onClick={() => handleSwitchSfd(sfd.id)}
-                    disabled={switchingId === sfd.id || synchronizeBalances.isLoading}
+                    disabled={switchingId === sfd.id || synchronizeBalances.isPending}
                   >
                     {switchingId === sfd.id ? 'Changement...' : 'Basculer'}
                   </Button>

@@ -136,7 +136,7 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
               Solde disponible
             </h3>
             <p className="text-2xl font-bold">
-              {isLoading || synchronizeBalances.isLoading
+              {isLoading || synchronizeBalances.isPending
                 ? "Chargement..." 
                 : formatCurrency(activeSfdId ? (activeSfdAccount?.balance || 0) : (account?.balance || 0))}
             </p>
@@ -146,11 +146,11 @@ const FinancialSnapshot: React.FC<FinancialSnapshotProps> = ({
               </p>
               <button 
                 onClick={refreshBalance}
-                disabled={isRefreshing || synchronizeBalances.isLoading}
+                disabled={isRefreshing || synchronizeBalances.isPending}
                 className="text-xs text-blue-500 flex items-center"
               >
-                <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing || synchronizeBalances.isLoading ? 'animate-spin' : ''}`} />
-                {isRefreshing || synchronizeBalances.isLoading ? 'Actualisation...' : 'Actualiser'}
+                <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing || synchronizeBalances.isPending ? 'animate-spin' : ''}`} />
+                {isRefreshing || synchronizeBalances.isPending ? 'Actualisation...' : 'Actualiser'}
               </button>
             </div>
           </div>
