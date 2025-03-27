@@ -18,7 +18,13 @@ export const transactionService = {
 
       if (filters) {
         if (filters.type) {
-          query = query.eq('type', filters.type);
+          if (Array.isArray(filters.type)) {
+            // Handle array of transaction types
+            query = query.in('type', filters.type);
+          } else {
+            // Handle single transaction type
+            query = query.eq('type', filters.type);
+          }
         }
         
         if (filters.startDate) {
@@ -27,6 +33,30 @@ export const transactionService = {
         
         if (filters.endDate) {
           query = query.lte('created_at', filters.endDate);
+        }
+
+        if (filters.status) {
+          query = query.eq('status', filters.status);
+        }
+        
+        if (filters.minAmount !== undefined) {
+          query = query.gte('amount', filters.minAmount);
+        }
+        
+        if (filters.maxAmount !== undefined) {
+          query = query.lte('amount', filters.maxAmount);
+        }
+        
+        if (filters.searchTerm && filters.searchTerm.trim() !== '') {
+          query = query.ilike('name', `%${filters.searchTerm}%`);
+        }
+        
+        if (filters.category) {
+          query = query.eq('category', filters.category);
+        }
+        
+        if (filters.paymentMethod) {
+          query = query.eq('payment_method', filters.paymentMethod);
         }
         
         if (filters.limit) {
