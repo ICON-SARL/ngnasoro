@@ -21,8 +21,8 @@ interface CreateTransactionParams {
   status?: TransactionStatus;
   description?: string;
   paymentMethod?: PaymentMethod;
-  metadata?: Record<string, any>;
   referenceId?: string;
+  category?: string;
 }
 
 export function useTransactionService() {
@@ -55,8 +55,8 @@ export function useTransactionService() {
         status: params.status,
         description: params.description,
         paymentMethod: params.paymentMethod || 'sfd_account',
-        metadata: params.metadata,
-        referenceId: params.referenceId
+        referenceId: params.referenceId,
+        category: params.category
       });
 
       if (transaction) {

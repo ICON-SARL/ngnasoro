@@ -16,7 +16,7 @@ const FundsManagementPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [activeView, setActiveView] = useState<'main' | 'withdraw' | 'deposit'>('main');
-  const { transactions, isLoading: transactionsLoading } = useTransactions(user?.id);
+  const { transactions, isLoading: transactionsLoading } = useTransactions(user?.id || '', user?.id ? 'default-sfd' : '');
   
   const handleBack = () => {
     if (activeView !== 'main') {

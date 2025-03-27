@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,14 +13,14 @@ import { useAuth } from '@/hooks/useAuth';
 const HomeLoanPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { transactions, isLoading } = useTransactions(user?.id);
+  const { transactions, isLoading } = useTransactions(user?.id || '', user?.id ? 'default-sfd' : '');
   
   const formattedTransactions = transactions.map(transaction => ({
     id: transaction.id,
     name: transaction.name,
     type: transaction.type,
     amount: `${transaction.amount > 0 ? '+' : ''}${transaction.amount.toLocaleString('fr-FR')} FCFA`,
-    date: new Date(transaction.date).toLocaleDateString('fr-FR'),
+    date: new Date(transaction.date || transaction.created_at).toLocaleDateString('fr-FR'),
     avatar: transaction.avatar_url,
     sfdName: transaction.type === 'loan_disbursement' ? 'SFD' : undefined
   }));

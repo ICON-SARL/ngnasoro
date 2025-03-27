@@ -1,17 +1,23 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import { Transaction } from '@/types/transactions';
+import { TransactionFilters, TransactionStatus } from './types';
 import { transactionService } from './transactionService';
-import { TransactionStatistics } from './types';
+
+interface TransactionStats {
+  totalVolume: number;
+  transactionCount: number;
+  averageAmount: number;
+  depositVolume: number;
+  withdrawalVolume: number;
+}
 
 class TransactionStatisticsService {
-  /**
-   * Generate statistics for a user's transactions over a given period
-   */
   async generateTransactionStatistics(
     userId: string, 
     sfdId?: string, 
     period: 'day' | 'week' | 'month' = 'month'
-  ): Promise<TransactionStatistics> {
+  ): Promise<TransactionStats> {
     try {
       let startDate = new Date();
       
@@ -23,12 +29,15 @@ class TransactionStatisticsService {
       } else if (period === 'month') {
         startDate.setMonth(startDate.getMonth() - 1);
       }
-
-      const transactions = await transactionService.getUserTransactions(userId, sfdId, {
+      
+      const filter: TransactionFilters = {
         startDate: startDate.toISOString()
-      });
+      };
 
-      if (transactions.length === 0) {
+      const transactions = await transactionService.getUserTransactions(userId, sfdId, filter);
+
+      // Default values if no transactions are found
+      if (!transactions.length) {
         return {
           totalVolume: 0,
           transactionCount: 0,
@@ -38,6 +47,12 @@ class TransactionStatisticsService {
         };
       }
 
+      // Calculate statistics
+      const totalVolume = transactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+      const transactionCount = transactions.length;
+      const averageAmount = totalVolume / transactionCount;
+      
+      // Calculate deposit and withdrawal volumes
       const depositTransactions = transactions.filter(tx => 
         tx.type === 'deposit' || 
         (tx.type === 'transfer' && tx.amount > 0)
@@ -48,20 +63,19 @@ class TransactionStatisticsService {
         (tx.type === 'payment') || 
         (tx.type === 'transfer' && tx.amount < 0)
       );
-
-      const totalVolume = transactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+      
       const depositVolume = depositTransactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
       const withdrawalVolume = withdrawalTransactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
       return {
         totalVolume,
-        transactionCount: transactions.length,
-        averageAmount: totalVolume / transactions.length,
+        transactionCount,
+        averageAmount,
         depositVolume,
         withdrawalVolume
       };
     } catch (error) {
-      console.error('Failed to generate transaction statistics:', error);
+      console.error('Error generating transaction statistics:', error);
       return {
         totalVolume: 0,
         transactionCount: 0,
