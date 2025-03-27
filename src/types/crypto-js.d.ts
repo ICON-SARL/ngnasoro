@@ -59,36 +59,14 @@ declare module 'crypto-js' {
 
   export const lib: crypto.Library;
   
-  // Fix the encoder definitions by providing proper types
   export const enc: {
-    Hex: {
-      stringify(wordArray: crypto.WordArray): string;
-      parse(hexStr: string): crypto.WordArray;
-    };
-    Latin1: {
-      stringify(wordArray: crypto.WordArray): string;
-      parse(latin1Str: string): crypto.WordArray;
-    };
-    Utf8: {
-      stringify(wordArray: crypto.WordArray): string;
-      parse(utf8Str: string): crypto.WordArray;
-    };
-    Utf16: {
-      stringify(wordArray: crypto.WordArray): string;
-      parse(utf16Str: string): crypto.WordArray;
-    };
-    Utf16LE: {
-      stringify(wordArray: crypto.WordArray): string;
-      parse(utf16Str: string): crypto.WordArray;
-    };
-    Utf16BE: {
-      stringify(wordArray: crypto.WordArray): string;
-      parse(utf16Str: string): crypto.WordArray;
-    };
-    Base64: {
-      stringify(wordArray: crypto.WordArray): string;
-      parse(base64Str: string): crypto.WordArray;
-    };
+    Hex: crypto.Encoder;
+    Latin1: crypto.Encoder;
+    Utf8: crypto.Encoder;
+    Utf16: crypto.Encoder;
+    Utf16LE: crypto.Encoder;
+    Utf16BE: crypto.Encoder;
+    Base64: crypto.Encoder;
   };
   
   export const algo: {
