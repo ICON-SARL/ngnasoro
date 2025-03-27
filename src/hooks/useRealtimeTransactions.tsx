@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Transaction, TransactionStats } from '@/types/transactions';
 
-// Define a simple type for payload to avoid deep type instantiation
+// Define an even simpler type for payload to avoid deep type instantiation
 type SimplePayload = {
   eventType: string;
   new?: Record<string, any> | null;
@@ -93,29 +93,29 @@ export function useRealtimeTransactions() {
     return mockTransactions;
   }, []);
   
-  // Fetch initial transactions - simplified with explicit any type
+  // Fetch initial transactions - with further simplification to avoid type issues
   const fetchTransactions = useCallback(async () => {
     if (!user || !activeSfdId) return;
     
     setIsLoading(true);
     
     try {
-      // Using explicit any type for data to avoid complex inference
-      const { data, error } = await supabase
+      // Use any type and avoid destructuring to simplify type inference
+      const result: any = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
         .limit(50);
         
-      if (error) throw error;
+      if (result.error) throw result.error;
       
       let txData: Transaction[] = [];
       
-      if (data && data.length > 0) {
-        // Explicitly type as any[] to avoid deep inference
-        const rawData: any[] = data;
-        txData = convertDatabaseRecordsToTransactions(rawData);
+      // Treat data as a simple array without complex typing
+      if (result.data && result.data.length > 0) {
+        // Use as any[] to completely avoid TypeScript's deep inference
+        txData = convertDatabaseRecordsToTransactions(result.data as any[]);
       } else {
         txData = generateMockTransactions(activeSfdId);
       }
@@ -202,7 +202,7 @@ export function useRealtimeTransactions() {
     
     fetchTransactions();
     
-    // Configure realtime subscription via Supabase with explicit any typing
+    // Configure realtime subscription via Supabase with completely simplified approach
     const channel = supabase
       .channel('public:transactions')
       .on('postgres_changes', {
@@ -210,13 +210,17 @@ export function useRealtimeTransactions() {
         schema: 'public',
         table: 'transactions',
         filter: `sfd_id=eq.${activeSfdId}`
-      }, (payload: any) => {
-        // Create a simple payload object to avoid type recursion
+      }, (rawPayload) => {
+        // Use any typing to avoid deep type instantiation completely
+        const rawPayloadAny: any = rawPayload;
+        
+        // Create a flat simple payload without complex nesting
         const simplePayload: SimplePayload = {
-          eventType: payload.eventType,
-          new: payload.new,
-          old: payload.old
+          eventType: rawPayloadAny.eventType,
+          new: rawPayloadAny.new,
+          old: rawPayloadAny.old
         };
+        
         handleRealtimeUpdate(simplePayload);
       })
       .subscribe();
