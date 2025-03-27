@@ -4,12 +4,17 @@ export type TransactionStatus = 'pending' | 'success' | 'failed' | 'cancelled';
 export type PaymentMethod = 'sfd_account' | 'mobile_money' | 'cash' | 'bank_transfer' | 'qr_code' | 'agency_qr' | 'other';
 
 export interface TransactionFilters {
-  type?: TransactionType;
+  type?: TransactionType | TransactionType[];
   startDate?: string;
   endDate?: string;
   status?: TransactionStatus;
   limit?: number;
   referenceId?: string;
+  minAmount?: number;
+  maxAmount?: number;
+  searchTerm?: string;
+  category?: string;
+  paymentMethod?: PaymentMethod;
 }
 
 export interface CreateTransactionOptions {

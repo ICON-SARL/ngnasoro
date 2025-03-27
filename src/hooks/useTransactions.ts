@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { transactionService } from '@/services/transactions/transactionService';
-import { CreateTransactionOptions, TransactionFilters } from '@/services/transactions/types';
+import { CreateTransactionOptions, TransactionFilters, PaymentMethod } from '@/services/transactions/types';
 import { useToast } from '@/hooks/use-toast';
 import { Transaction } from '@/types/transactions';
 
@@ -68,7 +68,7 @@ export function useTransactions(userId?: string, sfdId?: string, filters?: Trans
         type: 'deposit',
         name: description || 'Dépôt',
         description: description || 'Dépôt de fonds',
-        paymentMethod: paymentMethod || 'sfd_account'
+        paymentMethod: (paymentMethod || 'sfd_account') as PaymentMethod
       });
       
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
@@ -90,7 +90,7 @@ export function useTransactions(userId?: string, sfdId?: string, filters?: Trans
         type: 'withdrawal',
         name: description || 'Retrait',
         description: description || 'Retrait de fonds',
-        paymentMethod: paymentMethod || 'sfd_account'
+        paymentMethod: (paymentMethod || 'sfd_account') as PaymentMethod
       });
       
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
@@ -112,7 +112,7 @@ export function useTransactions(userId?: string, sfdId?: string, filters?: Trans
         type: 'loan_repayment',
         name: description || 'Remboursement de prêt',
         description: description || `Remboursement pour le prêt ${loanId}`,
-        paymentMethod: paymentMethod || 'sfd_account',
+        paymentMethod: (paymentMethod || 'sfd_account') as PaymentMethod,
         referenceId: loanId
       });
       

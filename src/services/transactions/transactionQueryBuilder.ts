@@ -44,11 +44,11 @@ export function buildTransactionQuery(userId?: string, sfdId?: string, filters?:
     }
     
     // Amount range filters
-    if (filters.minAmount) {
+    if (filters.minAmount !== undefined) {
       query.gte('amount', filters.minAmount);
     }
     
-    if (filters.maxAmount) {
+    if (filters.maxAmount !== undefined) {
       query.lte('amount', filters.maxAmount);
     }
     
@@ -71,6 +71,11 @@ export function buildTransactionQuery(userId?: string, sfdId?: string, filters?:
     // Payment method filter
     if (filters.paymentMethod) {
       query.eq('payment_method', filters.paymentMethod);
+    }
+
+    // Limit results
+    if (filters.limit) {
+      query.limit(filters.limit);
     }
   }
   

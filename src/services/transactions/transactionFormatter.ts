@@ -17,11 +17,23 @@ export function formatTransaction(record: any): Transaction {
     }
   };
 
+  // Make sure the transaction type exists in our Transaction interface
+  const ensureValidType = (type: string): Transaction['type'] => {
+    // Convert loan_repayment to payment for compatibility with Transaction type
+    if (type === 'loan_repayment') return 'payment';
+    
+    // Check if the type is one of the allowed types in the Transaction interface
+    const allowedTypes: Transaction['type'][] = ['deposit', 'withdrawal', 'transfer', 'payment', 'loan_disbursement', 'other'];
+    return allowedTypes.includes(type as any) 
+      ? (type as Transaction['type']) 
+      : 'other';
+  };
+
   return {
     id: record.id,
     user_id: record.user_id,
     sfd_id: record.sfd_id,
-    type: record.type as TransactionType,
+    type: ensureValidType(record.type),
     amount: record.amount,
     status: mapStatus(record.status || 'completed'),
     description: record.description,
