@@ -14,6 +14,7 @@ import LoansPage from '@/pages/LoansPage';
 import TransactionsPage from '@/pages/TransactionsPage';
 import LoanAgreementManagement from '@/components/sfd/LoanAgreementManagement';
 import SFDSelector from '@/pages/SFDSelector';
+import AuthUI from '@/components/AuthUI';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/auth" element={<AuthUI />} />
           <Route path="/mobile-flow/*" element={<MobileFlow />} />
           <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
           <Route path="/agency-dashboard" element={<AgencyDashboard />} />

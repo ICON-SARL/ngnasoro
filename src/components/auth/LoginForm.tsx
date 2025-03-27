@@ -7,20 +7,25 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import AuthenticationSystem from '@/components/AuthenticationSystem';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useNavigate } from 'react-router-dom';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authMode, setAuthMode] = useState<'simple' | 'advanced'>('simple');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
     if (authMode === 'advanced') {
       setShowAuthDialog(true);
+      setIsLoading(false);
       return;
     }
     
@@ -31,12 +36,20 @@ const LoginForm = () => {
         title: "Connectez-vous avec le lien magique",
         description: "Vérifiez votre e-mail pour le lien de connexion.",
       });
+      
+      // Redirect to mobile flow after successful magic link send
+      setTimeout(() => {
+        navigate('/mobile-flow');
+      }, 3000);
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Erreur de connexion",
-        description: error.message,
+        description: error.message || "Une erreur s'est produite lors de la connexion.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -46,6 +59,7 @@ const LoginForm = () => {
       title: "Authentification réussie",
       description: "Vous êtes maintenant connecté.",
     });
+    navigate('/mobile-flow');
   };
 
   const toggleAuthMode = () => {
@@ -109,8 +123,9 @@ const LoginForm = () => {
         <Button 
           type="submit" 
           className="w-full"
+          disabled={isLoading}
         >
-          {authMode === 'simple' ? 'Se connecter' : 'Authentification sécurisée'}
+          {isLoading ? 'Chargement...' : (authMode === 'simple' ? 'Se connecter' : 'Authentification sécurisée')}
         </Button>
         
         <div className="relative mt-6">
