@@ -37,7 +37,7 @@ export class EncryptionService {
     
     // Combine IV and ciphertext and encode as base64
     const ivAndCiphertext = iv.concat(encrypted.ciphertext);
-    return ivAndCiphertext.toString(crypto.enc.Base64);
+    return crypto.enc.Base64.stringify(ivAndCiphertext);
   }
   
   /**
@@ -88,7 +88,7 @@ export class EncryptionService {
         mode: crypto.mode.CBC
       });
       
-      return decrypted.toString(crypto.enc.Utf8);
+      return crypto.enc.Utf8.stringify(decrypted);
     } catch (error) {
       console.error('Decryption failed:', error);
       throw new Error('Failed to decrypt data');
@@ -224,4 +224,4 @@ export class SecureStorage {
   }
 }
 
-// No duplicate exports needed - classes are already exported with the export keyword
+// Do not duplicate exports at the end of the file, since classes are already exported above
