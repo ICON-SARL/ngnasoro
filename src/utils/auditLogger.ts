@@ -38,8 +38,8 @@ export interface AuditLogEntry {
 export const logAuditEvent = async (entry: AuditLogEntry): Promise<void> => {
   try {
     // Use a type assertion to bypass the TypeScript error
-    const { error } = await supabase
-      .from('audit_logs')
+    const { error } = await (supabase
+      .from('audit_logs' as any)
       .insert({
         user_id: entry.user_id,
         action: entry.action,
@@ -51,7 +51,7 @@ export const logAuditEvent = async (entry: AuditLogEntry): Promise<void> => {
         target_resource: entry.target_resource,
         status: entry.status,
         error_message: entry.error_message
-      });
+      }) as any);
 
     if (error) {
       console.error('Failed to log audit event:', error);
@@ -78,10 +78,10 @@ export const getAuditLogs = async (
 ): Promise<any[]> => {
   try {
     // Use a type assertion to bypass the TypeScript error
-    let query = supabase
-      .from('audit_logs')
+    let query = (supabase
+      .from('audit_logs' as any)
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false }) as any);
 
     // Apply filters
     if (options?.userId) {
