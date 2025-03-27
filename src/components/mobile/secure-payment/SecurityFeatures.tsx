@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Check, Shield } from 'lucide-react';
+import { Shield, Lock, QrCode, Smartphone } from 'lucide-react';
 
 interface SecurityFeaturesProps {
   isWithdrawal?: boolean;
@@ -8,51 +8,43 @@ interface SecurityFeaturesProps {
 
 export const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ isWithdrawal = false }) => {
   return (
-    <div className="mt-6 pt-6 border-t border-gray-200">
-      <h3 className="text-sm font-medium mb-4 flex items-center">
-        <Shield className="h-4 w-4 mr-2 text-[#0D6A51]" />
-        {isWithdrawal ? "Sécurité des retraits" : "Sécurité des remboursements"}
-      </h3>
-      
-      <div className="space-y-3">
+    <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+      <h3 className="text-sm font-semibold mb-3">Sécurité renforcée</h3>
+      <div className="grid grid-cols-2 gap-3">
         <div className="flex items-start space-x-2">
-          <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-            <Check className="h-3 w-3 text-green-600" />
+          <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+            <Lock className="h-4 w-4 text-blue-600" />
           </div>
           <div>
-            <p className="text-sm font-medium">
-              {isWithdrawal ? "Retrait sécurisé" : "Remboursement sécurisé"}
-            </p>
-            <p className="text-xs text-gray-500">
-              Vos données de paiement sont cryptées avec le niveau de sécurité bancaire
-            </p>
+            <p className="text-xs font-medium">Cryptage de bout en bout</p>
+            <p className="text-xs text-gray-500">Toutes les données sont cryptées</p>
           </div>
         </div>
-        
         <div className="flex items-start space-x-2">
-          <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-            <Check className="h-3 w-3 text-green-600" />
+          <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+            <Shield className="h-4 w-4 text-green-600" />
           </div>
           <div>
-            <p className="text-sm font-medium">Confirmation immédiate</p>
-            <p className="text-xs text-gray-500">
-              {isWithdrawal 
-                ? "Votre retrait est enregistré instantanément dans votre compte" 
-                : "Votre remboursement est enregistré instantanément dans votre compte de prêt"
-              }
-            </p>
+            <p className="text-xs font-medium">Transaction sécurisée</p>
+            <p className="text-xs text-gray-500">Vérification biométrique</p>
           </div>
         </div>
-        
         <div className="flex items-start space-x-2">
-          <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-            <Check className="h-3 w-3 text-green-600" />
+          <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center">
+            <QrCode className="h-4 w-4 text-yellow-600" />
           </div>
           <div>
-            <p className="text-sm font-medium">Protection anti-fraude</p>
-            <p className="text-xs text-gray-500">
-              Toutes les transactions sont contrôlées par notre système anti-fraude 24/7
-            </p>
+            <p className="text-xs font-medium">QR Code unique</p>
+            <p className="text-xs text-gray-500">Authentification en agence</p>
+          </div>
+        </div>
+        <div className="flex items-start space-x-2">
+          <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+            <Smartphone className="h-4 w-4 text-purple-600" />
+          </div>
+          <div>
+            <p className="text-xs font-medium">Mobile Money intégré</p>
+            <p className="text-xs text-gray-500">Connexion directe et sécurisée</p>
           </div>
         </div>
       </div>

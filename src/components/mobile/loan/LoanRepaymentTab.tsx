@@ -33,7 +33,7 @@ const LoanRepaymentTab = ({
   
   const handleRepayment = (method: 'mobile' | 'agency') => {
     if (method === 'mobile') {
-      // Corrigé pour utiliser le bon chemin
+      // Rediriger vers la page de paiement sécurisé avec les paramètres appropriés
       navigate('/mobile-flow/secure-payment', { 
         state: { 
           isRepayment: true, 

@@ -1,9 +1,5 @@
 
-import { 
-  MobileMoneyResponse, 
-  QRCodeResponse 
-} from '@/utils/mobileMoneyApi';
-
+// Types pour l'utilisation de Mobile Money
 export interface MobileMoneyPaymentHook {
   isProcessingPayment: boolean;
   processMobileMoneyPayment: (
@@ -42,4 +38,30 @@ export interface MobileMoneyOperationsHook {
   ) => Promise<MobileMoneyResponse>;
   generatePaymentQRCode: (amount: number) => Promise<QRCodeResponse>;
   generateWithdrawalQRCode: (amount: number) => Promise<QRCodeResponse>;
+}
+
+export interface MobileMoneyResponse {
+  success: boolean;
+  message: string;
+  transaction?: any;
+  reference?: string;
+  providerResponse?: {
+    status: string;
+    providerReference: string;
+    estimatedCompletion: string;
+  };
+  error?: string;
+}
+
+export interface QRCodeResponse {
+  success: boolean;
+  qrCode?: {
+    userId: string;
+    amount: number;
+    isWithdrawal: boolean;
+    timestamp: number;
+    expiresAt: string;
+    code: string;
+  };
+  error?: string;
 }

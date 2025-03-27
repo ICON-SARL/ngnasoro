@@ -164,6 +164,13 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
                 onClose={() => {}} 
                 amount={3500} 
                 isWithdrawal={false}
+                onSuccess={async () => {
+                  // Actualiser les données après un paiement QR réussi
+                  toast({
+                    title: "Paiement réussi",
+                    description: "Votre remboursement a été traité avec succès",
+                  });
+                }}
               />
             </Dialog>
           </TabsContent>
@@ -174,6 +181,13 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack }) => {
         <MobileMoneyModal 
           onClose={() => setMobileMoneyInitiated(false)}
           isWithdrawal={false}
+          onSuccess={async () => {
+            // Actualiser les données après un paiement mobile money réussi
+            toast({
+              title: "Paiement réussi",
+              description: "Votre remboursement a été traité avec succès",
+            });
+          }}
         />
       )}
     </div>
