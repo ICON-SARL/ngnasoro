@@ -30,7 +30,8 @@ export function useSfdClients() {
       return [];
     }
     
-    return data || [];
+    // Type assertion to ensure the status field is properly typed
+    return (data || []) as SfdClient[];
   };
   
   const clientsQuery = useQuery({
