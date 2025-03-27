@@ -9,8 +9,8 @@ export function buildTransactionQuery(userId?: string, sfdId?: string, filters?:
   // Create a base query
   const query = supabase.from('transactions').select('*');
   
-  // Apply filters directly to the query object
-  // This avoids returning the query after each operation which causes TypeScript to create deeply nested types
+  // Apply filters without chaining
+  // The Supabase query builder modifies the query object in-place
   
   // Apply user_id filter if provided
   if (userId) {
