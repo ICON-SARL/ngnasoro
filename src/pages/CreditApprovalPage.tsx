@@ -4,6 +4,8 @@ import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { CreditApplicationList } from '@/components/admin/credit/CreditApplicationList';
 import { CreditScoringPanel } from '@/components/admin/credit/CreditScoringPanel';
 import { CreditNotificationSettings } from '@/components/admin/credit/CreditNotificationSettings';
+import { SfdManagement } from '@/components/admin/SfdManagement';
+import { SfdAuditLog } from '@/components/admin/SfdAuditLog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const CreditApprovalPage = () => {
@@ -13,9 +15,9 @@ const CreditApprovalPage = () => {
       
       <main className="flex-1 container mx-auto p-4 md:p-6">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold">Approbation de Crédit</h2>
+          <h2 className="text-2xl font-bold">Approbation de Crédit et Gestion des SFDs</h2>
           <p className="text-muted-foreground">
-            Gérez les demandes de crédit des SFDs et configurez le système de scoring
+            Gérez les demandes de crédit des SFDs, configurez le système de scoring et gérez les SFDs
           </p>
         </div>
         
@@ -24,6 +26,8 @@ const CreditApprovalPage = () => {
             <TabsTrigger value="applications">Demandes</TabsTrigger>
             <TabsTrigger value="scoring">Système de Scoring</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="sfd-management">Gestion des SFDs</TabsTrigger>
+            <TabsTrigger value="sfd-audit">Historique SFDs</TabsTrigger>
           </TabsList>
           
           <TabsContent value="applications">
@@ -36,6 +40,14 @@ const CreditApprovalPage = () => {
           
           <TabsContent value="notifications">
             <CreditNotificationSettings />
+          </TabsContent>
+          
+          <TabsContent value="sfd-management">
+            <SfdManagement />
+          </TabsContent>
+          
+          <TabsContent value="sfd-audit">
+            <SfdAuditLog />
           </TabsContent>
         </Tabs>
       </main>

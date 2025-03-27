@@ -13,7 +13,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { ReportGenerator } from '@/components/ReportGenerator';
 import { DataExport } from '@/components/DataExport';
 import { Button } from '@/components/ui/button';
-import { FileText, CreditCard } from 'lucide-react';
+import { FileText, CreditCard, Building } from 'lucide-react';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
@@ -49,6 +49,15 @@ const SuperAdminDashboard = () => {
           >
             <CreditCard className="h-4 w-4 mr-2 text-[#0D6A51]" />
             Approbation de Crédit
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="flex items-center bg-white"
+            onClick={() => navigate('/credit-approval?tab=sfd-management')}
+          >
+            <Building className="h-4 w-4 mr-2 text-[#0D6A51]" />
+            Gestion des SFDs
           </Button>
           
           <Button 

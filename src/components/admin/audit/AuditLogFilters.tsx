@@ -1,121 +1,117 @@
 
 import React from 'react';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CalendarIcon, Search } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { AuditLogCategory, AuditLogSeverity } from '@/utils/auditLogger';
+import { Input } from '@/components/ui/input';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
 import { AuditLogFiltersProps } from './types';
+import { Search, X } from 'lucide-react';
 
-export function AuditLogFilters({ 
-  filters, 
-  handleFilterChange, 
-  handleClearFilters, 
-  handleApplyFilters 
+export function AuditLogFilters({
+  filters,
+  handleFilterChange,
+  handleClearFilters,
+  handleApplyFilters
 }: AuditLogFiltersProps) {
   return (
-    <div className="flex flex-wrap gap-2 mb-4">
-      <div className="flex-1 min-w-[200px]">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Rechercher..."
-            className="pl-8"
-            value={filters.searchTerm}
-            onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
-          />
+    <div className="bg-card p-4 rounded-md shadow-sm space-y-4 mb-4">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 space-y-2">
+          <label className="text-sm font-medium">Recherche</label>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Rechercher dans l'historique..."
+              className="pl-8"
+              value={filters.searchTerm}
+              onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
+            />
+          </div>
+        </div>
+        
+        <div className="flex-1 space-y-2">
+          <label className="text-sm font-medium">Catégorie</label>
+          <Select
+            value={filters.categoryFilter}
+            onValueChange={(value) => handleFilterChange('categoryFilter', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Toutes les catégories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Toutes les catégories</SelectItem>
+              <SelectItem value="sfd_operations">Opérations SFD</SelectItem>
+              <SelectItem value="user_management">Gestion Utilisateurs</SelectItem>
+              <SelectItem value="data_access">Accès aux données</SelectItem>
+              <SelectItem value="configuration">Configuration</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex-1 space-y-2">
+          <label className="text-sm font-medium">Sévérité</label>
+          <Select
+            value={filters.severityFilter}
+            onValueChange={(value) => handleFilterChange('severityFilter', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Toutes les sévérités" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Toutes les sévérités</SelectItem>
+              <SelectItem value="info">Info</SelectItem>
+              <SelectItem value="warning">Avertissement</SelectItem>
+              <SelectItem value="error">Erreur</SelectItem>
+              <SelectItem value="critical">Critique</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       
-      <Select 
-        value={filters.categoryFilter} 
-        onValueChange={val => handleFilterChange('categoryFilter', val)}
-      >
-        <SelectTrigger className="w-[200px]">
-          <SelectValue placeholder="Filtrer par catégorie" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="">Toutes les catégories</SelectItem>
-          <SelectItem value={AuditLogCategory.SFD_OPERATIONS}>Opérations SFD</SelectItem>
-          <SelectItem value={AuditLogCategory.AUTHENTICATION}>Authentification</SelectItem>
-          <SelectItem value={AuditLogCategory.DATA_ACCESS}>Accès aux données</SelectItem>
-          <SelectItem value={AuditLogCategory.CONFIGURATION}>Configuration</SelectItem>
-        </SelectContent>
-      </Select>
-      
-      <Select 
-        value={filters.severityFilter} 
-        onValueChange={val => handleFilterChange('severityFilter', val)}
-      >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Filtrer par sévérité" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="">Toutes les sévérités</SelectItem>
-          <SelectItem value={AuditLogSeverity.INFO}>Info</SelectItem>
-          <SelectItem value={AuditLogSeverity.WARNING}>Avertissement</SelectItem>
-          <SelectItem value={AuditLogSeverity.ERROR}>Erreur</SelectItem>
-          <SelectItem value={AuditLogSeverity.CRITICAL}>Critique</SelectItem>
-        </SelectContent>
-      </Select>
-      
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" className="w-[180px] pl-3 text-left font-normal">
-            {filters.startDate ? format(filters.startDate, 'dd/MM/yyyy') : "Date de début"}
-            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={filters.startDate}
-            onSelect={(date) => handleFilterChange('startDate', date)}
-            initialFocus
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 space-y-2">
+          <label className="text-sm font-medium">Depuis</label>
+          <DatePicker
+            date={filters.startDate}
+            setDate={(date) => handleFilterChange('startDate', date)}
+            placeholder="Date de début"
           />
-        </PopoverContent>
-      </Popover>
-      
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" className="w-[180px] pl-3 text-left font-normal">
-            {filters.endDate ? format(filters.endDate, 'dd/MM/yyyy') : "Date de fin"}
-            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={filters.endDate}
-            onSelect={(date) => handleFilterChange('endDate', date)}
-            initialFocus
+        </div>
+        
+        <div className="flex-1 space-y-2">
+          <label className="text-sm font-medium">Jusqu'à</label>
+          <DatePicker
+            date={filters.endDate}
+            setDate={(date) => handleFilterChange('endDate', date)}
+            placeholder="Date de fin"
           />
-        </PopoverContent>
-      </Popover>
-      
-      {(filters.startDate || filters.endDate || filters.categoryFilter || 
-        filters.severityFilter || filters.searchTerm) && (
-        <Button 
-          variant="ghost" 
-          onClick={handleClearFilters}
-        >
-          Réinitialiser les filtres
-        </Button>
-      )}
-      
-      <Button onClick={handleApplyFilters}>
-        Appliquer
-      </Button>
+        </div>
+        
+        <div className="flex-1 flex items-end space-x-2">
+          <Button 
+            variant="outline" 
+            className="flex-1"
+            onClick={handleClearFilters}
+          >
+            <X className="h-4 w-4 mr-2" />
+            Effacer
+          </Button>
+          
+          <Button 
+            className="flex-1"
+            onClick={handleApplyFilters}
+          >
+            Appliquer
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

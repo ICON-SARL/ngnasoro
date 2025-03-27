@@ -8,6 +8,7 @@ export type Sfd = {
   created_at: string;
   updated_at?: string;
   status?: 'active' | 'suspended' | 'pending';
+  subsidy_balance?: number;
 };
 
 export type SfdSubsidy = {

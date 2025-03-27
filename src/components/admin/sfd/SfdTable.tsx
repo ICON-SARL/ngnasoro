@@ -72,6 +72,7 @@ export function SfdTable({
             <TableHead>Nom</TableHead>
             <TableHead>Code</TableHead>
             <TableHead>Région</TableHead>
+            <TableHead>Subvention</TableHead>
             <TableHead>Statut</TableHead>
             <TableHead className="w-[100px]">Actions</TableHead>
           </TableRow>
@@ -85,6 +86,21 @@ export function SfdTable({
               <TableCell className="font-medium">{sfd.name}</TableCell>
               <TableCell>{sfd.code}</TableCell>
               <TableCell>{sfd.region || '-'}</TableCell>
+              <TableCell>
+                {sfd.subsidy_balance !== undefined ? (
+                  <div className="space-y-1">
+                    <div className="text-sm text-muted-foreground">
+                      {new Intl.NumberFormat('fr-FR').format(sfd.subsidy_balance)} FCFA
+                    </div>
+                    <Progress 
+                      value={Math.min(100, (sfd.subsidy_balance / 1000000) * 100)} 
+                      className="h-2" 
+                    />
+                  </div>
+                ) : (
+                  '-'
+                )}
+              </TableCell>
               <TableCell>
                 <SfdStatusBadge status={sfd.status} />
               </TableCell>

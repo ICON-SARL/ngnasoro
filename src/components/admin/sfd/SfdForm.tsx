@@ -36,6 +36,7 @@ const formSchema = z.object({
   }),
   status: z.enum(['active', 'pending', 'suspended']),
   logo_url: z.string().optional(),
+  subsidy_balance: z.number().optional(),
 });
 
 export type SfdFormValues = z.infer<typeof formSchema>;
@@ -66,6 +67,7 @@ export function SfdForm({
       region: initialData?.region || '',
       status: (initialData?.status as 'active' | 'pending' | 'suspended') || 'active',
       logo_url: initialData?.logo_url || '',
+      subsidy_balance: initialData?.subsidy_balance || 0,
     },
   });
 
@@ -145,6 +147,25 @@ export function SfdForm({
                       <SelectItem value="suspended">Suspendu</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="subsidy_balance"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Solde de Subvention (FCFA)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      placeholder="0" 
+                      {...field} 
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
