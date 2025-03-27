@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, CheckCircle, AlertCircle, ArrowRightCircle, Clock } from 'lucide-react';
+import { Plus, CheckCircle, AlertCircle, ArrowRightCircle, Clock, Copy, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
@@ -22,9 +22,10 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { activeSfdId: authActiveSfdId, setActiveSfdId } = useAuth();
+  const { activeSfdId: authActiveSfdId, setActiveSfdId, isAdmin } = useAuth();
   const { sfdAccounts, isLoading, refetch, synchronizeBalances } = useSfdAccounts();
   const [switchingId, setSwitchingId] = useState<string | null>(null);
+  const [otpData, setOtpData] = useState<{[key: string]: {code: string, expiresAt: Date}} | null>(null);
   
   const effectiveActiveSfdId = propsActiveSfdId !== undefined ? propsActiveSfdId : authActiveSfdId;
 
@@ -65,6 +66,42 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
     
     // For demo, randomly mark some accounts as pending
     return sfdId.startsWith('1') ? 'pending' : 'verified';
+  };
+
+  // Function to generate OTP for SFD account verification
+  const generateOTP = (sfdId: string) => {
+    // Generate a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Set expiry for 15 minutes from now
+    const expiryTime = new Date();
+    expiryTime.setMinutes(expiryTime.getMinutes() + 15);
+    
+    // Store OTP data
+    setOtpData({
+      ...otpData,
+      [sfdId]: {
+        code: otp,
+        expiresAt: expiryTime
+      }
+    });
+    
+    // Show a success toast
+    toast({
+      title: "Code OTP généré",
+      description: "Partagez ce code avec votre agent SFD pour valider votre compte",
+    });
+  };
+
+  // Function to copy OTP to clipboard
+  const copyOTP = (sfdId: string) => {
+    if (otpData && otpData[sfdId]) {
+      navigator.clipboard.writeText(otpData[sfdId].code);
+      toast({
+        title: "Code copié",
+        description: "Le code OTP a été copié dans le presse-papier",
+      });
+    }
   };
 
   if (isLoading) {
@@ -124,6 +161,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
           <div className="space-y-3">
             {displayAccounts.map((sfd) => {
               const status = getAccountStatus(sfd.id);
+              const hasOtp = otpData && otpData[sfd.id];
               
               return (
                 <div key={sfd.id} className="flex items-center justify-between border p-3 rounded-lg">
@@ -153,32 +191,69 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
                       </div>
                     </div>
                   </div>
-                  {sfd.id !== effectiveActiveSfdId && status === 'verified' && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="text-xs"
-                      onClick={() => handleSwitchSfd(sfd.id)}
-                      disabled={switchingId === sfd.id || synchronizeBalances.isPending}
-                    >
-                      {switchingId === sfd.id ? 'Changement...' : 'Basculer'}
-                    </Button>
-                  )}
-                  {sfd.id !== effectiveActiveSfdId && status === 'pending' && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="text-xs text-amber-600"
-                      onClick={() => navigate('/sfd-selector')}
-                    >
-                      Valider
-                    </Button>
-                  )}
-                  {sfd.id === effectiveActiveSfdId && (
-                    <span className="text-xs font-medium text-green-600 px-2 py-1 bg-green-50 rounded-md">
-                      Active
-                    </span>
-                  )}
+                  
+                  {/* Button controls based on status */}
+                  <div className="flex items-center space-x-2">
+                    {sfd.id !== effectiveActiveSfdId && status === 'verified' && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="text-xs"
+                        onClick={() => handleSwitchSfd(sfd.id)}
+                        disabled={switchingId === sfd.id || synchronizeBalances.isPending}
+                      >
+                        {switchingId === sfd.id ? 'Changement...' : 'Basculer'}
+                      </Button>
+                    )}
+                    
+                    {sfd.id !== effectiveActiveSfdId && status === 'pending' && (
+                      <>
+                        {hasOtp ? (
+                          <div className="flex flex-col space-y-1">
+                            <div className="flex items-center space-x-1">
+                              <div className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">
+                                {otpData[sfd.id].code}
+                              </div>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-6 w-6 p-0" 
+                                onClick={() => copyOTP(sfd.id)}
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-6 w-6 p-0" 
+                                onClick={() => generateOTP(sfd.id)}
+                              >
+                                <RefreshCw className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <span className="text-[10px] text-gray-500">
+                              Valide jusqu'à {otpData[sfd.id].expiresAt.toLocaleTimeString()}
+                            </span>
+                          </div>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="text-xs text-amber-600"
+                            onClick={() => generateOTP(sfd.id)}
+                          >
+                            Générer OTP
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    
+                    {sfd.id === effectiveActiveSfdId && (
+                      <span className="text-xs font-medium text-green-600 px-2 py-1 bg-green-50 rounded-md">
+                        Active
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })}
