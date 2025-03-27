@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -89,18 +90,21 @@ export function useRealtimeTransactions() {
     setIsLoading(true);
     
     try {
-      interface QueryResponse {
-        data: any[] | null;
-        error: any;
-      }
+      // Use a simple type definition and completely bypass complex inference
+      type SimpleQueryResult = { data: any[] | null; error: any };
       
-      const { data, error } = await supabase
+      // Perform the query with direct type casting to avoid type inference issues
+      const result = await supabase
         .from('transactions')
         .select('*')
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(50) as unknown as QueryResponse;
+        .limit(50);
         
+      // Manually extract data and error to simplify types
+      const data = result.data;
+      const error = result.error;
+      
       if (error) throw error;
       
       let txData: Transaction[] = [];
@@ -184,7 +188,8 @@ export function useRealtimeTransactions() {
   }, [transactions, toast, calculateStats, activeSfdId]);
   
   function createRealtimeSubscription(sfdId: string) {
-    const channel = supabase.channel('public:transactions') as any;
+    // Use explicit any type to avoid type inference issues
+    const channel = supabase.channel('public:transactions');
     
     const handleChanges = (payload: any) => {
       handleRealtimeUpdate(payload);
