@@ -24,6 +24,9 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
   // Extract current path from location
   const currentPath = location.pathname.split('/').pop() || '';
   const [activeTab, setActiveTab] = useState(currentPath || 'main');
+  
+  // Check if current route is welcome screen
+  const isWelcomePage = location.pathname === '/mobile-flow/welcome';
 
   useEffect(() => {
     const pathSegment = location.pathname.split('/').pop() || '';
@@ -77,7 +80,8 @@ const MobileNavigation = ({ onAction }: MobileNavigationProps) => {
     }
   ];
 
-  if (!isMobile) return null;
+  // Don't render on welcome page or if not mobile
+  if (!isMobile || isWelcomePage) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 z-50">

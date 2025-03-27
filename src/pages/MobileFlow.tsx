@@ -221,6 +221,8 @@ const MobileFlow = () => {
     }
   }, [showWelcome, location.pathname, navigate]);
 
+  const isWelcomePage = location.pathname === '/mobile-flow/welcome';
+
   if (loading || accountLoading) {
     return <div className="p-8 text-center">Chargement...</div>;
   }
@@ -409,7 +411,7 @@ const MobileFlow = () => {
         <Route path="*" element={<Navigate to="/mobile-flow/welcome" replace />} />
       </Routes>
       
-      <MobileNavigation onAction={handleAction} />
+      {!isWelcomePage && <MobileNavigation onAction={handleAction} />}
     </div>
   );
 };
