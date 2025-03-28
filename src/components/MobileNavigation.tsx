@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Home, CreditCard, BarChart3, User, Building, Plus } from 'lucide-react';
+import { Home, CreditCard, BarChart3, User, Building, Plus, Wallet } from 'lucide-react';
 
 interface MobileNavigationProps {
   onAction?: (action: string, data?: any) => void;
@@ -26,7 +26,9 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
     const path = location.pathname;
     if (path.includes('/mobile-flow/transactions')) return 'transactions';
     if (path.includes('/mobile-flow/funds')) return 'funds';
-    if (path.includes('/mobile-flow/loan-activity') || path.includes('/mobile-flow/loan-process') || path.includes('/mobile-flow/secure-payment')) return 'loans';
+    if (path.includes('/mobile-flow/loan-activity') || path.includes('/mobile-flow/loan-process') || 
+        path.includes('/mobile-flow/secure-payment') || path.includes('/mobile-flow/apply-loan') ||
+        path.includes('/mobile-flow/loan-details') || path.includes('/mobile-flow/loan-agreement')) return 'loans';
     if (path.includes('/mobile-flow/profile')) return 'profile';
     if (path.includes('/mobile-flow/sfd-clients')) return 'admin';
     return 'home';
@@ -46,7 +48,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
         navigate('/mobile-flow/funds');
         break;
       case 'loans':
-        navigate('/mobile-flow/loan-activity');
+        navigate('/mobile-flow/apply-loan');
         break;
       case 'profile':
         navigate('/mobile-flow/profile');
@@ -86,7 +88,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
         
         {showLoanOption && (
           <TabButton 
-            icon={<CreditCard className="h-5 w-5" />} 
+            icon={<Wallet className="h-5 w-5" />} 
             label="Prêts" 
             active={activeTab === 'loans'} 
             onClick={() => handleTabClick('loans')} 
