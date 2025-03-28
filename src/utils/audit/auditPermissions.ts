@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { logAuditEvent } from './auditLoggerCore';
 import { AuditLogCategory, AuditLogSeverity } from './auditLoggerTypes';
@@ -37,10 +36,27 @@ export enum Role {
 // Function to check if a user has a specific role
 export const hasRole = async (userId: string, role: Role): Promise<boolean> => {
   try {
+    // Here we need to make sure we're only passing valid role values to the RPC function
+    // The RPC function 'has_role' accepts only 'admin', 'sfd_admin', and 'user'
+    // We need to check if the role is 'client' and handle it separately
+    
+    if (role === Role.CLIENT) {
+      // If checking for client role, we can make a different query or handle it differently
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'client');
+      
+      if (rolesError) throw rolesError;
+      return userRoles && userRoles.length > 0;
+    }
+    
+    // For other roles, use the RPC function
     const { data, error } = await supabase
       .rpc('has_role', { 
         _user_id: userId, 
-        _role: role as 'admin' | 'sfd_admin' | 'client' | 'user' // Use a more explicit type assertion that includes 'client'
+        _role: role // The enum values match the expected string literals
       });
       
     if (error) throw error;
