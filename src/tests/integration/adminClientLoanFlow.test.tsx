@@ -59,9 +59,9 @@ const createTestQueryClient = () => new QueryClient({
     queries: {
       retry: false,
       cacheTime: 0,
-      staleTime: 0,
-    },
-  },
+      staleTime: 0
+    }
+  }
 });
 
 describe('Admin Client Loan Flow Integration Test', () => {
