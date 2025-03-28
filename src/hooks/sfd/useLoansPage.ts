@@ -28,6 +28,14 @@ interface LoanFormData {
   subsidy_justification: string;
 }
 
+interface LoanPaginationData {
+  loans: Loan[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export function useLoansPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -58,7 +66,16 @@ export function useLoansPage() {
     setLoading(true);
     try {
       const loansData = await sfdLoanApi.getSfdLoans();
-      setLoans(loansData);
+      
+      // Fix the type issue by only setting the loans array
+      if (Array.isArray(loansData)) {
+        setLoans(loansData);
+      } else if (loansData && 'loans' in loansData) {
+        // If it's a pagination object, just set the loans array
+        setLoans((loansData as LoanPaginationData).loans);
+      } else {
+        setLoans([]);
+      }
     } catch (error) {
       console.error('Error fetching loans:', error);
       toast({

@@ -3,7 +3,7 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '@/hooks/auth/AuthProvider';
-import { ToastProvider } from '@/hooks/use-toast';
+import { Toaster } from '@/components/ui/toaster';
 
 interface TestProvidersProps {
   children: React.ReactNode;
@@ -24,9 +24,8 @@ export const TestProviders: React.FC<TestProvidersProps> = ({
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={initialEntries}>
         <AuthProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
+          {children}
+          <Toaster />
         </AuthProvider>
       </MemoryRouter>
     </QueryClientProvider>

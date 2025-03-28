@@ -4,13 +4,19 @@ import '@testing-library/jest-dom';
 import 'whatwg-fetch';
 
 // Global mocks
-global.matchMedia = global.matchMedia || function() {
-  return {
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: (query: string) => ({
     matches: false,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-  };
-};
+    media: query,
+    onchange: null,
+    addListener: jest.fn(), // deprecated
+    removeListener: jest.fn(), // deprecated
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  }),
+});
 
 // Mock console.error and console.warn to make tests fail on react warnings
 const originalConsoleError = console.error;

@@ -23,19 +23,29 @@ export function useCachedSfdData(sfdId: string | undefined, queryKey: string, fe
     }
   }, [sfdId, queryKey, queryClient]);
   
-  // Use React Query to fetch data
+  // Use React Query to fetch data with updated options
   const query = useQuery({
     queryKey: [queryKey, sfdId],
     queryFn: fetchFunction,
     enabled: !!sfdId && !isCacheHit,
     staleTime: 5 * 60 * 1000, // 5 minutes until data is considered stale
-    onSuccess: (data) => {
-      // Update our cache on successful fetch
-      if (sfdId) {
-        sfdCache.set(sfdId, queryKey, data);
+    // Using callbacks instead of direct onSuccess
+    meta: {
+      onQuerySuccess: (data: any) => {
+        // Update our cache on successful fetch
+        if (sfdId) {
+          sfdCache.set(sfdId, queryKey, data);
+        }
       }
     }
   });
+  
+  // Handle onSuccess callback separately
+  useEffect(() => {
+    if (query.data && sfdId) {
+      sfdCache.set(sfdId, queryKey, query.data);
+    }
+  }, [query.data, sfdId, queryKey]);
   
   return {
     ...query,
