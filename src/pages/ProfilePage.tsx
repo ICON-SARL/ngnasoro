@@ -2,17 +2,41 @@
 import React from 'react';
 import { AgencyHeader } from '@/components/AgencyHeader';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User, Mail, Phone, Building } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
 
 const ProfilePage = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
+  const navigate = useNavigate();
   
+  const handleLogout = async () => {
+    try {
+      const { error } = await signOut();
+      if (!error) {
+        toast({
+          title: "Déconnexion réussie",
+          description: "Vous avez été déconnecté",
+        });
+        navigate('/auth');
+      } else {
+        toast({
+          title: "Erreur de déconnexion",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {isAdmin ? <SuperAdminHeader /> : <AgencyHeader />}
@@ -124,7 +148,7 @@ const ProfilePage = () => {
               </div>
               
               <div className="pt-4">
-                <Button variant="destructive" className="w-full">
+                <Button variant="destructive" className="w-full" onClick={handleLogout}>
                   Déconnecter toutes les sessions
                 </Button>
               </div>

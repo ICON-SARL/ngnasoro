@@ -2,8 +2,7 @@
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { AuthError } from '@supabase/supabase-js';
 
-export interface User {
-  id: string;
+export interface User extends Omit<SupabaseUser, 'user_metadata' | 'app_metadata'> {
   email: string;
   full_name: string;
   avatar_url?: string;
