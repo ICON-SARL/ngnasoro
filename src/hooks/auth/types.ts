@@ -5,7 +5,7 @@ export interface User {
   app_metadata: {
     [key: string]: any;
   };
-  user_metadata?: {
+  user_metadata: {
     [key: string]: any;
   };
   // Adding properties that are used in the application
