@@ -42,7 +42,7 @@ export function MerefSfdCommunication() {
   const [isLoading, setIsLoading] = useState(false);
   const [recipients, setRecipients] = useState<SfdAdmin[]>([]);
   const [isLoadingRecipients, setIsLoadingRecipients] = useState(false);
-  const [selectedRecipientId, setSelectedRecipientId] = useState<string>('');
+  const [selectedRecipientId, setSelectedRecipientId] = useState<string>('all'); // Initialize with 'all' instead of empty string
   const [notification, setNotification] = useState<AdminNotificationRequest>({
     title: '',
     message: '',
@@ -126,8 +126,8 @@ export function MerefSfdCommunication() {
       
       const notificationToSend: AdminNotificationRequest = {
         ...notification,
-        recipient_id: selectedRecipientId || undefined,
-        recipient_role: !selectedRecipientId ? 'sfd_admin' : undefined
+        recipient_id: selectedRecipientId === 'all' ? undefined : selectedRecipientId, // Changed logic to match new default
+        recipient_role: selectedRecipientId === 'all' ? 'sfd_admin' : undefined
       };
       
       const result = await sendNotification(notificationToSend);
@@ -138,7 +138,7 @@ export function MerefSfdCommunication() {
       
       toast({
         title: "Succès",
-        description: selectedRecipientId 
+        description: selectedRecipientId !== 'all'
           ? "Message envoyé à l'administrateur SFD sélectionné" 
           : "Message envoyé à tous les administrateurs SFD"
       });
@@ -148,7 +148,7 @@ export function MerefSfdCommunication() {
         message: '',
         type: 'info'
       });
-      setSelectedRecipientId('');
+      setSelectedRecipientId('all');
       setOpen(false);
     } catch (error) {
       console.error('Error sending notification:', error);
@@ -201,7 +201,7 @@ export function MerefSfdCommunication() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectItem value="">Tous les administrateurs SFD</SelectItem>
+                        <SelectItem value="all">Tous les administrateurs SFD</SelectItem>
                         <SelectLabel>Administrateurs spécifiques</SelectLabel>
                         {isLoadingRecipients ? (
                           <SelectItem value="loading" disabled>
@@ -214,7 +214,7 @@ export function MerefSfdCommunication() {
                             </SelectItem>
                           ))
                         ) : (
-                          <SelectItem value="empty" disabled>
+                          <SelectItem value="no_admins" disabled>
                             Aucun administrateur trouvé
                           </SelectItem>
                         )}
