@@ -77,4 +77,4 @@ export const createTransactionManager = (userId: string, sfdId: string): Transac
 };
 
 // Export the TransactionParams interface to maintain the public API
-export { TransactionParams } from './interfaces/transactionInterfaces';
+export type { TransactionParams } from './interfaces/transactionInterfaces';
