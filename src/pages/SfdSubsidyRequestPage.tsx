@@ -114,7 +114,7 @@ const SfdSubsidyRequestPage = () => {
       priority: 'normal',
       created_at: '2023-04-20T11:20:00Z',
       region: 'Ziguinchor',
-      expected_impact: 'Réduction de l'impact environnemental et augmentation des revenus',
+      expected_impact: "Réduction de l'impact environnemental et augmentation des revenus",
       decision_comments: 'Budget insuffisant pour cette période fiscale'
     }
   ];
