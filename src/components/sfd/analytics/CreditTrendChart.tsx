@@ -1,163 +1,163 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 
-interface MonthlyData {
+type CreditData = {
   month: string;
-  approvedCount: number;
-  rejectedCount: number;
-  approvedAmount: number;
-  rejectedAmount: number;
-}
+  approved: number;
+  rejected: number;
+};
 
 export function CreditTrendChart() {
   const { activeSfdId } = useAuth();
   
-  const fetchCreditTrends = async (): Promise<MonthlyData[]> => {
+  const fetchCreditTrendData = async (): Promise<CreditData[]> => {
     if (!activeSfdId) return [];
     
-    // Get the last 6 months
-    const months: MonthlyData[] = [];
-    const now = new Date();
+    // Get current year
+    const currentYear = new Date().getFullYear();
     
-    for (let i = 5; i >= 0; i--) {
-      const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthName = month.toLocaleString('default', { month: 'short' });
-      
-      months.push({
-        month: monthName,
-        approvedCount: 0,
-        rejectedCount: 0,
-        approvedAmount: 0,
-        rejectedAmount: 0
-      });
-    }
-    
-    // Get start and end dates for our query (6 months ago to now)
-    const startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
-    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
-    
-    // Fetch approved loans
+    // Get approved loans data for the current year
     const { data: approvedLoans, error: approvedError } = await supabase
       .from('sfd_loans')
-      .select('amount, approved_at')
+      .select('created_at, amount')
       .eq('sfd_id', activeSfdId)
       .eq('status', 'approved')
-      .gte('approved_at', startDate)
-      .lte('approved_at', endDate);
+      .gte('created_at', `${currentYear}-01-01`)
+      .lte('created_at', `${currentYear}-12-31`);
       
-    if (approvedError) console.error('Error fetching approved loans:', approvedError);
+    if (approvedError) {
+      console.error('Error fetching approved loans:', approvedError);
+      return [];
+    }
     
-    // Fetch rejected loans
+    // Get rejected loans data for the current year
     const { data: rejectedLoans, error: rejectedError } = await supabase
       .from('sfd_loans')
-      .select('amount, created_at')
+      .select('created_at, amount')
       .eq('sfd_id', activeSfdId)
       .eq('status', 'rejected')
-      .gte('created_at', startDate)
-      .lte('created_at', endDate);
+      .gte('created_at', `${currentYear}-01-01`)
+      .lte('created_at', `${currentYear}-12-31`);
       
-    if (rejectedError) console.error('Error fetching rejected loans:', rejectedError);
-    
-    // Process the data
-    if (approvedLoans) {
-      approvedLoans.forEach(loan => {
-        const loanDate = new Date(loan.approved_at);
-        const monthIndex = loanDate.getMonth() - (now.getMonth() - 5);
-        
-        if (monthIndex >= 0 && monthIndex < 6) {
-          months[monthIndex].approvedCount += 1;
-          months[monthIndex].approvedAmount += Number(loan.amount) || 0;
-        }
-      });
+    if (rejectedError) {
+      console.error('Error fetching rejected loans:', rejectedError);
+      return [];
     }
     
-    if (rejectedLoans) {
-      rejectedLoans.forEach(loan => {
+    // Process data by month
+    const monthNames = [
+      'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 
+      'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'
+    ];
+    
+    const monthlyData: CreditData[] = monthNames.map((month, index) => {
+      const monthNumber = index + 1;
+      
+      // Filter loans for this month
+      const approvedForMonth = approvedLoans?.filter(loan => {
         const loanDate = new Date(loan.created_at);
-        const monthIndex = loanDate.getMonth() - (now.getMonth() - 5);
-        
-        if (monthIndex >= 0 && monthIndex < 6) {
-          months[monthIndex].rejectedCount += 1;
-          months[monthIndex].rejectedAmount += Number(loan.amount) || 0;
-        }
-      });
-    }
+        return loanDate.getMonth() + 1 === monthNumber && loanDate.getFullYear() === currentYear;
+      }) || [];
+      
+      const rejectedForMonth = rejectedLoans?.filter(loan => {
+        const loanDate = new Date(loan.created_at);
+        return loanDate.getMonth() + 1 === monthNumber && loanDate.getFullYear() === currentYear;
+      }) || [];
+      
+      // Calculate totals
+      const approvedTotal = approvedForMonth.reduce((sum, loan) => sum + (loan.amount || 0), 0);
+      const rejectedTotal = rejectedForMonth.reduce((sum, loan) => sum + (loan.amount || 0), 0);
+      
+      return {
+        month,
+        approved: approvedTotal,
+        rejected: rejectedTotal
+      };
+    });
     
-    return months;
+    return monthlyData;
   };
   
-  const { data, isLoading } = useQuery({
-    queryKey: ['credit-trends', activeSfdId],
-    queryFn: fetchCreditTrends,
+  const { data: creditData = [], isLoading } = useQuery({
+    queryKey: ['credit-trend', activeSfdId, new Date().getFullYear()],
+    queryFn: fetchCreditTrendData,
     enabled: !!activeSfdId
   });
   
-  if (isLoading || !data) {
-    return (
-      <Card className="col-span-2">
-        <CardHeader>
-          <CardTitle>Tendances des Crédits (6 derniers mois)</CardTitle>
-        </CardHeader>
-        <CardContent className="h-80 flex items-center justify-center">
-          <p className="text-muted-foreground">Chargement des données...</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Calculate visibility of each month
+  const visibleMonths = useMemo(() => {
+    const currentMonth = new Date().getMonth();
+    return creditData.slice(0, currentMonth + 1);
+  }, [creditData]);
+  
+  // Custom tooltip formatter
+  const formatTooltipValue = (value: number) => {
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(value);
+  };
+  
+  // Filter months with data
+  const hasData = visibleMonths.some(item => item.approved > 0 || item.rejected > 0);
   
   return (
-    <Card className="col-span-2">
+    <Card className="md:col-span-2">
       <CardHeader>
-        <CardTitle>Tendances des Crédits (6 derniers mois)</CardTitle>
+        <CardTitle>Tendance des Crédits (Année en cours)</CardTitle>
       </CardHeader>
-      <CardContent className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={data}
-            margin={{
-              top: 5,
-              right: 30,
-              left: 20,
-              bottom: 5,
-            }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis yAxisId="left" />
-            <YAxis yAxisId="right" orientation="right" />
-            <Tooltip 
-              formatter={(value, name) => {
-                if (name.includes('Amount')) {
-                  return [new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(value as number), name];
-                }
-                return [value, name];
-              }}
-            />
-            <Legend />
-            <Line
-              yAxisId="left"
-              type="monotone"
-              dataKey="approvedCount"
-              name="Crédits Approuvés"
-              stroke="#0D6A51"
-              activeDot={{ r: 8 }}
-            />
-            <Line
-              yAxisId="left"
-              type="monotone"
-              dataKey="rejectedCount"
-              name="Crédits Rejetés"
-              stroke="#f43f5e"
-              activeDot={{ r: 8 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-[300px]">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#0D6A51]"></div>
+          </div>
+        ) : !hasData ? (
+          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+            Aucune donnée disponible pour cette année
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={visibleMonths} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="month" 
+                tickFormatter={(value) => {
+                  // Ensure value is a string for includes check
+                  return String(value);
+                }}
+              />
+              <YAxis tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`} />
+              <Tooltip 
+                formatter={(value: number) => formatTooltipValue(value)}
+                labelFormatter={(value) => `Mois: ${value}`}
+              />
+              <Legend />
+              <Area 
+                type="monotone" 
+                dataKey="approved" 
+                name="Crédits Approuvés" 
+                stroke="#10B981" 
+                fill="#10B981" 
+                fillOpacity={0.3} 
+                stackId="1"
+              />
+              <Area 
+                type="monotone" 
+                dataKey="rejected" 
+                name="Crédits Rejetés" 
+                stroke="#EF4444" 
+                fill="#EF4444" 
+                fillOpacity={0.3} 
+                stackId="1"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   );
 }
+
+export default CreditTrendChart;

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSfdStats } from '@/hooks/useSfdStats';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
-import { CreditCard, UserCheck, UserClock, BadgeDollarSign } from 'lucide-react';
+import { CreditCard, UserCheck, Clock, BadgeDollarSign } from 'lucide-react';
 
 export function SfdDashboardStats() {
   const { activeSfdId } = useAuth();
@@ -79,7 +79,7 @@ export function SfdDashboardStats() {
           <CardTitle className="text-sm font-medium">Clients</CardTitle>
           <div className="flex space-x-1">
             <UserCheck className="h-4 w-4 text-green-500" />
-            <UserClock className="h-4 w-4 text-amber-500" />
+            <Clock className="h-4 w-4 text-amber-500" />
           </div>
         </CardHeader>
         <CardContent>
