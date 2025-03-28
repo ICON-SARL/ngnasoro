@@ -1,109 +1,83 @@
 
 import React from 'react';
-import { FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
-import { Card } from '@/components/ui/card';
-import { UseFormReturn } from 'react-hook-form';
-import { z } from 'zod';
-
-// Re-use schema from parent
-const formSchema = z.object({
-  amount: z.number().min(10000, 'Le montant minimum est de 10 000 FCFA').max(1000000, 'Le montant maximum est de 1 000 000 FCFA'),
-  duration_months: z.number().min(1, 'La durée minimum est de 1 mois').max(36, 'La durée maximum est de 36 mois'),
-  purpose: z.string().min(10, 'Veuillez décrire l\'objet du prêt (10 caractères minimum)'),
-  sfd_id: z.string().min(1, 'Veuillez sélectionner un SFD'),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { Label } from '@/components/ui/label';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
 
 interface AmountDurationStepProps {
-  form: UseFormReturn<FormValues>;
+  amount: number;
+  setAmount: (amount: number) => void;
+  durationMonths: number;
+  setDurationMonths: (duration: number) => void;
+  onNext: () => void;
+  isValid: boolean;
 }
 
-const AmountDurationStep: React.FC<AmountDurationStepProps> = ({ form }) => {
-  // Calcul de la mensualité (simplifié)
-  const calculateMonthlyPayment = () => {
-    const amount = form.getValues('amount');
-    const duration = form.getValues('duration_months');
-    const interestRate = 0.1; // 10% annuel simplifié
-    
-    // Formule simplifiée
-    const monthlyRate = interestRate / 12;
-    const payment = (amount * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -duration));
-    
-    return payment.toFixed(0);
+const AmountDurationStep: React.FC<AmountDurationStepProps> = ({
+  amount,
+  setAmount,
+  durationMonths,
+  setDurationMonths,
+  onNext,
+  isValid
+}) => {
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    setAmount(parseInt(value) || 0);
   };
 
   return (
     <div className="space-y-4">
-      <div className="text-xl font-semibold mb-2">Montant et durée</div>
+      <h2 className="text-xl font-semibold text-center mb-4">Montant et Durée du Prêt</h2>
       
-      <FormField
-        control={form.control}
-        name="amount"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Montant du prêt (FCFA)</FormLabel>
-            <div className="mb-2">
-              <Input 
-                type="number" 
-                {...field} 
-                onChange={(e) => field.onChange(parseInt(e.target.value))}
-              />
-            </div>
-            <Slider
-              min={10000}
-              max={1000000}
-              step={5000}
-              value={[field.value]}
-              onValueChange={(value) => field.onChange(value[0])}
-            />
-            <div className="flex justify-between text-sm text-gray-500 mt-1">
-              <span>10 000</span>
-              <span>1 000 000</span>
-            </div>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <div className="space-y-2">
+        <Label htmlFor="loan-amount">Montant du prêt (FCFA)</Label>
+        <Input
+          id="loan-amount"
+          type="text"
+          value={amount || ''}
+          onChange={handleAmountChange}
+          className="text-lg"
+          placeholder="Ex: 100000"
+        />
+        <p className="text-xs text-muted-foreground">Montant minimum: 50,000 FCFA</p>
+      </div>
       
-      <FormField
-        control={form.control}
-        name="duration_months"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Durée (mois)</FormLabel>
-            <div className="mb-2">
-              <Input 
-                type="number" 
-                {...field} 
-                onChange={(e) => field.onChange(parseInt(e.target.value))}
-              />
-            </div>
-            <Slider
-              min={1}
-              max={36}
-              step={1}
-              value={[field.value]}
-              onValueChange={(value) => field.onChange(value[0])}
-            />
-            <div className="flex justify-between text-sm text-gray-500 mt-1">
-              <span>1 mois</span>
-              <span>36 mois</span>
-            </div>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <Card className="p-4 bg-gray-50">
-        <div className="font-semibold text-sm mb-2">Estimation mensuelle</div>
-        <div className="text-2xl font-bold">{calculateMonthlyPayment()} FCFA</div>
-        <div className="text-xs text-gray-500 mt-1">
-          *Taux d'intérêt estimé à 10% annuel
-        </div>
-      </Card>
+      <div className="space-y-2">
+        <Label htmlFor="loan-duration">Durée du prêt</Label>
+        <Select 
+          value={durationMonths.toString()} 
+          onValueChange={(value) => setDurationMonths(parseInt(value))}
+        >
+          <SelectTrigger id="loan-duration">
+            <SelectValue placeholder="Sélectionnez une durée" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="3">3 mois</SelectItem>
+            <SelectItem value="6">6 mois</SelectItem>
+            <SelectItem value="9">9 mois</SelectItem>
+            <SelectItem value="12">12 mois</SelectItem>
+            <SelectItem value="18">18 mois</SelectItem>
+            <SelectItem value="24">24 mois</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <Button 
+        className="w-full mt-4" 
+        onClick={onNext} 
+        disabled={!isValid}
+      >
+        Continuer <ArrowRight className="ml-2 h-4 w-4" />
+      </Button>
     </div>
   );
 };

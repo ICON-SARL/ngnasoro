@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/auth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -10,6 +9,7 @@ import LanguageSelector from './LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useRoleRedirect } from '@/hooks/auth/useRoleRedirect';
+import { supabase } from '@/lib/supabase';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
@@ -19,7 +19,6 @@ const AuthUI = () => {
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
   
-  // Use the role-based redirect hook
   useRoleRedirect();
   
   useEffect(() => {
@@ -27,7 +26,6 @@ const AuthUI = () => {
     if (hash && hash.includes('access_token')) {
       setAuthSuccess(true);
       
-      // Role-based redirecting will be handled by useRoleRedirect
       const timer = setTimeout(() => {
         if (userRole === 'admin') {
           navigate('/super-admin-dashboard');
@@ -42,7 +40,6 @@ const AuthUI = () => {
     }
   }, [location, navigate, userRole]);
   
-  // Auto-redirect based on user role
   useEffect(() => {
     if (user && session) {
       if (userRole === 'admin') {
@@ -55,7 +52,6 @@ const AuthUI = () => {
     }
   }, [user, session, navigate, userRole]);
 
-  // Update tab based on current route
   useEffect(() => {
     if (location.pathname.includes('register')) {
       setActiveTab('register');
@@ -63,7 +59,6 @@ const AuthUI = () => {
       setActiveTab('login');
     }
     
-    // Détection du mode auth par l'URL
     if (location.search.includes('admin=true')) {
       setAuthMode('admin');
     } else if (location.search.includes('sfd=true')) {
@@ -72,6 +67,55 @@ const AuthUI = () => {
       setAuthMode('default');
     }
   }, [location.pathname, location.search]);
+
+  const createTestUsers = async () => {
+    if (!window.confirm("Créer des utilisateurs de test? Cela va créer un Super Admin, un Admin SFD et un utilisateur standard.")) {
+      return;
+    }
+    
+    const testUsers = [
+      {
+        email: "superadmin@meref.ml",
+        password: "testadmin123",
+        full_name: "Super Admin Test",
+        role: "admin"
+      },
+      {
+        email: "sfdadmin@meref.ml",
+        password: "testadmin123",
+        full_name: "SFD Admin Test",
+        role: "sfd_admin"
+      },
+      {
+        email: "user@meref.ml",
+        password: "testuser123",
+        full_name: "Utilisateur Test",
+        role: "user"
+      }
+    ];
+    
+    try {
+      for (const user of testUsers) {
+        const { data, error } = await supabase.functions.invoke('create-admin-user', {
+          body: JSON.stringify(user)
+        });
+        
+        if (error) {
+          console.error(`Erreur lors de la création de ${user.email}:`, error);
+        } else {
+          console.log(`Utilisateur ${user.email} créé avec succès:`, data);
+        }
+      }
+      
+      alert("Utilisateurs de test créés avec succès. Vous pouvez maintenant vous connecter avec:\n\n" +
+            "Super Admin: superadmin@meref.ml / testadmin123\n" +
+            "SFD Admin: sfdadmin@meref.ml / testadmin123\n" +
+            "Utilisateur: user@meref.ml / testuser123");
+    } catch (error) {
+      console.error("Erreur lors de la création des utilisateurs de test:", error);
+      alert("Erreur lors de la création des utilisateurs de test. Voir la console pour plus de détails.");
+    }
+  };
 
   if (authSuccess) {
     return (
@@ -152,6 +196,15 @@ const AuthUI = () => {
                 Connexion Utilisateur Standard
               </a>
             )}
+          </div>
+        
+          <div className="mt-2 text-center pb-2">
+            <button
+              onClick={createTestUsers}
+              className="text-xs text-gray-500 hover:underline"
+            >
+              Créer des utilisateurs de test
+            </button>
           </div>
         </div>
       </div>
