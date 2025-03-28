@@ -1,8 +1,18 @@
 
-import { User as SupabaseUser } from '@supabase/supabase-js';
-
-export interface User extends SupabaseUser {
-  // Add any additional user properties needed
+export interface User {
+  id: string;
+  email: string;
+  app_metadata?: {
+    [key: string]: any;
+  };
+  user_metadata?: {
+    [key: string]: any;
+  };
+  // Adding properties that are used in the application
+  full_name?: string;
+  avatar_url?: string;
+  sfd_id?: string;
+  // Add any other properties that might be needed
 }
 
 export enum Role {
@@ -27,4 +37,9 @@ export interface AuthContextProps {
   userRole: Role | null;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
+  // Add these properties to fix the errors in other components
+  session?: any;
+  hasPermission?: (permission: string) => boolean;
+  hasRole?: (role: string) => boolean;
+  isLoading?: boolean;
 }

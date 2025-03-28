@@ -3,9 +3,20 @@
  * @deprecated This file is maintained for backward compatibility.
  * Import from '@/utils/audit' instead.
  */
-export * from './auditLoggerCore';
 export * from './auditLoggerTypes';
-export * from './auditLoggerExport';
+export { 
+  logAuditEvent,
+  getAuditLogs,
+  logAuthEvent,
+  logDataAccess 
+} from './auditLoggerCore';
+
+// Export only non-conflicting functions from export module
+export { 
+  downloadAuditLogsAsCSV,
+  exportAuditLogsToPDF,
+  downloadAuditLogsAsPDF
+} from './auditLoggerExport';
 
 // Added explicit export for the logPermissionFailure function
 export const logPermissionFailure = (userId: string, permission: string, location: string) => {

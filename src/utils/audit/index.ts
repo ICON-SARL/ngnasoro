@@ -1,8 +1,27 @@
 
-// Export everything from the core modules
-export * from './auditLoggerCore';
+// Export types
 export * from './auditLoggerTypes';
-export * from './auditLoggerExport';
+
+// Export core functions
+export {
+  logAuditEvent,
+  getAuditLogs,
+  logAuthEvent,
+  logDataAccess
+} from './auditLoggerCore';
+
+// Export the CSV export function from auditLoggerCore and not from auditLoggerExport
+export { exportAuditLogsToCSV } from './auditLoggerCore';
+
+// Export other export functions without the conflicting one
+export {
+  downloadAuditLogsAsCSV,
+  exportAuditLogsToPDF,
+  downloadAuditLogsAsPDF
+} from './auditLoggerExport';
+
+// Export permissions
 export * from './auditPermissions';
 
-// This ensures all necessary types and functions are properly exported
+// Added explicit export for the logPermissionFailure function
+export { logPermissionFailure } from './auditLogger';
