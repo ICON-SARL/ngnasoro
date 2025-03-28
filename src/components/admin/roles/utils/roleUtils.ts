@@ -63,16 +63,34 @@ export async function assignRoleToUser(email: string, selectedRole: UserRole): P
         throw new Error('Impossible de récupérer la liste des utilisateurs');
       }
 
-      // Find user with matching email - fix the type issue by properly checking the data structure
+      // Define a type for the auth user
+      interface AuthUser {
+        id: string;
+        email?: string;
+        user_metadata?: {
+          full_name?: string;
+        };
+      }
+
+      // Find user with matching email - properly check and type the data
+      let foundUser: AuthUser | undefined;
+      
       if (authData.users && Array.isArray(authData.users)) {
-        authUser = authData.users.find(u => u && typeof u === 'object' && 'email' in u && u.email === email);
+        foundUser = authData.users.find((u: any): u is AuthUser => 
+          u && 
+          typeof u === 'object' && 
+          'email' in u && 
+          typeof u.email === 'string' && 
+          u.email === email
+        );
       }
       
-      if (!authUser) {
+      if (!foundUser) {
         throw new Error('Utilisateur non trouvé');
       }
 
-      userId = authUser.id;
+      authUser = foundUser;
+      userId = foundUser.id;
 
       // Update user's role in app_metadata
       const { error: updateError } = await supabase
@@ -87,8 +105,8 @@ export async function assignRoleToUser(email: string, selectedRole: UserRole): P
         .from('admin_users')
         .upsert({
           id: userId,
-          email: authUser.email,
-          full_name: authUser.user_metadata?.full_name || email.split('@')[0],
+          email: foundUser.email,
+          full_name: foundUser.user_metadata?.full_name || email.split('@')[0],
           role: selectedRole
         });
 
