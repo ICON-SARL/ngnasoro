@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AuditLogCategory, AuditLogSeverity, AuditLogFilterOptions, AuditLogEvent } from '@/utils/audit/auditLoggerTypes';
 import { getAuditLogs } from '@/utils/audit/auditLoggerCore';
@@ -24,11 +25,11 @@ export const AuditLogs = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<AuditLogFilterOptions>({
-    category: '',
-    severity: '',
+    category: undefined,
+    severity: undefined,
     startDate: '',
     endDate: '',
-    status: '' as '' | 'success' | 'failure',
+    status: undefined,
   });
   const [showFilters, setShowFilters] = useState(false);
 
@@ -36,11 +37,11 @@ export const AuditLogs = () => {
     setLoading(true);
     try {
       const filterOptions: AuditLogFilterOptions = {
-        ...(filters.category ? { category: filters.category as AuditLogCategory } : {}),
-        ...(filters.severity ? { severity: filters.severity as AuditLogSeverity } : {}),
+        ...(filters.category ? { category: filters.category } : {}),
+        ...(filters.severity ? { severity: filters.severity } : {}),
         ...(filters.startDate ? { startDate: filters.startDate } : {}),
         ...(filters.endDate ? { endDate: filters.endDate } : {}),
-        ...(filters.status ? { status: filters.status as 'success' | 'failure' | 'pending' } : {}),
+        ...(filters.status ? { status: filters.status } : {}),
       };
       
       const response = await getAuditLogs(filterOptions);
@@ -66,11 +67,11 @@ export const AuditLogs = () => {
 
   const handleClearFilters = () => {
     setFilters({
-      category: '',
-      severity: '',
+      category: undefined,
+      severity: undefined,
       startDate: '',
       endDate: '',
-      status: '',
+      status: undefined,
     });
     fetchLogs();
   };
@@ -180,8 +181,8 @@ export const AuditLogs = () => {
             <div>
               <label className="text-sm font-medium">Catégorie</label>
               <Select 
-                value={filters.category} 
-                onValueChange={val => handleFilterChange('category', val)}
+                value={filters.category as string} 
+                onValueChange={(val) => handleFilterChange('category', val ? val as AuditLogCategory : undefined)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Toutes les catégories" />
@@ -198,8 +199,8 @@ export const AuditLogs = () => {
             <div>
               <label className="text-sm font-medium">Sévérité</label>
               <Select 
-                value={filters.severity} 
-                onValueChange={val => handleFilterChange('severity', val)}
+                value={filters.severity as string} 
+                onValueChange={(val) => handleFilterChange('severity', val ? val as AuditLogSeverity : undefined)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Toutes les sévérités" />
@@ -216,8 +217,8 @@ export const AuditLogs = () => {
             <div>
               <label className="text-sm font-medium">Statut</label>
               <Select 
-                value={filters.status} 
-                onValueChange={val => handleFilterChange('status', val as '' | 'success' | 'failure')}
+                value={filters.status as string || ""} 
+                onValueChange={(val) => handleFilterChange('status', val as 'success' | 'failure' | 'pending' || undefined)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tous les statuts" />
@@ -226,6 +227,7 @@ export const AuditLogs = () => {
                   <SelectItem value="">Tous les statuts</SelectItem>
                   <SelectItem value="success">Succès</SelectItem>
                   <SelectItem value="failure">Échec</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -328,12 +330,12 @@ export const AuditLogs = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={getCategoryColor(log.category)}>
+                    <Badge variant="outline" className={getCategoryColor(log.category as AuditLogCategory)}>
                       {log.category}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge className={getSeverityColor(log.severity)}>
+                    <Badge className={getSeverityColor(log.severity as AuditLogSeverity)}>
                       {log.severity}
                     </Badge>
                   </TableCell>

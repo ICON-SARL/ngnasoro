@@ -1,13 +1,13 @@
-
-import { InternalAxiosRequestConfig, AxiosError } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import sfdApiClient from './sfdApiClient';
 import { sfdCache } from '../cacheUtils';
-import { refreshSfdContextToken, shouldRefreshSfdToken, decodeSfdContextToken } from '../sfdJwtContext';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '../auditLogger';
+import { shouldRefreshSfdToken, refreshSfdContextToken, decodeSfdContextToken } from '../sfdJwtContext';
+import { logAuditEvent } from '../audit';
+import { AuditLogCategory, AuditLogSeverity } from '../audit/auditLoggerTypes';
 
 // Add a request interceptor to include the SFD context token
 sfdApiClient.interceptors.request.use(
-  async (config: InternalAxiosRequestConfig) => {
+  async (config: AxiosRequestConfig) => {
     // Get the SFD ID from the config (must be provided in each call)
     const sfdId = config.headers?.['X-SFD-ID'] as string;
     const sfdToken = config.headers?.['X-SFD-TOKEN'] as string;

@@ -1,4 +1,5 @@
 
+// Exporting the enums separately to make sure they're properly exported
 export enum AuditLogCategory {
   AUTHENTICATION = 'authentication',
   DATA_ACCESS = 'data_access',
@@ -28,7 +29,7 @@ export interface AuditLogEvent {
   error_message?: string;
   ip_address?: string;
   device_info?: string;
-  created_at?: string; // Added this field
+  created_at?: string;
 }
 
 // Interface for API response
@@ -43,8 +44,8 @@ export interface AuditLogFilterOptions {
   category?: AuditLogCategory | AuditLogCategory[];
   severity?: AuditLogSeverity | AuditLogSeverity[];
   status?: 'success' | 'failure' | 'pending';
-  startDate?: string | Date; // Update to accept both string and Date
-  endDate?: string | Date; // Update to accept both string and Date
+  startDate?: string | Date;
+  endDate?: string | Date;
   targetResource?: string;
   limit?: number;
   offset?: number;

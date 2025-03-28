@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from './auditLoggerCore';
+import { logAuditEvent } from './auditLoggerCore';
+import { AuditLogCategory, AuditLogSeverity } from './auditLoggerTypes';
 
 // Enumeration for permission types
 export enum Permission {

@@ -43,7 +43,7 @@ export const getAuditLogs = async (
     startDate?: string;
     endDate?: string;
     limit?: number;
-    status?: 'success' | 'failure';
+    status?: 'success' | 'failure' | 'pending';
   }
 ): Promise<any[]> => {
   try {

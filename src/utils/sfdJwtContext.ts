@@ -1,8 +1,8 @@
-
 import * as jose from 'jose';
 import { EncryptionService } from './crypto';
 import { SecureTokenService } from './crypto';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from './auditLogger';
+import { logAuditEvent } from './audit';
+import { AuditLogCategory, AuditLogSeverity } from './audit/auditLoggerTypes';
 
 // Set a secure secret key (in production, this would be stored securely)
 const JWT_SECRET = 'your-very-secure-secret-key-for-sfd-context';

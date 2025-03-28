@@ -9,7 +9,7 @@ export * from './auditLoggerExport';
 
 // Added explicit export for the logPermissionFailure function
 export const logPermissionFailure = (userId: string, permission: string, location: string) => {
-  // Import from auditLoggerCore to avoid circular dependencies
+  // Import from auditLoggerTypes to avoid circular dependencies
   const { logAuditEvent } = require('./auditLoggerCore');
   const { AuditLogCategory, AuditLogSeverity } = require('./auditLoggerTypes');
   
