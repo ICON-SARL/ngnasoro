@@ -1,131 +1,128 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { AuditLogCategory, AuditLogSeverity } from './auditLoggerTypes';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { AuditLogEvent } from './auditLoggerTypes';
 
 /**
- * Retrieves audit logs with optional filtering
+ * Formats a date for CSV export
  */
-export const getAuditLogs = async (options?: {
-  userId?: string;
-  category?: AuditLogCategory | AuditLogCategory[];
-  severity?: AuditLogSeverity | AuditLogSeverity[];
-  startDate?: Date;
-  endDate?: Date;
-  action?: string;
-  limit?: number;
-  offset?: number;
-}) => {
-  try {
-    let query = supabase
-      .from('audit_logs')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (options?.userId) {
-      query = query.eq('user_id', options.userId);
-    }
-
-    if (options?.category) {
-      if (Array.isArray(options.category)) {
-        query = query.in('category', options.category);
-      } else {
-        query = query.eq('category', options.category);
-      }
-    }
-
-    if (options?.severity) {
-      if (Array.isArray(options.severity)) {
-        query = query.in('severity', options.severity);
-      } else {
-        query = query.eq('severity', options.severity);
-      }
-    }
-
-    if (options?.action) {
-      query = query.ilike('action', `%${options.action}%`);
-    }
-
-    if (options?.startDate) {
-      query = query.gte('created_at', options.startDate.toISOString());
-    }
-
-    if (options?.endDate) {
-      query = query.lte('created_at', options.endDate.toISOString());
-    }
-
-    if (options?.limit) {
-      query = query.limit(options.limit);
-    }
-
-    if (options?.offset) {
-      query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
-    }
-
-    const { data, error, count } = await query;
-
-    if (error) {
-      throw error;
-    }
-
-    return { logs: data, count };
-  } catch (error) {
-    console.error('Error fetching audit logs:', error);
-    throw error;
-  }
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleString();
 };
 
 /**
- * Exports audit logs to CSV format
+ * Converts audit logs to CSV format
+ * @param logs The audit logs to convert
+ * @returns CSV formatted string
  */
-export const exportAuditLogsToCSV = async (options?: {
-  userId?: string;
-  category?: AuditLogCategory | AuditLogCategory[];
-  startDate?: Date;
-  endDate?: Date;
-  severity?: AuditLogSeverity | AuditLogSeverity[];
-}) => {
-  try {
-    const { logs } = await getAuditLogs({
-      ...options,
-      limit: 1000
-    });
+export const exportAuditLogsToCSV = (logs: AuditLogEvent[]): string => {
+  // Define CSV headers
+  const headers = [
+    'Date',
+    'User ID',
+    'Action',
+    'Category',
+    'Severity',
+    'Status',
+    'Target Resource',
+    'Details',
+    'Error Message',
+    'IP Address',
+    'Device Info'
+  ];
 
-    if (!logs || logs.length === 0) {
-      return { success: false, message: 'Aucun log d\'audit trouvé' };
-    }
+  // Convert logs to CSV rows
+  const rows = logs.map(log => [
+    formatDate(log.created_at?.toString() || new Date().toISOString()),
+    log.user_id || '',
+    log.action || '',
+    log.category || '',
+    log.severity || '',
+    log.status || '',
+    log.target_resource || '',
+    log.details ? JSON.stringify(log.details) : '',
+    log.error_message || '',
+    log.ip_address || '',
+    log.device_info || ''
+  ]);
 
-    // Transform data for CSV
-    const csvData = logs.map(log => ({
-      'Date': format(new Date(log.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: fr }),
-      'Utilisateur': log.user_id || '-',
-      'Action': log.action,
-      'Catégorie': log.category,
-      'Sévérité': log.severity,
-      'Statut': log.status,
-      'Ressource': log.target_resource || '-',
-      'Message d\'erreur': log.error_message || '-'
-    }));
+  // Combine headers and rows
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+  ].join('\n');
 
-    // Convert to CSV string
-    const headers = Object.keys(csvData[0]);
-    const csvString = [
-      headers.join(','),
-      ...csvData.map(row => headers.map(header => {
-        // Handle special characters and commas in CSV
-        const value = String(row[header] || '');
-        return value.includes(',') ? `"${value}"` : value;
-      }).join(','))
-    ].join('\n');
+  return csvContent;
+};
 
-    return {
-      success: true,
-      filename: `audit_logs_${format(new Date(), 'yyyyMMdd')}.csv`,
-      csvString
-    };
-  } catch (error) {
-    console.error('Error exporting audit logs:', error);
-    return { success: false, message: 'Erreur lors de l\'exportation des logs d\'audit' };
-  }
+/**
+ * Downloads audit logs as a CSV file
+ * @param logs The audit logs to download
+ * @param filename Optional filename (default: audit_logs_YYYY-MM-DD.csv)
+ */
+export const downloadAuditLogsAsCSV = (logs: AuditLogEvent[], filename?: string) => {
+  const csvContent = exportAuditLogsToCSV(logs);
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename || `audit_logs_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+/**
+ * Generate a PDF report of audit logs
+ * This is a placeholder - in a real implementation, you'd use a library like jsPDF
+ */
+export const exportAuditLogsToPDF = async (logs: AuditLogEvent[]): Promise<Blob> => {
+  // For demonstration - in a real app, you'd generate a proper PDF
+  // using a library like jsPDF or pdfmake
+  const { jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
+  
+  const doc = new jsPDF();
+  
+  // Add title
+  doc.setFontSize(16);
+  doc.text('Audit Logs Report', 14, 22);
+  doc.setFontSize(10);
+  doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+  
+  // Prepare data for autotable
+  const tableColumn = ["Date", "User", "Action", "Category", "Status", "Resource"];
+  const tableRows = logs.map(log => [
+    formatDate(log.created_at?.toString() || new Date().toISOString()),
+    log.user_id?.substring(0, 8) || 'N/A',
+    log.action || 'N/A',
+    log.category || 'N/A',
+    log.status || 'N/A', 
+    log.target_resource || 'N/A'
+  ]);
+  
+  // Generate table
+  autoTable(doc, { 
+    head: [tableColumn],
+    body: tableRows,
+    startY: 40,
+    theme: 'grid'
+  });
+  
+  return doc.output('blob');
+};
+
+/**
+ * Downloads audit logs as a PDF file
+ */
+export const downloadAuditLogsAsPDF = async (logs: AuditLogEvent[], filename?: string) => {
+  const pdfBlob = await exportAuditLogsToPDF(logs);
+  const url = URL.createObjectURL(pdfBlob);
+  const link = document.createElement('a');
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename || `audit_logs_${new Date().toISOString().split('T')[0]}.pdf`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };

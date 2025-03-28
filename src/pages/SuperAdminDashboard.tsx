@@ -20,8 +20,10 @@ import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommuni
 import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
 import { IntegratedDashboard } from '@/components/admin/shared/IntegratedDashboard';
 import AuditLogsSummary from '@/components/audit/AuditLogsSummary';
-import { PermissionGuard } from '@/components/PermissionGuard';
+import PermissionGuard from '@/components/PermissionGuard';
 import { Permission } from '@/utils/audit/auditPermissions';
+import { SubsidySummary } from '@/components/admin/dashboard/SubsidySummary';
+import { PendingSubsidies } from '@/components/admin/dashboard/PendingSubsidies';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
@@ -103,6 +105,10 @@ const SuperAdminDashboard = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="md:col-span-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <SubsidySummary />
+                  <PendingSubsidies />
+                </div>
                 <DashboardWidgets 
                   stats={stats} 
                   isLoading={isLoadingStats} 

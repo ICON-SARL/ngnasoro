@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
@@ -14,11 +13,12 @@ import LoginPage from '@/pages/LoginPage';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import SfdSubsidyRequestPage from '@/pages/SfdSubsidyRequestPage';
 import SfdTransactionsPage from '@/pages/SfdTransactionsPage';
-import SfdClientsPage from '@/pages/SfdClientsPage'; // Fixed import
+import SfdClientsPage from '@/pages/SfdClientsPage';
 import SfdLoansPage from '@/pages/SfdLoansPage';
 import SfdAdminDashboard from '@/components/admin/SfdAdminDashboard';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import AuditLogsPage from '@/pages/AuditLogsPage';
+import SubsidyRequestDetailPage from '@/pages/SubsidyRequestDetailPage';
 
 // Role types and permissions
 import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';

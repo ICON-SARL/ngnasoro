@@ -6,7 +6,8 @@ export enum AuditLogCategory {
   SFD_OPERATIONS = 'sfd_operations',
   SUBSIDY_OPERATIONS = 'subsidy_operations',
   USER_MANAGEMENT = 'user_management',
-  SYSTEM = 'system'
+  SYSTEM = 'system',
+  TOKEN_MANAGEMENT = 'token_management'
 }
 
 export enum AuditLogSeverity {
@@ -27,4 +28,23 @@ export interface AuditLogEvent {
   error_message?: string;
   ip_address?: string;
   device_info?: string;
+}
+
+// Interface for API response
+export interface AuditLogResponse {
+  logs: AuditLogEvent[];
+  count: number;
+}
+
+// Interface for filter options
+export interface AuditLogFilterOptions {
+  userId?: string;
+  category?: AuditLogCategory | AuditLogCategory[];
+  severity?: AuditLogSeverity | AuditLogSeverity[];
+  status?: 'success' | 'failure' | 'pending';
+  startDate?: Date;
+  endDate?: Date;
+  targetResource?: string;
+  limit?: number;
+  offset?: number;
 }
