@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AuditLogCategory, AuditLogSeverity, getAuditLogs } from '@/utils/audit';
 import { User } from '@/hooks/useAuth';
@@ -54,8 +53,7 @@ export const AuditLogs = () => {
       };
       
       const auditLogs = await getAuditLogs(filterOptions);
-      // Type cast the returned data to match our AuditLog[] type
-      setLogs(auditLogs as unknown as AuditLog[]);
+      setLogs(auditLogs);
     } catch (error) {
       console.error('Failed to fetch audit logs:', error);
     } finally {

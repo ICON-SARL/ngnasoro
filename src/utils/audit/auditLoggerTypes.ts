@@ -1,29 +1,7 @@
 
 /**
- * Types for the audit logger
+ * Types for the audit logging system
  */
-
-export enum AuditLogCategory {
-  // System categories
-  AUTHENTICATION = 'authentication',
-  AUTHORIZATION = 'authorization',
-  ACCESS_CONTROL = 'access_control',
-  SYSTEM = 'system',
-  DATA_ACCESS = 'data_access',
-  
-  // Business categories
-  USER_OPERATIONS = 'user_operations',
-  SFD_OPERATIONS = 'sfd_operations',
-  LOAN_OPERATIONS = 'loan_operations',
-  PAYMENT_OPERATIONS = 'payment_operations',
-  TOKEN_MANAGEMENT = 'token_management',
-  SUBSIDY_OPERATIONS = 'subsidy_operations',
-  CLIENT_OPERATIONS = 'client_operations',
-  
-  // Admin management categories
-  USER_MANAGEMENT = 'user_management',
-  ADMIN_ACTION = 'admin_action'
-}
 
 export enum AuditLogSeverity {
   INFO = 'info',
@@ -32,8 +10,21 @@ export enum AuditLogSeverity {
   CRITICAL = 'critical'
 }
 
+export enum AuditLogCategory {
+  AUTHENTICATION = 'authentication',
+  DATA_ACCESS = 'data_access',
+  CONFIGURATION = 'configuration',
+  TOKEN_MANAGEMENT = 'token_management',
+  USER_MANAGEMENT = 'user_management',
+  SFD_OPERATIONS = 'sfd_operations',
+  CLIENT_MANAGEMENT = 'client_management',
+  LOAN_MANAGEMENT = 'loan_management',
+  SUBSIDY_MANAGEMENT = 'subsidy_management',
+  ADMIN_ACTION = 'admin_action'
+}
+
 export interface AuditLogEntry {
-  user_id: string;
+  user_id?: string;
   action: string;
   category: AuditLogCategory;
   severity: AuditLogSeverity;
@@ -49,12 +40,12 @@ export interface AuditLogQueryOptions {
   userId?: string;
   category?: AuditLogCategory;
   severity?: AuditLogSeverity;
-  status?: 'success' | 'failure';
   startDate?: string;
   endDate?: string;
+  limit?: number;
+  status?: 'success' | 'failure';
   page?: number;
   pageSize?: number;
-  limit?: number;
   sortBy?: string;
-  sortOrder?: { ascending: boolean };
+  sortOrder?: 'asc' | 'desc';
 }

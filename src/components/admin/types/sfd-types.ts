@@ -9,7 +9,6 @@ export type Sfd = {
   updated_at?: string;
   status?: 'active' | 'suspended' | 'pending';
   subsidy_balance?: number;
-  admin_id?: string;
 };
 
 export type SfdSubsidy = {
@@ -28,8 +27,6 @@ export type SfdSubsidy = {
 export type SfdAuditLog = {
   id: string;
   user_id?: string;
-  user_email?: string;
-  user_name?: string;
   action: string;
   category: string;
   severity: string;

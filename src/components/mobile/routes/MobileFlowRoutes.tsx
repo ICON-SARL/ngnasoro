@@ -12,9 +12,6 @@ import LoanActivityPage from '@/components/mobile/LoanActivityPage';
 import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
 import LoanSetupPage from '@/components/mobile/LoanSetupPage';
 import LoanProcessFlow from '@/components/mobile/LoanProcessFlow';
-import LoanApplicationForm from '@/components/mobile/loan/LoanApplicationForm';
-import LoanTrackingPage from '@/components/mobile/loan/LoanTrackingPage';
-import NotificationsPage from '@/components/mobile/notifications/NotificationsPage';
 
 interface MobileFlowRoutesProps {
   onAction: (action: string, data?: any) => void;
@@ -84,17 +81,6 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       } />
       <Route path="/loan-process/:loanId" element={
         <LoanProcessFlow onBack={handleBack} />
-      } />
-      
-      {/* Nouvelles routes pour les écrans demandés */}
-      <Route path="/loan-application" element={
-        <LoanApplicationForm />
-      } />
-      <Route path="/loan-tracking/:loanId" element={
-        <LoanTrackingPage />
-      } />
-      <Route path="/notifications" element={
-        <NotificationsPage />
       } />
       
       <Route path="*" element={

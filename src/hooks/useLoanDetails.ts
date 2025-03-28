@@ -2,8 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/auth/useAuth';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 
 export interface LoanStatus {
   nextPaymentDue: string;
@@ -35,7 +33,6 @@ export interface LoanDetails {
 
 export function useLoanDetails(loanId: string | undefined) {
   const { toast } = useToast();
-  const { user } = useAuth();
   
   const [loanStatus, setLoanStatus] = useState<LoanStatus>({
     nextPaymentDue: '10 Juillet 2023',
@@ -66,7 +63,6 @@ export function useLoanDetails(loanId: string | undefined) {
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [previousStatus, setPreviousStatus] = useState<string | null>(null);
 
   const fetchLoanDetails = async () => {
     setIsLoading(true);
@@ -100,28 +96,6 @@ export function useLoanDetails(loanId: string | undefined) {
       if (error) throw error;
       
       if (data) {
-        // Store previous status for change detection
-        if (previousStatus !== null && previousStatus !== data.status) {
-          // Log status change
-          if (user?.id) {
-            logAuditEvent({
-              user_id: user.id,
-              action: 'loan_status_changed',
-              category: AuditLogCategory.LOAN_OPERATIONS,
-              severity: AuditLogSeverity.WARNING,
-              details: {
-                loan_id: loanId,
-                old_status: previousStatus,
-                new_status: data.status
-              },
-              status: 'success',
-              target_resource: `loan:${loanId}`
-            });
-          }
-        }
-        
-        setPreviousStatus(data.status);
-        
         setLoanDetails({
           loanType: data.purpose.includes('Micro') ? 'Microcrédit' : 'Prêt standard',
           loanPurpose: data.purpose,

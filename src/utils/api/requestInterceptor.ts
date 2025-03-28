@@ -11,7 +11,6 @@ sfdApiClient.interceptors.request.use(
     // Get the SFD ID from the config (must be provided in each call)
     const sfdId = config.headers?.['X-SFD-ID'] as string;
     const sfdToken = config.headers?.['X-SFD-TOKEN'] as string;
-    const userRole = config.headers?.['X-User-Role'] as string || 'user'; // Default to 'user' if not provided
     
     if (!sfdId || !sfdToken) {
       throw new Error('SFD ID and token are required for API calls');
@@ -60,7 +59,6 @@ sfdApiClient.interceptors.request.use(
           severity: AuditLogSeverity.INFO,
           details: { 
             sfdId, 
-            userRole,
             method: config.method,
             url: config.url,
             fromCache: !!config.headers?.['X-From-Cache']

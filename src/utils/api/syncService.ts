@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/auth';
 
 // Types for API responses and filters
 export interface PaginationParams {
@@ -62,7 +61,6 @@ export const syncService = {
   
   /**
    * Fetch subsidies with pagination and filters
-   * Only accessible to admin users
    */
   async getSubsidies(
     params: PaginationParams & DateFilter & SfdFilter = {}
@@ -71,7 +69,6 @@ export const syncService = {
       const { data, error } = await supabase.functions.invoke('admin-mobile-sync', {
         body: JSON.stringify({ 
           endpoint: '/subsidies',
-          requireAdmin: true,
           ...params
         }),
       });
@@ -86,7 +83,6 @@ export const syncService = {
   
   /**
    * Fetch loans/credit requests with pagination and filters
-   * Accessible to admin and sfd_admin users
    */
   async getLoans(
     params: PaginationParams & DateFilter & SfdFilter & { status?: string } = {}
@@ -109,7 +105,6 @@ export const syncService = {
   
   /**
    * Fetch subsidy requests with pagination and filters
-   * Only accessible to admin users
    */
   async getSubsidyRequests(
     params: PaginationParams & DateFilter & SfdFilter & { status?: string, priority?: string } = {}
@@ -118,7 +113,6 @@ export const syncService = {
       const { data, error } = await supabase.functions.invoke('admin-mobile-sync', {
         body: JSON.stringify({ 
           endpoint: '/subsidy-requests',
-          requireAdmin: true,
           ...params
         }),
       });
@@ -133,7 +127,6 @@ export const syncService = {
   
   /**
    * Fetch audit logs with pagination and filters
-   * Only accessible to admin users
    */
   async getAuditLogs(
     params: PaginationParams & DateFilter & AuditLogFilter = {}
@@ -142,7 +135,6 @@ export const syncService = {
       const { data, error } = await supabase.functions.invoke('admin-mobile-sync', {
         body: JSON.stringify({ 
           endpoint: '/audit-logs',
-          requireAdmin: true,
           ...params
         }),
       });
@@ -157,7 +149,6 @@ export const syncService = {
   
   /**
    * Export audit logs as CSV
-   * Only accessible to admin users
    */
   async exportAuditLogs(
     params: DateFilter & AuditLogFilter = {}
@@ -166,7 +157,6 @@ export const syncService = {
       const { data, error } = await supabase.functions.invoke('admin-mobile-sync', {
         body: JSON.stringify({ 
           endpoint: '/audit-logs/export',
-          requireAdmin: true,
           ...params
         }),
       });
@@ -181,70 +171,5 @@ export const syncService = {
       console.error('Error exporting audit logs:', error);
       throw error;
     }
-  },
-  
-  /**
-   * Apply for a loan - available to all authenticated users
-   */
-  async applyForLoan(loanData: any): Promise<any> {
-    try {
-      const { data, error } = await supabase.functions.invoke('admin-mobile-sync', {
-        body: JSON.stringify({ 
-          endpoint: '/apply-loan',
-          method: 'POST',
-          data: loanData
-        }),
-      });
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error applying for loan:', error);
-      throw error;
-    }
   }
-};
-
-// Hook wrapper for the sync service that adds permission checks
-export const useSyncService = () => {
-  const { userRole } = useAuth();
-  
-  // Permission check utility
-  const checkPermission = (requiredRole: string[]): boolean => {
-    if (!userRole) return false;
-    return requiredRole.includes(userRole);
-  };
-  
-  return {
-    ...syncService,
-    
-    // Override methods with permission checks
-    getSubsidies: async (params: PaginationParams & DateFilter & SfdFilter = {}) => {
-      if (!checkPermission(['admin'])) {
-        throw new Error('Insufficient permissions: Only Super Admins can access subsidies');
-      }
-      return syncService.getSubsidies(params);
-    },
-    
-    getSubsidyRequests: async (params: PaginationParams & DateFilter & SfdFilter & { status?: string, priority?: string } = {}) => {
-      if (!checkPermission(['admin'])) {
-        throw new Error('Insufficient permissions: Only Super Admins can access subsidy requests');
-      }
-      return syncService.getSubsidyRequests(params);
-    },
-    
-    getAuditLogs: async (params: PaginationParams & DateFilter & AuditLogFilter = {}) => {
-      if (!checkPermission(['admin'])) {
-        throw new Error('Insufficient permissions: Only Super Admins can access audit logs');
-      }
-      return syncService.getAuditLogs(params);
-    },
-    
-    exportAuditLogs: async (params: DateFilter & AuditLogFilter = {}) => {
-      if (!checkPermission(['admin'])) {
-        throw new Error('Insufficient permissions: Only Super Admins can export audit logs');
-      }
-      return syncService.exportAuditLogs(params);
-    }
-  };
 };

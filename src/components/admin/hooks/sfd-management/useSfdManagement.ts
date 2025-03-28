@@ -24,12 +24,7 @@ export function useSfdManagement() {
     suspendSfdMutation, 
     reactivateSfdMutation 
   } = useSfdMutations();
-  const { 
-    handleExportPdf, 
-    handleExportExcel, 
-    handleExportCsv, 
-    isExporting 
-  } = useSfdExport(filteredSfds, statusFilter);
+  const { handleExportPdf, handleExportExcel, isExporting } = useSfdExport(filteredSfds, statusFilter);
 
   // Event handlers
   const handleAddSfd = (formData: SfdFormValues) => {
@@ -88,7 +83,6 @@ export function useSfdManagement() {
     handleSuspendSfd,
     handleReactivateSfd,
     handleExportPdf,
-    handleExportExcel,
-    handleExportCsv
+    handleExportExcel
   };
 }

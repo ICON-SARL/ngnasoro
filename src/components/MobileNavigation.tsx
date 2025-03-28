@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -36,43 +37,27 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   const activeTab = getActiveTab();
   
   const handleTabClick = (tab: string) => {
-    const currentPath = location.pathname;
-    
     switch (tab) {
       case 'home':
-        if (!currentPath.includes('/mobile-flow/main') && !currentPath.endsWith('/mobile-flow')) {
-          navigate('/mobile-flow');
-        }
+        navigate('/mobile-flow');
         break;
       case 'transactions':
-        if (!currentPath.includes('/mobile-flow/transactions')) {
-          navigate('/mobile-flow/transactions');
-        }
+        navigate('/mobile-flow/transactions');
         break;
       case 'funds':
-        if (!currentPath.includes('/mobile-flow/funds')) {
-          navigate('/mobile-flow/funds');
-        }
+        navigate('/mobile-flow/funds');
         break;
       case 'loans':
-        if (!currentPath.includes('/mobile-flow/apply-loan')) {
-          navigate('/mobile-flow/apply-loan');
-        }
+        navigate('/mobile-flow/apply-loan');
         break;
       case 'profile':
-        if (!currentPath.includes('/mobile-flow/profile')) {
-          navigate('/mobile-flow/profile');
-        }
+        navigate('/mobile-flow/profile');
         break;
       case 'admin':
-        if (!currentPath.includes('/mobile-flow/sfd-clients')) {
-          navigate('/mobile-flow/sfd-clients');
-        }
+        navigate('/mobile-flow/sfd-clients');
         break;
       default:
-        if (!currentPath.endsWith('/mobile-flow') && !currentPath.includes('/mobile-flow/main')) {
-          navigate('/mobile-flow');
-        }
+        navigate('/mobile-flow');
     }
     
     if (onAction) {

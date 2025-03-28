@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
+import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/auditLogger';
 
 export const useLoginForm = (adminMode: boolean = false, sfdMode: boolean = false) => {
   const [email, setEmail] = useState('');
@@ -82,19 +82,14 @@ export const useLoginForm = (adminMode: boolean = false, sfdMode: boolean = fals
         throw error;
       }
       
-      // Log successful authentication attempt - don't include user_id yet since we don't have it
-      try {
-        await logAuditEvent({
-          user_id: '00000000-0000-0000-0000-000000000000', // Anonymous user placeholder
-          action: adminMode ? "admin_login_attempt" : sfdMode ? "sfd_admin_login_attempt" : "password_login_attempt",
-          category: AuditLogCategory.AUTHENTICATION,
-          severity: AuditLogSeverity.INFO,
-          status: 'success',
-          details: { email, admin_mode: adminMode, sfd_mode: sfdMode }
-        });
-      } catch (logError) {
-        console.error("Error logging login:", logError);
-      }
+      // Log successful authentication attempt
+      await logAuditEvent({
+        action: adminMode ? "admin_login_attempt" : sfdMode ? "sfd_admin_login_attempt" : "password_login_attempt",
+        category: AuditLogCategory.AUTHENTICATION,
+        severity: AuditLogSeverity.INFO,
+        status: 'success',
+        details: { email, admin_mode: adminMode, sfd_mode: sfdMode }
+      });
       
       // Redirection will be handled by the AuthUI component based on user role
       
@@ -107,19 +102,14 @@ export const useLoginForm = (adminMode: boolean = false, sfdMode: boolean = fals
       console.error("Login error:", error);
       
       // Log failed authentication attempt
-      try {
-        await logAuditEvent({
-          user_id: '00000000-0000-0000-0000-000000000000', // Anonymous user placeholder
-          action: adminMode ? "admin_login_failed" : sfdMode ? "sfd_admin_login_failed" : "password_login_attempt",
-          category: AuditLogCategory.AUTHENTICATION,
-          severity: AuditLogSeverity.WARNING,
-          status: 'failure',
-          error_message: error.message,
-          details: { email, admin_mode: adminMode, sfd_mode: sfdMode }
-        });
-      } catch (logError) {
-        console.error("Error logging failed login:", logError);
-      }
+      await logAuditEvent({
+        action: adminMode ? "admin_login_failed" : sfdMode ? "sfd_admin_login_failed" : "password_login_attempt",
+        category: AuditLogCategory.AUTHENTICATION,
+        severity: AuditLogSeverity.WARNING,
+        status: 'failure',
+        error_message: error.message,
+        details: { email, admin_mode: adminMode, sfd_mode: sfdMode }
+      });
       
       // Check for rate limiting errors
       if (error.message && error.message.includes('security purposes') && error.message.includes('seconds')) {
