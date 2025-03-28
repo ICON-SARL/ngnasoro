@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { getAuditLogs, AuditLogCategory, AuditLogSeverity } from '@/utils/auditLogger';
+import { getAuditLogs } from '@/utils/auditLogger';
 import { SfdAuditLog } from '../types/sfd-types';
 import { AuditLogFilterState } from './types';
 

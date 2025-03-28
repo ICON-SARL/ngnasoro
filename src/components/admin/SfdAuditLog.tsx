@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { addDays } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DateRange } from 'react-day-picker';
 
 type SfdAuditLogEntry = {
   id: string;
@@ -37,10 +38,15 @@ type SfdAuditLogEntry = {
 export function SfdAuditLog() {
   const [searchQuery, setSearchQuery] = useState('');
   const [actionFilter, setActionFilter] = useState<string>('all');
-  const [dateRange, setDateRange] = useState({
+  const [dateRange, setDateRange] = useState<DateRange>({
     from: addDays(new Date(), -30),
     to: new Date(),
   });
+
+  // Handle date range change
+  const handleDateRangeChange = (range: DateRange) => {
+    setDateRange(range);
+  };
 
   // Mock audit log data
   const mockAuditLogs: SfdAuditLogEntry[] = [
@@ -213,7 +219,10 @@ export function SfdAuditLog() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
-                  <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+                  <DatePickerWithRange 
+                    date={dateRange} 
+                    setDate={handleDateRangeChange} 
+                  />
                 </PopoverContent>
               </Popover>
               

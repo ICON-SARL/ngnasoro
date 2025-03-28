@@ -11,6 +11,7 @@ export interface Sfd {
   status: SfdStatus;
   created_at: string;
   updated_at: string;
+  subsidy_balance?: number;
 }
 
 // SFD Client Types
@@ -75,4 +76,18 @@ export interface SfdAuditLogEntry {
   performed_at: string;
   details: string;
   severity: 'info' | 'warning' | 'critical';
+}
+
+// Add the SfdAuditLog type that was missing
+export interface SfdAuditLog {
+  id: string;
+  created_at: string;
+  user_id?: string;
+  action: string;
+  category: string;
+  severity: string;
+  details?: any;
+  status: 'success' | 'failure';
+  error_message?: string;
+  target_resource?: string;
 }
