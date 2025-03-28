@@ -34,7 +34,7 @@ export const mockSupabaseClient = {
         }))
       }))
     }))
-  }),
+  })),
   functions: {
     invoke: jest.fn(() => ({
       data: {},
