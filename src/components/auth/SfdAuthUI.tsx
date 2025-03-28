@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -6,6 +5,7 @@ import Logo from './Logo';
 import LoginForm from './login/LoginForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
+import DemoAccountsCreator from './DemoAccountsCreator';
 
 const SfdAuthUI = () => {
   const { user, session } = useAuth();
@@ -87,6 +87,8 @@ const SfdAuthUI = () => {
               Accès Administrateur MEREF
             </a>
           </div>
+          
+          <DemoAccountsCreator />
         </div>
       </div>
     </div>
