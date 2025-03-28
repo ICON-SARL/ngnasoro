@@ -90,25 +90,32 @@ export function RoleManagement() {
         .eq('email', email)
         .single();
 
+      let userId: string;
+      let authUser: any;
+
       if (userError) {
         // User not found in admin_users table, look in auth.users (administrators only)
-        const { data: authUsersData, error: authError } = await supabase.auth.admin.listUsers({
+        const { data, error: authError } = await supabase.auth.admin.listUsers({
           page: 1,
-          perPage: 1,
-          filter: {
-            email: email
-          }
+          perPage: 1
         });
 
-        if (authError || !authUsersData?.users?.length) {
+        if (authError || !data.users) {
+          throw new Error('Impossible de récupérer la liste des utilisateurs');
+        }
+
+        // Find user with matching email
+        authUser = data.users.find(u => u.email === email);
+        
+        if (!authUser) {
           throw new Error('Utilisateur non trouvé');
         }
 
-        const authUser = authUsersData.users[0];
+        userId = authUser.id;
 
         // Update user's role in app_metadata
         const { error: updateError } = await supabase
-          .auth.admin.updateUserById(authUser.id, {
+          .auth.admin.updateUserById(userId, {
             app_metadata: { role: selectedRole }
           });
 
@@ -118,16 +125,16 @@ export function RoleManagement() {
         const { error: adminError } = await supabase
           .from('admin_users')
           .upsert({
-            id: authUser.id,
+            id: userId,
             email: authUser.email,
-            full_name: authUser.user_metadata.full_name || email.split('@')[0],
+            full_name: authUser.user_metadata?.full_name || email.split('@')[0],
             role: selectedRole
           });
 
         if (adminError) throw adminError;
       } else {
         // User found in admin_users, update their role
-        const userId = userData.id;
+        userId = userData.id;
 
         // Update user's role in app_metadata
         const { error: updateError } = await supabase
@@ -148,7 +155,7 @@ export function RoleManagement() {
 
       // Call the assign_role function for both cases
       const { error: roleError } = await supabase.rpc('assign_role', {
-        user_id: userData?.id || authUsersData?.users[0].id,
+        user_id: userId,
         role: selectedRole
       });
 
