@@ -1,5 +1,6 @@
 import { toast } from "@/components/ui/use-toast";
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
+import { CacheService } from './cacheService';
 
 export enum ErrorType {
   AUTHENTICATION = "AUTHENTICATION",
@@ -105,27 +106,47 @@ export const handleError = (error: unknown, userId?: string): AppError => {
   return appError;
 };
 
-export const handleApiResponse = async (response: Response, userId?: string) => {
+export const handleApiResponse = async (response: Response, userId?: string, options?: {
+  cacheKey?: string,
+  cacheNamespace?: string,
+  cacheTtl?: number,
+  invalidateOnError?: boolean
+}) => {
   if (!response.ok) {
     let errorDetail = "Erreur serveur inconnue";
     
     try {
-      const errorData = await response.json();
-      errorDetail = errorData.message || errorData.error || errorDetail;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const errorData = await response.json();
+        errorDetail = errorData.message || errorData.error || errorDetail;
+      } else {
+        errorDetail = await response.text();
+      }
     } catch (e) {
-      // Couldn't parse JSON error response
+      // Couldn't parse response
+      errorDetail = `Erreur (${response.status}): ${response.statusText}`;
     }
     
     const appError: AppError = {
       type: response.status === 401 || response.status === 403 
         ? ErrorType.AUTHENTICATION 
-        : ErrorType.SERVER,
+        : response.status === 400
+          ? ErrorType.VALIDATION
+          : ErrorType.SERVER,
       message: response.status === 401 || response.status === 403
         ? "Accès non autorisé"
-        : "Erreur serveur",
+        : response.status === 400
+          ? "Données invalides"
+          : "Erreur serveur",
       technical: errorDetail,
       statusCode: response.status
     };
+    
+    // Si l'option est activée, invalider le cache associé
+    if (options?.invalidateOnError && options.cacheKey) {
+      await CacheService.delete(options.cacheKey, options.cacheNamespace);
+    }
     
     // Log server and permission errors
     if (userId && (response.status === 500 || response.status === 403)) {
@@ -147,17 +168,41 @@ export const handleApiResponse = async (response: Response, userId?: string) => 
       
       // Send alert for critical errors (500)
       if (response.status === 500) {
-        sendErrorAlert(appError);
+        await sendErrorAlert(appError);
       }
     }
     
     throw appError;
   }
   
+  // Si la réponse est une réussite et que nous avons une clé de cache, mettre en cache
+  if (options?.cacheKey) {
+    try {
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        // Cloner la réponse pour ne pas la consommer
+        const clonedResponse = response.clone();
+        const data = await clonedResponse.json();
+        
+        // Mettre en cache la réponse
+        await CacheService.set(
+          options.cacheKey, 
+          data,
+          { 
+            namespace: options.cacheNamespace || 'api',
+            ttl: options.cacheTtl || 5 * 60 * 1000 // 5 minutes par défaut
+          }
+        );
+      }
+    } catch (cacheError) {
+      console.warn('Erreur lors de la mise en cache:', cacheError);
+      // Ne pas échouer si le cache échoue
+    }
+  }
+  
   return response;
 };
 
-// Function to send alerts for critical errors
 export const sendErrorAlert = async (error: AppError) => {
   try {
     // Call the edge function to send Slack/Email alerts
