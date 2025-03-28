@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { logAuditEvent } from './auditLoggerCore';
 import { AuditLogCategory, AuditLogSeverity } from './auditLoggerTypes';
@@ -41,12 +42,12 @@ export const hasRole = async (userId: string, role: Role): Promise<boolean> => {
     // We need to check if the role is 'client' and handle it separately
     
     if (role === Role.CLIENT) {
-      // If checking for client role, we can make a different query or handle it differently
+      // If checking for client role, we need to query directly instead of using the RPC
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .eq('role', 'client');
+        .eq('role', Role.CLIENT);
       
       if (rolesError) throw rolesError;
       return userRoles && userRoles.length > 0;
