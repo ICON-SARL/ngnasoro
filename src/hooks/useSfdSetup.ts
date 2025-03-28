@@ -11,7 +11,7 @@ export function useSfdSetup() {
   const { user, activeSfdId } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  const createSfd = async (sfdData: {
+  const createSfd = async (sfdFormData: {
     name: string;
     code: string;
     region: string;
@@ -33,10 +33,10 @@ export function useSfdSetup() {
       const { data: sfdData, error: sfdError } = await supabase
         .from('sfds')
         .insert({
-          name: sfdData.name,
-          code: sfdData.code,
-          region: sfdData.region,
-          logo_url: sfdData.logo_url,
+          name: sfdFormData.name,
+          code: sfdFormData.code,
+          region: sfdFormData.region,
+          logo_url: sfdFormData.logo_url,
           status: 'active'
         })
         .select()

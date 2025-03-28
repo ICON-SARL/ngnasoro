@@ -16,6 +16,23 @@ export interface User {
 
 export type UserRole = 'admin' | 'sfd_admin' | 'user';
 
+export type Permission = 
+  | 'access_mobile_app'
+  | 'access_admin_panel'
+  | 'access_sfd_panel'
+  | 'manage_users'
+  | 'manage_sfds'
+  | 'manage_sfd_clients'
+  | 'manage_sfd_loans'
+  | 'approve_subsidies'
+  | 'view_reports'
+  | 'view_audit_logs'
+  | 'apply_for_loans'
+  | 'make_transfers'
+  | 'view_transactions'
+  | 'view_sfd_subsidies'
+  | 'view_sfd_reports';
+
 export interface AuthContextProps {
   session: Session | null;
   user: User | null;
