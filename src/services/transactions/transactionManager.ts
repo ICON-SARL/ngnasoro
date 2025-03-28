@@ -1,7 +1,8 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction } from '@/types/transactions';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/services/transactionService';
+import { logAuditEvent } from '@/services/transactionService';
+import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 
 export interface TransactionParams {
   amount: number;
