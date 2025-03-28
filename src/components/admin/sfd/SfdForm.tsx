@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
 
 // Form schema validation
 const formSchema = z.object({
@@ -37,6 +38,7 @@ const formSchema = z.object({
   status: z.enum(['active', 'pending', 'suspended']),
   logo_url: z.string().optional(),
   subsidy_balance: z.number().optional(),
+  admin_id: z.string().optional(),
 });
 
 export type SfdFormValues = z.infer<typeof formSchema>;
@@ -50,6 +52,12 @@ interface SfdFormProps {
   isPending: boolean;
 }
 
+interface AdminUser {
+  id: string;
+  full_name: string;
+  email: string;
+}
+
 export function SfdForm({
   open,
   onOpenChange,
@@ -58,6 +66,9 @@ export function SfdForm({
   title,
   isPending,
 }: SfdFormProps) {
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [isLoadingAdmins, setIsLoadingAdmins] = useState(false);
+
   // Initialize the form
   const form = useForm<SfdFormValues>({
     resolver: zodResolver(formSchema),
@@ -68,8 +79,43 @@ export function SfdForm({
       status: (initialData?.status as 'active' | 'pending' | 'suspended') || 'active',
       logo_url: initialData?.logo_url || '',
       subsidy_balance: initialData?.subsidy_balance || 0,
+      admin_id: initialData?.admin_id || '',
     },
   });
+
+  // Fetch admin users
+  useEffect(() => {
+    if (open) {
+      const fetchAdmins = async () => {
+        setIsLoadingAdmins(true);
+        try {
+          const { data, error } = await supabase
+            .from('user_roles')
+            .select(`
+              user_id,
+              profiles:user_id(id, full_name, email)
+            `)
+            .eq('role', 'sfd_admin');
+            
+          if (error) throw error;
+          
+          const adminUsers = data.map(item => ({
+            id: item.profiles.id,
+            full_name: item.profiles.full_name,
+            email: item.profiles.email
+          }));
+          
+          setAdmins(adminUsers);
+        } catch (error) {
+          console.error('Error fetching admin users:', error);
+        } finally {
+          setIsLoadingAdmins(false);
+        }
+      };
+      
+      fetchAdmins();
+    }
+  }, [open]);
 
   // Handle form submission
   const handleSubmit = (values: SfdFormValues) => {
@@ -166,6 +212,35 @@ export function SfdForm({
                       onChange={(e) => field.onChange(Number(e.target.value))}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="admin_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Administrateur assigné</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un administrateur" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Non assigné</SelectItem>
+                      {admins.map((admin) => (
+                        <SelectItem key={admin.id} value={admin.id}>
+                          {admin.full_name || admin.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
