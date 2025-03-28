@@ -59,29 +59,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        // Set session first to avoid race conditions
         setSession(session);
 
         if (session?.user) {
-          // Check if user has admin role
           const isUserAdminValue = isUserAdmin(session);
           setIsAdmin(isUserAdminValue);
           
-          // Set user role
           const role = session.user.app_metadata?.role as UserRole || 'user';
           setUserRole(role);
           
           setBiometricEnabled(getBiometricStatus(session));
           setUser(createUserFromSupabaseUser(session.user));
 
-          // Set active SFD ID if available
           if (session.user.user_metadata.sfd_id) {
             setActiveSfdId(session.user.user_metadata.sfd_id as string);
           }
 
-          // Check if user is admin and if 2FA is required
           if (isUserAdminValue && !isTwoFactorVerified) {
-            // Check if admin has 2FA enabled
             const { data: adminData } = await supabase
               .from('admin_users')
               .select('has_2fa')
@@ -89,7 +83,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               .single();
 
             if (adminData?.has_2fa) {
-              // Fetch admin's 2FA secret
               const { data: twoFactorData } = await supabase
                 .from('user_2fa')
                 .select('secret_key')
@@ -119,7 +112,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     fetchSession();
 
-    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       
@@ -127,14 +119,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const isUserAdminValue = isUserAdmin(session);
         setIsAdmin(isUserAdminValue);
         
-        // Set user role
         const role = session.user.app_metadata?.role as UserRole || 'user';
         setUserRole(role);
         
         setBiometricEnabled(getBiometricStatus(session));
         setUser(createUserFromSupabaseUser(session.user));
 
-        // Set active SFD ID if available
         if (session.user.user_metadata.sfd_id) {
           setActiveSfdId(session.user.user_metadata.sfd_id as string);
         }
@@ -162,7 +152,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { error } = await supabase.auth.signInWithOtp({ 
           email,
           options: {
-            // This ensures we always get a fresh email
             emailRedirectTo: window.location.origin + '/auth'
           }
         });
@@ -170,7 +159,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Use password authentication by default
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
         password 
@@ -178,7 +166,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // Log successful login
       await logAuditEvent({
         user_id: data.user?.id,
         action: 'user_login',
@@ -187,7 +174,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         status: 'success'
       });
       
-      // Check if this user is an admin and requires 2FA
       const { data: adminData } = await supabase
         .from('admin_users')
         .select('has_2fa')
@@ -195,7 +181,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (adminData?.has_2fa) {
-        // Fetch admin's 2FA secret
         const { data: twoFactorData } = await supabase
           .from('user_2fa')
           .select('secret_key')
@@ -210,7 +195,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       console.error("Authentication error:", error.message);
       
-      // Log failed login attempt
       await logAuditEvent({
         action: 'user_login_failed',
         category: AuditLogCategory.AUTHENTICATION,
@@ -239,7 +223,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // Log signup
       await logAuditEvent({
         user_id: data.user?.id,
         action: 'user_signup',
@@ -259,7 +242,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: 'destructive'
       });
       
-      // Log failed signup
       await logAuditEvent({
         action: 'user_signup_failed',
         category: AuditLogCategory.AUTHENTICATION,
@@ -273,7 +255,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      // Log the user out action before actually signing out
       if (user) {
         await logAuditEvent({
           user_id: user.id,
@@ -284,17 +265,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       }
       
-      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
       setIsTwoFactorVerified(false);
+      
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: 'Déconnexion réussie',
+        description: 'Vous avez été déconnecté avec succès',
+      });
     } catch (error: any) {
       console.error('Error signing out:', error.message);
+      toast({
+        title: 'Erreur',
+        description: 'Un problème est survenu lors de la déconnexion',
+        variant: 'destructive'
+      });
     }
   };
 
   const verifyBiometricAuth = async (): Promise<boolean> => {
     try {
-      // In a real implementation, this would integrate with device biometrics
-      // For this demo, we're simulating successful verification
       console.log("Biometric authentication verified");
       return true;
     } catch (error) {
@@ -328,7 +322,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: 'Authentification à deux facteurs validée',
       });
     } else {
-      // If 2FA verification fails, sign the user out
       signOut();
       toast({
         title: 'Vérification échouée',
@@ -344,7 +337,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signOut,
     isLoading,
-    loading: isLoading, // Alias for backward compatibility
+    loading: isLoading,
     activeSfdId,
     setActiveSfdId,
     isAdmin,
@@ -358,13 +351,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={value}>
-      {/* 2FA Dialog */}
       <Dialog open={showTwoFactorDialog} onOpenChange={(open) => {
-        // Only allow closing if 2FA is verified or we're not signed in
         if (!open && (!session || isTwoFactorVerified)) {
           setShowTwoFactorDialog(false);
         } else if (!open && session && !isTwoFactorVerified) {
-          // If trying to close without verification, show a message and sign out
           toast({
             title: 'Vérification requise',
             description: 'L\'authentification à deux facteurs est requise pour les administrateurs',

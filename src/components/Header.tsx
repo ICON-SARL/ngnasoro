@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Menu, X, Shield, Building, User } from 'lucide-react';
 import { 
@@ -18,7 +18,7 @@ import MobileNavigation from './MobileNavigation';
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -36,23 +36,9 @@ const Header = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    navigate('/auth');
+    setMobileMenuOpen(false);
   };
-
-  // Déterminer le rôle de l'utilisateur
-  const getUserRole = () => {
-    if (!user) return null;
-    
-    if (user.app_metadata?.role === 'admin') {
-      return 'admin';
-    } else if (user.app_metadata?.role === 'sfd_admin') {
-      return 'sfd_admin';
-    } else {
-      return 'user';
-    }
-  };
-
-  const userRole = getUserRole();
 
   return (
     <header 
@@ -222,16 +208,32 @@ const Header = () => {
           <nav className="flex flex-col space-y-4">
             {(!user || userRole === 'user') && (
               <>
-                <Link to="/sfd-selector" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+                <Link 
+                  to="/sfd-selector" 
+                  className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   SFDs
                 </Link>
-                <Link to="/mobile-flow" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+                <Link 
+                  to="/mobile-flow" 
+                  className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   App Mobile
                 </Link>
-                <Link to="/loan-system" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+                <Link 
+                  to="/loan-system" 
+                  className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Microcrédits
                 </Link>
-                <Link to="/solvency-engine" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+                <Link 
+                  to="/solvency-engine" 
+                  className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Financement
                 </Link>
               </>
@@ -239,16 +241,32 @@ const Header = () => {
             
             {userRole === 'admin' && (
               <>
-                <Link to="/super-admin-dashboard" className="text-sm font-medium hover:text-amber-600 transition-colors px-2 py-1">
+                <Link 
+                  to="/super-admin-dashboard" 
+                  className="text-sm font-medium hover:text-amber-600 transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Tableau de bord
                 </Link>
-                <Link to="/credit-approval" className="text-sm font-medium hover:text-amber-600 transition-colors px-2 py-1">
+                <Link 
+                  to="/credit-approval" 
+                  className="text-sm font-medium hover:text-amber-600 transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Approbation de Crédit
                 </Link>
-                <Link to="/super-admin-dashboard?tab=sfds" className="text-sm font-medium hover:text-amber-600 transition-colors px-2 py-1">
+                <Link 
+                  to="/super-admin-dashboard?tab=sfds" 
+                  className="text-sm font-medium hover:text-amber-600 transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Gestion SFDs
                 </Link>
-                <Link to="/super-admin-dashboard?tab=reports" className="text-sm font-medium hover:text-amber-600 transition-colors px-2 py-1">
+                <Link 
+                  to="/super-admin-dashboard?tab=reports" 
+                  className="text-sm font-medium hover:text-amber-600 transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Rapports
                 </Link>
               </>
@@ -256,23 +274,52 @@ const Header = () => {
             
             {userRole === 'sfd_admin' && (
               <>
-                <Link to="/agency-dashboard" className="text-sm font-medium hover:text-blue-600 transition-colors px-2 py-1">
+                <Link 
+                  to="/agency-dashboard" 
+                  className="text-sm font-medium hover:text-blue-600 transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Tableau de bord
                 </Link>
-                <Link to="/clients" className="text-sm font-medium hover:text-blue-600 transition-colors px-2 py-1">
+                <Link 
+                  to="/clients" 
+                  className="text-sm font-medium hover:text-blue-600 transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Clients
                 </Link>
-                <Link to="/loans" className="text-sm font-medium hover:text-blue-600 transition-colors px-2 py-1">
+                <Link 
+                  to="/loans" 
+                  className="text-sm font-medium hover:text-blue-600 transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Crédits
                 </Link>
-                <Link to="/transactions" className="text-sm font-medium hover:text-blue-600 transition-colors px-2 py-1">
+                <Link 
+                  to="/transactions" 
+                  className="text-sm font-medium hover:text-blue-600 transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Transactions
                 </Link>
               </>
             )}
             
-            {!user && (
-              <Link to="/auth" className="text-sm font-medium bg-[#FFAB2E] text-white px-4 py-2 rounded-md hover:bg-[#FFAB2E]/90 transition-colors">
+            {user ? (
+              <Button 
+                variant="destructive" 
+                className="mt-2"
+                onClick={handleSignOut}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Déconnexion
+              </Button>
+            ) : (
+              <Link 
+                to="/auth" 
+                className="text-sm font-medium bg-[#FFAB2E] text-white px-4 py-2 rounded-md hover:bg-[#FFAB2E]/90 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 Connexion
               </Link>
             )}

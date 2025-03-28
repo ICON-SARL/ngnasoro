@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Sun, Moon, Database, Trash2, AlertTriangle } from 'lucide-react';
+import { Sun, Moon, Database, Trash2, AlertTriangle, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +25,9 @@ interface AdvancedSettingsSectionProps {
 
 const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   const handleThemeChange = (value: string) => {
     toast({
@@ -49,7 +52,24 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
       description: "Votre compte a été supprimé avec succès",
       variant: "destructive",
     });
-    onLogout();
+    handleLogout();
+  };
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await onLogout();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la déconnexion",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -92,9 +112,11 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
             <Button 
               variant="outline" 
               className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-              onClick={() => onLogout()}
+              onClick={handleLogout}
+              disabled={isLoggingOut}
             >
-              Se déconnecter
+              <LogOut className="mr-2 h-4 w-4" />
+              {isLoggingOut ? 'Déconnexion en cours...' : 'Se déconnecter'}
             </Button>
             
             <AlertDialog>
