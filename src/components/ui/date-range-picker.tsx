@@ -23,7 +23,7 @@ import {
 
 interface DatePickerWithRangeProps {
   date: DateRange | undefined;
-  setDate: (date: DateRange) => void;
+  setDate: (date: DateRange | undefined) => void;
   className?: string;
 }
 
@@ -37,7 +37,7 @@ export function DatePickerWithRange({
   // Quick select options
   const handleQuickSelect = (option: string) => {
     const today = new Date();
-    let newRange: DateRange;
+    let newRange: DateRange | undefined;
 
     switch (option) {
       case "today":
@@ -135,5 +135,5 @@ export function DatePickerWithRange({
   );
 }
 
-// Add DateRangePicker export that references DatePickerWithRange
+// Explicitly export DateRangePicker as an alias for DatePickerWithRange
 export const DateRangePicker = DatePickerWithRange;
