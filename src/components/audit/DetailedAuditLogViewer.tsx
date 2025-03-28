@@ -1,533 +1,395 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { DateRange } from 'react-day-picker';
+import { Card, CardContent } from '@/components/ui/card';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
 import {
-  Select,
+  AuditLogCategory,
+  AuditLogSeverity,
+  getAuditLogs,
+  exportAuditLogsToCSV
+} from '@/utils/audit';
+import { useAuth } from '@/hooks/auth';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { DatePickerWithRange } from '@/components/ui/date-range-picker';
+import { Input } from '@/components/ui/input';
+import { 
+  Select, 
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { DatePickerWithRange } from '@/components/ui/date-range-picker';
-import { DateRange } from 'react-day-picker';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { 
   AlertCircle, 
-  CalendarIcon, 
-  ChevronRight, 
-  ChevronLeft, 
-  Clock, 
+  AlertTriangle, 
+  Info, 
   Download, 
-  Filter, 
-  Search, 
-  Activity 
+  FileText,
+  Search,
+  Filter,
+  User
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
+import { useToast } from '@/hooks/use-toast';
 
-interface AuditLogEntry {
+interface AuditLog {
   id: string;
   created_at: string;
-  user_id: string | null;
+  user_id: string;
   action: string;
-  category: string;
-  severity: string;
+  category: AuditLogCategory;
+  severity: AuditLogSeverity;
   status: string;
-  details: any;
-  error_message: string | null;
-  target_resource: string | null;
-  ip_address: string | null;
-  device_info: string | null;
+  target_resource?: string;
+  error_message?: string;
+  details?: Record<string, any>;
 }
 
-const DetailedAuditLogViewer = () => {
-  // State for filters
-  const [filters, setFilters] = useState({
-    category: '',
-    severity: '',
-    status: '',
-    searchTerm: '',
-    dateRange: {
-      from: undefined,
-      to: undefined
-    }
-  });
-  
-  // State for logs and pagination
-  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+const DetailedAuditLogViewer: React.FC = () => {
+  const [logs, setLogs] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [totalLogs, setTotalLogs] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null);
-  const logsPerPage = 10;
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [severityFilter, setSeverityFilter] = useState<string>('all');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(new Date().setDate(new Date().getDate() - 7)),
+    to: new Date()
+  });
+  const [isExporting, setIsExporting] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Categories for filtering
-  const categories = Object.values(AuditLogCategory);
-  const severities = Object.values(AuditLogSeverity);
-  const statuses = ['success', 'failure', 'pending'];
+  useEffect(() => {
+    fetchLogs();
+  }, [dateRange, categoryFilter, severityFilter, user]);
 
-  // Load logs from Supabase
   const fetchLogs = async () => {
-    setIsLoading(true);
+    if (!user) return;
     
     try {
-      // Build the query with filters
-      let query = supabase
-        .from('audit_logs')
-        .select('*', { count: 'exact' });
+      setIsLoading(true);
+
+      // Prepare filter options
+      const filterOptions: any = {
+        limit: 100
+      };
       
-      // Apply filters
-      if (filters.category) {
-        query = query.eq('category', filters.category);
+      // Add category filter
+      if (categoryFilter !== 'all') {
+        filterOptions.category = categoryFilter as AuditLogCategory;
       }
       
-      if (filters.severity) {
-        query = query.eq('severity', filters.severity);
+      // Add severity filter
+      if (severityFilter !== 'all') {
+        filterOptions.severity = severityFilter as AuditLogSeverity;
       }
       
-      if (filters.status) {
-        query = query.eq('status', filters.status);
+      // Add date range filter
+      if (dateRange?.from) {
+        filterOptions.startDate = dateRange.from;
+      }
+      if (dateRange?.to) {
+        // Set to end of day
+        const endDate = new Date(dateRange.to);
+        endDate.setHours(23, 59, 59, 999);
+        filterOptions.endDate = endDate;
       }
       
-      if (filters.searchTerm) {
-        query = query.or(`action.ilike.%${filters.searchTerm}%,target_resource.ilike.%${filters.searchTerm}%,error_message.ilike.%${filters.searchTerm}%`);
+      const { logs: fetchedLogs } = await getAuditLogs(filterOptions);
+      
+      // Apply search filter in memory (since it's a text search across multiple fields)
+      let filteredLogs = fetchedLogs as AuditLog[];
+      
+      if (searchTerm) {
+        filteredLogs = filteredLogs.filter(log => 
+          log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (log.error_message && log.error_message.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (log.target_resource && log.target_resource.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
       }
       
-      // Apply date range filter
-      if (filters.dateRange.from) {
-        const fromDate = new Date(filters.dateRange.from);
-        fromDate.setHours(0, 0, 0, 0);
-        query = query.gte('created_at', fromDate.toISOString());
-      }
+      setLogs(filteredLogs);
       
-      if (filters.dateRange.to) {
-        const toDate = new Date(filters.dateRange.to);
-        toDate.setHours(23, 59, 59, 999);
-        query = query.lte('created_at', toDate.toISOString());
-      }
-      
-      // Add pagination
-      const from = (currentPage - 1) * logsPerPage;
-      const to = from + logsPerPage - 1;
-      
-      // Execute the query with pagination
-      const { data, error, count } = await query
-        .order('created_at', { ascending: false })
-        .range(from, to);
-      
-      if (error) {
-        throw error;
-      }
-      
-      setLogs(data || []);
-      setTotalLogs(count || 0);
     } catch (error) {
       console.error('Error fetching audit logs:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de charger les journaux d\'audit.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fetch logs when filters or pagination changes
-  useEffect(() => {
-    fetchLogs();
-  }, [filters, currentPage]);
-
-  // Reset pagination when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters]);
-
-  // Format the date for display
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'dd MMM yyyy HH:mm:ss', { locale: fr });
-  };
-
-  // Get severity badge class
-  const getSeverityBadge = (severity: string) => {
-    switch (severity) {
-      case 'INFO':
-        return 'bg-blue-100 text-blue-800';
-      case 'WARNING':
-        return 'bg-amber-100 text-amber-800';
-      case 'ERROR':
-        return 'bg-red-100 text-red-800';
-      case 'CRITICAL':
-        return 'bg-red-200 text-red-900';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-  
-  // Get status badge class
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'success':
-        return 'bg-green-100 text-green-800';
-      case 'failure':
-        return 'bg-red-100 text-red-800';
-      case 'pending':
-        return 'bg-amber-100 text-amber-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-  
-  // Pagination controls
-  const totalPages = Math.ceil(totalLogs / logsPerPage);
-  
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-  
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  // Export logs as CSV
-  const exportLogs = () => {
-    // Implementation for exporting logs
-    alert('Export functionality would be implemented here');
-  };
-
-  // View log details
-  const viewLogDetails = (log: AuditLogEntry) => {
-    setSelectedLog(log);
-  };
-
-  // Handle date range change with proper type handling
-  const handleDateRangeChange = (range: DateRange | undefined) => {
-    setFilters(prev => ({
-      ...prev,
-      dateRange: {
-        from: range?.from,
-        to: range?.to
+  const handleExportCSV = async () => {
+    try {
+      setIsExporting(true);
+      
+      // Prepare filter options for export (same as current view)
+      const filterOptions: any = {};
+      
+      if (categoryFilter !== 'all') {
+        filterOptions.category = categoryFilter as AuditLogCategory;
       }
-    }));
+      
+      if (severityFilter !== 'all') {
+        filterOptions.severity = severityFilter as AuditLogSeverity;
+      }
+      
+      if (dateRange?.from) {
+        filterOptions.startDate = dateRange.from;
+      }
+      if (dateRange?.to) {
+        const endDate = new Date(dateRange.to);
+        endDate.setHours(23, 59, 59, 999);
+        filterOptions.endDate = endDate;
+      }
+      
+      const result = await exportAuditLogsToCSV(filterOptions);
+      
+      if (result.success) {
+        // Create a download link
+        const blob = new Blob([result.csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', result.filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+          title: 'Export réussi',
+          description: 'Les journaux d\'audit ont été exportés avec succès.',
+        });
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error('Error exporting logs:', error);
+      toast({
+        title: 'Erreur d\'exportation',
+        description: 'Impossible d\'exporter les journaux d\'audit.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const getSeverityBadge = (severity: AuditLogSeverity) => {
+    switch (severity) {
+      case AuditLogSeverity.CRITICAL:
+        return <Badge className="bg-red-100 text-red-800">Critique</Badge>;
+      case AuditLogSeverity.ERROR:
+        return <Badge className="bg-red-100 text-red-800">Erreur</Badge>;
+      case AuditLogSeverity.WARNING:
+        return <Badge className="bg-yellow-100 text-yellow-800">Avertissement</Badge>;
+      case AuditLogSeverity.INFO:
+      default:
+        return <Badge className="bg-blue-100 text-blue-800">Info</Badge>;
+    }
+  };
+
+  const getSeverityIcon = (severity: AuditLogSeverity) => {
+    switch (severity) {
+      case AuditLogSeverity.CRITICAL:
+      case AuditLogSeverity.ERROR:
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
+      case AuditLogSeverity.WARNING:
+        return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
+      case AuditLogSeverity.INFO:
+      default:
+        return <Info className="h-4 w-4 text-blue-600" />;
+    }
+  };
+
+  const getCategoryLabel = (category: AuditLogCategory) => {
+    switch (category) {
+      case AuditLogCategory.AUTHENTICATION:
+        return 'Authentification';
+      case AuditLogCategory.DATA_ACCESS:
+        return 'Accès aux données';
+      case AuditLogCategory.ADMIN_ACTION:
+        return 'Action administrateur';
+      case AuditLogCategory.SFD_OPERATIONS:
+        return 'Opérations SFD';
+      case AuditLogCategory.SUBSIDY_OPERATIONS:
+        return 'Opérations de subvention';
+      case AuditLogCategory.USER_MANAGEMENT:
+        return 'Gestion utilisateur';
+      case AuditLogCategory.SYSTEM:
+        return 'Système';
+      default:
+        return category;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), 'dd/MM/yyyy HH:mm:ss', { locale: fr });
   };
 
   return (
-    <div className="space-y-4">
-      {/* Filters Section */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center">
-            <Filter className="h-5 w-5 mr-2" />
-            Filtres
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Catégorie</label>
-              <Select 
-                value={filters.category} 
-                onValueChange={(value) => setFilters({...filters, category: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Toutes les catégories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Toutes les catégories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+    <div className="space-y-6">
+      <div className="bg-white p-4 rounded-lg shadow-sm border">
+        <div className="grid gap-4 md:grid-cols-4">
+          <div className="md:col-span-1">
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Période</div>
+              <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-full" />
             </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-1 block">Sévérité</label>
-              <Select 
-                value={filters.severity} 
-                onValueChange={(value) => setFilters({...filters, severity: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Toutes les sévérités" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Toutes les sévérités</SelectItem>
-                  {severities.map((severity) => (
-                    <SelectItem key={severity} value={severity}>{severity}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-1 block">Statut</label>
-              <Select 
-                value={filters.status} 
-                onValueChange={(value) => setFilters({...filters, status: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Tous les statuts" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Tous les statuts</SelectItem>
-                  {statuses.map((status) => (
-                    <SelectItem key={status} value={status}>{status}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-1 block">Période</label>
-              <DatePickerWithRange
-                date={filters.dateRange}
-                setDate={handleDateRangeChange}
-                className="w-full"
-              />
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-1 block">Recherche</label>
-              <div className="relative">
+          </div>
+          
+          <div className="space-y-2 md:col-span-3">
+            <div className="flex flex-col md:flex-row md:items-center gap-2">
+              <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
                   type="text"
-                  placeholder="Rechercher..."
+                  placeholder="Rechercher par action, ressource ou message d'erreur..."
                   className="pl-8"
-                  value={filters.searchTerm}
-                  onChange={(e) => setFilters({...filters, searchTerm: e.target.value})}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && fetchLogs()}
                 />
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Results Section */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center">
-              <Activity className="h-5 w-5 mr-2" />
-              Journal d'Audit
-            </CardTitle>
-            <Button variant="outline" size="sm" onClick={exportLogs}>
-              <Download className="h-4 w-4 mr-2" />
-              Exporter
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <div className="relative overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b">
-                    <th className="px-4 py-3 text-left">Date et Heure</th>
-                    <th className="px-4 py-3 text-left">Action</th>
-                    <th className="px-4 py-3 text-left">Catégorie</th>
-                    <th className="px-4 py-3 text-left">Sévérité</th>
-                    <th className="px-4 py-3 text-left">Statut</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {isLoading ? (
-                    Array.from({ length: 5 }).map((_, index) => (
-                      <tr key={index}>
-                        <td className="px-4 py-3"><Skeleton className="h-5 w-32" /></td>
-                        <td className="px-4 py-3"><Skeleton className="h-5 w-40" /></td>
-                        <td className="px-4 py-3"><Skeleton className="h-5 w-24" /></td>
-                        <td className="px-4 py-3"><Skeleton className="h-5 w-20" /></td>
-                        <td className="px-4 py-3"><Skeleton className="h-5 w-16" /></td>
-                        <td className="px-4 py-3 text-right"><Skeleton className="h-5 w-12 ml-auto" /></td>
-                      </tr>
-                    ))
-                  ) : logs.length > 0 ? (
-                    logs.map((log) => (
-                      <tr key={log.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 flex items-center">
-                          <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                          {formatDate(log.created_at)}
-                        </td>
-                        <td className="px-4 py-3">{log.action}</td>
-                        <td className="px-4 py-3">
-                          <Badge variant="outline">{log.category}</Badge>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge className={getSeverityBadge(log.severity)}>
-                            {log.severity}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge className={getStatusBadge(log.status)}>
-                            {log.status}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => viewLogDetails(log)}
-                          >
-                            Détails
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-12 text-center">
-                        <div className="flex flex-col items-center">
-                          <AlertCircle className="h-8 w-8 text-gray-400 mb-2" />
-                          <p className="text-gray-500">Aucun log d'audit ne correspond à vos critères</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Pagination */}
-            {logs.length > 0 && (
-              <div className="px-4 py-2 border-t flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">
-                    Affichage {Math.min((currentPage - 1) * logsPerPage + 1, totalLogs)} - {Math.min(currentPage * logsPerPage, totalLogs)} sur {totalLogs} entrées
-                  </p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button 
-                    variant="ghost"
-                    size="sm"
-                    onClick={goToPreviousPage}
-                    disabled={currentPage <= 1}
-                    aria-disabled={currentPage <= 1}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Précédent
-                  </Button>
-                  <Button 
-                    variant="ghost"
-                    size="sm" 
-                    onClick={goToNextPage}
-                    disabled={currentPage >= totalPages}
-                    aria-disabled={currentPage >= totalPages}
-                  >
-                    Suivant
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Log Details Modal would go here */}
-      {selectedLog && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Détails du Log #{selectedLog.id.slice(0, 8)}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[600px] rounded-md border p-4">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-medium mb-2">Informations Générales</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Date et Heure</p>
-                      <p className="font-medium">{formatDate(selectedLog.created_at)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">ID Utilisateur</p>
-                      <p className="font-medium">{selectedLog.user_id || 'Non spécifié'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Action</p>
-                      <p className="font-medium">{selectedLog.action}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Ressource Cible</p>
-                      <p className="font-medium">{selectedLog.target_resource || 'Non spécifié'}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium mb-2">Métadonnées</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Catégorie</p>
-                      <Badge variant="outline">{selectedLog.category}</Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Sévérité</p>
-                      <Badge className={getSeverityBadge(selectedLog.severity)}>
-                        {selectedLog.severity}
-                      </Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Statut</p>
-                      <Badge className={getStatusBadge(selectedLog.status)}>
-                        {selectedLog.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-                
-                {selectedLog.error_message && (
-                  <div>
-                    <h3 className="text-sm font-medium mb-2">Message d'Erreur</h3>
-                    <div className="bg-red-50 border border-red-200 rounded-md p-3 text-red-800">
-                      {selectedLog.error_message}
-                    </div>
-                  </div>
-                )}
-                
-                <div>
-                  <h3 className="text-sm font-medium mb-2">Détails Supplémentaires</h3>
-                  <pre className="bg-gray-50 rounded-md p-3 overflow-x-auto text-sm">
-                    {JSON.stringify(selectedLog.details, null, 2)}
-                  </pre>
-                </div>
-                
-                {(selectedLog.ip_address || selectedLog.device_info) && (
-                  <div>
-                    <h3 className="text-sm font-medium mb-2">Informations Techniques</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {selectedLog.ip_address && (
-                        <div>
-                          <p className="text-sm text-gray-500">Adresse IP</p>
-                          <p className="font-medium">{selectedLog.ip_address}</p>
-                        </div>
-                      )}
-                      {selectedLog.device_info && (
-                        <div>
-                          <p className="text-sm text-gray-500">Informations de l'Appareil</p>
-                          <p className="font-medium">{selectedLog.device_info}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-            <div className="flex justify-end mt-4">
-              <Button onClick={() => setSelectedLog(null)}>
-                Fermer
+              
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtrer par catégorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les catégories</SelectItem>
+                  <SelectItem value={AuditLogCategory.AUTHENTICATION}>Authentification</SelectItem>
+                  <SelectItem value={AuditLogCategory.DATA_ACCESS}>Accès aux données</SelectItem>
+                  <SelectItem value={AuditLogCategory.ADMIN_ACTION}>Action administrateur</SelectItem>
+                  <SelectItem value={AuditLogCategory.SFD_OPERATIONS}>Opérations SFD</SelectItem>
+                  <SelectItem value={AuditLogCategory.SUBSIDY_OPERATIONS}>Opérations de subvention</SelectItem>
+                  <SelectItem value={AuditLogCategory.USER_MANAGEMENT}>Gestion utilisateur</SelectItem>
+                  <SelectItem value={AuditLogCategory.SYSTEM}>Système</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={severityFilter} onValueChange={setSeverityFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtrer par sévérité" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les sévérités</SelectItem>
+                  <SelectItem value={AuditLogSeverity.INFO}>Info</SelectItem>
+                  <SelectItem value={AuditLogSeverity.WARNING}>Avertissement</SelectItem>
+                  <SelectItem value={AuditLogSeverity.ERROR}>Erreur</SelectItem>
+                  <SelectItem value={AuditLogSeverity.CRITICAL}>Critique</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button variant="outline" onClick={fetchLogs}>
+                <Filter className="h-4 w-4 mr-2" />
+                Filtrer
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleExportCSV} 
+                disabled={isExporting || logs.length === 0}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Exporter CSV
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </div>
+      </div>
+      
+      <Card>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="p-4 space-y-4">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="flex space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <FileText className="h-12 w-12 text-gray-300 mb-3" />
+              <h3 className="text-lg font-medium text-gray-900">Aucun log trouvé</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Aucun enregistrement d'audit ne correspond à vos critères de recherche.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead></TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Utilisateur</TableHead>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Catégorie</TableHead>
+                    <TableHead>Sévérité</TableHead>
+                    <TableHead>Ressource</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead>Message d'erreur</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {logs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell>{getSeverityIcon(log.severity)}</TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDate(log.created_at)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <User className="h-3.5 w-3.5 mr-1 text-gray-400" />
+                          <span className="text-xs">{log.user_id.substring(0, 8)}...</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{log.action}</TableCell>
+                      <TableCell>{getCategoryLabel(log.category)}</TableCell>
+                      <TableCell>{getSeverityBadge(log.severity)}</TableCell>
+                      <TableCell>{log.target_resource || '-'}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          className={log.status === 'success' 
+                            ? 'bg-green-100 text-green-800' 
+                            : log.status === 'failure' 
+                            ? 'bg-red-100 text-red-800' 
+                            : 'bg-blue-100 text-blue-800'
+                          }
+                        >
+                          {log.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {log.error_message || '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

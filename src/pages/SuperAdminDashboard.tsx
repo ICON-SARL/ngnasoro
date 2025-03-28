@@ -13,12 +13,15 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { ReportGenerator } from '@/components/ReportGenerator';
 import { DataExport } from '@/components/DataExport';
 import { Button } from '@/components/ui/button';
-import { FileText, CreditCard, Building, Users } from 'lucide-react';
+import { FileText, CreditCard, Building, Users, Shield } from 'lucide-react';
 import { AdminManagement } from '@/components/admin/AdminManagement';
 import { SubsidyRequestManagement } from '@/components/admin/subsidy';
 import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommunication';
 import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
 import { IntegratedDashboard } from '@/components/admin/shared/IntegratedDashboard';
+import AuditLogsSummary from '@/components/audit/AuditLogsSummary';
+import { PermissionGuard } from '@/components/PermissionGuard';
+import { Permission } from '@/utils/audit/auditPermissions';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
@@ -83,18 +86,34 @@ const SuperAdminDashboard = () => {
             Gestion Administrateurs
           </Button>
           
+          <Button 
+            variant="outline" 
+            className="flex items-center bg-white"
+            onClick={() => navigate('/audit-logs')}
+          >
+            <Shield className="h-4 w-4 mr-2 text-[#0D6A51]" />
+            Journal d'Audit
+          </Button>
+          
           <MerefSfdCommunication />
         </div>
         
         {/* Dashboard Widgets */}
         {activeTab === 'dashboard' && (
           <>
-            <DashboardWidgets 
-              stats={stats} 
-              isLoading={isLoadingStats} 
-              subsidies={subsidies} 
-              isLoadingSubsidies={isLoadingSubsidies} 
-            />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="md:col-span-2">
+                <DashboardWidgets 
+                  stats={stats} 
+                  isLoading={isLoadingStats} 
+                  subsidies={subsidies} 
+                  isLoadingSubsidies={isLoadingSubsidies} 
+                />
+              </div>
+              <div>
+                <AuditLogsSummary />
+              </div>
+            </div>
             <div className="mt-6">
               <IntegratedDashboard />
             </div>

@@ -1,42 +1,25 @@
 
-import { Session } from '@supabase/supabase-js';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import { Permission, Role } from '@/utils/audit/auditPermissions';
 
-export interface User {
-  id: string;
-  email: string;
+export interface User extends SupabaseUser {
   full_name?: string;
+  role?: Role;
+  permissions?: Permission[];
   avatar_url?: string;
-  sfd_id?: string;
-  user_metadata: {
-    full_name?: string;
-    avatar_url?: string;
-    sfd_id?: string;
-    phone?: string;
-    biometric_enabled?: boolean;
-    [key: string]: any;
-  };
-  app_metadata: {
-    role?: string;
-    provider?: string;
-    [key: string]: any;
-  };
-  phone?: string;
-  aud: string;
-  created_at: string;
 }
 
 export interface AuthContextProps {
   session: Session | null;
   user: User | null;
-  signIn: (email: string, password: string, useOtp?: boolean) => Promise<void>;
-  signOut: () => Promise<void>;
   isLoading: boolean;
-  loading: boolean; // Alias for isLoading for backward compatibility
-  activeSfdId: string | null;
-  setActiveSfdId: (id: string) => void;
-  isAdmin: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<void>;
-  verifyBiometricAuth: () => Promise<boolean>;
-  biometricEnabled: boolean;
-  toggleBiometricAuth: (enabled: boolean) => Promise<void>;
+  error: Error | null;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: Error }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ success: boolean; error?: Error }>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error?: Error }>;
+  updatePassword: (password: string) => Promise<{ success: boolean; error?: Error }>;
+  updateProfile: (profile: Partial<User>) => Promise<{ success: boolean; error?: Error }>;
+  hasPermission: (permission: Permission) => Promise<boolean>;
+  hasRole: (role: Role) => Promise<boolean>;
 }
