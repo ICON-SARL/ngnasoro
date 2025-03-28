@@ -1,4 +1,6 @@
 
-export { useAuth } from './useAuth';
-export { default as AuthProvider } from './AuthProvider';
-export type { User, AuthContextProps } from './types';
+export * from './useAuth';
+export * from './AuthProvider';
+export * from './types';
+export * from './authUtils';
+export * from './useRoleRedirect';

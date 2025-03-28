@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Session, User, UserResponse, AuthError } from '@supabase/supabase-js';
+import { Session, User, AuthError } from '@supabase/supabase-js';
 import { Permission, UserRole } from './types';
 
 // Define default permissions for each role
@@ -145,7 +145,7 @@ export function useAuthProvider() {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error }: UserResponse = await supabase.auth.signInWithPassword({ 
+      const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
         password 
       });
