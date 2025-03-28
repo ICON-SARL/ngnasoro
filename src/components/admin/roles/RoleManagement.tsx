@@ -25,6 +25,7 @@ import {
   Loader2 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { UserRole } from '@/hooks/auth/types';
 
 interface UserWithRole {
   id: string;
@@ -41,7 +42,7 @@ export function RoleManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [email, setEmail] = useState('');
-  const [selectedRole, setSelectedRole] = useState<string>('user');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('user');
   const [assigningRole, setAssigningRole] = useState(false);
 
   useEffect(() => {
@@ -82,37 +83,72 @@ export function RoleManagement() {
 
     setAssigningRole(true);
     try {
-      // First check if user exists
+      // Find user by email
       const { data: userData, error: userError } = await supabase
-        .auth.admin.getUserByEmail(email);
+        .from('admin_users')
+        .select('id')
+        .eq('email', email)
+        .single();
 
-      if (userError || !userData?.user) {
-        throw new Error('Utilisateur non trouvé');
+      if (userError) {
+        // User not found in admin_users table, look in auth.users (administrators only)
+        const { data: authUsersData, error: authError } = await supabase.auth.admin.listUsers({
+          page: 1,
+          perPage: 1,
+          filter: {
+            email: email
+          }
+        });
+
+        if (authError || !authUsersData?.users?.length) {
+          throw new Error('Utilisateur non trouvé');
+        }
+
+        const authUser = authUsersData.users[0];
+
+        // Update user's role in app_metadata
+        const { error: updateError } = await supabase
+          .auth.admin.updateUserById(authUser.id, {
+            app_metadata: { role: selectedRole }
+          });
+
+        if (updateError) throw updateError;
+
+        // Create or update record in admin_users table
+        const { error: adminError } = await supabase
+          .from('admin_users')
+          .upsert({
+            id: authUser.id,
+            email: authUser.email,
+            full_name: authUser.user_metadata.full_name || email.split('@')[0],
+            role: selectedRole
+          });
+
+        if (adminError) throw adminError;
+      } else {
+        // User found in admin_users, update their role
+        const userId = userData.id;
+
+        // Update user's role in app_metadata
+        const { error: updateError } = await supabase
+          .auth.admin.updateUserById(userId, {
+            app_metadata: { role: selectedRole }
+          });
+
+        if (updateError) throw updateError;
+
+        // Update record in admin_users table
+        const { error: adminError } = await supabase
+          .from('admin_users')
+          .update({ role: selectedRole })
+          .eq('id', userId);
+
+        if (adminError) throw adminError;
       }
 
-      // Update user's role in app_metadata
-      const { error: updateError } = await supabase
-        .auth.admin.updateUserById(userData.user.id, {
-          app_metadata: { role: selectedRole }
-        });
-
-      if (updateError) throw updateError;
-
-      // Create or update record in admin_users table
-      const { error: adminError } = await supabase
-        .from('admin_users')
-        .upsert({
-          id: userData.user.id,
-          email: userData.user.email,
-          full_name: userData.user.user_metadata.full_name || email.split('@')[0],
-          role: selectedRole
-        });
-
-      if (adminError) throw adminError;
-
-      // Call the assign_role function
+      // Call the assign_role function for both cases
       const { error: roleError } = await supabase.rpc('assign_role', {
-        user_id: userData.user.id,
+        user_id: userData?.id || authUsersData?.users[0].id,
         role: selectedRole
       });
 
