@@ -50,21 +50,23 @@ export async function assignRoleToUser(email: string, selectedRole: UserRole): P
       .single();
 
     let userId: string;
-    let authUser: any;
+    let authUser: any = null;
 
     if (userError) {
       // User not found in admin_users table, look in auth.users (administrators only)
-      const { data, error: authError } = await supabase.auth.admin.listUsers({
+      const { data: authData, error: authError } = await supabase.auth.admin.listUsers({
         page: 1,
-        perPage: 1
+        perPage: 1000 // Fetch a reasonable number of users
       });
 
-      if (authError || !data.users) {
+      if (authError || !authData?.users?.length) {
         throw new Error('Impossible de récupérer la liste des utilisateurs');
       }
 
-      // Find user with matching email
-      authUser = data.users.find(u => u.email === email);
+      // Find user with matching email - fix the type issue by properly checking the data structure
+      if (authData.users && Array.isArray(authData.users)) {
+        authUser = authData.users.find(u => u && typeof u === 'object' && 'email' in u && u.email === email);
+      }
       
       if (!authUser) {
         throw new Error('Utilisateur non trouvé');
