@@ -1,7 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction } from '@/types/transactions';
 import { CreateTransactionOptions, TransactionFilters } from './types';
+import { AuditLogSeverity, AuditLogCategory, AuditLogEntry } from '@/utils/audit';
 
 export const transactionService = {
   // Récupérer les transactions d'un utilisateur
