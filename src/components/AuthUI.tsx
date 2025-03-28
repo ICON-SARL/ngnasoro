@@ -7,9 +7,11 @@ import LoginForm from './auth/LoginForm';
 import RegisterForm from './auth/RegisterForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
+  const [authMode, setAuthMode] = useState<'default' | 'admin'>('default');
   const { user, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,7 +32,14 @@ const AuthUI = () => {
   
   useEffect(() => {
     if (user && session) {
-      navigate('/mobile-flow');
+      // Redirection basée sur le rôle de l'utilisateur
+      if (user.app_metadata?.role === 'admin') {
+        navigate('/super-admin-dashboard');
+      } else if (user.app_metadata?.role === 'sfd_admin') {
+        navigate('/agency-dashboard');
+      } else {
+        navigate('/mobile-flow');
+      }
     }
   }, [user, session, navigate]);
 
@@ -41,7 +50,12 @@ const AuthUI = () => {
     } else {
       setActiveTab('login');
     }
-  }, [location.pathname]);
+    
+    // Détection du mode admin par l'URL
+    if (location.search.includes('admin=true')) {
+      setAuthMode('admin');
+    }
+  }, [location.pathname, location.search]);
 
   if (authSuccess) {
     return (
@@ -67,22 +81,43 @@ const AuthUI = () => {
         <Logo />
         
         <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-          {activeTab === 'login' ? (
-            <LoginForm />
-          ) : (
-            <RegisterForm />
+          {authMode === 'admin' && (
+            <div className="p-4 bg-amber-50 border-b border-amber-100">
+              <h2 className="text-amber-800 font-medium text-center">
+                Connexion Administration
+              </h2>
+            </div>
           )}
           
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full grid grid-cols-2">
+              <TabsTrigger value="login">Connexion</TabsTrigger>
+              <TabsTrigger value="register">Inscription</TabsTrigger>
+            </TabsList>
+            <TabsContent value="login">
+              <LoginForm adminMode={authMode === 'admin'} />
+            </TabsContent>
+            <TabsContent value="register">
+              <RegisterForm />
+            </TabsContent>
+          </Tabs>
+          
           <div className="mt-4 text-center pb-6">
-            <button 
-              onClick={() => {
-                setActiveTab(activeTab === 'login' ? 'register' : 'login');
-                navigate(activeTab === 'login' ? '/register' : '/login');
-              }}
-              className="text-[#0D6A51] hover:underline font-medium"
-            >
-              {activeTab === 'login' ? "Créer un compte" : "Déjà inscrit ? Se connecter"}
-            </button>
+            {authMode === 'default' ? (
+              <a 
+                href="/auth?admin=true"
+                className="text-[#0D6A51] hover:underline font-medium"
+              >
+                Accès Administrateur
+              </a>
+            ) : (
+              <a 
+                href="/auth"
+                className="text-[#0D6A51] hover:underline font-medium"
+              >
+                Connexion Utilisateur Standard
+              </a>
+            )}
           </div>
         </div>
       </div>

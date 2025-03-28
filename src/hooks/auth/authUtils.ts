@@ -19,7 +19,12 @@ export const createUserFromSupabaseUser = (supabaseUser: SupabaseUser): User => 
 
 export const isUserAdmin = (session: Session | null): boolean => {
   if (!session?.user) return false;
-  return session.user.app_metadata?.role === 'admin';
+  return session.user.app_metadata?.role === 'admin' || session.user.app_metadata?.role === 'sfd_admin';
+};
+
+export const getRoleFromSession = (session: Session | null): string | null => {
+  if (!session?.user) return null;
+  return session.user.app_metadata?.role || null;
 };
 
 export const getBiometricStatus = (session: Session | null): boolean => {

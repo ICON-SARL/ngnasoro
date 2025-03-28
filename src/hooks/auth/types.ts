@@ -15,11 +15,12 @@ export interface User {
     biometric_enabled?: boolean;
     [key: string]: any;
   };
-  phone?: string;
   app_metadata: {
     role?: string;
+    provider?: string;
     [key: string]: any;
   };
+  phone?: string;
   aud: string;
   created_at: string;
 }

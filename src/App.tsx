@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import AuthProvider from './hooks/auth/AuthProvider';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import MobileFlowPage from './pages/MobileFlowPage';
 import ProtectedRoute from './components/routes/ProtectedRoute';
 import FundsManagementPage from './components/mobile/funds-management/FundsManagementPage';
@@ -27,15 +28,15 @@ function App() {
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<LoginPage />} />
           <Route path="/login" element={<Navigate to="/auth" replace />} />
-          <Route path="/register" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           
-          {/* Agency Dashboard Route */}
+          {/* Agency Dashboard Route - Nécessite un rôle SFD Admin */}
           <Route 
             path="/agency-dashboard"
-            element={<ProtectedRoute component={AgencyDashboard} />}
+            element={<ProtectedRoute component={AgencyDashboard} requireSfdAdmin={true} />}
           />
           
-          {/* Mobile Flow Routes */}
+          {/* Mobile Flow Routes - Pour les utilisateurs standard */}
           <Route 
             path="/mobile-flow"
             element={<ProtectedRoute component={MobileFlowPage} />}
@@ -86,31 +87,31 @@ function App() {
             element={<ProtectedRoute component={LoanProcessPage} />}
           />
           
-          {/* SFD Admin Routes */}
+          {/* SFD Admin Routes - Nécessite un rôle SFD Admin */}
           <Route 
             path="/sfd-admin"
-            element={<ProtectedRoute component={ClientsPage} />}
+            element={<ProtectedRoute component={ClientsPage} requireSfdAdmin={true} />}
           />
           
           <Route 
             path="/sfd-dashboard"
-            element={<ProtectedRoute component={LoansPage} />}
+            element={<ProtectedRoute component={LoansPage} requireSfdAdmin={true} />}
           />
           
-          {/* Admin Routes */}
+          {/* Super Admin Routes - Nécessite un rôle Admin */}
           <Route 
             path="/super-admin-dashboard"
-            element={<ProtectedRoute component={SuperAdminDashboard} />}
+            element={<ProtectedRoute component={SuperAdminDashboard} requireAdmin={true} />}
           />
           
           <Route 
             path="/clients"
-            element={<ProtectedRoute component={ClientsPage} />}
+            element={<ProtectedRoute component={ClientsPage} requireSfdAdmin={true} />}
           />
           
           <Route 
             path="/loans"
-            element={<ProtectedRoute component={LoansPage} />}
+            element={<ProtectedRoute component={LoansPage} requireSfdAdmin={true} />}
           />
           
           <Route 
@@ -124,8 +125,11 @@ function App() {
             element={<ProtectedRoute component={MobileFlowPage} />}
           />
           
-          {/* Credit Approval Route */}
-          <Route path="/credit-approval" element={<CreditApprovalPage />} />
+          {/* Credit Approval Route - Nécessite un rôle Admin */}
+          <Route 
+            path="/credit-approval" 
+            element={<ProtectedRoute component={CreditApprovalPage} requireAdmin={true} />} 
+          />
           
           {/* 404 Page */}
           <Route path="*" element={<NotFound />} />

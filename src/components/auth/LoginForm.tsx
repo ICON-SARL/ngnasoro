@@ -8,9 +8,14 @@ import {
 import SuccessState from './login/SuccessState';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Eye, EyeOff, Lock } from 'lucide-react';
+import { Mail, Eye, EyeOff, Lock, ShieldAlert } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-const LoginForm = () => {
+interface LoginFormProps {
+  adminMode?: boolean;
+}
+
+const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false }) => {
   const {
     email,
     setEmail,
@@ -24,7 +29,7 @@ const LoginForm = () => {
     cooldownTime,
     emailSent,
     handleLogin
-  } = useLoginForm();
+  } = useLoginForm(adminMode);
 
   if (emailSent) {
     return <SuccessState email={email} />;
@@ -32,6 +37,21 @@ const LoginForm = () => {
 
   return (
     <div className="space-y-5 p-6 w-full">
+      {adminMode && (
+        <div className="flex items-center gap-2 border border-amber-200 bg-amber-50 p-3 rounded-md">
+          <ShieldAlert className="h-5 w-5 text-amber-600" />
+          <div>
+            <h3 className="font-medium text-amber-800">Connexion Administration</h3>
+            <p className="text-xs text-amber-700">
+              Accès réservé au personnel autorisé
+            </p>
+          </div>
+          <Badge variant="outline" className="ml-auto bg-amber-100 text-amber-800 border-amber-200">
+            Admin
+          </Badge>
+        </div>
+      )}
+      
       <ErrorDisplay message={errorMessage} />
       <CooldownAlert active={cooldownActive} remainingTime={cooldownTime} />
 
@@ -44,7 +64,7 @@ const LoginForm = () => {
               <Input 
                 id="email"
                 type="email"
-                placeholder="jean.dulac@anatec.io"
+                placeholder={adminMode ? "admin@meref.ml" : "jean.dulac@anatec.io"}
                 className="pl-10 h-12 text-base border border-gray-300 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-md"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -84,7 +104,9 @@ const LoginForm = () => {
         <div className="pt-3 space-y-3">
           <button 
             type="submit" 
-            className="w-full h-12 rounded-md font-semibold text-white bg-[#0D6A51] hover:bg-[#0D6A51]/90 transition-all shadow-md flex items-center justify-center gap-2"
+            className={`w-full h-12 rounded-md font-semibold text-white ${
+              adminMode ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#0D6A51] hover:bg-[#0D6A51]/90'
+            } transition-all shadow-md flex items-center justify-center gap-2`}
             disabled={isLoading || cooldownActive}
           >
             {isLoading ? (
@@ -95,7 +117,7 @@ const LoginForm = () => {
                 </svg>
                 Chargement...
               </span>
-            ) : "Connexion"}
+            ) : adminMode ? "Connexion Administration" : "Connexion"}
           </button>
         </div>
       </form>
