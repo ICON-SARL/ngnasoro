@@ -1,4 +1,5 @@
-import { AuditLogEvent, AuditLogFilterOptions, AuditLogResponse, AuditLogExportResult } from './auditLoggerTypes';
+
+import { AuditLogEvent, AuditLogFilterOptions, AuditLogResponse, AuditLogExportResult, AuditLogCategory, AuditLogSeverity } from './auditLoggerTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
@@ -152,7 +153,7 @@ export const exportAuditLogsToCSV = async (options?: AuditLogFilterOptions): Pro
     const csvString = [headers, ...rows].join('\n');
     
     // Generate filename with current date
-    const filename = `audit-logs-${format(new Date(), 'yyyy-MM-dd')}.csv';
+    const filename = `audit-logs-${format(new Date(), 'yyyy-MM-dd')}.csv`;
     
     return {
       success: true,
