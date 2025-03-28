@@ -13,7 +13,7 @@ export interface User {
   avatar_url?: string;
   sfd_id?: string;
   phone?: string;
-  aud?: string;
+  aud: string; // Changed from optional to required
   created_at?: string;
   // Add any other properties that might be needed
 }

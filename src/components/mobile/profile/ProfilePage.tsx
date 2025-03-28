@@ -69,7 +69,7 @@ const ProfilePage = () => {
         </TabsContent>
         
         <TabsContent value="profile" className="px-4">
-          <PersonalInfoSection user={user as User} />
+          <PersonalInfoSection user={user as any} />
           <KycVerificationSection />
         </TabsContent>
       </Tabs>
