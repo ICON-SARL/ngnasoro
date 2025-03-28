@@ -1,8 +1,17 @@
 
 import { useState, useEffect } from 'react';
-import { getAuditLogs } from '@/utils/auditLogger';
-import { SfdAuditLog } from '../types/sfd-types';
-import { AuditLogFilterState } from './types';
+import { getAuditLogs } from '@/utils/audit/auditLoggerCore';
+import { AuditLogEvent } from '@/utils/audit/auditLoggerTypes';
+
+export type SfdAuditLog = AuditLogEvent & { id: string; created_at: string };
+
+export interface AuditLogFilterState {
+  searchTerm: string;
+  categoryFilter: string;
+  severityFilter: string;
+  startDate?: Date;
+  endDate?: Date;
+}
 
 export function useAuditLog() {
   const [auditLogs, setAuditLogs] = useState<SfdAuditLog[]>([]);
@@ -34,15 +43,23 @@ export function useAuditLog() {
       }
       
       if (filters.startDate) {
-        options.startDate = filters.startDate.toISOString();
+        options.startDate = filters.startDate;
       }
       
       if (filters.endDate) {
-        options.endDate = filters.endDate.toISOString();
+        options.endDate = filters.endDate;
       }
       
-      const logs = await getAuditLogs(options);
-      setAuditLogs(logs);
+      const response = await getAuditLogs(options);
+      
+      // Convert response.logs to SfdAuditLog[] type
+      const typedLogs: SfdAuditLog[] = response.logs.map(log => ({
+        ...log,
+        id: (log as any).id || '',
+        created_at: (log as any).created_at || new Date().toISOString()
+      }));
+      
+      setAuditLogs(typedLogs);
     } catch (error) {
       console.error('Error fetching audit logs:', error);
     } finally {

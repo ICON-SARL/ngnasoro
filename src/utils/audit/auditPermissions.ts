@@ -28,7 +28,7 @@ export enum Permission {
 
 // Enumeration for roles
 export enum Role {
-  SUPER_ADMIN = 'super_admin',
+  SUPER_ADMIN = 'admin',
   SFD_ADMIN = 'sfd_admin',
   CLIENT = 'client',
   USER = 'user'
@@ -38,7 +38,7 @@ export enum Role {
 export const hasRole = async (userId: string, role: Role): Promise<boolean> => {
   try {
     const { data, error } = await supabase
-      .rpc('has_role', { _user_id: userId, _role: role.toString() });
+      .rpc('has_role', { _user_id: userId, _role: role });
       
     if (error) throw error;
     return data as boolean;
@@ -64,13 +64,13 @@ export const hasPermission = async (userId: string, permission: Permission): Pro
     }
     
     // Super admin has all permissions
-    if (userRoles.some(r => r.role.toString() === Role.SUPER_ADMIN.toString())) {
+    if (userRoles.some(r => r.role === Role.SUPER_ADMIN)) {
       return true;
     }
     
     // Map roles to permissions
     const rolesToPermissions = {
-      [Role.SUPER_ADMIN.toString()]: [
+      [Role.SUPER_ADMIN]: [
         Permission.MANAGE_SFDS,
         Permission.APPROVE_SUBSIDIES,
         Permission.MANAGE_ADMINS,
@@ -78,19 +78,19 @@ export const hasPermission = async (userId: string, permission: Permission): Pro
         Permission.EXPORT_DATA,
         Permission.VIEW_AUDIT_LOGS
       ],
-      [Role.SFD_ADMIN.toString()]: [
+      [Role.SFD_ADMIN]: [
         Permission.MANAGE_SFD_USERS,
         Permission.MANAGE_CLIENTS,
         Permission.MANAGE_LOANS,
         Permission.REQUEST_SUBSIDIES,
         Permission.VIEW_SFD_REPORTS
       ],
-      [Role.CLIENT.toString()]: [
+      [Role.CLIENT]: [
         Permission.VIEW_OWN_DATA,
         Permission.APPLY_FOR_LOANS,
         Permission.MANAGE_PROFILE
       ],
-      [Role.USER.toString()]: [
+      [Role.USER]: [
         Permission.VIEW_OWN_DATA,
         Permission.MANAGE_PROFILE
       ]
@@ -98,7 +98,7 @@ export const hasPermission = async (userId: string, permission: Permission): Pro
     
     // Check if any of the user's roles have the requested permission
     return userRoles.some(r => {
-      const rolePermissions = rolesToPermissions[r.role.toString()];
+      const rolePermissions = rolesToPermissions[r.role as Role];
       return rolePermissions && rolePermissions.includes(permission);
     });
   } catch (error) {

@@ -1,4 +1,5 @@
-import { AxiosRequestConfig } from 'axios';
+
+import { InternalAxiosRequestConfig } from 'axios';
 import sfdApiClient from './sfdApiClient';
 import { sfdCache } from '../cacheUtils';
 import { shouldRefreshSfdToken, refreshSfdContextToken, decodeSfdContextToken } from '../sfdJwtContext';
@@ -7,7 +8,7 @@ import { AuditLogCategory, AuditLogSeverity } from '../audit/auditLoggerTypes';
 
 // Add a request interceptor to include the SFD context token
 sfdApiClient.interceptors.request.use(
-  async (config: AxiosRequestConfig) => {
+  async (config: InternalAxiosRequestConfig) => {
     // Get the SFD ID from the config (must be provided in each call)
     const sfdId = config.headers?.['X-SFD-ID'] as string;
     const sfdToken = config.headers?.['X-SFD-TOKEN'] as string;
@@ -29,13 +30,13 @@ sfdApiClient.interceptors.request.use(
         if (refreshedToken) {
           tokenToUse = refreshedToken;
           // Signal that the token has been refreshed (for the caller to update)
-          config.headers?.set('X-Token-Refreshed', 'true');
-          config.headers?.set('X-Refreshed-Token', refreshedToken);
+          config.headers.set('X-Token-Refreshed', 'true');
+          config.headers.set('X-Refreshed-Token', refreshedToken);
         }
       }
       
       // Set the Authorization header with the SFD context token
-      config.headers?.set('Authorization', `Bearer ${tokenToUse}`);
+      config.headers.set('Authorization', `Bearer ${tokenToUse}`);
       
       // Check if the request can be served from cache
       if (config.method?.toLowerCase() === 'get' && config.url) {
@@ -44,8 +45,8 @@ sfdApiClient.interceptors.request.use(
         
         if (cachedData) {
           // Set cache headers
-          config.headers?.set('X-From-Cache', 'true');
-          config.headers?.set('X-Cache-Data', JSON.stringify(cachedData));
+          config.headers.set('X-From-Cache', 'true');
+          config.headers.set('X-Cache-Data', JSON.stringify(cachedData));
         }
       }
       
@@ -61,7 +62,7 @@ sfdApiClient.interceptors.request.use(
             sfdId, 
             method: config.method,
             url: config.url,
-            fromCache: !!config.headers?.['X-From-Cache']
+            fromCache: !!config.headers['X-From-Cache']
           },
           status: 'success',
           target_resource: `sfd:${sfdId}:${config.url}`
@@ -97,7 +98,7 @@ sfdApiClient.interceptors.request.use(
       return config; // Proceed with original token
     }
   },
-  (error: AxiosError) => {
+  (error) => {
     return Promise.reject(error);
   }
 );

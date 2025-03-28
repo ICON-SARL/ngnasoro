@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,6 +41,7 @@ interface SubsidyRequest {
   requester_name?: string;
   supporting_documents?: string[];
   expected_impact?: string;
+  decision_comments?: string | null;
 }
 
 interface ActivityLog {
@@ -97,10 +97,14 @@ const SubsidyRequestDetailPage = () => {
           }
         }
         
+        // Cast priority to the correct type to satisfy TypeScript
+        const typedPriority = requestData.priority as 'low' | 'normal' | 'high' | 'urgent';
+        
         setRequest({
           ...requestData,
           sfd_name: requestData.sfds?.name || 'Unknown SFD',
-          requester_name: requesterName
+          requester_name: requesterName,
+          priority: typedPriority
         });
       } catch (error) {
         console.error('Error fetching subsidy request:', error);

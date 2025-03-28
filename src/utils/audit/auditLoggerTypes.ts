@@ -55,3 +55,11 @@ export interface AuditLogFilterOptions {
 export interface AuditLogEntry extends AuditLogEvent {
   // This alias ensures backward compatibility
 }
+
+// Interface for CSV export response
+export interface AuditLogExportResult {
+  success: boolean;
+  csvString?: string;
+  filename?: string;
+  message?: string;
+}

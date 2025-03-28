@@ -1,46 +1,41 @@
-
+import { AuditLogEvent, AuditLogFilterOptions, AuditLogResponse, AuditLogExportResult } from './auditLoggerTypes';
 import { supabase } from '@/integrations/supabase/client';
-import { AuditLogEvent, AuditLogCategory, AuditLogSeverity, AuditLogFilterOptions, AuditLogResponse } from './auditLoggerTypes';
+import { format } from 'date-fns';
 
 /**
- * Logs an audit event to the database
+ * Log an audit event
  */
-export const logAuditEvent = async (event: AuditLogEvent) => {
+export const logAuditEvent = async (event: AuditLogEvent): Promise<void> => {
   try {
-    // Log to database
+    // Ensure created_at is set
+    const auditEvent = {
+      ...event,
+      created_at: event.created_at || new Date().toISOString()
+    };
+    
+    // Store in Supabase
     const { error } = await supabase
       .from('audit_logs')
-      .insert({
-        user_id: event.user_id,
-        action: event.action,
-        category: event.category,
-        severity: event.severity,
-        status: event.status,
-        target_resource: event.target_resource,
-        details: event.details,
-        error_message: event.error_message,
-        ip_address: event.ip_address,
-        device_info: event.device_info
-      });
-
+      .insert(auditEvent);
+    
     if (error) {
       console.error('Error logging audit event:', error);
     }
   } catch (err) {
+    // Silent fail - audit logging should never break the application
     console.error('Failed to log audit event:', err);
   }
 };
 
 /**
- * Retrieve audit logs with optional filtering
+ * Get audit logs with filtering options
  */
 export const getAuditLogs = async (options?: AuditLogFilterOptions): Promise<AuditLogResponse> => {
   try {
     let query = supabase
       .from('audit_logs')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false });
-
+      .select('*', { count: 'exact' });
+    
     // Apply filters
     if (options?.userId) {
       query = query.eq('user_id', options.userId);
@@ -66,46 +61,110 @@ export const getAuditLogs = async (options?: AuditLogFilterOptions): Promise<Aud
       query = query.eq('status', options.status);
     }
     
+    if (options?.targetResource) {
+      query = query.ilike('target_resource', `%${options.targetResource}%`);
+    }
+    
     if (options?.startDate) {
-      const startDate = options.startDate instanceof Date 
-        ? options.startDate.toISOString() 
-        : options.startDate;
+      const startDate = typeof options.startDate === 'string' 
+        ? options.startDate 
+        : options.startDate.toISOString();
       query = query.gte('created_at', startDate);
     }
     
     if (options?.endDate) {
-      const endDate = options.endDate instanceof Date
-        ? options.endDate.toISOString()
-        : options.endDate;
+      const endDate = typeof options.endDate === 'string' 
+        ? options.endDate 
+        : options.endDate.toISOString();
       query = query.lte('created_at', endDate);
     }
     
-    if (options?.targetResource) {
-      query = query.eq('target_resource', options.targetResource);
-    }
-    
+    // Pagination
     if (options?.limit) {
       query = query.limit(options.limit);
     }
     
     if (options?.offset) {
-      query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+      query = query.range(options.offset, options.offset + (options.limit || 50) - 1);
     }
-
+    
+    // Ordering
+    query = query.order('created_at', { ascending: false });
+    
     const { data, error, count } = await query;
-
-    if (error) {
-      console.error('Failed to retrieve audit logs:', error);
-      return { logs: [], count: 0 };
-    }
-
-    return { 
-      logs: (data || []) as AuditLogEvent[], 
-      count: count || 0 
+    
+    if (error) throw error;
+    
+    return {
+      logs: data || [],
+      count: count || 0
     };
   } catch (err) {
-    console.error('Error retrieving audit logs:', err);
+    console.error('Error fetching audit logs:', err);
     return { logs: [], count: 0 };
+  }
+};
+
+/**
+ * Export audit logs to CSV format
+ */
+export const exportAuditLogsToCSV = async (options?: AuditLogFilterOptions): Promise<AuditLogExportResult> => {
+  try {
+    const { logs } = await getAuditLogs(options);
+    
+    if (logs.length === 0) {
+      return {
+        success: false,
+        message: 'No data to export'
+      };
+    }
+    
+    // CSV headers
+    const headers = [
+      'ID',
+      'Timestamp',
+      'User ID',
+      'Action',
+      'Category',
+      'Severity',
+      'Status',
+      'Target Resource',
+      'Error Message',
+      'Details',
+      'IP Address'
+    ].join(',');
+    
+    // Format each log into a CSV row
+    const rows = logs.map(log => [
+      log.created_at ? `"${log.created_at}"` : '',
+      log.user_id ? `"${log.user_id}"` : '',
+      log.action ? `"${log.action}"` : '',
+      log.category ? `"${log.category}"` : '',
+      log.severity ? `"${log.severity}"` : '',
+      log.status ? `"${log.status}"` : '',
+      log.target_resource ? `"${log.target_resource}"` : '',
+      log.error_message ? `"${log.error_message.replace(/"/g, '""')}"` : '',
+      log.details ? `"${JSON.stringify(log.details).replace(/"/g, '""')}"` : '',
+      log.ip_address ? `"${log.ip_address}"` : ''
+    ].join(','));
+    
+    // Combine into a CSV string
+    const csvString = [headers, ...rows].join('\n');
+    
+    // Generate filename with current date
+    const filename = `audit-logs-${format(new Date(), 'yyyy-MM-dd')}.csv';
+    
+    return {
+      success: true,
+      csvString,
+      filename
+    };
+  } catch (error) {
+    console.error('Error exporting audit logs:', error);
+    return {
+      success: false,
+      message: String(error)
+    };
   }
 };
 
