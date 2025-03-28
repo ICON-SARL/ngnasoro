@@ -36,6 +36,45 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_notifications: {
+        Row: {
+          action_link: string | null
+          created_at: string
+          id: string
+          message: string
+          read: boolean | null
+          recipient_id: string | null
+          recipient_role: string | null
+          sender_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          action_link?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean | null
+          recipient_id?: string | null
+          recipient_role?: string | null
+          sender_id: string
+          title: string
+          type: string
+        }
+        Update: {
+          action_link?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean | null
+          recipient_id?: string | null
+          recipient_role?: string | null
+          sender_id?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       admin_roles: {
         Row: {
           created_at: string
