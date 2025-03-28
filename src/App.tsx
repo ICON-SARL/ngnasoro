@@ -1,175 +1,115 @@
 
 import React from 'react';
-import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
-import AuthProvider from './hooks/auth/AuthProvider';
-import LoginPage from './pages/LoginPage';
-import ClientLoginPage from './pages/ClientLoginPage';
-import AdminLoginPage from './pages/AdminLoginPage';
-import SfdLoginPage from './pages/SfdLoginPage';
-import RegisterPage from './pages/RegisterPage';
-import MobileFlowPage from './pages/MobileFlowPage';
-import ProtectedRoute from './components/routes/ProtectedRoute';
-import FundsManagementPage from './components/mobile/funds-management/FundsManagementPage';
-import TransactionsPage from './components/mobile/transactions/TransactionsPage';
-import TransactionDetails from './components/mobile/transactions/TransactionDetails';
-import NotFound from './pages/NotFound';
-import ClientsPage from './pages/ClientsPage';
-import LoansPage from './pages/LoansPage';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
-import LoanActivityPage from './components/mobile/LoanActivityPage';
-import LoanProcessPage from './components/mobile/LoanProcessPage';
-import Index from './pages/Index';
-import AgencyDashboard from './pages/AgencyDashboard';
-import CreditApprovalPage from './pages/CreditApprovalPage';
-import SfdLoansPage from './pages/SfdLoansPage';
-import SfdClientsPage from './pages/SfdClientsPage';
-import SfdTransactionsPage from './pages/SfdTransactionsPage';
-import SfdSubsidyRequestPage from './pages/SfdSubsidyRequestPage';
+import { Routes, Route, Navigate } from 'react-router-dom';
+
+// Auth components
+import { AuthProvider } from '@/hooks/auth/AuthProvider';
+
+// Route protection components
+import ProtectedRoute from '@/components/routes/ProtectedRoute';
+import PermissionProtectedRoute from '@/components/routes/PermissionProtectedRoute';
+
+// Pages
+import LoginPage from '@/pages/LoginPage';
+import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
+import SfdSubsidyRequestPage from '@/pages/SfdSubsidyRequestPage';
+import SfdTransactionsPage from '@/pages/SfdTransactionsPage';
+import SfdClientPage from '@/pages/SfdClientPage';
+import SfdLoansPage from '@/pages/SfdLoansPage';
+import SfdAdminDashboard from '@/components/admin/SfdAdminDashboard';
+import AccessDeniedPage from '@/pages/AccessDeniedPage';
+
+// Role types and permissions
+import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          {/* Landing et Auth Routes */}
-          <Route path="/" element={<Index />} />
-          
-          {/* Routes de Connexion Séparées */}
-          <Route path="/auth" element={<ClientLoginPage />} />
-          <Route path="/admin/auth" element={<AdminLoginPage />} />
-          <Route path="/sfd/auth" element={<SfdLoginPage />} />
-          
-          {/* Compatibilité avec les anciennes routes */}
-          <Route path="/login" element={<Navigate to="/auth" replace />} />
-          <Route path="/register" element={<RegisterPage />} />
-          
-          {/* Agency Dashboard Route - Nécessite un rôle SFD Admin */}
-          <Route 
-            path="/agency-dashboard"
-            element={<ProtectedRoute component={AgencyDashboard} requireSfdAdmin={true} />}
-          />
-          
-          {/* SFD Specific Routes */}
-          <Route 
-            path="/sfd-loans"
-            element={<ProtectedRoute component={SfdLoansPage} requireSfdAdmin={true} />}
-          />
-          
-          <Route 
-            path="/sfd-clients"
-            element={<ProtectedRoute component={SfdClientsPage} requireSfdAdmin={true} />}
-          />
-          
-          <Route 
-            path="/sfd-transactions"
-            element={<ProtectedRoute component={SfdTransactionsPage} requireSfdAdmin={true} />}
-          />
-          
-          <Route 
-            path="/sfd-subsidy-requests"
-            element={<ProtectedRoute component={SfdSubsidyRequestPage} requireSfdAdmin={true} />}
-          />
-          
-          {/* Mobile Flow Routes - Pour les utilisateurs standard */}
-          <Route 
-            path="/mobile-flow"
-            element={<ProtectedRoute component={MobileFlowPage} />}
-          />
-          
-          <Route 
-            path="/mobile-flow/*"
-            element={<ProtectedRoute component={MobileFlowPage} />}
-          />
-          
-          <Route 
-            path="/mobile-flow/funds"
-            element={<ProtectedRoute component={FundsManagementPage} />}
-          />
-          
-          <Route 
-            path="/mobile-flow/funds-management"
-            element={<ProtectedRoute component={FundsManagementPage} />}
-          />
-          
-          <Route 
-            path="/mobile-flow/transactions"
-            element={<ProtectedRoute component={TransactionsPage} />}
-          />
-          
-          <Route 
-            path="/mobile-flow/transactions/:id"
-            element={<ProtectedRoute component={TransactionDetails} />}
-          />
-          
-          <Route 
-            path="/mobile-flow/welcome"
-            element={<ProtectedRoute component={MobileFlowPage} />}
-          />
-          
-          <Route 
-            path="/mobile-flow/loan-application"
-            element={<ProtectedRoute component={MobileFlowPage} />}
-          />
-          
-          <Route 
-            path="/mobile-flow/loan-activity"
-            element={<ProtectedRoute component={LoanActivityPage} />}
-          />
-          
-          <Route 
-            path="/mobile-flow/loan-process/:loanId"
-            element={<ProtectedRoute component={LoanProcessPage} />}
-          />
-          
-          {/* SFD Admin Routes - Nécessite un rôle SFD Admin */}
-          <Route 
-            path="/sfd-admin"
-            element={<ProtectedRoute component={ClientsPage} requireSfdAdmin={true} />}
-          />
-          
-          <Route 
-            path="/sfd-dashboard"
-            element={<ProtectedRoute component={LoansPage} requireSfdAdmin={true} />}
-          />
-          
-          {/* Super Admin Routes - Nécessite un rôle Admin */}
-          <Route 
-            path="/super-admin-dashboard"
-            element={<ProtectedRoute component={SuperAdminDashboard} requireAdmin={true} />}
-          />
-          
-          <Route 
-            path="/clients"
-            element={<ProtectedRoute component={ClientsPage} requireSfdAdmin={true} />}
-          />
-          
-          <Route 
-            path="/loans"
-            element={<ProtectedRoute component={LoansPage} requireSfdAdmin={true} />}
-          />
-          
-          <Route 
-            path="/transactions"
-            element={<ProtectedRoute component={TransactionsPage} />}
-          />
-          
-          {/* Multi-SFD Routes */}
-          <Route 
-            path="/multi-sfd"
-            element={<ProtectedRoute component={MobileFlowPage} />}
-          />
-          
-          {/* Credit Approval Route - Nécessite un rôle Admin */}
-          <Route 
-            path="/credit-approval" 
-            element={<ProtectedRoute component={CreditApprovalPage} requireAdmin={true} />} 
-          />
-          
-          {/* 404 Page */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+    <AuthProvider>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/access-denied" element={<AccessDeniedPage />} />
+        
+        {/* Protected routes with permissions */}
+        <Route 
+          path="/super-admin-dashboard" 
+          element={
+            <PermissionProtectedRoute 
+              component={SuperAdminDashboard} 
+              requiredRole={UserRole.SUPER_ADMIN}
+              fallbackPath="/access-denied"
+            />
+          } 
+        />
+        
+        {/* SFD Admin routes */}
+        <Route 
+          path="/sfd-admin-dashboard" 
+          element={
+            <PermissionProtectedRoute 
+              component={SfdAdminDashboard} 
+              requiredRole={UserRole.SFD_ADMIN}
+              fallbackPath="/access-denied"
+            />
+          } 
+        />
+        
+        {/* SFD functionality routes */}
+        <Route 
+          path="/sfd-subsidy-requests" 
+          element={
+            <PermissionProtectedRoute 
+              component={SfdSubsidyRequestPage} 
+              requiredPermission={PERMISSIONS.REQUEST_SUBSIDIES}
+              fallbackPath="/access-denied"
+            />
+          } 
+        />
+        
+        <Route 
+          path="/sfd-transactions" 
+          element={
+            <PermissionProtectedRoute 
+              component={SfdTransactionsPage} 
+              requiredPermission={PERMISSIONS.VIEW_SFD}
+              fallbackPath="/access-denied"
+            />
+          } 
+        />
+        
+        <Route 
+          path="/sfd-clients" 
+          element={
+            <PermissionProtectedRoute 
+              component={SfdClientPage} 
+              requiredPermission={PERMISSIONS.VIEW_CLIENTS}
+              fallbackPath="/access-denied"
+            />
+          } 
+        />
+        
+        <Route 
+          path="/sfd-loans" 
+          element={
+            <PermissionProtectedRoute 
+              component={SfdLoansPage} 
+              requiredPermission={PERMISSIONS.VIEW_LOANS}
+              fallbackPath="/access-denied"
+            />
+          } 
+        />
+        
+        {/* Legacy protected routes for backward compatibility */}
+        <Route
+          path="/agency-dashboard"
+          element={<ProtectedRoute component={SfdAdminDashboard} />}
+        />
+        
+        {/* Fallback route */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </AuthProvider>
   );
 }
 
