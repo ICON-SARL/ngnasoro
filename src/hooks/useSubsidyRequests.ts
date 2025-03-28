@@ -1,12 +1,13 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subsidyRequestsApi } from '@/utils/subsidyRequestsApi';
 import { SubsidyRequestFilter } from '@/types/subsidyRequests';
 import { useToast } from '@/hooks/use-toast';
+import { useSubsidyNotifications } from '@/hooks/useSubsidyNotifications';
 
 export function useSubsidyRequests(filters?: SubsidyRequestFilter) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { createRequestNotification, createDecisionNotification } = useSubsidyNotifications();
   
   // Fetch all subsidy requests
   const subsidyRequestsQuery = useQuery({
@@ -24,15 +25,18 @@ export function useSubsidyRequests(filters?: SubsidyRequestFilter) {
     return subsidyRequestsApi.getSubsidyRequestActivities(requestId);
   };
   
-  // Create a new subsidy request
+  // Create a new subsidy request with notification
   const createSubsidyRequest = useMutation({
     mutationFn: subsidyRequestsApi.createSubsidyRequest,
-    onSuccess: () => {
+    onSuccess: (newRequest) => {
       toast({
         title: "Demande créée",
         description: "La demande de subvention a été créée avec succès",
       });
       queryClient.invalidateQueries({ queryKey: ['subsidyRequests'] });
+      
+      // Send notification to super admins
+      createRequestNotification.mutate(newRequest);
     },
     onError: (error: any) => {
       toast({
@@ -43,7 +47,7 @@ export function useSubsidyRequests(filters?: SubsidyRequestFilter) {
     }
   });
 
-  // Update subsidy request status
+  // Update subsidy request status with notification
   const updateSubsidyRequestStatus = useMutation({
     mutationFn: ({ 
       requestId, 
@@ -56,7 +60,7 @@ export function useSubsidyRequests(filters?: SubsidyRequestFilter) {
     }) => {
       return subsidyRequestsApi.updateSubsidyRequestStatus(requestId, status, comments);
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (updatedRequest, variables) => {
       const statusMessages = {
         pending: "en attente",
         under_review: "en cours d'examen",
@@ -69,6 +73,17 @@ export function useSubsidyRequests(filters?: SubsidyRequestFilter) {
         description: `La demande est maintenant ${statusMessages[variables.status]}`,
       });
       queryClient.invalidateQueries({ queryKey: ['subsidyRequests'] });
+      
+      // If approved or rejected, send notification to SFD admin
+      if ((variables.status === 'approved' || variables.status === 'rejected') && 
+          updatedRequest.requested_by) {
+        createDecisionNotification.mutate({
+          requestId: updatedRequest.id,
+          sfdAdminId: updatedRequest.requested_by,
+          status: variables.status as 'approved' | 'rejected',
+          amount: updatedRequest.amount
+        });
+      }
     },
     onError: (error: any) => {
       toast({

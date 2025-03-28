@@ -1,190 +1,162 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts';
-import { BarChart3, LineChart as LineChartIcon, PieChart as PieChartIcon, Download } from 'lucide-react';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
-// Sample data - in a real application, this would come from an API
-const monthlyData = [
-  { month: 'Jan', requests: 45, approved: 38, rejected: 7 },
-  { month: 'Fév', requests: 52, approved: 43, rejected: 9 },
-  { month: 'Mar', requests: 49, approved: 40, rejected: 9 },
-  { month: 'Avr', requests: 63, approved: 55, rejected: 8 },
-  { month: 'Mai', requests: 59, approved: 48, rejected: 11 },
-  { month: 'Jun', requests: 68, approved: 62, rejected: 6 },
-  { month: 'Jul', requests: 72, approved: 65, rejected: 7 },
-  { month: 'Aoû', requests: 67, approved: 58, rejected: 9 },
-  { month: 'Sep', requests: 75, approved: 68, rejected: 7 },
-  { month: 'Oct', requests: 80, approved: 69, rejected: 11 },
-  { month: 'Nov', requests: 92, approved: 82, rejected: 10 },
-  { month: 'Dec', requests: 55, approved: 47, rejected: 8 }
-];
-
-const quarterlyData = [
-  { quarter: 'Q1', requests: 146, approved: 121, rejected: 25 },
-  { quarter: 'Q2', requests: 190, approved: 165, rejected: 25 },
-  { quarter: 'Q3', requests: 214, approved: 191, rejected: 23 },
-  { quarter: 'Q4', requests: 227, approved: 198, rejected: 29 }
-];
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
+interface MonthlyData {
+  month: string;
+  approvedCount: number;
+  rejectedCount: number;
+  approvedAmount: number;
+  rejectedAmount: number;
+}
 
 export function CreditTrendChart() {
-  const [timeFrame, setTimeFrame] = useState('monthly');
-  const [chartType, setChartType] = useState('bar');
+  const { activeSfdId } = useAuth();
   
-  const data = timeFrame === 'monthly' ? monthlyData : quarterlyData;
-  const categoryKey = timeFrame === 'monthly' ? 'month' : 'quarter';
-  
-  const renderApprovalPieChart = () => {
-    const totalRequests = data.reduce((sum, item) => sum + item.requests, 0);
-    const totalApproved = data.reduce((sum, item) => sum + item.approved, 0);
-    const totalRejected = data.reduce((sum, item) => sum + item.rejected, 0);
+  const fetchCreditTrends = async (): Promise<MonthlyData[]> => {
+    if (!activeSfdId) return [];
     
-    const pieData = [
-      { name: 'Approuvées', value: totalApproved },
-      { name: 'Rejetées', value: totalRejected }
-    ];
+    // Get the last 6 months
+    const months: MonthlyData[] = [];
+    const now = new Date();
     
-    return (
-      <ResponsiveContainer width="100%" height={400}>
-        <PieChart>
-          <Pie
-            data={pieData}
-            cx="50%"
-            cy="50%"
-            labelLine={true}
-            outerRadius={150}
-            fill="#8884d8"
-            dataKey="value"
-            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-          >
-            {pieData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip formatter={(value) => [`${value} demandes`, '']} />
-          <Legend />
-        </PieChart>
-      </ResponsiveContainer>
-    );
+    for (let i = 5; i >= 0; i--) {
+      const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = month.toLocaleString('default', { month: 'short' });
+      
+      months.push({
+        month: monthName,
+        approvedCount: 0,
+        rejectedCount: 0,
+        approvedAmount: 0,
+        rejectedAmount: 0
+      });
+    }
+    
+    // Get start and end dates for our query (6 months ago to now)
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
+    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+    
+    // Fetch approved loans
+    const { data: approvedLoans, error: approvedError } = await supabase
+      .from('sfd_loans')
+      .select('amount, approved_at')
+      .eq('sfd_id', activeSfdId)
+      .eq('status', 'approved')
+      .gte('approved_at', startDate)
+      .lte('approved_at', endDate);
+      
+    if (approvedError) console.error('Error fetching approved loans:', approvedError);
+    
+    // Fetch rejected loans
+    const { data: rejectedLoans, error: rejectedError } = await supabase
+      .from('sfd_loans')
+      .select('amount, created_at')
+      .eq('sfd_id', activeSfdId)
+      .eq('status', 'rejected')
+      .gte('created_at', startDate)
+      .lte('created_at', endDate);
+      
+    if (rejectedError) console.error('Error fetching rejected loans:', rejectedError);
+    
+    // Process the data
+    if (approvedLoans) {
+      approvedLoans.forEach(loan => {
+        const loanDate = new Date(loan.approved_at);
+        const monthIndex = loanDate.getMonth() - (now.getMonth() - 5);
+        
+        if (monthIndex >= 0 && monthIndex < 6) {
+          months[monthIndex].approvedCount += 1;
+          months[monthIndex].approvedAmount += Number(loan.amount) || 0;
+        }
+      });
+    }
+    
+    if (rejectedLoans) {
+      rejectedLoans.forEach(loan => {
+        const loanDate = new Date(loan.created_at);
+        const monthIndex = loanDate.getMonth() - (now.getMonth() - 5);
+        
+        if (monthIndex >= 0 && monthIndex < 6) {
+          months[monthIndex].rejectedCount += 1;
+          months[monthIndex].rejectedAmount += Number(loan.amount) || 0;
+        }
+      });
+    }
+    
+    return months;
   };
   
-  const renderBarChart = () => {
-    return (
-      <ResponsiveContainer width="100%" height={400}>
-        <BarChart
-          data={data}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey={categoryKey} />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="requests" name="Demandes" fill="#8884d8" />
-          <Bar dataKey="approved" name="Approuvées" fill="#82ca9d" />
-          <Bar dataKey="rejected" name="Rejetées" fill="#ff8042" />
-        </BarChart>
-      </ResponsiveContainer>
-    );
-  };
+  const { data, isLoading } = useQuery({
+    queryKey: ['credit-trends', activeSfdId],
+    queryFn: fetchCreditTrends,
+    enabled: !!activeSfdId
+  });
   
-  const renderLineChart = () => {
+  if (isLoading || !data) {
     return (
-      <ResponsiveContainer width="100%" height={400}>
-        <LineChart
-          data={data}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey={categoryKey} />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="requests" name="Demandes" stroke="#8884d8" />
-          <Line type="monotone" dataKey="approved" name="Approuvées" stroke="#82ca9d" />
-          <Line type="monotone" dataKey="rejected" name="Rejetées" stroke="#ff8042" />
-        </LineChart>
-      </ResponsiveContainer>
+      <Card className="col-span-2">
+        <CardHeader>
+          <CardTitle>Tendances des Crédits (6 derniers mois)</CardTitle>
+        </CardHeader>
+        <CardContent className="h-80 flex items-center justify-center">
+          <p className="text-muted-foreground">Chargement des données...</p>
+        </CardContent>
+      </Card>
     );
-  };
+  }
   
   return (
-    <Card className="w-full">
+    <Card className="col-span-2">
       <CardHeader>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-          <div>
-            <CardTitle>Tendances des demandes de crédit</CardTitle>
-            <CardDescription>Évolution des demandes de crédit par période</CardDescription>
-          </div>
-          <div className="flex gap-2 mt-4 md:mt-0">
-            <Select
-              value={timeFrame}
-              onValueChange={setTimeFrame}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Période" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="monthly">Mensuel</SelectItem>
-                <SelectItem value="quarterly">Trimestriel</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <div className="flex gap-1 border rounded-md">
-              <Button
-                variant={chartType === 'bar' ? "secondary" : "ghost"}
-                size="icon"
-                onClick={() => setChartType('bar')}
-                className="rounded-none"
-              >
-                <BarChart3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={chartType === 'line' ? "secondary" : "ghost"}
-                size="icon"
-                onClick={() => setChartType('line')}
-                className="rounded-none"
-              >
-                <LineChartIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={chartType === 'pie' ? "secondary" : "ghost"}
-                size="icon"
-                onClick={() => setChartType('pie')}
-                className="rounded-none"
-              >
-                <PieChartIcon className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <Button variant="outline" size="icon">
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <CardTitle>Tendances des Crédits (6 derniers mois)</CardTitle>
       </CardHeader>
-      <CardContent>
-        {chartType === 'bar' && renderBarChart()}
-        {chartType === 'line' && renderLineChart()}
-        {chartType === 'pie' && renderApprovalPieChart()}
+      <CardContent className="h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={data}
+            margin={{
+              top: 5,
+              right: 30,
+              left: 20,
+              bottom: 5,
+            }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" />
+            <YAxis yAxisId="left" />
+            <YAxis yAxisId="right" orientation="right" />
+            <Tooltip 
+              formatter={(value, name) => {
+                if (name.includes('Amount')) {
+                  return [new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(value as number), name];
+                }
+                return [value, name];
+              }}
+            />
+            <Legend />
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="approvedCount"
+              name="Crédits Approuvés"
+              stroke="#0D6A51"
+              activeDot={{ r: 8 }}
+            />
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="rejectedCount"
+              name="Crédits Rejetés"
+              stroke="#f43f5e"
+              activeDot={{ r: 8 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );
