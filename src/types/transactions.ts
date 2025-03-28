@@ -4,7 +4,7 @@ export interface Transaction {
   user_id?: string;
   sfd_id?: string;
   client_id?: string;
-  type: 'deposit' | 'withdrawal' | 'transfer' | 'payment' | 'loan_disbursement' | 'other';
+  type: 'deposit' | 'withdrawal' | 'transfer' | 'payment' | 'loan_disbursement' | 'loan_repayment' | 'other';
   amount: number;
   currency?: string;
   status: 'pending' | 'success' | 'failed' | 'flagged';
