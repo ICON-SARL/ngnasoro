@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { getAuditLogs, AuditLogCategory, AuditLogSeverity } from '@/utils/auditLogger';
+import { getAuditLogs, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 import { SfdAuditLog } from '../types/sfd-types';
 import { AuditLogFilterState } from './types';
 
@@ -42,7 +42,11 @@ export function useAuditLog() {
       }
       
       const logs = await getAuditLogs(options);
-      setAuditLogs(logs);
+      // Cast the logs to the correct type
+      setAuditLogs(logs.map(log => ({
+        ...log,
+        details: log.details as Record<string, any>
+      })) as SfdAuditLog[]);
     } catch (error) {
       console.error('Error fetching audit logs:', error);
     } finally {

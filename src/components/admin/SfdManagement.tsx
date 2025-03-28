@@ -108,21 +108,19 @@ export function SfdManagement() {
         isPending={reactivateSfdMutation.isPending}
       />
       
+      {/* Removing the open and onOpenChange props which are not in SfdForm */}
       <SfdForm
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
+        defaultValues={{}}
         onSubmit={handleAddSfd}
-        title="Ajouter une nouvelle SFD"
-        isPending={addSfdMutation.isPending}
+        isLoading={addSfdMutation.isPending}
+        isCreate={true}
       />
       
       <SfdForm
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
+        defaultValues={selectedSfd || {}}
         onSubmit={handleEditSfd}
-        initialData={selectedSfd || {}}
-        title="Modifier la SFD"
-        isPending={editSfdMutation.isPending}
+        isLoading={editSfdMutation.isPending}
+        isCreate={false}
       />
     </div>
   );

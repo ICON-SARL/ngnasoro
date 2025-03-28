@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -110,7 +109,11 @@ export function SfdHistory() {
             action: item.action,
             created_at: item.created_at,
             target_resource: item.target_resource,
-            details: item.details || {}
+            details: (item.details || {}) as {
+              [key: string]: any;
+              sfd_id?: string;
+              modified_fields?: Record<string, any>;
+            }
           };
         })
       );
@@ -303,8 +306,8 @@ export function SfdHistory() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Du</span>
               <DatePicker
-                selected={startDate}
-                onSelect={setStartDate}
+                date={startDate}
+                setDate={setStartDate}
                 locale={fr}
                 placeholder="Date début"
               />
@@ -313,8 +316,8 @@ export function SfdHistory() {
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">au</span>
               <DatePicker
-                selected={endDate}
-                onSelect={setEndDate}
+                date={endDate}
+                setDate={setEndDate}
                 locale={fr}
                 placeholder="Date fin"
               />
