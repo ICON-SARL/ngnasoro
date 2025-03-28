@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Loan } from "@/types/sfdClients";
 
@@ -133,16 +134,8 @@ export const loanService = {
   // Count loans by status for dashboard statistics
   async countLoansByStatus(sfdId: string) {
     try {
-      // Use a direct SQL query instead of RPC since the function doesn't exist
-      const { data, error } = await supabase
-        .from('sfd_loans')
-        .select('status, count(*)')
-        .eq('sfd_id', sfdId)
-        .group('status');
-      
-      if (error) throw error;
-      
-      // Transform the result into the expected format
+      // Use separate queries for each status instead of grouping
+      const statuses = ['pending', 'approved', 'active', 'completed', 'rejected'];
       const result = {
         pending: 0,
         approved: 0,
@@ -151,12 +144,19 @@ export const loanService = {
         rejected: 0
       };
       
-      // Populate the result object with the counts
-      data.forEach(item => {
-        if (item.status in result) {
-          result[item.status as keyof typeof result] = parseInt(item.count);
-        }
-      });
+      // Run separate queries for each status to avoid using group()
+      for (const status of statuses) {
+        const { data, error, count } = await supabase
+          .from('sfd_loans')
+          .select('*', { count: 'exact', head: true })
+          .eq('sfd_id', sfdId)
+          .eq('status', status);
+          
+        if (error) throw error;
+        
+        // Set the count for this status
+        result[status as keyof typeof result] = count || 0;
+      }
       
       return result;
     } catch (error) {
