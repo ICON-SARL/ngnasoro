@@ -106,7 +106,10 @@ const LoanApplicationForm: React.FC = () => {
       // Dans une implémentation complète, il faudrait gérer l'upload des fichiers
       
       const loanData = {
-        ...data,
+        amount: data.amount,
+        duration_months: data.duration_months,
+        purpose: data.purpose,
+        sfd_id: data.sfd_id,
         attachments: attachmentBase64,
         full_name: user?.user_metadata?.full_name || '',
       };
