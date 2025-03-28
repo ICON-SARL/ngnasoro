@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,7 @@ const NotificationItem = ({ notification, markAsRead }: { notification: any, mar
         
         <div>
           {!isRead && (
-            <Button variant="outline" size="xs" onClick={handleMarkAsRead}>
+            <Button variant="outline" size="sm" onClick={handleMarkAsRead}>
               Marquer comme lu
             </Button>
           )}
