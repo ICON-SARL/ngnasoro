@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
-  const [authMode, setAuthMode] = useState<'default' | 'admin'>('default');
+  const [authMode, setAuthMode] = useState<'default' | 'admin' | 'sfd_admin'>('default');
   const { user, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,6 +54,10 @@ const AuthUI = () => {
     // Détection du mode admin par l'URL
     if (location.search.includes('admin=true')) {
       setAuthMode('admin');
+    } else if (location.search.includes('sfd_admin=true')) {
+      setAuthMode('sfd_admin');
+    } else {
+      setAuthMode('default');
     }
   }, [location.pathname, location.search]);
 
@@ -89,34 +93,77 @@ const AuthUI = () => {
             </div>
           )}
           
+          {authMode === 'sfd_admin' && (
+            <div className="p-4 bg-blue-50 border-b border-blue-100">
+              <h2 className="text-blue-800 font-medium text-center">
+                Connexion Administration SFD
+              </h2>
+            </div>
+          )}
+          
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full grid grid-cols-2">
               <TabsTrigger value="login">Connexion</TabsTrigger>
               <TabsTrigger value="register">Inscription</TabsTrigger>
             </TabsList>
             <TabsContent value="login">
-              <LoginForm adminMode={authMode === 'admin'} />
+              <LoginForm adminMode={authMode !== 'default'} isSfdAdmin={authMode === 'sfd_admin'} />
             </TabsContent>
             <TabsContent value="register">
               <RegisterForm />
             </TabsContent>
           </Tabs>
           
-          <div className="mt-4 text-center pb-6">
-            {authMode === 'default' ? (
-              <a 
-                href="/auth?admin=true"
-                className="text-[#0D6A51] hover:underline font-medium"
-              >
-                Accès Administrateur
-              </a>
-            ) : (
-              <a 
-                href="/auth"
-                className="text-[#0D6A51] hover:underline font-medium"
-              >
-                Connexion Utilisateur Standard
-              </a>
+          <div className="mt-4 text-center pb-6 flex flex-col gap-2">
+            {authMode === 'default' && (
+              <>
+                <a 
+                  href="/auth?admin=true"
+                  className="text-[#0D6A51] hover:underline font-medium"
+                >
+                  Accès Administrateur MEREF
+                </a>
+                <a 
+                  href="/auth?sfd_admin=true"
+                  className="text-blue-600 hover:underline font-medium"
+                >
+                  Accès Administrateur SFD
+                </a>
+              </>
+            )}
+            
+            {authMode === 'admin' && (
+              <>
+                <a 
+                  href="/auth"
+                  className="text-[#0D6A51] hover:underline font-medium"
+                >
+                  Connexion Utilisateur Standard
+                </a>
+                <a 
+                  href="/auth?sfd_admin=true"
+                  className="text-blue-600 hover:underline font-medium"
+                >
+                  Accès Administrateur SFD
+                </a>
+              </>
+            )}
+            
+            {authMode === 'sfd_admin' && (
+              <>
+                <a 
+                  href="/auth"
+                  className="text-[#0D6A51] hover:underline font-medium"
+                >
+                  Connexion Utilisateur Standard
+                </a>
+                <a 
+                  href="/auth?admin=true"
+                  className="text-amber-600 hover:underline font-medium"
+                >
+                  Accès Administrateur MEREF
+                </a>
+              </>
             )}
           </div>
         </div>
