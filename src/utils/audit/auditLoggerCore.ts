@@ -104,7 +104,7 @@ export const getAuditLogs = async (options?: AuditLogFilterOptions): Promise<Aud
       severity: log.severity as AuditLogSeverity,
       status: log.status as 'success' | 'failure' | 'pending',
       target_resource: log.target_resource,
-      details: log.details,
+      details: log.details as Record<string, any>,
       error_message: log.error_message,
       ip_address: log.ip_address,
       device_info: log.device_info,

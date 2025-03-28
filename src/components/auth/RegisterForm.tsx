@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +16,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 
-// Schema de validation
 const registerSchema = z.object({
   fullName: z.string()
     .min(3, { message: 'Le nom complet doit contenir au moins 3 caractères' })
