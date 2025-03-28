@@ -42,6 +42,7 @@ interface SubsidyRequest {
   supporting_documents?: string[];
   expected_impact?: string;
   decision_comments?: string | null;
+  alert_triggered: boolean;
 }
 
 interface ActivityLog {
@@ -97,15 +98,21 @@ const SubsidyRequestDetailPage = () => {
           }
         }
         
-        // Cast priority to the correct type to satisfy TypeScript
+        // Cast status and priority to the correct types to satisfy TypeScript
+        const typedStatus = requestData.status as 'pending' | 'under_review' | 'approved' | 'rejected';
         const typedPriority = requestData.priority as 'low' | 'normal' | 'high' | 'urgent';
         
-        setRequest({
+        // Create a properly typed SubsidyRequest object
+        const typedRequest: SubsidyRequest = {
           ...requestData,
           sfd_name: requestData.sfds?.name || 'Unknown SFD',
           requester_name: requesterName,
-          priority: typedPriority
-        });
+          status: typedStatus,
+          priority: typedPriority,
+          alert_triggered: !!requestData.alert_triggered
+        };
+        
+        setRequest(typedRequest);
       } catch (error) {
         console.error('Error fetching subsidy request:', error);
         toast({

@@ -38,7 +38,10 @@ export enum Role {
 export const hasRole = async (userId: string, role: Role): Promise<boolean> => {
   try {
     const { data, error } = await supabase
-      .rpc('has_role', { _user_id: userId, _role: role });
+      .rpc('has_role', { 
+        _user_id: userId, 
+        _role: role.toString() // Convert enum to string
+      });
       
     if (error) throw error;
     return data as boolean;

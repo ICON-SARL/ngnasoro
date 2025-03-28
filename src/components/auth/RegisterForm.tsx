@@ -54,7 +54,13 @@ const RegisterForm = () => {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsSubmitting(true);
     try {
-      await signUp(data.email, data.password, data.fullName);
+      // Create a proper metadata object
+      const metadata = {
+        full_name: data.fullName,
+        phone: data.phoneNumber || undefined
+      };
+      
+      await signUp(data.email, data.password, metadata);
       toast({
         title: "Inscription réussie",
         description: "Veuillez vérifier votre email pour confirmer votre compte",

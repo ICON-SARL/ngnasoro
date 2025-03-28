@@ -1,9 +1,28 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, AuthContextProps, Role } from './types';
 import { useToast } from '@/hooks/use-toast';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { logAuditEvent } from '@/utils/audit/auditLoggerCore';
+
+// Create a conversion function to convert Supabase User to our User type
+const convertSupabaseUser = (supabaseUser: any): User => {
+  if (!supabaseUser) return null;
+  
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email || '',
+    full_name: supabaseUser.user_metadata?.full_name,
+    avatar_url: supabaseUser.user_metadata?.avatar_url,
+    sfd_id: supabaseUser.user_metadata?.sfd_id,
+    phone: supabaseUser.user_metadata?.phone,
+    aud: supabaseUser.aud,
+    created_at: supabaseUser.created_at,
+    app_metadata: supabaseUser.app_metadata,
+    user_metadata: supabaseUser.user_metadata
+  };
+};
 
 const defaultContext: AuthContextProps = {
   user: null,
@@ -49,6 +68,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
+        // Convert Supabase user to our User type
+        setUser(convertSupabaseUser(data.user));
         await checkUserRole(data.user.id);
       }
 
@@ -84,6 +105,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
+        // Convert Supabase user to our User type
+        setUser(convertSupabaseUser(data.user));
         await checkUserRole(data.user.id);
       }
 
@@ -137,7 +160,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       async (event, session) => {
         setLoading(true);
         if (session?.user) {
-          setUser(session.user);
+          // Convert Supabase user to our User type
+          setUser(convertSupabaseUser(session.user));
           await checkUserRole(session.user.id);
         } else {
           setUser(null);
@@ -153,7 +177,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        setUser(user);
+        // Convert Supabase user to our User type
+        setUser(convertSupabaseUser(user));
         await checkUserRole(user.id);
       }
       setLoading(false);

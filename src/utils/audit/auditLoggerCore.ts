@@ -96,8 +96,23 @@ export const getAuditLogs = async (options?: AuditLogFilterOptions): Promise<Aud
     
     if (error) throw error;
     
+    // Transform data to match AuditLogEvent type
+    const formattedLogs: AuditLogEvent[] = data?.map(log => ({
+      user_id: log.user_id,
+      action: log.action,
+      category: log.category as AuditLogCategory,
+      severity: log.severity as AuditLogSeverity,
+      status: log.status as 'success' | 'failure' | 'pending',
+      target_resource: log.target_resource,
+      details: log.details,
+      error_message: log.error_message,
+      ip_address: log.ip_address,
+      device_info: log.device_info,
+      created_at: log.created_at
+    })) || [];
+    
     return {
-      logs: data || [],
+      logs: formattedLogs,
       count: count || 0
     };
   } catch (err) {

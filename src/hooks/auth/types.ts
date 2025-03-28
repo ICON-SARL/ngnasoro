@@ -12,6 +12,9 @@ export interface User {
   full_name?: string;
   avatar_url?: string;
   sfd_id?: string;
+  phone?: string;
+  aud?: string;
+  created_at?: string;
   // Add any other properties that might be needed
 }
 
