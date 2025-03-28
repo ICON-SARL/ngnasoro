@@ -22,7 +22,7 @@ const defaultContext: AuthContextProps = {
   toggleBiometricAuth: async () => {},
 };
 
-const AuthContext = createContext<AuthContextProps>(defaultContext);
+export const AuthContext = createContext<AuthContextProps>(defaultContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
