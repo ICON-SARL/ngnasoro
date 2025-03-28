@@ -1,280 +1,282 @@
 
-import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Sfd } from '../types/sfd-types';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sfd } from '@/components/admin/types/sfd-types';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-// Form schema validation
 const formSchema = z.object({
-  name: z.string().min(3, {
-    message: 'Le nom doit contenir au moins 3 caractères',
+  name: z.string().min(2, {
+    message: "Le nom doit contenir au moins 2 caractères.",
   }),
   code: z.string().min(2, {
-    message: 'Le code doit contenir au moins 2 caractères',
+    message: "Le code doit contenir au moins 2 caractères.",
   }),
-  region: z.string().min(2, {
-    message: 'La région doit être spécifiée',
-  }),
-  status: z.enum(['active', 'pending', 'suspended']),
-  logo_url: z.string().optional(),
-  subsidy_balance: z.number().optional(),
+  region: z.string().optional(),
+  status: z.enum(["active", "suspended", "pending"]),
   admin_id: z.string().optional(),
+  subsidy_balance: z.coerce.number().optional(),
+  logo_url: z.string().optional(),
 });
 
 export type SfdFormValues = z.infer<typeof formSchema>;
 
 interface SfdFormProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (data: SfdFormValues) => void;
-  initialData?: Partial<Sfd>;
-  title: string;
-  isPending: boolean;
+  defaultValues?: Partial<SfdFormValues>;
+  onSubmit: (values: SfdFormValues) => void;
+  isLoading?: boolean;
+  isCreate?: boolean;
 }
 
-interface AdminUser {
-  id: string;
-  full_name: string;
-  email: string;
-}
-
-export function SfdForm({
-  open,
-  onOpenChange,
-  onSubmit,
-  initialData,
-  title,
-  isPending,
-}: SfdFormProps) {
-  const [admins, setAdmins] = useState<AdminUser[]>([]);
-  const [isLoadingAdmins, setIsLoadingAdmins] = useState(false);
-
-  // Initialize the form
+export function SfdForm({ defaultValues, onSubmit, isLoading = false, isCreate = false }: SfdFormProps) {
   const form = useForm<SfdFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: initialData?.name || '',
-      code: initialData?.code || '',
-      region: initialData?.region || '',
-      status: (initialData?.status as 'active' | 'pending' | 'suspended') || 'active',
-      logo_url: initialData?.logo_url || '',
-      subsidy_balance: initialData?.subsidy_balance || 0,
-      admin_id: initialData?.admin_id || '',
+      name: "",
+      code: "",
+      region: "",
+      status: "active",
+      admin_id: "",
+      subsidy_balance: 0,
+      logo_url: "",
+      ...defaultValues,
     },
   });
 
-  // Fetch admin users
-  useEffect(() => {
-    if (open) {
-      const fetchAdmins = async () => {
-        setIsLoadingAdmins(true);
-        try {
-          const { data, error } = await supabase
-            .from('user_roles')
-            .select(`
-              user_id,
-              profiles:user_id(id, full_name, email)
-            `)
-            .eq('role', 'sfd_admin');
-            
-          if (error) throw error;
-          
-          const adminUsers = data.map(item => ({
-            id: item.profiles.id,
-            full_name: item.profiles.full_name,
-            email: item.profiles.email
-          }));
-          
-          setAdmins(adminUsers);
-        } catch (error) {
-          console.error('Error fetching admin users:', error);
-        } finally {
-          setIsLoadingAdmins(false);
-        }
-      };
+  // Fetch SFD admins for dropdown
+  const { data: sfdAdmins, isLoading: isLoadingAdmins } = useQuery({
+    queryKey: ['sfdAdmins'],
+    queryFn: async () => {
+      // First, get all users with sfd_admin role
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'sfd_admin');
       
-      fetchAdmins();
-    }
-  }, [open]);
-
-  // Handle form submission
-  const handleSubmit = (values: SfdFormValues) => {
-    onSubmit(values);
-  };
+      if (roleError) throw roleError;
+      
+      if (!roleData || roleData.length === 0) {
+        return [];
+      }
+      
+      // Get user details for each admin
+      const userIds = roleData.map(item => item.user_id);
+      
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', userIds);
+        
+      if (profileError) throw profileError;
+      
+      // Get emails from auth.users (need to use admin functions)
+      const adminsWithDetails = await Promise.all(
+        (profileData || []).map(async (profile) => {
+          try {
+            const { data: userData, error: userError } = await supabase.auth.admin.getUserById(profile.id);
+            
+            if (userError) {
+              console.error('Error fetching user details:', userError);
+              return {
+                id: profile.id,
+                full_name: profile.full_name || 'Unknown',
+                email: 'No email available'
+              };
+            }
+            
+            return {
+              id: profile.id,
+              full_name: profile.full_name || userData.user.user_metadata?.full_name || 'Unknown',
+              email: userData.user.email || 'No email available'
+            };
+          } catch (error) {
+            console.error('Error in admin lookup:', error);
+            return {
+              id: profile.id,
+              full_name: profile.full_name || 'Unknown',
+              email: 'Error fetching email'
+            };
+          }
+        })
+      );
+      
+      return adminsWithDetails;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nom</FormLabel>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nom de la SFD</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nom de la SFD" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Nom complet de la Structure de Financement Décentralisée
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Code SFD</FormLabel>
+                <FormControl>
+                  <Input placeholder="Code unique" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Code unique d'identification pour la SFD
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="region"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Région</FormLabel>
+                <FormControl>
+                  <Input placeholder="Région" {...field} value={field.value || ''} />
+                </FormControl>
+                <FormDescription>
+                  Région géographique d'opération
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Statut</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value}
+                >
                   <FormControl>
-                    <Input placeholder="Nom de la SFD" {...field} />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un statut" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Code</FormLabel>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="pending">En attente</SelectItem>
+                    <SelectItem value="suspended">Suspendue</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Statut actuel de la SFD
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="admin_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Admin SFD</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value || ''}
+                >
                   <FormControl>
-                    <Input placeholder="Code de la SFD" {...field} />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un admin" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="region"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Région</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Région de la SFD" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Statut</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un statut" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">Actif</SelectItem>
-                      <SelectItem value="pending">En attente</SelectItem>
-                      <SelectItem value="suspended">Suspendu</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="subsidy_balance"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Solde de Subvention (FCFA)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="0" 
-                      {...field} 
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="admin_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Administrateur assigné</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un administrateur" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="">Non assigné</SelectItem>
-                      {admins.map((admin) => (
-                        <SelectItem key={admin.id} value={admin.id}>
-                          {admin.full_name || admin.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="logo_url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>URL du Logo (optionnel)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="URL du logo" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => onOpenChange(false)}
-              >
-                Annuler
-              </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Enregistrement...' : 'Enregistrer'}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+                  <SelectContent>
+                    <SelectItem value="">Aucun admin assigné</SelectItem>
+                    {sfdAdmins && sfdAdmins.map((admin) => (
+                      <SelectItem key={admin.id} value={admin.id}>
+                        {admin.full_name} ({admin.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Administrateur assigné à cette SFD
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="subsidy_balance"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Solde de subvention (FCFA)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    placeholder="0" 
+                    {...field}
+                    value={field.value || ''}
+                    onChange={(e) => {
+                      const value = e.target.value === '' ? undefined : Number(e.target.value);
+                      field.onChange(value);
+                    }}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Montant total des subventions accordées
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="logo_url"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>URL du Logo</FormLabel>
+                <FormControl>
+                  <Input placeholder="https://example.com/logo.png" {...field} value={field.value || ''} />
+                </FormControl>
+                <FormDescription>
+                  URL de l'image du logo de la SFD
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <div className="flex justify-end space-x-4">
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Traitement en cours..." : isCreate ? "Créer la SFD" : "Mettre à jour la SFD"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

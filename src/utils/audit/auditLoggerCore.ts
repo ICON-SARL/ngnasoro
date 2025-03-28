@@ -1,153 +1,156 @@
 
-/**
- * Core audit logging functionality
- */
 import { supabase } from '@/integrations/supabase/client';
-import { AuditLogEntry, AuditLogQueryOptions } from './auditLoggerTypes';
+import { AuditLogCategory, AuditLogEntry, AuditLogQueryOptions, AuditLogSeverity } from './auditLoggerTypes';
 
 /**
- * Logs an audit event to the database
+ * Log an audit event to the database
+ * @param entry The audit log entry to save
  */
-export const logAuditEvent = async (entry: AuditLogEntry): Promise<void> => {
+export async function logAuditEvent(entry: Partial<AuditLogEntry> & {
+  action: string;
+  category: AuditLogCategory;
+  severity: AuditLogSeverity;
+  status: 'success' | 'failure';
+}): Promise<{success: boolean; error?: any}> {
   try {
-    // Ensure details is a valid JSON object
-    const sanitizedDetails = entry.details ? entry.details : null;
-    
-    // Use a type assertion to bypass the TypeScript error
-    const { error } = await (supabase
-      .from('audit_logs' as any)
-      .insert({
-        user_id: entry.user_id,
-        action: entry.action,
-        category: entry.category,
-        severity: entry.severity,
-        details: sanitizedDetails,
-        ip_address: entry.ip_address,
-        device_info: entry.device_info,
-        target_resource: entry.target_resource,
-        status: entry.status,
-        error_message: entry.error_message
-      }) as any);
+    // If we don't have a user_id, set a placeholder value for database constraint
+    const finalEntry: AuditLogEntry = {
+      user_id: entry.user_id || '00000000-0000-0000-0000-000000000000',
+      action: entry.action,
+      category: entry.category,
+      severity: entry.severity,
+      status: entry.status,
+      details: entry.details,
+      ip_address: entry.ip_address,
+      device_info: entry.device_info,
+      target_resource: entry.target_resource,
+      error_message: entry.error_message
+    };
+
+    const { data, error } = await supabase
+      .from('audit_logs')
+      .insert(finalEntry);
 
     if (error) {
-      console.error('Failed to log audit event:', error);
+      console.error('Error logging audit event:', error);
+      return { success: false, error };
     }
-  } catch (err) {
-    // Ensure audit logging never breaks the application
-    console.error('Error in audit logging:', err);
+
+    return { success: true };
+  } catch (error) {
+    console.error('Exception in logAuditEvent:', error);
+    return { success: false, error };
   }
-};
+}
 
 /**
- * Retrieve audit logs with optional filtering
+ * Query audit logs with filters
+ * @param options Filter and pagination options
  */
-export const getAuditLogs = async (options?: AuditLogQueryOptions): Promise<any[]> => {
+export async function getAuditLogs(options: AuditLogQueryOptions = {}) {
   try {
-    // Use a type assertion to bypass the TypeScript error
-    let query = (supabase
-      .from('audit_logs' as any)
-      .select('*') as any);
-    
-    // Default sort order
-    const sortBy = options?.sortBy || 'created_at';
-    const sortOrder = options?.sortOrder || { ascending: false };
-    
-    // Apply ordering
-    query = query.order(sortBy, sortOrder);
+    let query = supabase
+      .from('audit_logs')
+      .select('*');
 
     // Apply filters
-    if (options?.userId) {
+    if (options.userId) {
       query = query.eq('user_id', options.userId);
     }
     
-    if (options?.category) {
+    if (options.category) {
       query = query.eq('category', options.category);
     }
     
-    if (options?.severity) {
+    if (options.severity) {
       query = query.eq('severity', options.severity);
     }
     
-    if (options?.status) {
+    if (options.status) {
       query = query.eq('status', options.status);
     }
     
-    if (options?.startDate) {
+    if (options.startDate) {
       query = query.gte('created_at', options.startDate);
     }
     
-    if (options?.endDate) {
+    if (options.endDate) {
       query = query.lte('created_at', options.endDate);
     }
     
-    // Apply pagination if specified
-    if (options?.page && options?.pageSize) {
-      const from = (options.page - 1) * options.pageSize;
-      const to = from + options.pageSize - 1;
-      query = query.range(from, to);
-    } else if (options?.limit) {
+    // Apply sorting
+    if (options.sortBy) {
+      const order = options.sortOrder?.ascending ? 'asc' : 'desc';
+      query = query.order(options.sortBy, { ascending: options.sortOrder?.ascending });
+    } else {
+      query = query.order('created_at', { ascending: false });
+    }
+    
+    // Apply pagination
+    if (options.limit) {
       query = query.limit(options.limit);
+    } else if (options.page !== undefined && options.pageSize) {
+      const start = options.page * options.pageSize;
+      query = query.range(start, start + options.pageSize - 1);
     }
-
+    
     const { data, error } = await query;
-
+    
     if (error) {
-      console.error('Failed to retrieve audit logs:', error);
-      return [];
+      throw error;
     }
-
-    return data || [];
-  } catch (err) {
-    console.error('Error retrieving audit logs:', err);
-    return [];
+    
+    return data;
+  } catch (error) {
+    console.error('Error getting audit logs:', error);
+    throw error;
   }
-};
+}
 
 /**
- * Count total audit logs with the given filters
+ * Count audit logs with filters
+ * @param options Filter options
  */
-export const countAuditLogs = async (options?: AuditLogQueryOptions): Promise<number> => {
+export async function countAuditLogs(options: Omit<AuditLogQueryOptions, 'page' | 'pageSize' | 'sortBy' | 'sortOrder'> = {}) {
   try {
-    // Use a type assertion to bypass the TypeScript error
-    let query = (supabase
-      .from('audit_logs' as any)
-      .select('id', { count: 'exact', head: true }) as any);
-
+    let query = supabase
+      .from('audit_logs')
+      .select('*', { count: 'exact', head: true });
+    
     // Apply filters
-    if (options?.userId) {
+    if (options.userId) {
       query = query.eq('user_id', options.userId);
     }
     
-    if (options?.category) {
+    if (options.category) {
       query = query.eq('category', options.category);
     }
     
-    if (options?.severity) {
+    if (options.severity) {
       query = query.eq('severity', options.severity);
     }
     
-    if (options?.status) {
+    if (options.status) {
       query = query.eq('status', options.status);
     }
     
-    if (options?.startDate) {
+    if (options.startDate) {
       query = query.gte('created_at', options.startDate);
     }
     
-    if (options?.endDate) {
+    if (options.endDate) {
       query = query.lte('created_at', options.endDate);
     }
-
+    
     const { count, error } = await query;
-
+    
     if (error) {
-      console.error('Failed to count audit logs:', error);
-      return 0;
+      throw error;
     }
-
+    
     return count || 0;
-  } catch (err) {
-    console.error('Error counting audit logs:', err);
-    return 0;
+  } catch (error) {
+    console.error('Error counting audit logs:', error);
+    throw error;
   }
-};
+}

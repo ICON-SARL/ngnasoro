@@ -18,7 +18,11 @@ export enum AuditLogCategory {
   PAYMENT_OPERATIONS = 'payment_operations',
   TOKEN_MANAGEMENT = 'token_management',
   SUBSIDY_OPERATIONS = 'subsidy_operations',
-  CLIENT_OPERATIONS = 'client_operations'
+  CLIENT_OPERATIONS = 'client_operations',
+  
+  // Admin management categories
+  USER_MANAGEMENT = 'user_management',
+  ADMIN_ACTION = 'admin_action'
 }
 
 export enum AuditLogSeverity {
