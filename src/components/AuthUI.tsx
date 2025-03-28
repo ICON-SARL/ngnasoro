@@ -107,7 +107,7 @@ const AuthUI = () => {
               <TabsTrigger value="register">Inscription</TabsTrigger>
             </TabsList>
             <TabsContent value="login">
-              <LoginForm adminMode={authMode !== 'default'} isSfdAdmin={authMode === 'sfd_admin'} />
+              <LoginForm adminMode={authMode === 'admin'} isSfdAdmin={authMode === 'sfd_admin'} />
             </TabsContent>
             <TabsContent value="register">
               <RegisterForm />

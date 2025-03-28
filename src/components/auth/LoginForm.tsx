@@ -13,9 +13,10 @@ import { Badge } from '@/components/ui/badge';
 
 interface LoginFormProps {
   adminMode?: boolean;
+  isSfdAdmin?: boolean;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = false }) => {
   const {
     email,
     setEmail,
@@ -29,7 +30,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false }) => {
     cooldownTime,
     emailSent,
     handleLogin
-  } = useLoginForm(adminMode);
+  } = useLoginForm(adminMode, isSfdAdmin);
 
   if (emailSent) {
     return <SuccessState email={email} />;
@@ -37,17 +38,32 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false }) => {
 
   return (
     <div className="space-y-5 p-6 w-full">
-      {adminMode && (
+      {adminMode && !isSfdAdmin && (
         <div className="flex items-center gap-2 border border-amber-200 bg-amber-50 p-3 rounded-md">
           <ShieldAlert className="h-5 w-5 text-amber-600" />
           <div>
             <h3 className="font-medium text-amber-800">Connexion Administration</h3>
             <p className="text-xs text-amber-700">
-              Accès réservé au personnel autorisé
+              Accès réservé au personnel MEREF autorisé
             </p>
           </div>
           <Badge variant="outline" className="ml-auto bg-amber-100 text-amber-800 border-amber-200">
-            Admin
+            Admin MEREF
+          </Badge>
+        </div>
+      )}
+      
+      {isSfdAdmin && (
+        <div className="flex items-center gap-2 border border-blue-200 bg-blue-50 p-3 rounded-md">
+          <ShieldAlert className="h-5 w-5 text-blue-600" />
+          <div>
+            <h3 className="font-medium text-blue-800">Connexion SFD</h3>
+            <p className="text-xs text-blue-700">
+              Accès réservé aux administrateurs SFD
+            </p>
+          </div>
+          <Badge variant="outline" className="ml-auto bg-blue-100 text-blue-800 border-blue-200">
+            Admin SFD
           </Badge>
         </div>
       )}
@@ -64,7 +80,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false }) => {
               <Input 
                 id="email"
                 type="email"
-                placeholder={adminMode ? "admin@meref.ml" : "jean.dulac@anatec.io"}
+                placeholder={isSfdAdmin ? "admin@sfd.ml" : adminMode ? "admin@meref.ml" : "jean.dulac@anatec.io"}
                 className="pl-10 h-12 text-base border border-gray-300 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-md"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -105,7 +121,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false }) => {
           <button 
             type="submit" 
             className={`w-full h-12 rounded-md font-semibold text-white ${
-              adminMode ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#0D6A51] hover:bg-[#0D6A51]/90'
+              isSfdAdmin ? 'bg-blue-600 hover:bg-blue-700' :
+              adminMode ? 'bg-amber-600 hover:bg-amber-700' : 
+              'bg-[#0D6A51] hover:bg-[#0D6A51]/90'
             } transition-all shadow-md flex items-center justify-center gap-2`}
             disabled={isLoading || cooldownActive}
           >
@@ -117,7 +135,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false }) => {
                 </svg>
                 Chargement...
               </span>
-            ) : adminMode ? "Connexion Administration" : "Connexion"}
+            ) : isSfdAdmin ? "Connexion SFD" : adminMode ? "Connexion Administration" : "Connexion"}
           </button>
         </div>
       </form>
