@@ -11,10 +11,13 @@ import {
   LayoutDashboard,
   Users,
   CircleDollarSign,
-  Building
+  Building,
+  RefreshCcw
 } from 'lucide-react';
 import { SfdRoleManager } from '@/components/sfd/roles/SfdRoleManager';
 import { useAuth } from '@/hooks/auth';
+import { AdminNotifications } from './shared/AdminNotifications';
+import { IntegratedDashboard } from './shared/IntegratedDashboard';
 
 const SfdAdminDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -61,6 +64,7 @@ const SfdAdminDashboard = () => {
             </div>
             
             <div className="flex items-center space-x-4">
+              <AdminNotifications />
               <div className="text-sm">
                 <span className="font-medium">{user?.full_name}</span>
                 <span className="text-gray-500 block text-xs">{user?.email}</span>
@@ -81,65 +85,84 @@ const SfdAdminDashboard = () => {
               Gérez vos clients, prêts et utilisateurs
             </p>
           </div>
+          
+          <div className="flex items-center gap-2 mt-4 md:mt-0">
+            <Button variant="outline" className="flex items-center">
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Synchroniser
+            </Button>
+          </div>
         </div>
         
         {/* Dashboard Widgets */}
         {activeTab === 'dashboard' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">Clients</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold">
-                    {stats.totalClients}
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-500">Clients</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="text-2xl font-bold">
+                      {stats.totalClients}
+                    </div>
+                    <div className="p-2 bg-blue-50 rounded-full">
+                      <Users className="h-5 w-5 text-blue-500" />
+                    </div>
                   </div>
-                  <div className="p-2 bg-blue-50 rounded-full">
-                    <Users className="h-5 w-5 text-blue-500" />
+                  <div className="text-xs text-gray-500 mt-1">
+                    +{stats.newClientsThisMonth} ce mois
                   </div>
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  +{stats.newClientsThisMonth} ce mois
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-500">Prêts Actifs</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="text-2xl font-bold">
+                      {stats.activeLoans}
+                    </div>
+                    <div className="p-2 bg-green-50 rounded-full">
+                      <CircleDollarSign className="h-5 w-5 text-green-500" />
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    +{stats.newLoansThisMonth} ce mois
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-500">Approbations en attente</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="text-2xl font-bold">
+                      {stats.pendingApprovals}
+                    </div>
+                    <div className="p-2 bg-amber-50 rounded-full">
+                      <FileText className="h-5 w-5 text-amber-500" />
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Traiter dès que possible
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
             
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">Prêts Actifs</CardTitle>
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Tableau de bord Intégré MEREF-SFD</CardTitle>
+                <CardDescription>Visualisation des données partagées entre le MEREF et votre SFD</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold">
-                    {stats.activeLoans}
-                  </div>
-                  <div className="p-2 bg-green-50 rounded-full">
-                    <CircleDollarSign className="h-5 w-5 text-green-500" />
-                  </div>
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  +{stats.newLoansThisMonth} ce mois
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">Approbations en attente</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold">
-                    {stats.pendingApprovals}
-                  </div>
-                  <div className="p-2 bg-amber-50 rounded-full">
-                    <FileText className="h-5 w-5 text-amber-500" />
-                  </div>
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  Traiter dès que possible
-                </div>
+                <IntegratedDashboard />
               </CardContent>
             </Card>
           </div>

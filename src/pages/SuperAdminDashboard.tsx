@@ -16,6 +16,9 @@ import { Button } from '@/components/ui/button';
 import { FileText, CreditCard, Building, Users } from 'lucide-react';
 import { AdminManagement } from '@/components/admin/AdminManagement';
 import { SubsidyRequestManagement } from '@/components/admin/subsidy';
+import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommunication';
+import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
+import { IntegratedDashboard } from '@/components/admin/shared/IntegratedDashboard';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
@@ -37,7 +40,7 @@ const SuperAdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <SuperAdminHeader />
+      <SuperAdminHeader additionalComponents={<AdminNotifications />} />
       
       <main className="flex-1 container mx-auto p-4 md:p-6">
         <SuperAdminDashboardHeader />
@@ -79,16 +82,23 @@ const SuperAdminDashboard = () => {
             <Users className="h-4 w-4 mr-2 text-[#0D6A51]" />
             Gestion Administrateurs
           </Button>
+          
+          <MerefSfdCommunication />
         </div>
         
         {/* Dashboard Widgets */}
         {activeTab === 'dashboard' && (
-          <DashboardWidgets 
-            stats={stats} 
-            isLoading={isLoadingStats} 
-            subsidies={subsidies} 
-            isLoadingSubsidies={isLoadingSubsidies} 
-          />
+          <>
+            <DashboardWidgets 
+              stats={stats} 
+              isLoading={isLoadingStats} 
+              subsidies={subsidies} 
+              isLoadingSubsidies={isLoadingSubsidies} 
+            />
+            <div className="mt-6">
+              <IntegratedDashboard />
+            </div>
+          </>
         )}
         
         {/* Charts */}

@@ -1,17 +1,27 @@
 
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { CreditApplicationList } from '@/components/admin/credit/CreditApplicationList';
 import { CreditScoringPanel } from '@/components/admin/credit/CreditScoringPanel';
 import { CreditNotificationSettings } from '@/components/admin/credit/CreditNotificationSettings';
 import { SfdManagement } from '@/components/admin/SfdManagement';
 import { SfdAuditLog } from '@/components/admin/SfdAuditLog';
+import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
+import { MerefApprovalDashboard } from '@/components/admin/MerefApprovalDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const CreditApprovalPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'applications';
+
+  const handleTabChange = (tab: string) => {
+    setSearchParams({ tab });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <SuperAdminHeader />
+      <SuperAdminHeader additionalComponents={<AdminNotifications />} />
       
       <main className="flex-1 container mx-auto p-4 md:p-6">
         <div className="mb-6">
@@ -21,13 +31,14 @@ const CreditApprovalPage = () => {
           </p>
         </div>
         
-        <Tabs defaultValue="applications" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList>
             <TabsTrigger value="applications">Demandes</TabsTrigger>
             <TabsTrigger value="scoring">Système de Scoring</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="sfd-management">Gestion des SFDs</TabsTrigger>
             <TabsTrigger value="sfd-audit">Historique SFDs</TabsTrigger>
+            <TabsTrigger value="meref-approval">Approbations MEREF</TabsTrigger>
           </TabsList>
           
           <TabsContent value="applications">
@@ -48,6 +59,10 @@ const CreditApprovalPage = () => {
           
           <TabsContent value="sfd-audit">
             <SfdAuditLog />
+          </TabsContent>
+          
+          <TabsContent value="meref-approval">
+            <MerefApprovalDashboard />
           </TabsContent>
         </Tabs>
       </main>
