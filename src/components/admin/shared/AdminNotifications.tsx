@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAdminCommunication, AdminNotification } from '@/hooks/useAdminCommunication';
-import { Bell, Check, CheckAll, ChevronDown, ChevronUp, ExternalLink, Info, AlertTriangle, AlertCircle, FileEdit } from 'lucide-react';
+import { Bell, Check, CheckCheck, ChevronDown, ChevronUp, ExternalLink, Info, AlertTriangle, AlertCircle, FileEdit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -57,7 +57,7 @@ export function AdminNotifications() {
               className="h-8 text-xs"
               onClick={() => markAllAsRead()}
             >
-              <CheckAll className="h-3.5 w-3.5 mr-1" />
+              <CheckCheck className="h-3.5 w-3.5 mr-1" />
               Tout marquer comme lu
             </Button>
           )}
@@ -89,6 +89,7 @@ export function AdminNotifications() {
                   notification={notification} 
                   onMarkAsRead={handleMarkAsRead}
                   onClose={() => setOpen(false)}
+                  getNotificationIcon={getNotificationIcon}
                 />
               ))}
             </div>
@@ -103,9 +104,10 @@ interface NotificationItemProps {
   notification: AdminNotification;
   onMarkAsRead: (id: string, e: React.MouseEvent) => void;
   onClose: () => void;
+  getNotificationIcon: (type: string) => React.ReactNode;
 }
 
-function NotificationItem({ notification, onMarkAsRead, onClose }: NotificationItemProps) {
+function NotificationItem({ notification, onMarkAsRead, onClose, getNotificationIcon }: NotificationItemProps) {
   const [expanded, setExpanded] = useState(false);
   
   // Format the date
