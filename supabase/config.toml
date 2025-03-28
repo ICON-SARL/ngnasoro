@@ -15,3 +15,4 @@ enabled = true
 [functions]
 [functions.process-repayment]
 verify_jwt = false
+

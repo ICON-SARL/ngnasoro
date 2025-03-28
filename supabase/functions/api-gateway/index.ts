@@ -325,7 +325,7 @@ serve(async (req) => {
   const url = new URL(req.url);
   const pathParts = url.pathname.split('/').filter(Boolean);
   
-  // Handle subsidy webhook
+  // Handle subsidy webhook - consolidated from subsidy-webhooks function
   if (req.method === 'POST' && pathParts[0] === 'subsidy-webhooks') {
     return handleSubsidyApproval(req);
   }

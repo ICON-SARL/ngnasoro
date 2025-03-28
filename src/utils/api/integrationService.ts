@@ -44,7 +44,7 @@ export const integrationService = {
     }
   },
   
-  // Trigger subsidy approval webhook
+  // Trigger subsidy approval webhook - now uses the api-gateway endpoint instead of subsidy-webhooks
   async triggerSubsidyApproval(
     requestId: string, 
     status: 'approved' | 'rejected', 
