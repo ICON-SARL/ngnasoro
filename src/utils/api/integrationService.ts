@@ -52,8 +52,9 @@ export const integrationService = {
     comments?: string
   ): Promise<SubsidyApprovalResult> {
     try {
-      const { data, error } = await supabase.functions.invoke('subsidy-webhooks', {
+      const { data, error } = await supabase.functions.invoke('api-gateway', {
         body: JSON.stringify({ 
+          path: '/subsidy-webhooks',
           requestId,
           status,
           reviewedBy,
