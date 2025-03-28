@@ -16,3 +16,4 @@ enabled = true
 [functions.process-repayment]
 verify_jwt = false
 
+# Note: We've removed the loan-status-webhooks function and consolidated it into api-gateway
