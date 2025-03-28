@@ -21,6 +21,10 @@ import LoanProcessPage from './components/mobile/LoanProcessPage';
 import Index from './pages/Index';
 import AgencyDashboard from './pages/AgencyDashboard';
 import CreditApprovalPage from './pages/CreditApprovalPage';
+import SfdLoansPage from './pages/SfdLoansPage';
+import SfdClientsPage from './pages/SfdClientsPage';
+import SfdTransactionsPage from './pages/SfdTransactionsPage';
+import SfdSubsidyRequestPage from './pages/SfdSubsidyRequestPage';
 
 function App() {
   return (
@@ -43,6 +47,27 @@ function App() {
           <Route 
             path="/agency-dashboard"
             element={<ProtectedRoute component={AgencyDashboard} requireSfdAdmin={true} />}
+          />
+          
+          {/* SFD Specific Routes */}
+          <Route 
+            path="/sfd-loans"
+            element={<ProtectedRoute component={SfdLoansPage} requireSfdAdmin={true} />}
+          />
+          
+          <Route 
+            path="/sfd-clients"
+            element={<ProtectedRoute component={SfdClientsPage} requireSfdAdmin={true} />}
+          />
+          
+          <Route 
+            path="/sfd-transactions"
+            element={<ProtectedRoute component={SfdTransactionsPage} requireSfdAdmin={true} />}
+          />
+          
+          <Route 
+            path="/sfd-subsidy-requests"
+            element={<ProtectedRoute component={SfdSubsidyRequestPage} requireSfdAdmin={true} />}
           />
           
           {/* Mobile Flow Routes - Pour les utilisateurs standard */}

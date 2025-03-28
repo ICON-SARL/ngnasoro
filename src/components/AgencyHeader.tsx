@@ -50,27 +50,53 @@ export const AgencyHeader = () => {
             <nav className="hidden md:flex space-x-6">
               <NavLink 
                 to="/agency-dashboard" 
-                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#0D6A51]' : 'text-gray-600 hover:text-gray-900'}`}
+                className={({ isActive }) => 
+                  `text-sm font-medium transition-colors hover:text-[#0D6A51] ${
+                    isActive ? 'text-[#0D6A51]' : 'text-muted-foreground'
+                  }`
+                }
               >
                 Tableau de Bord
               </NavLink>
               <NavLink 
-                to="/loans" 
-                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#0D6A51]' : 'text-gray-600 hover:text-gray-900'}`}
+                to="/sfd-loans" 
+                className={({ isActive }) => 
+                  `text-sm font-medium transition-colors hover:text-[#0D6A51] ${
+                    isActive ? 'text-[#0D6A51]' : 'text-muted-foreground'
+                  }`
+                }
               >
                 Prêts
               </NavLink>
               <NavLink 
-                to="/clients" 
-                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#0D6A51]' : 'text-gray-600 hover:text-gray-900'}`}
+                to="/sfd-clients" 
+                className={({ isActive }) => 
+                  `text-sm font-medium transition-colors hover:text-[#0D6A51] ${
+                    isActive ? 'text-[#0D6A51]' : 'text-muted-foreground'
+                  }`
+                }
               >
                 Clients
               </NavLink>
               <NavLink 
-                to="/transactions" 
-                className={({ isActive }) => `text-sm font-medium ${isActive ? 'text-[#0D6A51]' : 'text-gray-600 hover:text-gray-900'}`}
+                to="/sfd-transactions" 
+                className={({ isActive }) => 
+                  `text-sm font-medium transition-colors hover:text-[#0D6A51] ${
+                    isActive ? 'text-[#0D6A51]' : 'text-muted-foreground'
+                  }`
+                }
               >
                 Transactions
+              </NavLink>
+              <NavLink 
+                to="/sfd-subsidy-requests" 
+                className={({ isActive }) => 
+                  `text-sm font-medium transition-colors hover:text-[#0D6A51] ${
+                    isActive ? 'text-[#0D6A51]' : 'text-muted-foreground'
+                  }`
+                }
+              >
+                Demandes de Subvention
               </NavLink>
             </nav>
           </div>
@@ -80,7 +106,7 @@ export const AgencyHeader = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.avatar_url} alt={user?.full_name || 'User'} />
+                    <AvatarImage src="/placeholder-avatar.jpg" alt={user?.full_name || 'User'} />
                     <AvatarFallback className="bg-[#0D6A51] text-white">
                       {user?.full_name?.charAt(0) || 'U'}
                     </AvatarFallback>
@@ -90,25 +116,25 @@ export const AgencyHeader = () => {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user?.full_name}</p>
+                    <p className="text-sm font-medium leading-none">{user?.full_name || 'SFD User'}</p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      {user?.email}
+                      {user?.email || 'sfd@example.com'}
                     </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
-                  <Users className="mr-2 h-4 w-4" />
-                  <span>Profil</span>
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/agency-dashboard')}>
                   <Building className="mr-2 h-4 w-4" />
-                  <span>SFD Dashboard</span>
+                  <span>Tableau de bord</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/sfd-subsidy-requests')}>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  <span>Demandes de subvention</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Déconnexion</span>
+                  <span>Se déconnecter</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
