@@ -3,9 +3,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
 import ProfileHeader from './ProfileHeader';
 import SfdAccountsSection from './SfdAccountsSection';
 import SecuritySection from './SecuritySection';
@@ -13,7 +16,6 @@ import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
 import KycVerificationSection from './KycVerificationSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
-import { UserPermissions } from '@/components/auth/UserPermissions';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('accounts');
@@ -23,17 +25,6 @@ const ProfilePage = () => {
 
   const handleGoBack = () => {
     navigate('/mobile-flow/main');
-  };
-
-  const handleLogout = async () => {
-    try {
-      const { error } = await signOut();
-      if (!error) {
-        navigate('/auth');
-      }
-    } catch (err) {
-      console.error("Logout error:", err);
-    }
   };
 
   return (
@@ -73,13 +64,12 @@ const ProfilePage = () => {
         <TabsContent value="security" className="px-4">
           <SecuritySection />
           <NotificationsSection />
-          <AdvancedSettingsSection onLogout={handleLogout} />
+          <AdvancedSettingsSection onLogout={signOut} />
         </TabsContent>
         
         <TabsContent value="profile" className="px-4">
           <PersonalInfoSection user={user} />
           <KycVerificationSection />
-          <UserPermissions />
         </TabsContent>
       </Tabs>
     </div>

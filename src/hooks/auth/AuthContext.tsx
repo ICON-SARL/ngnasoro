@@ -2,24 +2,21 @@
 import { createContext } from 'react';
 import { AuthContextProps } from './types';
 
-const defaultContext: AuthContextProps = {
+// Create the auth context with default values
+const AuthContext = createContext<AuthContextProps>({
   session: null,
   user: null,
-  signIn: async () => ({ user: null, session: null, error: null }),
-  signOut: async () => ({ error: null }),
-  signUp: async () => ({ user: null, session: null, error: null }),
-  loading: true,
+  signIn: async () => {},
+  signOut: async () => {},
   isLoading: true,
+  loading: true,
   activeSfdId: null,
   setActiveSfdId: () => {},
   isAdmin: false,
-  userRole: null,
+  signUp: async () => {},
   verifyBiometricAuth: async () => false,
   biometricEnabled: false,
   toggleBiometricAuth: async () => {},
-  hasPermission: () => false,
-};
-
-const AuthContext = createContext<AuthContextProps>(defaultContext);
+});
 
 export default AuthContext;

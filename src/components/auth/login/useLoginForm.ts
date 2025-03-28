@@ -1,11 +1,11 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/auditLogger';
 
-export const useLoginForm = (adminMode: boolean = false, sfdMode: boolean = false) => {
+export const useLoginForm = (adminMode: boolean = false) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -76,22 +76,18 @@ export const useLoginForm = (adminMode: boolean = false, sfdMode: boolean = fals
     
     try {
       // Use password authentication (false for magic link)
-      const { error } = await signIn(email, password, false);
-      
-      if (error) {
-        throw error;
-      }
+      await signIn(email, password, false);
       
       // Log successful authentication attempt
       await logAuditEvent({
-        action: adminMode ? "admin_login_attempt" : sfdMode ? "sfd_admin_login_attempt" : "password_login_attempt",
+        action: adminMode ? "admin_login_attempt" : "password_login_attempt",
         category: AuditLogCategory.AUTHENTICATION,
         severity: AuditLogSeverity.INFO,
         status: 'success',
-        details: { email, admin_mode: adminMode, sfd_mode: sfdMode }
+        details: { email, admin_mode: adminMode }
       });
       
-      // Redirection will be handled by the AuthUI component based on user role
+      // La redirection est gérée par le composant AuthUI en fonction du rôle
       
       toast({
         title: "Connexion réussie",
@@ -103,12 +99,12 @@ export const useLoginForm = (adminMode: boolean = false, sfdMode: boolean = fals
       
       // Log failed authentication attempt
       await logAuditEvent({
-        action: adminMode ? "admin_login_failed" : sfdMode ? "sfd_admin_login_failed" : "password_login_attempt",
+        action: adminMode ? "admin_login_failed" : "password_login_attempt",
         category: AuditLogCategory.AUTHENTICATION,
         severity: AuditLogSeverity.WARNING,
         status: 'failure',
         error_message: error.message,
-        details: { email, admin_mode: adminMode, sfd_mode: sfdMode }
+        details: { email, admin_mode: adminMode }
       });
       
       // Check for rate limiting errors
@@ -162,7 +158,6 @@ export const useLoginForm = (adminMode: boolean = false, sfdMode: boolean = fals
     handleLogin,
     handleAuthComplete,
     toggleAuthMode,
-    adminMode,
-    sfdMode
+    adminMode
   };
 };

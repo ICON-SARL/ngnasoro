@@ -6,7 +6,6 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MobileFlowPage from './pages/MobileFlowPage';
 import ProtectedRoute from './components/routes/ProtectedRoute';
-import RoleGuard from './components/routes/RoleGuard';
 import FundsManagementPage from './components/mobile/funds-management/FundsManagementPage';
 import TransactionsPage from './components/mobile/transactions/TransactionsPage';
 import TransactionDetails from './components/mobile/transactions/TransactionDetails';
@@ -31,41 +30,10 @@ function App() {
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/register" element={<RegisterPage />} />
           
-          {/* MEREF Super Admin Routes */}
-          <Route 
-            path="/super-admin-dashboard"
-            element={<RoleGuard component={SuperAdminDashboard} allowedRoles={['admin']} />}
-          />
-          
-          <Route 
-            path="/credit-approval" 
-            element={<RoleGuard component={CreditApprovalPage} allowedRoles={['admin']} />} 
-          />
-          
-          {/* SFD Admin Dashboard Route */}
+          {/* Agency Dashboard Route - Nécessite un rôle SFD Admin */}
           <Route 
             path="/agency-dashboard"
-            element={<RoleGuard component={AgencyDashboard} allowedRoles={['sfd_admin']} />}
-          />
-          
-          <Route 
-            path="/sfd-admin"
-            element={<RoleGuard component={ClientsPage} allowedRoles={['sfd_admin']} />}
-          />
-          
-          <Route 
-            path="/sfd-dashboard"
-            element={<RoleGuard component={LoansPage} allowedRoles={['sfd_admin']} />}
-          />
-          
-          <Route 
-            path="/clients"
-            element={<RoleGuard component={ClientsPage} allowedRoles={['sfd_admin']} />}
-          />
-          
-          <Route 
-            path="/loans"
-            element={<RoleGuard component={LoansPage} allowedRoles={['sfd_admin']} />}
+            element={<ProtectedRoute component={AgencyDashboard} requireSfdAdmin={true} />}
           />
           
           {/* Mobile Flow Routes - Pour les utilisateurs standard */}
@@ -119,15 +87,48 @@ function App() {
             element={<ProtectedRoute component={LoanProcessPage} />}
           />
           
-          {/* Shared Routes */}
+          {/* SFD Admin Routes - Nécessite un rôle SFD Admin */}
+          <Route 
+            path="/sfd-admin"
+            element={<ProtectedRoute component={ClientsPage} requireSfdAdmin={true} />}
+          />
+          
+          <Route 
+            path="/sfd-dashboard"
+            element={<ProtectedRoute component={LoansPage} requireSfdAdmin={true} />}
+          />
+          
+          {/* Super Admin Routes - Nécessite un rôle Admin */}
+          <Route 
+            path="/super-admin-dashboard"
+            element={<ProtectedRoute component={SuperAdminDashboard} requireAdmin={true} />}
+          />
+          
+          <Route 
+            path="/clients"
+            element={<ProtectedRoute component={ClientsPage} requireSfdAdmin={true} />}
+          />
+          
+          <Route 
+            path="/loans"
+            element={<ProtectedRoute component={LoansPage} requireSfdAdmin={true} />}
+          />
+          
           <Route 
             path="/transactions"
             element={<ProtectedRoute component={TransactionsPage} />}
           />
           
+          {/* Multi-SFD Routes */}
           <Route 
             path="/multi-sfd"
             element={<ProtectedRoute component={MobileFlowPage} />}
+          />
+          
+          {/* Credit Approval Route - Nécessite un rôle Admin */}
+          <Route 
+            path="/credit-approval" 
+            element={<ProtectedRoute component={CreditApprovalPage} requireAdmin={true} />} 
           />
           
           {/* 404 Page */}

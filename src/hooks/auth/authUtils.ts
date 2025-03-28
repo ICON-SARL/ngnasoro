@@ -1,38 +1,33 @@
 
-import { Session } from '@supabase/supabase-js';
-import { UserRole } from './types';
+import { User } from './types';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
-/**
- * Extract user role from session
- */
-export const getRoleFromSession = (session: Session): UserRole => {
-  const role = session.user.app_metadata.role as UserRole;
-  if (!role) return 'user';
-  return role;
+export const createUserFromSupabaseUser = (supabaseUser: SupabaseUser): User => {
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email ?? '',
+    full_name: supabaseUser.user_metadata.full_name as string,
+    avatar_url: supabaseUser.user_metadata.avatar_url as string,
+    sfd_id: supabaseUser.user_metadata.sfd_id as string,
+    user_metadata: supabaseUser.user_metadata || {},
+    phone: supabaseUser.user_metadata.phone as string,
+    app_metadata: supabaseUser.app_metadata || {},
+    aud: supabaseUser.aud || '',
+    created_at: supabaseUser.created_at || '',
+  };
 };
 
-/**
- * Check if a user has a specific role
- */
-export const hasRole = (session: Session | null, role: UserRole): boolean => {
-  if (!session) return false;
-  return getRoleFromSession(session) === role;
+export const isUserAdmin = (session: Session | null): boolean => {
+  if (!session?.user) return false;
+  return session.user.app_metadata?.role === 'admin' || session.user.app_metadata?.role === 'sfd_admin';
 };
 
-/**
- * Get the appropriate redirect path based on user role
- */
-export const getRedirectPath = (session: Session | null): string => {
-  if (!session) return '/auth';
-  
-  const role = getRoleFromSession(session);
-  
-  switch (role) {
-    case 'admin':
-      return '/super-admin-dashboard';
-    case 'sfd_admin':
-      return '/agency-dashboard';
-    default:
-      return '/mobile-flow';
-  }
+export const getRoleFromSession = (session: Session | null): string | null => {
+  if (!session?.user) return null;
+  return session.user.app_metadata?.role || null;
+};
+
+export const getBiometricStatus = (session: Session | null): boolean => {
+  if (!session?.user) return false;
+  return session.user.user_metadata.biometric_enabled as boolean || false;
 };

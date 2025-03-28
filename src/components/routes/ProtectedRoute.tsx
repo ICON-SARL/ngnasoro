@@ -25,14 +25,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!user) {
-    // Redirection vers la page d'authentification appropriée en fonction du type d'accès requis
-    if (requireAdmin) {
-      return <Navigate to="/auth?admin=true" state={{ from: location }} replace />;
-    } else if (requireSfdAdmin) {
-      return <Navigate to="/auth?sfd=true" state={{ from: location }} replace />;
-    } else {
-      return <Navigate to="/auth" state={{ from: location }} replace />;
-    }
+    // Rediriger vers la page d'authentification avec l'URL d'origine comme "from"
+    return <Navigate to={`/auth${requireAdmin || requireSfdAdmin ? '?admin=true' : ''}`} state={{ from: location }} replace />;
   }
   
   const userRole = session ? getRoleFromSession(session) : null;
@@ -43,7 +37,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
   
   if (requireSfdAdmin && userRole !== 'sfd_admin') {
-    return <Navigate to="/auth?sfd=true" state={{ from: location, error: 'access_denied' }} replace />;
+    return <Navigate to="/auth?admin=true" state={{ from: location, error: 'access_denied' }} replace />;
   }
 
   return <Component {...rest} />;
