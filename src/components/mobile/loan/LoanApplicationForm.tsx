@@ -4,17 +4,18 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, AlertCircle } from 'lucide-react';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { ArrowLeft } from 'lucide-react';
+import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Card } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { mobileApi } from '@/utils/mobileApi';
 import { useAuth } from '@/hooks/auth';
+
+// Importation des étapes du formulaire
+import StepIndicator from './LoanApplicationSteps/StepIndicator';
+import AmountDurationStep from './LoanApplicationSteps/AmountDurationStep';
+import PurposeStep from './LoanApplicationSteps/PurposeStep';
+import AttachmentsStep from './LoanApplicationSteps/AttachmentsStep';
 
 // Schéma de validation du formulaire
 const formSchema = z.object({
@@ -32,6 +33,7 @@ const LoanApplicationForm: React.FC = () => {
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const totalSteps = 3;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -43,7 +45,6 @@ const LoanApplicationForm: React.FC = () => {
     },
   });
 
-  const totalSteps = 3;
   const handleNext = () => {
     // Validation du formulaire par étape
     if (step === 1) {
@@ -135,17 +136,25 @@ const LoanApplicationForm: React.FC = () => {
     }
   };
 
-  // Calcul de la mensualité (simplifié)
-  const calculateMonthlyPayment = () => {
-    const amount = form.getValues('amount');
-    const duration = form.getValues('duration_months');
-    const interestRate = 0.1; // 10% annuel simplifié
-    
-    // Formule simplifiée
-    const monthlyRate = interestRate / 12;
-    const payment = (amount * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -duration));
-    
-    return payment.toFixed(0);
+  // Rendu du formulaire en fonction de l'étape
+  const renderStepContent = () => {
+    switch (step) {
+      case 1:
+        return <AmountDurationStep form={form} />;
+      case 2:
+        return <PurposeStep form={form} />;
+      case 3:
+        return (
+          <AttachmentsStep 
+            attachments={attachments}
+            handleFileChange={handleFileChange}
+            removeAttachment={removeAttachment}
+            isSubmitting={isSubmitting}
+          />
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -162,212 +171,12 @@ const LoanApplicationForm: React.FC = () => {
       
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-2">Demande de prêt</h1>
-        <div className="flex items-center justify-between mb-1">
-          <div className="text-sm">Étape {step} sur {totalSteps}</div>
-          <div className="text-sm font-medium">{Math.round((step / totalSteps) * 100)}%</div>
-        </div>
-        <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-[#0D6A51] rounded-full transition-all duration-300" 
-            style={{ width: `${(step / totalSteps) * 100}%` }}
-          ></div>
-        </div>
+        <StepIndicator currentStep={step} totalSteps={totalSteps} />
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {step === 1 && (
-            <div className="space-y-4">
-              <div className="text-xl font-semibold mb-2">Montant et durée</div>
-              
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Montant du prêt (FCFA)</FormLabel>
-                    <div className="mb-2">
-                      <Input 
-                        type="number" 
-                        {...field} 
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
-                      />
-                    </div>
-                    <Slider
-                      min={10000}
-                      max={1000000}
-                      step={5000}
-                      value={[field.value]}
-                      onValueChange={(value) => field.onChange(value[0])}
-                    />
-                    <div className="flex justify-between text-sm text-gray-500 mt-1">
-                      <span>10 000</span>
-                      <span>1 000 000</span>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="duration_months"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Durée (mois)</FormLabel>
-                    <div className="mb-2">
-                      <Input 
-                        type="number" 
-                        {...field} 
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
-                      />
-                    </div>
-                    <Slider
-                      min={1}
-                      max={36}
-                      step={1}
-                      value={[field.value]}
-                      onValueChange={(value) => field.onChange(value[0])}
-                    />
-                    <div className="flex justify-between text-sm text-gray-500 mt-1">
-                      <span>1 mois</span>
-                      <span>36 mois</span>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Card className="p-4 bg-gray-50">
-                <div className="font-semibold text-sm mb-2">Estimation mensuelle</div>
-                <div className="text-2xl font-bold">{calculateMonthlyPayment()} FCFA</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  *Taux d'intérêt estimé à 10% annuel
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-4">
-              <div className="text-xl font-semibold mb-2">Objet du prêt</div>
-              
-              <FormField
-                control={form.control}
-                name="sfd_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Institution financière</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner un SFD" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="sfd-1">Microfinance Alpha</SelectItem>
-                        <SelectItem value="sfd-2">Crédit Rural</SelectItem>
-                        <SelectItem value="sfd-3">Finance Solidaire</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="purpose"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Objet du prêt</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Décrivez l'objet de votre demande de prêt" 
-                        className="resize-none h-32"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-4">
-              <div className="text-xl font-semibold mb-2">Pièces justificatives</div>
-              
-              <div className="border-2 border-dashed rounded-lg p-4 text-center">
-                <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm text-gray-500 mb-2">Glissez-déposez ou cliquez pour ajouter</p>
-                <input
-                  type="file"
-                  id="file-upload"
-                  className="hidden"
-                  multiple
-                  onChange={handleFileChange}
-                  accept=".pdf,.jpg,.jpeg,.png"
-                />
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => document.getElementById('file-upload')?.click()}
-                >
-                  Parcourir
-                </Button>
-              </div>
-              
-              {attachments.length > 0 && (
-                <div className="border rounded-lg divide-y">
-                  {attachments.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-3">
-                      <div className="flex items-center">
-                        <div className="bg-gray-100 p-1.5 rounded">
-                          <Upload className="h-4 w-4 text-gray-500" />
-                        </div>
-                        <div className="ml-3">
-                          <p className="text-sm font-medium truncate max-w-[200px]">{file.name}</p>
-                          <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(0)} KB</p>
-                        </div>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => removeAttachment(index)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        Supprimer
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start">
-                <AlertCircle className="h-5 w-5 text-amber-500 mr-2 mt-0.5 shrink-0" />
-                <div className="text-sm text-amber-800">
-                  <p className="font-semibold">Important</p>
-                  <p>Toutes les pièces justificatives doivent être lisibles et valides. Des documents incomplets peuvent retarder le traitement de votre demande.</p>
-                </div>
-              </div>
-              
-              <div className="pt-4">
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Traitement en cours...' : 'Soumettre ma demande'}
-                </Button>
-              </div>
-            </div>
-          )}
+          {renderStepContent()}
           
           {step < totalSteps && (
             <div className="pt-4">
