@@ -3,6 +3,9 @@ import React from 'react';
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import AuthProvider from './hooks/auth/AuthProvider';
 import LoginPage from './pages/LoginPage';
+import ClientLoginPage from './pages/ClientLoginPage';
+import AdminLoginPage from './pages/AdminLoginPage';
+import SfdLoginPage from './pages/SfdLoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MobileFlowPage from './pages/MobileFlowPage';
 import ProtectedRoute from './components/routes/ProtectedRoute';
@@ -26,7 +29,13 @@ function App() {
         <Routes>
           {/* Landing et Auth Routes */}
           <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<LoginPage />} />
+          
+          {/* Routes de Connexion Séparées */}
+          <Route path="/auth" element={<ClientLoginPage />} />
+          <Route path="/admin/auth" element={<AdminLoginPage />} />
+          <Route path="/sfd/auth" element={<SfdLoginPage />} />
+          
+          {/* Compatibilité avec les anciennes routes */}
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/register" element={<RegisterPage />} />
           
