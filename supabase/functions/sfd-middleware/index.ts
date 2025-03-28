@@ -5,8 +5,15 @@ import { decode, validate } from 'https://deno.land/x/djwt@v2.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-sfd-id, x-sfd-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-sfd-id, x-sfd-token, x-user-role',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+};
+
+// Define the routes that are accessible for each role
+const roleAccessibleRoutes = {
+  'admin': ['/api/subventions', '/api/loans', '/api/apply-loan', '/api/sfd'],
+  'sfd_admin': ['/api/loans', '/api/apply-loan', '/api/sfd'],
+  'user': ['/api/apply-loan', '/api/sfd/public'],
 };
 
 // Define the routes that are accessible for each SFD
@@ -15,27 +22,44 @@ const sfdAccessibleRoutes: Record<string, string[]> = {
   '*': ['/api/sfd/public', '/api/sfd/auth'],
 };
 
-// Function to check if a user has access to the requested endpoint
-const hasEndpointAccess = (sfdId: string, endpoint: string): boolean => {
-  // Check if there are specific routes for this SFD
-  const sfdRoutes = sfdAccessibleRoutes[sfdId] || [];
-  
-  // Include global routes available to all SFDs
-  const globalRoutes = sfdAccessibleRoutes['*'] || [];
-  
-  // Combine specific and global routes
-  const accessibleRoutes = [...sfdRoutes, ...globalRoutes];
+// Function to check if a user has access to the requested endpoint based on role
+const hasEndpointAccess = (role: string, endpoint: string): boolean => {
+  const allowedRoutes = roleAccessibleRoutes[role as keyof typeof roleAccessibleRoutes] || [];
   
   // Check if any route prefix matches the requested endpoint
-  return accessibleRoutes.some(route => endpoint.startsWith(route));
+  return allowedRoutes.some(route => endpoint.startsWith(route));
+};
+
+// Function to check if an SFD admin has access to a specific SFD endpoint
+const hasSfdAccessRights = (role: string, userSfdId: string, requestedSfdId: string, endpoint: string): boolean => {
+  // Super admins have access to all SFDs
+  if (role === 'admin') return true;
+  
+  // SFD admins only have access to their assigned SFD
+  if (role === 'sfd_admin') {
+    // Extract SFD ID from endpoint like /api/loans/{sfd-id}/...
+    const endpointParts = endpoint.split('/');
+    const sfdIdIndex = endpointParts.findIndex(part => part === 'loans') + 1;
+    
+    if (sfdIdIndex > 0 && sfdIdIndex < endpointParts.length) {
+      const endpointSfdId = endpointParts[sfdIdIndex];
+      return userSfdId === endpointSfdId;
+    }
+    
+    // If no specific SFD ID in the URL, check if using the provided SFD ID header
+    return userSfdId === requestedSfdId;
+  }
+  
+  return false;
 };
 
 // Extract and validate SFD JWT token
-async function extractAndValidateSfdToken(req: Request): Promise<{ userId: string; sfdId: string } | null> {
+async function extractAndValidateToken(req: Request): Promise<{ userId: string; sfdId: string; role: string } | null> {
   const authorization = req.headers.get('Authorization') || '';
   const sfdIdHeader = req.headers.get('x-sfd-id');
+  const userRoleHeader = req.headers.get('x-user-role');
   
-  if (!authorization || !authorization.startsWith('Bearer ') || !sfdIdHeader) {
+  if (!authorization || !authorization.startsWith('Bearer ') || !sfdIdHeader || !userRoleHeader) {
     return null;
   }
   
@@ -54,7 +78,8 @@ async function extractAndValidateSfdToken(req: Request): Promise<{ userId: strin
     
     return { 
       userId: payload.userId,
-      sfdId: payload.sfdId
+      sfdId: payload.sfdId,
+      role: userRoleHeader
     };
   } catch (error) {
     console.error('Token validation error:', error);
@@ -72,23 +97,48 @@ serve(async (req) => {
     const url = new URL(req.url);
     const endpoint = url.pathname;
     
-    // Extract and validate the SFD JWT token
-    const tokenData = await extractAndValidateSfdToken(req);
+    // Extract and validate the token
+    const tokenData = await extractAndValidateToken(req);
     
     if (!tokenData) {
       return new Response(JSON.stringify({ 
-        error: 'Unauthorized: Invalid or missing SFD token' 
+        error: 'Unauthorized: Invalid or missing authentication information' 
       }), { 
         status: 401, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
     }
     
-    // Check if the user has access to the requested endpoint for the specified SFD
-    if (!hasEndpointAccess(tokenData.sfdId, endpoint)) {
+    // Check if the user has access to the requested endpoint based on role
+    if (!hasEndpointAccess(tokenData.role, endpoint)) {
       return new Response(JSON.stringify({ 
-        error: 'Forbidden: Access denied to this endpoint for the specified SFD',
+        error: 'Forbidden: Insufficient permissions to access this endpoint',
+        role: tokenData.role,
+        endpoint: endpoint
+      }), { 
+        status: 403, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+    
+    // For SFD-specific endpoints, check if the user has access to the requested SFD
+    if (endpoint.includes('/loans/') && !hasSfdAccessRights(tokenData.role, tokenData.sfdId, req.headers.get('x-sfd-id') || '', endpoint)) {
+      return new Response(JSON.stringify({ 
+        error: 'Forbidden: You do not have access to the requested SFD resources',
+        role: tokenData.role,
         sfdId: tokenData.sfdId,
+        endpoint: endpoint
+      }), { 
+        status: 403, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+    
+    // Special check for subventions endpoint - only admins can access
+    if (endpoint.startsWith('/api/subventions') && tokenData.role !== 'admin') {
+      return new Response(JSON.stringify({ 
+        error: 'Forbidden: Only Super Admins can access subsidy information',
+        role: tokenData.role,
         endpoint: endpoint
       }), { 
         status: 403, 
@@ -102,6 +152,7 @@ serve(async (req) => {
       message: 'Access granted',
       userId: tokenData.userId,
       sfdId: tokenData.sfdId,
+      role: tokenData.role,
       endpoint: endpoint
     }), { 
       status: 200, 
