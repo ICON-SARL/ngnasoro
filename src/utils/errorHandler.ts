@@ -1,5 +1,6 @@
 
 import { toast } from "@/components/ui/use-toast";
+import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 
 export enum ErrorType {
   AUTHENTICATION = "AUTHENTICATION",
@@ -17,7 +18,7 @@ export interface AppError {
   statusCode?: number;
 }
 
-export const handleError = (error: unknown): AppError => {
+export const handleError = (error: unknown, userId?: string): AppError => {
   console.error("Error caught:", error);
   
   // Default error
@@ -54,6 +55,46 @@ export const handleError = (error: unknown): AppError => {
       };
     }
   }
+
+  // For errors with HTTP status codes
+  const errorWithStatus = error as any;
+  if (errorWithStatus?.statusCode) {
+    appError.statusCode = errorWithStatus.statusCode;
+    
+    if (errorWithStatus.statusCode === 403) {
+      appError.type = ErrorType.AUTHENTICATION;
+      appError.message = "Accès refusé";
+    } else if (errorWithStatus.statusCode >= 500) {
+      appError.type = ErrorType.SERVER;
+      appError.message = "Erreur serveur";
+    }
+  }
+  
+  // Log the error to our centralized audit system
+  const isServerError = appError.statusCode === 500;
+  const isPermissionError = appError.statusCode === 403;
+  
+  if (userId && (isServerError || isPermissionError || appError.type === ErrorType.AUTHENTICATION)) {
+    logAuditEvent({
+      user_id: userId,
+      action: 'error_caught',
+      category: AuditLogCategory.SYSTEM,
+      severity: isServerError ? AuditLogSeverity.ERROR : AuditLogSeverity.WARNING,
+      details: {
+        error_type: appError.type,
+        status_code: appError.statusCode,
+        technical_message: appError.technical
+      },
+      status: 'failure',
+      error_message: appError.message,
+      target_resource: errorWithStatus?.url || 'unknown'
+    });
+    
+    // Send alert for critical errors (500)
+    if (isServerError) {
+      sendErrorAlert(appError);
+    }
+  }
   
   // Show toast for user feedback
   toast({
@@ -65,7 +106,7 @@ export const handleError = (error: unknown): AppError => {
   return appError;
 };
 
-export const handleApiResponse = async (response: Response) => {
+export const handleApiResponse = async (response: Response, userId?: string) => {
   if (!response.ok) {
     let errorDetail = "Erreur serveur inconnue";
     
@@ -87,8 +128,59 @@ export const handleApiResponse = async (response: Response) => {
       statusCode: response.status
     };
     
+    // Log server and permission errors
+    if (userId && (response.status === 500 || response.status === 403)) {
+      logAuditEvent({
+        user_id: userId,
+        action: 'api_error',
+        category: AuditLogCategory.SYSTEM,
+        severity: response.status === 500 ? AuditLogSeverity.ERROR : AuditLogSeverity.WARNING,
+        details: {
+          error_type: appError.type,
+          status_code: response.status,
+          technical_message: errorDetail,
+          url: response.url
+        },
+        status: 'failure',
+        error_message: appError.message,
+        target_resource: response.url
+      });
+      
+      // Send alert for critical errors (500)
+      if (response.status === 500) {
+        sendErrorAlert(appError);
+      }
+    }
+    
     throw appError;
   }
   
   return response;
+};
+
+// Function to send alerts for critical errors
+export const sendErrorAlert = async (error: AppError) => {
+  try {
+    // Call the edge function to send Slack/Email alerts
+    const { data, error: alertError } = await fetch('/api/alert-critical-error', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        error_type: error.type,
+        message: error.message,
+        technical_details: error.technical,
+        status_code: error.statusCode,
+        timestamp: new Date().toISOString()
+      })
+    });
+    
+    if (alertError) {
+      console.error("Failed to send error alert:", alertError);
+    }
+  } catch (err) {
+    console.error("Error sending alert:", err);
+    // Don't throw here - this is a background task that shouldn't impact the app
+  }
 };

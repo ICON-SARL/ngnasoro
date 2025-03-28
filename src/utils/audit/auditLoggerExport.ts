@@ -1,64 +1,72 @@
 
-/**
- * Export functionality for audit logs
- */
-import { getAuditLogs } from './auditLoggerCore';
-import { AuditLogQueryOptions } from './auditLoggerTypes';
+import { getAuditLogs, AuditLogCategory, AuditLogSeverity } from './auditLoggerCore';
 
-/**
- * Export audit logs to CSV format
- */
-export const exportAuditLogsToCSV = async (options?: AuditLogQueryOptions): Promise<string> => {
+export async function exportAuditLogsToCSV(options?: {
+  category?: AuditLogCategory;
+  severity?: AuditLogSeverity;
+  startDate?: string;
+  endDate?: string;
+  status?: 'success' | 'failure';
+}): Promise<void> {
   try {
-    // Get filtered logs
+    // Fetch logs with provided options
     const logs = await getAuditLogs({
       ...options,
-      limit: 10000 // Set a reasonable limit for export
+      limit: 1000, // Limit to 1000 records for export
+      sortBy: 'created_at',
+      sortOrder: { ascending: false }
     });
     
-    if (logs.length === 0) {
-      return 'No data to export';
+    if (!logs || logs.length === 0) {
+      throw new Error('No logs available to export');
     }
     
-    // CSV headers
+    // Define CSV headers
     const headers = [
-      'ID',
-      'Timestamp',
-      'Action',
-      'User ID',
-      'Category',
-      'Severity',
-      'Status',
-      'Target Resource',
-      'IP Address',
-      'Details',
-      'Error Message'
+      'Date', 
+      'User ID', 
+      'Action', 
+      'Category', 
+      'Severity', 
+      'Status', 
+      'Target Resource', 
+      'Error Message', 
+      'Details'
     ];
     
-    // Format data rows
+    // Format log data for CSV
     const rows = logs.map(log => [
-      log.id,
-      log.created_at,
+      new Date(log.created_at).toLocaleString('fr-FR'),
+      log.user_id,
       log.action,
-      log.user_id || '',
       log.category,
       log.severity,
       log.status,
       log.target_resource || '',
-      log.ip_address || '',
-      JSON.stringify(log.details || {}),
-      log.error_message || ''
+      log.error_message || '',
+      log.details ? JSON.stringify(log.details) : ''
     ]);
     
     // Combine headers and rows
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.join(','))
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     ].join('\n');
     
-    return csvContent;
-  } catch (err) {
-    console.error('Error exporting audit logs to CSV:', err);
-    throw err;
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `audit_logs_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    return Promise.resolve();
+  } catch (error) {
+    console.error('Error exporting audit logs to CSV:', error);
+    throw error;
   }
-};
+}

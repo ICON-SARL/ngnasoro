@@ -1,7 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Loan, LoanPayment } from "@/types/sfdClients";
-import { useAuth } from "@/hooks/useAuth";
+import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from "@/utils/audit";
 
 // SFD Loan Management API functions
 export const sfdLoanApi = {
@@ -49,7 +48,7 @@ export const sfdLoanApi = {
     monthly_payment: number;
     subsidy_amount?: number;
     subsidy_rate?: number;
-  }) {
+  }, userId?: string) {
     try {
       const { data, error } = await supabase
         .from('sfd_loans')
@@ -79,6 +78,25 @@ export const sfdLoanApi = {
           description: `Prêt de ${loanData.amount} FCFA créé pour le client`
         });
         
+      // Log audit event for loan creation
+      if (userId) {
+        logAuditEvent({
+          user_id: userId,
+          action: 'create_loan',
+          category: AuditLogCategory.LOAN_OPERATIONS,
+          severity: AuditLogSeverity.INFO,
+          details: {
+            loan_id: data.id,
+            sfd_id: loanData.sfd_id,
+            client_id: loanData.client_id,
+            amount: loanData.amount,
+            purpose: loanData.purpose
+          },
+          status: 'success',
+          target_resource: `loan:${data.id}`
+        });
+      }
+        
       return data as unknown as Loan;
     } catch (error) {
       console.error('Error creating loan:', error);
@@ -89,6 +107,12 @@ export const sfdLoanApi = {
   // Approve a loan
   async approveLoan(loanId: string, approvedBy: string) {
     try {
+      const { data: oldData } = await supabase
+        .from('sfd_loans')
+        .select('status')
+        .eq('id', loanId)
+        .single();
+      
       const { data, error } = await supabase
         .from('sfd_loans')
         .update({
@@ -111,6 +135,21 @@ export const sfdLoanApi = {
           description: 'Prêt approuvé par un agent SFD',
           performed_by: approvedBy
         });
+      
+      // Log audit event for loan status change
+      logAuditEvent({
+        user_id: approvedBy,
+        action: 'loan_status_change',
+        category: AuditLogCategory.LOAN_OPERATIONS,
+        severity: AuditLogSeverity.WARNING,
+        details: {
+          loan_id: loanId,
+          old_status: oldData?.status || 'unknown',
+          new_status: 'approved'
+        },
+        status: 'success',
+        target_resource: `loan:${loanId}`
+      });
         
       return data as unknown as Loan;
     } catch (error) {
@@ -120,12 +159,19 @@ export const sfdLoanApi = {
   },
   
   // Reject a loan
-  async rejectLoan(loanId: string, rejectedBy: string) {
+  async rejectLoan(loanId: string, rejectedBy: string, reason?: string) {
     try {
+      const { data: oldData } = await supabase
+        .from('sfd_loans')
+        .select('status')
+        .eq('id', loanId)
+        .single();
+      
       const { data, error } = await supabase
         .from('sfd_loans')
         .update({
-          status: 'rejected'
+          status: 'rejected',
+          rejection_reason: reason
         })
         .eq('id', loanId)
         .select()
@@ -139,10 +185,26 @@ export const sfdLoanApi = {
         .insert({
           loan_id: loanId,
           activity_type: 'loan_rejected',
-          description: 'Prêt rejeté par un agent SFD',
+          description: reason ? `Prêt rejeté: ${reason}` : 'Prêt rejeté par un agent SFD',
           performed_by: rejectedBy
         });
         
+      // Log audit event for loan rejection with reason
+      logAuditEvent({
+        user_id: rejectedBy,
+        action: 'loan_status_change',
+        category: AuditLogCategory.LOAN_OPERATIONS,
+        severity: AuditLogSeverity.WARNING,
+        details: {
+          loan_id: loanId,
+          old_status: oldData?.status || 'unknown',
+          new_status: 'rejected',
+          rejection_reason: reason
+        },
+        status: 'success',
+        target_resource: `loan:${loanId}`
+      });
+      
       return data as unknown as Loan;
     } catch (error) {
       console.error('Error rejecting loan:', error);
@@ -175,6 +237,12 @@ export const sfdLoanApi = {
       }
       
       // Update the loan to disbursed status
+      const { data: oldData } = await supabase
+        .from('sfd_loans')
+        .select('status')
+        .eq('id', loanId)
+        .single();
+      
       const { data, error } = await supabase
         .from('sfd_loans')
         .update({
@@ -197,6 +265,22 @@ export const sfdLoanApi = {
           description: 'Prêt décaissé et fonds transférés au client',
           performed_by: disbursedBy
         });
+      
+      // Log audit event for loan disbursement
+      logAuditEvent({
+        user_id: disbursedBy,
+        action: 'loan_status_change',
+        category: AuditLogCategory.LOAN_OPERATIONS,
+        severity: AuditLogSeverity.WARNING,
+        details: {
+          loan_id: loanId,
+          old_status: oldData?.status || 'unknown',
+          new_status: 'active',
+          operation: 'disbursement'
+        },
+        status: 'success',
+        target_resource: `loan:${loanId}`
+      });
         
       return data as unknown as Loan;
     } catch (error) {
