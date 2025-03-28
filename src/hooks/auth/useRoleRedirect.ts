@@ -22,7 +22,7 @@ export const useRoleRedirect = () => {
       // Skip redirect if user is already on an appropriate page
       const currentPath = location.pathname;
       
-      // If user is on auth page or root, redirect based on role
+      // Only redirect if user is on auth page or root
       if (currentPath === '/auth' || currentPath === '/login' || currentPath === '/') {
         switch (userRole) {
           case 'admin':
@@ -31,8 +31,11 @@ export const useRoleRedirect = () => {
           case 'sfd_admin':
             navigate('/agency-dashboard');
             break;
-          default: // Regular user
+          case 'user':
             navigate('/mobile-flow');
+            break;
+          default:
+            // No redirect for other paths
             break;
         }
       }
