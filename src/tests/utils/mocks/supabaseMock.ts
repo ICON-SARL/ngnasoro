@@ -20,20 +20,29 @@ export const mockSupabaseClient = {
         }))
       })),
       order: jest.fn(() => ({
+        range: jest.fn(() => ({
+          data: [],
+          error: null,
+          count: 0
+        })),
+        data: [],
+        error: null
+      })),
+      or: jest.fn(() => ({
+        limit: jest.fn(() => ({
+          data: [],
+          error: null
+        }))
+      })),
+      group: jest.fn(() => ({
         data: [],
         error: null
       }))
-    })),
-    update: jest.fn(() => ({
-      eq: jest.fn(() => ({
-        select: jest.fn(() => ({
-          single: jest.fn(() => ({
-            data: { id: 'mock-id' },
-            error: null
-          }))
-        }))
-      }))
     }))
+  })),
+  rpc: jest.fn(() => ({
+    data: {},
+    error: null
   })),
   functions: {
     invoke: jest.fn(() => ({

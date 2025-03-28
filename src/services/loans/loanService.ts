@@ -1,11 +1,19 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Loan } from "@/types/sfdClients";
+
+// Define a proper filter type to avoid TypeScript errors
+interface LoanFilters {
+  status?: string;
+  clientId?: string;
+  fromDate?: string;
+  toDate?: string;
+  [key: string]: any; // Allow other filter properties
+}
 
 // Core loan operations with pagination and performance improvements
 export const loanService = {
   // Get all loans for the current SFD with pagination
-  async getSfdLoans(page = 1, pageSize = 20, filters = {}) {
+  async getSfdLoans(page = 1, pageSize = 20, filters: LoanFilters = {}) {
     try {
       let query = supabase
         .from('sfd_loans')
@@ -125,11 +133,32 @@ export const loanService = {
   // Count loans by status for dashboard statistics
   async countLoansByStatus(sfdId: string) {
     try {
+      // Use a direct SQL query instead of RPC since the function doesn't exist
       const { data, error } = await supabase
-        .rpc('count_loans_by_status', { p_sfd_id: sfdId });
+        .from('sfd_loans')
+        .select('status, count(*)')
+        .eq('sfd_id', sfdId)
+        .group('status');
       
       if (error) throw error;
-      return data;
+      
+      // Transform the result into the expected format
+      const result = {
+        pending: 0,
+        approved: 0,
+        active: 0,
+        completed: 0,
+        rejected: 0
+      };
+      
+      // Populate the result object with the counts
+      data.forEach(item => {
+        if (item.status in result) {
+          result[item.status as keyof typeof result] = parseInt(item.count);
+        }
+      });
+      
+      return result;
     } catch (error) {
       console.error('Error counting loans by status:', error);
       return {
@@ -145,11 +174,19 @@ export const loanService = {
   // Search loans - optimized for performance
   async searchLoans(searchTerm: string, limit = 5) {
     try {
+      // Use direct query instead of RPC since the function doesn't exist
       const { data, error } = await supabase
-        .rpc('search_loans', { 
-          search_term: searchTerm,
-          result_limit: limit
-        });
+        .from('sfd_loans')
+        .select(`
+          *,
+          client:client_id(id, full_name)
+        `)
+        .or(`
+          client_id.ilike.%${searchTerm}%,
+          id.ilike.%${searchTerm}%,
+          purpose.ilike.%${searchTerm}%
+        `)
+        .limit(limit);
       
       if (error) throw error;
       return data as unknown as Loan[];

@@ -7,9 +7,11 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export async function setupIntegrationTests() {
   // Create necessary database indexes for performance optimization
+  // Instead of using RPC, use direct query or log that this is a mock operation
   try {
-    await supabase.rpc('create_performance_indexes');
-    console.log('Performance indexes created successfully for tests');
+    console.log('Setting up performance indexes for tests (mock operation)');
+    // In a real implementation, you would execute SQL to create indexes
+    // await supabase.from('sfd_loans').select('count(*)'); // Just a no-op query
   } catch (error) {
     console.error('Failed to create performance indexes:', error);
   }
