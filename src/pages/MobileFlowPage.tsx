@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth';
 import MobileMenu from '@/components/mobile/menu/MobileMenu';
 import MobileNavigation from '@/components/MobileNavigation';
-import PageContent from '@/components/mobile/page-content/PageContent';
+import PageContent from '@/components/mobile/page-content';
 import { useMobilePermissions } from '@/hooks/mobile/useMobilePermissions';
 import { useMobileMenuState } from '@/hooks/mobile/useMobileMenuState';
 

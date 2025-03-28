@@ -14,6 +14,7 @@ import SecurePaymentTab from '@/components/mobile/secure-payment';
 import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
 import InstantLoanPage from '@/components/mobile/InstantLoanPage';
 import LoanAgreementPage from '@/components/mobile/LoanAgreementPage';
+import SfdAdminDashboard from '@/components/mobile/sfd-admin/SfdAdminDashboard';
 
 // Mock data
 import { Account } from '@/types/transactions';
@@ -30,7 +31,7 @@ const PageContent: React.FC<PageContentProps> = ({ toggleMenu, subPath }) => {
   
   // Redirect unknown paths to dashboard
   useEffect(() => {
-    const validPaths = ['main', 'profile', 'create-sfd', 'secure-payment', 'sfd-clients', 'loan-details', 'apply-loan', 'loan-agreement'];
+    const validPaths = ['main', 'profile', 'create-sfd', 'secure-payment', 'sfd-clients', 'loan-details', 'apply-loan', 'loan-agreement', 'sfd-admin-dashboard'];
     if (!validPaths.includes(subPath)) {
       console.log(`Redirecting from unknown path: ${subPath} to main dashboard`);
       navigate('/mobile-flow/main');
@@ -59,6 +60,10 @@ const PageContent: React.FC<PageContentProps> = ({ toggleMenu, subPath }) => {
     
     if (subPath === 'apply-loan') {
       checkPermissionWithRedirect('apply_for_loans');
+    }
+    
+    if (subPath === 'sfd-admin-dashboard') {
+      checkPermissionWithRedirect('manage_sfd_loans');
     }
   }, [user, subPath, hasPermission, navigate, checkPermissionWithRedirect]);
   
@@ -150,8 +155,16 @@ const renderContent = (
           <p>Vous n'avez pas les permissions nécessaires pour accéder à cette page.</p>
         </div>
       );
+    case 'sfd-admin-dashboard':
+      // Check if user has permission to manage SFD loans
+      return hasPermission('manage_sfd_loans') ? <SfdAdminDashboard /> : (
+        <div className="p-4 text-center">
+          <h2 className="text-xl font-semibold mb-2">Accès restreint</h2>
+          <p>Vous n'avez pas les permissions nécessaires pour accéder à cette page.</p>
+        </div>
+      );
     case 'loan-details':
-      return <LoanDetailsPage onBack={() => navigate('/mobile-flow')} />;
+      return <LoanDetailsPage onBack={() => navigate(-1)} />;
     case 'apply-loan':
       return hasPermission('apply_for_loans') ? <InstantLoanPage /> : (
         <div className="p-4 text-center">
