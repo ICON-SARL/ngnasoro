@@ -1,4 +1,3 @@
-
 import { toast } from "@/components/ui/use-toast";
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 
@@ -162,7 +161,7 @@ export const handleApiResponse = async (response: Response, userId?: string) => 
 export const sendErrorAlert = async (error: AppError) => {
   try {
     // Call the edge function to send Slack/Email alerts
-    const { data, error: alertError } = await fetch('/api/alert-critical-error', {
+    const response = await fetch('/api/alert-critical-error', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -176,8 +175,8 @@ export const sendErrorAlert = async (error: AppError) => {
       })
     });
     
-    if (alertError) {
-      console.error("Failed to send error alert:", alertError);
+    if (!response.ok) {
+      console.error("Failed to send error alert:", await response.text());
     }
   } catch (err) {
     console.error("Error sending alert:", err);

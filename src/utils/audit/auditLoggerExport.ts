@@ -1,5 +1,6 @@
 
-import { getAuditLogs, AuditLogCategory, AuditLogSeverity } from './auditLoggerCore';
+import { getAuditLogs } from './auditLoggerCore';
+import { AuditLogCategory, AuditLogSeverity } from './auditLoggerTypes';
 
 export async function exportAuditLogsToCSV(options?: {
   category?: AuditLogCategory;
