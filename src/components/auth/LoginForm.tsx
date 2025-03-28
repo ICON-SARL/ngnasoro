@@ -4,7 +4,7 @@ import {
   ErrorDisplay,
   CooldownAlert,
   useLoginForm
-} from './login';
+} from './login/index';
 import SuccessState from './login/SuccessState';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
