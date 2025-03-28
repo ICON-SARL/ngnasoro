@@ -1,210 +1,80 @@
 
-import { supabase } from '@/integrations/supabase/client';
 import { Transaction } from '@/types/transactions';
-import { logAuditEvent } from '@/services/transactionService';
-import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
+import { BaseTransactionManager } from './managers/baseTransactionManager';
+import { DepositManager } from './managers/depositManager';
+import { WithdrawalManager } from './managers/withdrawalManager';
+import { LoanManager } from './managers/loanManager';
+import { TransactionParams } from './interfaces/transactionInterfaces';
 
-export interface TransactionParams {
-  amount: number;
-  type: 'deposit' | 'withdrawal' | 'loan_repayment' | 'loan_disbursement';
-  description?: string;
-  paymentMethod?: string;
-  referenceId?: string;
-  name?: string;
-}
-
+/**
+ * Combined transaction manager that provides access to all transaction operations
+ */
 export class TransactionManager {
+  private baseManager: BaseTransactionManager;
+  private depositManager: DepositManager;
+  private withdrawalManager: WithdrawalManager;
+  private loanManager: LoanManager;
   private userId: string;
   private sfdId: string;
 
   constructor(userId: string, sfdId: string) {
     this.userId = userId;
     this.sfdId = sfdId;
+    this.baseManager = new BaseTransactionManager(userId, sfdId);
+    this.depositManager = new DepositManager(userId, sfdId);
+    this.withdrawalManager = new WithdrawalManager(userId, sfdId);
+    this.loanManager = new LoanManager(userId, sfdId);
   }
 
   /**
-   * Crée une nouvelle transaction
+   * Creates a new transaction
    */
   async createTransaction(params: TransactionParams): Promise<Transaction | null> {
-    try {
-      const { amount, type, description, paymentMethod, referenceId, name } = params;
-      
-      // Préparer les données pour la base de données
-      const transactionData = {
-        user_id: this.userId,
-        sfd_id: this.sfdId,
-        amount: amount,
-        type: type,
-        description: description || `Transaction ${type}`,
-        payment_method: paymentMethod || 'sfd_account',
-        reference_id: referenceId || `tx-${Date.now()}`,
-        name: name || `Transaction ${type}`,
-        date: new Date().toISOString(),
-        status: 'success'
-      };
-
-      // Insérer la transaction dans la base de données
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert(transactionData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Erreur lors de la création de la transaction:', error);
-        
-        // Logger l'erreur pour audit
-        await logAuditEvent({
-          action: "transaction_creation",
-          category: AuditLogCategory.SFD_OPERATIONS,
-          severity: AuditLogSeverity.ERROR,
-          status: 'failure',
-          user_id: this.userId,
-          error_message: error.message,
-          details: { type, amount, sfd_id: this.sfdId }
-        });
-        
-        return null;
-      }
-
-      // Logger le succès pour audit
-      await logAuditEvent({
-        action: "transaction_creation",
-        category: AuditLogCategory.SFD_OPERATIONS,
-        severity: AuditLogSeverity.INFO,
-        status: 'success',
-        user_id: this.userId,
-        details: { 
-          transaction_id: data.id, 
-          type, 
-          amount, 
-          sfd_id: this.sfdId 
-        }
-      });
-
-      return data as Transaction;
-    } catch (error: any) {
-      console.error('Échec de la création de transaction:', error);
-      return null;
-    }
+    return this.baseManager.createTransaction(params);
   }
 
   /**
-   * Effectue un dépôt
+   * Makes a deposit
    */
   async makeDeposit(amount: number, description?: string, paymentMethod?: string): Promise<Transaction | null> {
-    if (amount <= 0) {
-      throw new Error('Le montant du dépôt doit être supérieur à 0');
-    }
-
-    return this.createTransaction({
-      amount: amount,
-      type: 'deposit',
-      description: description || 'Dépôt dans le compte SFD',
-      paymentMethod,
-      name: 'Dépôt'
-    });
+    return this.depositManager.makeDeposit(amount, description, paymentMethod);
   }
 
   /**
-   * Effectue un retrait
+   * Makes a withdrawal
    */
   async makeWithdrawal(amount: number, description?: string, paymentMethod?: string): Promise<Transaction | null> {
-    if (amount <= 0) {
-      throw new Error('Le montant du retrait doit être supérieur à 0');
-    }
-
-    // Vérifier si le solde est suffisant
-    const { data: account, error } = await supabase
-      .from('accounts')
-      .select('balance')
-      .eq('user_id', this.userId)
-      .single();
-
-    if (error || !account) {
-      throw new Error('Impossible de vérifier le solde du compte');
-    }
-
-    if (account.balance < amount) {
-      throw new Error('Solde insuffisant pour effectuer ce retrait');
-    }
-
-    return this.createTransaction({
-      amount: amount,
-      type: 'withdrawal',
-      description: description || 'Retrait du compte SFD',
-      paymentMethod,
-      name: 'Retrait'
-    });
+    return this.withdrawalManager.makeWithdrawal(amount, description, paymentMethod);
   }
 
   /**
-   * Effectue un remboursement de prêt
+   * Makes a loan repayment
    */
   async makeLoanRepayment(loanId: string, amount: number, description?: string, paymentMethod?: string): Promise<Transaction | null> {
-    if (amount <= 0) {
-      throw new Error('Le montant du remboursement doit être supérieur à 0');
-    }
-
-    return this.createTransaction({
-      amount: amount,
-      type: 'loan_repayment',
-      description: description || `Remboursement du prêt ${loanId}`,
-      paymentMethod,
-      referenceId: loanId,
-      name: 'Remboursement de prêt'
-    });
+    return this.loanManager.makeLoanRepayment(loanId, amount, description, paymentMethod);
   }
 
   /**
-   * Récupérer l'historique des transactions
+   * Gets transaction history
    */
   async getTransactionHistory(limit: number = 10): Promise<Transaction[]> {
-    try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', this.userId)
-        .eq('sfd_id', this.sfdId)
-        .order('date', { ascending: false })
-        .limit(limit);
-
-      if (error) {
-        console.error('Erreur lors de la récupération de l\'historique des transactions:', error);
-        return [];
-      }
-
-      return data as Transaction[];
-    } catch (error) {
-      console.error('Échec de la récupération de l\'historique des transactions:', error);
-      return [];
-    }
+    return this.baseManager.getTransactionHistory(limit);
   }
 
   /**
-   * Récupérer le solde actuel du compte
+   * Gets account balance
    */
   async getAccountBalance(): Promise<number> {
-    try {
-      const { data, error } = await supabase
-        .from('accounts')
-        .select('balance')
-        .eq('user_id', this.userId)
-        .single();
-
-      if (error) {
-        console.error('Erreur lors de la récupération du solde:', error);
-        return 0;
-      }
-
-      return data.balance || 0;
-    } catch (error) {
-      console.error('Échec de la récupération du solde:', error);
-      return 0;
-    }
+    return this.baseManager.getAccountBalance();
   }
 }
 
+/**
+ * Factory function to create a TransactionManager
+ */
 export const createTransactionManager = (userId: string, sfdId: string): TransactionManager => {
   return new TransactionManager(userId, sfdId);
 };
+
+// Export the TransactionParams interface to maintain the public API
+export { TransactionParams } from './interfaces/transactionInterfaces';
