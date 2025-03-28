@@ -1,0 +1,3 @@
+
+[functions.loan-status-webhooks]
+verify_jwt = false

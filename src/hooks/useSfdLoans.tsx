@@ -124,6 +124,27 @@ export function useSfdLoans() {
       });
     }
   });
+  
+  // Send payment reminder
+  const sendPaymentReminder = useMutation({
+    mutationFn: ({ loanId }: { loanId: string }) => {
+      if (!user?.id) throw new Error("Utilisateur non authentifié");
+      return sfdLoanApi.sendPaymentReminder(loanId, user.id);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Rappel envoyé",
+        description: "Le rappel de paiement a été envoyé au client",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur d'envoi",
+        description: error.message || "Une erreur est survenue lors de l'envoi du rappel",
+        variant: "destructive",
+      });
+    }
+  });
 
   // Confirm loan agreement (OTP confirmation)
   const confirmLoanAgreement = useMutation({
@@ -169,6 +190,7 @@ export function useSfdLoans() {
     rejectLoan,
     disburseLoan,
     recordPayment,
+    sendPaymentReminder,
     confirmLoanAgreement,
     getLoanById,
     getLoanPayments,
