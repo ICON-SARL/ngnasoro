@@ -1,164 +1,139 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Home, Wallet, User, Plus, RefreshCw, ArrowUp } from 'lucide-react';
-import { useState } from 'react';
-
-interface NavigationItem {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  path: string;
-}
+import { cn } from '@/lib/utils';
+import { Home, CreditCard, BarChart3, User, Building, Plus } from 'lucide-react';
 
 interface MobileNavigationProps {
-  onAction?: (action: string) => void;
-  className?: string;
+  onAction?: (action: string, data?: any) => void;
   isHeader?: boolean;
+  className?: string;
+  showLoanOption?: boolean;
+  showAdminOption?: boolean;
 }
 
-const MobileNavigation = ({ onAction, className = "", isHeader = false }: MobileNavigationProps) => {
-  const isMobile = useIsMobile();
+const MobileNavigation: React.FC<MobileNavigationProps> = ({ 
+  onAction,
+  isHeader = false,
+  className = '',
+  showLoanOption = true,
+  showAdminOption = false
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Extract current path from location
-  const currentPath = location.pathname.split('/').pop() || '';
-  const [activeTab, setActiveTab] = useState(currentPath || 'main');
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path.includes('/mobile-flow/transactions')) return 'transactions';
+    if (path.includes('/mobile-flow/funds')) return 'funds';
+    if (path.includes('/mobile-flow/loan-activity') || path.includes('/mobile-flow/loan-process') || path.includes('/mobile-flow/secure-payment')) return 'loans';
+    if (path.includes('/mobile-flow/profile')) return 'profile';
+    if (path.includes('/mobile-flow/sfd-clients')) return 'admin';
+    return 'home';
+  };
   
-  // Check if current route is welcome screen
-  const isWelcomePage = location.pathname === '/mobile-flow/welcome';
-
-  useEffect(() => {
-    const pathSegment = location.pathname.split('/').pop() || '';
-    setActiveTab(pathSegment || 'main');
-  }, [location.pathname]);
-
-  useEffect(() => {
-    const handleCustomAction = (event: any) => {
-      if (event.detail && event.detail.action && onAction) {
-        onAction(event.detail.action);
-      }
-    };
-
-    window.addEventListener('lovable:action', handleCustomAction);
-    
-    return () => {
-      window.removeEventListener('lovable:action', handleCustomAction);
-    };
-  }, [onAction]);
-
-  const navigationItems: NavigationItem[] = [
-    {
-      icon: <Home className="h-6 w-6" />,
-      label: "Accueil",
-      value: 'main',
-      path: '/mobile-flow/main'
-    },
-    {
-      icon: <Wallet className="h-6 w-6" />,
-      label: "Mes Fonds",
-      value: 'funds-management',
-      path: '/mobile-flow/funds-management'
-    },
-    {
-      icon: null,
-      label: "",
-      value: 'action',
-      path: '/mobile-flow/loan-application'
-    },
-    {
-      icon: <ArrowUp className="h-6 w-6" />,
-      label: "Rembourser",
-      value: 'payment',
-      path: '/mobile-flow/secure-payment'
-    },
-    {
-      icon: <User className="h-6 w-6" />,
-      label: "Profil",
-      value: 'profile',
-      path: '/mobile-flow/profile'
+  const activeTab = getActiveTab();
+  
+  const handleTabClick = (tab: string) => {
+    switch (tab) {
+      case 'home':
+        navigate('/mobile-flow');
+        break;
+      case 'transactions':
+        navigate('/mobile-flow/transactions');
+        break;
+      case 'funds':
+        navigate('/mobile-flow/funds');
+        break;
+      case 'loans':
+        navigate('/mobile-flow/loan-activity');
+        break;
+      case 'profile':
+        navigate('/mobile-flow/profile');
+        break;
+      case 'admin':
+        navigate('/mobile-flow/sfd-clients');
+        break;
+      default:
+        navigate('/mobile-flow');
     }
-  ];
+    
+    if (onAction) {
+      onAction(tab);
+    }
+  };
 
-  // Don't render on welcome page or if not mobile
-  if (!isMobile || isWelcomePage) return null;
-
-  // If we're in the header (tablet mode), show horizontal navigation
-  if (isHeader) {
-    return (
-      <div className={`bg-white border-b border-gray-200 py-2 ${className}`}>
-        <div className="flex justify-around items-center px-2 relative">
-          {navigationItems.map((item, index) => {
-            if (index === 2) {
-              return (
-                <div key={index} className="relative">
-                  <button 
-                    className="bg-[#0D6A51] text-white p-3 rounded-full shadow-lg"
-                    onClick={() => navigate('/mobile-flow/loan-application')}
-                  >
-                    <Plus className="h-5 w-5" />
-                  </button>
-                </div>
-              );
-            }
-            
-            return (
-              <button
-                key={index}
-                className={`flex flex-col items-center justify-center py-1 px-2 ${
-                  activeTab === item.value 
-                    ? 'text-[#0D6A51] font-medium' 
-                    : 'text-gray-400'
-                }`}
-                onClick={() => navigate(item.path)}
-              >
-                {item.icon}
-                <span className="text-xs mt-1">{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // Regular mobile footer navigation
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 z-50">
-      <div className="flex justify-around items-center px-2 relative">
-        {navigationItems.map((item, index) => {
-          if (index === 2) {
-            return (
-              <div key={index} className="relative -top-5">
-                <button 
-                  className="bg-[#0D6A51] text-white p-4 rounded-full shadow-lg"
-                  onClick={() => navigate('/mobile-flow/loan-application')}
-                >
-                  <Plus className="h-6 w-6" />
-                </button>
-              </div>
-            );
-          }
-          
-          return (
-            <button
-              key={index}
-              className={`flex flex-col items-center justify-center py-3 px-2 ${
-                activeTab === item.value 
-                  ? 'text-[#0D6A51] font-medium' 
-                  : 'text-gray-400'
-              }`}
-              onClick={() => navigate(item.path)}
-            >
-              {item.icon}
-              <span className="text-xs mt-1">{item.label}</span>
-            </button>
-          );
-        })}
+    <div className={cn(
+      "bg-white border-t border-gray-200 px-2 pt-1 pb-0.5",
+      isHeader ? "border-t-0 border-b border-gray-200 bg-white/50 backdrop-blur-sm" : "fixed bottom-0 left-0 right-0 z-50",
+      className
+    )}>
+      <div className="grid grid-cols-5 gap-1">
+        <TabButton 
+          icon={<Home className="h-5 w-5" />} 
+          label="Accueil" 
+          active={activeTab === 'home'} 
+          onClick={() => handleTabClick('home')} 
+        />
+        
+        <TabButton 
+          icon={<BarChart3 className="h-5 w-5" />} 
+          label="Transactions" 
+          active={activeTab === 'transactions'} 
+          onClick={() => handleTabClick('transactions')} 
+        />
+        
+        {showLoanOption && (
+          <TabButton 
+            icon={<CreditCard className="h-5 w-5" />} 
+            label="Prêts" 
+            active={activeTab === 'loans'} 
+            onClick={() => handleTabClick('loans')} 
+          />
+        )}
+        
+        {showAdminOption && (
+          <TabButton 
+            icon={<Building className="h-5 w-5" />} 
+            label="Admin" 
+            active={activeTab === 'admin'} 
+            onClick={() => handleTabClick('admin')} 
+          />
+        )}
+        
+        <TabButton 
+          icon={<User className="h-5 w-5" />} 
+          label="Profil" 
+          active={activeTab === 'profile'} 
+          onClick={() => handleTabClick('profile')} 
+        />
       </div>
     </div>
+  );
+};
+
+interface TabButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}
+
+const TabButton: React.FC<TabButtonProps> = ({ icon, label, active, onClick }) => {
+  return (
+    <button 
+      className={cn(
+        "flex flex-col items-center justify-center py-1 px-1 rounded-lg transition-colors",
+        active 
+          ? "text-[#0D6A51]" 
+          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+      )}
+      onClick={onClick}
+    >
+      {icon}
+      <span className="text-xs mt-0.5">{label}</span>
+    </button>
   );
 };
 

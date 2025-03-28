@@ -14,7 +14,7 @@ import MobileNavigation from '@/components/MobileNavigation';
 const MobileFlowPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, hasPermission } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   
   // Cette fonction extrait le sous-chemin du path /mobile-flow/X
@@ -42,6 +42,23 @@ const MobileFlowPage: React.FC = () => {
       navigate('/auth');
     }
   }, [user, isLoading, navigate]);
+  
+  // Vérifier les permissions pour accéder aux pages
+  useEffect(() => {
+    if (!isLoading && user) {
+      // Permission requise pour accéder à l'app mobile
+      if (!hasPermission('access_mobile_app')) {
+        navigate('/auth');
+        return;
+      }
+      
+      // Permission requise pour les clients SFD (admin SFD uniquement)
+      if (subPath === 'sfd-clients' && !hasPermission('manage_sfd_clients')) {
+        navigate('/mobile-flow/main');
+        return;
+      }
+    }
+  }, [user, isLoading, subPath, hasPermission, navigate]);
   
   // Rediriger les chemins inconnus vers le dashboard
   useEffect(() => {
@@ -109,11 +126,23 @@ const MobileFlowPage: React.FC = () => {
       case 'profile':
         return <ProfilePage />;
       case 'create-sfd':
-        return <SfdSetupPage />;
+        // Vérifier si l'utilisateur a la permission de gérer les SFDs
+        return hasPermission('manage_sfds') ? <SfdSetupPage /> : (
+          <div className="p-4 text-center">
+            <h2 className="text-xl font-semibold mb-2">Accès restreint</h2>
+            <p>Vous n'avez pas les permissions nécessaires pour accéder à cette page.</p>
+          </div>
+        );
       case 'secure-payment':
         return <SecurePaymentTab onBack={() => navigate(-1)} />;
       case 'sfd-clients':
-        return <SfdClientsPage />;
+        // Vérifier si l'utilisateur a la permission de gérer les clients SFD
+        return hasPermission('manage_sfd_clients') ? <SfdClientsPage /> : (
+          <div className="p-4 text-center">
+            <h2 className="text-xl font-semibold mb-2">Accès restreint</h2>
+            <p>Vous n'avez pas les permissions nécessaires pour accéder à cette page.</p>
+          </div>
+        );
       default:
         return (
           <MainDashboard 
@@ -133,12 +162,18 @@ const MobileFlowPage: React.FC = () => {
         {renderContent()}
       </main>
       
-      <MobileNavigation onAction={handleAction} />
+      <MobileNavigation 
+        onAction={handleAction} 
+        // Filtre de navigation basé sur les permissions
+        showLoanOption={hasPermission('apply_for_loans')}
+        showAdminOption={hasPermission('manage_sfd_clients') || hasPermission('manage_sfd_loans')}
+      />
       
       <MobileMenu 
         isOpen={menuOpen} 
         onClose={toggleMenu} 
         onLogout={handleLogout}
+        userRole={user.app_metadata?.role}
       />
     </div>
   );
