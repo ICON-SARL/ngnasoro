@@ -15,6 +15,9 @@ import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
 import InstantLoanPage from '@/components/mobile/InstantLoanPage';
 import LoanAgreementPage from '@/components/mobile/LoanAgreementPage';
 import SfdAdminDashboard from '@/components/mobile/sfd-admin/SfdAdminDashboard';
+import LoanApplicationForm from '@/components/mobile/loan/LoanApplicationForm';
+import LoanTrackingPage from '@/components/mobile/loan/LoanTrackingPage';
+import NotificationsPage from '@/components/mobile/notifications/NotificationsPage';
 
 // Mock data
 import { Account } from '@/types/transactions';
@@ -31,7 +34,11 @@ const PageContent: React.FC<PageContentProps> = ({ toggleMenu, subPath }) => {
   
   // Redirect unknown paths to dashboard
   useEffect(() => {
-    const validPaths = ['main', 'profile', 'create-sfd', 'secure-payment', 'sfd-clients', 'loan-details', 'apply-loan', 'loan-agreement', 'sfd-admin-dashboard'];
+    const validPaths = [
+      'main', 'profile', 'create-sfd', 'secure-payment', 'sfd-clients', 
+      'loan-details', 'apply-loan', 'loan-agreement', 'sfd-admin-dashboard',
+      'loan-application', 'loan-tracking', 'notifications'
+    ];
     if (!validPaths.includes(subPath)) {
       console.log(`Redirecting from unknown path: ${subPath} to main dashboard`);
       navigate('/mobile-flow/main');
@@ -58,7 +65,7 @@ const PageContent: React.FC<PageContentProps> = ({ toggleMenu, subPath }) => {
       checkPermissionWithRedirect('manage_sfd_clients');
     }
     
-    if (subPath === 'apply-loan') {
+    if (subPath === 'apply-loan' || subPath === 'loan-application') {
       checkPermissionWithRedirect('apply_for_loans');
     }
     
@@ -85,13 +92,16 @@ const PageContent: React.FC<PageContentProps> = ({ toggleMenu, subPath }) => {
   const handleAction = (action: string, data?: any) => {
     console.log('Action:', action, data);
     if (action === 'Loans' && hasPermission('apply_for_loans')) {
-      navigate('/mobile-flow/apply-loan');
+      navigate('/mobile-flow/loan-application');
     }
     if (action === 'Repayment' && data?.loanId) {
       navigate(`/mobile-flow/loan-details/${data.loanId}`);
     }
     if ((action === 'Send' || action === 'Receive') && hasPermission('make_transfers')) {
       navigate('/mobile-flow/secure-payment');
+    }
+    if (action === 'Notifications') {
+      navigate('/mobile-flow/notifications');
     }
   };
   
@@ -174,6 +184,17 @@ const renderContent = (
       );
     case 'loan-agreement':
       return <LoanAgreementPage />;
+    case 'loan-application':
+      return hasPermission('apply_for_loans') ? <LoanApplicationForm /> : (
+        <div className="p-4 text-center">
+          <h2 className="text-xl font-semibold mb-2">Accès restreint</h2>
+          <p>Vous n'avez pas les permissions nécessaires pour demander un prêt.</p>
+        </div>
+      );
+    case 'loan-tracking':
+      return <LoanTrackingPage />;
+    case 'notifications':
+      return <NotificationsPage />;
     default:
       return (
         <MainDashboard 
