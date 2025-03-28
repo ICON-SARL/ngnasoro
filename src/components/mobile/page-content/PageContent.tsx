@@ -141,7 +141,7 @@ const renderContent = (
         </div>
       );
     case 'secure-payment':
-      return hasPermission('make_transfers') ? <SecurePaymentTab onBack={() => navigate(-1)} /> : (
+      return hasPermission('make_transfers') ? <SecurePaymentTab onBack={() => navigate('/mobile-flow/main')} /> : (
         <div className="p-4 text-center">
           <h2 className="text-xl font-semibold mb-2">Accès restreint</h2>
           <p>Vous n'avez pas les permissions nécessaires pour effectuer des transferts.</p>
@@ -164,7 +164,7 @@ const renderContent = (
         </div>
       );
     case 'loan-details':
-      return <LoanDetailsPage onBack={() => navigate(-1)} />;
+      return <LoanDetailsPage onBack={() => navigate('/mobile-flow/main')} />;
     case 'apply-loan':
       return hasPermission('apply_for_loans') ? <InstantLoanPage /> : (
         <div className="p-4 text-center">
