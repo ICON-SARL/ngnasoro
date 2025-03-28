@@ -5,18 +5,26 @@ import { sfdLoanApi } from '@/utils/sfdLoanApi';
 import { Loan } from '@/types/sfdClients';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCachedSfdData } from '@/hooks/useCachedSfdData';
 
 export function useSfdLoans() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Fetch all loans for the current SFD
-  const loansQuery = useQuery({
-    queryKey: ['sfd-loans'],
-    queryFn: sfdLoanApi.getSfdLoans,
-    enabled: !!user
-  });
+  // Fetch all loans for the current SFD using cache
+  const { 
+    data: loans,
+    isLoading,
+    isError,
+    refetch,
+    forceRefresh,
+    clearCache
+  } = useCachedSfdData(
+    user?.id,
+    'sfd-loans',
+    sfdLoanApi.getSfdLoans
+  );
   
   // Create a new loan
   const createLoan = useMutation({
@@ -27,6 +35,7 @@ export function useSfdLoans() {
         description: "Le prêt a été créé et est en attente d'approbation",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+      clearCache(); // Clear the cache to ensure fresh data
     },
     onError: (error: any) => {
       toast({
@@ -49,6 +58,7 @@ export function useSfdLoans() {
         description: "Le prêt a été approuvé avec succès",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+      clearCache(); // Clear the cache to ensure fresh data
     },
     onError: (error: any) => {
       toast({
@@ -71,6 +81,7 @@ export function useSfdLoans() {
         description: "Le prêt a été rejeté",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+      clearCache(); // Clear the cache to ensure fresh data
     },
     onError: (error: any) => {
       toast({
@@ -93,6 +104,7 @@ export function useSfdLoans() {
         description: "Le prêt a été décaissé avec succès",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+      clearCache(); // Clear the cache to ensure fresh data
     },
     onError: (error: any) => {
       toast({
@@ -115,6 +127,7 @@ export function useSfdLoans() {
         description: "Le paiement a été enregistré avec succès",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+      clearCache(); // Clear the cache to ensure fresh data
     },
     onError: (error: any) => {
       toast({
@@ -129,7 +142,7 @@ export function useSfdLoans() {
   const sendPaymentReminder = useMutation({
     mutationFn: ({ loanId }: { loanId: string }) => {
       if (!user?.id) throw new Error("Utilisateur non authentifié");
-      // Fix: Remove the second argument (user.id) since the loanNotificationService only expects one argument
+      // Use only one argument as expected by the loanNotificationService
       return sfdLoanApi.sendPaymentReminder(loanId);
     },
     onSuccess: () => {
@@ -162,6 +175,7 @@ export function useSfdLoans() {
         description: "Votre accord de prêt a été confirmé avec succès",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+      clearCache(); // Clear the cache to ensure fresh data
     },
     onError: (error: any) => {
       toast({
@@ -172,20 +186,34 @@ export function useSfdLoans() {
     }
   });
 
-  // Get loan details
+  // Get loan details with cached results
   const getLoanById = async (loanId: string) => {
-    return sfdLoanApi.getLoanById(loanId);
+    const cachedLoan = queryClient.getQueryData<Loan>(['loan', loanId]);
+    if (cachedLoan) return cachedLoan;
+    
+    const loan = await sfdLoanApi.getLoanById(loanId);
+    if (loan) {
+      queryClient.setQueryData(['loan', loanId], loan);
+    }
+    return loan;
   };
 
-  // Get loan payments
+  // Get loan payments with cached results
   const getLoanPayments = async (loanId: string) => {
-    return sfdLoanApi.getLoanPayments(loanId);
+    const cachedPayments = queryClient.getQueryData(['loan-payments', loanId]);
+    if (cachedPayments) return cachedPayments;
+    
+    const payments = await sfdLoanApi.getLoanPayments(loanId);
+    if (payments) {
+      queryClient.setQueryData(['loan-payments', loanId], payments);
+    }
+    return payments;
   };
 
   return {
-    loans: loansQuery.data || [],
-    isLoading: loansQuery.isLoading,
-    isError: loansQuery.isError,
+    loans: loans || [],
+    isLoading,
+    isError,
     createLoan,
     approveLoan,
     rejectLoan,
@@ -195,6 +223,7 @@ export function useSfdLoans() {
     confirmLoanAgreement,
     getLoanById,
     getLoanPayments,
-    refetch: loansQuery.refetch
+    refetch,
+    forceRefresh
   };
 }

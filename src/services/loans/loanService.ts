@@ -2,21 +2,54 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Loan } from "@/types/sfdClients";
 
-// Core loan operations
+// Core loan operations with pagination and performance improvements
 export const loanService = {
-  // Get all loans for the current SFD user
-  async getSfdLoans() {
+  // Get all loans for the current SFD with pagination
+  async getSfdLoans(page = 1, pageSize = 20, filters = {}) {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('sfd_loans')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' });
+        
+      // Apply filters if provided
+      if (filters.status) {
+        query = query.eq('status', filters.status);
+      }
+      
+      if (filters.clientId) {
+        query = query.eq('client_id', filters.clientId);
+      }
+      
+      if (filters.fromDate && filters.toDate) {
+        query = query.gte('created_at', filters.fromDate).lte('created_at', filters.toDate);
+      }
+      
+      // Apply pagination
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      
+      const { data, error, count } = await query
+        .order('created_at', { ascending: false })
+        .range(from, to);
         
       if (error) throw error;
-      return data as unknown as Loan[];
+      
+      return {
+        loans: data as unknown as Loan[],
+        total: count || 0,
+        page,
+        pageSize,
+        totalPages: count ? Math.ceil(count / pageSize) : 0
+      };
     } catch (error) {
       console.error('Error fetching loans:', error);
-      return [];
+      return {
+        loans: [],
+        total: 0,
+        page,
+        pageSize,
+        totalPages: 0
+      };
     }
   },
   
@@ -25,7 +58,11 @@ export const loanService = {
     try {
       const { data, error } = await supabase
         .from('sfd_loans')
-        .select('*')
+        .select(`
+          *,
+          client:client_id(id, full_name, phone, email),
+          loan_activities(*)
+        `)
         .eq('id', loanId)
         .single();
         
@@ -82,6 +119,43 @@ export const loanService = {
     } catch (error) {
       console.error('Error creating loan:', error);
       throw error;
+    }
+  },
+  
+  // Count loans by status for dashboard statistics
+  async countLoansByStatus(sfdId: string) {
+    try {
+      const { data, error } = await supabase
+        .rpc('count_loans_by_status', { p_sfd_id: sfdId });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error counting loans by status:', error);
+      return {
+        pending: 0,
+        approved: 0,
+        active: 0,
+        completed: 0,
+        rejected: 0
+      };
+    }
+  },
+  
+  // Search loans - optimized for performance
+  async searchLoans(searchTerm: string, limit = 5) {
+    try {
+      const { data, error } = await supabase
+        .rpc('search_loans', { 
+          search_term: searchTerm,
+          result_limit: limit
+        });
+      
+      if (error) throw error;
+      return data as unknown as Loan[];
+    } catch (error) {
+      console.error('Error searching loans:', error);
+      return [];
     }
   }
 };
