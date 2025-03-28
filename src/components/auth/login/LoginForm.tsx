@@ -4,8 +4,8 @@ import {
   ErrorDisplay,
   CooldownAlert,
   useLoginForm
-} from './login';
-import SuccessState from './login/SuccessState';
+} from '../login/index';
+import SuccessState from '../login/SuccessState';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mail, Eye, EyeOff, Lock, ShieldAlert } from 'lucide-react';
