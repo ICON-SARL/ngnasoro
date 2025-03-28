@@ -9,7 +9,7 @@ import LanguageSelector from './LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useRoleRedirect } from '@/hooks/auth/useRoleRedirect';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
