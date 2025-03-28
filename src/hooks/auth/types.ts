@@ -7,12 +7,14 @@ export interface User extends SupabaseUser {
   role?: Role;
   permissions?: Permission[];
   avatar_url?: string;
+  sfd_id?: string; // Add this field
 }
 
 export interface AuthContextProps {
   session: Session | null;
   user: User | null;
-  isLoading: boolean;
+  isLoading: boolean; // Renamed from loading for consistency
+  loading: boolean; // Legacy field for backward compatibility
   error: Error | null;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: Error }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ success: boolean; error?: Error }>;
@@ -22,4 +24,13 @@ export interface AuthContextProps {
   updateProfile: (profile: Partial<User>) => Promise<{ success: boolean; error?: Error }>;
   hasPermission: (permission: Permission) => Promise<boolean>;
   hasRole: (role: Role) => Promise<boolean>;
+  
+  // SFD-related properties
+  activeSfdId: string | null;
+  setActiveSfdId: (sfdId: string | null) => void;
+  isAdmin: boolean; // Convenience property
+  
+  // Mobile-related properties
+  biometricEnabled: boolean;
+  toggleBiometricAuth: () => Promise<void>;
 }

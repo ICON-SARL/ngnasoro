@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { AuditLogCategory, AuditLogSeverity, getAuditLogs } from '@/utils/audit';
+import { AuditLogCategory, AuditLogSeverity, AuditLogFilterOptions, AuditLogEvent } from '@/utils/audit/auditLoggerTypes';
+import { getAuditLogs } from '@/utils/audit/auditLoggerCore';
 import { User } from '@/hooks/useAuth';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -13,18 +14,8 @@ import { format } from 'date-fns';
 import { CalendarIcon, Download, Filter, RefreshCw, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-interface AuditLog {
+interface AuditLog extends AuditLogEvent {
   id: string;
-  user_id?: string;
-  action: string;
-  category: AuditLogCategory;
-  severity: AuditLogSeverity;
-  details?: Record<string, any>;
-  ip_address?: string;
-  device_info?: string;
-  target_resource?: string;
-  status: 'success' | 'failure';
-  error_message?: string;
   created_at: string;
 }
 
@@ -32,9 +23,9 @@ export const AuditLogs = () => {
   const { user } = useAuth();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    category: '' as string | AuditLogCategory,
-    severity: '' as string | AuditLogSeverity,
+  const [filters, setFilters] = useState<AuditLogFilterOptions>({
+    category: '',
+    severity: '',
     startDate: '',
     endDate: '',
     status: '' as '' | 'success' | 'failure',
@@ -44,16 +35,16 @@ export const AuditLogs = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const filterOptions = {
+      const filterOptions: AuditLogFilterOptions = {
         ...(filters.category ? { category: filters.category as AuditLogCategory } : {}),
         ...(filters.severity ? { severity: filters.severity as AuditLogSeverity } : {}),
         ...(filters.startDate ? { startDate: filters.startDate } : {}),
         ...(filters.endDate ? { endDate: filters.endDate } : {}),
-        ...(filters.status ? { status: filters.status as 'success' | 'failure' } : {}),
+        ...(filters.status ? { status: filters.status as 'success' | 'failure' | 'pending' } : {}),
       };
       
-      const auditLogs = await getAuditLogs(filterOptions);
-      setLogs(auditLogs);
+      const response = await getAuditLogs(filterOptions);
+      setLogs(response.logs as AuditLog[]);
     } catch (error) {
       console.error('Failed to fetch audit logs:', error);
     } finally {
@@ -65,7 +56,7 @@ export const AuditLogs = () => {
     fetchLogs();
   }, []);
 
-  const handleFilterChange = (key: string, value: any) => {
+  const handleFilterChange = (key: keyof AuditLogFilterOptions, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 

@@ -1,11 +1,11 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { AuditLogSeverity, AuditLogCategory, AuditLogEntry } from '@/utils/audit';
+import { AuditLogSeverity, AuditLogCategory, AuditLogEvent } from '@/utils/audit';
 
 /**
  * Logs an audit event to the database
  */
-export const logAuditEvent = async (entry: AuditLogEntry): Promise<void> => {
+export const logAuditEvent = async (entry: AuditLogEvent): Promise<void> => {
   try {
     // Use a type assertion to bypass the TypeScript error
     const { error } = await (supabase

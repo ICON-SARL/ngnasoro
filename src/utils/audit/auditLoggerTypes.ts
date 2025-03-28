@@ -28,6 +28,7 @@ export interface AuditLogEvent {
   error_message?: string;
   ip_address?: string;
   device_info?: string;
+  created_at?: string; // Added this field
 }
 
 // Interface for API response
@@ -42,9 +43,14 @@ export interface AuditLogFilterOptions {
   category?: AuditLogCategory | AuditLogCategory[];
   severity?: AuditLogSeverity | AuditLogSeverity[];
   status?: 'success' | 'failure' | 'pending';
-  startDate?: Date;
-  endDate?: Date;
+  startDate?: string | Date; // Update to accept both string and Date
+  endDate?: string | Date; // Update to accept both string and Date
   targetResource?: string;
   limit?: number;
   offset?: number;
+}
+
+// Interface for audit log entry for services
+export interface AuditLogEntry extends AuditLogEvent {
+  // This alias ensures backward compatibility
 }

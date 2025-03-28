@@ -11,6 +11,7 @@ const AuthContext = createContext<AuthContextProps>({
   session: null,
   user: null,
   isLoading: true,
+  loading: true, // For backward compatibility
   error: null,
   signIn: async () => ({ success: false }),
   signUp: async () => ({ success: false }),
@@ -20,6 +21,15 @@ const AuthContext = createContext<AuthContextProps>({
   updateProfile: async () => ({ success: false }),
   hasPermission: async () => false,
   hasRole: async () => false,
+  
+  // SFD-related properties
+  activeSfdId: null,
+  setActiveSfdId: () => {},
+  isAdmin: false,
+  
+  // Mobile-related properties
+  biometricEnabled: false,
+  toggleBiometricAuth: async () => {},
 });
 
 // Provider component
@@ -28,6 +38,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
+  const [biometricEnabled, setBiometricEnabled] = useState<boolean>(false);
+  
+  // Derived state
+  const isAdmin = Boolean(user?.role === 'super_admin' || user?.role === 'admin');
 
   useEffect(() => {
     // Setup auth state listener FIRST
@@ -112,28 +127,51 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         throw rolesError;
       }
 
+      // Fetch default SFD for the user
+      const { data: userSfds, error: sfdsError } = await supabase
+        .from('user_sfds')
+        .select('sfd_id, is_default')
+        .eq('user_id', userId);
+        
+      if (sfdsError) {
+        console.error('Error fetching user SFDs:', sfdsError);
+      }
+      
+      // Find default SFD or use the first one
+      const defaultSfd = userSfds?.find(s => s.is_default) || userSfds?.[0];
+      if (defaultSfd?.sfd_id && !activeSfdId) {
+        setActiveSfdId(defaultSfd.sfd_id);
+      }
+
       // Update user state with additional data
       setUser(prev => {
         if (!prev) return null;
         
         const roles = userRoles?.map(r => r.role) || [];
-        const mainRole = roles.includes(Role.SUPER_ADMIN) 
+        const mainRole = roles.includes(Role.SUPER_ADMIN.toString()) 
           ? Role.SUPER_ADMIN 
-          : roles.includes(Role.SFD_ADMIN) 
+          : roles.includes(Role.SFD_ADMIN.toString()) 
             ? Role.SFD_ADMIN 
-            : roles.includes(Role.CLIENT) 
+            : roles.includes(Role.CLIENT.toString()) 
               ? Role.CLIENT 
               : Role.USER;
               
         return {
           ...prev,
           ...profileData,
-          role: mainRole
+          role: mainRole,
+          sfd_id: defaultSfd?.sfd_id
         };
       });
     } catch (err) {
       console.error('Error fetching user profile:', err);
     }
+  };
+
+  // Toggle biometric authentication
+  const toggleBiometricAuth = async () => {
+    setBiometricEnabled(prev => !prev);
+    // In a real implementation, you would store this preference in the user's profile
   };
 
   // Sign in function
@@ -332,6 +370,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     session,
     user,
     isLoading,
+    loading: isLoading, // For backward compatibility
     error,
     signIn,
     signUp,
@@ -340,7 +379,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     updatePassword,
     updateProfile,
     hasPermission: checkPermission,
-    hasRole: checkRole
+    hasRole: checkRole,
+    activeSfdId,
+    setActiveSfdId,
+    isAdmin,
+    biometricEnabled,
+    toggleBiometricAuth
   };
 
   return (

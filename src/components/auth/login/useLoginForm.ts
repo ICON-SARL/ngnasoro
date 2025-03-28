@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/auditLogger';
+import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 
 export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = false) => {
   const [email, setEmail] = useState('');
@@ -76,10 +76,11 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
     
     try {
       // Use password authentication (false for magic link)
-      await signIn(email, password, false);
+      await signIn(email, password);
       
       // Log successful authentication attempt
       await logAuditEvent({
+        user_id: 'system', // We don't know the user ID yet as it's not returned by signIn
         action: isSfdAdmin ? "sfd_admin_login_attempt" : adminMode ? "admin_login_attempt" : "password_login_attempt",
         category: AuditLogCategory.AUTHENTICATION,
         severity: AuditLogSeverity.INFO,
@@ -99,6 +100,7 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       
       // Log failed authentication attempt
       await logAuditEvent({
+        user_id: 'system', // We don't know the user ID as login failed
         action: isSfdAdmin ? "sfd_admin_login_failed" : adminMode ? "admin_login_failed" : "password_login_attempt",
         category: AuditLogCategory.AUTHENTICATION,
         severity: AuditLogSeverity.WARNING,
