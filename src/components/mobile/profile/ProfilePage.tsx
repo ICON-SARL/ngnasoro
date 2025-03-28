@@ -5,10 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/auth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
 import ProfileHeader from './ProfileHeader';
 import SfdAccountsSection from './SfdAccountsSection';
 import SecuritySection from './SecuritySection';
@@ -16,6 +13,7 @@ import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
 import KycVerificationSection from './KycVerificationSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
+import { UserPermissions } from '@/components/auth/UserPermissions';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('accounts');
@@ -81,6 +79,7 @@ const ProfilePage = () => {
         <TabsContent value="profile" className="px-4">
           <PersonalInfoSection user={user} />
           <KycVerificationSection />
+          <UserPermissions />
         </TabsContent>
       </Tabs>
     </div>

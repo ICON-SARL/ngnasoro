@@ -4,34 +4,36 @@ import { useAuth } from '@/hooks/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Permission } from '@/hooks/auth/types';
 
 interface UserPermissionsProps {
   showAll?: boolean;
 }
 
+// Map of permission keys to human-readable names
 const PERMISSION_NAMES: Record<string, string> = {
   // Admin permissions
-  'access_admin_dashboard': 'Accès au tableau de bord admin',
+  'access_admin_panel': 'Accès au tableau de bord admin',
   'manage_users': 'Gestion des utilisateurs',
-  'manage_roles': 'Gestion des rôles',
   'manage_sfds': 'Gestion des SFDs',
+  'manage_roles': 'Gestion des rôles',
   'approve_subsidies': 'Approbation des subventions',
-  'view_all_reports': 'Consultation de tous les rapports',
-  'manage_system_settings': 'Gestion des paramètres système',
+  'view_audit_logs': 'Consultation des journaux d\'audit',
+  'manage_system_settings': 'Paramètres système',
   
   // SFD Admin permissions
-  'access_sfd_dashboard': 'Accès au tableau de bord SFD',
+  'access_sfd_panel': 'Accès au tableau de bord SFD',
   'manage_sfd_clients': 'Gestion des clients SFD',
   'manage_sfd_loans': 'Gestion des prêts SFD',
-  'view_sfd_reports': 'Consultation des rapports SFD',
-  'manage_sfd_users': 'Gestion des utilisateurs SFD',
+  'view_sfd_subsidies': 'Consultation des subventions SFD',
+  'view_sfd_reports': 'Rapports SFD',
   
   // User permissions
   'access_mobile_app': 'Accès à l\'application mobile',
-  'manage_personal_profile': 'Gestion du profil personnel',
-  'view_loan_options': 'Consultation des options de prêt',
   'apply_for_loans': 'Demande de prêts',
-  'view_transactions': 'Consultation des transactions'
+  'make_transfers': 'Effectuer des transferts',
+  'view_transactions': 'Voir les transactions',
+  'manage_personal_profile': 'Gérer le profil personnel'
 };
 
 const ALL_PERMISSIONS = Object.keys(PERMISSION_NAMES);

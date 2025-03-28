@@ -13,11 +13,12 @@ import MobileNavigation from '@/components/MobileNavigation';
 import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
 import InstantLoanPage from '@/components/mobile/InstantLoanPage';
 import LoanAgreementPage from '@/components/mobile/LoanAgreementPage';
+import { toast } from '@/hooks/use-toast';
 
 const MobileFlowPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isLoading, hasPermission } = useAuth();
+  const { user, isLoading, userRole, hasPermission, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   
   // Extract the sub-path from /mobile-flow/X
@@ -28,7 +29,7 @@ const MobileFlowPage: React.FC = () => {
       return 'main';
     }
     
-    // Sinon extraire le sous-chemin
+    // Extract the sub-path
     const parts = path.split('/');
     if (parts.length >= 3) {
       return parts[2]; // /mobile-flow/X -> X
@@ -51,12 +52,32 @@ const MobileFlowPage: React.FC = () => {
     if (!isLoading && user) {
       // Permission required to access mobile app
       if (!hasPermission('access_mobile_app')) {
+        toast({
+          title: "Accès refusé",
+          description: "Vous n'avez pas les permissions nécessaires pour accéder à l'application mobile",
+          variant: "destructive"
+        });
         navigate('/auth');
         return;
       }
       
-      // Permission required for SFD clients (SFD admin only)
+      // Check permissions for specific pages
       if (subPath === 'sfd-clients' && !hasPermission('manage_sfd_clients')) {
+        toast({
+          title: "Accès refusé",
+          description: "Vous n'avez pas les permissions nécessaires pour accéder à cette page",
+          variant: "destructive"
+        });
+        navigate('/mobile-flow/main');
+        return;
+      }
+      
+      if (subPath === 'apply-loan' && !hasPermission('apply_for_loans')) {
+        toast({
+          title: "Accès refusé",
+          description: "Vous n'avez pas les permissions nécessaires pour demander un prêt",
+          variant: "destructive"
+        });
         navigate('/mobile-flow/main');
         return;
       }
@@ -92,21 +113,33 @@ const MobileFlowPage: React.FC = () => {
   };
   
   // Handle logout
-  const handleLogout = () => {
-    // Add logout logic here
-    navigate('/auth');
+  const handleLogout = async () => {
+    try {
+      const { error } = await signOut();
+      if (!error) {
+        navigate('/auth');
+      } else {
+        toast({
+          title: "Erreur de déconnexion",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
   };
   
   // Mock action handler
   const handleAction = (action: string, data?: any) => {
     console.log('Action:', action, data);
-    if (action === 'Loans') {
+    if (action === 'Loans' && hasPermission('apply_for_loans')) {
       navigate('/mobile-flow/apply-loan');
     }
     if (action === 'Repayment' && data?.loanId) {
       navigate(`/mobile-flow/loan-details/${data.loanId}`);
     }
-    if (action === 'Send' || action === 'Receive') {
+    if ((action === 'Send' || action === 'Receive') && hasPermission('make_transfers')) {
       navigate('/mobile-flow/secure-payment');
     }
   };
@@ -143,7 +176,12 @@ const MobileFlowPage: React.FC = () => {
           </div>
         );
       case 'secure-payment':
-        return <SecurePaymentTab onBack={() => navigate(-1)} />;
+        return hasPermission('make_transfers') ? <SecurePaymentTab onBack={() => navigate(-1)} /> : (
+          <div className="p-4 text-center">
+            <h2 className="text-xl font-semibold mb-2">Accès restreint</h2>
+            <p>Vous n'avez pas les permissions nécessaires pour effectuer des transferts.</p>
+          </div>
+        );
       case 'sfd-clients':
         // Check if user has permission to manage SFD clients
         return hasPermission('manage_sfd_clients') ? <SfdClientsPage /> : (
@@ -155,7 +193,12 @@ const MobileFlowPage: React.FC = () => {
       case 'loan-details':
         return <LoanDetailsPage onBack={() => navigate('/mobile-flow')} />;
       case 'apply-loan':
-        return <InstantLoanPage />;
+        return hasPermission('apply_for_loans') ? <InstantLoanPage /> : (
+          <div className="p-4 text-center">
+            <h2 className="text-xl font-semibold mb-2">Accès restreint</h2>
+            <p>Vous n'avez pas les permissions nécessaires pour demander un prêt.</p>
+          </div>
+        );
       case 'loan-agreement':
         return <LoanAgreementPage />;
       default:
@@ -181,14 +224,14 @@ const MobileFlowPage: React.FC = () => {
         onAction={handleAction} 
         // Filter navigation based on permissions
         showLoanOption={hasPermission('apply_for_loans')}
-        showAdminOption={hasPermission('manage_sfd_clients') || hasPermission('manage_sfd_loans')}
+        showAdminOption={userRole === 'admin' || userRole === 'sfd_admin' || hasPermission('manage_sfd_clients') || hasPermission('manage_sfd_loans')}
       />
       
       <MobileMenu 
         isOpen={menuOpen} 
         onClose={toggleMenu} 
         onLogout={handleLogout}
-        userRole={user.app_metadata?.role}
+        userRole={userRole}
       />
     </div>
   );

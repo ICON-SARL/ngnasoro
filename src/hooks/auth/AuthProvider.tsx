@@ -1,7 +1,7 @@
 
 import React, { createContext, ReactNode } from 'react';
 import { useAuthProvider } from './useAuthProvider';
-import { AuthContextProps, User, AuthResponse } from './types';
+import { AuthContextProps, User, AuthResponse, UserRole } from './types';
 import AuthContext from './AuthContext';
 
 interface AuthProviderProps {

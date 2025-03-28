@@ -8,12 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Mail, Phone, Building } from 'lucide-react';
+import { User, Mail, Phone, Building, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { UserPermissions } from '@/components/auth/UserPermissions';
 
 const ProfilePage = () => {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, userRole, signOut } = useAuth();
   const navigate = useNavigate();
   
   const handleLogout = async () => {
@@ -37,6 +38,11 @@ const ProfilePage = () => {
     }
   };
 
+  const roleName = 
+    userRole === 'admin' ? 'Super Admin' : 
+    userRole === 'sfd_admin' ? 'Admin SFD' : 
+    'Utilisateur Standard';
+
   return (
     <div className="min-h-screen bg-gray-50">
       {isAdmin ? <SuperAdminHeader /> : <AgencyHeader />}
@@ -50,7 +56,10 @@ const ProfilePage = () => {
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Informations personnelles</CardTitle>
+              <CardTitle className="flex items-center">
+                <User className="h-5 w-5 mr-2 text-primary" />
+                Informations personnelles
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex justify-center mb-6">
@@ -108,7 +117,7 @@ const ProfilePage = () => {
                   </div>
                 </div>
                 
-                {!isAdmin && (
+                {!isAdmin && user?.sfd_id && (
                   <div className="space-y-2">
                     <Label htmlFor="sfd">SFD</Label>
                     <div className="flex">
@@ -124,36 +133,58 @@ const ProfilePage = () => {
                     </div>
                   </div>
                 )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="role">Rôle</Label>
+                  <div className="flex">
+                    <div className="bg-muted p-2 flex items-center rounded-l-md border border-r-0 border-input">
+                      <Shield className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <Input 
+                      id="role" 
+                      value={roleName}
+                      readOnly
+                      className="rounded-l-none focus-visible:ring-0"
+                    />
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Sécurité du compte</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="changePassword">Changer de mot de passe</Label>
-                <Button id="changePassword" variant="outline" className="w-full">
-                  Modifier le mot de passe
-                </Button>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="twoFactor">Authentification à deux facteurs</Label>
-                <Button id="twoFactor" variant="outline" className="w-full">
-                  Configurer l'authentification à deux facteurs
-                </Button>
-              </div>
-              
-              <div className="pt-4">
-                <Button variant="destructive" className="w-full" onClick={handleLogout}>
-                  Déconnecter toutes les sessions
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Shield className="h-5 w-5 mr-2 text-primary" />
+                  Sécurité du compte
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="changePassword">Changer de mot de passe</Label>
+                  <Button id="changePassword" variant="outline" className="w-full">
+                    Modifier le mot de passe
+                  </Button>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="twoFactor">Authentification à deux facteurs</Label>
+                  <Button id="twoFactor" variant="outline" className="w-full">
+                    Configurer l'authentification à deux facteurs
+                  </Button>
+                </div>
+                
+                <div className="pt-4">
+                  <Button variant="destructive" className="w-full" onClick={handleLogout}>
+                    Déconnecter toutes les sessions
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <UserPermissions showAll={true} />
+          </div>
         </div>
       </div>
     </div>

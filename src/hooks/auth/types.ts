@@ -16,22 +16,30 @@ export interface User extends Omit<SupabaseUser, 'user_metadata' | 'app_metadata
 
 export type UserRole = 'admin' | 'sfd_admin' | 'user';
 
+// Comprehensive list of all possible permissions in the system
 export type Permission = 
-  | 'access_mobile_app'
-  | 'access_admin_panel'
-  | 'access_sfd_panel'
-  | 'manage_users'
-  | 'manage_sfds'
-  | 'manage_sfd_clients'
-  | 'manage_sfd_loans'
-  | 'approve_subsidies'
-  | 'view_reports'
-  | 'view_audit_logs'
-  | 'apply_for_loans'
-  | 'make_transfers'
-  | 'view_transactions'
-  | 'view_sfd_subsidies'
-  | 'view_sfd_reports';
+  // Admin permissions
+  | 'access_admin_panel'        // Access to the super admin dashboard
+  | 'manage_users'              // Create, edit, delete users system-wide
+  | 'manage_sfds'               // Create, edit, delete SFDs
+  | 'manage_roles'              // Manage role assignments
+  | 'approve_subsidies'         // Approve or reject subsidy requests
+  | 'view_audit_logs'           // View system audit logs
+  | 'manage_system_settings'    // Configure system-wide settings
+  
+  // SFD Admin permissions
+  | 'access_sfd_panel'          // Access to the SFD admin dashboard
+  | 'manage_sfd_clients'        // Create, edit, delete clients within assigned SFD
+  | 'manage_sfd_loans'          // Create, edit, manage loans within assigned SFD
+  | 'view_sfd_subsidies'        // View subsidies related to assigned SFD
+  | 'view_sfd_reports'          // Access reports for assigned SFD
+  
+  // User permissions
+  | 'access_mobile_app'         // Access to the mobile application
+  | 'apply_for_loans'           // Submit loan applications
+  | 'make_transfers'            // Make financial transfers
+  | 'view_transactions'         // View transaction history
+  | 'manage_personal_profile';  // Update personal information
 
 export interface AuthResponse {
   user: User | null;

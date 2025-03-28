@@ -1,41 +1,60 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { Permission, UserRole } from './types';
 
-// Define default permissions for each role
+// Define hierarchical permission structure for each role
 const rolePermissions: Record<UserRole, Permission[]> = {
+  // Super Admin - Full access to everything
   admin: [
-    'access_mobile_app',
+    // Admin-specific permissions
     'access_admin_panel',
     'manage_users',
     'manage_sfds',
-    'manage_sfd_clients',
-    'manage_sfd_loans',
+    'manage_roles',
     'approve_subsidies',
-    'view_reports',
     'view_audit_logs',
-    'apply_for_loans',
-    'make_transfers',
-    'view_transactions'
-  ],
-  sfd_admin: [
-    'access_mobile_app',
+    'manage_system_settings',
+    
+    // SFD admin permissions (admins can do everything SFD admins can)
     'access_sfd_panel',
     'manage_sfd_clients',
     'manage_sfd_loans',
     'view_sfd_subsidies',
     'view_sfd_reports',
+    
+    // User permissions (admins can do everything users can)
+    'access_mobile_app',
     'apply_for_loans',
     'make_transfers',
-    'view_transactions'
+    'view_transactions',
+    'manage_personal_profile'
   ],
+  
+  // SFD Admin - Access to their SFD and limited mobile features
+  sfd_admin: [
+    // SFD admin-specific permissions
+    'access_sfd_panel',
+    'manage_sfd_clients',
+    'manage_sfd_loans',
+    'view_sfd_subsidies',
+    'view_sfd_reports',
+    
+    // User permissions (SFD admins can do everything users can)
+    'access_mobile_app',
+    'apply_for_loans',
+    'make_transfers',
+    'view_transactions',
+    'manage_personal_profile'
+  ],
+  
+  // Standard User - Mobile app access only
   user: [
     'access_mobile_app',
     'apply_for_loans',
     'make_transfers',
-    'view_transactions'
+    'view_transactions',
+    'manage_personal_profile'
   ]
 };
 
@@ -90,16 +109,17 @@ export function useAuthProvider() {
     }
   }, [user]);
 
+  // Get user's role based on app_metadata
   const getUserRole = useCallback((): UserRole => {
     if (!user || !user.app_metadata) return 'user';
     return (user.app_metadata.role as UserRole) || 'user';
   }, [user]);
 
-  // Check if user has a specific permission
+  // Check if user has a specific permission based on their role
   const hasPermission = useCallback(
     (permission: Permission): boolean => {
       const userRole = getUserRole();
-      return rolePermissions[userRole]?.includes(permission) || false;
+      return rolePermissions[userRole]?.includes(permission as Permission) || false;
     },
     [getUserRole]
   );
