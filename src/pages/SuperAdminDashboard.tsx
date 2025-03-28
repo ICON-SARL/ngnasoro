@@ -13,9 +13,12 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { ReportGenerator } from '@/components/ReportGenerator';
 import { DataExport } from '@/components/DataExport';
 import { Button } from '@/components/ui/button';
-import { FileText, CreditCard, Building, Users } from 'lucide-react';
+import { FileText, CreditCard, Building, Users, Lock } from 'lucide-react';
 import { AdminManagement } from '@/components/admin/AdminManagement';
 import { SubsidyRequestManagement } from '@/components/admin/subsidy';
+import { RoleManagement } from '@/components/admin/roles/RoleManagement';
+import { useAuth } from '@/hooks/auth';
+import { UserPermissions } from '@/components/auth/UserPermissions';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
@@ -23,6 +26,7 @@ const SuperAdminDashboard = () => {
   const activeTab = searchParams.get('tab') || 'dashboard';
   const { stats, isLoading: isLoadingStats } = useDashboardStats();
   const navigate = useNavigate();
+  const { hasPermission } = useAuth();
   
   // Set the active tab based on query parameter
   useEffect(() => {
@@ -44,41 +48,60 @@ const SuperAdminDashboard = () => {
         
         {/* Quick Actions */}
         <div className="mb-6 flex flex-wrap gap-2">
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white" 
-            onClick={() => navigate('/credit-approval')}
-          >
-            <CreditCard className="h-4 w-4 mr-2 text-[#0D6A51]" />
-            Approbation de Crédit
-          </Button>
+          {hasPermission('approve_subsidies') && (
+            <Button 
+              variant="outline" 
+              className="flex items-center bg-white" 
+              onClick={() => navigate('/credit-approval')}
+            >
+              <CreditCard className="h-4 w-4 mr-2 text-[#0D6A51]" />
+              Approbation de Crédit
+            </Button>
+          )}
           
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white"
-            onClick={() => navigate('/credit-approval?tab=sfd-management')}
-          >
-            <Building className="h-4 w-4 mr-2 text-[#0D6A51]" />
-            Gestion des SFDs
-          </Button>
+          {hasPermission('manage_sfds') && (
+            <Button 
+              variant="outline" 
+              className="flex items-center bg-white"
+              onClick={() => navigate('/credit-approval?tab=sfd-management')}
+            >
+              <Building className="h-4 w-4 mr-2 text-[#0D6A51]" />
+              Gestion des SFDs
+            </Button>
+          )}
           
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white"
-            onClick={() => setSearchParams({ tab: 'reports' })}
-          >
-            <FileText className="h-4 w-4 mr-2 text-[#0D6A51]" />
-            Générer des Rapports
-          </Button>
+          {hasPermission('view_all_reports') && (
+            <Button 
+              variant="outline" 
+              className="flex items-center bg-white"
+              onClick={() => setSearchParams({ tab: 'reports' })}
+            >
+              <FileText className="h-4 w-4 mr-2 text-[#0D6A51]" />
+              Générer des Rapports
+            </Button>
+          )}
           
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white"
-            onClick={() => setSearchParams({ tab: 'admins' })}
-          >
-            <Users className="h-4 w-4 mr-2 text-[#0D6A51]" />
-            Gestion Administrateurs
-          </Button>
+          {hasPermission('manage_users') && (
+            <Button 
+              variant="outline" 
+              className="flex items-center bg-white"
+              onClick={() => setSearchParams({ tab: 'users' })}
+            >
+              <Users className="h-4 w-4 mr-2 text-[#0D6A51]" />
+              Gestion Administrateurs
+            </Button>
+          )}
+          
+          {hasPermission('manage_roles') && (
+            <Button 
+              variant="outline" 
+              className="flex items-center bg-white"
+              onClick={() => setSearchParams({ tab: 'roles' })}
+            >
+              <Lock className="h-4 w-4 mr-2 text-[#0D6A51]" />
+              Gestion des Rôles
+            </Button>
+          )}
         </div>
         
         {/* Dashboard Widgets */}
@@ -118,9 +141,23 @@ const SuperAdminDashboard = () => {
         )}
         
         {/* Admin Management */}
-        {activeTab === 'admins' && (
+        {activeTab === 'users' && (
           <div className="space-y-6">
             <AdminManagement />
+          </div>
+        )}
+        
+        {/* Role Management */}
+        {activeTab === 'roles' && (
+          <div className="space-y-6">
+            <RoleManagement />
+          </div>
+        )}
+        
+        {/* Permissions */}
+        {activeTab === 'permissions' && (
+          <div className="space-y-6">
+            <UserPermissions showAll={true} />
           </div>
         )}
         

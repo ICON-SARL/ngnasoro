@@ -87,7 +87,7 @@ export const useLoginForm = (adminMode: boolean = false, sfdMode: boolean = fals
         details: { email, admin_mode: adminMode, sfd_mode: sfdMode }
       });
       
-      // La redirection est gérée par le composant AuthUI en fonction du rôle
+      // Redirection will be handled by the AuthUI component based on user role
       
       toast({
         title: "Connexion réussie",

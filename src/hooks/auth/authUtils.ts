@@ -24,7 +24,7 @@ export const isUserAdmin = (session: Session | null): boolean => {
 
 export const getRoleFromSession = (session: Session | null): string | null => {
   if (!session?.user) return null;
-  return session.user.app_metadata?.role || null;
+  return session.user.app_metadata?.role || 'user';
 };
 
 export const getBiometricStatus = (session: Session | null): boolean => {

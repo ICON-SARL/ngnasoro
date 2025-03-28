@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MobileFlowPage from './pages/MobileFlowPage';
 import ProtectedRoute from './components/routes/ProtectedRoute';
+import RoleGuard from './components/routes/RoleGuard';
 import FundsManagementPage from './components/mobile/funds-management/FundsManagementPage';
 import TransactionsPage from './components/mobile/transactions/TransactionsPage';
 import TransactionDetails from './components/mobile/transactions/TransactionDetails';
@@ -33,38 +34,38 @@ function App() {
           {/* MEREF Super Admin Routes */}
           <Route 
             path="/super-admin-dashboard"
-            element={<ProtectedRoute component={SuperAdminDashboard} requireAdmin={true} />}
+            element={<RoleGuard component={SuperAdminDashboard} allowedRoles={['admin']} />}
           />
           
           <Route 
             path="/credit-approval" 
-            element={<ProtectedRoute component={CreditApprovalPage} requireAdmin={true} />} 
+            element={<RoleGuard component={CreditApprovalPage} allowedRoles={['admin']} />} 
           />
           
           {/* SFD Admin Dashboard Route */}
           <Route 
             path="/agency-dashboard"
-            element={<ProtectedRoute component={AgencyDashboard} requireSfdAdmin={true} />}
+            element={<RoleGuard component={AgencyDashboard} allowedRoles={['sfd_admin']} />}
           />
           
           <Route 
             path="/sfd-admin"
-            element={<ProtectedRoute component={ClientsPage} requireSfdAdmin={true} />}
+            element={<RoleGuard component={ClientsPage} allowedRoles={['sfd_admin']} />}
           />
           
           <Route 
             path="/sfd-dashboard"
-            element={<ProtectedRoute component={LoansPage} requireSfdAdmin={true} />}
+            element={<RoleGuard component={LoansPage} allowedRoles={['sfd_admin']} />}
           />
           
           <Route 
             path="/clients"
-            element={<ProtectedRoute component={ClientsPage} requireSfdAdmin={true} />}
+            element={<RoleGuard component={ClientsPage} allowedRoles={['sfd_admin']} />}
           />
           
           <Route 
             path="/loans"
-            element={<ProtectedRoute component={LoansPage} requireSfdAdmin={true} />}
+            element={<RoleGuard component={LoansPage} allowedRoles={['sfd_admin']} />}
           />
           
           {/* Mobile Flow Routes - Pour les utilisateurs standard */}

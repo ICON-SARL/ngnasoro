@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import AuthContext from './AuthContext';
-import { User } from './types';
+import { User, UserRole } from './types';
 import { createUserFromSupabaseUser, isUserAdmin, getBiometricStatus } from './authUtils';
 import { toast } from '@/hooks/use-toast';
 import { 
@@ -16,12 +15,39 @@ import {
 import { TwoFactorAuth } from '@/components/auth/TwoFactorAuth';
 import { AuditLogCategory, AuditLogSeverity, logAuditEvent } from '@/utils/auditLogger';
 
+const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
+  'admin': [
+    'access_admin_dashboard',
+    'manage_users',
+    'manage_roles',
+    'manage_sfds',
+    'approve_subsidies',
+    'view_all_reports',
+    'manage_system_settings'
+  ],
+  'sfd_admin': [
+    'access_sfd_dashboard',
+    'manage_sfd_clients',
+    'manage_sfd_loans',
+    'view_sfd_reports',
+    'manage_sfd_users'
+  ],
+  'user': [
+    'access_mobile_app',
+    'manage_personal_profile',
+    'view_loan_options',
+    'apply_for_loans',
+    'view_transactions'
+  ]
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [showTwoFactorDialog, setShowTwoFactorDialog] = useState(false);
   const [isTwoFactorVerified, setIsTwoFactorVerified] = useState(false);
@@ -38,7 +64,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (session?.user) {
           // Check if user has admin role
-          setIsAdmin(isUserAdmin(session));
+          const isUserAdminValue = isUserAdmin(session);
+          setIsAdmin(isUserAdminValue);
+          
+          // Set user role
+          const role = session.user.app_metadata?.role as UserRole || 'user';
+          setUserRole(role);
+          
           setBiometricEnabled(getBiometricStatus(session));
           setUser(createUserFromSupabaseUser(session.user));
 
@@ -48,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           // Check if user is admin and if 2FA is required
-          if (isAdmin && !isTwoFactorVerified) {
+          if (isUserAdminValue && !isTwoFactorVerified) {
             // Check if admin has 2FA enabled
             const { data: adminData } = await supabase
               .from('admin_users')
@@ -73,11 +105,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setUser(null);
           setActiveSfdId(null);
+          setUserRole(null);
         }
       } catch (error) {
         console.error("Error fetching session:", error);
         setUser(null);
         setSession(null);
+        setUserRole(null);
       } finally {
         setIsLoading(false);
       }
@@ -90,7 +124,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       
       if (session?.user) {
-        setIsAdmin(isUserAdmin(session));
+        const isUserAdminValue = isUserAdmin(session);
+        setIsAdmin(isUserAdminValue);
+        
+        // Set user role
+        const role = session.user.app_metadata?.role as UserRole || 'user';
+        setUserRole(role);
+        
         setBiometricEnabled(getBiometricStatus(session));
         setUser(createUserFromSupabaseUser(session.user));
 
@@ -101,6 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setUser(null);
         setActiveSfdId(null);
+        setUserRole(null);
         setIsTwoFactorVerified(false);
       }
     });
@@ -109,6 +150,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, [isTwoFactorVerified]);
+
+  const hasPermission = (permission: string): boolean => {
+    if (!userRole) return false;
+    return ROLE_PERMISSIONS[userRole]?.includes(permission) || false;
+  };
 
   const signIn = async (email: string, password: string, useOtp: boolean = false) => {
     try {
@@ -302,10 +348,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     activeSfdId,
     setActiveSfdId,
     isAdmin,
+    userRole,
     signUp,
     verifyBiometricAuth,
     biometricEnabled,
     toggleBiometricAuth,
+    hasPermission,
   };
 
   return (

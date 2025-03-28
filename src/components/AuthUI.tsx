@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from './auth/Logo';
 import LoginForm from './auth/LoginForm';
@@ -9,40 +9,51 @@ import { Check } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { useRoleRedirect } from '@/hooks/auth/useRoleRedirect';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
   const [authMode, setAuthMode] = useState<'default' | 'admin' | 'sfd'>('default');
-  const { user, session } = useAuth();
+  const { user, session, userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
+  
+  // Use the role-based redirect hook
+  useRoleRedirect();
   
   useEffect(() => {
     const hash = location.hash;
     if (hash && hash.includes('access_token')) {
       setAuthSuccess(true);
       
+      // Role-based redirecting will be handled by useRoleRedirect
       const timer = setTimeout(() => {
-        navigate('/mobile-flow');
+        if (userRole === 'admin') {
+          navigate('/super-admin-dashboard');
+        } else if (userRole === 'sfd_admin') {
+          navigate('/agency-dashboard');
+        } else {
+          navigate('/mobile-flow');
+        }
       }, 2000);
       
       return () => clearTimeout(timer);
     }
-  }, [location, navigate]);
+  }, [location, navigate, userRole]);
   
+  // Auto-redirect based on user role
   useEffect(() => {
     if (user && session) {
-      // Redirection basée sur le rôle de l'utilisateur
-      if (user.app_metadata?.role === 'admin') {
+      if (userRole === 'admin') {
         navigate('/super-admin-dashboard');
-      } else if (user.app_metadata?.role === 'sfd_admin') {
+      } else if (userRole === 'sfd_admin') {
         navigate('/agency-dashboard');
       } else {
         navigate('/mobile-flow');
       }
     }
-  }, [user, session, navigate]);
+  }, [user, session, navigate, userRole]);
 
   // Update tab based on current route
   useEffect(() => {
