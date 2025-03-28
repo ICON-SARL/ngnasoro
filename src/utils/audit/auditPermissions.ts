@@ -47,7 +47,7 @@ export const hasRole = async (userId: string, role: Role): Promise<boolean> => {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .eq('role', 'client'); // Use the string literal directly
+        .eq('role', 'client' as any); // Use type assertion to bypass TypeScript check
       
       if (rolesError) throw rolesError;
       return userRoles && userRoles.length > 0;
