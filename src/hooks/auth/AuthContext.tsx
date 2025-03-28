@@ -5,9 +5,9 @@ import { AuthContextProps } from './types';
 const defaultContext: AuthContextProps = {
   session: null,
   user: null,
-  signIn: async () => {},
-  signOut: async () => {},
-  signUp: async () => {},
+  signIn: async () => ({ user: null, session: null, error: null }),
+  signOut: async () => ({ error: null }),
+  signUp: async () => ({ user: null, session: null, error: null }),
   loading: true,
   isLoading: true,
   activeSfdId: null,

@@ -1,5 +1,6 @@
 
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import { AuthError } from '@supabase/supabase-js';
 
 export interface User {
   id: string;
@@ -33,12 +34,18 @@ export type Permission =
   | 'view_sfd_subsidies'
   | 'view_sfd_reports';
 
+export interface AuthResponse {
+  user: User | null;
+  session: Session | null;
+  error: AuthError | null;
+}
+
 export interface AuthContextProps {
   session: Session | null;
   user: User | null;
-  signIn: (email: string, password: string, useOtp?: boolean) => Promise<void>;
-  signOut: () => Promise<void>;
-  signUp: (email: string, password: string, fullName: string) => Promise<void>;
+  signIn: (email: string, password: string, useOtp?: boolean) => Promise<AuthResponse>;
+  signOut: () => Promise<{ error: AuthError | null }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<AuthResponse>;
   loading: boolean;
   isLoading: boolean;
   activeSfdId: string | null;

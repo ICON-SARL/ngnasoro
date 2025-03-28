@@ -1,25 +1,8 @@
 
 import React, { createContext, ReactNode } from 'react';
 import { useAuthProvider } from './useAuthProvider';
-import { AuthContextProps, User } from './types';
-
-export const AuthContext = createContext<AuthContextProps>({
-  session: null,
-  user: null,
-  signIn: async () => { throw new Error('Not implemented'); },
-  signOut: async () => { throw new Error('Not implemented'); },
-  signUp: async () => { throw new Error('Not implemented'); },
-  loading: true,
-  isLoading: true,
-  activeSfdId: null,
-  setActiveSfdId: () => {},
-  isAdmin: false,
-  userRole: null,
-  verifyBiometricAuth: async () => false,
-  biometricEnabled: false,
-  toggleBiometricAuth: async () => {},
-  hasPermission: () => false,
-});
+import { AuthContextProps, User, AuthResponse } from './types';
+import AuthContext from './AuthContext';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -40,7 +23,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   } = useAuthProvider();
 
   // Wrapper functions to adapt the interface
-  const signIn = async (email: string, password: string, useOtp?: boolean) => {
+  const signIn = async (email: string, password: string, useOtp?: boolean): Promise<AuthResponse> => {
     return supabaseSignIn(email, password);
   };
 
@@ -48,7 +31,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return supabaseSignOut();
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string): Promise<AuthResponse> => {
     return supabaseSignUp(email, password, { full_name: fullName });
   };
 

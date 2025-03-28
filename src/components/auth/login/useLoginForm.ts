@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/auditLogger';
@@ -76,7 +76,11 @@ export const useLoginForm = (adminMode: boolean = false, sfdMode: boolean = fals
     
     try {
       // Use password authentication (false for magic link)
-      await signIn(email, password, false);
+      const { error } = await signIn(email, password, false);
+      
+      if (error) {
+        throw error;
+      }
       
       // Log successful authentication attempt
       await logAuditEvent({
