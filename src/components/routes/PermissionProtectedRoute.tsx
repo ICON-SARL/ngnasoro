@@ -5,11 +5,12 @@ import { useAuth } from '@/hooks/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { logPermissionFailure } from '@/utils/audit/auditLogger';
 import { Loader2 } from 'lucide-react';
+import { UserRole } from '@/utils/auth/roleTypes';
 
 interface PermissionProtectedRouteProps {
   component: React.ComponentType<any>;
   requiredPermission?: string;
-  requiredRole?: string;
+  requiredRole?: UserRole; // Fixed type to use the enum directly
   fallbackPath?: string;
   [x: string]: any;
 }

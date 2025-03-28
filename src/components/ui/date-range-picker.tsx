@@ -134,3 +134,6 @@ export function DatePickerWithRange({
     </div>
   );
 }
+
+// Add DateRangePicker export that references DatePickerWithRange
+export const DateRangePicker = DatePickerWithRange;

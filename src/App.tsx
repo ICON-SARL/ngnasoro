@@ -14,10 +14,11 @@ import LoginPage from '@/pages/LoginPage';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import SfdSubsidyRequestPage from '@/pages/SfdSubsidyRequestPage';
 import SfdTransactionsPage from '@/pages/SfdTransactionsPage';
-import SfdClientPage from '@/pages/SfdClientPage';
+import SfdClientsPage from '@/pages/SfdClientsPage'; // Fixed import
 import SfdLoansPage from '@/pages/SfdLoansPage';
 import SfdAdminDashboard from '@/components/admin/SfdAdminDashboard';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
+import AuditLogsPage from '@/pages/AuditLogsPage';
 
 // Role types and permissions
 import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
@@ -81,7 +82,7 @@ function App() {
           path="/sfd-clients" 
           element={
             <PermissionProtectedRoute 
-              component={SfdClientPage} 
+              component={SfdClientsPage} 
               requiredPermission={PERMISSIONS.VIEW_CLIENTS}
               fallbackPath="/access-denied"
             />
@@ -97,6 +98,18 @@ function App() {
               fallbackPath="/access-denied"
             />
           } 
+        />
+
+        {/* Audit Logs page */}
+        <Route
+          path="/audit-logs"
+          element={
+            <PermissionProtectedRoute
+              component={AuditLogsPage}
+              requiredPermission={PERMISSIONS.VIEW_AUDIT_LOGS}
+              fallbackPath="/access-denied"
+            />
+          }
         />
         
         {/* Legacy protected routes for backward compatibility */}

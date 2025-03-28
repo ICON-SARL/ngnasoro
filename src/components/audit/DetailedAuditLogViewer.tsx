@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { getAuditLogs } from '@/utils/audit/auditLogger';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
@@ -102,7 +101,6 @@ export const DetailedAuditLogViewer: React.FC<DetailedAuditLogViewerProps> = ({
         sortOrder: 'desc',
       };
       
-      // Add filters
       if (filters.category) options.category = filters.category;
       if (filters.severity) options.severity = filters.severity;
       if (filters.status) options.status = filters.status;
@@ -113,8 +111,7 @@ export const DetailedAuditLogViewer: React.FC<DetailedAuditLogViewerProps> = ({
       const fetchedLogs = await getAuditLogs(options);
       setLogs(fetchedLogs);
       
-      // In a real app, you would get total count from API
-      setTotalCount(fetchedLogs.length > 0 ? pageSize * 5 : 0); // Mock total
+      setTotalCount(fetchedLogs.length > 0 ? pageSize * 5 : 0);
     } catch (error) {
       console.error('Error fetching audit logs:', error);
     } finally {
@@ -123,7 +120,7 @@ export const DetailedAuditLogViewer: React.FC<DetailedAuditLogViewerProps> = ({
   };
   
   const handleApplyFilters = () => {
-    setPage(1); // Reset to first page
+    setPage(1);
     fetchLogs();
   };
   
@@ -143,7 +140,6 @@ export const DetailedAuditLogViewer: React.FC<DetailedAuditLogViewerProps> = ({
   };
   
   const handleExportLogs = () => {
-    // Convert logs to CSV
     const headers = ['Date', 'Action', 'Catégorie', 'Sévérité', 'Statut', 'Utilisateur', 'Ressource', 'Détails'];
     const csvRows = [
       headers.join(','),
@@ -155,7 +151,7 @@ export const DetailedAuditLogViewer: React.FC<DetailedAuditLogViewerProps> = ({
         log.status,
         log.user_id,
         log.target_resource || '',
-        JSON.stringify(log.details || {}).replace(/,/g, ';') // Avoid CSV confusion
+        JSON.stringify(log.details || {}).replace(/,/g, ';')
       ].join(','))
     ];
     
@@ -163,7 +159,6 @@ export const DetailedAuditLogViewer: React.FC<DetailedAuditLogViewerProps> = ({
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     
-    // Create download link
     const link = document.createElement('a');
     link.setAttribute('href', url);
     link.setAttribute('download', `audit-logs-${format(new Date(), 'yyyy-MM-dd')}.csv`);
@@ -212,7 +207,6 @@ export const DetailedAuditLogViewer: React.FC<DetailedAuditLogViewerProps> = ({
   const getFormattedDetails = (details: Record<string, any> | undefined) => {
     if (!details) return null;
     
-    // Format subsidy approvals specially
     if (details.sfd_name && details.amount) {
       return (
         <div>
@@ -226,7 +220,6 @@ export const DetailedAuditLogViewer: React.FC<DetailedAuditLogViewerProps> = ({
     return (
       <div>
         {Object.entries(details).map(([key, value]) => {
-          // Skip timestamp and technical fields
           if (['timestamp', 'id', '_id'].includes(key)) return null;
           
           return (
@@ -470,10 +463,17 @@ export const DetailedAuditLogViewer: React.FC<DetailedAuditLogViewerProps> = ({
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
-                      <PaginationPrevious 
-                        onClick={() => setPage(p => Math.max(p - 1, 1))} 
-                        disabled={page === 1}
-                      />
+                      {page === 1 ? (
+                        <PaginationPrevious 
+                          onClick={() => {}} 
+                          aria-disabled="true"
+                          className="pointer-events-none opacity-50"
+                        />
+                      ) : (
+                        <PaginationPrevious 
+                          onClick={() => setPage(p => Math.max(p - 1, 1))} 
+                        />
+                      )}
                     </PaginationItem>
                     
                     {Array.from({ length: Math.ceil(totalCount / pageSize) }, (_, i) => (
@@ -488,10 +488,17 @@ export const DetailedAuditLogViewer: React.FC<DetailedAuditLogViewerProps> = ({
                     ))}
                     
                     <PaginationItem>
-                      <PaginationNext 
-                        onClick={() => setPage(p => Math.min(p + 1, Math.ceil(totalCount / pageSize)))} 
-                        disabled={page === Math.ceil(totalCount / pageSize)}
-                      />
+                      {page === Math.ceil(totalCount / pageSize) ? (
+                        <PaginationNext 
+                          onClick={() => {}} 
+                          aria-disabled="true"
+                          className="pointer-events-none opacity-50"
+                        />
+                      ) : (
+                        <PaginationNext 
+                          onClick={() => setPage(p => Math.min(p + 1, Math.ceil(totalCount / pageSize)))} 
+                        />
+                      )}
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
