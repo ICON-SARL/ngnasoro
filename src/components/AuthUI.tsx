@@ -10,6 +10,7 @@ import AuthHeader from './auth/AuthHeader';
 import AuthTabs from './auth/AuthTabs';
 import AuthLinks from './auth/AuthLinks';
 import TestUserButton from './auth/TestUserButton';
+import { supabase } from '@/integrations/supabase/client';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
@@ -19,7 +20,8 @@ const AuthUI = () => {
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
   
-  useRoleRedirect();
+  // Pass the authMode to the redirect hook
+  useRoleRedirect(authMode);
   
   useEffect(() => {
     const hash = location.hash;
@@ -42,15 +44,23 @@ const AuthUI = () => {
   
   useEffect(() => {
     if (user && session) {
-      if (userRole === 'admin') {
+      // Implement role-specific redirects based on auth mode
+      if (authMode === 'admin' && userRole === 'admin') {
         navigate('/super-admin-dashboard');
-      } else if (userRole === 'sfd_admin') {
+      } else if (authMode === 'sfd' && userRole === 'sfd_admin') {
         navigate('/agency-dashboard');
-      } else {
-        navigate('/mobile-flow');
+      } else if (authMode === 'default') {
+        // Standard user logic
+        if (userRole === 'admin') {
+          navigate('/super-admin-dashboard');
+        } else if (userRole === 'sfd_admin') {
+          navigate('/agency-dashboard');
+        } else {
+          navigate('/mobile-flow');
+        }
       }
     }
-  }, [user, session, navigate, userRole]);
+  }, [user, session, navigate, userRole, authMode]);
 
   useEffect(() => {
     if (location.pathname.includes('register')) {

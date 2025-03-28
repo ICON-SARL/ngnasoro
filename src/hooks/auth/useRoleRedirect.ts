@@ -7,7 +7,7 @@ import { useAuth } from './useAuth';
  * Hook to handle automatic redirects based on user roles
  * Redirects users to appropriate dashboards based on their role
  */
-export const useRoleRedirect = () => {
+export const useRoleRedirect = (authMode?: 'default' | 'admin' | 'sfd') => {
   const { user, session, userRole, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,6 +24,20 @@ export const useRoleRedirect = () => {
       
       // Only redirect if user is on auth page or root
       if (currentPath === '/auth' || currentPath === '/login' || currentPath === '/') {
+        // If we're in admin mode, only redirect to admin page if user is admin
+        if (authMode === 'admin' && userRole !== 'admin') {
+          // User doesn't have admin role but trying to access admin
+          console.log('Access denied: User is not admin but tried to access admin interface');
+          return;
+        }
+        
+        // If we're in sfd mode, only redirect to sfd page if user is sfd_admin
+        if (authMode === 'sfd' && userRole !== 'sfd_admin') {
+          // User doesn't have sfd_admin role but trying to access sfd admin
+          console.log('Access denied: User is not SFD admin but tried to access SFD admin interface');
+          return;
+        }
+        
         switch (userRole) {
           case 'admin':
             navigate('/super-admin-dashboard');
@@ -40,7 +54,7 @@ export const useRoleRedirect = () => {
         }
       }
     }
-  }, [user, session, userRole, isLoading, navigate, location.pathname]);
+  }, [user, session, userRole, isLoading, navigate, location.pathname, authMode]);
 
   return { isLoading };
 };
