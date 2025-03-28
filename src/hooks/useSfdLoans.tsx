@@ -129,7 +129,8 @@ export function useSfdLoans() {
   const sendPaymentReminder = useMutation({
     mutationFn: ({ loanId }: { loanId: string }) => {
       if (!user?.id) throw new Error("Utilisateur non authentifié");
-      return sfdLoanApi.sendPaymentReminder(loanId, user.id);
+      // Fix: Remove the second argument (user.id) since the loanNotificationService only expects one argument
+      return sfdLoanApi.sendPaymentReminder(loanId);
     },
     onSuccess: () => {
       toast({
