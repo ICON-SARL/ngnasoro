@@ -8,6 +8,7 @@ import { CreditNotificationSettings } from '@/components/admin/credit/CreditNoti
 import { SfdManagement } from '@/components/admin/SfdManagement';
 import { SfdAuditLog } from '@/components/admin/SfdAuditLog';
 import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
+import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommunication';
 import { MerefApprovalDashboard } from '@/components/admin/MerefApprovalDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -21,7 +22,12 @@ const CreditApprovalPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <SuperAdminHeader additionalComponents={<AdminNotifications />} />
+      <SuperAdminHeader additionalComponents={
+        <div className="flex items-center gap-2">
+          <MerefSfdCommunication />
+          <AdminNotifications />
+        </div>
+      } />
       
       <main className="flex-1 container mx-auto p-4 md:p-6">
         <div className="mb-6">

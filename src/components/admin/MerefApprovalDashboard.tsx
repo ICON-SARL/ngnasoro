@@ -1,512 +1,334 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import { 
-  CheckCircle, 
+  CreditCard, 
+  Building, 
+  FileText, 
+  BarChart3, 
+  Calendar, 
+  Search, 
+  ArrowUpDown, 
+  CheckCircle2, 
   XCircle, 
-  AlertTriangle, 
-  Search,
-  FileText,
-  Eye,
-  Filter,
-  ArrowUpDown
+  Clock, 
+  AlertTriangle 
 } from 'lucide-react';
-import { useAuth } from '@/hooks/auth';
-import { merefSfdIntegration, MerefApprovalRequest } from '@/utils/merefSfdIntegration';
-import { toast } from '@/hooks/use-toast';
-import { Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { CreditDecisionFlow } from '@/components/CreditDecisionFlow';
+import { useCreditApplications } from '@/hooks/useCreditApplications';
+import { Input } from '@/components/ui/input';
 
-interface RequestItem {
-  id: string;
-  sfd_id: string;
-  sfd_name: string;
-  type: string;
-  title: string;
-  description: string;
-  amount?: number;
-  status: string;
-  created_at: string;
-  requested_by: string;
-  priority?: string;
-}
+export const MerefApprovalDashboard = () => {
+  const { applications, isLoading } = useCreditApplications();
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [activeTab, setActiveTab] = React.useState('overview');
 
-export function MerefApprovalDashboard() {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('pending');
-  const [isLoading, setIsLoading] = useState(true);
-  const [requests, setRequests] = useState<RequestItem[]>([]);
-  const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
-  const [showApproveDialog, setShowApproveDialog] = useState(false);
-  const [showRejectDialog, setShowRejectDialog] = useState(false);
-  const [comments, setComments] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  // Filter applications by search query
+  const filteredApplications = applications?.filter(app => 
+    app.sfd_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    app.reference.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
+  // Calculate statistics
+  const totalRequests = applications?.length || 0;
+  const pendingRequests = applications?.filter(app => app.status === 'pending').length || 0;
+  const approvedRequests = applications?.filter(app => app.status === 'approved').length || 0;
+  const rejectedRequests = applications?.filter(app => app.status === 'rejected').length || 0;
   
-  // Fetch pending requests when the tab changes
-  useEffect(() => {
-    const fetchRequests = async () => {
-      setIsLoading(true);
-      try {
-        let query = supabase
-          .from('subsidy_requests')
-          .select('*, sfds(name)');
-          
-        // Filter based on active tab
-        if (activeTab === 'pending') {
-          query = query.eq('status', 'pending');
-        } else if (activeTab === 'under_review') {
-          query = query.eq('status', 'under_review');
-        } else if (activeTab === 'approved') {
-          query = query.eq('status', 'approved');
-        } else if (activeTab === 'rejected') {
-          query = query.eq('status', 'rejected');
-        }
-        
-        const { data, error } = await query.order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        if (data) {
-          const formattedRequests = data.map(item => ({
-            id: item.id,
-            sfd_id: item.sfd_id,
-            sfd_name: item.sfds?.name || 'SFD Inconnue',
-            type: 'subsidy',
-            title: item.purpose || 'Demande de subvention',
-            description: item.justification || '',
-            amount: item.amount,
-            status: item.status,
-            created_at: item.created_at,
-            requested_by: item.requested_by,
-            priority: item.priority
-          }));
-          
-          setRequests(formattedRequests);
-        }
-      } catch (error) {
-        console.error('Error fetching requests:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les demandes",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const averageScore = applications?.length 
+    ? Math.round(applications.reduce((sum, app) => sum + app.score, 0) / applications.length) 
+    : 0;
+  
+  // Get top SFDs by approval rate
+  const sfdStats = React.useMemo(() => {
+    const stats: Record<string, { total: number, approved: number, name: string }> = {};
     
-    fetchRequests();
-  }, [activeTab]);
-  
-  // Filter requests based on search term
-  const filteredRequests = requests.filter(request => 
-    request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.sfd_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  // Handle request approval
-  const handleApprove = async () => {
-    if (!selectedRequest || !user) return;
-    
-    try {
-      const approvalRequest: MerefApprovalRequest = {
-        requestId: selectedRequest.id,
-        sfdId: selectedRequest.sfd_id,
-        requestType: selectedRequest.type as 'loan' | 'subsidy' | 'client_registration',
-        status: 'approved',
-        comments: comments,
-        reviewedBy: user.id
-      };
-      
-      const result = await merefSfdIntegration.processMerefApproval(approvalRequest);
-      
-      if (!result.success) {
-        throw new Error(result.message || 'Erreur lors de l\'approbation');
+    applications?.forEach(app => {
+      if (!stats[app.sfd_id]) {
+        stats[app.sfd_id] = { total: 0, approved: 0, name: app.sfd_name };
       }
       
-      // Update the local state
-      setRequests(prev => prev.filter(r => r.id !== selectedRequest.id));
-      
-      toast({
-        title: "Succès",
-        description: "La demande a été approuvée avec succès"
-      });
-      
-      setShowApproveDialog(false);
-      setSelectedRequest(null);
-      setComments('');
-    } catch (error) {
-      console.error('Error approving request:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'approuver la demande",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  // Handle request rejection
-  const handleReject = async () => {
-    if (!selectedRequest || !user) return;
-    
-    try {
-      const rejectionRequest: MerefApprovalRequest = {
-        requestId: selectedRequest.id,
-        sfdId: selectedRequest.sfd_id,
-        requestType: selectedRequest.type as 'loan' | 'subsidy' | 'client_registration',
-        status: 'rejected',
-        comments: comments,
-        reviewedBy: user.id
-      };
-      
-      const result = await merefSfdIntegration.processMerefApproval(rejectionRequest);
-      
-      if (!result.success) {
-        throw new Error(result.message || 'Erreur lors du rejet');
+      stats[app.sfd_id].total += 1;
+      if (app.status === 'approved') {
+        stats[app.sfd_id].approved += 1;
       }
-      
-      // Update the local state
-      setRequests(prev => prev.filter(r => r.id !== selectedRequest.id));
-      
-      toast({
-        title: "Information",
-        description: "La demande a été rejetée"
-      });
-      
-      setShowRejectDialog(false);
-      setSelectedRequest(null);
-      setComments('');
-    } catch (error) {
-      console.error('Error rejecting request:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de rejeter la demande",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  // Format the date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
     });
-  };
-  
-  // Format the amount
-  const formatAmount = (amount?: number) => {
-    if (!amount) return '';
-    return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
-  };
-  
-  // Get status badge
-  const getStatusBadge = (status: string) => {
+    
+    return Object.values(stats)
+      .map(stat => ({
+        ...stat,
+        approvalRate: stat.total ? Math.round((stat.approved / stat.total) * 100) : 0
+      }))
+      .sort((a, b) => b.approvalRate - a.approvalRate)
+      .slice(0, 5);
+  }, [applications]);
+
+  // Render status badge
+  const renderStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge className="bg-amber-100 text-amber-800">En attente</Badge>;
-      case 'under_review':
-        return <Badge className="bg-blue-100 text-blue-800">En cours d'examen</Badge>;
+        return <Badge className="bg-amber-100 text-amber-800"><Clock className="h-3 w-3 mr-1" /> En attente</Badge>;
       case 'approved':
-        return <Badge className="bg-green-100 text-green-800">Approuvée</Badge>;
+        return <Badge className="bg-green-100 text-green-800"><CheckCircle2 className="h-3 w-3 mr-1" /> Approuvée</Badge>;
       case 'rejected':
-        return <Badge className="bg-red-100 text-red-800">Rejetée</Badge>;
+        return <Badge className="bg-red-100 text-red-800"><XCircle className="h-3 w-3 mr-1" /> Rejetée</Badge>;
       default:
         return <Badge>Inconnu</Badge>;
     }
   };
-  
-  // Get priority badge
-  const getPriorityBadge = (priority?: string) => {
-    if (!priority) return null;
-    
-    switch (priority) {
-      case 'low':
-        return <Badge className="bg-blue-100 text-blue-800">Basse</Badge>;
-      case 'normal':
-        return <Badge className="bg-gray-100 text-gray-800">Normale</Badge>;
-      case 'high':
-        return <Badge className="bg-amber-100 text-amber-800">Haute</Badge>;
-      case 'urgent':
-        return <Badge className="bg-red-100 text-red-800">Urgente</Badge>;
-      default:
-        return null;
-    }
-  };
-  
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Approbations MEREF</h1>
-        <p className="text-sm text-muted-foreground">
-          Gérez les demandes d'approbation provenant des SFDs
-        </p>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total des demandes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalRequests}</div>
+            <p className="text-xs text-muted-foreground mt-1">Toutes demandes confondues</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">En attente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-600">{pendingRequests}</div>
+            <Progress value={(pendingRequests / totalRequests) * 100} className="h-2 mt-2" />
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Approuvées</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{approvedRequests}</div>
+            <Progress value={(approvedRequests / totalRequests) * 100} className="h-2 mt-2" />
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Score moyen</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{averageScore}</div>
+            <div className="w-full bg-gray-200 h-2 rounded-full mt-2">
+              <div 
+                className={`h-2 rounded-full ${
+                  averageScore >= 75 ? 'bg-green-500' : 
+                  averageScore >= 50 ? 'bg-amber-500' : 
+                  'bg-red-500'
+                }`} 
+                style={{ width: `${averageScore}%` }}
+              ></div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2 w-full max-w-sm">
-          <div className="relative w-full">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Rechercher par titre ou SFD..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <Button variant="outline" size="icon">
-            <Filter className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-      
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="pending">
-            En attente ({requests.filter(r => r.status === 'pending').length})
-          </TabsTrigger>
-          <TabsTrigger value="under_review">
-            En examen ({requests.filter(r => r.status === 'under_review').length})
-          </TabsTrigger>
-          <TabsTrigger value="approved">
-            Approuvées
-          </TabsTrigger>
-          <TabsTrigger value="rejected">
-            Rejetées
-          </TabsTrigger>
-          <TabsTrigger value="all">
-            Toutes
-          </TabsTrigger>
+          <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+          <TabsTrigger value="workflow">Workflow de décision</TabsTrigger>
+          <TabsTrigger value="analytics">Analytiques</TabsTrigger>
         </TabsList>
         
-        <TabsContent value={activeTab}>
+        <TabsContent value="overview">
           <Card>
             <CardHeader>
-              <CardTitle>
-                Demandes {activeTab === 'pending' ? 'en attente' : 
-                          activeTab === 'under_review' ? 'en cours d\'examen' :
-                          activeTab === 'approved' ? 'approuvées' :
-                          activeTab === 'rejected' ? 'rejetées' : ''}
-              </CardTitle>
+              <CardTitle>Dernières demandes de crédit</CardTitle>
               <CardDescription>
-                {activeTab === 'pending' ? 'Demandes nécessitant une approbation du MEREF' : 
-                 activeTab === 'under_review' ? 'Demandes en cours d\'examen par le MEREF' :
-                 activeTab === 'approved' ? 'Demandes approuvées par le MEREF' :
-                 activeTab === 'rejected' ? 'Demandes rejetées par le MEREF' : 
-                 'Toutes les demandes'}
+                Aperçu des demandes récentes en attente d'évaluation
               </CardDescription>
             </CardHeader>
+            
             <CardContent>
+              <div className="flex justify-between mb-4">
+                <div className="relative w-64">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    Date
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex items-center">
+                    <ArrowUpDown className="h-4 w-4 mr-1" />
+                    Trier
+                  </Button>
+                </div>
+              </div>
+              
               {isLoading ? (
-                <div className="flex items-center justify-center h-60">
-                  <div className="flex flex-col items-center">
-                    <AlertTriangle className="h-10 w-10 text-muted-foreground animate-pulse" />
-                    <p className="mt-2 text-muted-foreground">Chargement des demandes...</p>
-                  </div>
+                <div className="py-8 text-center">
+                  <div className="h-8 w-8 mx-auto animate-spin rounded-full border-b-2 border-[#0D6A51]"></div>
+                  <p className="mt-2 text-muted-foreground">Chargement des demandes...</p>
                 </div>
-              ) : filteredRequests.length === 0 ? (
-                <div className="flex items-center justify-center h-60">
-                  <div className="flex flex-col items-center">
-                    <FileText className="h-10 w-10 text-muted-foreground" />
-                    <p className="mt-2 text-muted-foreground">Aucune demande trouvée</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>SFD</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Titre</TableHead>
-                        <TableHead>
+              ) : filteredApplications.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Référence</TableHead>
+                      <TableHead>SFD</TableHead>
+                      <TableHead>Montant</TableHead>
+                      <TableHead>Score</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredApplications.map((application) => (
+                      <TableRow key={application.id}>
+                        <TableCell className="font-medium">{application.reference}</TableCell>
+                        <TableCell>{application.sfd_name}</TableCell>
+                        <TableCell>{application.amount.toLocaleString()} FCFA</TableCell>
+                        <TableCell>
                           <div className="flex items-center">
-                            Montant
-                            <ArrowUpDown className="ml-1 h-3 w-3" />
-                          </div>
-                        </TableHead>
-                        <TableHead>
-                          <div className="flex items-center">
-                            Date
-                            <ArrowUpDown className="ml-1 h-3 w-3" />
-                          </div>
-                        </TableHead>
-                        <TableHead>Priorité</TableHead>
-                        <TableHead>Statut</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredRequests.map((request) => (
-                        <TableRow key={request.id}>
-                          <TableCell className="font-medium">{request.sfd_name}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {request.type === 'subsidy' ? 'Subvention' : 
-                               request.type === 'loan' ? 'Prêt' : 
-                               request.type === 'client_registration' ? 'Client' : 
-                               request.type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{request.title}</TableCell>
-                          <TableCell>{formatAmount(request.amount)}</TableCell>
-                          <TableCell>{formatDate(request.created_at)}</TableCell>
-                          <TableCell>{getPriorityBadge(request.priority)}</TableCell>
-                          <TableCell>{getStatusBadge(request.status)}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end space-x-1">
-                              <Button variant="ghost" size="icon" asChild>
-                                <Link to={`/approval-details/${request.id}`}>
-                                  <Eye className="h-4 w-4" />
-                                </Link>
-                              </Button>
-                              
-                              {request.status === 'pending' && (
-                                <>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                    onClick={() => {
-                                      setSelectedRequest(request);
-                                      setShowApproveDialog(true);
-                                    }}
-                                  >
-                                    <CheckCircle className="h-4 w-4" />
-                                  </Button>
-                                  
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    onClick={() => {
-                                      setSelectedRequest(request);
-                                      setShowRejectDialog(true);
-                                    }}
-                                  >
-                                    <XCircle className="h-4 w-4" />
-                                  </Button>
-                                </>
-                              )}
+                            <div 
+                              className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                                application.score >= 75 ? 'bg-green-100 text-green-800' : 
+                                application.score >= 50 ? 'bg-amber-100 text-amber-800' : 
+                                'bg-red-100 text-red-800'
+                              }`}
+                            >
+                              {application.score}
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                          </div>
+                        </TableCell>
+                        <TableCell>{new Date(application.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell>{renderStatusBadge(application.status)}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm">
+                            <FileText className="h-4 w-4 mr-1" />
+                            Détails
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="py-8 text-center">
+                  <p className="text-muted-foreground">Aucune demande trouvée</p>
                 </div>
               )}
             </CardContent>
           </Card>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Performance des SFDs</CardTitle>
+                <CardDescription>Top 5 des SFDs par taux d'approbation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {sfdStats.length > 0 ? (
+                  <div className="space-y-4">
+                    {sfdStats.map((sfd, index) => (
+                      <div key={index}>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-medium">{sfd.name}</span>
+                          <span>{sfd.approvalRate}%</span>
+                        </div>
+                        <div className="w-full bg-gray-100 h-2 rounded-full">
+                          <div 
+                            className="bg-[#0D6A51] h-2 rounded-full" 
+                            style={{ width: `${sfd.approvalRate}%` }}
+                          ></div>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {sfd.approved} approuvées sur {sfd.total} demandes
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center">
+                    <p className="text-muted-foreground">Pas assez de données</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Distribution des scores</CardTitle>
+                <CardDescription>Répartition des scores des demandes</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64 flex items-end justify-between gap-2">
+                  {[
+                    { range: '0-20', count: applications?.filter(a => a.score >= 0 && a.score < 20).length || 0, color: 'bg-red-500' },
+                    { range: '20-40', count: applications?.filter(a => a.score >= 20 && a.score < 40).length || 0, color: 'bg-red-400' },
+                    { range: '40-60', count: applications?.filter(a => a.score >= 40 && a.score < 60).length || 0, color: 'bg-amber-400' },
+                    { range: '60-80', count: applications?.filter(a => a.score >= 60 && a.score < 80).length || 0, color: 'bg-green-400' },
+                    { range: '80-100', count: applications?.filter(a => a.score >= 80 && a.score <= 100).length || 0, color: 'bg-green-500' },
+                  ].map((bar, index) => {
+                    const maxCount = Math.max(...[0, 1, 2, 3, 4].map(i => 
+                      applications?.filter(a => 
+                        a.score >= i*20 && a.score < (i+1)*20
+                      ).length || 0
+                    ));
+                    const height = maxCount ? (bar.count / maxCount) * 100 : 0;
+                    
+                    return (
+                      <div key={index} className="flex flex-col items-center flex-1">
+                        <div 
+                          className={`${bar.color} w-full rounded-t-sm`} 
+                          style={{ height: `${height}%`, minHeight: bar.count ? '10%' : '0' }}
+                        ></div>
+                        <div className="text-xs mt-2">{bar.range}</div>
+                        <div className="text-xs font-medium">{bar.count}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="workflow">
+          <CreditDecisionFlow />
+        </TabsContent>
+        
+        <TabsContent value="analytics">
+          <Card>
+            <CardHeader>
+              <CardTitle>Analytiques détaillées</CardTitle>
+              <CardDescription>
+                Insights approfondis sur les performances du système de crédit
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="py-12 text-center">
+                <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-medium">Analytiques avancées</h3>
+                <p className="mt-2 text-muted-foreground max-w-md mx-auto">
+                  Cette fonctionnalité sera disponible dans une prochaine mise à jour. Elle inclura des analyses prédictives, des tendances temporelles et des rapports détaillés.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
-      
-      {/* Approve Dialog */}
-      {showApproveDialog && selectedRequest && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full">
-            <h2 className="text-xl font-semibold mb-4">Approuver la demande</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Vous êtes sur le point d'approuver la demande de <strong>{selectedRequest.sfd_name}</strong> pour <strong>{selectedRequest.title}</strong>
-              {selectedRequest.amount ? ` (${formatAmount(selectedRequest.amount)})` : ''}.
-            </p>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Commentaires (optionnel)</label>
-              <textarea
-                className="w-full p-2 border rounded-md"
-                rows={3}
-                value={comments}
-                onChange={(e) => setComments(e.target.value)}
-                placeholder="Ajouter des commentaires sur cette approbation..."
-              ></textarea>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowApproveDialog(false);
-                  setSelectedRequest(null);
-                  setComments('');
-                }}
-              >
-                Annuler
-              </Button>
-              
-              <Button
-                onClick={handleApprove}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                Confirmer l'approbation
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Reject Dialog */}
-      {showRejectDialog && selectedRequest && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full">
-            <h2 className="text-xl font-semibold mb-4">Rejeter la demande</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Vous êtes sur le point de rejeter la demande de <strong>{selectedRequest.sfd_name}</strong> pour <strong>{selectedRequest.title}</strong>
-              {selectedRequest.amount ? ` (${formatAmount(selectedRequest.amount)})` : ''}.
-            </p>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Motif du rejet (requis)</label>
-              <textarea
-                className="w-full p-2 border rounded-md"
-                rows={3}
-                value={comments}
-                onChange={(e) => setComments(e.target.value)}
-                placeholder="Veuillez indiquer le motif du rejet..."
-                required
-              ></textarea>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowRejectDialog(false);
-                  setSelectedRequest(null);
-                  setComments('');
-                }}
-              >
-                Annuler
-              </Button>
-              
-              <Button
-                onClick={handleReject}
-                className="bg-red-600 hover:bg-red-700"
-                disabled={!comments.trim()}
-              >
-                Confirmer le rejet
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
-}
+};

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Check, X, AlertTriangle, FileText, Search, ArrowUpDown, Star } from 'lucide-react';
 import { useCreditApplications } from '@/hooks/useCreditApplications';
 import { Input } from '@/components/ui/input';
+import { useAdminCommunication } from '@/hooks/useAdminCommunication';
 
 export const CreditApplicationList = () => {
   const { applications, isLoading, approveApplication, rejectApplication } = useCreditApplications();
@@ -21,14 +21,13 @@ export const CreditApplicationList = () => {
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [additionalComments, setAdditionalComments] = useState('');
+  const { sendNotification } = useAdminCommunication();
 
-  // Filter applications by search query
   const filteredApplications = applications?.filter(app => 
     app.sfd_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     app.reference.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
-  // Predefined rejection reasons
   const rejectionReasons = [
     'dossier_incomplet', 
     'risque_eleve', 
@@ -39,7 +38,6 @@ export const CreditApplicationList = () => {
     'autre'
   ];
 
-  // Get readable rejection reason label
   const getRejectionReasonLabel = (code: string) => {
     switch(code) {
       case 'dossier_incomplet': return 'Dossier incomplet';
@@ -53,7 +51,6 @@ export const CreditApplicationList = () => {
     }
   };
 
-  // Handle application approval
   const handleApprove = async () => {
     if (!selectedApplication) return;
     
@@ -61,6 +58,14 @@ export const CreditApplicationList = () => {
       await approveApplication.mutateAsync({
         applicationId: selectedApplication.id,
         comments: additionalComments
+      });
+      
+      await sendNotification({
+        title: "Demande de crédit approuvée",
+        message: `Votre demande de crédit (Réf: ${selectedApplication.reference}) a été approuvée pour un montant de ${selectedApplication.amount.toLocaleString()} FCFA.`,
+        type: 'info',
+        recipient_id: selectedApplication.sfd_id,
+        action_link: '/sfd/credit-applications'
       });
       
       toast({
@@ -76,7 +81,6 @@ export const CreditApplicationList = () => {
     }
   };
 
-  // Handle application rejection
   const handleReject = async () => {
     if (!selectedApplication || !rejectionReason) return;
     
@@ -85,6 +89,14 @@ export const CreditApplicationList = () => {
         applicationId: selectedApplication.id,
         rejectionReason,
         comments: additionalComments
+      });
+      
+      await sendNotification({
+        title: "Demande de crédit rejetée",
+        message: `Votre demande de crédit (Réf: ${selectedApplication.reference}) a été rejetée pour la raison suivante: ${getRejectionReasonLabel(rejectionReason)}.`,
+        type: 'warning',
+        recipient_id: selectedApplication.sfd_id,
+        action_link: '/sfd/credit-applications'
       });
       
       toast({
@@ -101,7 +113,6 @@ export const CreditApplicationList = () => {
     }
   };
 
-  // Render score badge
   const renderScoreBadge = (score: number) => {
     if (score >= 80) {
       return <Badge className="bg-green-100 text-green-800">Score: {score}</Badge>;
@@ -238,7 +249,6 @@ export const CreditApplicationList = () => {
         </CardContent>
       </Card>
       
-      {/* Approval Dialog */}
       <Dialog open={isApprovalDialogOpen} onOpenChange={setIsApprovalDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -277,7 +287,6 @@ export const CreditApplicationList = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Rejection Dialog */}
       <Dialog open={isRejectionDialogOpen} onOpenChange={setIsRejectionDialogOpen}>
         <DialogContent>
           <DialogHeader>
