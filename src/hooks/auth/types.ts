@@ -2,7 +2,7 @@
 export interface User {
   id: string;
   email: string;
-  app_metadata?: {
+  app_metadata: {
     [key: string]: any;
   };
   user_metadata?: {

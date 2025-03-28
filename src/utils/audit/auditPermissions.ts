@@ -40,7 +40,7 @@ export const hasRole = async (userId: string, role: Role): Promise<boolean> => {
     const { data, error } = await supabase
       .rpc('has_role', { 
         _user_id: userId, 
-        _role: role.toString() // Convert enum to string
+        _role: role as 'admin' | 'sfd_admin' | 'client' | 'user' // Type assertion to match the expected type
       });
       
     if (error) throw error;

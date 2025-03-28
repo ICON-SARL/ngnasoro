@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, AuthContextProps, Role } from './types';
@@ -18,8 +19,8 @@ const convertSupabaseUser = (supabaseUser: any): User => {
     phone: supabaseUser.user_metadata?.phone,
     aud: supabaseUser.aud,
     created_at: supabaseUser.created_at,
-    app_metadata: supabaseUser.app_metadata,
-    user_metadata: supabaseUser.user_metadata
+    app_metadata: supabaseUser.app_metadata || {},
+    user_metadata: supabaseUser.user_metadata || {}
   };
 };
 

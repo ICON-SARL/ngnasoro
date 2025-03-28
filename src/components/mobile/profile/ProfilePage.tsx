@@ -16,6 +16,7 @@ import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
 import KycVerificationSection from './KycVerificationSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
+import { User } from '@/hooks/auth/types';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('accounts');
@@ -68,7 +69,7 @@ const ProfilePage = () => {
         </TabsContent>
         
         <TabsContent value="profile" className="px-4">
-          <PersonalInfoSection user={user} />
+          <PersonalInfoSection user={user as User} />
           <KycVerificationSection />
         </TabsContent>
       </Tabs>
