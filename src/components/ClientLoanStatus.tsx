@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +9,7 @@ import { useClientLoans } from '@/hooks/useClientLoans';
 import { Clock, CheckCircle, XCircle, AlertTriangle, FileText, CalendarIcon, BanknoteIcon, InfoIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Link } from 'react-router-dom';
 
 const LoanStatusBadge = ({ status }: { status: string }) => {
   switch (status) {
@@ -113,7 +113,6 @@ const ClientLoanStatus = () => {
   const { loans, isLoading } = useClientLoans();
   const [activeTab, setActiveTab] = useState<string>("all");
   
-  // Filter loans based on active tab
   const filteredLoans = loans.filter(loan => {
     if (activeTab === 'all') return true;
     if (activeTab === 'pending') return loan.status === 'pending';
@@ -122,7 +121,6 @@ const ClientLoanStatus = () => {
     return true;
   });
   
-  // Count loans by status
   const pendingCount = loans.filter(loan => loan.status === 'pending').length;
   const approvedCount = loans.filter(loan => loan.status === 'approved' || loan.status === 'active').length;
   const rejectedCount = loans.filter(loan => loan.status === 'rejected').length;
@@ -168,7 +166,9 @@ const ClientLoanStatus = () => {
                 <p className="text-muted-foreground mb-6">
                   Vous n'avez pas encore de demande de prêt. Commencez par en créer une.
                 </p>
-                <Button as="a" href="/loans/apply">Faire une demande de prêt</Button>
+                <Button asChild>
+                  <Link to="/loans/apply">Faire une demande de prêt</Link>
+                </Button>
               </div>
             ) : (
               <div>
