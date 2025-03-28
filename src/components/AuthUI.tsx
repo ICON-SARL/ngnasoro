@@ -8,10 +8,11 @@ import RegisterForm from './auth/RegisterForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
-  const [authMode, setAuthMode] = useState<'default' | 'admin'>('default');
+  const [authMode, setAuthMode] = useState<'default' | 'admin' | 'sfd'>('default');
   const { user, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -51,9 +52,13 @@ const AuthUI = () => {
       setActiveTab('login');
     }
     
-    // Détection du mode admin par l'URL
+    // Détection du mode auth par l'URL
     if (location.search.includes('admin=true')) {
       setAuthMode('admin');
+    } else if (location.search.includes('sfd=true')) {
+      setAuthMode('sfd');
+    } else {
+      setAuthMode('default');
     }
   }, [location.pathname, location.search]);
 
@@ -81,35 +86,53 @@ const AuthUI = () => {
         <Logo />
         
         <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-          {authMode === 'admin' && (
-            <div className="p-4 bg-amber-50 border-b border-amber-100">
-              <h2 className="text-amber-800 font-medium text-center">
-                Connexion Administration
-              </h2>
+          {authMode !== 'default' && (
+            <div className={`p-4 ${authMode === 'admin' ? 'bg-amber-50 border-b border-amber-100' : 'bg-blue-50 border-b border-blue-100'}`}>
+              <div className="flex items-center justify-between">
+                <h2 className={`${authMode === 'admin' ? 'text-amber-800' : 'text-blue-800'} font-medium`}>
+                  {authMode === 'admin' ? 'Connexion Super Admin MEREF' : 'Connexion Administration SFD'}
+                </h2>
+                <Badge variant="outline" className={authMode === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}>
+                  {authMode === 'admin' ? 'MEREF' : 'SFD'}
+                </Badge>
+              </div>
             </div>
           )}
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full grid grid-cols-2">
               <TabsTrigger value="login">Connexion</TabsTrigger>
-              <TabsTrigger value="register">Inscription</TabsTrigger>
+              {authMode === 'default' && (
+                <TabsTrigger value="register">Inscription</TabsTrigger>
+              )}
+              {authMode !== 'default' && (
+                <TabsTrigger value="register" disabled>Inscription</TabsTrigger>
+              )}
             </TabsList>
             <TabsContent value="login">
-              <LoginForm adminMode={authMode === 'admin'} />
+              <LoginForm adminMode={authMode === 'admin'} sfdMode={authMode === 'sfd'} />
             </TabsContent>
             <TabsContent value="register">
               <RegisterForm />
             </TabsContent>
           </Tabs>
           
-          <div className="mt-4 text-center pb-6">
+          <div className="mt-4 text-center pb-6 flex justify-center gap-4">
             {authMode === 'default' ? (
-              <a 
-                href="/auth?admin=true"
-                className="text-[#0D6A51] hover:underline font-medium"
-              >
-                Accès Administrateur
-              </a>
+              <>
+                <a 
+                  href="/auth?admin=true"
+                  className="text-amber-600 hover:underline font-medium"
+                >
+                  Accès Super Admin
+                </a>
+                <a 
+                  href="/auth?sfd=true"
+                  className="text-blue-600 hover:underline font-medium"
+                >
+                  Accès Admin SFD
+                </a>
+              </>
             ) : (
               <a 
                 href="/auth"

@@ -8,14 +8,15 @@ import {
 import SuccessState from './login/SuccessState';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Eye, EyeOff, Lock, ShieldAlert } from 'lucide-react';
+import { Mail, Eye, EyeOff, Lock, ShieldAlert, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface LoginFormProps {
   adminMode?: boolean;
+  sfdMode?: boolean;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, sfdMode = false }) => {
   const {
     email,
     setEmail,
@@ -29,25 +30,37 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false }) => {
     cooldownTime,
     emailSent,
     handleLogin
-  } = useLoginForm(adminMode);
+  } = useLoginForm(adminMode, sfdMode);
 
   if (emailSent) {
     return <SuccessState email={email} />;
   }
 
+  const getPlaceholderEmail = () => {
+    if (adminMode) return "admin@meref.ml";
+    if (sfdMode) return "admin@ngnasoro.ml";
+    return "jean.dulac@anatec.io";
+  };
+
   return (
     <div className="space-y-5 p-6 w-full">
-      {adminMode && (
-        <div className="flex items-center gap-2 border border-amber-200 bg-amber-50 p-3 rounded-md">
-          <ShieldAlert className="h-5 w-5 text-amber-600" />
+      {(adminMode || sfdMode) && (
+        <div className={`flex items-center gap-2 border ${adminMode ? 'border-amber-200 bg-amber-50' : 'border-blue-200 bg-blue-50'} p-3 rounded-md`}>
+          {adminMode ? (
+            <ShieldAlert className="h-5 w-5 text-amber-600" />
+          ) : (
+            <Building className="h-5 w-5 text-blue-600" />
+          )}
           <div>
-            <h3 className="font-medium text-amber-800">Connexion Administration</h3>
-            <p className="text-xs text-amber-700">
+            <h3 className={`font-medium ${adminMode ? 'text-amber-800' : 'text-blue-800'}`}>
+              {adminMode ? 'Connexion Super Administration' : 'Connexion Administration SFD'}
+            </h3>
+            <p className={`text-xs ${adminMode ? 'text-amber-700' : 'text-blue-700'}`}>
               Accès réservé au personnel autorisé
             </p>
           </div>
-          <Badge variant="outline" className="ml-auto bg-amber-100 text-amber-800 border-amber-200">
-            Admin
+          <Badge variant="outline" className={`ml-auto ${adminMode ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-blue-100 text-blue-800 border-blue-200'}`}>
+            {adminMode ? 'MEREF' : 'SFD'}
           </Badge>
         </div>
       )}
@@ -64,7 +77,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false }) => {
               <Input 
                 id="email"
                 type="email"
-                placeholder={adminMode ? "admin@meref.ml" : "jean.dulac@anatec.io"}
+                placeholder={getPlaceholderEmail()}
                 className="pl-10 h-12 text-base border border-gray-300 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-md"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -105,7 +118,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false }) => {
           <button 
             type="submit" 
             className={`w-full h-12 rounded-md font-semibold text-white ${
-              adminMode ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#0D6A51] hover:bg-[#0D6A51]/90'
+              adminMode ? 'bg-amber-600 hover:bg-amber-700' : 
+              sfdMode ? 'bg-blue-600 hover:bg-blue-700' : 
+              'bg-[#0D6A51] hover:bg-[#0D6A51]/90'
             } transition-all shadow-md flex items-center justify-center gap-2`}
             disabled={isLoading || cooldownActive}
           >
@@ -117,7 +132,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false }) => {
                 </svg>
                 Chargement...
               </span>
-            ) : adminMode ? "Connexion Administration" : "Connexion"}
+            ) : adminMode ? "Connexion Super Administration" : 
+               sfdMode ? "Connexion Administration SFD" : "Connexion"}
           </button>
         </div>
       </form>

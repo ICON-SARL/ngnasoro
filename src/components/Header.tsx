@@ -4,19 +4,21 @@ import { cn } from '@/lib/utils';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Menu, X } from 'lucide-react';
+import { LogOut, Menu, X, Shield, Building, User } from 'lucide-react';
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import MobileNavigation from './MobileNavigation';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -36,6 +38,21 @@ const Header = () => {
     await signOut();
     navigate('/');
   };
+
+  // Déterminer le rôle de l'utilisateur
+  const getUserRole = () => {
+    if (!user) return null;
+    
+    if (user.app_metadata?.role === 'admin') {
+      return 'admin';
+    } else if (user.app_metadata?.role === 'sfd_admin') {
+      return 'sfd_admin';
+    } else {
+      return 'user';
+    }
+  };
+
+  const userRole = getUserRole();
 
   return (
     <header 
@@ -58,40 +75,114 @@ const Header = () => {
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex space-x-8">
-          <Link to="/sfd-selector" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
-            SFDs
-          </Link>
-          <Link to="/mobile-flow" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
-            App Mobile
-          </Link>
-          <Link to="/loan-system" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
-            Microcrédits
-          </Link>
-          <Link to="/solvency-engine" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
-            Financement
-          </Link>
+          {(!user || userRole === 'user') && (
+            <>
+              <Link to="/sfd-selector" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
+                SFDs
+              </Link>
+              <Link to="/mobile-flow" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
+                App Mobile
+              </Link>
+              <Link to="/loan-system" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
+                Microcrédits
+              </Link>
+              <Link to="/solvency-engine" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
+                Financement
+              </Link>
+            </>
+          )}
+          
+          {userRole === 'admin' && (
+            <>
+              <Link to="/super-admin-dashboard" className="text-sm font-medium hover:text-amber-600 transition-colors">
+                Tableau de bord
+              </Link>
+              <Link to="/credit-approval" className="text-sm font-medium hover:text-amber-600 transition-colors">
+                Approbation de Crédit
+              </Link>
+              <Link to="/super-admin-dashboard?tab=sfds" className="text-sm font-medium hover:text-amber-600 transition-colors">
+                Gestion SFDs
+              </Link>
+              <Link to="/super-admin-dashboard?tab=reports" className="text-sm font-medium hover:text-amber-600 transition-colors">
+                Rapports
+              </Link>
+            </>
+          )}
+          
+          {userRole === 'sfd_admin' && (
+            <>
+              <Link to="/agency-dashboard" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                Tableau de bord
+              </Link>
+              <Link to="/clients" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                Clients
+              </Link>
+              <Link to="/loans" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                Crédits
+              </Link>
+              <Link to="/transactions" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                Transactions
+              </Link>
+            </>
+          )}
         </nav>
         
         <div className="flex items-center space-x-4">
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="rounded-full h-8 w-8 p-0">
+                <Button variant="ghost" className="rounded-full h-9 w-9 p-0">
                   <span className="sr-only">Menu utilisateur</span>
-                  <div className="h-8 w-8 rounded-full bg-[#0D6A51] flex items-center justify-center text-white">
-                    {user.email?.charAt(0).toUpperCase() || "U"}
+                  <div className={`h-9 w-9 rounded-full flex items-center justify-center text-white ${
+                    userRole === 'admin' ? 'bg-amber-600' : 
+                    userRole === 'sfd_admin' ? 'bg-blue-600' : 'bg-[#0D6A51]'
+                  }`}>
+                    {userRole === 'admin' ? (
+                      <Shield className="h-5 w-5" />
+                    ) : userRole === 'sfd_admin' ? (
+                      <Building className="h-5 w-5" />
+                    ) : (
+                      <User className="h-5 w-5" />
+                    )}
                   </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuLabel>
+                  {user.full_name || user.email}
+                  {userRole === 'admin' && (
+                    <span className="block text-xs text-amber-600">Super Admin MEREF</span>
+                  )}
+                  {userRole === 'sfd_admin' && (
+                    <span className="block text-xs text-blue-600">Admin SFD</span>
+                  )}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate('/profile')}>
                   Profil
                 </DropdownMenuItem>
-                {user.email?.endsWith('@meref-mali.ml') && (
-                  <DropdownMenuItem onClick={() => navigate('/super-admin')}>
-                    Admin
+                
+                {userRole === 'admin' && (
+                  <DropdownMenuItem onClick={() => navigate('/super-admin-dashboard')}>
+                    <Shield className="mr-2 h-4 w-4 text-amber-600" />
+                    Dashboard Admin
                   </DropdownMenuItem>
                 )}
+                
+                {userRole === 'sfd_admin' && (
+                  <DropdownMenuItem onClick={() => navigate('/agency-dashboard')}>
+                    <Building className="mr-2 h-4 w-4 text-blue-600" />
+                    Dashboard SFD
+                  </DropdownMenuItem>
+                )}
+                
+                {userRole === 'user' && (
+                  <DropdownMenuItem onClick={() => navigate('/mobile-flow')}>
+                    App Mobile
+                  </DropdownMenuItem>
+                )}
+                
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Déconnexion
@@ -125,22 +216,61 @@ const Header = () => {
         </div>
       )}
 
-      {/* Mobile Navigation Menu */}
+      {/* Mobile Navigation Menu - Adapté selon le rôle */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white dark:bg-gray-900 p-4 shadow-md">
           <nav className="flex flex-col space-y-4">
-            <Link to="/sfd-selector" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
-              SFDs
-            </Link>
-            <Link to="/mobile-flow" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
-              App Mobile
-            </Link>
-            <Link to="/loan-system" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
-              Microcrédits
-            </Link>
-            <Link to="/solvency-engine" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
-              Financement
-            </Link>
+            {(!user || userRole === 'user') && (
+              <>
+                <Link to="/sfd-selector" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+                  SFDs
+                </Link>
+                <Link to="/mobile-flow" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+                  App Mobile
+                </Link>
+                <Link to="/loan-system" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+                  Microcrédits
+                </Link>
+                <Link to="/solvency-engine" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+                  Financement
+                </Link>
+              </>
+            )}
+            
+            {userRole === 'admin' && (
+              <>
+                <Link to="/super-admin-dashboard" className="text-sm font-medium hover:text-amber-600 transition-colors px-2 py-1">
+                  Tableau de bord
+                </Link>
+                <Link to="/credit-approval" className="text-sm font-medium hover:text-amber-600 transition-colors px-2 py-1">
+                  Approbation de Crédit
+                </Link>
+                <Link to="/super-admin-dashboard?tab=sfds" className="text-sm font-medium hover:text-amber-600 transition-colors px-2 py-1">
+                  Gestion SFDs
+                </Link>
+                <Link to="/super-admin-dashboard?tab=reports" className="text-sm font-medium hover:text-amber-600 transition-colors px-2 py-1">
+                  Rapports
+                </Link>
+              </>
+            )}
+            
+            {userRole === 'sfd_admin' && (
+              <>
+                <Link to="/agency-dashboard" className="text-sm font-medium hover:text-blue-600 transition-colors px-2 py-1">
+                  Tableau de bord
+                </Link>
+                <Link to="/clients" className="text-sm font-medium hover:text-blue-600 transition-colors px-2 py-1">
+                  Clients
+                </Link>
+                <Link to="/loans" className="text-sm font-medium hover:text-blue-600 transition-colors px-2 py-1">
+                  Crédits
+                </Link>
+                <Link to="/transactions" className="text-sm font-medium hover:text-blue-600 transition-colors px-2 py-1">
+                  Transactions
+                </Link>
+              </>
+            )}
+            
             {!user && (
               <Link to="/auth" className="text-sm font-medium bg-[#FFAB2E] text-white px-4 py-2 rounded-md hover:bg-[#FFAB2E]/90 transition-colors">
                 Connexion
