@@ -1,40 +1,90 @@
 
-/**
- * @deprecated This file is maintained for backward compatibility.
- * Import from '@/utils/audit' instead.
- */
-export * from './auditLoggerTypes';
-export { 
-  logAuditEvent,
-  getAuditLogs,
-  logAuthEvent,
-  logDataAccess 
-} from './auditLoggerCore';
+import { supabase } from '@/integrations/supabase/client';
 
-// Export only non-conflicting functions from export module
-export { 
-  downloadAuditLogsAsCSV,
-  exportAuditLogsToPDF,
-  downloadAuditLogsAsPDF
-} from './auditLoggerExport';
+export const logAuditEvent = async (
+  category: string,
+  action: string,
+  details?: any,
+  targetResource?: string,
+  severity: string = 'info',
+  status: string = 'success'
+) => {
+  try {
+    const { data, error } = await supabase.from('audit_logs').insert({
+      category,
+      action,
+      details,
+      target_resource: targetResource,
+      severity,
+      status,
+    });
 
-// Import needed modules directly instead of using require
-import { logAuditEvent } from './auditLoggerCore';
-import { AuditLogCategory, AuditLogSeverity } from './auditLoggerTypes';
+    if (error) {
+      console.error('Error logging audit event:', error);
+    }
+    
+    return { data, error };
+  } catch (err) {
+    console.error('Error in logAuditEvent:', err);
+    return { data: null, error: err };
+  }
+};
 
-// Added explicit export for the logPermissionFailure function
-export const logPermissionFailure = (userId: string, permission: string, location: string) => {
-  logAuditEvent({
-    user_id: userId,
-    action: 'permission_check_failure',
-    category: AuditLogCategory.DATA_ACCESS,
-    severity: AuditLogSeverity.WARNING,
-    status: 'failure',
-    target_resource: location,
-    details: {
-      required_permission: permission,
-      timestamp: new Date().toISOString()
+export const logPermissionFailure = async (
+  userId: string, 
+  requiredPermission: string, 
+  path: string
+) => {
+  try {
+    await logAuditEvent(
+      'security',
+      'permission_denied',
+      {
+        userId,
+        requiredPermission,
+        path,
+      },
+      'permission',
+      'warning',
+      'failure'
+    );
+  } catch (err) {
+    console.error('Error logging permission failure:', err);
+  }
+};
+
+export const logLoginAttempt = async (
+  email: string,
+  success: boolean,
+  ipAddress?: string,
+  deviceInfo?: string
+) => {
+  await logAuditEvent(
+    'authentication',
+    success ? 'login_success' : 'login_failure',
+    {
+      email,
+      ipAddress,
+      deviceInfo,
     },
-    error_message: `Access denied: Missing permission (${permission})`
-  });
+    'user',
+    success ? 'info' : 'warning',
+    success ? 'success' : 'failure'
+  );
+};
+
+export const logAdminAction = async (
+  userId: string,
+  action: string,
+  targetEntity: string,
+  details?: any
+) => {
+  await logAuditEvent(
+    'admin',
+    action,
+    details,
+    targetEntity,
+    'info',
+    'success'
+  );
 };

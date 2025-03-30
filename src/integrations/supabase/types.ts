@@ -409,6 +409,65 @@ export type Database = {
           },
         ]
       }
+      sfd_loan_plans: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          fees: number
+          id: string
+          interest_rate: number
+          is_active: boolean | null
+          max_amount: number
+          max_duration: number
+          min_amount: number
+          min_duration: number
+          name: string
+          requirements: string[] | null
+          sfd_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          fees?: number
+          id?: string
+          interest_rate?: number
+          is_active?: boolean | null
+          max_amount?: number
+          max_duration?: number
+          min_amount?: number
+          min_duration?: number
+          name: string
+          requirements?: string[] | null
+          sfd_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          fees?: number
+          id?: string
+          interest_rate?: number
+          is_active?: boolean | null
+          max_amount?: number
+          max_duration?: number
+          min_amount?: number
+          min_duration?: number
+          name?: string
+          requirements?: string[] | null
+          sfd_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sfd_loan_plans_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sfd_loans: {
         Row: {
           amount: number
