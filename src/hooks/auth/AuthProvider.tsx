@@ -71,29 +71,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Log auth events
         if (event === 'SIGNED_IN') {
-          await logAuditEvent({
-            user_id: newSession?.user.id,
-            action: 'user_login',
-            category: AuditLogCategory.AUTHENTICATION,
-            severity: AuditLogSeverity.INFO,
-            status: 'success',
-            details: {
+          await logAuditEvent(
+            AuditLogCategory.AUTHENTICATION,
+            'user_login',
+            {
               login_method: 'password',
               timestamp: new Date().toISOString(),
               user_role: newSession?.user.app_metadata?.role
-            }
-          });
+            },
+            newSession?.user.id,
+            AuditLogSeverity.INFO,
+            'success'
+          );
         } else if (event === 'SIGNED_OUT') {
-          await logAuditEvent({
-            user_id: user?.id, // Use previous user since new session is null
-            action: 'user_logout',
-            category: AuditLogCategory.AUTHENTICATION,
-            severity: AuditLogSeverity.INFO,
-            status: 'success',
-            details: {
+          await logAuditEvent(
+            AuditLogCategory.AUTHENTICATION,
+            'user_logout',
+            {
               timestamp: new Date().toISOString()
-            }
-          });
+            },
+            user?.id,
+            AuditLogSeverity.INFO,
+            'success'
+          );
         }
       }
     );
@@ -108,19 +108,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await supabase.auth.signInWithPassword({ email, password });
       
       if (result.error) {
-        await logAuditEvent({
-          user_id: undefined,
-          action: 'failed_login',
-          category: AuditLogCategory.AUTHENTICATION,
-          severity: AuditLogSeverity.WARNING,
-          status: 'failure',
-          details: {
+        await logAuditEvent(
+          AuditLogCategory.AUTHENTICATION,
+          'failed_login',
+          {
             email,
             reason: result.error.message,
             timestamp: new Date().toISOString()
           },
-          error_message: result.error.message
-        });
+          undefined,
+          AuditLogSeverity.WARNING,
+          'failure'
+        );
       } else if (result.data.user) {
         console.log('Login successful:', {
           userId: result.data.user.id,
