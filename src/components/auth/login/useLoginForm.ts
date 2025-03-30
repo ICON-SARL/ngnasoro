@@ -17,7 +17,7 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
   const [cooldownTime, setCooldownTime] = useState(0);
   const [emailSent, setEmailSent] = useState(false);
   
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -85,14 +85,21 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       }
       
       // Log successful authentication attempt
-      await logAuditEvent({
-        user_id: 'system', // We don't know the user ID yet as it's not returned by signIn
-        action: isSfdAdmin ? "sfd_admin_login_attempt" : adminMode ? "admin_login_attempt" : "password_login_attempt",
-        category: AuditLogCategory.AUTHENTICATION,
-        severity: AuditLogSeverity.INFO,
-        status: 'success',
-        details: { email, admin_mode: adminMode, sfd_admin: isSfdAdmin }
-      });
+      // Use 'anonymous' instead of 'system'
+      try {
+        if (user?.id) {
+          await logAuditEvent({
+            user_id: user.id,
+            action: isSfdAdmin ? "sfd_admin_login_attempt" : adminMode ? "admin_login_attempt" : "password_login_attempt",
+            category: AuditLogCategory.AUTHENTICATION,
+            severity: AuditLogSeverity.INFO,
+            status: 'success',
+            details: { email, admin_mode: adminMode, sfd_admin: isSfdAdmin }
+          });
+        }
+      } catch (auditErr) {
+        console.warn('Failed to log audit event:', auditErr);
+      }
       
       toast({
         title: "Connexion réussie",
@@ -105,15 +112,19 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       console.error("Login error:", error);
       
       // Log failed authentication attempt
-      await logAuditEvent({
-        user_id: 'system', // We don't know the user ID as login failed
-        action: isSfdAdmin ? "sfd_admin_login_failed" : adminMode ? "admin_login_failed" : "password_login_attempt",
-        category: AuditLogCategory.AUTHENTICATION,
-        severity: AuditLogSeverity.WARNING,
-        status: 'failure',
-        error_message: error.message,
-        details: { email, admin_mode: adminMode, sfd_admin: isSfdAdmin }
-      });
+      try {
+        await logAuditEvent({
+          user_id: user?.id || 'anonymous', // Use 'anonymous' instead of 'system'
+          action: isSfdAdmin ? "sfd_admin_login_failed" : adminMode ? "admin_login_failed" : "password_login_attempt",
+          category: AuditLogCategory.AUTHENTICATION,
+          severity: AuditLogSeverity.WARNING,
+          status: 'failure',
+          error_message: error.message,
+          details: { email, admin_mode: adminMode, sfd_admin: isSfdAdmin }
+        });
+      } catch (auditErr) {
+        console.warn('Failed to log audit event:', auditErr);
+      }
       
       // Check for rate limiting errors
       if (error.message && error.message.includes('security purposes') && error.message.includes('seconds')) {

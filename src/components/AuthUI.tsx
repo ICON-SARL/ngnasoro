@@ -9,11 +9,12 @@ import { Check } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DemoAccountsCreator from './auth/DemoAccountsCreator';
+import { Role } from '@/hooks/auth/types';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
   const [authMode, setAuthMode] = useState<'default' | 'admin' | 'sfd_admin'>('default');
-  const { user, session } = useAuth();
+  const { user, userRole, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
@@ -32,21 +33,21 @@ const AuthUI = () => {
   }, [location, navigate]);
   
   useEffect(() => {
-    // Si l'utilisateur est authentifié et qu'une session existe
-    if (user && session) {
+    // Si l'utilisateur est authentifié
+    if (user && !loading) {
       console.log('Authenticated user:', user);
-      console.log('User role:', user.app_metadata?.role);
+      console.log('User role:', userRole);
       
       // Redirection basée sur le rôle de l'utilisateur
-      if (user.app_metadata?.role === 'admin') {
+      if (userRole === Role.SUPER_ADMIN) {
         navigate('/super-admin-dashboard');
-      } else if (user.app_metadata?.role === 'sfd_admin') {
+      } else if (userRole === Role.SFD_ADMIN) {
         navigate('/agency-dashboard');
       } else {
         navigate('/mobile-flow');
       }
     }
-  }, [user, session, navigate]);
+  }, [user, userRole, loading, navigate]);
 
   // Update tab based on current route
   useEffect(() => {
@@ -75,6 +76,20 @@ const AuthUI = () => {
           </div>
           <h1 className="text-3xl font-bold text-green-700 mb-3">Connexion réussie!</h1>
           <p className="mt-2 text-gray-600 text-lg">Vous allez être redirigé vers l'application...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="h-20 w-20 bg-blue-100 text-blue-600 rounded-full mx-auto flex items-center justify-center mb-6">
+            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+          </div>
+          <h1 className="text-2xl font-bold text-blue-700 mb-3">Chargement en cours...</h1>
+          <p className="mt-2 text-gray-600">Veuillez patienter pendant la vérification de votre session.</p>
         </div>
       </div>
     );

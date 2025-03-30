@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, AuthContextProps, Role } from './types';
@@ -253,7 +252,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Save the role to user_roles table for consistency
         try {
-          // FIX: We need to pass the original string role to the RPC function, not the enum value
+          // Passing the original string role to the RPC function, not the enum value
           await supabase.rpc('assign_role', {
             user_id: userId,
             role: appMetadataRole  // This expects a string value like 'admin', 'sfd_admin', etc.
