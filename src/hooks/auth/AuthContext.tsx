@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, AuthContextProps, Role } from './types';
@@ -209,9 +210,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
 
       if (data && data.length > 0) {
+        // Convert the string role to our Role enum
+        const roleString = data[0].role as string;
+        console.log('Role found in database for user', userId, ':', roleString);
+        
         // Map the role string to our Role enum
-        const roleValue = data[0].role as Role;
-        console.log('Role found in database for user', userId, ':', roleValue);
+        let roleValue: Role;
+        
+        if (roleString === 'admin') {
+          roleValue = Role.SUPER_ADMIN;
+        } else if (roleString === 'sfd_admin') {
+          roleValue = Role.SFD_ADMIN;
+        } else if (roleString === 'client') {
+          roleValue = Role.CLIENT;
+        } else {
+          roleValue = Role.USER;
+        }
+        
         setUserRole(roleValue);
         return roleValue;
       }
@@ -220,8 +235,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('No role found in user_roles table, checking app_metadata...');
       const { data: userData } = await supabase.auth.getUser();
       if (userData && userData.user && userData.user.app_metadata?.role) {
-        const appMetadataRole = userData.user.app_metadata.role as Role;
+        const appMetadataRole = userData.user.app_metadata.role as string;
         console.log('Role found in app_metadata:', appMetadataRole);
+        
+        // Convert the string role to our Role enum
+        let roleValue: Role;
+        
+        if (appMetadataRole === 'admin') {
+          roleValue = Role.SUPER_ADMIN;
+        } else if (appMetadataRole === 'sfd_admin') {
+          roleValue = Role.SFD_ADMIN;
+        } else if (appMetadataRole === 'client') {
+          roleValue = Role.CLIENT;
+        } else {
+          roleValue = Role.USER;
+        }
         
         // Save the role to user_roles table for consistency
         try {
@@ -234,8 +262,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Error saving role to user_roles table:', err);
         }
         
-        setUserRole(appMetadataRole);
-        return appMetadataRole;
+        setUserRole(roleValue);
+        return roleValue;
       }
 
       // Default role if none found
