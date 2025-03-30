@@ -1,17 +1,16 @@
 
 import React from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import WelcomeScreen from '@/components/mobile/WelcomeScreen';
-import MainDashboard from '@/components/mobile/dashboard/MainDashboard';
-import PaymentTabContent from '@/components/mobile/PaymentTabContent';
-import ScheduleTransferTab from '@/components/mobile/ScheduleTransferTab';
-import { Button } from '@/components/ui/button';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { MainDashboard } from '@/components/mobile/dashboard';
+import ProfilePage from '@/components/mobile/profile/ProfilePage';
 import SecurePaymentTab from '@/components/mobile/secure-payment';
-import HomeLoanPage from '@/components/mobile/HomeLoanPage';
-import LoanActivityPage from '@/components/mobile/LoanActivityPage';
-import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
-import LoanSetupPage from '@/components/mobile/LoanSetupPage';
-import LoanProcessFlow from '@/components/mobile/LoanProcessFlow';
+import SfdSetupPage from '@/pages/SfdSetupPage';
+import SfdClientsPage from '@/pages/SfdClientsPage';
+import ScheduleTransferTab from '@/components/mobile/ScheduleTransferTab';
+import PaymentTabContent from '@/components/mobile/PaymentTabContent';
+import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
+import PaymentOptionsPage from '@/components/mobile/payment-options/PaymentOptionsPage';
+import LoanApplicationPage from '@/components/mobile/loan-application/LoanApplicationPage';
 
 interface MobileFlowRoutesProps {
   onAction: (action: string, data?: any) => void;
@@ -34,63 +33,64 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
   setShowWelcome,
   handlePaymentSubmit
 }) => {
-  const location = useLocation();
-  const currentPath = location.pathname;
-  
-  const handleBack = () => {
-    if (typeof window !== 'undefined') {
-      window.history.back();
-    }
-  };
-  
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
-      <Route path="/welcome" element={
-        <WelcomeScreen onStart={() => onAction('Start')} />
-      } />
-      <Route path="/main" element={
-        <MainDashboard 
-          onAction={onAction} 
-          account={account}
-          transactions={transactions}
-          transactionsLoading={transactionsLoading}
-          toggleMenu={toggleMenu}
-        />
-      } />
-      <Route path="/payment" element={
-        <PaymentTabContent onSubmit={handlePaymentSubmit} onBack={handleBack} />
-      } />
-      <Route path="/schedule-transfer" element={
-        <ScheduleTransferTab onBack={handleBack} />
-      } />
-      <Route path="/secure-payment" element={
-        <SecurePaymentTab onBack={handleBack} />
-      } />
-      <Route path="/home-loan" element={<HomeLoanPage />} />
-      <Route path="/loan-activity" element={<LoanActivityPage />} />
-      <Route path="/loan-details" element={
-        <LoanDetailsPage onBack={handleBack} />
-      } />
-      <Route path="/loan-details/:loanId" element={
-        <LoanDetailsPage onBack={handleBack} />
-      } />
-      <Route path="/loan-setup" element={<LoanSetupPage />} />
-      <Route path="/loan-process" element={
-        <LoanProcessFlow onBack={handleBack} />
-      } />
-      <Route path="/loan-process/:loanId" element={
-        <LoanProcessFlow onBack={handleBack} />
-      } />
-      
-      <Route path="*" element={
-        <div className="flex flex-col items-center justify-center h-screen">
-          <h2 className="text-xl font-semibold mb-4">Page introuvable</h2>
-          <Button onClick={() => onAction('Home')}>
-            Retour à l'accueil
-          </Button>
-        </div>
-      } />
+      <Route 
+        path="/" 
+        element={<Navigate to="/mobile-flow/main" replace />} 
+      />
+      <Route 
+        path="/main" 
+        element={
+          <MainDashboard 
+            onAction={onAction}
+            account={account}
+            transactions={transactions}
+            transactionsLoading={transactionsLoading}
+            toggleMenu={toggleMenu}
+          />
+        } 
+      />
+      <Route 
+        path="/profile" 
+        element={<ProfilePage />} 
+      />
+      <Route 
+        path="/create-sfd" 
+        element={<SfdSetupPage />} 
+      />
+      <Route 
+        path="/secure-payment" 
+        element={<SecurePaymentTab />} 
+      />
+      <Route 
+        path="/sfd-clients" 
+        element={<SfdClientsPage />} 
+      />
+      <Route 
+        path="/schedule-transfer" 
+        element={<ScheduleTransferTab />} 
+      />
+      <Route 
+        path="/payment" 
+        element={<PaymentTabContent onSubmit={handlePaymentSubmit} />} 
+      />
+      <Route 
+        path="/funds-management" 
+        element={<FundsManagementPage />} 
+      />
+      <Route 
+        path="/payment-options" 
+        element={<PaymentOptionsPage />} 
+      />
+      <Route 
+        path="/loan-application" 
+        element={<LoanApplicationPage />} 
+      />
+      <Route 
+        path="*" 
+        element={<Navigate to="/mobile-flow/main" replace />} 
+      />
     </Routes>
   );
 };

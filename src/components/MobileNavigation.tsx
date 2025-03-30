@@ -1,158 +1,45 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Home, Wallet, User, Plus, RefreshCw, ArrowUp } from 'lucide-react';
-import { useState } from 'react';
-
-interface NavigationItem {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  path: string;
-}
+import { mobileNavItems } from '@/config/mobileNavigation';
+import * as Icons from 'lucide-react';
 
 interface MobileNavigationProps {
-  onAction?: (action: string) => void;
-  className?: string;
-  isHeader?: boolean;
+  onAction: (action: string, data?: any) => void;
 }
 
-const MobileNavigation = ({ onAction, className = "", isHeader = false }: MobileNavigationProps) => {
-  const isMobile = useIsMobile();
+const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAction }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Extract current path from location
-  const currentPath = location.pathname.split('/').pop() || '';
-  const [activeTab, setActiveTab] = useState(currentPath || 'main');
+  const handleNavigation = (route: string, id: string) => {
+    navigate(route);
+    onAction(id);
+  };
   
-  // Check if current route is welcome screen
-  const isWelcomePage = location.pathname === '/mobile-flow/welcome';
+  // Fonction pour obtenir dynamiquement l'icône de Lucide
+  const getIcon = (iconName: string) => {
+    const IconComponent = (Icons as any)[iconName] || Icons.CircleDot;
+    return <IconComponent />;
+  };
 
-  useEffect(() => {
-    const pathSegment = location.pathname.split('/').pop() || '';
-    setActiveTab(pathSegment || 'main');
-  }, [location.pathname]);
-
-  useEffect(() => {
-    const handleCustomAction = (event: any) => {
-      if (event.detail && event.detail.action && onAction) {
-        onAction(event.detail.action);
-      }
-    };
-
-    window.addEventListener('lovable:action', handleCustomAction);
-    
-    return () => {
-      window.removeEventListener('lovable:action', handleCustomAction);
-    };
-  }, [onAction]);
-
-  const navigationItems: NavigationItem[] = [
-    {
-      icon: <Home className="h-6 w-6" />,
-      label: "Accueil",
-      value: 'main',
-      path: '/mobile-flow/main'
-    },
-    {
-      icon: <Wallet className="h-6 w-6" />,
-      label: "Mes Fonds",
-      value: 'funds-management',
-      path: '/mobile-flow/funds-management'
-    },
-    {
-      icon: null,
-      label: "",
-      value: 'action',
-      path: '/mobile-flow/loan-application'
-    },
-    {
-      icon: <ArrowUp className="h-6 w-6" />,
-      label: "Rembourser",
-      value: 'payment',
-      path: '/mobile-flow/secure-payment'
-    },
-    {
-      icon: <User className="h-6 w-6" />,
-      label: "Profil",
-      value: 'profile',
-      path: '/mobile-flow/profile'
-    }
-  ];
-
-  // Don't render on welcome page or if not mobile
-  if (!isMobile || isWelcomePage) return null;
-
-  // If we're in the header (tablet mode), show horizontal navigation
-  if (isHeader) {
-    return (
-      <div className={`bg-white border-b border-gray-200 py-2 ${className}`}>
-        <div className="flex justify-around items-center px-2 relative">
-          {navigationItems.map((item, index) => {
-            if (index === 2) {
-              return (
-                <div key={index} className="relative">
-                  <button 
-                    className="bg-[#0D6A51] text-white p-3 rounded-full shadow-lg"
-                    onClick={() => navigate('/mobile-flow/loan-application')}
-                  >
-                    <Plus className="h-5 w-5" />
-                  </button>
-                </div>
-              );
-            }
-            
-            return (
-              <button
-                key={index}
-                className={`flex flex-col items-center justify-center py-1 px-2 ${
-                  activeTab === item.value 
-                    ? 'text-[#0D6A51] font-medium' 
-                    : 'text-gray-400'
-                }`}
-                onClick={() => navigate(item.path)}
-              >
-                {item.icon}
-                <span className="text-xs mt-1">{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // Regular mobile footer navigation
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 z-50">
-      <div className="flex justify-around items-center px-2 relative">
-        {navigationItems.map((item, index) => {
-          if (index === 2) {
-            return (
-              <div key={index} className="relative -top-5">
-                <button 
-                  className="bg-[#0D6A51] text-white p-4 rounded-full shadow-lg"
-                  onClick={() => navigate('/mobile-flow/loan-application')}
-                >
-                  <Plus className="h-6 w-6" />
-                </button>
-              </div>
-            );
-          }
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-3 z-40">
+      <div className="flex justify-between items-center">
+        {mobileNavItems.map((item) => {
+          const isActive = location.pathname === item.route;
           
           return (
             <button
-              key={index}
-              className={`flex flex-col items-center justify-center py-3 px-2 ${
-                activeTab === item.value 
-                  ? 'text-[#0D6A51] font-medium' 
-                  : 'text-gray-400'
+              key={item.id}
+              className={`flex flex-col items-center justify-center p-2 rounded-lg ${
+                isActive ? 'text-[#0D6A51]' : 'text-gray-500'
               }`}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavigation(item.route, item.id)}
             >
-              {item.icon}
+              <div className={`h-6 w-6 ${isActive ? 'text-[#0D6A51]' : 'text-gray-500'}`}>
+                {getIcon(item.icon)}
+              </div>
               <span className="text-xs mt-1">{item.label}</span>
             </button>
           );
