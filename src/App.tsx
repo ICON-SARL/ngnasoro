@@ -3,7 +3,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Auth components
-import { AuthProvider } from '@/hooks/auth/AuthProvider';
+import { AuthProvider } from '@/hooks/auth';
 
 // Auth pages
 import LoginPage from '@/pages/LoginPage';
@@ -30,6 +30,10 @@ import MobileFlow from '@/pages/MobileFlow';
 
 // Role types and permissions
 import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
+import { initializeSupabase } from '@/utils/initSupabase';
+
+// Initialize Supabase data structures
+initializeSupabase();
 
 function App() {
   return (

@@ -19,6 +19,7 @@ const AuthUI = () => {
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
   
+  // Handle hash in URL for OAuth flows
   useEffect(() => {
     const hash = location.hash;
     if (hash && hash.includes('access_token')) {
@@ -32,13 +33,14 @@ const AuthUI = () => {
     }
   }, [location, navigate]);
   
+  // Redirect based on authentication state
   useEffect(() => {
-    // Si l'utilisateur est authentifié
+    // Only redirect if not loading and user is authenticated
     if (user && !loading) {
       console.log('Authenticated user:', user);
       console.log('User role:', userRole);
       
-      // Redirection basée sur le rôle de l'utilisateur
+      // Redirection based on user's role
       if (userRole === Role.SUPER_ADMIN) {
         navigate('/super-admin-dashboard');
       } else if (userRole === Role.SFD_ADMIN) {
@@ -57,7 +59,7 @@ const AuthUI = () => {
       setActiveTab('login');
     }
     
-    // Détection du mode admin par l'URL
+    // Detect admin mode from URL
     if (location.pathname.includes('admin/auth') || location.search.includes('admin=true')) {
       setAuthMode('admin');
     } else if (location.pathname.includes('sfd/auth') || location.search.includes('sfd_admin=true')) {
@@ -67,6 +69,7 @@ const AuthUI = () => {
     }
   }, [location.pathname, location.search]);
 
+  // Show success screen after successful OAuth login
   if (authSuccess) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
@@ -81,6 +84,7 @@ const AuthUI = () => {
     );
   }
 
+  // Show loading screen while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
@@ -95,6 +99,7 @@ const AuthUI = () => {
     );
   }
 
+  // Show auth UI when not authenticated and not loading
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex flex-col items-center justify-center p-4 relative">
       <div className="absolute top-4 right-4">

@@ -31,7 +31,7 @@ export interface AuthContextProps {
   // Adding missing properties
   session: any | null;
   isLoading: boolean;
-  refreshSession?: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 export enum Role {
