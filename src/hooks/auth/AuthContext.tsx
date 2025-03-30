@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthContextProps, Role } from './types';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,6 +34,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const navigate = useNavigate();
   const [biometricEnabled, setBiometricEnabled] = useState(false);
+
+  // Helper function to assign roles
+  const assignUserRole = async (user: User, role: string) => {
+    if (!user || !role) return;
+    
+    try {
+      // Cast the string role to the expected literal type
+      const validRole = role as "admin" | "sfd_admin" | "user";
+      
+      const { data: roleData, error: roleError } = await supabase.rpc('assign_role', {
+        user_id: user.id,
+        role: validRole
+      });
+      
+      if (!roleError) {
+        // Update user metadata to mark role as assigned
+        const { error: updateError } = await supabase.auth.updateUser({
+          data: {
+            ...user.app_metadata,
+            role_assigned: true
+          }
+        });
+        
+        if (updateError) {
+          console.error('Error updating user metadata:', updateError);
+        }
+      } else {
+        console.error('Error assigning role:', roleError);
+      }
+    } catch (err) {
+      console.error('Error in assign_role process:', err);
+    }
+  };
 
   useEffect(() => {
     const storedSfdId = localStorage.getItem('activeSfdId');
@@ -71,7 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
         if (session && session.user) {
-          setUser(session.user);
+          setUser(session.user as User);
           setSession(session);
         }
       } else if (event === 'SIGNED_OUT') {
@@ -82,7 +116,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    // You need to fix the user session handling in getSession
     supabase.auth.getSession().then(({ data }) => {
       if (data && data.session) {
         setSession(data.session);
@@ -96,6 +129,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
+  // Check and assign role when user changes
+  useEffect(() => {
+    const checkAndAssignRole = async () => {
+      if (user && user.app_metadata?.role && !user.app_metadata.role_assigned) {
+        await assignUserRole(user, user.app_metadata.role);
+      }
+    };
+
+    checkAndAssignRole();
+  }, [user]);
+
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
@@ -108,7 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
       if (data.session) {
-        setUser(data.session.user);
+        setUser(data.session.user as User);
         setSession(data.session);
       }
       return {};
@@ -135,7 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       if (data.session) {
-        setUser(data.session.user);
+        setUser(data.session.user as User);
         setSession(data.session);
       }
     } catch (error) {
@@ -176,7 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (data?.session) {
         setSession(data.session);
-        setUser(data.session.user);
+        setUser(data.session.user as User);
       }
     } catch (error) {
       console.error('Unexpected refreshSession error:', error);
@@ -192,38 +236,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = user?.app_metadata?.role === 'admin';
   const isSfdAdmin = user?.app_metadata?.role === 'sfd_admin';
   const userRole = user?.app_metadata?.role as Role | null;
-
-  // Fix the assign_role call to properly cast the role value
-  const storedRole = user?.app_metadata?.role;
-  if (storedRole && !user.app_metadata.role_assigned) {
-    // Cast the string role to the expected literal type
-    const validRole = storedRole as "admin" | "sfd_admin" | "user";
-    
-    try {
-      const { data: roleData, error: roleError } = await supabase.rpc('assign_role', {
-        user_id: user.id,
-        role: validRole // Now properly typed
-      });
-      
-      if (!roleError) {
-        // Update user metadata to mark role as assigned
-        const { error: updateError } = await supabase.auth.updateUser({
-          data: {
-            ...user.app_metadata,
-            role_assigned: true
-          }
-        });
-        
-        if (updateError) {
-          console.error('Error updating user metadata:', updateError);
-        }
-      } else {
-        console.error('Error assigning role:', roleError);
-      }
-    } catch (err) {
-      console.error('Error in assign_role process:', err);
-    }
-  }
 
   const value: AuthContextType = {
     user,

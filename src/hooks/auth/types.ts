@@ -1,7 +1,7 @@
 
 export interface User {
   id: string;
-  email: string;
+  email?: string; // Make email optional to match Supabase's User type
   full_name?: string;
   avatar_url?: string;
   sfd_id?: string;

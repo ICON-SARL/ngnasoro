@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -14,6 +15,7 @@ const ClientAuthUI = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
+  const [activeTab, setActiveTab] = useState('login');
   
   useEffect(() => {
     const hash = location.hash;
