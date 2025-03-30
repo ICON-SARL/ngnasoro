@@ -11,49 +11,47 @@ interface RoleGuardProps {
 }
 
 const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
-  const { user, hasRole } = useAuth();
+  const { user, session } = useAuth();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const location = useLocation();
 
   useEffect(() => {
-    const checkAccess = async () => {
-      if (!user) {
-        setHasAccess(false);
-        return;
-      }
+    // Check if user exists in the auth context
+    if (!user) {
+      setHasAccess(false);
+      return;
+    }
 
-      try {
-        const permitted = await hasRole(requiredRole);
-        setHasAccess(permitted);
-        
-        // Log access denied attempts
-        if (!permitted) {
-          await logAuditEvent({
-            user_id: user.id,
-            action: 'role_check_failure',
-            category: AuditLogCategory.DATA_ACCESS,
-            severity: AuditLogSeverity.WARNING,
-            status: 'failure',
-            target_resource: location.pathname,
-            details: {
-              required_role: requiredRole,
-              timestamp: new Date().toISOString()
-            },
-            error_message: `Access denied: Missing role (${requiredRole})`
-          });
-        }
-      } catch (error) {
-        console.error('Error checking role:', error);
-        setHasAccess(false);
-      }
-    };
-
-    checkAccess();
-  }, [user, requiredRole, hasRole, location.pathname]);
+    // Basic check: if user has role in metadata
+    const userRole = user.app_metadata?.role;
+    const permitted = userRole === requiredRole;
+    
+    setHasAccess(permitted);
+    
+    // Log access denied attempts
+    if (!permitted) {
+      logAuditEvent({
+        user_id: user.id,
+        action: 'role_check_failure',
+        category: AuditLogCategory.DATA_ACCESS,
+        severity: AuditLogSeverity.WARNING,
+        status: 'failure',
+        target_resource: location.pathname,
+        details: {
+          required_role: requiredRole,
+          timestamp: new Date().toISOString()
+        },
+        error_message: `Access denied: Missing role (${requiredRole})`
+      }).catch(err => console.error('Error logging audit event:', err));
+    }
+  }, [user, requiredRole, location.pathname]);
 
   if (hasAccess === null) {
     // Still checking permissions
-    return <div>Vérification des autorisations...</div>;
+    return <div className="flex justify-center items-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <span className="ml-2">Vérification des autorisations...</span>
+    </div>;
   }
 
   if (!user) {

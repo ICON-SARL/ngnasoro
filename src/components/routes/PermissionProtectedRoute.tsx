@@ -1,8 +1,7 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth';
-import { usePermissions } from '@/hooks/auth/usePermissions';
 import { logPermissionFailure } from '@/utils/audit/auditLogger';
 import { Loader2 } from 'lucide-react';
 import { UserRole } from '@/utils/auth/roleTypes';
@@ -10,7 +9,7 @@ import { UserRole } from '@/utils/auth/roleTypes';
 interface PermissionProtectedRouteProps {
   component: React.ComponentType<any>;
   requiredPermission?: string;
-  requiredRole?: UserRole; // Fixed type to use the enum directly
+  requiredRole?: UserRole;
   fallbackPath?: string;
   [x: string]: any;
 }
@@ -22,15 +21,50 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
   fallbackPath = '/login',
   ...rest 
 }) => {
-  const { user, loading: authLoading } = useAuth();
-  const { hasPermission, hasRole, loading: permissionsLoading } = usePermissions();
+  const { user } = useAuth();
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const location = useLocation();
   
-  const isLoading = authLoading || permissionsLoading;
+  useEffect(() => {
+    // If no user, deny access immediately
+    if (!user) {
+      setHasAccess(false);
+      return;
+    }
+
+    // Simple permission/role check based on user metadata
+    const userRole = user.app_metadata?.role;
+    
+    let roleMatch = !requiredRole || userRole === requiredRole;
+    
+    // Super admin has all permissions
+    let permissionMatch = !requiredPermission || userRole === 'admin';
+    
+    // SFD admin has SFD-related permissions
+    if (!permissionMatch && userRole === 'sfd_admin' && requiredPermission && 
+        (requiredPermission.includes('sfd') || 
+         requiredPermission.includes('client') || 
+         requiredPermission.includes('loan'))) {
+      permissionMatch = true;
+    }
+    
+    const permitted = roleMatch && permissionMatch;
+    setHasAccess(permitted);
+    
+    // Log access denied attempts if needed
+    if (!permitted && user) {
+      if (requiredPermission && !permissionMatch) {
+        logPermissionFailure(user.id, requiredPermission, location.pathname);
+      }
+      if (requiredRole && !roleMatch) {
+        logPermissionFailure(user.id, `role:${requiredRole}`, location.pathname);
+      }
+    }
+  }, [user, requiredPermission, requiredRole, location.pathname]);
   
-  if (isLoading) {
+  if (hasAccess === null) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <span className="ml-2">Chargement des permissions...</span>
       </div>
@@ -39,18 +73,6 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
 
   if (!user) {
     return <Navigate to={fallbackPath} state={{ from: location }} replace />;
-  }
-  
-  let hasAccess = true;
-  
-  if (requiredPermission && !hasPermission(requiredPermission)) {
-    logPermissionFailure(user.id, requiredPermission, location.pathname);
-    hasAccess = false;
-  }
-  
-  if (requiredRole && !hasRole(requiredRole)) {
-    logPermissionFailure(user.id, `role:${requiredRole}`, location.pathname);
-    hasAccess = false;
   }
   
   if (!hasAccess) {

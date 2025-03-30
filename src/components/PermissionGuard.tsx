@@ -11,49 +11,61 @@ interface PermissionGuardProps {
 }
 
 const PermissionGuard: React.FC<PermissionGuardProps> = ({ requiredPermission, children }) => {
-  const { user, hasPermission } = useAuth();
+  const { user } = useAuth();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const location = useLocation();
 
   useEffect(() => {
-    const checkAccess = async () => {
-      if (!user) {
-        setHasAccess(false);
-        return;
-      }
+    // If no user, deny access immediately
+    if (!user) {
+      setHasAccess(false);
+      return;
+    }
 
-      try {
-        const permitted = await hasPermission(requiredPermission);
-        setHasAccess(permitted);
-        
-        // Log access denied attempts
-        if (!permitted) {
-          await logAuditEvent({
-            user_id: user.id,
-            action: 'permission_check_failure',
-            category: AuditLogCategory.DATA_ACCESS,
-            severity: AuditLogSeverity.WARNING,
-            status: 'failure',
-            target_resource: location.pathname,
-            details: {
-              required_permission: requiredPermission,
-              timestamp: new Date().toISOString()
-            },
-            error_message: `Access denied: Missing permission (${requiredPermission})`
-          });
-        }
-      } catch (error) {
-        console.error('Error checking permission:', error);
-        setHasAccess(false);
-      }
-    };
-
-    checkAccess();
-  }, [user, requiredPermission, hasPermission, location.pathname]);
+    // Simple permission check based on user role
+    // In a real application, you would check against a permissions database
+    const userRole = user.app_metadata?.role;
+    
+    let permitted = false;
+    
+    // Super admin has all permissions
+    if (userRole === 'admin') {
+      permitted = true;
+    } 
+    // SFD admin has SFD-related permissions
+    else if (userRole === 'sfd_admin' && 
+        (requiredPermission.includes('sfd') || 
+         requiredPermission.includes('client') || 
+         requiredPermission.includes('loan'))) {
+      permitted = true;
+    }
+    
+    setHasAccess(permitted);
+    
+    // Log access denied attempts
+    if (!permitted) {
+      logAuditEvent({
+        user_id: user.id,
+        action: 'permission_check_failure',
+        category: AuditLogCategory.DATA_ACCESS,
+        severity: AuditLogSeverity.WARNING,
+        status: 'failure',
+        target_resource: location.pathname,
+        details: {
+          required_permission: requiredPermission,
+          timestamp: new Date().toISOString()
+        },
+        error_message: `Access denied: Missing permission (${requiredPermission})`
+      }).catch(err => console.error('Error logging audit event:', err));
+    }
+  }, [user, requiredPermission, location.pathname]);
 
   if (hasAccess === null) {
     // Still checking permissions
-    return <div>Vérification des autorisations...</div>;
+    return <div className="flex justify-center items-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <span className="ml-2">Vérification des autorisations...</span>
+    </div>;
   }
 
   if (!user) {
