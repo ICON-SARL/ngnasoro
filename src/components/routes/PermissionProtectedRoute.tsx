@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth';
-import { logPermissionFailure } from '@/utils/audit/auditLogger';
+import { logPermissionFailure } from '@/utils/audit';
 import { Loader2 } from 'lucide-react';
 import { UserRole } from '@/utils/auth/roleTypes';
 

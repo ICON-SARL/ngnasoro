@@ -21,5 +21,5 @@ export {
 // Export permissions
 export * from './auditPermissions';
 
-// Added explicit export for the logPermissionFailure function
+// Export logPermissionFailure
 export { logPermissionFailure } from './auditLogger';

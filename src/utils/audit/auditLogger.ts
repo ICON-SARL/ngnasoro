@@ -18,12 +18,12 @@ export {
   downloadAuditLogsAsPDF
 } from './auditLoggerExport';
 
+// Import needed modules directly instead of using require
+import { logAuditEvent } from './auditLoggerCore';
+import { AuditLogCategory, AuditLogSeverity } from './auditLoggerTypes';
+
 // Added explicit export for the logPermissionFailure function
 export const logPermissionFailure = (userId: string, permission: string, location: string) => {
-  // Import from auditLoggerCore to avoid circular dependencies
-  const { logAuditEvent } = require('./auditLoggerCore');
-  const { AuditLogCategory, AuditLogSeverity } = require('./auditLoggerTypes');
-  
   logAuditEvent({
     user_id: userId,
     action: 'permission_check_failure',
