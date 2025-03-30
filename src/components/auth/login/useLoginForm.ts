@@ -76,10 +76,13 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
     
     try {
       // Use password authentication
-      const response = await signIn(email, password);
+      // The signIn function from useAuth returns an object with possibly an error property
+      const result = await signIn(email, password);
       
-      if (response && response.error) {
-        throw response.error;
+      // Since the signIn function is already properly typed in the AuthProvider to return 
+      // { error: any } | undefined, we can safely check for the error property
+      if (result && result.error) {
+        throw result.error;
       }
       
       // Log successful authentication attempt
