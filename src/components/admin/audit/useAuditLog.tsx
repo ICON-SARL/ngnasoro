@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { getAuditLogs } from '@/utils/audit/auditLoggerCore';
-import { AuditLogEvent } from '@/utils/audit/auditLoggerTypes';
+import { AuditLogEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 
 export type SfdAuditLog = AuditLogEvent & { id: string; created_at: string };
 
@@ -35,11 +35,11 @@ export function useAuditLog() {
       };
       
       if (filters.categoryFilter) {
-        options.category = filters.categoryFilter;
+        options.category = filters.categoryFilter as AuditLogCategory;
       }
       
       if (filters.severityFilter) {
-        options.severity = filters.severityFilter;
+        options.severity = filters.severityFilter as AuditLogSeverity;
       }
       
       if (filters.startDate) {

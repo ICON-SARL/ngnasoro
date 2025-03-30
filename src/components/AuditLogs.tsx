@@ -45,7 +45,13 @@ export const AuditLogs = () => {
       };
       
       const response = await getAuditLogs(filterOptions);
-      setLogs(response.logs as AuditLog[]);
+      const typedLogs = response.logs.map(log => ({
+        ...log,
+        id: (log as any).id || '',
+        created_at: (log as any).created_at || new Date().toISOString()
+      })) as AuditLog[];
+      
+      setLogs(typedLogs);
     } catch (error) {
       console.error('Failed to fetch audit logs:', error);
     } finally {

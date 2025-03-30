@@ -1,6 +1,13 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { AuditLogEntry, AuditLogEvent, AuditLogFilterOptions } from './auditLoggerTypes';
+import { 
+  AuditLogEntry, 
+  AuditLogEvent, 
+  AuditLogFilterOptions, 
+  AuditLogCategory, 
+  AuditLogSeverity,
+  AuditLogExportResult 
+} from './auditLoggerTypes';
 
 export async function logAuditEvent(entry: AuditLogEntry) {
   try {
@@ -48,11 +55,19 @@ export async function getAuditLogs(options?: AuditLogFilterOptions) {
     // Apply filters if provided
     if (options) {
       if (options.category) {
-        query = query.eq('category', options.category);
+        if (Array.isArray(options.category)) {
+          query = query.in('category', options.category.map(c => c.toString()));
+        } else {
+          query = query.eq('category', options.category.toString());
+        }
       }
       
       if (options.severity) {
-        query = query.eq('severity', options.severity);
+        if (Array.isArray(options.severity)) {
+          query = query.in('severity', options.severity.map(s => s.toString()));
+        } else {
+          query = query.eq('severity', options.severity.toString());
+        }
       }
       
       if (options.status) {
@@ -78,7 +93,23 @@ export async function getAuditLogs(options?: AuditLogFilterOptions) {
       throw error;
     }
     
-    return { logs: data || [] };
+    // Convert the raw data to AuditLogEvent type
+    const typedLogs: AuditLogEvent[] = data?.map(log => ({
+      id: log.id,
+      created_at: log.created_at,
+      user_id: log.user_id || 'anonymous',
+      action: log.action,
+      category: log.category as AuditLogCategory,
+      severity: log.severity as AuditLogSeverity,
+      status: log.status as 'success' | 'failure' | 'pending',
+      target_resource: log.target_resource,
+      error_message: log.error_message,
+      details: log.details,
+      ip_address: log.ip_address,
+      device_info: log.device_info
+    })) || [];
+    
+    return { logs: typedLogs };
   } catch (error) {
     console.error('Error fetching audit logs:', error);
     return { logs: [] };
@@ -89,7 +120,7 @@ export async function getAuditLogs(options?: AuditLogFilterOptions) {
 export async function logAuthEvent(entry: Omit<AuditLogEntry, 'category'>) {
   return logAuditEvent({
     ...entry,
-    category: 'AUTHENTICATION'
+    category: AuditLogCategory.AUTHENTICATION
   });
 }
 
@@ -97,12 +128,12 @@ export async function logAuthEvent(entry: Omit<AuditLogEntry, 'category'>) {
 export async function logDataAccess(entry: Omit<AuditLogEntry, 'category'>) {
   return logAuditEvent({
     ...entry,
-    category: 'DATA_ACCESS'
+    category: AuditLogCategory.DATA_ACCESS
   });
 }
 
 // Export function for CSV
-export async function exportAuditLogsToCSV(options?: AuditLogFilterOptions) {
+export async function exportAuditLogsToCSV(options?: AuditLogFilterOptions): Promise<AuditLogExportResult> {
   try {
     const { logs } = await getAuditLogs(options);
     
@@ -121,14 +152,14 @@ export async function exportAuditLogsToCSV(options?: AuditLogFilterOptions) {
     ].join(',');
     
     // Generate CSV rows
-    const rows = logs.map((log: AuditLogEvent & { id: string, created_at: string }) => {
+    const rows = logs.map((log: AuditLogEvent & { id: string }) => {
       return [
-        log.id,
-        log.created_at,
+        (log as any).id || '',
+        log.created_at || new Date().toISOString(),
         log.user_id || 'anonymous',
         log.action,
-        log.category,
-        log.severity,
+        log.category.toString(),
+        log.severity.toString(),
         log.status,
         log.target_resource || '',
         log.error_message || '',
@@ -137,9 +168,19 @@ export async function exportAuditLogsToCSV(options?: AuditLogFilterOptions) {
     });
     
     // Combine header and rows
-    return [header, ...rows].join('\n');
+    const csvString = [header, ...rows].join('\n');
+    const filename = `audit_logs_${new Date().toISOString().split('T')[0]}.csv`;
+    
+    return {
+      success: true,
+      csvString,
+      filename
+    };
   } catch (error) {
     console.error('Error exporting audit logs to CSV:', error);
-    throw error;
+    return {
+      success: false,
+      message: `Error exporting logs: ${(error as Error).message}`
+    };
   }
 }

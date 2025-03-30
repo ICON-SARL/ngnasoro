@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MainDashboard } from '@/components/mobile/dashboard';
@@ -11,24 +10,21 @@ import SecurePaymentTab from '@/components/mobile/secure-payment';
 import { Account } from '@/types/transactions';
 import MobileNavigation from '@/components/MobileNavigation';
 
-const MobileFlowPage: React.FC = () => {
+const MobileFlowPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   
-  // Cette fonction extrait le sous-chemin du path /mobile-flow/X
   const getSubPath = () => {
     const path = location.pathname;
-    // Si c'est exactement /mobile-flow ou /mobile-flow/
     if (path === '/mobile-flow' || path === '/mobile-flow/') {
       return 'main';
     }
     
-    // Sinon extraire le sous-chemin
     const parts = path.split('/');
     if (parts.length >= 3) {
-      return parts[2]; // /mobile-flow/X -> X
+      return parts[2];
     }
     
     return 'main';
@@ -36,14 +32,12 @@ const MobileFlowPage: React.FC = () => {
   
   const subPath = getSubPath();
   
-  // Rediriger si l'utilisateur n'est pas connecté
   useEffect(() => {
-    if (!loading && !user) {
+    if (!isLoading && !user) {
       navigate('/auth');
     }
-  }, [user, loading, navigate]);
+  }, [user, isLoading, navigate]);
   
-  // Rediriger les chemins inconnus vers le dashboard
   useEffect(() => {
     const validPaths = ['main', 'profile', 'create-sfd', 'secure-payment', 'sfd-clients'];
     if (!validPaths.includes(subPath)) {
@@ -52,7 +46,6 @@ const MobileFlowPage: React.FC = () => {
     }
   }, [subPath, navigate]);
   
-  // Handle mock data for dashboard
   const mockAccount: Account = {
     id: 'account-1',
     user_id: user?.id || '',
@@ -66,18 +59,14 @@ const MobileFlowPage: React.FC = () => {
     { id: 2, name: 'Retrait', type: 'withdrawal', amount: -5000, date: new Date().toISOString(), avatar_url: '' }
   ];
   
-  // Toggle menu
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
   
-  // Handle logout
   const handleLogout = () => {
-    // Add logout logic here
     navigate('/auth');
   };
   
-  // Mock action handler
   const handleAction = (action: string, data?: any) => {
     console.log('Action:', action, data);
     if (action === 'Loans') {
@@ -85,8 +74,7 @@ const MobileFlowPage: React.FC = () => {
     }
   };
   
-  // Si chargement en cours ou user null, montrer un loader
-  if (loading || !user) {
+  if (isLoading || !user) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0D6A51]"></div>

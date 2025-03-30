@@ -1,112 +1,128 @@
-
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthContextProps, Role } from './types';
-import { useToast } from '@/hooks/use-toast';
-import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
-import { logAuditEvent } from '@/utils/audit/auditLoggerCore';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
-const convertSupabaseUser = (supabaseUser: any): User => {
-  if (!supabaseUser) return null;
-  
-  return {
-    id: supabaseUser.id,
-    email: supabaseUser.email || '',
-    full_name: supabaseUser.user_metadata?.full_name,
-    avatar_url: supabaseUser.user_metadata?.avatar_url,
-    sfd_id: supabaseUser.user_metadata?.sfd_id,
-    phone: supabaseUser.user_metadata?.phone,
-    aud: supabaseUser.aud,
-    created_at: supabaseUser.created_at,
-    app_metadata: supabaseUser.app_metadata || {},
-    user_metadata: supabaseUser.user_metadata || {}
-  };
-};
+interface AuthContextType extends AuthContextProps { }
 
-const defaultContext: AuthContextProps = {
+const AuthContext = createContext<AuthContextType>({
   user: null,
-  setUser: () => {},
+  setUser: () => { },
   signIn: async () => ({}),
-  signUp: async () => {},
-  signOut: async () => {},
+  signUp: async () => { },
+  signOut: async () => { },
   loading: true,
-  isLoading: true, // Added to match interface
   isLoggedIn: false,
   isAdmin: false,
   isSfdAdmin: false,
   activeSfdId: null,
-  setActiveSfdId: () => {},
+  setActiveSfdId: () => { },
   userRole: null,
   biometricEnabled: false,
-  toggleBiometricAuth: async () => {},
-  session: null, // Added to match interface
-};
-
-export const AuthContext = createContext<AuthContextProps>(defaultContext);
+  toggleBiometricAuth: async () => { },
+  session: null,
+  isLoading: false,
+  refreshSession: async () => { }
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<Role | null>(null);
+  const navigate = useNavigate();
   const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const { toast } = useToast();
 
-  const isLoggedIn = !!user;
-  const isAdmin = userRole === Role.SUPER_ADMIN;
-  const isSfdAdmin = userRole === Role.SFD_ADMIN;
+  useEffect(() => {
+    const storedSfdId = localStorage.getItem('activeSfdId');
+    if (storedSfdId) {
+      setActiveSfdId(storedSfdId);
+    }
+  }, []);
 
-  const signIn = async (email: string, password: string): Promise<{ error?: any } | undefined> => {
-    setLoading(true);
+  useEffect(() => {
+    if (activeSfdId) {
+      localStorage.setItem('activeSfdId', activeSfdId);
+    } else {
+      localStorage.removeItem('activeSfdId');
+    }
+  }, [activeSfdId]);
+
+  useEffect(() => {
+    const checkBiometricSupport = async () => {
+      if (typeof window !== 'undefined' && 'PublicKeyCredential' in window) {
+        try {
+          const isConditionalMediationAvailable = await (window.PublicKeyCredential as any).isConditionalMediationAvailable();
+          setBiometricEnabled(!!isConditionalMediationAvailable);
+        } catch (error) {
+          console.error("Error checking biometric support:", error);
+          setBiometricEnabled(false);
+        }
+      } else {
+        setBiometricEnabled(false);
+      }
+    };
+
+    checkBiometricSupport();
+  }, []);
+
+  useEffect(() => {
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+        if (session && session.user) {
+          setUser(session.user);
+          setSession(session);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setSession(null);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    // You need to fix the user session handling in getSession
+    supabase.auth.getSession().then(({ data }) => {
+      if (data && data.session) {
+        setSession(data.session);
+        setUser(data.session.user as User);
+        setLoading(false);
+      } else {
+        setUser(null);
+        setSession(null);
+        setLoading(false);
+      }
+    });
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
     try {
+      setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-
       if (error) {
-        throw error;
+        console.error('Sign in error:', error);
+        return { error };
       }
-
-      if (data.user) {
-        // Convert Supabase user to our User type
-        setUser(convertSupabaseUser(data.user));
+      if (data.session) {
+        setUser(data.session.user);
         setSession(data.session);
-        
-        console.log('Signin successful - User data:', {
-          id: data.user.id,
-          email: data.user.email,
-          role: data.user.app_metadata?.role,
-          metadata: data.user.app_metadata,
-        });
-        
-        await checkUserRole(data.user.id);
       }
-
-      toast({
-        title: 'Connexion réussie',
-        description: 'Vous êtes maintenant connecté.',
-      });
-      
-      return undefined; // Return undefined when no error
-    } catch (error: any) {
-      console.error('Sign-in error:', error);
-      toast({
-        title: 'Erreur de connexion',
-        description: error.message || 'Identifiants incorrects.',
-        variant: 'destructive',
-      });
-      
-      return { error }; // Return the error
+      return {};
+    } catch (error) {
+      console.error('Unexpected sign in error:', error);
+      return { error: error };
     } finally {
       setLoading(false);
     }
   };
 
-  const signUp = async (email: string, password: string, metadata?: Record<string, any>): Promise<void> => {
-    setLoading(true);
+  const signUp = async (email: string, password: string, metadata: Record<string, any> = {}) => {
     try {
+      setLoading(true);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -114,232 +130,109 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: metadata,
         },
       });
-
       if (error) {
+        console.error('Sign up error:', error);
         throw error;
       }
-
-      if (data.user) {
-        // Convert Supabase user to our User type
-        setUser(convertSupabaseUser(data.user));
+      if (data.session) {
+        setUser(data.session.user);
         setSession(data.session);
-        await checkUserRole(data.user.id);
       }
-
-      toast({
-        title: 'Inscription réussie',
-        description: 'Veuillez confirmer votre adresse e-mail.',
-      });
-    } catch (error: any) {
-      console.error('Sign-up error:', error);
-      toast({
-        title: "Erreur d'inscription",
-        description: error.message || "Impossible d'enregistrer l'utilisateur.",
-        variant: 'destructive',
-      });
+    } catch (error) {
+      console.error('Unexpected sign up error:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const signOut = async (): Promise<void> => {
-    setLoading(true);
+  const signOut = async () => {
     try {
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
-
       if (error) {
+        console.error('Sign out error:', error);
         throw error;
       }
-
       setUser(null);
       setSession(null);
-      setUserRole(null);
-      setActiveSfdId(null);
-
-      toast({
-        title: 'Déconnexion réussie',
-        description: 'Vous êtes maintenant déconnecté.',
-      });
-    } catch (error: any) {
-      console.error('Sign-out error:', error);
-      toast({
-        title: 'Erreur de déconnexion',
-        description: error.message || 'Impossible de vous déconnecter.',
-        variant: 'destructive',
-      });
+      navigate('/auth');
+    } catch (error) {
+      console.error('Unexpected sign out error:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
-
-  const refreshSession = async (): Promise<void> => {
+  
+  const refreshSession = async () => {
     try {
-      const { data, error } = await supabase.auth.refreshSession();
+      setIsLoading(true);
+      const { data, error } = await supabase.auth.refreshSession()
+      
       if (error) {
-        console.error('Error refreshing session:', error);
-        return;
+        console.error('refreshSession error:', error);
       }
       
-      setSession(data.session);
-      if (data.user) {
-        setUser(convertSupabaseUser(data.user));
+      if (data?.session) {
+        setSession(data.session);
+        setUser(data.session.user);
       }
     } catch (error) {
-      console.error('Error refreshing session:', error);
+      console.error('Unexpected refreshSession error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, authSession) => {
-        setLoading(true);
-        if (authSession?.user) {
-          // Convert Supabase user to our User type
-          setUser(convertSupabaseUser(authSession.user));
-          setSession(authSession);
-          await checkUserRole(authSession.user.id);
-        } else {
-          setUser(null);
-          setSession(null);
-          setUserRole(null);
-          setActiveSfdId(null);
-        }
-        setLoading(false);
-      }
-    );
-
-    // Initial load
-    (async () => {
-      setLoading(true);
-      const { data: { user, session: initialSession } } = await supabase.auth.getUser();
-      if (user) {
-        // Convert Supabase user to our User type
-        setUser(convertSupabaseUser(user));
-        setSession(initialSession);
-        await checkUserRole(user.id);
-      }
-      setLoading(false);
-    })();
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  const checkUserRole = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        // Convert the string role to our Role enum
-        const roleString = data[0].role as string;
-        console.log('Role found in database for user', userId, ':', roleString);
-        
-        // Map the role string to our Role enum
-        let roleValue: Role;
-        
-        if (roleString === 'admin') {
-          roleValue = Role.SUPER_ADMIN;
-        } else if (roleString === 'sfd_admin') {
-          roleValue = Role.SFD_ADMIN;
-        } else if (roleString === 'client') {
-          roleValue = Role.CLIENT;
-        } else {
-          roleValue = Role.USER;
-        }
-        
-        setUserRole(roleValue);
-        return roleValue;
-      }
-
-      // If no role found in user_roles table, check app_metadata
-      console.log('No role found in user_roles table, checking app_metadata...');
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData && userData.user && userData.user.app_metadata?.role) {
-        const appMetadataRole = userData.user.app_metadata.role as string;
-        console.log('Role found in app_metadata:', appMetadataRole);
-        
-        // Convert the string role to our Role enum
-        let roleValue: Role;
-        
-        if (appMetadataRole === 'admin') {
-          roleValue = Role.SUPER_ADMIN;
-        } else if (appMetadataRole === 'sfd_admin') {
-          roleValue = Role.SFD_ADMIN;
-        } else if (appMetadataRole === 'client') {
-          roleValue = Role.CLIENT;
-        } else {
-          roleValue = Role.USER;
-        }
-        
-        // Save the role to user_roles table for consistency
-        try {
-          // Use as 'unknown' first and then as 'string' to avoid TypeScript errors
-          // The actual value passed will be a string like 'admin', 'sfd_admin', etc.
-          const roleStringValue = appMetadataRole as unknown as string;
-          
-          // Now use the rpc function
-          await supabase.rpc('assign_role', {
-            user_id: userId,
-            role: roleStringValue  // This is now a string type
-          });
-          console.log('Role saved to user_roles table');
-        } catch (err) {
-          console.error('Error saving role to user_roles table:', err);
-        }
-        
-        setUserRole(roleValue);
-        return roleValue;
-      }
-
-      // Default role if none found
-      console.log('No role found, defaulting to USER role');
-      setUserRole(Role.USER);
-      return Role.USER;
-    } catch (error) {
-      console.error('Error fetching user role:', error);
-      setUserRole(null);
-      return null;
-    }
+  const toggleBiometricAuth = async () => {
+    setBiometricEnabled(prev => !prev);
   };
 
-  const toggleBiometricAuth = async (): Promise<void> => {
+  const isAdmin = user?.app_metadata?.role === 'admin';
+  const isSfdAdmin = user?.app_metadata?.role === 'sfd_admin';
+  const userRole = user?.app_metadata?.role as Role | null;
+
+  // Fix the assign_role call to properly cast the role value
+  const storedRole = user?.app_metadata?.role;
+  if (storedRole && !user.app_metadata.role_assigned) {
+    // Cast the string role to the expected literal type
+    const validRole = storedRole as "admin" | "sfd_admin" | "user";
+    
     try {
-      setBiometricEnabled(prev => !prev);
-      
-      // In a real app, you would store this preference in the database
-      await logAuditEvent({
-        user_id: user?.id || 'anonymous',
-        action: biometricEnabled ? 'disable_biometric_auth' : 'enable_biometric_auth',
-        category: AuditLogCategory.AUTHENTICATION,
-        severity: AuditLogSeverity.INFO,
-        status: 'success',
-        details: {
-          enabled: !biometricEnabled
-        }
+      const { data: roleData, error: roleError } = await supabase.rpc('assign_role', {
+        user_id: user.id,
+        role: validRole // Now properly typed
       });
       
-    } catch (error) {
-      console.error('Error toggling biometric auth:', error);
-      setBiometricEnabled(prev => prev); // Revert to previous state
-      throw error;
+      if (!roleError) {
+        // Update user metadata to mark role as assigned
+        const { error: updateError } = await supabase.auth.updateUser({
+          data: {
+            ...user.app_metadata,
+            role_assigned: true
+          }
+        });
+        
+        if (updateError) {
+          console.error('Error updating user metadata:', updateError);
+        }
+      } else {
+        console.error('Error assigning role:', roleError);
+      }
+    } catch (err) {
+      console.error('Error in assign_role process:', err);
     }
-  };
+  }
 
-  const value: AuthContextProps = {
+  const value: AuthContextType = {
     user,
     setUser,
     signIn,
     signUp,
     signOut,
     loading,
-    isLoading: loading, // Alias for compatibility
-    isLoggedIn,
+    isLoggedIn: !!user,
     isAdmin,
     isSfdAdmin,
     activeSfdId,
@@ -348,10 +241,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     biometricEnabled,
     toggleBiometricAuth,
     session,
-    refreshSession,
+    isLoading,
+    refreshSession
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
