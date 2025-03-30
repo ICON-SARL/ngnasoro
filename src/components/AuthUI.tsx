@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from './auth/Logo';
-import LoginForm from './auth/LoginForm';
+import LoginForm from './auth/login/LoginForm';
 import RegisterForm from './auth/RegisterForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
@@ -32,7 +32,11 @@ const AuthUI = () => {
   }, [location, navigate]);
   
   useEffect(() => {
+    // Si l'utilisateur est authentifié et qu'une session existe
     if (user && session) {
+      console.log('Authenticated user:', user);
+      console.log('User role:', user.app_metadata?.role);
+      
       // Redirection basée sur le rôle de l'utilisateur
       if (user.app_metadata?.role === 'admin') {
         navigate('/super-admin-dashboard');
@@ -53,9 +57,9 @@ const AuthUI = () => {
     }
     
     // Détection du mode admin par l'URL
-    if (location.search.includes('admin=true')) {
+    if (location.pathname.includes('admin/auth') || location.search.includes('admin=true')) {
       setAuthMode('admin');
-    } else if (location.search.includes('sfd_admin=true')) {
+    } else if (location.pathname.includes('sfd/auth') || location.search.includes('sfd_admin=true')) {
       setAuthMode('sfd_admin');
     } else {
       setAuthMode('default');
@@ -119,13 +123,13 @@ const AuthUI = () => {
             {authMode === 'default' && (
               <>
                 <a 
-                  href="/auth?admin=true"
-                  className="text-[#0D6A51] hover:underline font-medium"
+                  href="/admin/auth"
+                  className="text-amber-600 hover:underline font-medium"
                 >
                   Accès Administrateur MEREF
                 </a>
                 <a 
-                  href="/auth?sfd_admin=true"
+                  href="/sfd/auth"
                   className="text-blue-600 hover:underline font-medium"
                 >
                   Accès Administrateur SFD
@@ -142,7 +146,7 @@ const AuthUI = () => {
                   Connexion Utilisateur Standard
                 </a>
                 <a 
-                  href="/auth?sfd_admin=true"
+                  href="/sfd/auth"
                   className="text-blue-600 hover:underline font-medium"
                 >
                   Accès Administrateur SFD
@@ -159,7 +163,7 @@ const AuthUI = () => {
                   Connexion Utilisateur Standard
                 </a>
                 <a 
-                  href="/auth?admin=true"
+                  href="/admin/auth"
                   className="text-amber-600 hover:underline font-medium"
                 >
                   Accès Administrateur MEREF
