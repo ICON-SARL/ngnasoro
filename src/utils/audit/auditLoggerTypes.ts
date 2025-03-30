@@ -30,12 +30,13 @@ export interface AuditLogEvent {
   ip_address?: string;
   device_info?: string;
   created_at?: string;
+  id?: string; // Added for compatibility with database responses
 }
 
 // Interface for API response
 export interface AuditLogResponse {
   logs: AuditLogEvent[];
-  count: number;
+  count?: number;
 }
 
 // Interface for filter options

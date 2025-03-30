@@ -94,19 +94,22 @@ export async function getAuditLogs(options?: AuditLogFilterOptions) {
     }
     
     // Convert the raw data to AuditLogEvent type
+    // Handle converting database JSON to Record<string, any> type
     const typedLogs: AuditLogEvent[] = data?.map(log => ({
-      id: log.id,
-      created_at: log.created_at,
       user_id: log.user_id || 'anonymous',
       action: log.action,
       category: log.category as AuditLogCategory,
       severity: log.severity as AuditLogSeverity,
       status: log.status as 'success' | 'failure' | 'pending',
-      target_resource: log.target_resource,
-      error_message: log.error_message,
-      details: log.details,
-      ip_address: log.ip_address,
-      device_info: log.device_info
+      target_resource: log.target_resource || undefined,
+      error_message: log.error_message || undefined,
+      // Handle the details property correctly, converting it to Record<string, any> if it exists
+      details: log.details ? (typeof log.details === 'string' ? JSON.parse(log.details) : log.details) as Record<string, any> : undefined,
+      ip_address: log.ip_address || undefined,
+      device_info: log.device_info || undefined,
+      created_at: log.created_at || undefined,
+      // Include id for compatibility with the application code
+      id: log.id
     })) || [];
     
     return { logs: typedLogs };
@@ -152,9 +155,10 @@ export async function exportAuditLogsToCSV(options?: AuditLogFilterOptions): Pro
     ].join(',');
     
     // Generate CSV rows
-    const rows = logs.map((log: AuditLogEvent & { id: string }) => {
+    const rows = logs.map((log: AuditLogEvent) => {
+      const logWithId = log as AuditLogEvent & { id: string };
       return [
-        (log as any).id || '',
+        logWithId.id || '',
         log.created_at || new Date().toISOString(),
         log.user_id || 'anonymous',
         log.action,

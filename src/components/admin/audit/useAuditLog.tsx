@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { getAuditLogs } from '@/utils/audit/auditLoggerCore';
 import { AuditLogEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 
-export type SfdAuditLog = AuditLogEvent & { id: string; created_at: string };
+export type SfdAuditLog = AuditLogEvent;
 
 export interface AuditLogFilterState {
   searchTerm: string;
@@ -51,15 +51,7 @@ export function useAuditLog() {
       }
       
       const response = await getAuditLogs(options);
-      
-      // Convert response.logs to SfdAuditLog[] type
-      const typedLogs: SfdAuditLog[] = response.logs.map(log => ({
-        ...log,
-        id: (log as any).id || '',
-        created_at: (log as any).created_at || new Date().toISOString()
-      }));
-      
-      setAuditLogs(typedLogs);
+      setAuditLogs(response.logs);
     } catch (error) {
       console.error('Error fetching audit logs:', error);
     } finally {
