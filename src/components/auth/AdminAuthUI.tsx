@@ -8,7 +8,7 @@ import LanguageSelector from '../LanguageSelector';
 import DemoAccountsCreator from './DemoAccountsCreator';
 
 const AdminAuthUI = () => {
-  const { user, session } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
@@ -27,7 +27,7 @@ const AdminAuthUI = () => {
   }, [location, navigate]);
   
   useEffect(() => {
-    if (user && session) {
+    if (user && !loading) {
       if (user.app_metadata?.role === 'admin') {
         navigate('/super-admin-dashboard');
       } else {
@@ -39,7 +39,7 @@ const AdminAuthUI = () => {
         }
       }
     }
-  }, [user, session, navigate]);
+  }, [user, loading, navigate]);
 
   if (authSuccess) {
     return (

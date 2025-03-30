@@ -17,7 +17,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireSfdAdmin = false,
   ...rest 
 }) => {
-  const { user, session, loading } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   
   if (loading) {
@@ -35,7 +35,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   }
   
-  const userRole = session ? getRoleFromSession(session) : null;
+  const userRole = user.app_metadata?.role;
   
   // Vérifier les permissions basées sur le rôle
   if (requireAdmin && userRole !== 'admin') {

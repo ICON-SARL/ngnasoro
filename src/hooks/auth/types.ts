@@ -27,6 +27,11 @@ export interface AuthContextProps {
   userRole: Role | null;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
+  
+  // Adding missing properties
+  session: any | null;
+  isLoading: boolean;
+  refreshSession?: () => Promise<void>;
 }
 
 export enum Role {

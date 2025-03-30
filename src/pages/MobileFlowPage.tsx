@@ -14,7 +14,7 @@ import MobileNavigation from '@/components/MobileNavigation';
 const MobileFlowPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   
   // Cette fonction extrait le sous-chemin du path /mobile-flow/X
@@ -38,10 +38,10 @@ const MobileFlowPage: React.FC = () => {
   
   // Rediriger si l'utilisateur n'est pas connecté
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!loading && !user) {
       navigate('/auth');
     }
-  }, [user, isLoading, navigate]);
+  }, [user, loading, navigate]);
   
   // Rediriger les chemins inconnus vers le dashboard
   useEffect(() => {
@@ -86,7 +86,7 @@ const MobileFlowPage: React.FC = () => {
   };
   
   // Si chargement en cours ou user null, montrer un loader
-  if (isLoading || !user) {
+  if (loading || !user) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0D6A51]"></div>

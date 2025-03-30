@@ -7,11 +7,9 @@ export {
   logAuditEvent,
   getAuditLogs,
   logAuthEvent,
-  logDataAccess
+  logDataAccess,
+  exportAuditLogsToCSV
 } from './auditLoggerCore';
-
-// Export the CSV export function from auditLoggerCore and not from auditLoggerExport
-export { exportAuditLogsToCSV } from './auditLoggerCore';
 
 // Export other export functions without the conflicting one
 export {

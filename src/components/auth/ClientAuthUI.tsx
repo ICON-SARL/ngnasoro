@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -12,7 +11,7 @@ import DemoAccountsCreator from './DemoAccountsCreator';
 
 const ClientAuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
-  const { user, session } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
@@ -31,13 +30,12 @@ const ClientAuthUI = () => {
   }, [location, navigate]);
   
   useEffect(() => {
-    if (user && session) {
+    if (user && !loading) {
       // Redirection standard pour les utilisateurs clients
       navigate('/mobile-flow');
     }
-  }, [user, session, navigate]);
+  }, [user, loading, navigate]);
 
-  // Update tab based on current route
   useEffect(() => {
     if (location.pathname.includes('register')) {
       setActiveTab('register');

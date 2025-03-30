@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, AuthContextProps, Role } from './types';
@@ -29,6 +30,7 @@ const defaultContext: AuthContextProps = {
   signUp: async () => {},
   signOut: async () => {},
   loading: true,
+  isLoading: true, // Added to match interface
   isLoggedIn: false,
   isAdmin: false,
   isSfdAdmin: false,
@@ -37,6 +39,7 @@ const defaultContext: AuthContextProps = {
   userRole: null,
   biometricEnabled: false,
   toggleBiometricAuth: async () => {},
+  session: null, // Added to match interface
 };
 
 export const AuthContext = createContext<AuthContextProps>(defaultContext);
@@ -44,6 +47,7 @@ export const AuthContext = createContext<AuthContextProps>(defaultContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<any | null>(null);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<Role | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
@@ -68,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user) {
         // Convert Supabase user to our User type
         setUser(convertSupabaseUser(data.user));
+        setSession(data.session);
         
         console.log('Signin successful - User data:', {
           id: data.user.id,
@@ -117,6 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user) {
         // Convert Supabase user to our User type
         setUser(convertSupabaseUser(data.user));
+        setSession(data.session);
         await checkUserRole(data.user.id);
       }
 
@@ -146,6 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setUser(null);
+      setSession(null);
       setUserRole(null);
       setActiveSfdId(null);
 
@@ -165,16 +172,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const refreshSession = async (): Promise<void> => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error('Error refreshing session:', error);
+        return;
+      }
+      
+      setSession(data.session);
+      if (data.user) {
+        setUser(convertSupabaseUser(data.user));
+      }
+    } catch (error) {
+      console.error('Error refreshing session:', error);
+    }
+  };
+
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event, authSession) => {
         setLoading(true);
-        if (session?.user) {
+        if (authSession?.user) {
           // Convert Supabase user to our User type
-          setUser(convertSupabaseUser(session.user));
-          await checkUserRole(session.user.id);
+          setUser(convertSupabaseUser(authSession.user));
+          setSession(authSession);
+          await checkUserRole(authSession.user.id);
         } else {
           setUser(null);
+          setSession(null);
           setUserRole(null);
           setActiveSfdId(null);
         }
@@ -185,10 +211,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Initial load
     (async () => {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user, session: initialSession } } = await supabase.auth.getUser();
       if (user) {
         // Convert Supabase user to our User type
         setUser(convertSupabaseUser(user));
+        setSession(initialSession);
         await checkUserRole(user.id);
       }
       setLoading(false);
@@ -252,10 +279,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Save the role to user_roles table for consistency
         try {
-          // Passing the original string role to the RPC function, not the enum value
+          // Use as 'unknown' first and then as 'string' to avoid TypeScript errors
+          // The actual value passed will be a string like 'admin', 'sfd_admin', etc.
+          const roleStringValue = appMetadataRole as unknown as string;
+          
+          // Now use the rpc function
           await supabase.rpc('assign_role', {
             user_id: userId,
-            role: appMetadataRole  // This expects a string value like 'admin', 'sfd_admin', etc.
+            role: roleStringValue  // This is now a string type
           });
           console.log('Role saved to user_roles table');
         } catch (err) {
@@ -283,7 +314,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // In a real app, you would store this preference in the database
       await logAuditEvent({
-        user_id: user?.id || 'unknown',
+        user_id: user?.id || 'anonymous',
         action: biometricEnabled ? 'disable_biometric_auth' : 'enable_biometric_auth',
         category: AuditLogCategory.AUTHENTICATION,
         severity: AuditLogSeverity.INFO,
@@ -307,6 +338,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signOut,
     loading,
+    isLoading: loading, // Alias for compatibility
     isLoggedIn,
     isAdmin,
     isSfdAdmin,
@@ -315,6 +347,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     userRole,
     biometricEnabled,
     toggleBiometricAuth,
+    session,
+    refreshSession,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

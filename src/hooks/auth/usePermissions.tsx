@@ -1,11 +1,10 @@
-
 import { useAuth } from '@/hooks/auth';
 import { useEffect, useState } from 'react';
 import { UserRole, PERMISSIONS, DEFAULT_ROLE_PERMISSIONS } from '@/utils/auth/roleTypes';
 import { supabase } from '@/integrations/supabase/client';
 
 export function usePermissions() {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
