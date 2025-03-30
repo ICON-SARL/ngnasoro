@@ -35,7 +35,10 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     // Simple permission/role check based on user metadata
     const userRole = user.app_metadata?.role;
     
-    let roleMatch = !requiredRole || userRole === requiredRole;
+    // Fix for SFD_ADMIN matching sfd_admin
+    let roleMatch = !requiredRole || 
+      userRole === requiredRole || 
+      (requiredRole === UserRole.SFD_ADMIN && userRole === 'sfd_admin');
     
     // Super admin has all permissions
     let permissionMatch = !requiredPermission || userRole === 'admin';
@@ -47,6 +50,15 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
          requiredPermission.includes('loan'))) {
       permissionMatch = true;
     }
+    
+    console.log('Permission protected route check:', { 
+      userRole, 
+      requiredRole, 
+      requiredPermission,
+      roleMatch,
+      permissionMatch,
+      path: location.pathname
+    });
     
     const permitted = roleMatch && permissionMatch;
     setHasAccess(permitted);

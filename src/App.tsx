@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
@@ -115,7 +116,13 @@ function App() {
         {/* Legacy protected routes for backward compatibility */}
         <Route
           path="/agency-dashboard"
-          element={<ProtectedRoute component={SfdAdminDashboard} />}
+          element={
+            <PermissionProtectedRoute 
+              component={SfdAdminDashboard} 
+              requiredRole={UserRole.SFD_ADMIN}
+              fallbackPath="/access-denied"
+            />
+          }
         />
         
         {/* Fallback route */}

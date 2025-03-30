@@ -11,7 +11,7 @@ interface RoleGuardProps {
 }
 
 const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const location = useLocation();
 
@@ -24,7 +24,11 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
 
     // Basic check: if user has role in metadata
     const userRole = user.app_metadata?.role;
-    const permitted = userRole === requiredRole;
+    
+    // Handle special case where SFD_ADMIN should match sfd_admin role
+    const permitted = userRole === requiredRole || 
+      (requiredRole === 'sfd_admin' && userRole === 'sfd_admin') ||
+      (requiredRole === Role.SFD_ADMIN && userRole === 'sfd_admin');
     
     setHasAccess(permitted);
     
@@ -39,6 +43,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
         target_resource: location.pathname,
         details: {
           required_role: requiredRole,
+          user_role: userRole,
           timestamp: new Date().toISOString()
         },
         error_message: `Access denied: Missing role (${requiredRole})`

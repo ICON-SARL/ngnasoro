@@ -23,7 +23,6 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({ requiredPermission, c
     }
 
     // Simple permission check based on user role
-    // In a real application, you would check against a permissions database
     const userRole = user.app_metadata?.role;
     
     let permitted = false;
@@ -40,6 +39,8 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({ requiredPermission, c
       permitted = true;
     }
     
+    console.log('Permission check:', { userRole, requiredPermission, permitted });
+    
     setHasAccess(permitted);
     
     // Log access denied attempts
@@ -53,6 +54,7 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({ requiredPermission, c
         target_resource: location.pathname,
         details: {
           required_permission: requiredPermission,
+          user_role: userRole,
           timestamp: new Date().toISOString()
         },
         error_message: `Access denied: Missing permission (${requiredPermission})`
