@@ -45,20 +45,48 @@ serve(async (req) => {
 
     for (const account of accounts) {
       // Check if user already exists
-      const { data: existingUsers } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', account.role);
+      const { data: existingUsers, error: userCheckError } = await supabase.auth.admin.listUsers();
+      if (userCheckError) throw userCheckError;
       
-      const existingUser = existingUsers && existingUsers.length > 0 
-        ? await supabase.auth.admin.getUserById(existingUsers[0].user_id) 
-        : null;
+      const existingUser = existingUsers.users.find(u => u.email === account.email);
       
-      if (existingUser?.data?.user?.email === account.email) {
+      if (existingUser) {
+        console.log(`User ${account.email} already exists with ID ${existingUser.id}, updating role`);
+        
+        // Check if the user already has the correct role in app_metadata
+        const hasCorrectMetadataRole = existingUser.app_metadata?.role === account.role;
+        
+        // Update user app_metadata with role if needed
+        if (!hasCorrectMetadataRole) {
+          console.log(`Updating app_metadata role for ${account.email} to ${account.role}`);
+          await supabase.auth.admin.updateUserById(existingUser.id, {
+            app_metadata: { role: account.role }
+          });
+        }
+        
+        // Check if user has role in user_roles table
+        const { data: userRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('*')
+          .eq('user_id', existingUser.id)
+          .eq('role', account.role);
+          
+        if (rolesError) throw rolesError;
+        
+        // Assign role to the user if it doesn't exist in user_roles
+        if (!userRoles || userRoles.length === 0) {
+          console.log(`Assigning role ${account.role} to user ${account.email} in user_roles table`);
+          await supabase.rpc('assign_role', {
+            user_id: existingUser.id,
+            role: account.role
+          });
+        }
+        
         results.push({
           email: account.email,
           status: 'already_exists',
-          role: account.role
+          role: account.role,
+          hasCorrectRole: hasCorrectMetadataRole || (userRoles && userRoles.length > 0)
         });
         continue;
       }
@@ -70,6 +98,9 @@ serve(async (req) => {
         email_confirm: true,
         user_metadata: {
           full_name: account.full_name
+        },
+        app_metadata: { 
+          role: account.role  // Set role in app_metadata
         }
       });
 
@@ -82,17 +113,17 @@ serve(async (req) => {
         continue;
       }
 
-      // Assign role to the user
-      if (account.role !== 'user') {
+      console.log(`Created user ${account.email} with ID ${userData.user.id} and role ${account.role}`);
+
+      // Assign role to the user in user_roles table
+      try {
         await supabase.rpc('assign_role', {
           user_id: userData.user.id,
           role: account.role
         });
-        
-        // Update user app_metadata with role
-        await supabase.auth.admin.updateUserById(userData.user.id, {
-          app_metadata: { role: account.role }
-        });
+        console.log(`Assigned role ${account.role} to user ${account.email} in user_roles table`);
+      } catch (roleError) {
+        console.error(`Error assigning role to ${account.email}:`, roleError);
       }
 
       results.push({
@@ -101,6 +132,9 @@ serve(async (req) => {
         role: account.role
       });
     }
+
+    // Log success for debugging
+    console.log("Test accounts processed successfully:", results);
 
     return new Response(
       JSON.stringify({ 
@@ -116,7 +150,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error creating test accounts:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }), 
+      JSON.stringify({ success: false, error: error.message, stack: error.stack }), 
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

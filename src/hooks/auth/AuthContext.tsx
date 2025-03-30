@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { logAuditEvent } from '@/utils/audit/auditLoggerCore';
 
-// Create a conversion function to convert Supabase User to our User type
 const convertSupabaseUser = (supabaseUser: any): User => {
   if (!supabaseUser) return null;
   
@@ -69,6 +68,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user) {
         // Convert Supabase user to our User type
         setUser(convertSupabaseUser(data.user));
+        
+        console.log('Signin successful - User data:', {
+          id: data.user.id,
+          email: data.user.email,
+          role: data.user.app_metadata?.role,
+          metadata: data.user.app_metadata,
+        });
+        
         await checkUserRole(data.user.id);
       }
 
@@ -204,11 +211,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data && data.length > 0) {
         // Map the role string to our Role enum
         const roleValue = data[0].role as Role;
+        console.log('Role found in database for user', userId, ':', roleValue);
         setUserRole(roleValue);
         return roleValue;
       }
 
+      // If no role found in user_roles table, check app_metadata
+      console.log('No role found in user_roles table, checking app_metadata...');
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData && userData.user && userData.user.app_metadata?.role) {
+        const appMetadataRole = userData.user.app_metadata.role as Role;
+        console.log('Role found in app_metadata:', appMetadataRole);
+        
+        // Save the role to user_roles table for consistency
+        try {
+          await supabase.rpc('assign_role', {
+            user_id: userId,
+            role: appMetadataRole
+          });
+          console.log('Role saved to user_roles table');
+        } catch (err) {
+          console.error('Error saving role to user_roles table:', err);
+        }
+        
+        setUserRole(appMetadataRole);
+        return appMetadataRole;
+      }
+
       // Default role if none found
+      console.log('No role found, defaulting to USER role');
       setUserRole(Role.USER);
       return Role.USER;
     } catch (error) {
@@ -218,7 +249,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Biometric auth toggle
   const toggleBiometricAuth = async (): Promise<void> => {
     try {
       setBiometricEnabled(prev => !prev);

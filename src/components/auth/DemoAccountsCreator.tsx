@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const DemoAccountsCreator = () => {
@@ -22,6 +22,7 @@ export const DemoAccountsCreator = () => {
       }
       
       setResults(data.results);
+      console.log('Test accounts creation response:', data);
       
       toast({
         title: 'Comptes de test créés',
@@ -36,6 +37,30 @@ export const DemoAccountsCreator = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const getStatusDetails = (result: any) => {
+    if (result.status === 'created') {
+      return `Créé avec le rôle: ${result.role}`;
+    } else if (result.status === 'already_exists') {
+      return result.hasCorrectRole 
+        ? `Existant avec le rôle: ${result.role}` 
+        : `Existant, rôle mis à jour: ${result.role}`;
+    } else {
+      return `Erreur: ${result.message || 'Inconnue'}`;
+    }
+  };
+
+  const getStatusIcon = (result: any) => {
+    if (result.status === 'created') {
+      return <CheckCircle2 className="h-3 w-3 text-green-500 mr-1" />;
+    } else if (result.status === 'already_exists') {
+      return result.hasCorrectRole 
+        ? <CheckCircle2 className="h-3 w-3 text-blue-500 mr-1" />
+        : <Info className="h-3 w-3 text-orange-500 mr-1" />;
+    } else {
+      return <AlertCircle className="h-3 w-3 text-red-500 mr-1" />;
     }
   };
 
@@ -75,19 +100,9 @@ export const DemoAccountsCreator = () => {
           <ul className="space-y-1 mt-1">
             {results.map((result, idx) => (
               <li key={idx} className="flex items-center">
-                {result.status === 'created' ? (
-                  <CheckCircle2 className="h-3 w-3 text-green-500 mr-1" />
-                ) : result.status === 'already_exists' ? (
-                  <CheckCircle2 className="h-3 w-3 text-blue-500 mr-1" />
-                ) : (
-                  <AlertCircle className="h-3 w-3 text-red-500 mr-1" />
-                )}
+                {getStatusIcon(result)}
                 <span>
-                  {result.email}: {result.status === 'created' 
-                    ? 'Créé' 
-                    : result.status === 'already_exists'
-                    ? 'Déjà existant'
-                    : 'Erreur'}
+                  {result.email}: {getStatusDetails(result)}
                 </span>
               </li>
             ))}
