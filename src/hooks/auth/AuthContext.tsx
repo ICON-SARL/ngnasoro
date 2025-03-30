@@ -253,9 +253,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Save the role to user_roles table for consistency
         try {
+          // FIX: We need to pass the original string role to the RPC function, not the enum value
           await supabase.rpc('assign_role', {
             user_id: userId,
-            role: appMetadataRole
+            role: appMetadataRole  // This expects a string value like 'admin', 'sfd_admin', etc.
           });
           console.log('Role saved to user_roles table');
         } catch (err) {
