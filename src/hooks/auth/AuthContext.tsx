@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, AuthContextProps, Role } from './types';
@@ -27,7 +26,7 @@ const convertSupabaseUser = (supabaseUser: any): User => {
 const defaultContext: AuthContextProps = {
   user: null,
   setUser: () => {},
-  signIn: async () => {},
+  signIn: async () => ({}),
   signUp: async () => {},
   signOut: async () => {},
   loading: true,
@@ -55,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = userRole === Role.SUPER_ADMIN;
   const isSfdAdmin = userRole === Role.SFD_ADMIN;
 
-  const signIn = async (email: string, password: string): Promise<void> => {
+  const signIn = async (email: string, password: string): Promise<{ error?: any } | undefined> => {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -77,6 +76,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: 'Connexion réussie',
         description: 'Vous êtes maintenant connecté.',
       });
+      
+      return undefined; // Return undefined when no error
     } catch (error: any) {
       console.error('Sign-in error:', error);
       toast({
@@ -84,6 +85,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: error.message || 'Identifiants incorrects.',
         variant: 'destructive',
       });
+      
+      return { error }; // Return the error
     } finally {
       setLoading(false);
     }

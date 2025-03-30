@@ -28,7 +28,7 @@ export enum Role {
 export interface AuthContextProps {
   user: User | null;
   setUser: (user: User | null) => void;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ error?: any } | undefined>;
   signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
   signOut: () => Promise<void>;
   loading: boolean;
