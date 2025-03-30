@@ -1,81 +1,32 @@
 
-import React from 'react';
-import { AgencyHeader } from '@/components/AgencyHeader';
-import { Button } from '@/components/ui/button';
-import { Plus, CreditCard } from 'lucide-react';
-import { useLoansPage } from '@/hooks/sfd/useLoansPage';
-import LoanStatusTabs from '@/components/sfd/loans/LoanStatusTabs';
-import NewLoanDialog from '@/components/sfd/loans/NewLoanDialog';
-import SubsidyRequestDialog from '@/components/sfd/loans/SubsidyRequestDialog';
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SfdAdminDashboard } from '@/components/admin/SfdAdminDashboard';
+import { LoanWorkflow } from '@/components/LoanWorkflow';
+import LoanPlansManager from '@/components/sfd/loans/LoanPlansManager';
 
 const SfdLoansPage = () => {
-  const {
-    loans,
-    loading,
-    activeTab,
-    setActiveTab,
-    openNewLoanDialog,
-    setOpenNewLoanDialog,
-    openSubsidyRequestDialog,
-    setOpenSubsidyRequestDialog,
-    loanForm,
-    handleInputChange,
-    handleSelectChange,
-    handleCreateLoan,
-    handleCreateSubsidyRequest,
-    clients,
-  } = useLoansPage();
+  const [activeTab, setActiveTab] = useState('loans');
   
   return (
     <div className="min-h-screen bg-gray-50">
-      <AgencyHeader />
+      <SfdAdminDashboard />
       
-      <div className="container mx-auto py-6 px-4">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Gestion des Prêts SFD</h1>
-            <p className="text-muted-foreground">Gestion et suivi des prêts de votre institution</p>
-          </div>
+      <div className="container mx-auto p-4 md:p-6 mt-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="loans">Prêts</TabsTrigger>
+            <TabsTrigger value="plans">Plans de Prêts</TabsTrigger>
+          </TabsList>
           
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setOpenSubsidyRequestDialog(true)}
-            >
-              <CreditCard className="h-4 w-4 mr-2" />
-              Demande de Subvention
-            </Button>
-            
-            <Button onClick={() => setOpenNewLoanDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nouveau Prêt
-            </Button>
-          </div>
-        </div>
-        
-        <LoanStatusTabs 
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          loans={loans}
-          loading={loading}
-        />
-        
-        {/* Dialogs */}
-        <NewLoanDialog 
-          open={openNewLoanDialog}
-          onOpenChange={setOpenNewLoanDialog}
-          formData={loanForm}
-          onInputChange={handleInputChange}
-          onSelectChange={handleSelectChange}
-          onSubmit={handleCreateLoan}
-          clients={clients}
-        />
-        
-        <SubsidyRequestDialog 
-          open={openSubsidyRequestDialog}
-          onOpenChange={setOpenSubsidyRequestDialog}
-          onSubmit={handleCreateSubsidyRequest}
-        />
+          <TabsContent value="loans">
+            <LoanWorkflow />
+          </TabsContent>
+          
+          <TabsContent value="plans">
+            <LoanPlansManager />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

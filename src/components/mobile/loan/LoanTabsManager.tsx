@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog } from '@/components/ui/dialog';
 import LoanTrackingTab from './LoanTrackingTab';
 import LoanDetailsTab from './LoanDetailsTab';
 import LoanRepaymentTab from './LoanRepaymentTab';
+import LoanPlansDisplay from './LoanPlansDisplay';
 import QRCodePaymentDialog from './QRCodePaymentDialog';
 import { LoanStatus, LoanDetails } from '@/hooks/useLoanDetails';
 
@@ -35,6 +37,9 @@ const LoanTabsManager: React.FC<LoanTabsManagerProps> = ({
         </TabsTrigger>
         <TabsTrigger value="repayment" className="rounded-full px-6 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
           Remboursement
+        </TabsTrigger>
+        <TabsTrigger value="plans" className="rounded-full px-6 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
+          Plans
         </TabsTrigger>
       </TabsList>
       
@@ -71,6 +76,10 @@ const LoanTabsManager: React.FC<LoanTabsManagerProps> = ({
             isWithdrawal={false} 
           />
         </Dialog>
+      </TabsContent>
+      
+      <TabsContent value="plans">
+        <LoanPlansDisplay />
       </TabsContent>
     </Tabs>
   );
