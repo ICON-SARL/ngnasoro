@@ -8,6 +8,7 @@ import RegisterForm from './auth/RegisterForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import DemoAccountsCreator from './auth/DemoAccountsCreator';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
@@ -166,6 +167,8 @@ const AuthUI = () => {
               </>
             )}
           </div>
+          
+          <DemoAccountsCreator />
         </div>
       </div>
     </div>
