@@ -33,6 +33,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         setSession(data.session);
         setUser(data.session?.user || null);
+        
+        // Debug log
+        if (data.session?.user) {
+          console.log('Loaded user data:', {
+            id: data.session.user.id,
+            email: data.session.user.email,
+            role: data.session.user.app_metadata?.role,
+            metadata: data.session.user.app_metadata,
+          });
+        }
       } catch (err) {
         console.error('Error in auth session fetching:', err);
       } finally {
@@ -49,6 +59,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(newSession);
         setLoading(false);
         
+        // Debug log for auth state change
+        if (newSession?.user) {
+          console.log('Auth state changed:', {
+            event,
+            userId: newSession.user.id,
+            role: newSession.user.app_metadata?.role,
+            metadata: newSession.user.app_metadata,
+          });
+        }
+        
         // Log auth events
         if (event === 'SIGNED_IN') {
           await logAuditEvent({
@@ -59,7 +79,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             status: 'success',
             details: {
               login_method: 'password',
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              user_role: newSession?.user.app_metadata?.role
             }
           });
         } else if (event === 'SIGNED_OUT') {
@@ -99,6 +120,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             timestamp: new Date().toISOString()
           },
           error_message: result.error.message
+        });
+      } else if (result.data.user) {
+        console.log('Login successful:', {
+          userId: result.data.user.id,
+          role: result.data.user.app_metadata?.role,
+          metadata: result.data.user.app_metadata,
         });
       }
       

@@ -5,12 +5,18 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // Auth components
 import { AuthProvider } from '@/hooks/auth/AuthProvider';
 
+// Auth pages
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import ClientLoginPage from '@/pages/ClientLoginPage';
+import SfdLoginPage from '@/pages/SfdLoginPage';
+import AdminLoginPage from '@/pages/AdminLoginPage';
+
 // Route protection components
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
 import PermissionProtectedRoute from '@/components/routes/PermissionProtectedRoute';
 
 // Pages
-import LoginPage from '@/pages/LoginPage';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import SfdSubsidyRequestPage from '@/pages/SfdSubsidyRequestPage';
 import SfdTransactionsPage from '@/pages/SfdTransactionsPage';
@@ -20,6 +26,7 @@ import SfdAdminDashboard from '@/components/admin/SfdAdminDashboard';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import AuditLogsPage from '@/pages/AuditLogsPage';
 import SubsidyRequestDetailPage from '@/pages/SubsidyRequestDetailPage';
+import MobileFlow from '@/pages/MobileFlow';
 
 // Role types and permissions
 import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
@@ -28,8 +35,17 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<LoginPage />} />
+        {/* Public Authentication routes */}
+        <Route path="/auth" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/login" element={<Navigate to="/auth" replace />} />
+        
+        {/* Specialized Auth routes */}
+        <Route path="/auth/client" element={<ClientLoginPage />} />
+        <Route path="/sfd/auth" element={<SfdLoginPage />} />
+        <Route path="/admin/auth" element={<AdminLoginPage />} />
+        
+        {/* Access denied page */}
         <Route path="/access-denied" element={<AccessDeniedPage />} />
         
         {/* Protected routes with permissions */}
@@ -113,6 +129,14 @@ function App() {
           }
         />
         
+        {/* Client routes */}
+        <Route
+          path="/mobile-flow/*"
+          element={
+            <ProtectedRoute component={MobileFlow} />
+          }
+        />
+        
         {/* Legacy protected routes for backward compatibility */}
         <Route
           path="/agency-dashboard"
@@ -125,9 +149,9 @@ function App() {
           }
         />
         
-        {/* Fallback route */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        {/* Fallback routes */}
+        <Route path="/" element={<Navigate to="/auth" replace />} />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
       </Routes>
     </AuthProvider>
   );

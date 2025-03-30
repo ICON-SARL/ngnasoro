@@ -25,6 +25,12 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({ requiredPermission, c
     // Simple permission check based on user role
     const userRole = user.app_metadata?.role;
     
+    console.log('PermissionGuard checking:', { 
+      userRole, 
+      requiredPermission,
+      userMetadata: user.app_metadata 
+    });
+    
     let permitted = false;
     
     // Super admin has all permissions
@@ -39,7 +45,11 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({ requiredPermission, c
       permitted = true;
     }
     
-    console.log('Permission check:', { userRole, requiredPermission, permitted });
+    console.log('Permission check result:', { 
+      userRole, 
+      requiredPermission, 
+      permitted 
+    });
     
     setHasAccess(permitted);
     

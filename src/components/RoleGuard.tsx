@@ -22,13 +22,21 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
       return;
     }
 
-    // Basic check: if user has role in metadata
+    // Get role from user metadata
     const userRole = user.app_metadata?.role;
+    
+    // Debug log
+    console.log('RoleGuard checking:', { 
+      userRole, 
+      requiredRole, 
+      userMetadata: user.app_metadata 
+    });
     
     // Handle special case where SFD_ADMIN should match sfd_admin role
     const permitted = userRole === requiredRole || 
       (requiredRole === 'sfd_admin' && userRole === 'sfd_admin') ||
-      (requiredRole === Role.SFD_ADMIN && userRole === 'sfd_admin');
+      (requiredRole === Role.SFD_ADMIN && userRole === 'sfd_admin') ||
+      (requiredRole === 'admin' && userRole === 'admin');
     
     setHasAccess(permitted);
     

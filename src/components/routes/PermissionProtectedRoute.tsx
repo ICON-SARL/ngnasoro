@@ -32,8 +32,16 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
       return;
     }
 
-    // Simple permission/role check based on user metadata
+    // Get role from user metadata
     const userRole = user.app_metadata?.role;
+    
+    console.log('PermissionProtectedRoute checking:', { 
+      userRole, 
+      requiredRole, 
+      requiredPermission,
+      userMetadata: user.app_metadata,
+      path: location.pathname
+    });
     
     // Fix for SFD_ADMIN matching sfd_admin
     let roleMatch = !requiredRole || 
@@ -51,7 +59,7 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
       permissionMatch = true;
     }
     
-    console.log('Permission protected route check:', { 
+    console.log('Permission protected route check result:', { 
       userRole, 
       requiredRole, 
       requiredPermission,
@@ -84,7 +92,14 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
   }
 
   if (!user) {
-    return <Navigate to={fallbackPath} state={{ from: location }} replace />;
+    // Redirect to appropriate auth page based on required role
+    if (requiredRole === UserRole.SUPER_ADMIN) {
+      return <Navigate to="/admin/auth" state={{ from: location }} replace />;
+    } else if (requiredRole === UserRole.SFD_ADMIN) {
+      return <Navigate to="/sfd/auth" state={{ from: location }} replace />;
+    } else {
+      return <Navigate to="/auth" state={{ from: location }} replace />;
+    }
   }
   
   if (!hasAccess) {

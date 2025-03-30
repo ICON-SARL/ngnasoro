@@ -75,8 +75,12 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
     setIsLoading(true);
     
     try {
-      // Use password authentication (false for magic link)
-      await signIn(email, password);
+      // Use password authentication
+      const { error } = await signIn(email, password);
+      
+      if (error) {
+        throw error;
+      }
       
       // Log successful authentication attempt
       await logAuditEvent({
@@ -88,12 +92,12 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
         details: { email, admin_mode: adminMode, sfd_admin: isSfdAdmin }
       });
       
-      // La redirection est gérée par le composant AuthUI en fonction du rôle
-      
       toast({
         title: "Connexion réussie",
         description: "Vous êtes maintenant connecté.",
       });
+      
+      // No need to navigate here, the AuthProvider will handle that based on user role
       
     } catch (error: any) {
       console.error("Login error:", error);
@@ -127,20 +131,6 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       setIsLoading(false);
     }
   };
-  
-  const handleAuthComplete = () => {
-    setShowAuthDialog(false);
-    toast({
-      title: "Authentification réussie",
-      description: "Vous êtes maintenant connecté.",
-    });
-    navigate('/mobile-flow');
-  };
-
-  const toggleAuthMode = () => {
-    setAuthMode(prev => prev === 'simple' ? 'advanced' : 'simple');
-    setErrorMessage(null);
-  };
 
   return {
     email,
@@ -158,8 +148,6 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
     cooldownTime,
     emailSent,
     handleLogin,
-    handleAuthComplete,
-    toggleAuthMode,
     adminMode,
     isSfdAdmin
   };
