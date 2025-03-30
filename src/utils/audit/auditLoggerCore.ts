@@ -6,7 +6,8 @@ import {
   AuditLogFilterOptions, 
   AuditLogCategory, 
   AuditLogSeverity,
-  AuditLogExportResult 
+  AuditLogExportResult,
+  AuditLogResponse
 } from './auditLoggerTypes';
 
 export async function logAuditEvent(entry: AuditLogEntry) {
@@ -46,7 +47,7 @@ export async function logAuditEvent(entry: AuditLogEntry) {
   }
 }
 
-export async function getAuditLogs(options?: AuditLogFilterOptions) {
+export async function getAuditLogs(options?: AuditLogFilterOptions): Promise<AuditLogResponse> {
   try {
     let query = supabase
       .from('audit_logs')
@@ -56,16 +57,20 @@ export async function getAuditLogs(options?: AuditLogFilterOptions) {
     if (options) {
       if (options.category) {
         if (Array.isArray(options.category)) {
+          // For array of categories, use 'in' operator
           query = query.in('category', options.category.map(c => c.toString()));
         } else {
+          // For single category, use 'eq' operator
           query = query.eq('category', options.category.toString());
         }
       }
       
       if (options.severity) {
         if (Array.isArray(options.severity)) {
+          // For array of severities, use 'in' operator
           query = query.in('severity', options.severity.map(s => s.toString()));
         } else {
+          // For single severity, use 'eq' operator
           query = query.eq('severity', options.severity.toString());
         }
       }
@@ -95,22 +100,38 @@ export async function getAuditLogs(options?: AuditLogFilterOptions) {
     
     // Convert the raw data to AuditLogEvent type
     // Handle converting database JSON to Record<string, any> type
-    const typedLogs: AuditLogEvent[] = data?.map(log => ({
-      user_id: log.user_id || 'anonymous',
-      action: log.action,
-      category: log.category as AuditLogCategory,
-      severity: log.severity as AuditLogSeverity,
-      status: log.status as 'success' | 'failure' | 'pending',
-      target_resource: log.target_resource || undefined,
-      error_message: log.error_message || undefined,
-      // Handle the details property correctly, converting it to Record<string, any> if it exists
-      details: log.details ? (typeof log.details === 'string' ? JSON.parse(log.details) : log.details) as Record<string, any> : undefined,
-      ip_address: log.ip_address || undefined,
-      device_info: log.device_info || undefined,
-      created_at: log.created_at || undefined,
-      // Include id for compatibility with the application code
-      id: log.id
-    })) || [];
+    const typedLogs: AuditLogEvent[] = data?.map(log => {
+      // Handle the details property correctly
+      let parsedDetails: Record<string, any> | undefined = undefined;
+      
+      if (log.details) {
+        if (typeof log.details === 'string') {
+          try {
+            parsedDetails = JSON.parse(log.details);
+          } catch (e) {
+            console.error('Error parsing details JSON:', e);
+            parsedDetails = { raw: log.details };
+          }
+        } else if (typeof log.details === 'object') {
+          parsedDetails = log.details as Record<string, any>;
+        }
+      }
+      
+      return {
+        user_id: log.user_id || 'anonymous',
+        action: log.action,
+        category: log.category as AuditLogCategory,
+        severity: log.severity as AuditLogSeverity,
+        status: log.status as 'success' | 'failure' | 'pending',
+        target_resource: log.target_resource || undefined,
+        error_message: log.error_message || undefined,
+        details: parsedDetails,
+        ip_address: log.ip_address || undefined,
+        device_info: log.device_info || undefined,
+        created_at: log.created_at || undefined,
+        id: log.id
+      };
+    }) || [];
     
     return { logs: typedLogs };
   } catch (error) {
@@ -156,9 +177,8 @@ export async function exportAuditLogsToCSV(options?: AuditLogFilterOptions): Pro
     
     // Generate CSV rows
     const rows = logs.map((log: AuditLogEvent) => {
-      const logWithId = log as AuditLogEvent & { id: string };
       return [
-        logWithId.id || '',
+        log.id || '',
         log.created_at || new Date().toISOString(),
         log.user_id || 'anonymous',
         log.action,
