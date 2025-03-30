@@ -76,10 +76,10 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
     
     try {
       // Use password authentication
-      const { error } = await signIn(email, password);
+      const response = await signIn(email, password);
       
-      if (error) {
-        throw error;
+      if (response && response.error) {
+        throw response.error;
       }
       
       // Log successful authentication attempt
