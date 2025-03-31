@@ -1,35 +1,37 @@
 
 import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { Loader2, CreditCard, CheckCircle2, Clock, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import {
-  Building,
-  Calculator,
-  Calendar,
-  ChevronLeft,
-  HelpCircle,
-  Loader2,
-} from 'lucide-react';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Slider } from '@/components/ui/slider';
+import { useClientLoans } from '@/hooks/useClientLoans';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoanPlan {
   id: string;
   name: string;
-  description: string | null;
+  description: string;
   min_amount: number;
   max_amount: number;
   min_duration: number;
@@ -37,441 +39,451 @@ interface LoanPlan {
   interest_rate: number;
   fees: number;
   requirements: string[];
-  is_active: boolean;
-  sfd_id: string;
 }
 
-interface SFD {
-  id: string;
-  name: string;
-  code: string;
-  region: string | null;
+interface FormValues {
+  amount: number;
+  duration_months: number;
+  purpose: string;
+  loanPlanId: string;
+  agree_terms: boolean;
 }
 
 const LoanApplicationForm = () => {
-  const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
-  const [isLoading, setIsLoading] = useState(false);
+  const { applyForLoan, isUploading } = useClientLoans();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [sfds, setSfds] = useState<SFD[]>([]);
   const [loanPlans, setLoanPlans] = useState<LoanPlan[]>([]);
-  const [filteredPlans, setFilteredPlans] = useState<LoanPlan[]>([]);
-  
-  const [selectedSfd, setSelectedSfd] = useState<string>('');
-  const [selectedPlan, setSelectedPlan] = useState<string>('');
-  const [amount, setAmount] = useState<number>(100000);
-  const [duration, setDuration] = useState<number>(12);
-  const [purpose, setPurpose] = useState<string>('');
-  const [additionalInfo, setAdditionalInfo] = useState<string>('');
-  
-  const [currentPlan, setCurrentPlan] = useState<LoanPlan | null>(null);
-  
-  // Fetch user's SFDs and loan plans
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      
-      try {
-        if (!user) return;
-        
-        // Fetch SFDs available to the user
-        const { data: sfdData, error: sfdError } = await supabase
-          .from('user_sfds')
-          .select('sfds:sfd_id(*)')
-          .eq('user_id', user.id);
-          
-        if (sfdError) throw sfdError;
-        
-        const availableSfds = sfdData.map(item => item.sfds) as SFD[];
-        setSfds(availableSfds);
-        
-        // Set default SFD if activeSfdId is set
-        if (activeSfdId) {
-          setSelectedSfd(activeSfdId);
-        } else if (availableSfds.length > 0) {
-          setSelectedSfd(availableSfds[0].id);
-        }
-        
-        // Fetch all active loan plans
-        const { data: plansData, error: plansError } = await supabase
-          .from('sfd_loan_plans')
-          .select('*')
-          .eq('is_active', true);
-          
-        if (plansError) throw plansError;
-        
-        setLoanPlans(plansData);
-        
-        // Filter plans for the selected SFD
-        if (activeSfdId) {
-          const filtered = plansData.filter(plan => plan.sfd_id === activeSfdId);
-          setFilteredPlans(filtered);
-          
-          // Set default values from first plan
-          if (filtered.length > 0) {
-            const firstPlan = filtered[0];
-            setCurrentPlan(firstPlan);
-            setSelectedPlan(firstPlan.id);
-            setAmount(firstPlan.min_amount);
-            setDuration(firstPlan.min_duration);
-          }
-        }
-      } catch (error: any) {
-        console.error('Error fetching data:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les données",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [user, activeSfdId]);
-  
-  // Update filtered plans when SFD changes
-  useEffect(() => {
-    if (selectedSfd) {
-      const filtered = loanPlans.filter(plan => plan.sfd_id === selectedSfd);
-      setFilteredPlans(filtered);
-      
-      // Reset plan selection
-      setSelectedPlan('');
-      setCurrentPlan(null);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState<LoanPlan | null>(null);
+  const [monthlyPayment, setMonthlyPayment] = useState<number>(0);
+  const [sfdId, setSfdId] = useState<string | null>(null);
+
+  const form = useForm<FormValues>({
+    defaultValues: {
+      amount: 50000,
+      duration_months: 6,
+      purpose: '',
+      loanPlanId: '',
+      agree_terms: false
     }
-  }, [selectedSfd, loanPlans]);
-  
-  // Update current plan when plan changes
+  });
+
+  const { watch } = form;
+  const amount = watch('amount');
+  const duration = watch('duration_months');
+  const loanPlanId = watch('loanPlanId');
+
+  useEffect(() => {
+    fetchSfdInfo();
+  }, []);
+
+  useEffect(() => {
+    if (sfdId) {
+      fetchLoanPlans();
+    }
+  }, [sfdId]);
+
+  useEffect(() => {
+    const foundPlan = loanPlans.find(plan => plan.id === loanPlanId);
+    setSelectedPlan(foundPlan || null);
+  }, [loanPlanId, loanPlans]);
+
   useEffect(() => {
     if (selectedPlan) {
-      const plan = loanPlans.find(p => p.id === selectedPlan);
-      if (plan) {
-        setCurrentPlan(plan);
-        
-        // Set default values from plan
-        setAmount(plan.min_amount);
-        setDuration(plan.min_duration);
-      }
+      calculateMonthlyPayment();
     }
-  }, [selectedPlan, loanPlans]);
-  
-  const handleSfdChange = (value: string) => {
-    setSelectedSfd(value);
-  };
-  
-  const handlePlanChange = (value: string) => {
-    setSelectedPlan(value);
-  };
-  
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('fr-FR') + ' FCFA';
-  };
-  
-  const calculateMonthlyPayment = () => {
-    if (!currentPlan) return 0;
-    
-    const monthlyInterestRate = currentPlan.interest_rate / 100 / 12;
-    const numerator = amount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, duration);
-    const denominator = Math.pow(1 + monthlyInterestRate, duration) - 1;
-    
-    // Add fees
-    const feeAmount = amount * (currentPlan.fees / 100);
-    const totalLoanAmount = amount + feeAmount;
-    
-    return numerator / denominator;
-  };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!user || !selectedSfd || !selectedPlan || !currentPlan) {
-      toast({
-        title: "Informations manquantes",
-        description: "Veuillez remplir tous les champs obligatoires",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (amount < currentPlan.min_amount || amount > currentPlan.max_amount) {
-      toast({
-        title: "Montant invalide",
-        description: `Le montant doit être compris entre ${formatCurrency(currentPlan.min_amount)} et ${formatCurrency(currentPlan.max_amount)}`,
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (duration < currentPlan.min_duration || duration > currentPlan.max_duration) {
-      toast({
-        title: "Durée invalide",
-        description: `La durée doit être comprise entre ${currentPlan.min_duration} et ${currentPlan.max_duration} mois`,
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
+  }, [amount, duration, selectedPlan]);
+
+  const fetchSfdInfo = async () => {
     try {
-      // Get client ID for the user in this SFD
-      const { data: clientData, error: clientError } = await supabase
-        .from('sfd_clients')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('sfd_id', selectedSfd)
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Utilisateur non connecté');
+
+      const { data: sfdData, error: sfdError } = await supabase
+        .from('user_sfds')
+        .select('sfd_id')
+        .eq('user_id', userData.user.id)
+        .eq('is_default', true)
         .single();
-        
-      if (clientError) {
-        throw new Error("Vous n'êtes pas enregistré comme client pour cette SFD");
-      }
-      
-      const clientId = clientData.id;
-      
-      // Calculate monthly payment
-      const monthlyPayment = calculateMonthlyPayment();
-      
-      // Create loan request
-      const { data, error } = await supabase
-        .from('sfd_loans')
-        .insert({
-          client_id: clientId,
-          sfd_id: selectedSfd,
-          amount: amount,
-          duration_months: duration,
-          interest_rate: currentPlan.interest_rate,
-          monthly_payment: monthlyPayment,
-          purpose: purpose,
-          status: 'pending'
-        })
-        .select();
-        
-      if (error) throw error;
-      
-      // Create loan activity
-      await supabase
-        .from('loan_activities')
-        .insert({
-          loan_id: data[0].id,
-          activity_type: 'loan_request_created',
-          description: `Demande de prêt de ${formatCurrency(amount)} sur ${duration} mois créée`
-        });
-      
-      toast({
-        title: "Demande envoyée",
-        description: "Votre demande de prêt a été soumise avec succès et est en attente d'approbation",
-      });
-      
-      // Redirect to loans page
-      navigate('/loans');
-    } catch (error: any) {
-      console.error('Error submitting loan application:', error);
+
+      if (sfdError) throw sfdError;
+      setSfdId(sfdData.sfd_id);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des infos SFD:', error);
       toast({
         title: "Erreur",
-        description: error.message || "Impossible de soumettre votre demande de prêt",
+        description: "Impossible de récupérer vos informations SFD",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchLoanPlans = async () => {
+    setIsLoadingPlans(true);
+    try {
+      const { data, error } = await supabase
+        .from('sfd_loan_plans')
+        .select('*')
+        .eq('sfd_id', sfdId)
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setLoanPlans(data as LoanPlan[]);
+        // Set default loan plan
+        form.setValue('loanPlanId', data[0].id);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des plans de prêt:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer les plans de prêt disponibles",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPlans(false);
+    }
+  };
+
+  const calculateMonthlyPayment = () => {
+    if (!selectedPlan) return;
+
+    const principal = amount;
+    const interestRate = selectedPlan.interest_rate / 100 / 12; // Monthly interest rate
+    const numberOfPayments = duration;
+
+    // Monthly payment formula: P * r * (1 + r)^n / ((1 + r)^n - 1)
+    const monthlyPayment = 
+      (principal * interestRate * Math.pow(1 + interestRate, numberOfPayments)) / 
+      (Math.pow(1 + interestRate, numberOfPayments) - 1);
+
+    setMonthlyPayment(Math.round(monthlyPayment));
+  };
+
+  const onSubmit = async (values: FormValues) => {
+    if (!selectedPlan || !sfdId) {
+      toast({
+        title: "Erreur",
+        description: "Plan de prêt ou SFD non sélectionné",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await applyForLoan.mutateAsync({
+        sfd_id: sfdId,
+        amount: values.amount,
+        duration_months: values.duration_months,
+        purpose: values.purpose,
+      });
+
+      toast({
+        title: "Demande envoyée",
+        description: "Votre demande de prêt a été envoyée avec succès",
+      });
+      
+      // Redirect to a confirmation or dashboard page
+      navigate('/mobile-flow');
+    } catch (error: any) {
+      console.error('Erreur lors de la demande de prêt:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de l'envoi de votre demande",
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-  
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Chargement des plans de prêt...</p>
-      </div>
-    );
-  }
-  
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/loans')} className="mr-2">
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <CardTitle>Demande de prêt</CardTitle>
+    <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
+      <h1 className="text-2xl font-bold mb-2">Demande de Prêt</h1>
+      <p className="text-gray-600 mb-6">
+        Remplissez le formulaire ci-dessous pour soumettre votre demande de prêt
+      </p>
+
+      {isLoadingPlans ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-[#0D6A51]" />
+          <span className="ml-2">Chargement des plans de prêt...</span>
         </div>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="sfd">Institution financière (SFD)</Label>
-              <Select value={selectedSfd} onValueChange={handleSfdChange} required>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Sélectionner une SFD" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sfds.map((sfd) => (
-                    <SelectItem key={sfd.id} value={sfd.id}>
-                      {sfd.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {selectedSfd && filteredPlans.length === 0 ? (
-              <div className="bg-muted p-4 rounded-md">
-                <p className="text-sm text-muted-foreground">
-                  Aucun plan de prêt disponible pour cette SFD. Veuillez sélectionner une autre institution ou contactez votre conseiller.
-                </p>
-              </div>
-            ) : selectedSfd && (
-              <div>
-                <Label htmlFor="loanPlan">Type de prêt</Label>
-                <Select value={selectedPlan} onValueChange={handlePlanChange} required>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Sélectionner un plan de prêt" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredPlans.map((plan) => (
-                      <SelectItem key={plan.id} value={plan.id}>
-                        {plan.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            
-            {currentPlan && (
-              <>
-                <div className="bg-blue-50 p-4 rounded-md space-y-2">
-                  <div className="flex items-center gap-1 text-blue-600">
-                    <HelpCircle className="h-4 w-4" />
-                    <h4 className="text-sm font-medium">Informations du plan</h4>
-                  </div>
-                  <p className="text-sm text-blue-700">{currentPlan.description}</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Calculator className="h-3 w-3 text-blue-600" />
-                      <span className="text-blue-700">
-                        Taux: {currentPlan.interest_rate}%
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Building className="h-3 w-3 text-blue-600" />
-                      <span className="text-blue-700">
-                        Frais: {currentPlan.fees}%
-                      </span>
-                    </div>
-                  </div>
-                  {currentPlan.requirements && currentPlan.requirements.length > 0 && (
-                    <div>
-                      <h5 className="text-xs font-medium text-blue-700">Conditions requises:</h5>
-                      <ul className="text-xs pl-4 space-y-1 text-blue-700">
-                        {currentPlan.requirements.map((req, idx) => (
-                          <li key={idx} className="list-disc">{req}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-                
-                <div>
-                  <Label htmlFor="amount">Montant du prêt</Label>
-                  <div className="mb-2 font-bold text-xl text-center">{formatCurrency(amount)}</div>
-                  <Slider
-                    value={[amount]}
-                    min={currentPlan.min_amount}
-                    max={currentPlan.max_amount}
-                    step={5000}
-                    onValueChange={(values) => setAmount(values[0])}
-                    className="mt-2"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>{formatCurrency(currentPlan.min_amount)}</span>
-                    <span>{formatCurrency(currentPlan.max_amount)}</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="duration">Durée (mois)</Label>
-                  <div className="mb-2 font-bold text-xl text-center">{duration} mois</div>
-                  <Slider
-                    value={[duration]}
-                    min={currentPlan.min_duration}
-                    max={currentPlan.max_duration}
-                    step={1}
-                    onValueChange={(values) => setDuration(values[0])}
-                    className="mt-2"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>{currentPlan.min_duration} mois</span>
-                    <span>{currentPlan.max_duration} mois</span>
-                  </div>
-                </div>
-                
-                <div className="bg-muted p-4 rounded-md">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-muted-foreground">Mensualité estimée:</span>
-                    <span className="font-bold">{formatCurrency(calculateMonthlyPayment())}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Montant total à rembourser:</span>
-                    <span className="font-medium">{formatCurrency(calculateMonthlyPayment() * duration)}</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="purpose">Objet du prêt</Label>
-                  <Select value={purpose} onValueChange={setPurpose} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner l'objet du prêt" />
-                    </SelectTrigger>
+      ) : loanPlans.length === 0 ? (
+        <div className="text-center py-12 border rounded-lg">
+          <h3 className="font-medium mb-2">Aucun plan de prêt disponible</h3>
+          <p className="text-sm text-muted-foreground">
+            Veuillez contacter votre SFD pour plus d'informations
+          </p>
+        </div>
+      ) : (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="loanPlanId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type de prêt</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez un plan de prêt" />
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent>
-                      <SelectItem value="business">Activité commerciale</SelectItem>
-                      <SelectItem value="agriculture">Agriculture</SelectItem>
-                      <SelectItem value="education">Éducation</SelectItem>
-                      <SelectItem value="housing">Logement</SelectItem>
-                      <SelectItem value="personal">Besoins personnels</SelectItem>
-                      <SelectItem value="other">Autre</SelectItem>
+                      {loanPlans.map(plan => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                          {plan.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="additionalInfo">Informations complémentaires</Label>
-                  <Textarea
-                    id="additionalInfo"
-                    placeholder="Détails supplémentaires sur votre projet..."
-                    value={additionalInfo}
-                    onChange={(e) => setAdditionalInfo(e.target.value)}
-                    rows={3}
+                  <FormDescription>
+                    {selectedPlan?.description || "Sélectionnez un plan pour voir sa description"}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {selectedPlan && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Montant (FCFA)</FormLabel>
+                        <FormControl>
+                          <div className="space-y-4">
+                            <Slider
+                              min={selectedPlan.min_amount}
+                              max={selectedPlan.max_amount}
+                              step={5000}
+                              value={[field.value]}
+                              onValueChange={(values) => field.onChange(values[0])}
+                              className="py-4"
+                            />
+                            <div className="flex justify-between items-center">
+                              <Input
+                                type="number"
+                                min={selectedPlan.min_amount}
+                                max={selectedPlan.max_amount}
+                                {...field}
+                                className="w-2/3"
+                              />
+                              <span className="text-sm text-muted-foreground">FCFA</span>
+                            </div>
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>Min: {selectedPlan.min_amount.toLocaleString()} FCFA</span>
+                              <span>Max: {selectedPlan.max_amount.toLocaleString()} FCFA</span>
+                            </div>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="duration_months"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Durée (mois)</FormLabel>
+                        <FormControl>
+                          <div className="space-y-4">
+                            <Slider
+                              min={selectedPlan.min_duration}
+                              max={selectedPlan.max_duration}
+                              step={1}
+                              value={[field.value]}
+                              onValueChange={(values) => field.onChange(values[0])}
+                              className="py-4"
+                            />
+                            <div className="flex justify-between items-center">
+                              <Input
+                                type="number"
+                                min={selectedPlan.min_duration}
+                                max={selectedPlan.max_duration}
+                                {...field}
+                                className="w-2/3"
+                              />
+                              <span className="text-sm text-muted-foreground">mois</span>
+                            </div>
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>Min: {selectedPlan.min_duration} mois</span>
+                              <span>Max: {selectedPlan.max_duration} mois</span>
+                            </div>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="purpose"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Objet du prêt</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Décrivez en détail l'objet de votre demande de prêt"
+                          className="resize-none h-24"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Expliquez comment vous prévoyez d'utiliser ces fonds
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <Card className="bg-muted/20">
+                  <CardContent className="pt-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <Calculator className="h-5 w-5 mr-2 text-[#0D6A51]" />
+                      Simulation de prêt
+                    </h3>
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-muted-foreground">Montant du prêt</span>
+                        <span className="font-medium">{amount.toLocaleString()} FCFA</span>
+                      </div>
+
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-muted-foreground">Durée</span>
+                        <span className="font-medium">{duration} mois</span>
+                      </div>
+
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-muted-foreground">Taux d'intérêt</span>
+                        <span className="font-medium">{selectedPlan.interest_rate}%</span>
+                      </div>
+
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-muted-foreground">Frais de dossier</span>
+                        <span className="font-medium">{selectedPlan.fees}%</span>
+                      </div>
+
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-muted-foreground">Frais de dossier (montant)</span>
+                        <span className="font-medium">
+                          {Math.round(amount * selectedPlan.fees / 100).toLocaleString()} FCFA
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between py-2 bg-[#0D6A51]/5 px-2 rounded-md">
+                        <span className="font-medium">Mensualité estimée</span>
+                        <span className="font-bold text-[#0D6A51]">
+                          {monthlyPayment.toLocaleString()} FCFA
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between py-2">
+                        <span className="text-muted-foreground">Montant total à rembourser</span>
+                        <span className="font-medium">
+                          {(monthlyPayment * duration).toLocaleString()} FCFA
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </>
             )}
-          </div>
-          
-          <div className="pt-2">
-            <Button 
-              type="submit" 
-              className="w-full" 
-              size="lg"
-              disabled={!currentPlan || isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Soumission en cours...
-                </>
-              ) : (
-                'Soumettre ma demande'
-              )}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+
+            {selectedPlan?.requirements && selectedPlan.requirements.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-medium">Conditions requises</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  {selectedPlan.requirements.map((req, index) => (
+                    <li key={index} className="text-sm text-muted-foreground">
+                      {req}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="space-y-4 border-t pt-4">
+              <div className="flex items-start space-x-2">
+                <div className="flex h-5 items-center">
+                  <input
+                    id="agree_terms"
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-gray-300 text-[#0D6A51] focus:ring-[#0D6A51]"
+                    onChange={(e) => form.setValue('agree_terms', e.target.checked)}
+                  />
+                </div>
+                <div className="ml-3 text-sm">
+                  <label htmlFor="agree_terms" className="font-medium text-gray-900">
+                    J'accepte les conditions générales
+                  </label>
+                  <p className="text-gray-500">
+                    Je confirme avoir lu et accepté les conditions générales de prêt et j'atteste que toutes les 
+                    informations fournies sont exactes.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row gap-4">
+                <Button 
+                  type="submit" 
+                  className="flex-1 bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+                  disabled={isSubmitting || !form.watch('agree_terms')}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Traitement en cours...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Soumettre ma demande
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => navigate('/mobile-flow')}
+                >
+                  Annuler
+                </Button>
+              </div>
+            </div>
+
+            <div className="border-t pt-4 space-y-3">
+              <div className="flex items-center text-sm">
+                <CheckCircle2 className="h-4 w-4 text-green-600 mr-2" />
+                <span>Dossier traité en 24-48h ouvrées</span>
+              </div>
+              <div className="flex items-center text-sm">
+                <Clock className="h-4 w-4 text-blue-600 mr-2" />
+                <span>Versement rapide après approbation</span>
+              </div>
+            </div>
+          </form>
+        </Form>
+      )}
+    </div>
   );
 };
 

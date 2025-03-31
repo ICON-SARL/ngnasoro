@@ -22,6 +22,9 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
 
   const handleLogout = async () => {
     try {
+      // Clear any client-side states or cookies before calling sign out
+      localStorage.removeItem('adminLastSeen');
+      
       // Call Supabase auth signOut method
       const { error } = await supabase.auth.signOut();
       
@@ -29,17 +32,14 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
         throw error;
       }
       
-      // Clear any local storage items if needed
-      localStorage.removeItem('adminLastSeen');
-      
       // Show success toast
       toast({
         title: "Déconnexion réussie",
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Redirect to login page
-      navigate('/auth');
+      // Redirect to login page - Force a full page reload to clear any remaining state
+      window.location.href = '/auth';
     } catch (error: any) {
       console.error('Logout error:', error);
       toast({
