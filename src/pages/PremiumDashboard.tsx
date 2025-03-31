@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button';
 import { User, LogOut } from 'lucide-react';
 
 const PremiumDashboardPage = () => {
+  const handleAction = (action: string, data?: any) => {
+    console.log('Action triggered:', action, data);
+    // Handle action here
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-primary text-white p-4 shadow-md">
@@ -32,7 +37,7 @@ const PremiumDashboardPage = () => {
       </header>
       
       <PremiumDashboardComponent />
-      <MobileNavigation />
+      <MobileNavigation onAction={handleAction} />
     </div>
   );
 };
