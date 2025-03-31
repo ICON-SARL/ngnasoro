@@ -4,6 +4,8 @@ import PremiumDashboardComponent from '@/components/PremiumDashboard';
 import MobileNavigation from '@/components/MobileNavigation';
 import { Button } from '@/components/ui/button';
 import { User, LogOut } from 'lucide-react';
+import { Footer } from '@/components';
+import AdminLogout from '@/components/admin/shared/AdminLogout';
 
 const PremiumDashboardPage = () => {
   const handleAction = (action: string, data?: any) => {
@@ -12,7 +14,7 @@ const PremiumDashboardPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <header className="bg-primary text-white p-4 shadow-md">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-2">
@@ -29,15 +31,17 @@ const PremiumDashboardPage = () => {
               <User className="h-4 w-4" />
               <span className="hidden md:inline">Profil</span>
             </Button>
-            <Button variant="ghost" size="sm" className="text-white hover:text-white hover:bg-primary-foreground/10">
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <AdminLogout />
           </div>
         </div>
       </header>
       
-      <PremiumDashboardComponent />
+      <div className="flex-1">
+        <PremiumDashboardComponent />
+      </div>
+      
       <MobileNavigation onAction={handleAction} />
+      <Footer />
     </div>
   );
 };

@@ -24,6 +24,8 @@ import PermissionGuard from '@/components/PermissionGuard';
 import { Permission } from '@/utils/audit/auditPermissions';
 import { SubsidySummary } from '@/components/admin/dashboard/SubsidySummary';
 import { PendingSubsidies } from '@/components/admin/dashboard/PendingSubsidies';
+import { Footer } from '@/components';
+import AdminLogout from '@/components/admin/shared/AdminLogout';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
@@ -164,6 +166,8 @@ const SuperAdminDashboard = () => {
           onTabChange={handleTabChange}
         />
       </main>
+      
+      <Footer />
     </div>
   );
 };
