@@ -6,3 +6,4 @@ export * from './LoanWorkflow';
 export * from './UserManagement';
 export * from './DataExport';
 export * from './ReportGenerator';
+export { default as Footer } from './Footer';
