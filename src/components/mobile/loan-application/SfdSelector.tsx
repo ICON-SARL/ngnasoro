@@ -31,7 +31,7 @@ interface SfdSelectorProps {
 const SfdSelector: React.FC<SfdSelectorProps> = ({ value, onValueChange, sfds = [] }) => {
   const [open, setOpen] = React.useState(false);
 
-  // Make sure sfds is always an array and never undefined
+  // Ensure sfds is always an array
   const safeSfds = Array.isArray(sfds) ? sfds : [];
   
   // Find the selected SFD
