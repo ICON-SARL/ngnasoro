@@ -29,7 +29,8 @@ export function usePaymentActions({ loanId, onMobileMoneyPayment, sfdId }: UsePa
       navigate('/mobile-flow/secure-payment', { 
         state: { 
           isRepayment: true, 
-          loanId 
+          loanId,
+          sfdId 
         } 
       });
     } else {

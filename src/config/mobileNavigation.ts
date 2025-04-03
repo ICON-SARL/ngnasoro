@@ -1,3 +1,4 @@
+
 import { MobileMenuSection, MobileNavItem } from '@/types/navigation';
 
 // Navigation principale (footer)
@@ -15,10 +16,10 @@ export const mobileNavItems: MobileNavItem[] = [
     route: '/mobile-flow/loan-application'
   },
   {
-    id: 'secure-payment',
-    label: 'Paiement sécurisé',
-    icon: 'shield-check',
-    route: '/mobile-flow/secure-payment'
+    id: 'loan-activity',
+    label: 'Mes prêts',
+    icon: 'file-text',
+    route: '/mobile-flow/loan-activity'
   },
   {
     id: 'funds',
@@ -86,17 +87,17 @@ export const mobileMenuSections: MobileMenuSection[] = [
         color: '#FFAB2E'
       },
       {
+        id: 'loan-activity',
+        label: 'Mes prêts',
+        icon: 'file-text',
+        route: '/mobile-flow/loan-activity',
+        color: '#FFAB2E'
+      },
+      {
         id: 'funds',
         label: 'Mes fonds',
         icon: 'wallet',
         route: '/mobile-flow/funds-management',
-        color: '#FFAB2E'
-      },
-      {
-        id: 'payment-options',
-        label: 'Options de paiement',
-        icon: 'credit-card',
-        route: '/mobile-flow/payment-options',
         color: '#FFAB2E'
       },
       {

@@ -10,7 +10,6 @@ import ScheduleTransferTab from '@/components/mobile/ScheduleTransferTab';
 import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
 import PaymentOptionsPage from '@/components/mobile/payment-options/PaymentOptionsPage';
 import LoanApplicationPage from '@/components/mobile/loan-application/LoanApplicationPage';
-import HomeLoanPage from '@/components/mobile/HomeLoanPage';
 import LoanActivityPage from '@/components/mobile/LoanActivityPage';
 import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
 import LoanProcessPage from '@/components/mobile/LoanProcessPage';
@@ -85,10 +84,6 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       <Route 
         path="/loan-application" 
         element={<LoanApplicationPage />} 
-      />
-      <Route 
-        path="/home-loan" 
-        element={<HomeLoanPage />} 
       />
       <Route 
         path="/loan-activity" 
