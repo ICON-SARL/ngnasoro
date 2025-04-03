@@ -1,4 +1,5 @@
 
-// Re-export from the new location for backward compatibility
-export { useAuth } from './auth/AuthContext';
+// Re-export from the new location
+import { useAuth } from './auth/AuthContext';
+export { useAuth };
 export type { User, AuthContextProps } from './auth/types';

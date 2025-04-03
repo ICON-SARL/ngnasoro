@@ -2,7 +2,7 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
-import { AuthProvider } from '@/hooks/auth/AuthProvider';
+import { AuthProvider } from '@/hooks/auth/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 
 interface TestProvidersProps {
