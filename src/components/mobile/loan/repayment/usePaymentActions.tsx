@@ -37,8 +37,17 @@ export function usePaymentActions({ loanId, onMobileMoneyPayment }: UsePaymentAc
     }
   };
 
+  const handleLoanApplication = (sfdId?: string) => {
+    navigate('/mobile-flow/loan-application', {
+      state: {
+        sfdId
+      }
+    });
+  };
+
   return {
     isProcessing,
-    handlePaymentMethod
+    handlePaymentMethod,
+    handleLoanApplication
   };
 }

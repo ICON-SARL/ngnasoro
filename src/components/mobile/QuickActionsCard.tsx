@@ -60,7 +60,7 @@ const QuickActionsCard: React.FC<{ onAction: (action: string, data?: any) => voi
         ) : (
           <QuickAction
             icon={<Wallet className="h-5 w-5" />}
-            label="Crédits"
+            label="Prêts"
             onClick={() => onAction('Loans')}
             bgColor="bg-amber-50"
             iconColor="text-amber-500"

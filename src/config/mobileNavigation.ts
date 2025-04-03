@@ -10,15 +10,15 @@ export const mobileNavItems: MobileNavItem[] = [
     route: '/mobile-flow/main'
   },
   {
-    id: 'payments',
-    label: 'Paiements',
-    icon: 'credit-card',
-    route: '/mobile-flow/payment'
-  },
-  {
     id: 'loans',
     label: 'Prêts',
-    icon: 'wallet',
+    icon: 'credit-card',
+    route: '/mobile-flow/loan-application'
+  },
+  {
+    id: 'secure-payment',
+    label: 'Paiement sécurisé',
+    icon: 'shield-check',
     route: '/mobile-flow/secure-payment'
   },
   {
@@ -42,13 +42,6 @@ export const mobileMenuSections: MobileMenuSection[] = [
     title: 'Opérations bancaires',
     color: '#0D6A51',
     items: [
-      {
-        id: 'payments',
-        label: 'Paiements et transferts',
-        icon: 'credit-card',
-        route: '/mobile-flow/payment',
-        color: '#0D6A51'
-      },
       {
         id: 'secure-payment',
         label: 'Paiement sécurisé',
@@ -87,17 +80,17 @@ export const mobileMenuSections: MobileMenuSection[] = [
     color: '#FFAB2E',
     items: [
       {
-        id: 'funds',
-        label: 'Mes fonds',
-        icon: 'wallet',
-        route: '/mobile-flow/funds-management',
-        color: '#FFAB2E'
-      },
-      {
         id: 'loan-application',
         label: 'Demander un prêt',
         icon: 'hand-coins',
         route: '/mobile-flow/loan-application',
+        color: '#FFAB2E'
+      },
+      {
+        id: 'funds',
+        label: 'Mes fonds',
+        icon: 'wallet',
+        route: '/mobile-flow/funds-management',
         color: '#FFAB2E'
       },
       {

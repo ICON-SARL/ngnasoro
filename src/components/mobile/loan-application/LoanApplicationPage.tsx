@@ -1,22 +1,28 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Check, Building, AlertCircle } from 'lucide-react';
+
+interface LocationState {
+  sfdId?: string;
+}
 
 const LoanApplicationPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const locationState = location.state as LocationState;
   
   const [amount, setAmount] = useState(100000);
   const [duration, setDuration] = useState(12);
   const [purpose, setPurpose] = useState('');
-  const [sfd, setSfd] = useState('');
+  const [sfd, setSfd] = useState(locationState?.sfdId || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleBack = () => {
