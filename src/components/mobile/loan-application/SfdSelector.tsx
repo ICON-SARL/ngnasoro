@@ -31,14 +31,14 @@ interface SfdSelectorProps {
 const SfdSelector: React.FC<SfdSelectorProps> = ({ value, onValueChange, sfds = [] }) => {
   const [open, setOpen] = React.useState(false);
 
-  // Ensure sfds is always an array
-  const safeSfds = Array.isArray(sfds) ? sfds : [];
+  // Ensure sfds is always a non-empty array to prevent rendering issues
+  const safeSfds = Array.isArray(sfds) && sfds.length > 0 ? sfds : [];
   
   // Find the selected SFD
   const selectedSfd = safeSfds.find(sfd => sfd.id === value);
 
-  // Extra safeguard to ensure we don't pass undefined to Command components
-  if (!Array.isArray(safeSfds) || safeSfds.length === 0) {
+  // If no SFDs are available, render a disabled button
+  if (safeSfds.length === 0) {
     return (
       <Button
         variant="outline"
