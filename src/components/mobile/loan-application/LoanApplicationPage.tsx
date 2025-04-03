@@ -101,7 +101,6 @@ const LoanApplicationPage: React.FC = () => {
           
         if (error) throw error;
         
-        // Transform data to expected format
         // Ensure we have a valid array even if data is null or undefined
         const transformedData = Array.isArray(data) ? data.map(item => ({
           id: item.sfd_id,
@@ -127,7 +126,8 @@ const LoanApplicationPage: React.FC = () => {
           description: "Impossible de charger vos comptes SFD",
           variant: "destructive",
         });
-        setSfds([]); // Ensure sfds is always an array even on error
+        // Ensure sfds is always an array even on error
+        setSfds([]); 
       } finally {
         setIsLoading(false);
       }

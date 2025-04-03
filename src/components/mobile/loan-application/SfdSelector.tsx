@@ -37,6 +37,20 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ value, onValueChange, sfds = 
   // Find the selected SFD
   const selectedSfd = safeSfds.find(sfd => sfd.id === value);
 
+  // Extra safeguard to ensure we don't pass undefined to Command components
+  if (!Array.isArray(safeSfds) || safeSfds.length === 0) {
+    return (
+      <Button
+        variant="outline"
+        className="w-full justify-between"
+        disabled
+      >
+        Aucune SFD disponible
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+    );
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
