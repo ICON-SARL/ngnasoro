@@ -33,8 +33,13 @@ export const useActionHandler = () => {
     } else if (action === 'Start') {
       navigate('/mobile-flow/main');
     } else if (action === 'Repayment') {
-      navigate('/mobile-flow/secure-payment');
-      // You would handle setting repayment amount here if data contains amount
+      navigate('/mobile-flow/secure-payment', {
+        state: {
+          isRepayment: true,
+          loanId: data?.loanId,
+          amount: data?.amount
+        }
+      });
     } else if (action === 'Home') {
       navigate('/mobile-flow/main');
     }

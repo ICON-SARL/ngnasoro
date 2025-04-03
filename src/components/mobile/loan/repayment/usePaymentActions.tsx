@@ -6,9 +6,10 @@ import { useToast } from '@/hooks/use-toast';
 interface UsePaymentActionsProps {
   loanId?: string;
   onMobileMoneyPayment: () => void;
+  sfdId?: string;
 }
 
-export function usePaymentActions({ loanId, onMobileMoneyPayment }: UsePaymentActionsProps) {
+export function usePaymentActions({ loanId, onMobileMoneyPayment, sfdId }: UsePaymentActionsProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);

@@ -1,4 +1,3 @@
-
 import { MobileMenuSection, MobileNavItem } from '@/types/navigation';
 
 // Navigation principale (footer)
