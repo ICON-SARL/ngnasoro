@@ -69,33 +69,29 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ value, onValueChange, sfds = 
           <CommandInput placeholder="Rechercher une SFD..." />
           <CommandEmpty>Aucune SFD trouvée.</CommandEmpty>
           <CommandGroup>
-            {safeSfds.length > 0 ? (
-              safeSfds.map((sfd) => (
-                <CommandItem
-                  key={sfd.id}
-                  value={sfd.id}
-                  onSelect={() => {
-                    onValueChange(sfd.id);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === sfd.id ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  <span>{sfd.name}</span>
-                  {sfd.is_default && (
-                    <span className="ml-2 text-xs text-[#0D6A51] bg-[#0D6A51]/10 px-2 py-0.5 rounded-full">
-                      Par défaut
-                    </span>
+            {safeSfds.map((sfd) => (
+              <CommandItem
+                key={sfd.id}
+                value={sfd.id}
+                onSelect={() => {
+                  onValueChange(sfd.id);
+                  setOpen(false);
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    value === sfd.id ? "opacity-100" : "opacity-0"
                   )}
-                </CommandItem>
-              ))
-            ) : (
-              <CommandItem disabled>Aucune SFD disponible</CommandItem>
-            )}
+                />
+                <span>{sfd.name}</span>
+                {sfd.is_default && (
+                  <span className="ml-2 text-xs text-[#0D6A51] bg-[#0D6A51]/10 px-2 py-0.5 rounded-full">
+                    Par défaut
+                  </span>
+                )}
+              </CommandItem>
+            ))}
           </CommandGroup>
         </Command>
       </PopoverContent>

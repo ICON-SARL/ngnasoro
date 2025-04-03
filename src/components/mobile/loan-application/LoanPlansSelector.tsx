@@ -44,7 +44,8 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
       try {
         setIsLoading(true);
         setError(null);
-        setPlans([]); // Reset plans when sfdId changes
+        // Important: Reset plans to empty array when sfdId changes to prevent stale data
+        setPlans([]); 
         
         if (!sfdId) {
           setError('Aucune SFD sélectionnée');
@@ -62,7 +63,7 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
         if (error) throw error;
         
         // Ensure plans is always an array, even if data is null
-        const plansData = data || [];
+        const plansData = Array.isArray(data) ? data : [];
         setPlans(plansData as LoanPlan[]);
         
         // Auto-select the first plan if none is selected and plans exist
