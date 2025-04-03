@@ -44,6 +44,7 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
       try {
         setIsLoading(true);
         setError(null);
+        setPlans([]); // Reset plans when sfdId changes
         
         if (!sfdId) {
           setError('Aucune SFD sélectionnée');

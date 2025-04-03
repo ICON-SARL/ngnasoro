@@ -12,11 +12,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import LoanPlansSelector from './LoanPlansSelector';
 import SfdSelector from './SfdSelector';
-import { format } from 'date-fns';
-import { CalendarIcon, LoaderCircle } from 'lucide-react';
+import { LoaderCircle } from 'lucide-react';
 
 // Interface for SFD
 interface SFD {
@@ -104,11 +102,12 @@ const LoanApplicationPage: React.FC = () => {
         if (error) throw error;
         
         // Transform data to expected format
-        const transformedData = data.map(item => ({
+        // Ensure we have a valid array even if data is null or undefined
+        const transformedData = Array.isArray(data) ? data.map(item => ({
           id: item.sfd_id,
           name: item.sfds.name,
           is_default: item.is_default
-        }));
+        })) : [];
         
         setSfds(transformedData);
         
@@ -128,6 +127,7 @@ const LoanApplicationPage: React.FC = () => {
           description: "Impossible de charger vos comptes SFD",
           variant: "destructive",
         });
+        setSfds([]); // Ensure sfds is always an array even on error
       } finally {
         setIsLoading(false);
       }
