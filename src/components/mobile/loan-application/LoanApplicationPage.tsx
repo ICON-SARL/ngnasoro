@@ -90,6 +90,7 @@ const LoanApplicationPage: React.FC = () => {
       if (!user) return;
       
       try {
+        setIsLoading(true);
         const { data, error } = await supabase
           .from('user_sfds')
           .select(`
@@ -127,6 +128,8 @@ const LoanApplicationPage: React.FC = () => {
           description: "Impossible de charger vos comptes SFD",
           variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -301,7 +304,7 @@ const LoanApplicationPage: React.FC = () => {
                       <SfdSelector 
                         value={field.value}
                         onValueChange={field.onChange}
-                        sfds={sfds}
+                        sfds={sfds || []}
                       />
                     </FormControl>
                     <FormMessage />

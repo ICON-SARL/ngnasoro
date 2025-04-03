@@ -28,7 +28,7 @@ interface SfdSelectorProps {
   sfds: SFD[];
 }
 
-const SfdSelector: React.FC<SfdSelectorProps> = ({ value, onValueChange, sfds }) => {
+const SfdSelector: React.FC<SfdSelectorProps> = ({ value, onValueChange, sfds = [] }) => {
   const [open, setOpen] = React.useState(false);
 
   // Find the selected SFD
@@ -52,29 +52,33 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ value, onValueChange, sfds })
           <CommandInput placeholder="Rechercher une SFD..." />
           <CommandEmpty>Aucune SFD trouvée.</CommandEmpty>
           <CommandGroup>
-            {sfds.map((sfd) => (
-              <CommandItem
-                key={sfd.id}
-                value={sfd.id}
-                onSelect={() => {
-                  onValueChange(sfd.id);
-                  setOpen(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === sfd.id ? "opacity-100" : "opacity-0"
+            {Array.isArray(sfds) && sfds.length > 0 ? (
+              sfds.map((sfd) => (
+                <CommandItem
+                  key={sfd.id}
+                  value={sfd.id}
+                  onSelect={() => {
+                    onValueChange(sfd.id);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === sfd.id ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <span>{sfd.name}</span>
+                  {sfd.is_default && (
+                    <span className="ml-2 text-xs text-[#0D6A51] bg-[#0D6A51]/10 px-2 py-0.5 rounded-full">
+                      Par défaut
+                    </span>
                   )}
-                />
-                <span>{sfd.name}</span>
-                {sfd.is_default && (
-                  <span className="ml-2 text-xs text-[#0D6A51] bg-[#0D6A51]/10 px-2 py-0.5 rounded-full">
-                    Par défaut
-                  </span>
-                )}
-              </CommandItem>
-            ))}
+                </CommandItem>
+              ))
+            ) : (
+              <CommandItem disabled>Aucune SFD disponible</CommandItem>
+            )}
           </CommandGroup>
         </Command>
       </PopoverContent>

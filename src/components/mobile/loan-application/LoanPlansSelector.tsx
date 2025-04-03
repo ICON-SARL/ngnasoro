@@ -46,6 +46,7 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
         
         if (!sfdId) {
           setError('Aucune SFD sélectionnée');
+          setPlans([]);
           return;
         }
         
@@ -57,15 +58,17 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
           
         if (error) throw error;
         
-        setPlans(data as LoanPlan[]);
+        const plansData = data || [];
+        setPlans(plansData as LoanPlan[]);
         
         // Auto-select the first plan if none is selected and plans exist
-        if (data.length > 0 && !selectedPlanId) {
-          onSelectPlan(data[0] as LoanPlan);
+        if (plansData.length > 0 && !selectedPlanId) {
+          onSelectPlan(plansData[0] as LoanPlan);
         }
       } catch (err) {
         console.error('Error fetching loan plans:', err);
         setError('Impossible de charger les plans de prêt');
+        setPlans([]);
       } finally {
         setIsLoading(false);
       }
@@ -105,109 +108,61 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
       <Card className="mt-4 border-amber-200">
         <CardContent className="pt-4 text-center">
           <p className="text-amber-600">{error}</p>
-          <p className="text-sm text-gray-500 mt-2">
-            Veuillez réessayer ou contacter votre SFD
-          </p>
         </CardContent>
       </Card>
     );
   }
   
-  if (plans.length === 0) {
+  if (!plans || plans.length === 0) {
     return (
       <Card className="mt-4 border-gray-200">
         <CardContent className="pt-4 text-center">
-          <p className="text-gray-600">Aucun plan de prêt disponible pour cette SFD</p>
-          <p className="text-sm text-gray-500 mt-2">
-            Veuillez contacter votre SFD pour plus d'informations
-          </p>
+          <p className="text-gray-500">Aucun plan de prêt disponible pour cette SFD</p>
         </CardContent>
       </Card>
     );
   }
-
+  
   return (
-    <Card className="mt-4">
-      <CardContent className="pt-4">
-        <h3 className="font-medium mb-3">Plans de prêt disponibles</h3>
-        
-        <RadioGroup 
-          value={selectedPlanId} 
-          onValueChange={handleSelectPlan}
-          className="space-y-3"
-        >
-          {plans.map((plan) => (
-            <div 
-              key={plan.id} 
-              className={`border rounded-lg p-3 transition-colors ${
-                selectedPlanId === plan.id 
-                  ? 'border-[#0D6A51] bg-[#0D6A51]/5' 
-                  : 'border-gray-200 hover:bg-gray-50'
-              }`}
+    <RadioGroup value={selectedPlanId} onValueChange={handleSelectPlan}>
+      <div className="space-y-4">
+        {plans.map((plan) => (
+          <div key={plan.id} className="relative">
+            <RadioGroupItem
+              value={plan.id}
+              id={plan.id}
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor={plan.id}
+              className="flex flex-col p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-[#0D6A51] hover:bg-gray-50 peer-data-[state=checked]:bg-[#0D6A51]/5"
             >
-              <div className="flex items-start">
-                <RadioGroupItem 
-                  value={plan.id} 
-                  id={`plan-${plan.id}`} 
-                  className="mt-1"
-                />
-                <div className="ml-3 flex-1">
-                  <div className="flex justify-between items-start">
-                    <Label 
-                      htmlFor={`plan-${plan.id}`} 
-                      className="font-medium text-base cursor-pointer"
-                    >
-                      {plan.name}
-                    </Label>
-                    {plan.requirements?.length > 0 && (
-                      <Badge variant="outline" className="ml-2">
-                        {plan.requirements.length} conditions
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <p className="text-sm text-gray-600 mt-1">
-                    {plan.description || 'Plan de prêt standard'}
-                  </p>
-                  
-                  <div className="grid grid-cols-3 gap-3 mt-3">
-                    <div className="text-sm">
-                      <div className="flex items-center text-gray-500">
-                        <Calculator className="h-3.5 w-3.5 mr-1" />
-                        <span>Montant</span>
-                      </div>
-                      <p className="font-medium">
-                        {plan.min_amount.toLocaleString('fr-FR')} - {plan.max_amount.toLocaleString('fr-FR')} FCFA
-                      </p>
-                    </div>
-                    
-                    <div className="text-sm">
-                      <div className="flex items-center text-gray-500">
-                        <Calendar className="h-3.5 w-3.5 mr-1" />
-                        <span>Durée</span>
-                      </div>
-                      <p className="font-medium">
-                        {plan.min_duration} - {plan.max_duration} mois
-                      </p>
-                    </div>
-                    
-                    <div className="text-sm">
-                      <div className="flex items-center text-gray-500">
-                        <Percent className="h-3.5 w-3.5 mr-1" />
-                        <span>Taux</span>
-                      </div>
-                      <p className="font-medium">
-                        {plan.interest_rate}% {plan.fees > 0 && `+ ${plan.fees}% frais`}
-                      </p>
-                    </div>
-                  </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-medium">{plan.name}</span>
+                <Badge variant="outline" className="bg-[#0D6A51]/10 text-[#0D6A51] border-0">
+                  {plan.interest_rate}% p.a.
+                </Badge>
+              </div>
+              <p className="text-sm text-gray-500 mb-3">{plan.description}</p>
+              <div className="grid grid-cols-3 gap-2 text-xs text-gray-600">
+                <div className="flex items-center">
+                  <Calculator className="h-3 w-3 mr-1 text-[#0D6A51]" />
+                  <span>{plan.min_amount.toLocaleString()} - {plan.max_amount.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center">
+                  <Calendar className="h-3 w-3 mr-1 text-[#0D6A51]" />
+                  <span>{plan.min_duration} - {plan.max_duration} mois</span>
+                </div>
+                <div className="flex items-center">
+                  <Percent className="h-3 w-3 mr-1 text-[#0D6A51]" />
+                  <span>Frais: {plan.fees}%</span>
                 </div>
               </div>
-            </div>
-          ))}
-        </RadioGroup>
-      </CardContent>
-    </Card>
+            </Label>
+          </div>
+        ))}
+      </div>
+    </RadioGroup>
   );
 };
 
