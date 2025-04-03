@@ -43,10 +43,12 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
     const fetchLoanPlans = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         
         if (!sfdId) {
           setError('Aucune SFD sélectionnée');
           setPlans([]);
+          setIsLoading(false);
           return;
         }
         
@@ -58,6 +60,7 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
           
         if (error) throw error;
         
+        // Ensure plans is always an array, even if data is null
         const plansData = data || [];
         setPlans(plansData as LoanPlan[]);
         
@@ -65,7 +68,7 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
         if (plansData.length > 0 && !selectedPlanId) {
           onSelectPlan(plansData[0] as LoanPlan);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching loan plans:', err);
         setError('Impossible de charger les plans de prêt');
         setPlans([]);

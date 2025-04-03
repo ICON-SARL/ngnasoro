@@ -31,8 +31,11 @@ interface SfdSelectorProps {
 const SfdSelector: React.FC<SfdSelectorProps> = ({ value, onValueChange, sfds = [] }) => {
   const [open, setOpen] = React.useState(false);
 
+  // Make sure sfds is always an array and never undefined
+  const safeSfds = Array.isArray(sfds) ? sfds : [];
+  
   // Find the selected SFD
-  const selectedSfd = sfds.find(sfd => sfd.id === value);
+  const selectedSfd = safeSfds.find(sfd => sfd.id === value);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -52,8 +55,8 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ value, onValueChange, sfds = 
           <CommandInput placeholder="Rechercher une SFD..." />
           <CommandEmpty>Aucune SFD trouvée.</CommandEmpty>
           <CommandGroup>
-            {Array.isArray(sfds) && sfds.length > 0 ? (
-              sfds.map((sfd) => (
+            {safeSfds.length > 0 ? (
+              safeSfds.map((sfd) => (
                 <CommandItem
                   key={sfd.id}
                   value={sfd.id}
