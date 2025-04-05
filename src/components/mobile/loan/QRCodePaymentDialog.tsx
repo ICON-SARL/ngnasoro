@@ -12,6 +12,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { scanQRCodeForTransaction } from '@/utils/api/qrCodeGenerator';
 import { useAuth } from '@/hooks/useAuth';
+import jsQR from 'jsqr';
 
 interface QRCodePaymentDialogProps {
   onClose: () => void;
@@ -72,7 +73,7 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose, isWi
       }
       
       if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+        window.clearInterval(intervalRef.current);
       }
     };
   }, [toast]);
@@ -109,25 +110,24 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose, isWi
       // Get image data from canvas for processing
       const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
       
-      // In a real application, we would use a QR code scanning library here
-      // For demonstration, we'll simulate finding a QR code after a few seconds
+      // Use jsQR to detect QR codes in the frame
       setProcessingScan(true);
-      simulateQRCodeDetection();
+      
+      // Process the frame with jsQR
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: "dontInvert",
+      });
+      
+      if (code) {
+        console.log("QR code detected:", code.data);
+        handleQRCodeDetected(code.data);
+      } else {
+        setProcessingScan(false);
+      }
     } catch (error) {
       console.error('Error processing frame:', error);
       setProcessingScan(false);
     }
-  };
-  
-  // This function simulates QR code detection
-  // In a real app, you would use a library like jsQR or a service like Scandit
-  const simulateQRCodeDetection = () => {
-    // Generate a mock QR code
-    const mockQRCode = "QR" + Math.random().toString(36).substr(2, 8);
-    
-    setTimeout(() => {
-      handleQRCodeDetected(mockQRCode);
-    }, 2000);
   };
   
   // Process detected QR code

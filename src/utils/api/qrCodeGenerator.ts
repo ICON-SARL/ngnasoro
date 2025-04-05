@@ -11,7 +11,7 @@ export const generateQRCode = async (request: QRCodeRequest): Promise<QRCodeResp
     const { data, error } = await supabase.functions.invoke('qr-code-verification', {
       body: JSON.stringify({
         userId: request.userId,
-        loanId: 'LOAN-' + Math.random().toString(36).substr(2, 9),
+        loanId: request.loanId || ('LOAN-' + Math.random().toString(36).substr(2, 9)),
         amount: request.amount,
         isWithdrawal: request.isWithdrawal
       }),
