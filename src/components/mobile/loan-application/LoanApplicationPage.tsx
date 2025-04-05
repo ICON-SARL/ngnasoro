@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,7 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import LoanPlansSelector from './LoanPlansSelector';
 import SfdSelector from './SfdSelector';
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, ArrowLeft } from 'lucide-react';
 
 interface SFD {
   id: string;
@@ -253,15 +254,19 @@ const LoanApplicationPage: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  const navigateToRepayment = () => {
+    navigate('/mobile-flow/secure-payment', { state: { isRepayment: true } });
+  };
   
   return (
-    <div className="container px-4 py-6">
+    <div className="container px-4 py-6 pb-20">
       <Button 
         variant="ghost" 
         className="mb-4 pl-0" 
         onClick={() => navigate(-1)}
       >
-        ← Retour
+        <ArrowLeft className="mr-2 h-5 w-5" /> Retour
       </Button>
       
       <Card>
@@ -415,6 +420,17 @@ const LoanApplicationPage: React.FC = () => {
           </Form>
         </CardContent>
       </Card>
+      
+      {/* Footer for repayment functionality */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex justify-center">
+        <Button 
+          onClick={navigateToRepayment}
+          variant="outline"
+          className="text-[#0D6A51] border-[#0D6A51] hover:bg-[#0D6A51]/10"
+        >
+          Rembours.
+        </Button>
+      </div>
     </div>
   );
 };
