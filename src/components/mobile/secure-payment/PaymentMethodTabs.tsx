@@ -14,6 +14,7 @@ interface PaymentMethodTabsProps {
   handlePayment: () => void;
   isWithdrawal?: boolean;
   selectedSfdAccount?: SfdAccount | null;
+  syncedAccountsList?: SfdAccount[];
 }
 
 export const PaymentMethodTabs: React.FC<PaymentMethodTabsProps> = ({
@@ -23,7 +24,8 @@ export const PaymentMethodTabs: React.FC<PaymentMethodTabsProps> = ({
   onPaymentMethodChange,
   handlePayment,
   isWithdrawal = false,
-  selectedSfdAccount
+  selectedSfdAccount,
+  syncedAccountsList = []
 }) => {
   return (
     <Tabs defaultValue={paymentMethod} onValueChange={onPaymentMethodChange} className="w-full">
@@ -48,6 +50,7 @@ export const PaymentMethodTabs: React.FC<PaymentMethodTabsProps> = ({
           handlePayment={handlePayment}
           isWithdrawal={isWithdrawal}
           selectedSfdAccount={selectedSfdAccount}
+          syncedAccountsList={syncedAccountsList}
         />
       </TabsContent>
       

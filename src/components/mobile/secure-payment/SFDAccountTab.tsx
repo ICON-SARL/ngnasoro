@@ -16,6 +16,7 @@ interface SFDAccountTabProps {
   isWithdrawal?: boolean;
   paymentAmount?: number;
   selectedSfdAccount?: SfdAccount | null;
+  syncedAccountsList?: SfdAccount[];
 }
 
 export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({ 
@@ -23,12 +24,16 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
   handlePayment,
   isWithdrawal = false,
   paymentAmount = 3500,
-  selectedSfdAccount
+  selectedSfdAccount,
+  syncedAccountsList = []
 }) => {
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(true);
   const [selected, setSelected] = useState("");
   const { sfdAccounts, activeSfdAccount, isLoading } = useSfdAccounts();
   const { activeSfdId } = useAuth();
+  
+  // Use the syncedAccountsList if provided, otherwise fall back to sfdAccounts
+  const accountsList = syncedAccountsList.length > 0 ? syncedAccountsList : sfdAccounts;
   
   // Initialize with selected account or activeSfdId when component mounts
   useEffect(() => {
@@ -36,12 +41,12 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
       setSelected(selectedSfdAccount.id);
     } else if (activeSfdId) {
       setSelected(activeSfdId);
-    } else if (sfdAccounts.length > 0) {
-      setSelected(sfdAccounts[0].id);
+    } else if (accountsList.length > 0) {
+      setSelected(accountsList[0].id);
     }
-  }, [selectedSfdAccount, activeSfdId, sfdAccounts]);
+  }, [selectedSfdAccount, activeSfdId, accountsList]);
   
-  if (isLoading) {
+  if (isLoading && accountsList.length === 0) {
     return (
       <div className="flex justify-center items-center py-8">
         <RotateCw className="h-6 w-6 animate-spin text-primary" />
@@ -51,7 +56,7 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
   }
   
   // Display either the pre-selected account or a dropdown
-  const displayAccount = selectedSfdAccount || sfdAccounts.find(sfd => sfd.id === selected);
+  const displayAccount = selectedSfdAccount || accountsList.find(sfd => sfd.id === selected);
   const accountName = displayAccount?.name || "Compte SFD";
   const accountBalance = displayAccount?.balance || 0;
   const formattedBalance = `${formatCurrencyAmount(accountBalance, "")} FCFA`;
@@ -71,7 +76,7 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
               <SelectValue placeholder="Sélectionner un compte" />
             </SelectTrigger>
             <SelectContent>
-              {sfdAccounts.map(sfd => (
+              {accountsList.map(sfd => (
                 <SelectItem key={sfd.id} value={sfd.id}>
                   {sfd.name} ({formatCurrencyAmount(sfd.balance, "")} FCFA)
                 </SelectItem>

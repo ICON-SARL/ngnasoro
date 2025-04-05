@@ -18,7 +18,7 @@ import MobileMoneyModal from '../loan/MobileMoneyModal';
 import QRCodePaymentDialog from '../loan/QRCodePaymentDialog';
 import { usePaymentProcessor } from './hooks/usePaymentProcessor';
 import { useTransactions } from '@/hooks/useTransactions';
-import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { useSfdAccounts, SfdAccount } from '@/hooks/useSfdAccounts';
 
 export interface SecurePaymentTabProps {
   onBack?: () => void;
@@ -45,7 +45,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   const [progress, setProgress] = useState(0);
   const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
-  const { sfdAccounts } = useSfdAccounts();
+  const { sfdAccounts, isLoading: accountsLoading } = useSfdAccounts();
   
   // Use the explicitly passed selectedSfdId or fall back to activeSfdId
   const effectiveSfdId = selectedSfdId || activeSfdId;
@@ -189,6 +189,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
             handlePayment={handlePayment}
             isWithdrawal={isWithdrawal}
             selectedSfdAccount={selectedSfdAccount}
+            syncedAccountsList={sfdAccounts}
           />
           
           <SecurityFeatures isWithdrawal={isWithdrawal} />

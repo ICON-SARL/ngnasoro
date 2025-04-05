@@ -22,7 +22,10 @@ export function useRealtimeSynchronization() {
     try {
       // Call the edge function to synchronize accounts
       const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({ 
+          userId: user.id,
+          sfdId: activeSfdId || undefined 
+        }),
       });
       
       if (error) {
@@ -48,7 +51,7 @@ export function useRealtimeSynchronization() {
     } finally {
       setIsSyncing(false);
     }
-  }, [user?.id, toast]);
+  }, [user?.id, activeSfdId, toast]);
 
   // Set up realtime listener for balance changes
   useEffect(() => {

@@ -18,13 +18,13 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
     // Get the request body
-    const { userId } = await req.json()
+    const { userId, sfdId } = await req.json()
 
     if (!userId) {
       throw new Error('User ID is required')
     }
 
-    console.log(`Synchronizing SFD accounts for user ${userId}`)
+    console.log(`Synchronizing SFD accounts for user ${userId}${sfdId ? `, focusing on SFD ${sfdId}` : ''}`)
 
     // Get the user's SFDs
     const { data: userSfds, error: sfdsError } = await supabase
@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
         sfds:sfd_id(id, name)
       `)
       .eq('user_id', userId)
+      .conditionalFilter(sfdId ? `sfd_id.eq.${sfdId}` : '')
 
     if (sfdsError) {
       throw new Error(`Error fetching user SFDs: ${sfdsError.message}`)
@@ -73,16 +74,25 @@ Deno.serve(async (req) => {
       
       // In a real app, we would update the user's account balance in our database
       // based on the data received from the SFD's API
-      updates.push({
-        sfdId: sfd.sfd_id,
-        name: sfd.sfds.name,
-        newBalance
-      })
+
+      // For this demo, let's update the account balance in the database
+      const { error: updateError } = await supabase
+        .from('accounts')
+        .update({ balance: newBalance, updated_at: new Date().toISOString() })
+        .eq('user_id', userId)
+
+      if (updateError) {
+        console.error(`Error updating account for SFD ${sfd.sfds.name}:`, updateError)
+      } else {
+        updates.push({
+          sfdId: sfd.sfd_id,
+          name: sfd.sfds.name,
+          newBalance
+        })
+      }
     }
 
-    // In a real app, we would update our database with these new balances
-    // For now, we'll just return the simulated updates
-    
+    // Return the updates that were made
     return new Response(
       JSON.stringify({ 
         success: true, 

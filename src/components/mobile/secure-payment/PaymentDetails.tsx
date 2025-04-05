@@ -40,7 +40,7 @@ const PaymentDetails: React.FC<PaymentDetailsProps> = ({
           <>
             <div className="flex justify-between mb-1">
               <span className="text-gray-600">Prêt:</span>
-              <span>Microfinance Bamako</span>
+              <span>{selectedSfdAccount?.name || "Microfinance Bamako"}</span>
             </div>
             <div className="flex justify-between mb-1">
               <span className="text-gray-600">Échéance:</span>
@@ -50,7 +50,7 @@ const PaymentDetails: React.FC<PaymentDetailsProps> = ({
         )}
         <div className="flex justify-between text-lg font-bold">
           <span>{isWithdrawal ? "Montant du retrait:" : "Montant dû:"}</span>
-          <span>{amount.toLocaleString()} FCFA</span>
+          <span>{formatCurrencyAmount(amount)}</span>
         </div>
       </div>
       
