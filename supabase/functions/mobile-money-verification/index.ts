@@ -111,17 +111,18 @@ serve(async (req) => {
         .insert({
           user_id: userId,
           name: `${provider.toUpperCase()} Mobile Money ${isWithdrawal ? "Retrait" : "Paiement"}`,
-          type: transactionType,
-          amount: isWithdrawal ? -amount : -amount, // Negative for withdrawal/payment
-          date: new Date().toISOString()
+          amount: isWithdrawal ? -amount : -amount,
+          type: isWithdrawal ? "withdrawal" : "payment",
+          payment_method: "mobile_money",
+          description: `Mobile Money ${isWithdrawal ? "Retrait" : "Paiement"} via ${provider.toUpperCase()}`,
+          status: "success",
         })
-        .select()
-        .single();
+        .select("*");
         
       if (transactionError) {
         console.error("Transaction error:", transactionError);
         return new Response(
-          JSON.stringify({ error: "Failed to process transaction" }),
+          JSON.stringify({ success: false, error: transactionError.message }),
           { 
             status: 500, 
             headers: { ...corsHeaders, "Content-Type": "application/json" } 
@@ -129,20 +130,38 @@ serve(async (req) => {
         );
       }
       
-      // Return success response with transaction details
+      // Record in audit logs
+      await supabase.from("audit_logs").insert({
+        user_id: userId,
+        action: `mobile_money_${transactionType}`,
+        category: "payment",
+        status: "success",
+        details: {
+          provider,
+          phone_number: phoneNumber,
+          amount,
+          transaction_id: transaction ? transaction[0].id : null,
+        },
+      });
+        
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: `${isWithdrawal ? "Retrait" : "Paiement"} Mobile Money initié`,
-          transaction: transaction,
-          reference: `MM${Date.now().toString().substring(5)}`,
+        JSON.stringify({
+          success: true,
+          message: isWithdrawal 
+            ? "Retrait Mobile Money initié avec succès"
+            : "Paiement Mobile Money initié avec succès",
+          transaction: transaction ? transaction[0] : null,
+          reference: `MM-${Date.now().toString(36)}`,
           providerResponse: {
             status: "pending",
-            providerReference: `${provider.toUpperCase()}${Math.floor(Math.random() * 10000000)}`,
-            estimatedCompletion: new Date(Date.now() + 5 * 60000).toISOString()
-          }
+            providerReference: `${provider.toUpperCase()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+            estimatedCompletion: new Date(Date.now() + 60000).toISOString(),
+          },
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
       );
     }
     
@@ -150,53 +169,46 @@ serve(async (req) => {
     if (payload.action === "qrCode") {
       const { userId, amount, isWithdrawal } = payload as QRCodeRequest;
       
-      // Validate amount
-      if (!amount || amount <= 0) {
-        return new Response(
-          JSON.stringify({ error: "Invalid amount" }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, "Content-Type": "application/json" } 
-          }
-        );
-      }
+      // Generate a unique QR code
+      const code = `QR-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const expiresAt = new Date(Date.now() + 30 * 60000).toISOString(); // 30 minutes expiration
       
-      // Generate a unique QR code (in a real implementation, this would be more secure)
-      const qrCodeData = {
-        userId: userId,
-        amount: amount,
-        isWithdrawal: isWithdrawal,
-        timestamp: Date.now(),
-        expiresAt: new Date(Date.now() + 15 * 60000).toISOString(), // 15 minutes expiry
-        code: `QR${Math.random().toString(36).substring(2, 10).toUpperCase()}${Date.now().toString(36)}`
-      };
+      // In a real implementation, we would store the QR code in the database
+      // For demo purposes we're just returning it
       
-      // In a production environment, we would store this QR code data in the database
-      // and potentially encrypt sensitive information
-      
-      // Return QR code data
       return new Response(
         JSON.stringify({
           success: true,
-          qrCode: qrCodeData
+          qrCode: {
+            userId,
+            amount,
+            isWithdrawal,
+            timestamp: Date.now(),
+            expiresAt,
+            code,
+          },
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
       );
     }
     
-    // If no valid action specified
+    // If no valid action was specified
     return new Response(
-      JSON.stringify({ error: "Invalid action specified" }),
+      JSON.stringify({ success: false, error: "Invalid action specified" }),
       { 
         status: 400, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
+      
   } catch (error) {
     console.error("Error:", error);
     
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ success: false, error: error.message || "An unknown error occurred" }),
       { 
         status: 500, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 

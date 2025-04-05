@@ -25,7 +25,8 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
         variant: "destructive",
       });
       return { 
-        success: false
+        success: false, 
+        error: "Utilisateur non authentifié"
       };
     }
     
@@ -40,9 +41,14 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       
       const response = await generateQRCode(request);
       
-      if (!response.success) {
+      if (response.success) {
         toast({
-          title: "Échec de génération du QR code",
+          title: "Code QR généré",
+          description: "Présentez ce code en agence SFD pour finaliser votre paiement",
+        });
+      } else {
+        toast({
+          title: "Échec de génération",
           description: response.error || "Une erreur s'est produite",
           variant: "destructive",
         });
@@ -57,7 +63,8 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       });
       
       return {
-        success: false
+        success: false,
+        error: "Une erreur s'est produite lors de la génération du code QR"
       };
     } finally {
       setIsProcessingQRCode(false);
@@ -72,7 +79,8 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
         variant: "destructive",
       });
       return { 
-        success: false
+        success: false, 
+        error: "Utilisateur non authentifié"
       };
     }
     
@@ -87,9 +95,14 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       
       const response = await generateQRCode(request);
       
-      if (!response.success) {
+      if (response.success) {
         toast({
-          title: "Échec de génération du QR code",
+          title: "Code QR généré",
+          description: "Présentez ce code en agence SFD pour effectuer votre retrait",
+        });
+      } else {
+        toast({
+          title: "Échec de génération",
           description: response.error || "Une erreur s'est produite",
           variant: "destructive",
         });
@@ -104,7 +117,8 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       });
       
       return {
-        success: false
+        success: false,
+        error: "Une erreur s'est produite lors de la génération du code QR"
       };
     } finally {
       setIsProcessingQRCode(false);
