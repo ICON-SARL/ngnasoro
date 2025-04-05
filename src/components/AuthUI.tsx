@@ -9,7 +9,7 @@ import { Check } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DemoAccountsCreator from './auth/DemoAccountsCreator';
-import { Role } from '@/hooks/auth/types';
+import { UserRole } from '@/hooks/auth/types';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
@@ -41,9 +41,9 @@ const AuthUI = () => {
       console.log('User role:', userRole);
       
       // Redirection based on user's role
-      if (userRole === Role.SUPER_ADMIN) {
+      if (userRole === UserRole.SUPER_ADMIN) {
         navigate('/super-admin-dashboard');
-      } else if (userRole === Role.SFD_ADMIN) {
+      } else if (userRole === UserRole.SFD_ADMIN) {
         navigate('/agency-dashboard');
       } else {
         navigate('/mobile-flow');

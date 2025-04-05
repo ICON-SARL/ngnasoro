@@ -11,9 +11,11 @@ export const createUserFromSupabaseUser = (supabaseUser: SupabaseUser): User => 
     sfd_id: supabaseUser.user_metadata.sfd_id as string,
     phone: supabaseUser.user_metadata.phone as string,
     user_metadata: supabaseUser.user_metadata || {},
-    app_metadata: supabaseUser.app_metadata || {},
-    aud: supabaseUser.aud || '',
-    created_at: supabaseUser.created_at || '',
+    app_metadata: {
+      role: supabaseUser.app_metadata?.role as string,
+      role_assigned: supabaseUser.app_metadata?.role_assigned as boolean,
+      roles: supabaseUser.app_metadata?.roles as string[]
+    }
   };
 };
 
