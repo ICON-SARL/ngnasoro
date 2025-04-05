@@ -3,7 +3,7 @@ import { MobileMoneyResponse, QRCodeResponse } from '@/utils/mobileMoneyApi';
 
 export interface MobileMoneyPaymentHook {
   isProcessingPayment: boolean;
-  processMobileMoneyPayment: (phoneNumber: string, amount: number, provider: "orange" | "mtn" | "wave") => Promise<MobileMoneyResponse>;
+  processMobileMoneyPayment: (phoneNumber: string, amount: number, provider: "orange" | "mtn" | "wave", loanId?: string) => Promise<MobileMoneyResponse>;
 }
 
 export interface MobileMoneyWithdrawalHook {
