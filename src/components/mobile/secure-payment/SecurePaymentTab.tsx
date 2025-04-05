@@ -46,6 +46,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const { sfdAccounts, isLoading: accountsLoading } = useSfdAccounts();
+  const [transactionAmount, setTransactionAmount] = useState(isWithdrawal ? 25000 : loanId ? 3500 : 10000);
   
   // Use the explicitly passed selectedSfdId or fall back to activeSfdId
   const effectiveSfdId = selectedSfdId || activeSfdId;
@@ -67,9 +68,6 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     }
   };
   
-  // Définir les montants de transaction par défaut
-  const amount = isWithdrawal ? 25000 : loanId ? 3500 : 10000;
-  
   // Gérer le paiement en fonction du type d'opération
   const handlePayment = async () => {
     if (!user || !effectiveSfdId) {
@@ -78,6 +76,20 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
         description: "Utilisateur ou SFD non défini",
         variant: "destructive",
       });
+      return;
+    }
+    
+    if (transactionAmount <= 0) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez entrer un montant valide",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (paymentMethod === 'sfd') {
+      setQrDialogOpen(true);
       return;
     }
     
@@ -92,13 +104,13 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       
       if (isWithdrawal) {
         // Cas d'un retrait
-        result = await makeWithdrawal(amount, `Retrait via ${paymentMethod}`);
+        result = await makeWithdrawal(transactionAmount, `Retrait via ${paymentMethod}`);
       } else if (loanId) {
         // Cas d'un remboursement de prêt
-        result = await makeLoanRepayment(loanId, amount, `Remboursement de prêt via ${paymentMethod}`);
+        result = await makeLoanRepayment(loanId, transactionAmount, `Remboursement de prêt via ${paymentMethod}`);
       } else {
         // Cas d'un dépôt
-        result = await makeDeposit(amount, `Dépôt via ${paymentMethod}`);
+        result = await makeDeposit(transactionAmount, `Dépôt via ${paymentMethod}`);
       }
       
       setTimeout(() => setProgress(100), 1500);
@@ -136,7 +148,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     const detectPrimaryAccount = () => {
       if (selectedSfdAccount && isWithdrawal) {
         // Check if the selected account has enough balance
-        const hasEnoughBalance = selectedSfdAccount.balance >= amount;
+        const hasEnoughBalance = selectedSfdAccount.balance >= transactionAmount;
         setBalanceStatus(hasEnoughBalance ? 'sufficient' : 'insufficient');
         if (!hasEnoughBalance) {
           setPaymentMethod('mobile');
@@ -155,10 +167,14 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     };
     
     detectPrimaryAccount();
-  }, [toast, isWithdrawal, selectedSfdAccount, amount]);
+  }, [toast, isWithdrawal, selectedSfdAccount, transactionAmount]);
   
   const handleMobileMoneyPayment = () => {
     setMobileMoneyInitiated(true);
+  };
+  
+  const handleAmountChange = (amount: number) => {
+    setTransactionAmount(amount);
   };
   
   return (
@@ -168,17 +184,18 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       {paymentSuccess ? (
         <SuccessView 
           isWithdrawal={isWithdrawal} 
-          amount={isWithdrawal ? 25000 : loanId ? 3500 : 10000} 
+          amount={transactionAmount} 
           onBack={handleBackAction} 
         />
       ) : (
         <div className="p-4 space-y-6">
           <PaymentDetails 
             isWithdrawal={isWithdrawal}
-            amount={isWithdrawal ? 25000 : loanId ? 3500 : 10000}
+            amount={transactionAmount}
             progress={progress}
             paymentStatus={paymentStatus}
             selectedSfdAccount={selectedSfdAccount}
+            onAmountChange={handleAmountChange}
           />
           
           <PaymentMethodTabs 
@@ -204,7 +221,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       
       <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
         <DialogTrigger className="hidden">Open QR Dialog</DialogTrigger>
-        <QRCodePaymentDialog onClose={() => setQrDialogOpen(false)} amount={amount} isWithdrawal={isWithdrawal} />
+        <QRCodePaymentDialog onClose={() => setQrDialogOpen(false)} amount={transactionAmount} isWithdrawal={isWithdrawal} />
       </Dialog>
     </div>
   );

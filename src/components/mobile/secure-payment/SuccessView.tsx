@@ -15,19 +15,22 @@ const SuccessView: React.FC<SuccessViewProps> = ({ isWithdrawal, amount, onBack 
       <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
         <Check className="h-10 w-10 text-green-600" />
       </div>
+      
       <h2 className="text-xl font-bold mb-2">
         {isWithdrawal ? "Retrait réussi" : "Remboursement réussi"}
       </h2>
+      
       <p className="text-gray-600 mb-6">
         {isWithdrawal 
           ? `Votre retrait de ${amount.toLocaleString()} FCFA a été traité avec succès.` 
           : `Votre remboursement de ${amount.toLocaleString()} FCFA a été traité avec succès.`
         } Un reçu a été envoyé à votre adresse email.
       </p>
+      
       <div className="w-full bg-gray-100 p-4 rounded-lg mb-6">
         <div className="flex justify-between mb-2">
           <span className="text-gray-600">Référence:</span>
-          <span className="font-medium">REF-23458976</span>
+          <span className="font-medium">REF-{Math.floor(Math.random() * 90000000) + 10000000}</span>
         </div>
         <div className="flex justify-between mb-2">
           <span className="text-gray-600">Date:</span>
@@ -38,12 +41,14 @@ const SuccessView: React.FC<SuccessViewProps> = ({ isWithdrawal, amount, onBack 
           <span className="text-green-600 font-medium">Confirmé</span>
         </div>
       </div>
+      
       <Button 
         className="w-full mb-3"
         onClick={onBack}
       >
         {isWithdrawal ? "Retour au tableau de bord" : "Retour aux détails du prêt"}
       </Button>
+      
       <Button 
         variant="outline"
         className="w-full"
