@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SecurePaymentTab from '../secure-payment';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
-import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { useSfdAccounts, SfdAccount } from '@/hooks/useSfdAccounts';
 import { useMobileDashboard } from '@/hooks/useMobileDashboard';
 import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 import { useToast } from '@/hooks/use-toast';
@@ -19,11 +18,12 @@ import { formatCurrencyAmount } from '@/utils/transactionUtils';
 
 const FundsManagementPage = () => {
   const navigate = useNavigate();
-  const { user, activeSfdId } = useAuth();
+  const { user, activeSfdId, setActiveSfdId } = useAuth();
   const { toast } = useToast();
   const [activeView, setActiveView] = useState<'main' | 'withdraw' | 'deposit'>('main');
   const [totalBalance, setTotalBalance] = useState<number>(0);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [selectedSfd, setSelectedSfd] = useState<string>('all');
   
   // Utiliser useSfdAccounts pour récupérer les comptes SFD
   const { sfdAccounts, refetch: refetchSfdAccounts } = useSfdAccounts();
@@ -38,23 +38,37 @@ const FundsManagementPage = () => {
     transactions, 
     isLoading: transactionsLoading, 
     fetchTransactions
-  } = useTransactions(user?.id, activeSfdId);
+  } = useTransactions(user?.id, selectedSfd !== 'all' ? selectedSfd : undefined);
   
   useEffect(() => {
     // Charger les transactions lors du montage
     fetchTransactions();
-    calculateTotalBalance();
-  }, [activeSfdId, sfdAccounts]);
+    calculateBalanceForSelectedSfd();
+  }, [selectedSfd, sfdAccounts]);
 
-  // Calculer le solde total à partir de tous les comptes SFD
-  const calculateTotalBalance = () => {
-    if (sfdAccounts && sfdAccounts.length > 0) {
-      const total = sfdAccounts.reduce((sum, account) => sum + (account.balance || 0), 0);
-      setTotalBalance(total);
-    } else if (dashboardData?.account?.balance) {
-      setTotalBalance(dashboardData.account.balance);
+  // Calculer le solde en fonction de la SFD sélectionnée
+  const calculateBalanceForSelectedSfd = () => {
+    if (selectedSfd === 'all') {
+      // Calculer le solde total
+      if (sfdAccounts && sfdAccounts.length > 0) {
+        const total = sfdAccounts.reduce((sum, account) => sum + (account.balance || 0), 0);
+        setTotalBalance(total);
+      } else if (dashboardData?.account?.balance) {
+        setTotalBalance(dashboardData.account.balance);
+      } else {
+        setTotalBalance(0);
+      }
     } else {
-      setTotalBalance(0);
+      // Calculer le solde de la SFD sélectionnée
+      const selectedAccount = sfdAccounts.find(account => account.id === selectedSfd);
+      setTotalBalance(selectedAccount?.balance || 0);
+    }
+  };
+
+  const handleSfdSelection = (sfdId: string) => {
+    setSelectedSfd(sfdId);
+    if (sfdId !== 'all') {
+      setActiveSfdId(sfdId);
     }
   };
   
@@ -84,8 +98,8 @@ const FundsManagementPage = () => {
       // Récupérer les transactions
       await fetchTransactions();
       
-      // Recalculer le solde total
-      calculateTotalBalance();
+      // Recalculer le solde
+      calculateBalanceForSelectedSfd();
       
       toast({
         title: "Données actualisées",
@@ -117,7 +131,7 @@ const FundsManagementPage = () => {
   };
   
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-gray-50 min-h-screen">
       {activeView === 'main' ? (
         <>
           <FundsHeader 
@@ -129,19 +143,20 @@ const FundsManagementPage = () => {
           <FundsBalanceSection 
             balance={totalBalance}
             isRefreshing={isRefreshing || isSyncing}
-            onWithdraw={() => setActiveView('withdraw')} 
-            onDeposit={() => setActiveView('deposit')} 
+            sfdAccounts={sfdAccounts}
+            onSelectSfd={handleSfdSelection}
+            selectedSfd={selectedSfd}
           />
           
-          <div className="p-4 space-y-6 mt-2">
-            <h2 className="text-lg font-semibold">Options de transfert</h2>
+          <div className="p-5 space-y-6 mt-2">
+            <h2 className="text-lg font-semibold text-gray-800">Options de transfert</h2>
             
             <TransferOptions 
               onWithdraw={() => setActiveView('withdraw')} 
               onDeposit={() => setActiveView('deposit')} 
             />
             
-            <h2 className="text-lg font-semibold mt-6">Canaux disponibles</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mt-6">Canaux disponibles</h2>
             
             <AvailableChannels />
             

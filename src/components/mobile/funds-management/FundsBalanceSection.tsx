@@ -1,51 +1,86 @@
 
-import React from 'react';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
 import { Loader } from '@/components/ui/loader';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { SfdAccount } from '@/hooks/sfdAccounts';
 
 interface FundsBalanceSectionProps {
   balance: number;
   isRefreshing?: boolean;
-  onWithdraw: () => void;
-  onDeposit: () => void;
+  sfdAccounts?: SfdAccount[];
+  onSelectSfd?: (sfdId: string) => void;
+  selectedSfd?: string;
 }
 
 const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({ 
   balance, 
   isRefreshing = false,
-  onWithdraw, 
-  onDeposit 
+  sfdAccounts = [],
+  onSelectSfd,
+  selectedSfd
 }) => {
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const handleSfdChange = (value: string) => {
+    if (onSelectSfd) {
+      onSelectSfd(value);
+    }
+  };
+
+  const selectedSfdName = selectedSfd === 'all' 
+    ? 'Tous les comptes' 
+    : sfdAccounts.find(acc => acc.id === selectedSfd)?.name || 'Sélectionner un SFD';
+
   return (
-    <div className="bg-gradient-to-r from-[#0D6A51] to-[#0D6A51]/90 text-white px-4 pb-6">
-      <div className="mt-4 mb-6 flex flex-col items-center">
-        <p className="text-sm mb-1">Solde disponible</p>
+    <div className="bg-gradient-to-r from-[#0D6A51] to-[#0D6A51]/90 text-white p-6 rounded-b-3xl shadow-md">
+      <div className="flex flex-col items-center">
+        <p className="text-sm font-medium opacity-80 mb-1">Solde disponible</p>
+        
+        {/* SFD Selector */}
+        {sfdAccounts.length > 0 && (
+          <div className="w-full max-w-xs mb-3">
+            <Select onValueChange={handleSfdChange} value={selectedSfd} defaultValue="all">
+              <SelectTrigger className="bg-white/10 border-white/20 text-white rounded-xl">
+                <SelectValue placeholder="Sélectionner un compte SFD" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les comptes</SelectItem>
+                {sfdAccounts.map((sfd) => (
+                  <SelectItem key={sfd.id} value={sfd.id}>
+                    {sfd.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        
+        {/* Balance Display */}
         {isRefreshing ? (
-          <div className="flex items-center justify-center h-10">
+          <div className="flex items-center justify-center h-16 w-full">
             <Loader size="default" className="text-white" />
           </div>
         ) : (
-          <p className="text-3xl font-bold">{formatCurrencyAmount(balance)} FCFA</p>
+          <div className="text-center">
+            <h1 className="text-5xl font-bold tracking-tight mt-2">
+              {formatCurrencyAmount(balance)}
+            </h1>
+            <p className="text-lg mt-1">FCFA</p>
+          </div>
         )}
-        <p className="text-sm mt-1 opacity-70">Solde consolidé de vos comptes SFD</p>
-        <div className="mt-4 flex space-x-3">
-          <Button 
-            onClick={onWithdraw}
-            className="bg-white/20 hover:bg-white/30 text-white rounded-full py-2 px-4 flex items-center"
-          >
-            <ArrowUp className="h-4 w-4 mr-2" />
-            Retirer
-          </Button>
-          <Button 
-            onClick={onDeposit}
-            className="bg-white/20 hover:bg-white/30 text-white rounded-full py-2 px-4 flex items-center"
-          >
-            <ArrowDown className="h-4 w-4 mr-2" />
-            Déposer
-          </Button>
-        </div>
+        
+        {selectedSfd === 'all' ? (
+          <p className="text-sm mt-3 opacity-70 text-center">
+            Solde consolidé de vos comptes SFD
+          </p>
+        ) : (
+          <p className="text-sm mt-3 opacity-70 text-center">
+            Solde de votre compte {selectedSfdName}
+          </p>
+        )}
       </div>
     </div>
   );
