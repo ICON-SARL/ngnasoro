@@ -2,165 +2,92 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { RotateCw, Smartphone } from 'lucide-react';
-import { useMobileMoneyOperations } from '@/hooks/useMobileMoneyOperations';
-import { useAuth } from '@/hooks/useAuth';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useMobileMoneyOperations } from '@/hooks/mobile-money';
+import { Loader } from '@/components/ui/loader';
 
 interface MobileMoneyTabProps {
   paymentStatus: 'pending' | 'success' | 'failed' | null;
   handlePayment: () => void;
   isWithdrawal?: boolean;
-  amount?: number;
-  onAmountChange?: (amount: number) => void;
-  loanId?: string;
 }
 
 export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({ 
   paymentStatus, 
   handlePayment,
-  isWithdrawal = false,
-  amount = isWithdrawal ? 25000 : 3500,
-  onAmountChange,
-  loanId
+  isWithdrawal = false
 }) => {
-  const [selected, setSelected] = useState("orange");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const { user } = useAuth();
-  const { isProcessing, processPayment, processWithdrawal } = useMobileMoneyOperations();
-  const [customAmount, setCustomAmount] = useState(amount.toString());
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [provider, setProvider] = useState('orange');
+  const { mobileMoneyProviders, isProcessing } = useMobileMoneyOperations();
   
-  // Update amount when custom amount changes
-  const handleAmountChange = (value: string) => {
-    setCustomAmount(value);
-    const numValue = parseFloat(value.replace(/[^\d]/g, ''));
-    if (!isNaN(numValue) && onAmountChange) {
-      onAmountChange(numValue);
-    }
-  };
-  
-  const handleMobileMoneyTransaction = async () => {
-    if (!phoneNumber) {
-      return;
+  const handleClick = () => {
+    if (phoneNumber.trim().length < 8) {
+      return; // Basic phone number validation
     }
     
-    try {
-      const provider = selected as string;
-      const transactionAmount = onAmountChange ? parseFloat(customAmount) : amount;
-      
-      let success = false;
-      if (isWithdrawal) {
-        success = await processWithdrawal(phoneNumber, transactionAmount, provider);
-      } else {
-        // Pass the loanId for loan repayments
-        success = await processPayment(phoneNumber, transactionAmount, provider);
-      }
-      
-      if (success) {
-        // Call the parent component's handler
-        handlePayment();
-      }
-    } catch (error) {
-      console.error('Mobile money transaction error:', error);
-    }
+    // Call the appropriate handler in the parent component
+    handlePayment();
   };
   
   return (
-    <>
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Paiement par Mobile Money</h3>
+      
       <div className="space-y-4">
-        <RadioGroup defaultValue={selected} onValueChange={setSelected} className="space-y-3">
-          <div className="flex items-center p-3 rounded-xl border bg-white shadow-sm hover:bg-orange-50/20 transition-colors">
-            <RadioGroupItem value="orange" id="orange" className="text-orange-500" />
-            <Label htmlFor="orange" className="font-normal flex items-center ml-2 cursor-pointer">
-              <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center mr-3">
-                <span className="text-orange-500 font-bold text-sm">OM</span>
-              </div>
-              <div>
-                <p className="font-medium">Orange Money</p>
-                <p className="text-xs text-gray-500">Transfert instantané</p>
-              </div>
-            </Label>
-          </div>
-          <div className="flex items-center p-3 rounded-xl border bg-white shadow-sm hover:bg-blue-50/20 transition-colors">
-            <RadioGroupItem value="wave" id="wave" className="text-blue-500" />
-            <Label htmlFor="wave" className="font-normal flex items-center ml-2 cursor-pointer">
-              <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center mr-3">
-                <span className="text-blue-500 font-bold text-sm">WV</span>
-              </div>
-              <div>
-                <p className="font-medium">Wave</p>
-                <p className="text-xs text-gray-500">Sans frais</p>
-              </div>
-            </Label>
-          </div>
-          <div className="flex items-center p-3 rounded-xl border bg-white shadow-sm hover:bg-yellow-50/20 transition-colors">
-            <RadioGroupItem value="mtn" id="mtn" className="text-yellow-500" />
-            <Label htmlFor="mtn" className="font-normal flex items-center ml-2 cursor-pointer">
-              <div className="h-10 w-10 rounded-lg bg-yellow-100 flex items-center justify-center mr-3">
-                <span className="text-yellow-500 font-bold text-sm">MTN</span>
-              </div>
-              <div>
-                <p className="font-medium">MTN Mobile Money</p>
-                <p className="text-xs text-gray-500">Disponible partout</p>
-              </div>
-            </Label>
-          </div>
-        </RadioGroup>
-        
-        <div>
-          <Label htmlFor="phone">Numéro de téléphone</Label>
-          <Input 
-            id="phone" 
-            placeholder="+223 XX XX XX XX" 
+        <div className="space-y-2">
+          <label htmlFor="phone" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Numéro de téléphone
+          </label>
+          <Input
+            id="phone"
+            type="tel"
+            placeholder="Ex: 07XXXXXXXX"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
+            disabled={paymentStatus === 'pending'}
           />
-          <div className="mt-1 text-xs text-muted-foreground">
-            {isWithdrawal ? 
-              "Le montant sera envoyé à ce numéro" : 
-              "Un code de confirmation sera envoyé à ce numéro"
-            }
-          </div>
         </div>
         
-        <div>
-          <Label>Montant</Label>
-          {onAmountChange ? (
-            <Input 
-              type="text" 
-              value={customAmount}
-              onChange={(e) => handleAmountChange(e.target.value)}
-              placeholder="Entrez le montant" 
-            />
-          ) : (
-            <Input type="text" value={`${amount.toLocaleString()} FCFA`} readOnly />
-          )}
-          
-          <div className="flex items-center mt-1 text-xs text-green-600">
-            <Smartphone className="h-3 w-3 mr-1" />
-            {isWithdrawal ? 
-              "Frais de retrait: 250 FCFA" : 
-              "Aucuns frais de traitement"
-            }
-          </div>
-        </div>
-        
-        {paymentStatus === 'pending' || isProcessing ? (
-          <Button disabled className="w-full">
-            <RotateCw className="mr-2 h-4 w-4 animate-spin" />
-            Traitement en cours...
-          </Button>
-        ) : (
-          <Button 
-            className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-            onClick={handleMobileMoneyTransaction}
-            disabled={!phoneNumber}
+        <div className="space-y-2">
+          <label htmlFor="provider" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Opérateur Mobile Money
+          </label>
+          <Select 
+            value={provider} 
+            onValueChange={setProvider} 
+            disabled={paymentStatus === 'pending'}
           >
-            {isWithdrawal ? "Retirer maintenant" : "Rembourser maintenant"}
-          </Button>
-        )}
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionner un opérateur" />
+            </SelectTrigger>
+            <SelectContent>
+              {mobileMoneyProviders.map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <Button 
+          className="w-full" 
+          onClick={handleClick} 
+          disabled={paymentStatus === 'pending' || phoneNumber.trim().length < 8}
+        >
+          {paymentStatus === 'pending' ? (
+            <>
+              <Loader size="sm" className="mr-2" />
+              {isWithdrawal ? 'Retrait en cours...' : 'Paiement en cours...'}
+            </>
+          ) : (
+            isWithdrawal ? 'Effectuer le retrait' : 'Effectuer le paiement'
+          )}
+        </Button>
       </div>
-    </>
+      
+      <div className="text-sm text-gray-500">
+        <p>Vous recevrez une notification sur votre téléphone pour confirmer la transaction.</p>
+      </div>
+    </div>
   );
 };

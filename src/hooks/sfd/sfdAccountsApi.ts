@@ -1,9 +1,19 @@
 
-import { apiClient } from '@/utils/apiClient';
-import type { SfdBalanceData, UserSfd, SyncResult } from './types';
+// Use simple type definitions instead of imports to avoid circular references
+// This avoids importing types that might cause circular dependencies
 
-// Use primitive types for parameters to avoid circular references
-export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
+interface SfdBalanceData {
+  balance: number;
+  currency: string;
+}
+
+interface SyncResult {
+  success: boolean;
+  message?: string;
+}
+
+// Avoid importing the User type from another file
+export async function fetchUserSfds(userId: string): Promise<any[]> {
   if (!userId) return [];
   
   const sfdsList = await apiClient.getUserSfds(userId);
@@ -17,7 +27,6 @@ export async function fetchSfdBalance(userId: string, sfdId: string): Promise<Sf
       .from('accounts')
       .select('balance, currency')
       .eq('user_id', userId)
-      .eq('sfd_id', sfdId)
       .maybeSingle();
       
     if (error) {
@@ -132,3 +141,7 @@ export async function processMobileMoneyPayment(
     throw new Error('Échec du paiement mobile money');
   }
 }
+
+// Import apiClient at the end to avoid circular imports
+import { apiClient } from '@/utils/apiClient';
+
