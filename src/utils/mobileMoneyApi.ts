@@ -15,6 +15,14 @@ export interface QRCodeResponse {
   error?: string;
 }
 
+// Add the QRCodeRequest type that's needed by qrCodeGenerator.ts
+export interface QRCodeRequest {
+  userId: string;
+  amount: number;
+  loanId?: string;
+  isWithdrawal?: boolean;
+}
+
 // Mock implementation for mobile money API
 export const mobileMoneyApi = {
   initiatePayment: async (phoneNumber: string, amount: number, provider: string): Promise<MobileMoneyResponse> => {

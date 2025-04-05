@@ -35,14 +35,16 @@ export const generateQRCode = async (request: QRCodeRequest): Promise<QRCodeResp
     // Format the QR code data for the frontend
     return {
       success: true,
-      qrCode: {
+      qrCodeData: data.qrCodeData || `data:image/svg+xml;base64,${btoa(JSON.stringify({
+        code: data.code,
         userId: request.userId,
         amount: request.amount,
         isWithdrawal: request.isWithdrawal,
         timestamp: Date.now(),
-        expiresAt: data.expiresAt,
-        code: data.code
-      }
+        expiresAt: data.expiresAt
+      }))}`,
+      referenceId: data.code,
+      expiresAt: data.expiresAt
     };
   } catch (error: any) {
     console.error('QR code generation error:', error);
