@@ -1,7 +1,5 @@
 
-// Use simple type definitions instead of imports to avoid circular references
-// This avoids importing types that might cause circular dependencies
-
+// Define simple interfaces locally to avoid circular imports
 interface SfdBalanceData {
   balance: number;
   currency: string;
@@ -12,7 +10,9 @@ interface SyncResult {
   message?: string;
 }
 
-// Avoid importing the User type from another file
+// Import apiClient at the end to avoid circular imports
+import { apiClient } from '@/utils/apiClient';
+
 export async function fetchUserSfds(userId: string): Promise<any[]> {
   if (!userId) return [];
   
@@ -141,7 +141,3 @@ export async function processMobileMoneyPayment(
     throw new Error('Échec du paiement mobile money');
   }
 }
-
-// Import apiClient at the end to avoid circular imports
-import { apiClient } from '@/utils/apiClient';
-
