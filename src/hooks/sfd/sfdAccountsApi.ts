@@ -87,5 +87,34 @@ export async function processLoanPayment(
   return { success: true };
 }
 
-// Import types as type-only imports to avoid circular dependencies
-import type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from './types';
+// Define types inline to avoid circular dependencies
+interface SfdBalanceData {
+  balance: number;
+  currency: string;
+}
+
+interface UserSfd {
+  id: string;
+  is_default: boolean;
+  sfds: {
+    id: string;
+    name: string;
+    code?: string;
+    region?: string;
+    logo_url?: string;
+  }
+}
+
+interface SyncResult {
+  success: boolean;
+  message?: string;
+}
+
+interface LoanPaymentParams {
+  loanId: string;
+  amount: number;
+  method?: string;
+}
+
+// Re-export types for external use
+export type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams };
