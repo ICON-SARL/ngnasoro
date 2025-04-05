@@ -87,5 +87,5 @@ export async function processLoanPayment(
   return { success: true };
 }
 
-// Import types after function declarations to avoid circular references
+// Import types as type-only imports to avoid circular dependencies
 import type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from './types';
