@@ -63,7 +63,7 @@ export const apiClient = {
         .select('id, sfd_id')
         .eq('user_id', userId)
         .eq('sfd_id', sfdId)
-        .single();
+        .maybeSingle();
         
       if (sfdError) throw sfdError;
       
@@ -123,7 +123,7 @@ export const apiClient = {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
         
       if (error) throw error;
       return data;

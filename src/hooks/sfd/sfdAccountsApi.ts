@@ -23,8 +23,7 @@ export async function fetchSfdBalance(userId: string, sfdId: string): Promise<Sf
     if (error) {
       console.error(`Error fetching balance from database: ${error.message}`);
       // Fall back to the API client
-      const balanceData = await apiClient.getSfdBalance(userId, sfdId);
-      return balanceData;
+      return await apiClient.getSfdBalance(userId, sfdId);
     }
     
     if (data) {
@@ -33,9 +32,8 @@ export async function fetchSfdBalance(userId: string, sfdId: string): Promise<Sf
         currency: data.currency || 'FCFA' 
       };
     } else {
-      // If no record found, try the API client
-      const balanceData = await apiClient.getSfdBalance(userId, sfdId);
-      return balanceData;
+      // If no record found, use the API client
+      return await apiClient.getSfdBalance(userId, sfdId);
     }
   } catch (error) {
     console.error(`Failed to fetch balance for SFD ${sfdId}:`, error);
