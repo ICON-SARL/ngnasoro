@@ -43,7 +43,7 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
       
       try {
         const { data, error } = await supabase
-          .from('loan_plans')
+          .from('sfd_loan_plans')
           .select('*')
           .eq('sfd_id', sfdId)
           .eq('is_active', true)
@@ -51,11 +51,13 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
           
         if (error) throw error;
         
-        setPlans(data || []);
+        // Ensure we have LoanPlan type data
+        const typedData = data as LoanPlan[];
+        setPlans(typedData || []);
         
         // Auto-select first plan if none selected
-        if (data?.length && !selectedPlanId) {
-          onSelectPlan(data[0]);
+        if (typedData?.length && !selectedPlanId) {
+          onSelectPlan(typedData[0]);
         }
       } catch (err) {
         console.error('Error fetching loan plans:', err);
