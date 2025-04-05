@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { handleError, handleApiResponse } from "./errorHandler";
 
@@ -52,7 +53,6 @@ export const apiClient = {
         .from('accounts')
         .select('balance, currency')
         .eq('user_id', userId)
-        .eq('sfd_id', sfdId)
         .maybeSingle();
         
       if (!accountError && accountData && accountData.balance !== null) {
