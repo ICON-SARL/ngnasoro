@@ -1,5 +1,5 @@
 
-import { User } from "@/hooks/useAuth";
+import type { User } from "@/hooks/auth/types";
 
 export interface SfdData {
   id: string;

@@ -1,7 +1,7 @@
 
 import { apiClient } from '@/utils/apiClient';
 import type { User } from '@/hooks/auth/types';
-import { SfdAccount, SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from './types';
+import type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from './types';
 
 export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
   if (!userId) return [];
