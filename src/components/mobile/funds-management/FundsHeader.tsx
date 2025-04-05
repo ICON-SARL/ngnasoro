@@ -2,35 +2,37 @@
 import React from 'react';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Loader } from '@/components/ui/loader';
 
 interface FundsHeaderProps {
   onBack: () => void;
-  onRefresh?: () => void;
+  onRefresh: () => void;
+  isRefreshing?: boolean;
 }
 
-const FundsHeader: React.FC<FundsHeaderProps> = ({ onBack, onRefresh }) => {
+const FundsHeader: React.FC<FundsHeaderProps> = ({ 
+  onBack, 
+  onRefresh,
+  isRefreshing = false
+}) => {
   return (
-    <div className="bg-white pt-4 px-4 flex items-center justify-between">
+    <div className="flex justify-between items-center p-4 border-b">
+      <Button variant="ghost" size="icon" onClick={onBack}>
+        <ArrowLeft className="h-5 w-5" />
+      </Button>
+      <h1 className="text-xl font-semibold">Gestion des Fonds</h1>
       <Button 
         variant="ghost" 
         size="icon" 
-        onClick={onBack}
-        className="h-10 w-10"
+        onClick={onRefresh}
+        disabled={isRefreshing}
       >
-        <ArrowLeft className="h-6 w-6" />
-      </Button>
-      <h1 className="text-xl font-semibold">Gestion des Fonds</h1>
-      {onRefresh && (
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={onRefresh}
-          className="h-10 w-10"
-        >
+        {isRefreshing ? (
+          <Loader size="sm" />
+        ) : (
           <RefreshCw className="h-5 w-5" />
-        </Button>
-      )}
-      {!onRefresh && <div className="w-10"></div>}
+        )}
+      </Button>
     </div>
   );
 };

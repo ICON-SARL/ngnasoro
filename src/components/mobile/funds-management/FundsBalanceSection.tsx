@@ -3,15 +3,18 @@ import React from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
+import { Loader } from '@/components/ui/loader';
 
 interface FundsBalanceSectionProps {
   balance: number;
+  isRefreshing?: boolean;
   onWithdraw: () => void;
   onDeposit: () => void;
 }
 
 const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({ 
   balance, 
+  isRefreshing = false,
   onWithdraw, 
   onDeposit 
 }) => {
@@ -19,7 +22,14 @@ const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({
     <div className="bg-gradient-to-r from-[#0D6A51] to-[#0D6A51]/90 text-white px-4 pb-6">
       <div className="mt-4 mb-6 flex flex-col items-center">
         <p className="text-sm mb-1">Solde disponible</p>
-        <p className="text-3xl font-bold">{formatCurrencyAmount(balance)} FCFA</p>
+        {isRefreshing ? (
+          <div className="flex items-center justify-center h-10">
+            <Loader size="md" className="text-white" />
+          </div>
+        ) : (
+          <p className="text-3xl font-bold">{formatCurrencyAmount(balance)} FCFA</p>
+        )}
+        <p className="text-sm mt-1 opacity-70">Solde consolidé de vos comptes SFD</p>
         <div className="mt-4 flex space-x-3">
           <Button 
             onClick={onWithdraw}

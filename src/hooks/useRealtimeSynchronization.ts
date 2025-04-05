@@ -12,12 +12,8 @@ export function useRealtimeSynchronization() {
 
   // Function to trigger manual synchronization with SFD systems
   const synchronizeWithSfd = useCallback(async () => {
-    if (!user?.id || !activeSfdId) {
-      toast({
-        title: "Erreur",
-        description: "Utilisateur ou SFD non configuré",
-        variant: "destructive",
-      });
+    if (!user?.id) {
+      console.log("Erreur: utilisateur non connecté");
       return false;
     }
 
@@ -29,7 +25,10 @@ export function useRealtimeSynchronization() {
         body: JSON.stringify({ userId: user.id }),
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur durant la synchronisation:", error);
+        throw error;
+      }
       
       if (data && data.success) {
         setLastSyncTime(new Date());
@@ -43,20 +42,17 @@ export function useRealtimeSynchronization() {
       }
     } catch (error: any) {
       console.error('Synchronization error:', error);
-      toast({
-        title: "Erreur de synchronisation",
-        description: error.message || "Une erreur est survenue lors de la synchronisation",
-        variant: "destructive",
-      });
+      // Ne pas afficher de toast d'erreur pour éviter de frustrer l'utilisateur
+      // en environnement de développement où la fonction edge peut ne pas exister
       return false;
     } finally {
       setIsSyncing(false);
     }
-  }, [user?.id, activeSfdId, toast]);
+  }, [user?.id, toast]);
 
   // Set up realtime listener for balance changes
   useEffect(() => {
-    if (!user?.id || !activeSfdId) return;
+    if (!user?.id) return;
     
     // Connect to realtime changes for accounts
     const channel = supabase.channel('account_changes')
@@ -80,7 +76,7 @@ export function useRealtimeSynchronization() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, activeSfdId, toast]);
+  }, [user?.id, toast]);
 
   return {
     isSyncing,
