@@ -18,13 +18,13 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
     // Get the request body
-    const { userId, sfdId } = await req.json()
+    const { userId, sfdId, forceSync } = await req.json()
 
     if (!userId) {
       throw new Error('User ID is required')
     }
 
-    console.log(`Synchronizing SFD accounts for user ${userId}${sfdId ? `, focusing on SFD ${sfdId}` : ''}`)
+    console.log(`Synchronizing SFD accounts for user ${userId}${sfdId ? `, focusing on SFD ${sfdId}` : ''}${forceSync ? ', forcing full sync' : ''}`)
 
     // Get the user's SFDs
     const { data: userSfds, error: sfdsError } = await supabase
@@ -64,31 +64,99 @@ Deno.serve(async (req) => {
     // Record of successful updates
     const updates = []
 
+    // First get existing balances to ensure consistency
+    const { data: existingAccounts, error: accountsError } = await supabase
+      .from('accounts')
+      .select('id, balance, sfd_id')
+      .eq('user_id', userId)
+
+    if (accountsError) {
+      console.error("Error fetching existing accounts:", accountsError)
+    }
+
+    // Create a map of existing balances by SFD ID
+    const balancesBySfd = new Map()
+    if (existingAccounts) {
+      existingAccounts.forEach(account => {
+        if (account.sfd_id) {
+          balancesBySfd.set(account.sfd_id, account.balance)
+        }
+      })
+    }
+
     for (const sfd of userSfds) {
       // Simulate an API call to the SFD
       console.log(`Synchronizing account with SFD: ${sfd.sfds.name}`)
       
-      // Generate a random balance update (would be real balance from SFD API in production)
-      // This is just for demonstration purposes
-      const newBalance = Math.floor(Math.random() * 100000) + 150000
+      // Use existing balance if available and not forcing sync
+      let newBalance
+      if (!forceSync && balancesBySfd.has(sfd.sfd_id)) {
+        newBalance = balancesBySfd.get(sfd.sfd_id)
+        console.log(`Using existing balance for ${sfd.sfds.name}: ${newBalance}`)
+      } else {
+        // Generate consistent balances based on SFD ID
+        // This ensures the same SFD always shows the same balance across the app
+        const sfdIdSum = sfd.sfd_id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
+        newBalance = 50000 + (sfdIdSum % 5) * 30000
+        console.log(`Generated new balance for ${sfd.sfds.name}: ${newBalance}`)
+      }
       
       // In a real app, we would update the user's account balance in our database
       // based on the data received from the SFD's API
 
-      // For this demo, let's update the account balance in the database
-      const { error: updateError } = await supabase
+      // Check if account exists for this SFD
+      const { data: existingAccount, error: accountError } = await supabase
         .from('accounts')
-        .update({ balance: newBalance, updated_at: new Date().toISOString() })
+        .select('id')
         .eq('user_id', userId)
+        .eq('sfd_id', sfd.sfd_id)
+        .maybeSingle()
 
-      if (updateError) {
-        console.error(`Error updating account for SFD ${sfd.sfds.name}:`, updateError)
+      if (accountError) {
+        console.error(`Error checking account for SFD ${sfd.sfds.name}:`, accountError)
+        continue
+      }
+
+      if (existingAccount) {
+        // Update existing account
+        const { error: updateError } = await supabase
+          .from('accounts')
+          .update({ 
+            balance: newBalance, 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', existingAccount.id)
+
+        if (updateError) {
+          console.error(`Error updating account for SFD ${sfd.sfds.name}:`, updateError)
+        } else {
+          updates.push({
+            sfdId: sfd.sfd_id,
+            name: sfd.sfds.name,
+            newBalance
+          })
+        }
       } else {
-        updates.push({
-          sfdId: sfd.sfd_id,
-          name: sfd.sfds.name,
-          newBalance
-        })
+        // Create new account if not exists
+        const { error: insertError } = await supabase
+          .from('accounts')
+          .insert({
+            user_id: userId,
+            sfd_id: sfd.sfd_id,
+            balance: newBalance,
+            currency: 'FCFA',
+            updated_at: new Date().toISOString()
+          })
+
+        if (insertError) {
+          console.error(`Error creating account for SFD ${sfd.sfds.name}:`, insertError)
+        } else {
+          updates.push({
+            sfdId: sfd.sfd_id,
+            name: sfd.sfds.name,
+            newBalance
+          })
+        }
       }
     }
 

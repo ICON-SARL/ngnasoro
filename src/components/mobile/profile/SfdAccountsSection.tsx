@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { SfdData } from '@/hooks/useSfdDataAccess';
 import { useSfdSwitch } from '@/hooks/useSfdSwitch';
+import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 import SfdSwitchVerification from '@/components/SfdSwitchVerification';
 import LoadingState from './sfd-accounts/LoadingState';
 import EmptyAccountsState from './sfd-accounts/EmptyAccountsState';
@@ -24,6 +29,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
   const { toast } = useToast();
   const { activeSfdId: authActiveSfdId } = useAuth();
   const { sfdAccounts, isLoading, refetch, synchronizeBalances } = useSfdAccounts();
+  const { isSyncing, synchronizeWithSfd } = useRealtimeSynchronization();
   const { 
     isVerifying, 
     pendingSfdId, 
@@ -34,8 +40,26 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
   } = useSfdSwitch();
   
   const [switchingId, setSwitchingId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const effectiveActiveSfdId = propsActiveSfdId !== undefined ? propsActiveSfdId : authActiveSfdId;
+
+  // Synchronize accounts when the component mounts
+  useEffect(() => {
+    const syncAccounts = async () => {
+      setIsRefreshing(true);
+      try {
+        await synchronizeWithSfd();
+        await refetch();
+      } catch (error) {
+        console.error("Failed to sync accounts:", error);
+      } finally {
+        setIsRefreshing(false);
+      }
+    };
+    
+    syncAccounts();
+  }, []);
 
   // Transform SfdData to SfdAccountDisplay
   const transformSfdData = (data: SfdData[]): SfdAccountDisplay[] => {
@@ -109,6 +133,26 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
     return success;
   };
 
+  const refreshAccounts = async () => {
+    setIsRefreshing(true);
+    try {
+      await synchronizeWithSfd();
+      await refetch();
+      toast({
+        title: "Synchronisation réussie",
+        description: "Vos comptes SFD ont été mis à jour",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur de synchronisation",
+        description: "Impossible de mettre à jour vos comptes SFD",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   // Transform the data to our common format
   const displayAccounts: SfdAccountDisplay[] = propsSfdData 
     ? transformSfdData(propsSfdData)
@@ -118,11 +162,24 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
     <>
       <div className="space-y-4 mt-4">
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 flex justify-between items-center">
             <CardTitle className="text-lg">Mes Comptes SFD</CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={refreshAccounts}
+              disabled={isRefreshing || isLoading}
+            >
+              {isRefreshing ? (
+                <Loader size="sm" className="mr-1" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-1" />
+              )}
+              Actualiser
+            </Button>
           </CardHeader>
           
-          {isLoading ? (
+          {isLoading || isRefreshing ? (
             <LoadingState />
           ) : displayAccounts.length === 0 ? (
             <EmptyAccountsState />

@@ -2,6 +2,7 @@
 import React from 'react';
 import { ChevronRight, CheckCircle, Clock } from 'lucide-react';
 import { SfdAccountDisplay } from './AccountsList';
+import { formatCurrencyAmount } from '@/utils/transactionUtils';
 
 interface SfdAccountItemProps {
   sfd: SfdAccountDisplay;
@@ -43,7 +44,7 @@ const SfdAccountItem: React.FC<SfdAccountItemProps> = ({
         <div>
           <h4 className="font-medium">{sfd.name}</h4>
           <div className="flex items-center text-sm">
-            <span className="text-gray-500 mr-2">{sfd.balance.toLocaleString()} {sfd.currency}</span>
+            <span className="text-gray-500 mr-2">{formatCurrencyAmount(sfd.balance)} {sfd.currency}</span>
             {status === 'verified' ? (
               <span className="text-green-600 flex items-center">
                 <CheckCircle className="h-3 w-3 mr-1" />

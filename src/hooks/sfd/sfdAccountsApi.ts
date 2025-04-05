@@ -12,8 +12,31 @@ export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
 
 export async function fetchSfdBalance(userId: string, sfdId: string): Promise<SfdBalanceData> {
   try {
-    const balanceData = await apiClient.getSfdBalance(userId, sfdId);
-    return balanceData;
+    // First, try to get the balance from the accounts table
+    const { data, error } = await apiClient.supabase
+      .from('accounts')
+      .select('balance, currency')
+      .eq('user_id', userId)
+      .eq('sfd_id', sfdId)
+      .maybeSingle();
+      
+    if (error) {
+      console.error(`Error fetching balance from database: ${error.message}`);
+      // Fall back to the API client
+      const balanceData = await apiClient.getSfdBalance(userId, sfdId);
+      return balanceData;
+    }
+    
+    if (data) {
+      return { 
+        balance: data.balance || 0, 
+        currency: data.currency || 'FCFA' 
+      };
+    } else {
+      // If no record found, try the API client
+      const balanceData = await apiClient.getSfdBalance(userId, sfdId);
+      return balanceData;
+    }
   } catch (error) {
     console.error(`Failed to fetch balance for SFD ${sfdId}:`, error);
     return { balance: 0, currency: 'FCFA' };

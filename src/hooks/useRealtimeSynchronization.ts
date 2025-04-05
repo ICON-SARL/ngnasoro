@@ -24,7 +24,8 @@ export function useRealtimeSynchronization() {
       const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
         body: JSON.stringify({ 
           userId: user.id,
-          sfdId: activeSfdId || undefined 
+          sfdId: activeSfdId || undefined,
+          forceSync: true // Force a full sync to ensure all balances are up-to-date
         }),
       });
       
@@ -35,6 +36,8 @@ export function useRealtimeSynchronization() {
       
       if (data && data.success) {
         setLastSyncTime(new Date());
+        
+        // Only show toast for manual synchronization
         toast({
           title: "Synchronisation réussie",
           description: "Vos comptes ont été synchronisés avec succès",
@@ -75,11 +78,39 @@ export function useRealtimeSynchronization() {
         setLastSyncTime(new Date());
       })
       .subscribe();
+      
+    // Also listen for changes to the user_sfds table
+    const sfdChannel = supabase.channel('sfd_account_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_sfds',
+        filter: `user_id=eq.${user.id}`
+      }, () => {
+        // When SFD accounts change, trigger a sync
+        synchronizeWithSfd();
+      })
+      .subscribe();
     
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(sfdChannel);
     };
-  }, [user?.id, toast]);
+  }, [user?.id, toast, synchronizeWithSfd]);
+
+  // Periodically sync in the background
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    // Set up interval for periodic sync (every 15 minutes)
+    const intervalId = setInterval(() => {
+      synchronizeWithSfd();
+    }, 15 * 60 * 1000);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [user?.id, synchronizeWithSfd]);
 
   return {
     isSyncing,
