@@ -35,41 +35,25 @@ serve(async (req) => {
     
     console.log("Request body:", body);
 
-    // Verification endpoint for QR codes
-    if (body.code) {
-      const code = body.code;
+    // Scanning QR codes (mobile app)
+    if (body.action === "scan" && body.code && body.userId) {
+      const { code, userId } = body;
       
-      // In a real implementation, we would verify the QR code against database records
-      // For now, let's simulate verification with mock logic
-      const isValid = code.startsWith("QR") || code.startsWith("SFD");
+      // Check if the QR code exists and is valid
+      const { data: qrData, error: qrError } = await supabase
+        .from("qr_codes")
+        .select("*")
+        .eq("code", code)
+        .eq("status", "active")
+        .gt("expires_at", new Date().toISOString())
+        .single();
       
-      if (isValid) {
-        // Record the transaction in the audit logs
-        await supabase.from("audit_logs").insert({
-          action: "qr_code_verified",
-          status: "success",
-          category: "payment",
-          details: {
-            code,
-            verified_at: new Date().toISOString(),
-          },
-        });
-        
-        return new Response(
-          JSON.stringify({ 
-            success: true,
-            message: "QR code verified successfully", 
-          }),
-          { 
-            status: 200, 
-            headers: { ...corsHeaders, "Content-Type": "application/json" } 
-          }
-        );
-      } else {
+      if (qrError || !qrData) {
+        console.error("QR code not found or expired:", qrError);
         return new Response(
           JSON.stringify({ 
             success: false,
-            message: "Invalid QR code", 
+            message: "Code QR invalide ou expiré", 
           }),
           { 
             status: 400, 
@@ -77,6 +61,129 @@ serve(async (req) => {
           }
         );
       }
+      
+      // Process the transaction based on the QR code data
+      const transactionType = qrData.is_withdrawal ? "withdrawal" : "payment";
+      const transactionAmount = qrData.is_withdrawal ? -qrData.amount : -qrData.amount;
+      const transactionName = qrData.is_withdrawal 
+        ? "Retrait en agence SFD" 
+        : "Paiement en agence SFD";
+      
+      // Record the transaction
+      const { data: transaction, error: transactionError } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: userId,
+          amount: transactionAmount,
+          type: transactionType,
+          payment_method: "agency_qr",
+          name: transactionName,
+          description: `Transaction via QR code (${qrData.code})`,
+          status: "success",
+          date: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (transactionError) {
+        console.error("Error recording transaction:", transactionError);
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            message: "Erreur lors de l'enregistrement de la transaction", 
+          }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      }
+      
+      // Update the QR code status to used
+      await supabase
+        .from("qr_codes")
+        .update({ status: "used", used_at: new Date().toISOString(), used_by: userId })
+        .eq("id", qrData.id);
+      
+      // Record the operation in audit logs
+      await supabase
+        .from("audit_logs")
+        .insert({
+          user_id: userId,
+          action: `qr_code_${transactionType}`,
+          category: "payment",
+          status: "success",
+          details: {
+            qr_code: qrData.code,
+            transaction_id: transaction.id,
+            amount: qrData.amount
+          }
+        });
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: qrData.is_withdrawal 
+            ? "Retrait en espèces confirmé" 
+            : "Paiement en espèces confirmé",
+          transaction: transaction,
+          isWithdrawal: qrData.is_withdrawal
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+    
+    // Verification endpoint for QR codes
+    if (body.code) {
+      const code = body.code;
+      
+      // Verify the QR code against database records
+      const { data: qrCode, error: qrError } = await supabase
+        .from("qr_codes")
+        .select("*")
+        .eq("code", code)
+        .eq("status", "active")
+        .gt("expires_at", new Date().toISOString())
+        .single();
+      
+      if (qrError || !qrCode) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            message: "Code QR invalide ou expiré", 
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      }
+      
+      // Record the verification in the audit logs
+      await supabase.from("audit_logs").insert({
+        action: "qr_code_verified",
+        status: "success",
+        category: "payment",
+        details: {
+          code,
+          verified_at: new Date().toISOString(),
+        },
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: "QR code vérifié avec succès",
+          qrData: qrCode
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
     
     // QR code generation endpoint (for SFD admins only)

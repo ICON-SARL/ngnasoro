@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { QrCodeIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,20 +10,25 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { verifyQRCode } from '@/utils/api/qrCodeGenerator';
+import { scanQRCodeForTransaction } from '@/utils/api/qrCodeGenerator';
+import { useAuth } from '@/hooks/useAuth';
 
 interface QRCodePaymentDialogProps {
   onClose: () => void;
   isWithdrawal?: boolean;
-  amount?: number; // Add the amount prop to the interface
+  amount?: number;
 }
 
 const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose, isWithdrawal = false, amount }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<null | {success: boolean; message: string}>(null);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
-  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const [processingScan, setProcessingScan] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const intervalRef = useRef<number | null>(null);
   
   // Start scanner
   useEffect(() => {
@@ -54,47 +59,135 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose, isWi
     
     startScanner();
     
+    // Start the scanning interval once the video is ready
+    if (videoRef.current) {
+      videoRef.current.onloadedmetadata = () => {
+        startScanningInterval();
+      };
+    }
+    
     return () => {
       if (videoStream) {
         videoStream.getTracks().forEach(track => track.stop());
       }
+      
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     };
   }, [toast]);
   
-  // Mock function to simulate QR code scanning
-  // In a real app, this would be replaced with an actual QR code scanner library
-  const handleScanQRCode = async () => {
-    setScanning(false);
+  const startScanningInterval = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
     
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    intervalRef.current = window.setInterval(() => {
+      if (scanning && !processingScan && videoRef.current && canvasRef.current) {
+        captureAndProcessFrame();
+      }
+    }, 500); // Check for QR codes every 500ms
+  };
+  
+  const captureAndProcessFrame = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    if (!video || !canvas || video.paused || video.ended || processingScan) return;
+    
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    
+    // Set canvas dimensions to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw the current video frame to the canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
     
     try {
-      // In a real implementation, the code would come from the scanned QR code
-      const mockQRCode = "QR" + Math.random().toString(36).substr(2, 8);
+      // Get image data from canvas for processing
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
       
-      // Call the API to verify the QR code
-      const verified = await verifyQRCode(mockQRCode);
+      // In a real application, we would use a QR code scanning library here
+      // For demonstration, we'll simulate finding a QR code after a few seconds
+      setProcessingScan(true);
+      simulateQRCodeDetection();
+    } catch (error) {
+      console.error('Error processing frame:', error);
+      setProcessingScan(false);
+    }
+  };
+  
+  // This function simulates QR code detection
+  // In a real app, you would use a library like jsQR or a service like Scandit
+  const simulateQRCodeDetection = () => {
+    // Generate a mock QR code
+    const mockQRCode = "QR" + Math.random().toString(36).substr(2, 8);
+    
+    setTimeout(() => {
+      handleQRCodeDetected(mockQRCode);
+    }, 2000);
+  };
+  
+  // Process detected QR code
+  const handleQRCodeDetected = async (code: string) => {
+    console.log("QR Code detected:", code);
+    
+    if (!user) {
+      toast({
+        title: "Erreur d'authentification",
+        description: "Vous devez être connecté pour effectuer cette opération",
+        variant: "destructive",
+      });
+      setProcessingScan(false);
+      return;
+    }
+    
+    try {
+      setScanning(false);
       
-      if (verified) {
-        setScanResult({
-          success: true,
-          message: isWithdrawal 
-            ? "Retrait en espèces confirmé" 
-            : "Paiement en espèces confirmé"
+      // Call the API to verify and process the QR code
+      const result = await scanQRCodeForTransaction(code, user.id);
+      
+      setScanResult({
+        success: result.success,
+        message: result.message
+      });
+      
+      if (result.success) {
+        toast({
+          title: isWithdrawal ? "Retrait confirmé" : "Paiement confirmé",
+          description: result.message,
         });
       } else {
-        setScanResult({
-          success: false,
-          message: "Code QR invalide ou expiré"
+        toast({
+          title: "Échec",
+          description: result.message || "Code QR invalide ou expiré",
+          variant: "destructive",
         });
       }
-    } catch (error) {
-      console.error('Error verifying QR code:', error);
+    } catch (error: any) {
+      console.error('QR code processing error:', error);
       setScanResult({
         success: false,
-        message: "Une erreur s'est produite lors de la vérification"
+        message: error.message || "Une erreur s'est produite lors du traitement"
       });
+      
+      toast({
+        title: "Erreur",
+        description: "Impossible de traiter le code QR. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingScan(false);
+    }
+  };
+  
+  // Manual capture button handler
+  const handleManualCapture = () => {
+    if (!processingScan) {
+      captureAndProcessFrame();
     }
   };
   
@@ -125,6 +218,7 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose, isWi
                     style={{ maxWidth: '240px', maxHeight: '240px' }}
                   />
                   <div className="absolute inset-0 border-2 border-blue-500 pointer-events-none"></div>
+                  <canvas ref={canvasRef} className="hidden"></canvas>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center">
@@ -134,13 +228,22 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose, isWi
               )}
             </div>
             
-            {scanning && (
+            {scanning && !processingScan && (
               <Button 
                 className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-blue-500 hover:bg-blue-600"
-                onClick={handleScanQRCode}
+                onClick={handleManualCapture}
               >
                 <QrCodeIcon className="h-4 w-4 mr-2" /> Capturer
               </Button>
+            )}
+            
+            {processingScan && (
+              <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                <div className="text-white text-center">
+                  <Loader2 className="h-10 w-10 animate-spin mx-auto mb-2" />
+                  <p>Analyse du code QR...</p>
+                </div>
+              </div>
             )}
           </div>
         ) : (
