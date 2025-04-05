@@ -13,14 +13,14 @@ export interface MobileMoneyWithdrawalHook {
 
 export interface QRCodeGenerationHook {
   isProcessingQRCode: boolean;
-  generatePaymentQRCode: (amount: number) => Promise<QRCodeResponse>;
+  generatePaymentQRCode: (amount: number, loanId?: string) => Promise<QRCodeResponse>;
   generateWithdrawalQRCode: (amount: number) => Promise<QRCodeResponse>;
 }
 
 export interface MobileMoneyOperationsHook {
   isProcessing: boolean;
-  processMobileMoneyPayment: (phoneNumber: string, amount: number, provider: "orange" | "mtn" | "wave") => Promise<MobileMoneyResponse>;
+  processMobileMoneyPayment: (phoneNumber: string, amount: number, provider: "orange" | "mtn" | "wave", loanId?: string) => Promise<MobileMoneyResponse>;
   processMobileMoneyWithdrawal: (phoneNumber: string, amount: number, provider: "orange" | "mtn" | "wave") => Promise<MobileMoneyResponse>;
-  generatePaymentQRCode: (amount: number) => Promise<QRCodeResponse>;
+  generatePaymentQRCode: (amount: number, loanId?: string) => Promise<QRCodeResponse>;
   generateWithdrawalQRCode: (amount: number) => Promise<QRCodeResponse>;
 }

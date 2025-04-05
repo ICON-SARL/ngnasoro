@@ -34,3 +34,18 @@ export interface SfdAccount {
 // Import types from sfdAccountsApi.ts
 import type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from "./sfdAccountsApi";
 export type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams };
+
+// Add new mobile money types
+export interface MobileMoneyProvider {
+  id: string;
+  name: string;
+  code: string;
+  icon: string;
+}
+
+export interface MobileMoneyPaymentResult {
+  success: boolean;
+  transactionId?: string;
+  message?: string;
+  error?: string;
+}

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface MobileMoneyRequest {
@@ -6,6 +7,8 @@ export interface MobileMoneyRequest {
   amount: number;
   provider: "orange" | "mtn" | "wave";
   isWithdrawal: boolean;
+  loanId?: string;
+  isRepayment?: boolean;
 }
 
 export interface QRCodeRequest {
@@ -13,6 +16,7 @@ export interface QRCodeRequest {
   amount: number;
   isWithdrawal: boolean;
   loanId?: string;
+  isRepayment?: boolean;
 }
 
 export interface MobileMoneyResponse {
@@ -37,6 +41,7 @@ export interface QRCodeResponse {
     timestamp: number;
     expiresAt: string;
     code: string;
+    loanId?: string;
   };
   error?: string;
 }
@@ -68,6 +73,50 @@ export async function initiateMobileMoneyTransaction(request: MobileMoneyRequest
     return { 
       success: false, 
       message: "Une erreur s'est produite", 
+      error: error.message 
+    };
+  }
+}
+
+/**
+ * Initiates a loan repayment using mobile money
+ */
+export async function initiateLoanRepayment(
+  userId: string,
+  loanId: string,
+  phoneNumber: string,
+  amount: number,
+  provider: "orange" | "mtn" | "wave"
+): Promise<MobileMoneyResponse> {
+  try {
+    const { data, error } = await supabase.functions.invoke('mobile-money-verification', {
+      body: {
+        action: 'mobileMoney',
+        userId,
+        loanId,
+        phoneNumber,
+        amount,
+        provider,
+        isWithdrawal: false,
+        isRepayment: true
+      }
+    });
+    
+    if (error) {
+      console.error('Loan repayment error:', error);
+      return { 
+        success: false, 
+        message: "Le remboursement a échoué", 
+        error: error.message 
+      };
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Loan repayment API error:', error);
+    return { 
+      success: false, 
+      message: "Une erreur s'est produite lors du remboursement", 
       error: error.message 
     };
   }

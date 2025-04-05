@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -17,6 +16,8 @@ interface MobileMoneyRequest {
   amount: number;
   provider: "orange" | "mtn" | "wave";
   isWithdrawal: boolean;
+  loanId?: string;
+  isRepayment?: boolean;
 }
 
 interface QRCodeRequest {
@@ -65,7 +66,7 @@ serve(async (req) => {
 
     // Handle Mobile Money request
     if (payload.action === "mobileMoney") {
-      const { userId, phoneNumber, amount, provider, isWithdrawal } = payload as MobileMoneyRequest;
+      const { userId, phoneNumber, amount, provider, isWithdrawal, loanId, isRepayment } = payload;
       
       // Validate phone number (basic validation)
       if (!phoneNumber || !phoneNumber.match(/^\+?[0-9]{10,15}$/)) {
@@ -103,19 +104,24 @@ serve(async (req) => {
       // In a real implementation, we would initiate a mobile money transaction
       // For now, we'll simulate by recording the request
       
-      const transactionType = isWithdrawal ? "withdrawal" : "payment";
+      const transactionType = isWithdrawal ? "withdrawal" : isRepayment ? "loan_repayment" : "payment";
       
       // Record the transaction in the database
       const { data: transaction, error: transactionError } = await supabase
         .from("transactions")
         .insert({
           user_id: userId,
-          name: `${provider.toUpperCase()} Mobile Money ${isWithdrawal ? "Retrait" : "Paiement"}`,
-          amount: isWithdrawal ? -amount : -amount,
-          type: isWithdrawal ? "withdrawal" : "payment",
+          name: isRepayment 
+            ? `${provider.toUpperCase()} Remboursement de prêt` 
+            : `${provider.toUpperCase()} Mobile Money ${isWithdrawal ? "Retrait" : "Paiement"}`,
+          amount: isWithdrawal ? -amount : isRepayment ? -amount : -amount,
+          type: isRepayment ? "loan_repayment" : isWithdrawal ? "withdrawal" : "payment",
           payment_method: "mobile_money",
-          description: `Mobile Money ${isWithdrawal ? "Retrait" : "Paiement"} via ${provider.toUpperCase()}`,
+          description: isRepayment 
+            ? `Remboursement de prêt ${loanId} via ${provider.toUpperCase()} Mobile Money`
+            : `Mobile Money ${isWithdrawal ? "Retrait" : "Paiement"} via ${provider.toUpperCase()}`,
           status: "success",
+          reference_id: isRepayment ? loanId : undefined
         })
         .select("*");
         
@@ -130,26 +136,61 @@ serve(async (req) => {
         );
       }
       
+      // If this is a loan repayment, update the loan status
+      if (isRepayment && loanId) {
+        // Update loan status
+        const { error: loanUpdateError } = await supabase
+          .from("sfd_loans")
+          .update({
+            last_payment_date: new Date().toISOString(),
+            next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // Add 30 days
+          })
+          .eq("id", loanId);
+          
+        if (loanUpdateError) {
+          console.error("Loan update error:", loanUpdateError);
+        }
+        
+        // Add loan payment record
+        const { error: loanPaymentError } = await supabase
+          .from("loan_payments")
+          .insert({
+            loan_id: loanId,
+            amount: amount,
+            payment_method: "mobile_money",
+            status: "completed",
+            transaction_id: transaction ? transaction[0].id : null
+          });
+          
+        if (loanPaymentError) {
+          console.error("Loan payment error:", loanPaymentError);
+        }
+      }
+      
       // Record in audit logs
       await supabase.from("audit_logs").insert({
         user_id: userId,
         action: `mobile_money_${transactionType}`,
-        category: "payment",
+        category: isRepayment ? "loan_repayment" : "payment",
         status: "success",
         details: {
           provider,
           phone_number: phoneNumber,
           amount,
           transaction_id: transaction ? transaction[0].id : null,
+          loan_id: isRepayment ? loanId : null
         },
+        target_resource: isRepayment && loanId ? `loan:${loanId}` : null
       });
         
       return new Response(
         JSON.stringify({
           success: true,
-          message: isWithdrawal 
-            ? "Retrait Mobile Money initié avec succès"
-            : "Paiement Mobile Money initié avec succès",
+          message: isRepayment 
+            ? "Remboursement de prêt initié avec succès"
+            : isWithdrawal 
+              ? "Retrait Mobile Money initié avec succès"
+              : "Paiement Mobile Money initié avec succès",
           transaction: transaction ? transaction[0] : null,
           reference: `MM-${Date.now().toString(36)}`,
           providerResponse: {

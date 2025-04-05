@@ -14,6 +14,7 @@ interface MobileMoneyTabProps {
   isWithdrawal?: boolean;
   amount?: number;
   onAmountChange?: (amount: number) => void;
+  loanId?: string;
 }
 
 export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({ 
@@ -21,7 +22,8 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
   handlePayment,
   isWithdrawal = false,
   amount = isWithdrawal ? 25000 : 3500,
-  onAmountChange
+  onAmountChange,
+  loanId
 }) => {
   const [selected, setSelected] = useState("orange");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -50,7 +52,8 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
       if (isWithdrawal) {
         await processMobileMoneyWithdrawal(phoneNumber, transactionAmount, provider);
       } else {
-        await processMobileMoneyPayment(phoneNumber, transactionAmount, provider);
+        // Pass the loanId for loan repayments
+        await processMobileMoneyPayment(phoneNumber, transactionAmount, provider, loanId);
       }
       
       // Call the parent component's handler

@@ -10,14 +10,14 @@ import {
 import { QRCodeGenerationHook } from './types';
 
 /**
- * Hook for generating QR codes for payments or withdrawals
+ * Hook for handling QR code generation operations
  */
 export function useQRCodeGeneration(): QRCodeGenerationHook {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isProcessingQRCode, setIsProcessingQRCode] = useState(false);
   
-  const generatePaymentQRCode = async (amount: number): Promise<QRCodeResponse> => {
+  const generatePaymentQRCode = async (amount: number, loanId?: string): Promise<QRCodeResponse> => {
     if (!user) {
       toast({
         title: "Erreur d'authentification",
@@ -36,12 +36,19 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       const request: QRCodeRequest = {
         userId: user.id,
         amount,
-        isWithdrawal: false
+        isWithdrawal: false,
+        loanId,
+        isRepayment: !!loanId
       };
       
       const response = await generateQRCode(request);
       
-      if (!response.success) {
+      if (response.success) {
+        toast({
+          title: "QR code généré",
+          description: "Présentez ce code à l'agent pour effectuer le paiement",
+        });
+      } else {
         toast({
           title: "Échec de génération du QR code",
           description: response.error || "Une erreur s'est produite",
@@ -59,7 +66,7 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       
       return {
         success: false,
-        error: "Une erreur s'est produite lors de la génération du QR code"
+        error: error.message || "Une erreur s'est produite"
       };
     } finally {
       setIsProcessingQRCode(false);
@@ -90,7 +97,12 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       
       const response = await generateQRCode(request);
       
-      if (!response.success) {
+      if (response.success) {
+        toast({
+          title: "QR code généré",
+          description: "Présentez ce code à l'agent pour effectuer le retrait",
+        });
+      } else {
         toast({
           title: "Échec de génération du QR code",
           description: response.error || "Une erreur s'est produite",
@@ -108,7 +120,7 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       
       return {
         success: false,
-        error: "Une erreur s'est produite lors de la génération du QR code"
+        error: error.message || "Une erreur s'est produite"
       };
     } finally {
       setIsProcessingQRCode(false);

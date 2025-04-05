@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { 
   initiateMobileMoneyTransaction,
+  initiateLoanRepayment,
   MobileMoneyRequest,
   MobileMoneyResponse
 } from '@/utils/mobileMoneyApi';
@@ -20,7 +21,8 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
   const processMobileMoneyPayment = async (
     phoneNumber: string, 
     amount: number, 
-    provider: "orange" | "mtn" | "wave"
+    provider: "orange" | "mtn" | "wave",
+    loanId?: string
   ): Promise<MobileMoneyResponse> => {
     if (!user) {
       toast({
@@ -37,24 +39,36 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
     setIsProcessingPayment(true);
     
     try {
-      const request: MobileMoneyRequest = {
-        userId: user.id,
-        phoneNumber,
-        amount,
-        provider,
-        isWithdrawal: false
-      };
+      let response;
       
-      const response = await initiateMobileMoneyTransaction(request);
+      if (loanId) {
+        response = await initiateLoanRepayment(
+          user.id,
+          loanId,
+          phoneNumber,
+          amount,
+          provider
+        );
+      } else {
+        const request: MobileMoneyRequest = {
+          userId: user.id,
+          phoneNumber,
+          amount,
+          provider,
+          isWithdrawal: false
+        };
+        
+        response = await initiateMobileMoneyTransaction(request);
+      }
       
       if (response.success) {
         toast({
-          title: "Paiement initié",
+          title: loanId ? "Remboursement initié" : "Paiement initié",
           description: "La demande de paiement a été initiée avec succès",
         });
       } else {
         toast({
-          title: "Échec du paiement",
+          title: loanId ? "Échec du remboursement" : "Échec du paiement",
           description: response.error || "Une erreur s'est produite",
           variant: "destructive",
         });

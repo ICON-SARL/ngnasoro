@@ -50,7 +50,7 @@ export function useMobileMoneyWithdrawal(): MobileMoneyWithdrawalHook {
       if (response.success) {
         toast({
           title: "Retrait initié",
-          description: "Les fonds seront envoyés à votre compte Mobile Money sous peu",
+          description: "La demande de retrait a été initiée avec succès",
         });
       } else {
         toast({

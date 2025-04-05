@@ -116,3 +116,45 @@ export async function processLoanPayment(
   
   return { success: true };
 }
+
+// New function for mobile money payments
+export async function processMobileMoneyPayment(
+  userId: string,
+  phoneNumber: string,
+  amount: number,
+  provider: string,
+  isRepayment: boolean = false,
+  loanId?: string
+): Promise<SyncResult> {
+  if (!userId) {
+    throw new Error('Utilisateur non connecté');
+  }
+  
+  try {
+    const payload: any = {
+      userId,
+      phoneNumber,
+      amount,
+      provider,
+      isRepayment
+    };
+    
+    if (isRepayment && loanId) {
+      payload.loanId = loanId;
+    }
+    
+    const result = await apiClient.callEdgeFunction('mobile-money-payment', payload);
+    
+    if (!result || !result.success) {
+      throw new Error(result?.error || 'Échec du paiement mobile money');
+    }
+    
+    return { 
+      success: true,
+      message: 'Paiement mobile money initié avec succès'
+    };
+  } catch (error) {
+    console.error('Failed to process mobile money payment:', error);
+    throw new Error('Échec du paiement mobile money');
+  }
+}
