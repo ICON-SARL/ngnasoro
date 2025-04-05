@@ -74,3 +74,11 @@ export interface MobileMoneyPaymentResult {
   message?: string;
   error?: string;
 }
+
+// Add QRCode types
+export interface QRCodeRequest {
+  userId: string;
+  amount: number;
+  loanId?: string;
+  isWithdrawal: boolean;
+}
