@@ -1,55 +1,27 @@
 
-import React from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-
-interface SFD {
-  id: string;
-  name: string;
-  is_default?: boolean;
-}
+import React, { useState } from 'react';
+import { Check, ChevronsUpDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface SfdSelectorProps {
   value: string;
   onValueChange: (value: string) => void;
-  sfds: SFD[];
+  sfds: Array<{
+    id: string;
+    name: string;
+    is_default?: boolean;
+  }>;
 }
 
-const SfdSelector: React.FC<SfdSelectorProps> = ({ value, onValueChange, sfds = [] }) => {
-  const [open, setOpen] = React.useState(false);
+const SfdSelector: React.FC<SfdSelectorProps> = ({ value, onValueChange, sfds }) => {
+  const [open, setOpen] = useState(false);
+  const selectedSfd = sfds?.find(sfd => sfd.id === value);
 
-  // Ensure sfds is always a non-empty array to prevent rendering issues
-  const safeSfds = Array.isArray(sfds) && sfds.length > 0 ? sfds : [];
-  
-  // Find the selected SFD
-  const selectedSfd = safeSfds.find(sfd => sfd.id === value);
-
-  // If no SFDs are available, render a disabled button
-  if (safeSfds.length === 0) {
-    return (
-      <Button
-        variant="outline"
-        className="w-full justify-between"
-        disabled
-      >
-        Aucune SFD disponible
-        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-      </Button>
-    );
-  }
+  // Ensure sfds is an array
+  const safeSfds = Array.isArray(sfds) ? sfds : [];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -67,32 +39,32 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ value, onValueChange, sfds = 
       <PopoverContent className="w-full p-0">
         <Command>
           <CommandInput placeholder="Rechercher une SFD..." />
-          <CommandEmpty>Aucune SFD trouvée.</CommandEmpty>
-          <CommandGroup>
-            {safeSfds.map((sfd) => (
-              <CommandItem
-                key={sfd.id}
-                value={sfd.id}
-                onSelect={() => {
-                  onValueChange(sfd.id);
-                  setOpen(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === sfd.id ? "opacity-100" : "opacity-0"
+          <CommandEmpty>Aucun SFD trouvé.</CommandEmpty>
+          <CommandList>
+            <CommandGroup>
+              {safeSfds.map(sfd => (
+                <CommandItem
+                  key={sfd.id}
+                  value={sfd.id}
+                  onSelect={(currentValue) => {
+                    onValueChange(currentValue);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === sfd.id ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {sfd.name}
+                  {sfd.is_default && (
+                    <span className="ml-auto text-xs text-muted-foreground">(Défaut)</span>
                   )}
-                />
-                <span>{sfd.name}</span>
-                {sfd.is_default && (
-                  <span className="ml-2 text-xs text-[#0D6A51] bg-[#0D6A51]/10 px-2 py-0.5 rounded-full">
-                    Par défaut
-                  </span>
-                )}
-              </CommandItem>
-            ))}
-          </CommandGroup>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>

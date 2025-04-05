@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast'; // Correct import path
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -290,7 +290,7 @@ const LoanApplicationPage: React.FC = () => {
                       <SfdSelector 
                         value={field.value}
                         onValueChange={field.onChange}
-                        sfds={sfds || []}
+                        sfds={sfds}
                       />
                     </FormControl>
                     <FormMessage />

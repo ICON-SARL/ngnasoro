@@ -1,13 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calculator, Calendar, Percent } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 
 interface LoanPlan {
   id: string;
@@ -26,7 +22,7 @@ interface LoanPlan {
 interface LoanPlansSelectorProps {
   sfdId: string;
   onSelectPlan: (plan: LoanPlan) => void;
-  selectedPlanId?: string;
+  selectedPlanId: string;
 }
 
 const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({ 
@@ -35,45 +31,35 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
   selectedPlanId 
 }) => {
   const [plans, setPlans] = useState<LoanPlan[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
-
+  
   useEffect(() => {
     const fetchLoanPlans = async () => {
+      if (!sfdId) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
       try {
-        setIsLoading(true);
-        setError(null);
-        // Important: Reset plans to empty array when sfdId changes to prevent stale data
-        setPlans([]); 
-        
-        if (!sfdId) {
-          setError('Aucune SFD sélectionnée');
-          setPlans([]);
-          setIsLoading(false);
-          return;
-        }
-        
         const { data, error } = await supabase
-          .from('sfd_loan_plans')
+          .from('loan_plans')
           .select('*')
           .eq('sfd_id', sfdId)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .order('name');
           
         if (error) throw error;
         
-        // Ensure plans is always an array, even if data is null
-        const plansData = Array.isArray(data) ? data : [];
-        setPlans(plansData as LoanPlan[]);
+        setPlans(data || []);
         
-        // Auto-select the first plan if none is selected and plans exist
-        if (plansData.length > 0 && !selectedPlanId) {
-          onSelectPlan(plansData[0] as LoanPlan);
+        // Auto-select first plan if none selected
+        if (data?.length && !selectedPlanId) {
+          onSelectPlan(data[0]);
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error fetching loan plans:', err);
-        setError('Impossible de charger les plans de prêt');
-        setPlans([]);
+        setError('Impossible de charger les plans de prêt. Veuillez réessayer.');
       } finally {
         setIsLoading(false);
       }
@@ -81,93 +67,58 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
     
     fetchLoanPlans();
   }, [sfdId, onSelectPlan, selectedPlanId]);
-
-  const handleSelectPlan = (planId: string) => {
-    const selectedPlan = plans.find(plan => plan.id === planId);
-    if (selectedPlan) {
-      onSelectPlan(selectedPlan);
-    }
-  };
   
   if (isLoading) {
-    return (
-      <Card className="mt-4">
-        <CardContent className="pt-4">
-          <Skeleton className="h-6 w-2/3 mb-4" />
-          <Skeleton className="h-4 w-full mb-2" />
-          <Skeleton className="h-4 w-3/4 mb-2" />
-          <Skeleton className="h-4 w-5/6 mb-4" />
-          
-          <div className="grid grid-cols-3 gap-4 mt-2">
-            <Skeleton className="h-10 rounded-md" />
-            <Skeleton className="h-10 rounded-md" />
-            <Skeleton className="h-10 rounded-md" />
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <div className="flex justify-center p-8"><Loader size="lg" /></div>;
   }
   
   if (error) {
-    return (
-      <Card className="mt-4 border-amber-200">
-        <CardContent className="pt-4 text-center">
-          <p className="text-amber-600">{error}</p>
-        </CardContent>
-      </Card>
-    );
+    return <div className="text-red-500 text-center p-4">{error}</div>;
   }
   
-  if (!plans || plans.length === 0) {
-    return (
-      <Card className="mt-4 border-gray-200">
-        <CardContent className="pt-4 text-center">
-          <p className="text-gray-500">Aucun plan de prêt disponible pour cette SFD</p>
-        </CardContent>
-      </Card>
-    );
+  if (!plans.length) {
+    return <div className="text-center p-4 text-muted-foreground">Aucun plan de prêt disponible pour cette SFD.</div>;
   }
   
   return (
-    <RadioGroup value={selectedPlanId} onValueChange={handleSelectPlan}>
-      <div className="space-y-4">
-        {plans.map((plan) => (
-          <div key={plan.id} className="relative">
-            <RadioGroupItem
-              value={plan.id}
-              id={plan.id}
-              className="peer sr-only"
-            />
-            <Label
-              htmlFor={plan.id}
-              className="flex flex-col p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-[#0D6A51] hover:bg-gray-50 peer-data-[state=checked]:bg-[#0D6A51]/5"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-medium">{plan.name}</span>
-                <Badge variant="outline" className="bg-[#0D6A51]/10 text-[#0D6A51] border-0">
-                  {plan.interest_rate}% p.a.
-                </Badge>
-              </div>
-              <p className="text-sm text-gray-500 mb-3">{plan.description}</p>
-              <div className="grid grid-cols-3 gap-2 text-xs text-gray-600">
-                <div className="flex items-center">
-                  <Calculator className="h-3 w-3 mr-1 text-[#0D6A51]" />
-                  <span>{plan.min_amount.toLocaleString()} - {plan.max_amount.toLocaleString()}</span>
-                </div>
-                <div className="flex items-center">
-                  <Calendar className="h-3 w-3 mr-1 text-[#0D6A51]" />
-                  <span>{plan.min_duration} - {plan.max_duration} mois</span>
-                </div>
-                <div className="flex items-center">
-                  <Percent className="h-3 w-3 mr-1 text-[#0D6A51]" />
-                  <span>Frais: {plan.fees}%</span>
-                </div>
-              </div>
-            </Label>
+    <div className="space-y-3">
+      {plans.map((plan) => (
+        <Card
+          key={plan.id}
+          className={`p-4 cursor-pointer transition-all border-2 ${
+            selectedPlanId === plan.id 
+              ? 'border-[#0D6A51] bg-[#0D6A51]/5 shadow-md' 
+              : 'hover:border-[#0D6A51]/40'
+          }`}
+          onClick={() => onSelectPlan(plan)}
+        >
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className={`font-medium text-lg ${
+                selectedPlanId === plan.id ? 'text-[#0D6A51]' : ''
+              }`}>
+                {plan.name}
+              </h3>
+              <p className="text-sm text-muted-foreground">{plan.description}</p>
+            </div>
+            <Badge variant={selectedPlanId === plan.id ? "default" : "outline"} className="ml-2">
+              {plan.interest_rate}% / an
+            </Badge>
           </div>
-        ))}
-      </div>
-    </RadioGroup>
+          
+          <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
+            <div>
+              <p className="text-muted-foreground">Montant:</p>
+              <p>{plan.min_amount.toLocaleString('fr-FR')} - {plan.max_amount.toLocaleString('fr-FR')} FCFA</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Durée:</p>
+              <p>{plan.min_duration} - {plan.max_duration} mois</p>
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
   );
 };
 

@@ -25,14 +25,11 @@ Command.displayName = CommandPrimitive.displayName
 interface CommandDialogProps extends DialogProps {}
 
 const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
-  // Add safety check for children
-  const safeChildren = children || null;
-  
   return (
     <Dialog {...props}>
       <DialogContent className="overflow-hidden p-0 shadow-lg">
         <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
-          {safeChildren}
+          {children}
         </Command>
       </DialogContent>
     </Dialog>
@@ -61,20 +58,15 @@ CommandInput.displayName = CommandPrimitive.Input.displayName
 const CommandList = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
->(({ className, children, ...props }, ref) => {
-  // Add safety check for children
-  const safeChildren = children || null;
-  
-  return (
-    <CommandPrimitive.List
-      ref={ref}
-      className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
-      {...props}
-    >
-      {safeChildren}
-    </CommandPrimitive.List>
-  )
-})
+>(({ className, children, ...props }, ref) => (
+  <CommandPrimitive.List
+    ref={ref}
+    className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
+    {...props}
+  >
+    {children}
+  </CommandPrimitive.List>
+))
 
 CommandList.displayName = CommandPrimitive.List.displayName
 
@@ -94,23 +86,18 @@ CommandEmpty.displayName = CommandPrimitive.Empty.displayName
 const CommandGroup = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Group>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
->(({ className, children, ...props }, ref) => {
-  // Make sure we always have an array (or null) for children to prevent "undefined is not iterable" errors
-  const safeChildren = children != null ? children : null;
-  
-  return (
-    <CommandPrimitive.Group
-      ref={ref}
-      className={cn(
-        "overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground",
-        className
-      )}
-      {...props}
-    >
-      {safeChildren}
-    </CommandPrimitive.Group>
-  );
-})
+>(({ className, children, ...props }, ref) => (
+  <CommandPrimitive.Group
+    ref={ref}
+    className={cn(
+      "overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground",
+      className
+    )}
+    {...props}
+  >
+    {children}
+  </CommandPrimitive.Group>
+))
 
 CommandGroup.displayName = CommandPrimitive.Group.displayName
 
