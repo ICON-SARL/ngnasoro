@@ -1,5 +1,5 @@
 
-import { MobileMoneyResponse } from '@/utils/mobileMoneyApi';
+import { MobileMoneyResponse, QRCodeResponse } from '@/utils/mobileMoneyApi';
 
 export interface MobileMoneyPaymentHook {
   isProcessingPayment: boolean;
@@ -33,4 +33,10 @@ export interface MobileMoneyOperationsHook {
     amount: number, 
     provider: "orange" | "mtn" | "wave"
   ) => Promise<MobileMoneyResponse>;
+}
+
+export interface QRCodeGenerationHook {
+  isProcessingQRCode: boolean;
+  generatePaymentQRCode: (amount: number, loanId?: string) => Promise<QRCodeResponse>;
+  generateWithdrawalQRCode: (amount: number) => Promise<QRCodeResponse>;
 }
