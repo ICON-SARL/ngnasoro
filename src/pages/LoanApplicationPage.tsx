@@ -3,7 +3,6 @@ import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import LoanApplicationForm from '@/components/loan-application/LoanApplicationForm';
-import { Footer } from '@/components';
 
 const LoanApplicationPage = () => {
   const { user } = useAuth();
@@ -23,7 +22,6 @@ const LoanApplicationPage = () => {
           <LoanApplicationForm />
         </div>
       </div>
-      <Footer />
     </div>
   );
 };
