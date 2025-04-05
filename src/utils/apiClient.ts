@@ -2,6 +2,12 @@
 import { supabase } from "@/integrations/supabase/client";
 import { handleError, handleApiResponse } from "./errorHandler";
 
+// Define simple return types to avoid deep nesting
+interface BalanceResult {
+  balance: number;
+  currency: string;
+}
+
 export const apiClient = {
   // Expose supabase for direct use
   supabase,
@@ -40,7 +46,7 @@ export const apiClient = {
     }
   },
   
-  async getSfdBalance(userId: string, sfdId: string) {
+  async getSfdBalance(userId: string, sfdId: string): Promise<BalanceResult> {
     try {
       // First try to get balance from accounts table
       const { data: accountData, error: accountError } = await supabase
