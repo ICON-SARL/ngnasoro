@@ -33,6 +33,7 @@ import LoanApplicationPage from '@/pages/LoanApplicationPage';
 // Role types and permissions
 import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
 import { initializeSupabase } from '@/utils/initSupabase';
+import { Toaster } from "@/components/ui/toaster";
 
 // Initialize Supabase data structures
 initializeSupabase();
@@ -46,6 +47,7 @@ const AppWithFooter = () => {
     <>
       <AppRoutes />
       {isHomePage && <Footer />}
+      <Toaster />
     </>
   );
 };
