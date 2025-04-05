@@ -2,12 +2,12 @@
 import { apiClient } from '@/utils/apiClient';
 
 // Define types inline to avoid circular dependencies
-interface SfdBalanceData {
+export interface SfdBalanceData {
   balance: number;
   currency: string;
 }
 
-interface UserSfd {
+export interface UserSfd {
   id: string;
   is_default: boolean;
   sfds: {
@@ -19,12 +19,12 @@ interface UserSfd {
   }
 }
 
-interface SyncResult {
+export interface SyncResult {
   success: boolean;
   message?: string;
 }
 
-interface LoanPaymentParams {
+export interface LoanPaymentParams {
   loanId: string;
   amount: number;
   method?: string;
@@ -115,6 +115,3 @@ export async function processLoanPayment(
   
   return { success: true };
 }
-
-// Re-export types for external use
-export type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams };

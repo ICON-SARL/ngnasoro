@@ -13,18 +13,30 @@ interface MobileMoneyTabProps {
   handlePayment: () => void;
   isWithdrawal?: boolean;
   amount?: number;
+  onAmountChange?: (amount: number) => void;
 }
 
 export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({ 
   paymentStatus, 
   handlePayment,
   isWithdrawal = false,
-  amount = isWithdrawal ? 25000 : 3500
+  amount = isWithdrawal ? 25000 : 3500,
+  onAmountChange
 }) => {
   const [selected, setSelected] = useState("orange");
   const [phoneNumber, setPhoneNumber] = useState("");
   const { user } = useAuth();
   const { isProcessing, processMobileMoneyPayment, processMobileMoneyWithdrawal } = useMobileMoneyOperations();
+  const [customAmount, setCustomAmount] = useState(amount.toString());
+  
+  // Update amount when custom amount changes
+  const handleAmountChange = (value: string) => {
+    setCustomAmount(value);
+    const numValue = parseFloat(value.replace(/[^\d]/g, ''));
+    if (!isNaN(numValue) && onAmountChange) {
+      onAmountChange(numValue);
+    }
+  };
   
   const handleMobileMoneyTransaction = async () => {
     if (!phoneNumber) {
@@ -33,11 +45,12 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
     
     try {
       const provider = selected as "orange" | "mtn" | "wave";
+      const transactionAmount = onAmountChange ? parseFloat(customAmount) : amount;
       
       if (isWithdrawal) {
-        await processMobileMoneyWithdrawal(phoneNumber, amount, provider);
+        await processMobileMoneyWithdrawal(phoneNumber, transactionAmount, provider);
       } else {
-        await processMobileMoneyPayment(phoneNumber, amount, provider);
+        await processMobileMoneyPayment(phoneNumber, transactionAmount, provider);
       }
       
       // Call the parent component's handler
@@ -107,7 +120,17 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
         
         <div>
           <Label>Montant</Label>
-          <Input type="text" value={`${amount.toLocaleString()} FCFA`} readOnly />
+          {onAmountChange ? (
+            <Input 
+              type="text" 
+              value={customAmount}
+              onChange={(e) => handleAmountChange(e.target.value)}
+              placeholder="Entrez le montant" 
+            />
+          ) : (
+            <Input type="text" value={`${amount.toLocaleString()} FCFA`} readOnly />
+          )}
+          
           <div className="flex items-center mt-1 text-xs text-green-600">
             <Smartphone className="h-3 w-3 mr-1" />
             {isWithdrawal ? 

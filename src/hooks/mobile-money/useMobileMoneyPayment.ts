@@ -16,7 +16,7 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-
+  
   const processMobileMoneyPayment = async (
     phoneNumber: string, 
     amount: number, 
@@ -50,7 +50,7 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
       if (response.success) {
         toast({
           title: "Paiement initié",
-          description: "Vérifiez votre téléphone pour confirmer la transaction",
+          description: "La demande de paiement a été initiée avec succès",
         });
       } else {
         toast({
