@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,14 +15,12 @@ import LoanPlansSelector from './LoanPlansSelector';
 import SfdSelector from './SfdSelector';
 import { LoaderCircle } from 'lucide-react';
 
-// Interface for SFD
 interface SFD {
   id: string;
   name: string;
   is_default: boolean;
 }
 
-// Interface for Loan Plan
 interface LoanPlan {
   id: string;
   name: string;
@@ -38,7 +35,6 @@ interface LoanPlan {
   sfd_id: string;
 }
 
-// Define form schema
 const formSchema = z.object({
   sfdId: z.string({
     required_error: "Veuillez sélectionner une SFD",
@@ -69,7 +65,6 @@ const LoanApplicationPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Initialize form with default values
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -82,7 +77,6 @@ const LoanApplicationPage: React.FC = () => {
     },
   });
   
-  // Load user's SFDs
   useEffect(() => {
     const fetchUserSfds = async () => {
       if (!user) return;
@@ -101,7 +95,6 @@ const LoanApplicationPage: React.FC = () => {
           
         if (error) throw error;
         
-        // Ensure we have a valid array even if data is null or undefined
         const transformedData = Array.isArray(data) ? data.map(item => ({
           id: item.sfd_id,
           name: item.sfds.name,
@@ -110,7 +103,6 @@ const LoanApplicationPage: React.FC = () => {
         
         setSfds(transformedData);
         
-        // If no SFD is selected but we have a default, use it
         if (!form.getValues().sfdId && transformedData.length > 0) {
           const defaultSfd = transformedData.find(sfd => sfd.is_default);
           if (defaultSfd) {
@@ -126,8 +118,7 @@ const LoanApplicationPage: React.FC = () => {
           description: "Impossible de charger vos comptes SFD",
           variant: "destructive",
         });
-        // Ensure sfds is always an array even on error
-        setSfds([]); 
+        setSfds([]);
       } finally {
         setIsLoading(false);
       }
@@ -136,14 +127,12 @@ const LoanApplicationPage: React.FC = () => {
     fetchUserSfds();
   }, [user, form, toast, activeSfdId]);
   
-  // Listen for SFD changes to reset plan selection
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       if (name === 'sfdId') {
         form.setValue('planId', '');
         setSelectedPlan(null);
       } else if (name === 'planId' && selectedPlan) {
-        // Update amount and duration constraints based on the selected plan
         form.trigger(['amount', 'duration']);
       }
     });
@@ -151,7 +140,6 @@ const LoanApplicationPage: React.FC = () => {
     return () => subscription.unsubscribe();
   }, [form, selectedPlan]);
   
-  // Update validation schema based on selected plan
   useEffect(() => {
     if (selectedPlan) {
       form.reset({
@@ -166,7 +154,6 @@ const LoanApplicationPage: React.FC = () => {
     setSelectedPlan(plan);
     form.setValue('planId', plan.id);
     
-    // Update amount and duration to fit within plan constraints
     const currentAmount = form.getValues().amount;
     const currentDuration = form.getValues().duration;
     
@@ -192,12 +179,10 @@ const LoanApplicationPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Calculate monthly payment
       const monthlyInterestRate = (selectedPlan?.interest_rate || 5) / 100 / 12;
       const monthlyPayment = (data.amount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, data.duration)) / 
                           (Math.pow(1 + monthlyInterestRate, data.duration) - 1);
       
-      // First, check if this user has a client record for this SFD
       let clientId;
       const { data: clientData, error: clientError } = await supabase
         .from('sfd_clients')
@@ -207,7 +192,6 @@ const LoanApplicationPage: React.FC = () => {
         .single();
       
       if (clientError) {
-        // Create a client record
         const { data: newClient, error: createClientError } = await supabase
           .from('sfd_clients')
           .insert({
@@ -227,7 +211,6 @@ const LoanApplicationPage: React.FC = () => {
         clientId = clientData.id;
       }
       
-      // Create the loan request
       const { data: loanData, error: loanError } = await supabase
         .from('sfd_loans')
         .insert({
@@ -245,7 +228,6 @@ const LoanApplicationPage: React.FC = () => {
         
       if (loanError) throw loanError;
       
-      // Create a loan activity
       await supabase
         .from('loan_activities')
         .insert({
@@ -254,7 +236,6 @@ const LoanApplicationPage: React.FC = () => {
           description: `Demande de prêt de ${data.amount.toLocaleString('fr-FR')} FCFA soumise via l'application mobile`
         });
       
-      // Success!
       toast({
         title: "Demande envoyée",
         description: "Votre demande de prêt a été soumise avec succès",
@@ -424,10 +405,10 @@ const LoanApplicationPage: React.FC = () => {
               
               <Button 
                 type="submit" 
-                className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+                className="w-full py-4 text-lg font-semibold bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white shadow-lg"
                 disabled={isLoading || !selectedPlan}
               >
-                {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading && <LoaderCircle className="mr-2 h-5 w-5 animate-spin" />}
                 Soumettre ma demande
               </Button>
             </form>
