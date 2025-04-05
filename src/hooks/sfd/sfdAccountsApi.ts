@@ -117,7 +117,7 @@ export async function processLoanPayment(
   return { success: true };
 }
 
-// New function for mobile money payments
+// Mobile money payments function
 export async function processMobileMoneyPayment(
   userId: string,
   phoneNumber: string,

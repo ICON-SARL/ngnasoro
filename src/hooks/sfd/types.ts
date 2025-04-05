@@ -31,7 +31,8 @@ export interface SfdAccount {
   currency: string;
 }
 
-// Import types directly from sfdAccountsApi.ts
+// Import specific types from sfdAccountsApi.ts instead of the whole file
+// This breaks the circular dependency
 import type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from "./sfdAccountsApi";
 export type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams };
 
