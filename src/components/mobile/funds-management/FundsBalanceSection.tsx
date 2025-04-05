@@ -24,7 +24,7 @@ const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({
         <p className="text-sm mb-1">Solde disponible</p>
         {isRefreshing ? (
           <div className="flex items-center justify-center h-10">
-            <Loader size="md" className="text-white" />
+            <Loader size="default" className="text-white" />
           </div>
         ) : (
           <p className="text-3xl font-bold">{formatCurrencyAmount(balance)} FCFA</p>
