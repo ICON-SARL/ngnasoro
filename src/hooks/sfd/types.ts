@@ -54,6 +54,7 @@ export interface SyncResult {
   message?: string;
 }
 
+// Use simple types for parameters to avoid circular references
 export interface LoanPaymentParams {
   loanId: string;
   amount: number;
