@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface MobileMoneyRequest {
@@ -13,6 +12,7 @@ export interface QRCodeRequest {
   userId: string;
   amount: number;
   isWithdrawal: boolean;
+  loanId?: string;
 }
 
 export interface MobileMoneyResponse {
