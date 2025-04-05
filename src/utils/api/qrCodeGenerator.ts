@@ -4,6 +4,7 @@ import { QRCodeRequest, QRCodeResponse } from '@/utils/mobileMoneyApi';
 
 /**
  * Génère un QR code pour un paiement ou un retrait
+ * Note: Cette fonction ne sera utilisée que par l'admin SFD
  */
 export const generateQRCode = async (request: QRCodeRequest): Promise<QRCodeResponse> => {
   try {
@@ -54,6 +55,7 @@ export const generateQRCode = async (request: QRCodeRequest): Promise<QRCodeResp
 
 /**
  * Vérifie un QR code
+ * Cette fonction est utilisée par l'application mobile pour vérifier un code QR scanné
  */
 export const verifyQRCode = async (code: string): Promise<boolean> => {
   try {
@@ -62,6 +64,7 @@ export const verifyQRCode = async (code: string): Promise<boolean> => {
     });
     
     if (error || !data?.success) {
+      console.error('QR code verification error:', error || 'Invalid server response');
       return false;
     }
     
@@ -69,5 +72,54 @@ export const verifyQRCode = async (code: string): Promise<boolean> => {
   } catch (error) {
     console.error('QR code verification error:', error);
     return false;
+  }
+};
+
+/**
+ * Scanne un QR code pour un retrait ou un paiement en agence
+ * Cette fonction est utilisée par l'application mobile pour effectuer un retrait/paiement après avoir scanné un code QR
+ */
+export const scanQRCodeForTransaction = async (code: string, userId: string): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('qr-code-verification', {
+      body: JSON.stringify({ 
+        code,
+        userId,
+        action: 'scan'
+      })
+    });
+    
+    if (error) {
+      console.error('QR code scan error:', error);
+      return {
+        success: false,
+        message: error.message || 'Échec lors du scan du code QR'
+      };
+    }
+    
+    if (!data || !data.success) {
+      return {
+        success: false,
+        message: data?.message || 'Code QR invalide ou expiré'
+      };
+    }
+    
+    return {
+      success: true,
+      message: data.isWithdrawal 
+        ? 'Retrait en espèces confirmé' 
+        : 'Paiement en espèces confirmé',
+      data: data
+    };
+  } catch (error: any) {
+    console.error('QR code scan error:', error);
+    return {
+      success: false,
+      message: error.message || 'Une erreur est survenue lors du traitement'
+    };
   }
 };

@@ -177,9 +177,9 @@ serve(async (req) => {
       }
       
       const requestBody = await req.json();
-      const { userId, loanId, amount, isWithdrawal } = requestBody;
+      const { userId, loanId, amount, isWithdrawal, sfdId } = requestBody;
       
-      if (!userId || !amount) {
+      if (!sfdId || !amount) {
         return new Response(
           JSON.stringify({ error: "Missing required fields" }),
           { 
@@ -193,11 +193,12 @@ serve(async (req) => {
       
       // Generate a secure QR code
       const { code, encryptedData, expiresAt } = await generateSecureQrCode({
-        userId,
+        sfdId,
         loanId: loanId || undefined,
         amount,
         isWithdrawal: isWithdrawal || false,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        type: 'sfd_generated'
       });
       
       // Store the QR code in the database
@@ -206,8 +207,8 @@ serve(async (req) => {
         .insert({
           code,
           encrypted_data: encryptedData,
-          user_id: userId,
-          loan_id: loanId,
+          sfd_id: sfdId,
+          loan_id: loanId || null,
           amount,
           is_withdrawal: isWithdrawal || false,
           expires_at: expiresAt.toISOString(),
@@ -229,7 +230,7 @@ serve(async (req) => {
       );
     }
     
-    // Handle verification requests
+    // Handle verification and scan requests
     if (req.method !== "POST") {
       return new Response(
         JSON.stringify({ error: "Method not allowed" }),
@@ -240,7 +241,8 @@ serve(async (req) => {
       );
     }
 
-    const { code } = await req.json();
+    const requestBody = await req.json();
+    const { code, action = 'verify', userId } = requestBody;
     
     if (!code) {
       return new Response(
@@ -252,7 +254,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Verifying QR code ${code}`);
+    console.log(`${action === 'scan' ? 'Scanning' : 'Verifying'} QR code ${code}`);
 
     // Look up the QR code in the database
     const { data: qrData, error: qrError } = await supabase
@@ -265,9 +267,12 @@ serve(async (req) => {
     if (qrError || !qrData) {
       console.error("Error retrieving QR code:", qrError);
       return new Response(
-        JSON.stringify({ error: "Invalid or expired QR code" }),
+        JSON.stringify({ 
+          success: false, 
+          message: "Code QR invalide ou expiré" 
+        }),
         { 
-          status: 400, 
+          status: 200, 
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         }
       );
@@ -276,9 +281,12 @@ serve(async (req) => {
     // Check if the QR code has expired
     if (new Date(qrData.expires_at) < new Date()) {
       return new Response(
-        JSON.stringify({ error: "QR code has expired" }),
+        JSON.stringify({ 
+          success: false, 
+          message: "Le code QR a expiré" 
+        }),
         { 
-          status: 400, 
+          status: 200, 
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         }
       );
@@ -289,76 +297,119 @@ serve(async (req) => {
     
     if (!decryptedData) {
       return new Response(
-        JSON.stringify({ error: "Invalid QR code data" }),
+        JSON.stringify({ 
+          success: false, 
+          message: "Données du code QR invalides" 
+        }),
         { 
-          status: 400, 
+          status: 200, 
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         }
       );
     }
     
-    // Mark the QR code as used
-    await supabase
-      .from("qr_codes")
-      .update({ used: true, used_at: new Date().toISOString() })
-      .eq("code", code);
-    
-    // Record the transaction in the database
-    const transactionType = qrData.is_withdrawal ? "withdrawal" : "payment";
-    const transactionName = qrData.is_withdrawal ? "Retrait en agence" : "Remboursement en agence";
-    
-    const { data, error } = await supabase
-      .from("transactions")
-      .insert({
-        user_id: qrData.user_id,
-        amount: qrData.is_withdrawal ? -qrData.amount : qrData.amount,
-        name: transactionName,
-        type: transactionType,
-        sfd_id: decryptedData.sfdId,
-        reference: code,
-        date: new Date().toISOString()
-      });
-
-    if (error) {
-      console.error("Error recording transaction:", error);
-      throw error;
+    // For simple verification (just checking if valid)
+    if (action === 'verify') {
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: "Code QR valide"
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
-
-    // Broadcast the transaction status update using Supabase Realtime if needed
-    if (qrData.loan_id) {
-      const broadcastResult = await supabase
-        .channel('loan-status-changes')
-        .send({
-          type: 'broadcast',
-          event: 'loan_status_update',
-          payload: {
-            loanId: qrData.loan_id,
-            paidAmount: qrData.amount,
-            paymentType: 'in_agency',
-            transactionId: data?.[0]?.id || null,
-            qrCode: code,
-            usedAt: new Date().toISOString()
-          }
+    
+    // For actual scanning and processing the transaction
+    if (action === 'scan' && userId) {
+      // Mark the QR code as used
+      await supabase
+        .from("qr_codes")
+        .update({ used: true, used_at: new Date().toISOString(), used_by: userId })
+        .eq("code", code);
+      
+      // Record the transaction in the database
+      const transactionType = qrData.is_withdrawal ? "withdrawal" : "payment";
+      const transactionName = qrData.is_withdrawal ? "Retrait en agence" : "Remboursement en agence";
+      
+      const { data, error } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: userId,
+          amount: qrData.is_withdrawal ? -qrData.amount : qrData.amount,
+          name: transactionName,
+          type: transactionType,
+          sfd_id: decryptedData.sfdId || qrData.sfd_id,
+          reference: code,
+          date: new Date().toISOString()
         });
 
-      console.log("Broadcast result:", broadcastResult);
-    }
+      if (error) {
+        console.error("Error recording transaction:", error);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: "Erreur lors de l'enregistrement de la transaction" 
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+      }
 
+      // For loan repayment, update loan status if needed
+      if (qrData.loan_id) {
+        const broadcastResult = await supabase
+          .channel('loan-status-changes')
+          .send({
+            type: 'broadcast',
+            event: 'loan_status_update',
+            payload: {
+              loanId: qrData.loan_id,
+              paidAmount: qrData.amount,
+              paymentType: 'in_agency',
+              transactionId: data?.[0]?.id || null,
+              qrCode: code,
+              usedAt: new Date().toISOString()
+            }
+          });
+
+        console.log("Broadcast result:", broadcastResult);
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: qrData.is_withdrawal ? 'Retrait en espèces confirmé' : 'Paiement en espèces confirmé',
+          transactionId: data?.[0]?.id || null,
+          isWithdrawal: qrData.is_withdrawal,
+          amount: qrData.amount
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // If no valid action is provided
     return new Response(
       JSON.stringify({ 
-        success: true, 
-        message: `QR code verified and ${qrData.is_withdrawal ? 'withdrawal' : 'payment'} recorded`,
-        transactionId: data?.[0]?.id || null,
-        isWithdrawal: qrData.is_withdrawal,
-        amount: qrData.amount
+        success: false, 
+        message: "Action non valide" 
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { 
+        status: 400, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      }
     );
+    
   } catch (error) {
-    console.error("Error processing QR code verification:", error);
+    console.error("Error processing QR code operation:", error);
     
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: error.message }),
+      JSON.stringify({ 
+        success: false, 
+        message: "Erreur interne du serveur", 
+        details: error.message 
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
