@@ -77,8 +77,8 @@ const SFDSavingsOverview = () => {
     setIsHidden(!isHidden);
   };
 
-  const handleViewAllAccounts = () => {
-    navigate('/mobile-flow/multi-sfd');
+  const handleWithdrawal = () => {
+    navigate('/mobile-flow/secure-payment', { state: { isWithdrawal: true } });
   };
   
   // Show a "no account" message if the user doesn't have an active SFD
@@ -115,10 +115,14 @@ const SFDSavingsOverview = () => {
         
         <Button 
           className="mt-3 w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white py-2 rounded-xl font-medium transition-colors"
-          onClick={handleViewAllAccounts}
+          onClick={handleWithdrawal}
         >
-          Voir tous mes comptes SFD
+          Effectuer un retrait
         </Button>
+        
+        <p className="text-sm text-gray-500 mt-2 text-center">
+          Retirez vos fonds facilement via Mobile Money ou en agence SFD
+        </p>
       </CardContent>
     </Card>
   );

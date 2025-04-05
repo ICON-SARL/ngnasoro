@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ChevronRight, CheckCircle, Clock } from 'lucide-react';
+import { ChevronRight, CheckCircle, Clock, ArrowUp } from 'lucide-react';
 import { SfdAccountDisplay } from './AccountsList';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
 
@@ -68,6 +68,8 @@ const SfdAccountItem: React.FC<SfdAccountItemProps> = ({
         )}
         {isProcessing ? (
           <div className="animate-spin h-4 w-4 border-2 border-gray-500 border-t-transparent rounded-full"></div>
+        ) : isActive ? (
+          <ArrowUp className="h-5 w-5 text-green-600" />
         ) : (
           <ChevronRight className="h-5 w-5 text-gray-400" />
         )}
