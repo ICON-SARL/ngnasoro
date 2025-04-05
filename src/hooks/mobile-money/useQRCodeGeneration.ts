@@ -1,137 +1,51 @@
 
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  generateQRCode,
-  QRCodeRequest,
-  QRCodeResponse
-} from '@/utils/mobileMoneyApi';
+import { mobileMoneyApi, QRCodeResponse } from '@/utils/mobileMoneyApi';
 import { QRCodeGenerationHook } from './types';
 
-/**
- * Hook for generating QR codes for payments and withdrawals
- */
 export function useQRCodeGeneration(): QRCodeGenerationHook {
-  const { user } = useAuth();
-  const { toast } = useToast();
   const [isProcessingQRCode, setIsProcessingQRCode] = useState(false);
   
-  const generatePaymentQRCode = async (
-    amount: number,
-    loanId?: string
-  ): Promise<QRCodeResponse> => {
-    if (!user) {
-      toast({
-        title: "Erreur d'authentification",
-        description: "Vous devez être connecté pour effectuer cette opération",
-        variant: "destructive",
-      });
-      return { 
-        success: false, 
-        error: "Utilisateur non authentifié"
-      };
-    }
-    
+  const generatePaymentQRCode = async (amount: number, loanId?: string): Promise<QRCodeResponse> => {
     setIsProcessingQRCode(true);
-    
     try {
-      const request: QRCodeRequest = {
-        userId: user.id,
-        amount,
-        isWithdrawal: false,
-        loanId,
-        isRepayment: !!loanId
-      };
+      const result = await mobileMoneyApi.generateQRCode(amount, 'payment');
       
-      const response = await generateQRCode(request);
-      
-      if (response.success) {
-        toast({
-          title: "Code QR généré",
-          description: "Le code QR a été généré avec succès",
-        });
-      } else {
-        toast({
-          title: "Échec de la génération du code QR",
-          description: response.error || "Une erreur s'est produite",
-          variant: "destructive",
-        });
+      // Add loanId to qrCodeData if provided
+      if (loanId && result.success) {
+        const qrData = JSON.parse(atob(result.qrCodeData?.split(',')[1] || '{}'));
+        qrData.loanId = loanId;
+        result.qrCodeData = `data:image/svg+xml;base64,${btoa(JSON.stringify(qrData))}`;
       }
       
-      return response;
-    } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur s'est produite",
-        variant: "destructive",
-      });
-      
+      return result;
+    } catch (error) {
+      console.error('Failed to generate payment QR code:', error);
       return {
         success: false,
-        error: "Une erreur s'est produite lors de la génération du code QR"
+        error: 'Failed to generate payment QR code'
       };
     } finally {
       setIsProcessingQRCode(false);
     }
   };
   
-  const generateWithdrawalQRCode = async (
-    amount: number
-  ): Promise<QRCodeResponse> => {
-    if (!user) {
-      toast({
-        title: "Erreur d'authentification",
-        description: "Vous devez être connecté pour effectuer cette opération",
-        variant: "destructive",
-      });
-      return { 
-        success: false, 
-        error: "Utilisateur non authentifié"
-      };
-    }
-    
+  const generateWithdrawalQRCode = async (amount: number): Promise<QRCodeResponse> => {
     setIsProcessingQRCode(true);
-    
     try {
-      const request: QRCodeRequest = {
-        userId: user.id,
-        amount,
-        isWithdrawal: true
-      };
-      
-      const response = await generateQRCode(request);
-      
-      if (response.success) {
-        toast({
-          title: "Code QR généré",
-          description: "Le code QR a été généré avec succès",
-        });
-      } else {
-        toast({
-          title: "Échec de la génération du code QR",
-          description: response.error || "Une erreur s'est produite",
-          variant: "destructive",
-        });
-      }
-      
-      return response;
-    } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur s'est produite",
-        variant: "destructive",
-      });
-      
+      const result = await mobileMoneyApi.generateQRCode(amount, 'withdrawal');
+      return result;
+    } catch (error) {
+      console.error('Failed to generate withdrawal QR code:', error);
       return {
         success: false,
-        error: "Une erreur s'est produite lors de la génération du code QR"
+        error: 'Failed to generate withdrawal QR code'
       };
     } finally {
       setIsProcessingQRCode(false);
     }
   };
-
+  
   return {
     isProcessingQRCode,
     generatePaymentQRCode,

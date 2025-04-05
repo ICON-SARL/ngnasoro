@@ -1,84 +1,57 @@
 
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  initiateMobileMoneyTransaction,
-  MobileMoneyRequest,
-  MobileMoneyResponse
-} from '@/utils/mobileMoneyApi';
+import { useAuth } from '../useAuth';
+import { processMobileMoneyPayment } from '../sfd/sfdAccountsApi';
 import { MobileMoneyWithdrawalHook } from './types';
+import { MobileMoneyResponse } from '@/utils/mobileMoneyApi';
 
-/**
- * Hook for handling mobile money withdrawal operations
- */
 export function useMobileMoneyWithdrawal(): MobileMoneyWithdrawalHook {
-  const { user } = useAuth();
-  const { toast } = useToast();
   const [isProcessingWithdrawal, setIsProcessingWithdrawal] = useState(false);
+  const { user } = useAuth();
   
-  const processMobileMoneyWithdrawal = async (
+  const processMobileMoneyWithdrawalFn = async (
     phoneNumber: string, 
     amount: number, 
     provider: "orange" | "mtn" | "wave"
   ): Promise<MobileMoneyResponse> => {
-    if (!user) {
-      toast({
-        title: "Erreur d'authentification",
-        description: "Vous devez être connecté pour effectuer cette opération",
-        variant: "destructive",
-      });
-      return { 
-        success: false, 
-        message: "Utilisateur non authentifié"
+    if (!user?.id) {
+      return {
+        success: false,
+        message: "User not authenticated",
+        transactionId: null
       };
     }
     
     setIsProcessingWithdrawal(true);
     
     try {
-      const request: MobileMoneyRequest = {
-        userId: user.id,
+      // Use the same function but with different parameters
+      const result = await processMobileMoneyPayment(
+        user.id,
         phoneNumber,
         amount,
         provider,
-        isWithdrawal: true
-      };
-      
-      const response = await initiateMobileMoneyTransaction(request);
-      
-      if (response.success) {
-        toast({
-          title: "Retrait initié",
-          description: "La demande de retrait a été initiée avec succès",
-        });
-      } else {
-        toast({
-          title: "Échec du retrait",
-          description: response.error || "Une erreur s'est produite",
-          variant: "destructive",
-        });
-      }
-      
-      return response;
-    } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur s'est produite",
-        variant: "destructive",
-      });
+        false // Not a repayment for withdrawals
+      );
       
       return {
+        success: result.success,
+        message: result.message || "Withdrawal successful",
+        transactionId: `mmw-${Date.now()}`
+      };
+    } catch (error: any) {
+      return {
         success: false,
-        message: "Une erreur s'est produite lors du retrait"
+        message: error.message || "Failed to process mobile money withdrawal",
+        transactionId: null
       };
     } finally {
       setIsProcessingWithdrawal(false);
     }
   };
-
+  
   return {
     isProcessingWithdrawal,
-    processMobileMoneyWithdrawal
+    processMobileMoneyWithdrawal: processMobileMoneyWithdrawalFn
   };
 }
