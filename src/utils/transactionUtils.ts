@@ -79,7 +79,7 @@ export function formatCurrencyAmount(amount: number, currency: string = 'FCFA'):
     maximumFractionDigits: 0
   });
   
-  return `${formatter.format(Math.abs(amount))} ${currency}`;
+  return formatter.format(Math.abs(amount)) + (currency ? ` ${currency}` : '');
 }
 
 /**

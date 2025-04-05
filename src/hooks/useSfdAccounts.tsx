@@ -3,8 +3,9 @@ import { useAuth } from './useAuth';
 import { useSfdList } from './sfd/useSfdList';
 import { useActiveSfd } from './sfd/useActiveSfd';
 import { useSfdAccountActions } from './sfd/useSfdAccountActions';
-// Use export type for TypeScript types
-export type { SfdAccount } from './sfd/types';
+// Export the SfdAccount type directly
+import { SfdAccount } from './sfd/types';
+export type { SfdAccount };
 
 export function useSfdAccounts() {
   const { user, activeSfdId } = useAuth();

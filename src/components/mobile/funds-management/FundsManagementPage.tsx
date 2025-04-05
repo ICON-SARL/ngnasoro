@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import SecurePaymentTab from '../secure-payment';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
-import { useSfdAccounts, SfdAccount } from '@/hooks/useSfdAccounts';
+import { useSfdAccounts } from '@/hooks/sfd/useSfdAccounts';
 import { useMobileDashboard } from '@/hooks/useMobileDashboard';
 import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 import { useToast } from '@/hooks/use-toast';

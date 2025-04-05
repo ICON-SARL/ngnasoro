@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
 import { Loader } from '@/components/ui/loader';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { SfdAccount } from '@/hooks/sfdAccounts';
+import { SfdAccount } from '@/hooks/sfd/types';
 
 interface FundsBalanceSectionProps {
   balance: number;
@@ -66,7 +66,7 @@ const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({
         ) : (
           <div className="text-center">
             <h1 className="text-5xl font-bold tracking-tight mt-2">
-              {formatCurrencyAmount(balance)}
+              {formatCurrencyAmount(balance, "")}
             </h1>
             <p className="text-lg mt-1">FCFA</p>
           </div>
