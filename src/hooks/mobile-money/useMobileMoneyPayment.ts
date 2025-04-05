@@ -5,13 +5,12 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   initiateMobileMoneyTransaction,
   initiateLoanRepayment,
-  MobileMoneyRequest,
   MobileMoneyResponse
 } from '@/utils/mobileMoneyApi';
 import { MobileMoneyPaymentHook } from './types';
 
 /**
- * Hook for handling mobile money payment operations
+ * Hook for handling mobile money payments
  */
 export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
   const { user } = useAuth();
@@ -32,7 +31,7 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
       });
       return { 
         success: false, 
-        message: "Utilisateur non authentifié"
+        message: "Utilisateur non authentifié" 
       };
     }
     
@@ -42,33 +41,33 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
       let response;
       
       if (loanId) {
+        // If we have a loan ID, this is a loan repayment
         response = await initiateLoanRepayment(
-          user.id,
-          loanId,
-          phoneNumber,
-          amount,
+          user.id, 
+          loanId, 
+          phoneNumber, 
+          amount, 
           provider
         );
       } else {
-        const request: MobileMoneyRequest = {
+        // Regular payment
+        response = await initiateMobileMoneyTransaction({
           userId: user.id,
           phoneNumber,
           amount,
           provider,
           isWithdrawal: false
-        };
-        
-        response = await initiateMobileMoneyTransaction(request);
+        });
       }
       
       if (response.success) {
         toast({
-          title: loanId ? "Remboursement initié" : "Paiement initié",
-          description: "La demande de paiement a été initiée avec succès",
+          title: "Paiement initié",
+          description: response.message || "Votre paiement a été initié avec succès",
         });
       } else {
         toast({
-          title: loanId ? "Échec du remboursement" : "Échec du paiement",
+          title: "Échec du paiement",
           description: response.error || "Une erreur s'est produite",
           variant: "destructive",
         });
@@ -84,7 +83,7 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
       
       return {
         success: false,
-        message: "Une erreur s'est produite lors du paiement"
+        message: "Une erreur s'est produite lors du traitement du paiement"
       };
     } finally {
       setIsProcessingPayment(false);

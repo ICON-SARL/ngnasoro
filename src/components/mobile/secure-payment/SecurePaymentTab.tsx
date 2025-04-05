@@ -2,21 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { QrCodeIcon, Scan } from 'lucide-react';
-import { PaymentMethodTabs } from './PaymentMethodTabs';
-import { SecurityFeatures } from './SecurityFeatures';
-import { ReconciliationSection } from './ReconciliationSection';
 import TabHeader from './TabHeader';
-import PaymentDetails from './PaymentDetails';
 import SuccessView from './SuccessView';
+import SecurePaymentContent from './SecurePaymentContent';
 import MobileMoneyModal from '../loan/MobileMoneyModal';
 import QRCodePaymentDialog from '../loan/QRCodePaymentDialog';
-import { usePaymentProcessor } from './hooks/usePaymentProcessor';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 
@@ -68,7 +60,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     }
   };
   
-  // Gérer le paiement en fonction du type d'opération
+  // Handle payment based on the operation type
   const handlePayment = async () => {
     if (!user || !effectiveSfdId) {
       toast({
@@ -88,13 +80,13 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       return;
     }
     
-    // Pour les opérations en agence SFD, ouvrir le scanner de QR code
+    // For SFD in-agency operations, open the QR code scanner
     if (paymentMethod === 'sfd') {
       setQrDialogOpen(true);
       return;
     }
     
-    // Pour les autres méthodes comme Mobile Money
+    // For other methods like Mobile Money
     setPaymentStatus('pending');
     setProgress(10);
     
@@ -105,13 +97,13 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       let result;
       
       if (isWithdrawal) {
-        // Cas d'un retrait
+        // Withdrawal case
         result = await makeWithdrawal(transactionAmount, `Retrait via ${paymentMethod}`);
       } else if (loanId) {
-        // Cas d'un remboursement de prêt
+        // Loan repayment case
         result = await makeLoanRepayment(loanId, transactionAmount, `Remboursement de prêt via ${paymentMethod}`);
       } else {
-        // Cas d'un dépôt
+        // Deposit case
         result = await makeDeposit(transactionAmount, `Dépôt via ${paymentMethod}`);
       }
       
@@ -145,7 +137,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     }
   };
   
-  // Détecter automatiquement le solde suffisant
+  // Automatically detect sufficient balance
   useEffect(() => {
     const detectPrimaryAccount = () => {
       if (selectedSfdAccount && isWithdrawal) {
@@ -190,42 +182,16 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
           onBack={handleBackAction} 
         />
       ) : (
-        <div className="p-4 space-y-6">
-          <PaymentDetails 
-            isWithdrawal={isWithdrawal}
-            amount={transactionAmount}
-            progress={progress}
-            paymentStatus={paymentStatus}
-            selectedSfdAccount={selectedSfdAccount}
-            onAmountChange={handleAmountChange}
-          />
-          
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-            <h3 className="font-semibold flex items-center gap-2 mb-2">
-              <QrCodeIcon className="h-5 w-5" /> 
-              {isWithdrawal ? 'Retrait en agence SFD' : 'Paiement en agence SFD'}
-            </h3>
-            
-            <p className="text-sm text-gray-600 mb-4">
-              {isWithdrawal 
-                ? "Scannez le code QR disponible en agence SFD pour effectuer votre retrait en espèces."
-                : "Scannez le code QR disponible en agence SFD pour effectuer votre paiement en espèces."
-              }
-            </p>
-            
-            <Button 
-              onClick={() => setQrDialogOpen(true)} 
-              className="w-full flex items-center justify-center gap-2"
-            >
-              <Scan className="h-4 w-4" />
-              Scanner le code QR
-            </Button>
-          </div>
-          
-          <SecurityFeatures isWithdrawal={isWithdrawal} />
-          
-          {!isWithdrawal && !loanId && <ReconciliationSection />}
-        </div>
+        <SecurePaymentContent
+          isWithdrawal={isWithdrawal}
+          loanId={loanId}
+          transactionAmount={transactionAmount}
+          progress={progress}
+          paymentStatus={paymentStatus}
+          selectedSfdAccount={selectedSfdAccount}
+          onAmountChange={handleAmountChange}
+          onScanQRCode={() => setQrDialogOpen(true)}
+        />
       )}
       
       {mobileMoneyInitiated && (
@@ -233,7 +199,6 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       )}
       
       <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
-        <DialogTrigger className="hidden">Open QR Dialog</DialogTrigger>
         <QRCodePaymentDialog onClose={() => setQrDialogOpen(false)} isWithdrawal={isWithdrawal} />
       </Dialog>
     </div>
