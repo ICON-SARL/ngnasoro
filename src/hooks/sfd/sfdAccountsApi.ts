@@ -32,7 +32,7 @@ export interface LoanPaymentParams {
   method?: string;
 }
 
-// Use string type instead of importing User to break the circular dependency
+// Use primitive types only for parameters
 export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
   if (!userId) return [];
   
