@@ -176,9 +176,10 @@ serve(async (req) => {
         );
       }
       
-      const { loanId, amount, userId } = await req.json();
+      const requestBody = await req.json();
+      const { userId, loanId, amount, isWithdrawal } = requestBody;
       
-      if (!loanId || !amount || !userId) {
+      if (!userId || !amount) {
         return new Response(
           JSON.stringify({ error: "Missing required fields" }),
           { 
@@ -188,13 +189,14 @@ serve(async (req) => {
         );
       }
       
-      console.log(`Generating QR code for loan ${loanId}`);
+      console.log(`Generating QR code for ${isWithdrawal ? 'withdrawal' : 'payment'} of ${amount}`);
       
       // Generate a secure QR code
       const { code, encryptedData, expiresAt } = await generateSecureQrCode({
-        loanId,
-        amount,
         userId,
+        loanId: loanId || undefined,
+        amount,
+        isWithdrawal: isWithdrawal || false,
         timestamp: new Date().toISOString()
       });
       
@@ -207,6 +209,7 @@ serve(async (req) => {
           user_id: userId,
           loan_id: loanId,
           amount,
+          is_withdrawal: isWithdrawal || false,
           expires_at: expiresAt.toISOString(),
           used: false
         });
@@ -300,53 +303,54 @@ serve(async (req) => {
       .update({ used: true, used_at: new Date().toISOString() })
       .eq("code", code);
     
-    // Record the payment in the database
+    // Record the transaction in the database
+    const transactionType = qrData.is_withdrawal ? "withdrawal" : "payment";
+    const transactionName = qrData.is_withdrawal ? "Retrait en agence" : "Remboursement en agence";
+    
     const { data, error } = await supabase
       .from("transactions")
       .insert({
         user_id: qrData.user_id,
-        amount: qrData.amount,
-        name: "Remboursement prêt",
-        type: "Paiement en agence SFD",
-        reference: code
+        amount: qrData.is_withdrawal ? -qrData.amount : qrData.amount,
+        name: transactionName,
+        type: transactionType,
+        sfd_id: decryptedData.sfdId,
+        reference: code,
+        date: new Date().toISOString()
       });
 
     if (error) {
-      console.error("Error recording payment:", error);
+      console.error("Error recording transaction:", error);
       throw error;
     }
 
-    // Broadcast the loan status update using Supabase Realtime
-    const broadcastResult = await supabase
-      .channel('loan-status-changes')
-      .send({
-        type: 'broadcast',
-        event: 'loan_status_update',
-        payload: {
-          paidAmount: 13.90,
-          remainingAmount: 11.50,
-          progress: 55,
-          securityData: {
+    // Broadcast the transaction status update using Supabase Realtime if needed
+    if (qrData.loan_id) {
+      const broadcastResult = await supabase
+        .channel('loan-status-changes')
+        .send({
+          type: 'broadcast',
+          event: 'loan_status_update',
+          payload: {
+            loanId: qrData.loan_id,
+            paidAmount: qrData.amount,
+            paymentType: 'in_agency',
+            transactionId: data?.[0]?.id || null,
             qrCode: code,
-            method: 'AES-256',
             usedAt: new Date().toISOString()
-          },
-          paymentHistory: [
-            { id: 4, date: new Date().toLocaleDateString('fr-FR'), amount: 3.50, status: 'paid' },
-            { id: 1, date: '05 August 2023', amount: 3.50, status: 'paid' },
-            { id: 2, date: '05 July 2023', amount: 3.50, status: 'paid' },
-            { id: 3, date: '05 June 2023', amount: 3.50, status: 'paid' }
-          ]
-        }
-      });
+          }
+        });
 
-    console.log("Broadcast result:", broadcastResult);
+      console.log("Broadcast result:", broadcastResult);
+    }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "QR code verified and payment recorded",
-        paymentId: data?.[0]?.id || "payment-123"
+        message: `QR code verified and ${qrData.is_withdrawal ? 'withdrawal' : 'payment'} recorded`,
+        transactionId: data?.[0]?.id || null,
+        isWithdrawal: qrData.is_withdrawal,
+        amount: qrData.amount
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

@@ -11,9 +11,9 @@ export const generateQRCode = async (request: QRCodeRequest): Promise<QRCodeResp
       body: JSON.stringify({
         userId: request.userId,
         loanId: 'LOAN-' + Math.random().toString(36).substr(2, 9),
-        amount: request.amount
+        amount: request.amount,
+        isWithdrawal: request.isWithdrawal
       }),
-      path: '/generate'
     });
     
     if (error) {

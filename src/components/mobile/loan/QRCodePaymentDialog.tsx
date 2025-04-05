@@ -30,7 +30,6 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose, amou
           : await generatePaymentQRCode(amount);
           
         if (response.success && response.qrCode) {
-          // Dans un environnement réel, nous utiliserions l'URL du QR code ou générerions un QR code à partir des données
           // Pour cet exemple, nous simulons une URL de QR code
           setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
             JSON.stringify({
@@ -54,17 +53,17 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose, amou
   return (
     <DialogContent className="sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>Paiement par QR Code</DialogTitle>
-        <DialogDescription>
+        <DialogTitle className="text-center">Paiement par QR Code</DialogTitle>
+        <DialogDescription className="text-center">
           Scannez ce QR code en agence SFD pour {isWithdrawal ? 'effectuer votre retrait' : 'effectuer votre paiement'}.
-          <span className="font-semibold block mt-1">{amount.toLocaleString()} FCFA</span>
+          <span className="font-semibold block mt-1 text-lg">{amount.toLocaleString()} FCFA</span>
         </DialogDescription>
       </DialogHeader>
       
       <div className="flex items-center justify-center py-6">
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
+        <div className="bg-white p-4 rounded-lg shadow-sm border min-h-[256px] min-w-[256px] flex items-center justify-center">
           {isProcessing || !qrCodeUrl ? (
-            <div className="w-48 h-48 flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-10 w-10 text-gray-400 animate-spin mb-2" />
               <p className="text-sm text-gray-500">Génération du QR code...</p>
             </div>
@@ -84,18 +83,18 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose, amou
       </div>
       
       {qrCodeData && (
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-500 text-center">
           <p>Code valide pendant 15 minutes</p>
-          <p>Ref: {qrCodeData.code?.substring(0, 8)}...</p>
+          <p>Ref: {qrCodeData.code?.substring(0, 8) || 'QRH67SH8'}...</p>
         </div>
       )}
       
-      <DialogFooter className="sm:justify-center">
-        <Button variant="outline" onClick={onClose} className="mr-2">
-          Fermer
-        </Button>
-        <Button onClick={() => window.print()}>
+      <DialogFooter className="flex flex-col">
+        <Button className="w-full bg-blue-500 hover:bg-blue-600" onClick={() => window.print()}>
           Imprimer
+        </Button>
+        <Button variant="outline" onClick={onClose} className="mt-2 w-full">
+          Fermer
         </Button>
       </DialogFooter>
     </DialogContent>

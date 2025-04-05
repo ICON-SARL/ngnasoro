@@ -18,7 +18,7 @@ import MobileMoneyModal from '../loan/MobileMoneyModal';
 import QRCodePaymentDialog from '../loan/QRCodePaymentDialog';
 import { usePaymentProcessor } from './hooks/usePaymentProcessor';
 import { useTransactions } from '@/hooks/useTransactions';
-import { useSfdAccounts, SfdAccount } from '@/hooks/useSfdAccounts';
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 
 export interface SecurePaymentTabProps {
   onBack?: () => void;
@@ -88,11 +88,13 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       return;
     }
     
+    // Pour les opérations en agence SFD, toujours montrer le QR code
     if (paymentMethod === 'sfd') {
       setQrDialogOpen(true);
       return;
     }
     
+    // Pour les autres méthodes comme Mobile Money
     setPaymentStatus('pending');
     setProgress(10);
     
