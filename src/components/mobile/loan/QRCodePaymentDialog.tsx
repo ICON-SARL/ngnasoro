@@ -15,9 +15,10 @@ import { verifyQRCode } from '@/utils/api/qrCodeGenerator';
 interface QRCodePaymentDialogProps {
   onClose: () => void;
   isWithdrawal?: boolean;
+  amount?: number; // Add the amount prop to the interface
 }
 
-const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose, isWithdrawal = false }) => {
+const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose, isWithdrawal = false, amount }) => {
   const { toast } = useToast();
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<null | {success: boolean; message: string}>(null);
@@ -97,12 +98,16 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose, isWi
     }
   };
   
+  // Get transaction amount display
+  const displayAmount = amount ? `${amount.toLocaleString()} FCFA` : '';
+  
   return (
     <DialogContent className="sm:max-w-md">
       <DialogHeader>
         <DialogTitle className="text-center">Scanner le Code QR</DialogTitle>
         <DialogDescription className="text-center">
           Scannez le code QR généré par l'agence SFD pour {isWithdrawal ? 'effectuer votre retrait' : 'effectuer votre paiement'}.
+          {displayAmount && <div className="font-semibold mt-1">{displayAmount}</div>}
         </DialogDescription>
       </DialogHeader>
       
@@ -149,6 +154,7 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ onClose, isWi
                 </div>
                 <p className="text-xl font-semibold mb-2">{scanResult.message}</p>
                 <p className="text-sm text-gray-500">Transaction réussie</p>
+                {displayAmount && <p className="mt-2 font-medium">{displayAmount}</p>}
               </div>
             ) : (
               <div className="text-red-600">
