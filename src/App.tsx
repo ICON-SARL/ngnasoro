@@ -28,6 +28,7 @@ import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import AuditLogsPage from '@/pages/AuditLogsPage';
 import SubsidyRequestDetailPage from '@/pages/SubsidyRequestDetailPage';
 import MobileFlow from '@/pages/MobileFlow';
+import LoanApplicationPage from '@/pages/LoanApplicationPage';
 
 // Role types and permissions
 import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
@@ -76,6 +77,14 @@ const AppRoutes = () => {
             fallbackPath="/access-denied"
           />
         } 
+      />
+      
+      {/* Add Loan Application route */}
+      <Route
+        path="/loan-application"
+        element={
+          <ProtectedRoute component={LoanApplicationPage} />
+        }
       />
       
       {/* SFD Admin routes */}
