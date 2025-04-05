@@ -1,19 +1,23 @@
 
 import React from 'react';
 import { Progress } from '@/components/ui/progress';
+import { SfdAccount } from '@/hooks/useSfdAccounts';
+import { formatCurrencyAmount } from '@/utils/transactionUtils';
 
 interface PaymentDetailsProps {
   isWithdrawal: boolean;
   amount: number;
   progress: number;
   paymentStatus: 'pending' | 'success' | 'failed' | null;
+  selectedSfdAccount?: SfdAccount | null;
 }
 
 const PaymentDetails: React.FC<PaymentDetailsProps> = ({ 
   isWithdrawal, 
   amount, 
   progress, 
-  paymentStatus 
+  paymentStatus,
+  selectedSfdAccount
 }) => {
   return (
     <div className="space-y-6">
@@ -25,11 +29,11 @@ const PaymentDetails: React.FC<PaymentDetailsProps> = ({
           <>
             <div className="flex justify-between mb-1">
               <span className="text-gray-600">Compte:</span>
-              <span>SFD Bamako Principal</span>
+              <span>{selectedSfdAccount?.name || "SFD Bamako Principal"}</span>
             </div>
             <div className="flex justify-between mb-1">
               <span className="text-gray-600">Disponible:</span>
-              <span>198 500 FCFA</span>
+              <span>{selectedSfdAccount ? formatCurrencyAmount(selectedSfdAccount.balance) : "198 500"} FCFA</span>
             </div>
           </>
         ) : (

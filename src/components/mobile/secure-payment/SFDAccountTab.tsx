@@ -6,35 +6,40 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Fingerprint, RotateCw, Shield, Lock } from 'lucide-react';
-import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { useSfdAccounts, SfdAccount } from '@/hooks/useSfdAccounts';
 import { useAuth } from '@/hooks/useAuth';
+import { formatCurrencyAmount } from '@/utils/transactionUtils';
 
 interface SFDAccountTabProps {
   paymentStatus: 'pending' | 'success' | 'failed' | null;
   handlePayment: () => void;
   isWithdrawal?: boolean;
   paymentAmount?: number;
+  selectedSfdAccount?: SfdAccount | null;
 }
 
 export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({ 
   paymentStatus, 
   handlePayment,
   isWithdrawal = false,
-  paymentAmount = 3500
+  paymentAmount = 3500,
+  selectedSfdAccount
 }) => {
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(true);
   const [selected, setSelected] = useState("");
   const { sfdAccounts, activeSfdAccount, isLoading } = useSfdAccounts();
   const { activeSfdId } = useAuth();
   
-  // Initialize with activeSfdId when component mounts
+  // Initialize with selected account or activeSfdId when component mounts
   useEffect(() => {
-    if (activeSfdId) {
+    if (selectedSfdAccount) {
+      setSelected(selectedSfdAccount.id);
+    } else if (activeSfdId) {
       setSelected(activeSfdId);
     } else if (sfdAccounts.length > 0) {
       setSelected(sfdAccounts[0].id);
     }
-  }, [activeSfdId, sfdAccounts]);
+  }, [selectedSfdAccount, activeSfdId, sfdAccounts]);
   
   if (isLoading) {
     return (
@@ -45,22 +50,35 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
     );
   }
   
+  // Display either the pre-selected account or a dropdown
+  const displayAccount = selectedSfdAccount || sfdAccounts.find(sfd => sfd.id === selected);
+  const accountName = displayAccount?.name || "Compte SFD";
+  const accountBalance = displayAccount?.balance || 0;
+  const formattedBalance = `${formatCurrencyAmount(accountBalance, "")} FCFA`;
+  
   return (
     <>
       <div>
         <Label>{isWithdrawal ? "Compte SFD source" : "Compte SFD source"}</Label>
-        <Select value={selected} onValueChange={setSelected}>
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionner un compte" />
-          </SelectTrigger>
-          <SelectContent>
-            {sfdAccounts.map(sfd => (
-              <SelectItem key={sfd.id} value={sfd.id}>
-                {sfd.name} ({sfd.balance.toLocaleString()} {sfd.currency})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {selectedSfdAccount ? (
+          <div className="border border-gray-300 rounded-md p-3 bg-gray-50">
+            <p className="text-sm font-medium">{accountName}</p>
+            <p className="text-xs text-gray-500">{formattedBalance}</p>
+          </div>
+        ) : (
+          <Select value={selected} onValueChange={setSelected}>
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionner un compte" />
+            </SelectTrigger>
+            <SelectContent>
+              {sfdAccounts.map(sfd => (
+                <SelectItem key={sfd.id} value={sfd.id}>
+                  {sfd.name} ({formatCurrencyAmount(sfd.balance, "")} FCFA)
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <div className="flex items-center text-xs text-muted-foreground mt-1">
           <Lock className="h-3 w-3 mr-1" />
           Compte tokenisé conforme PCI DSS Level 1

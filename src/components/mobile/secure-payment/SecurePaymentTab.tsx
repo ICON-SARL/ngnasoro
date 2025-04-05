@@ -18,19 +18,22 @@ import MobileMoneyModal from '../loan/MobileMoneyModal';
 import QRCodePaymentDialog from '../loan/QRCodePaymentDialog';
 import { usePaymentProcessor } from './hooks/usePaymentProcessor';
 import { useTransactions } from '@/hooks/useTransactions';
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 
 export interface SecurePaymentTabProps {
   onBack?: () => void;
   isWithdrawal?: boolean;
   loanId?: string;
   onComplete?: () => void;
+  selectedSfdId?: string;
 }
 
 const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({ 
   onBack, 
   isWithdrawal = false, 
   loanId,
-  onComplete
+  onComplete,
+  selectedSfdId
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -42,12 +45,19 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   const [progress, setProgress] = useState(0);
   const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const { sfdAccounts } = useSfdAccounts();
+  
+  // Use the explicitly passed selectedSfdId or fall back to activeSfdId
+  const effectiveSfdId = selectedSfdId || activeSfdId;
+  
+  // Get selected SFD account details
+  const selectedSfdAccount = sfdAccounts.find(acc => acc.id === effectiveSfdId);
   
   const { 
     makeDeposit, 
     makeWithdrawal,
     makeLoanRepayment
-  } = useTransactions(user?.id, activeSfdId);
+  } = useTransactions(user?.id, effectiveSfdId);
   
   const handleBackAction = () => {
     if (onBack) {
@@ -62,7 +72,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   
   // Gérer le paiement en fonction du type d'opération
   const handlePayment = async () => {
-    if (!user || !activeSfdId) {
+    if (!user || !effectiveSfdId) {
       toast({
         title: "Erreur",
         description: "Utilisateur ou SFD non défini",
@@ -124,16 +134,20 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   // Détecter automatiquement le solde suffisant
   useEffect(() => {
     const detectPrimaryAccount = () => {
-      // Simuler une vérification de solde
-      const randomBalance = Math.random();
-      if (isWithdrawal && randomBalance < 0.3) {
-        setBalanceStatus('insufficient');
-        setPaymentMethod('mobile');
-        toast({
-          title: "Solde SFD insuffisant",
-          description: "Basculement automatique vers Mobile Money",
-          variant: "default",
-        });
+      if (selectedSfdAccount && isWithdrawal) {
+        // Check if the selected account has enough balance
+        const hasEnoughBalance = selectedSfdAccount.balance >= amount;
+        setBalanceStatus(hasEnoughBalance ? 'sufficient' : 'insufficient');
+        if (!hasEnoughBalance) {
+          setPaymentMethod('mobile');
+          toast({
+            title: "Solde SFD insuffisant",
+            description: "Basculement automatique vers Mobile Money",
+            variant: "default",
+          });
+        } else {
+          setPaymentMethod('sfd');
+        }
       } else {
         setBalanceStatus('sufficient');
         setPaymentMethod('sfd');
@@ -141,7 +155,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     };
     
     detectPrimaryAccount();
-  }, [toast, isWithdrawal]);
+  }, [toast, isWithdrawal, selectedSfdAccount, amount]);
   
   const handleMobileMoneyPayment = () => {
     setMobileMoneyInitiated(true);
@@ -164,6 +178,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
             amount={isWithdrawal ? 25000 : loanId ? 3500 : 10000}
             progress={progress}
             paymentStatus={paymentStatus}
+            selectedSfdAccount={selectedSfdAccount}
           />
           
           <PaymentMethodTabs 
@@ -173,6 +188,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
             onPaymentMethodChange={setPaymentMethod}
             handlePayment={handlePayment}
             isWithdrawal={isWithdrawal}
+            selectedSfdAccount={selectedSfdAccount}
           />
           
           <SecurityFeatures isWithdrawal={isWithdrawal} />

@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building, Phone } from 'lucide-react';
 import { SFDAccountTab } from './SFDAccountTab';
 import { MobileMoneyTab } from './MobileMoneyTab';
+import { SfdAccount } from '@/hooks/useSfdAccounts';
 
 interface PaymentMethodTabsProps {
   paymentMethod: string;
@@ -12,6 +13,7 @@ interface PaymentMethodTabsProps {
   onPaymentMethodChange: (value: string) => void;
   handlePayment: () => void;
   isWithdrawal?: boolean;
+  selectedSfdAccount?: SfdAccount | null;
 }
 
 export const PaymentMethodTabs: React.FC<PaymentMethodTabsProps> = ({
@@ -20,7 +22,8 @@ export const PaymentMethodTabs: React.FC<PaymentMethodTabsProps> = ({
   paymentStatus,
   onPaymentMethodChange,
   handlePayment,
-  isWithdrawal = false
+  isWithdrawal = false,
+  selectedSfdAccount
 }) => {
   return (
     <Tabs defaultValue={paymentMethod} onValueChange={onPaymentMethodChange} className="w-full">
@@ -44,6 +47,7 @@ export const PaymentMethodTabs: React.FC<PaymentMethodTabsProps> = ({
           paymentStatus={paymentStatus} 
           handlePayment={handlePayment}
           isWithdrawal={isWithdrawal}
+          selectedSfdAccount={selectedSfdAccount}
         />
       </TabsContent>
       

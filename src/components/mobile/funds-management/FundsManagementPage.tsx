@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -117,6 +118,11 @@ const FundsManagementPage = () => {
     }));
   };
   
+  // Get the selected SFD account for the payment view
+  const selectedSfdAccount = selectedSfd !== 'all' 
+    ? sfdAccounts.find(account => account.id === selectedSfd) 
+    : undefined;
+  
   return (
     <div className="bg-gray-50 min-h-screen">
       {activeView === 'main' ? (
@@ -156,7 +162,12 @@ const FundsManagementPage = () => {
           </div>
         </>
       ) : (
-        <SecurePaymentTab onBack={handleBack} isWithdrawal={activeView === 'withdraw'} onComplete={refreshData} />
+        <SecurePaymentTab 
+          onBack={handleBack} 
+          isWithdrawal={activeView === 'withdraw'} 
+          onComplete={refreshData}
+          selectedSfdId={selectedSfd !== 'all' ? selectedSfd : undefined}
+        />
       )}
     </div>
   );
