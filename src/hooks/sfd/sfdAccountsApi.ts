@@ -1,6 +1,35 @@
 
 import { apiClient } from '@/utils/apiClient';
 
+// Define types inline to avoid circular dependencies
+interface SfdBalanceData {
+  balance: number;
+  currency: string;
+}
+
+interface UserSfd {
+  id: string;
+  is_default: boolean;
+  sfds: {
+    id: string;
+    name: string;
+    code?: string;
+    region?: string;
+    logo_url?: string;
+  }
+}
+
+interface SyncResult {
+  success: boolean;
+  message?: string;
+}
+
+interface LoanPaymentParams {
+  loanId: string;
+  amount: number;
+  method?: string;
+}
+
 // Use primitive types instead of importing User
 // This breaks the circular dependency
 export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
@@ -85,35 +114,6 @@ export async function processLoanPayment(
   });
   
   return { success: true };
-}
-
-// Define types inline to avoid circular dependencies
-interface SfdBalanceData {
-  balance: number;
-  currency: string;
-}
-
-interface UserSfd {
-  id: string;
-  is_default: boolean;
-  sfds: {
-    id: string;
-    name: string;
-    code?: string;
-    region?: string;
-    logo_url?: string;
-  }
-}
-
-interface SyncResult {
-  success: boolean;
-  message?: string;
-}
-
-interface LoanPaymentParams {
-  loanId: string;
-  amount: number;
-  method?: string;
 }
 
 // Re-export types for external use

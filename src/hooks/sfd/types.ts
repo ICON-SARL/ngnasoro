@@ -31,30 +31,6 @@ export interface SfdAccount {
   currency: string;
 }
 
-export interface SfdBalanceData {
-  balance: number;
-  currency: string;
-}
-
-export interface UserSfd {
-  id: string;
-  is_default: boolean;
-  sfds: {
-    id: string;
-    name: string;
-    code?: string;
-    region?: string;
-    logo_url?: string;
-  }
-}
-
-export interface SyncResult {
-  success: boolean;
-  message?: string;
-}
-
-export interface LoanPaymentParams {
-  loanId: string;
-  amount: number;
-  method?: string;
-}
+// Import types from sfdAccountsApi.ts instead of defining them here
+import type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from "./sfdAccountsApi";
+export type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams };
