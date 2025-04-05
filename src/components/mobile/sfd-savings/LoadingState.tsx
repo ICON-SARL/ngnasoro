@@ -1,16 +1,13 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { RefreshCw } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 
 const LoadingState: React.FC = () => {
   return (
-    <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
-      <CardContent className="p-4 text-center py-10">
-        <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-[#0D6A51]" />
-        <p>Chargement des informations du compte...</p>
-      </CardContent>
-    </Card>
+    <div className="bg-white rounded-xl p-8 flex flex-col items-center justify-center shadow-sm">
+      <Loader size="lg" />
+      <p className="mt-4 text-gray-500">Chargement de vos données financières...</p>
+    </div>
   );
 };
 

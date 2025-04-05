@@ -1,44 +1,29 @@
 
 import React from 'react';
-import { ArrowUpRight } from 'lucide-react';
 
 interface AccountStatsProps {
   isHidden: boolean;
-  balance: number | undefined;
+  balance: number;
 }
 
-const AccountStats: React.FC<AccountStatsProps> = ({ isHidden, balance = 250000 }) => {
-  // Calcul des intérêts (3% annuel)
-  const interests = Math.floor(balance * 0.03);
-  // Montant des dépôts (calculé arbitrairement à 50% du solde total)
-  const deposits = Math.floor(balance / 2);
-
+const AccountStats: React.FC<AccountStatsProps> = ({ isHidden, balance }) => {
+  // Calculate a fake growth percentage based on the balance
+  const growthPercent = ((balance % 17) + 2) / 100;
+  const growth = balance * growthPercent;
+  
   return (
-    <div className="grid grid-cols-2 gap-4 mb-4">
-      <div className="bg-green-50 p-3 rounded-xl">
-        <div className="flex items-start justify-between mb-2">
-          <p className="text-sm text-gray-600">Dépôts</p>
-          <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
-            <ArrowUpRight className="h-3 w-3 text-green-600" />
-          </div>
-        </div>
-        <p className="text-xl font-semibold text-gray-800">
-          {isHidden ? '•••••' : `+${deposits.toLocaleString()} FCFA`}
-        </p>
-        <p className="text-xs text-gray-500 mt-1">Derniers 3 mois</p>
+    <div className="flex justify-between items-center mb-2">
+      <div className="bg-gray-50 rounded-lg px-3 py-2 flex-1 mr-2">
+        <p className="text-xs text-gray-500 mb-1">Croissance</p>
+        {isHidden ? (
+          <p className="font-medium">••••••</p>
+        ) : (
+          <p className="font-medium text-green-600">+{growth.toLocaleString('fr-FR')} FCFA</p>
+        )}
       </div>
-      
-      <div className="bg-amber-50 p-3 rounded-xl">
-        <div className="flex items-start justify-between mb-2">
-          <p className="text-sm text-gray-600">Intérêts</p>
-          <div className="h-6 w-6 rounded-full bg-amber-100 flex items-center justify-center">
-            <ArrowUpRight className="h-3 w-3 text-amber-600" />
-          </div>
-        </div>
-        <p className="text-xl font-semibold text-gray-800">
-          {isHidden ? '•••••' : `+${interests.toLocaleString()} FCFA`}
-        </p>
-        <p className="text-xs text-gray-500 mt-1">Taux 3% annuel</p>
+      <div className="bg-gray-50 rounded-lg px-3 py-2 flex-1">
+        <p className="text-xs text-gray-500 mb-1">Taux d'intérêt</p>
+        <p className="font-medium">3.8% annuel</p>
       </div>
     </div>
   );

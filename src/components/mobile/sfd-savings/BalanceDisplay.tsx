@@ -2,44 +2,55 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 
 interface BalanceDisplayProps {
   isHidden: boolean;
-  balance: number | undefined;
-  currency: string | undefined;
+  balance: number;
+  currency: string;
   isUpdating: boolean;
-  refreshBalance: () => void;
   isPending: boolean;
+  refreshBalance: () => void;
 }
 
 const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
   isHidden,
-  balance = 250000,
-  currency = 'FCFA',
+  balance,
+  currency,
   isUpdating,
-  refreshBalance,
-  isPending
+  isPending,
+  refreshBalance
 }) => {
   return (
-    <div className="border-t border-gray-100 pt-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-500">Solde total épargne</p>
-          <p className="text-2xl font-bold">
-            {isHidden ? '••••••••' : `${balance.toLocaleString()} ${currency}`}
-          </p>
-        </div>
+    <div className="bg-[#0D6A51]/5 rounded-xl p-4 flex flex-col items-center justify-center mt-2">
+      <div className="flex items-center mb-1">
+        <p className="text-sm text-[#0D6A51]">Solde disponible</p>
         <Button 
-          variant="outline" 
-          size="sm"
+          variant="ghost" 
+          size="icon" 
+          className="h-6 w-6 ml-1 text-[#0D6A51]"
           onClick={refreshBalance}
-          disabled={isUpdating || isPending}
-          className="h-9 px-3"
+          disabled={isUpdating}
         >
-          <RefreshCw className={`h-3 w-3 mr-1 ${isUpdating || isPending ? 'animate-spin' : ''}`} />
-          Actualiser
+          {isUpdating ? (
+            <Loader size="sm" variant="primary" className="text-[#0D6A51]" />
+          ) : (
+            <RefreshCw className="h-3 w-3" />
+          )}
         </Button>
       </div>
+      
+      {isHidden ? (
+        <p className="text-2xl font-bold text-gray-900">•••••• {currency}</p>
+      ) : (
+        <p className="text-2xl font-bold text-gray-900">
+          {balance.toLocaleString('fr-FR')} {currency}
+        </p>
+      )}
+      
+      {isPending && (
+        <p className="text-xs text-[#0D6A51] mt-1">Synchronisation en cours...</p>
+      )}
     </div>
   );
 };

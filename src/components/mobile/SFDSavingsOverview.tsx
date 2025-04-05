@@ -76,6 +76,10 @@ const SFDSavingsOverview = () => {
   const toggleVisibility = () => {
     setIsHidden(!isHidden);
   };
+
+  const handleViewAllAccounts = () => {
+    navigate('/mobile-flow/multi-sfd');
+  };
   
   // Show a "no account" message if the user doesn't have an active SFD
   if (!activeSfdId && !isLoading && !isDashboardLoading) {
@@ -111,7 +115,7 @@ const SFDSavingsOverview = () => {
         
         <Button 
           className="mt-3 w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white py-2 rounded-xl font-medium transition-colors"
-          onClick={() => navigate('/mobile-flow/multi-sfd')}
+          onClick={handleViewAllAccounts}
         >
           Voir tous mes comptes SFD
         </Button>
