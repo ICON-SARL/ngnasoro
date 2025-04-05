@@ -42,6 +42,7 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
       setError(null);
       
       try {
+        // Fixed table name from "loan_plans" to "sfd_loan_plans"
         const { data, error } = await supabase
           .from('sfd_loan_plans')
           .select('*')
@@ -51,7 +52,7 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
           
         if (error) throw error;
         
-        // Ensure we have LoanPlan type data
+        // Explicit type casting to ensure type safety
         const typedData = data as LoanPlan[];
         setPlans(typedData || []);
         
