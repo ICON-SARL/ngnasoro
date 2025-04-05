@@ -1,5 +1,6 @@
 
 import { apiClient } from '@/utils/apiClient';
+
 // Use primitive types instead of importing User
 // This breaks the circular dependency
 export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
