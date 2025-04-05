@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building, Phone } from 'lucide-react';
 import { SFDAccountTab } from './SFDAccountTab';
 import { MobileMoneyTab } from './MobileMoneyTab';
-import { SfdAccount } from '@/hooks/useSfdAccounts';
+import { SfdAccount } from '@/hooks/sfd/types';
 
 interface PaymentMethodTabsProps {
   paymentMethod: string;

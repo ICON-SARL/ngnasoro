@@ -10,14 +10,17 @@ import {
 import { QRCodeGenerationHook } from './types';
 
 /**
- * Hook for handling QR code generation operations
+ * Hook for generating QR codes for payments and withdrawals
  */
 export function useQRCodeGeneration(): QRCodeGenerationHook {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isProcessingQRCode, setIsProcessingQRCode] = useState(false);
   
-  const generatePaymentQRCode = async (amount: number, loanId?: string): Promise<QRCodeResponse> => {
+  const generatePaymentQRCode = async (
+    amount: number,
+    loanId?: string
+  ): Promise<QRCodeResponse> => {
     if (!user) {
       toast({
         title: "Erreur d'authentification",
@@ -45,12 +48,12 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       
       if (response.success) {
         toast({
-          title: "QR code généré",
-          description: "Présentez ce code à l'agent pour effectuer le paiement",
+          title: "Code QR généré",
+          description: "Le code QR a été généré avec succès",
         });
       } else {
         toast({
-          title: "Échec de génération du QR code",
+          title: "Échec de la génération du code QR",
           description: response.error || "Une erreur s'est produite",
           variant: "destructive",
         });
@@ -66,14 +69,16 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       
       return {
         success: false,
-        error: error.message || "Une erreur s'est produite"
+        error: "Une erreur s'est produite lors de la génération du code QR"
       };
     } finally {
       setIsProcessingQRCode(false);
     }
   };
   
-  const generateWithdrawalQRCode = async (amount: number): Promise<QRCodeResponse> => {
+  const generateWithdrawalQRCode = async (
+    amount: number
+  ): Promise<QRCodeResponse> => {
     if (!user) {
       toast({
         title: "Erreur d'authentification",
@@ -99,12 +104,12 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       
       if (response.success) {
         toast({
-          title: "QR code généré",
-          description: "Présentez ce code à l'agent pour effectuer le retrait",
+          title: "Code QR généré",
+          description: "Le code QR a été généré avec succès",
         });
       } else {
         toast({
-          title: "Échec de génération du QR code",
+          title: "Échec de la génération du code QR",
           description: response.error || "Une erreur s'est produite",
           variant: "destructive",
         });
@@ -120,7 +125,7 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       
       return {
         success: false,
-        error: error.message || "Une erreur s'est produite"
+        error: "Une erreur s'est produite lors de la génération du code QR"
       };
     } finally {
       setIsProcessingQRCode(false);
