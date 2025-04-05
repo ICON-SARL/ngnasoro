@@ -1,6 +1,6 @@
 
 import { apiClient } from '@/utils/apiClient';
-import { User } from '@/hooks/auth/types';
+import type { User } from '@/hooks/auth/types';
 import { SfdAccount, SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from './types';
 
 export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
