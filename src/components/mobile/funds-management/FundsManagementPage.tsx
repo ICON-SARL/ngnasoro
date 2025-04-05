@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import SecurePaymentTab from '../secure-payment';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
-import { useSfdAccounts } from '@/hooks/sfd/useSfdAccounts';
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { useMobileDashboard } from '@/hooks/useMobileDashboard';
 import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 import { useToast } from '@/hooks/use-toast';
@@ -25,14 +24,7 @@ const FundsManagementPage = () => {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [selectedSfd, setSelectedSfd] = useState<string>('all');
   
-  // Utiliser useSfdAccounts pour récupérer les comptes SFD
   const { sfdAccounts, refetch: refetchSfdAccounts } = useSfdAccounts();
-  
-  // Utiliser le hook de synchronisation
-  const { isSyncing, synchronizeWithSfd } = useRealtimeSynchronization();
-  
-  // Utiliser le hook du dashboard mobile pour les données globales
-  const { dashboardData, refreshDashboardData } = useMobileDashboard();
   
   const { 
     transactions, 
@@ -40,16 +32,17 @@ const FundsManagementPage = () => {
     fetchTransactions
   } = useTransactions(user?.id, selectedSfd !== 'all' ? selectedSfd : undefined);
   
+  const { isSyncing, synchronizeWithSfd } = useRealtimeSynchronization();
+  
+  const { dashboardData, refreshDashboardData } = useMobileDashboard();
+  
   useEffect(() => {
-    // Charger les transactions lors du montage
     fetchTransactions();
     calculateBalanceForSelectedSfd();
   }, [selectedSfd, sfdAccounts]);
 
-  // Calculer le solde en fonction de la SFD sélectionnée
   const calculateBalanceForSelectedSfd = () => {
     if (selectedSfd === 'all') {
-      // Calculer le solde total
       if (sfdAccounts && sfdAccounts.length > 0) {
         const total = sfdAccounts.reduce((sum, account) => sum + (account.balance || 0), 0);
         setTotalBalance(total);
@@ -59,7 +52,6 @@ const FundsManagementPage = () => {
         setTotalBalance(0);
       }
     } else {
-      // Calculer le solde de la SFD sélectionnée
       const selectedAccount = sfdAccounts.find(account => account.id === selectedSfd);
       setTotalBalance(selectedAccount?.balance || 0);
     }
@@ -84,21 +76,16 @@ const FundsManagementPage = () => {
     setIsRefreshing(true);
     
     try {
-      // Synchronisation avec les SFDs
       await synchronizeWithSfd();
       
-      // Rafraîchir les données du dashboard
       if (refreshDashboardData) {
         await refreshDashboardData();
       }
       
-      // Rafraîchir les comptes SFD
       await refetchSfdAccounts();
       
-      // Récupérer les transactions
       await fetchTransactions();
       
-      // Recalculer le solde
       calculateBalanceForSelectedSfd();
       
       toast({

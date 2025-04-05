@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
 import { Loader } from '@/components/ui/loader';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { SfdAccount } from '@/hooks/sfd/types';
+import { SfdAccount } from '@/hooks/useSfdAccounts';
 
 interface FundsBalanceSectionProps {
   balance: number;
