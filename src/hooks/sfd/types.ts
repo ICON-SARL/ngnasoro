@@ -1,4 +1,5 @@
 
+// Import User type from auth/types instead of useAuth
 import type { User } from "@/hooks/auth/types";
 
 export interface SfdData {

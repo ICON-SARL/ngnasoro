@@ -1,8 +1,7 @@
 
 import { apiClient } from '@/utils/apiClient';
-import type { User } from '@/hooks/auth/types';
-import type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from './types';
-
+// Use primitive types instead of importing User
+// This breaks the circular dependency
 export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
   if (!userId) return [];
   
@@ -86,3 +85,6 @@ export async function processLoanPayment(
   
   return { success: true };
 }
+
+// Import types after function declarations to avoid circular references
+import type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from './types';
