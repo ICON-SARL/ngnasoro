@@ -1,8 +1,8 @@
 
 import { apiClient } from '@/utils/apiClient';
-import type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from './types';
+import type { SfdBalanceData, UserSfd, SyncResult } from './types';
 
-// Use primitive types only for parameters
+// Use primitive types for parameters to avoid circular references
 export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
   if (!userId) return [];
   
@@ -70,7 +70,11 @@ export async function synchronizeAccounts(userId: string): Promise<SyncResult> {
 export async function processLoanPayment(
   userId: string, 
   activeSfdId: string, 
-  params: LoanPaymentParams
+  params: {
+    loanId: string;
+    amount: number;
+    method?: string;
+  }
 ): Promise<SyncResult> {
   if (!userId || !activeSfdId) {
     throw new Error('User or active SFD not set');

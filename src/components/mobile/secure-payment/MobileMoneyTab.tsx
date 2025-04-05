@@ -28,7 +28,7 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
   const [selected, setSelected] = useState("orange");
   const [phoneNumber, setPhoneNumber] = useState("");
   const { user } = useAuth();
-  const { isProcessing, processMobileMoneyPayment, processMobileMoneyWithdrawal } = useMobileMoneyOperations();
+  const { isProcessing, processPayment, processWithdrawal } = useMobileMoneyOperations();
   const [customAmount, setCustomAmount] = useState(amount.toString());
   
   // Update amount when custom amount changes
@@ -46,18 +46,21 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
     }
     
     try {
-      const provider = selected as "orange" | "mtn" | "wave";
+      const provider = selected as string;
       const transactionAmount = onAmountChange ? parseFloat(customAmount) : amount;
       
+      let success = false;
       if (isWithdrawal) {
-        await processMobileMoneyWithdrawal(phoneNumber, transactionAmount, provider);
+        success = await processWithdrawal(phoneNumber, transactionAmount, provider);
       } else {
         // Pass the loanId for loan repayments
-        await processMobileMoneyPayment(phoneNumber, transactionAmount, provider, loanId);
+        success = await processPayment(phoneNumber, transactionAmount, provider);
       }
       
-      // Call the parent component's handler
-      handlePayment();
+      if (success) {
+        // Call the parent component's handler
+        handlePayment();
+      }
     } catch (error) {
       console.error('Mobile money transaction error:', error);
     }

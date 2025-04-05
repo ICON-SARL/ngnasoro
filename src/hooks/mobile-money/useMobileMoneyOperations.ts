@@ -3,24 +3,40 @@ import { useState } from 'react';
 import { useAuth } from '../useAuth';
 import { processMobileMoneyPayment } from '../sfd/sfdAccountsApi';
 import { MobileMoneyOperationsHook } from './types';
-import { MobileMoneyResponse } from '@/utils/mobileMoneyApi';
 
 export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
   const [isProcessing, setIsProcessing] = useState(false);
   const { user } = useAuth();
   
-  const processMobileMoneyPaymentFn = async (
+  // Define mobile money providers
+  const mobileMoneyProviders = [
+    {
+      id: 'orange',
+      name: 'Orange Money',
+      code: 'orange',
+      icon: 'OM'
+    },
+    {
+      id: 'mtn',
+      name: 'MTN Mobile Money',
+      code: 'mtn',
+      icon: 'MTN'
+    },
+    {
+      id: 'wave',
+      name: 'Wave',
+      code: 'wave',
+      icon: 'WV'
+    }
+  ];
+  
+  const processPayment = async (
     phoneNumber: string, 
     amount: number, 
-    provider: "orange" | "mtn" | "wave",
-    loanId?: string
-  ): Promise<MobileMoneyResponse> => {
+    provider: string
+  ): Promise<boolean> => {
     if (!user?.id) {
-      return {
-        success: false,
-        message: "User not authenticated",
-        transactionId: null
-      };
+      return false;
     }
     
     setIsProcessing(true);
@@ -31,37 +47,25 @@ export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
         phoneNumber,
         amount,
         provider,
-        !!loanId, // isRepayment is true if loanId exists
-        loanId
+        false // Not a repayment by default
       );
       
-      return {
-        success: result.success,
-        message: result.message || "Payment successful",
-        transactionId: `mm-${Date.now()}`
-      };
+      return result.success;
     } catch (error: any) {
-      return {
-        success: false,
-        message: error.message || "Failed to process mobile money payment",
-        transactionId: null
-      };
+      console.error('Failed to process mobile money payment:', error);
+      return false;
     } finally {
       setIsProcessing(false);
     }
   };
   
-  const processMobileMoneyWithdrawalFn = async (
+  const processWithdrawal = async (
     phoneNumber: string, 
     amount: number, 
-    provider: "orange" | "mtn" | "wave"
-  ): Promise<MobileMoneyResponse> => {
+    provider: string
+  ): Promise<boolean> => {
     if (!user?.id) {
-      return {
-        success: false,
-        message: "User not authenticated",
-        transactionId: null
-      };
+      return false;
     }
     
     setIsProcessing(true);
@@ -76,25 +80,20 @@ export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
         false // Not a repayment for withdrawals
       );
       
-      return {
-        success: result.success,
-        message: result.message || "Withdrawal successful",
-        transactionId: `mmw-${Date.now()}`
-      };
+      return result.success;
     } catch (error: any) {
-      return {
-        success: false,
-        message: error.message || "Failed to process mobile money withdrawal",
-        transactionId: null
-      };
+      console.error('Failed to process mobile money withdrawal:', error);
+      return false;
     } finally {
       setIsProcessing(false);
     }
   };
   
   return {
+    mobileMoneyProviders,
+    defaultProvider: 'orange',
     isProcessing,
-    processMobileMoneyPayment: processMobileMoneyPaymentFn,
-    processMobileMoneyWithdrawal: processMobileMoneyWithdrawalFn
+    processPayment,
+    processWithdrawal
   };
 }
