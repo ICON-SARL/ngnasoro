@@ -31,6 +31,6 @@ export interface SfdAccount {
   currency: string;
 }
 
-// Import types from sfdAccountsApi.ts instead of defining them here
+// Import types from sfdAccountsApi.ts
 import type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from "./sfdAccountsApi";
 export type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams };

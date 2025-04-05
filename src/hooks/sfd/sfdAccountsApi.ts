@@ -7,16 +7,18 @@ export interface SfdBalanceData {
   currency: string;
 }
 
+export interface SfdInfo {
+  id: string;
+  name: string;
+  code?: string;
+  region?: string;
+  logo_url?: string;
+}
+
 export interface UserSfd {
   id: string;
   is_default: boolean;
-  sfds: {
-    id: string;
-    name: string;
-    code?: string;
-    region?: string;
-    logo_url?: string;
-  }
+  sfds: SfdInfo;
 }
 
 export interface SyncResult {
@@ -30,8 +32,7 @@ export interface LoanPaymentParams {
   method?: string;
 }
 
-// Use primitive types instead of importing User
-// This breaks the circular dependency
+// Use string type instead of importing User to break the circular dependency
 export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
   if (!userId) return [];
   
