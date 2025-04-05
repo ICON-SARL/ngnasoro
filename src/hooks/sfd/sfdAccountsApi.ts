@@ -1,36 +1,6 @@
 
 import { apiClient } from '@/utils/apiClient';
-
-// Define types inline to avoid circular dependencies
-export interface SfdBalanceData {
-  balance: number;
-  currency: string;
-}
-
-export interface SfdInfo {
-  id: string;
-  name: string;
-  code?: string;
-  region?: string;
-  logo_url?: string;
-}
-
-export interface UserSfd {
-  id: string;
-  is_default: boolean;
-  sfds: SfdInfo;
-}
-
-export interface SyncResult {
-  success: boolean;
-  message?: string;
-}
-
-export interface LoanPaymentParams {
-  loanId: string;
-  amount: number;
-  method?: string;
-}
+import type { SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from './types';
 
 // Use primitive types only for parameters
 export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
