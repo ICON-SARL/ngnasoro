@@ -26,9 +26,9 @@ export function SubsidyRequestCreate({ onSuccess }: SubsidyRequestCreateProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Nouvelle demande de subvention</CardTitle>
+        <CardTitle>Nouvelle demande de prêt MEREF</CardTitle>
         <CardDescription>
-          Créez une demande de subvention pour un SFD partenaire
+          Créez une demande de prêt MEREF pour un SFD partenaire
         </CardDescription>
       </CardHeader>
       <CardContent>

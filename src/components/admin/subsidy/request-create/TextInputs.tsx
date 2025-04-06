@@ -15,7 +15,7 @@ export function TextInputs({ purpose, justification, expectedImpact, onChange }:
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="purpose">Objet de la subvention</Label>
+        <Label htmlFor="purpose">Objet du prêt</Label>
         <Input
           id="purpose"
           name="purpose"
@@ -33,7 +33,7 @@ export function TextInputs({ purpose, justification, expectedImpact, onChange }:
           name="justification"
           value={justification}
           onChange={onChange}
-          placeholder="Décrivez pourquoi cette subvention est nécessaire..."
+          placeholder="Décrivez pourquoi ce prêt est nécessaire..."
           rows={3}
           required
         />
@@ -46,7 +46,7 @@ export function TextInputs({ purpose, justification, expectedImpact, onChange }:
           name="expected_impact"
           value={expectedImpact}
           onChange={onChange}
-          placeholder="Décrivez l'impact socio-économique attendu de cette subvention..."
+          placeholder="Décrivez l'impact socio-économique attendu de ce prêt..."
           rows={3}
           required
         />

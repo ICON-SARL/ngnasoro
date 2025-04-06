@@ -29,9 +29,9 @@ const SubsidyRequestDialog: React.FC<SubsidyRequestDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Demande de Subvention au MEREF</DialogTitle>
+          <DialogTitle>Demande de Prêt MEREF</DialogTitle>
           <DialogDescription>
-            Demandez une subvention auprès du MEREF pour financer vos prêts à taux réduit.
+            Demandez un prêt auprès du MEREF pour financer vos activités à taux réduit.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit}>
@@ -47,7 +47,7 @@ const SubsidyRequestDialog: React.FC<SubsidyRequestDialogProps> = ({
             </div>
             
             <div>
-              <Label htmlFor="purpose">Objet de la subvention</Label>
+              <Label htmlFor="purpose">Objet du prêt</Label>
               <Select name="purpose" required>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un objet" />
@@ -84,7 +84,7 @@ const SubsidyRequestDialog: React.FC<SubsidyRequestDialogProps> = ({
               <Textarea
                 id="justification"
                 name="justification"
-                placeholder="Expliquez pourquoi cette subvention est nécessaire et comment elle sera utilisée..."
+                placeholder="Expliquez pourquoi ce prêt est nécessaire et comment il sera utilisé..."
                 required
               />
             </div>
@@ -94,7 +94,7 @@ const SubsidyRequestDialog: React.FC<SubsidyRequestDialogProps> = ({
               <Textarea
                 id="expected_impact"
                 name="expected_impact"
-                placeholder="Décrivez l'impact social et économique attendu de cette subvention..."
+                placeholder="Décrivez l'impact social et économique attendu de ce prêt..."
                 required
               />
             </div>

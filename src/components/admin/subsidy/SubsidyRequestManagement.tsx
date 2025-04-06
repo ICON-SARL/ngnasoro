@@ -29,7 +29,7 @@ export function SubsidyRequestManagement() {
     <Card className="p-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="list">Demandes</TabsTrigger>
+          <TabsTrigger value="list">Demandes de Prêt</TabsTrigger>
           <TabsTrigger value="new">Nouvelle Demande</TabsTrigger>
           <TabsTrigger value="detail" disabled={!selectedRequestId}>Détails</TabsTrigger>
           <TabsTrigger value="settings">Paramètres d'alerte</TabsTrigger>

@@ -221,8 +221,8 @@ const SfdSubsidyRequestPage = () => {
       <div className="container mx-auto py-6 px-4">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Demandes de Subvention</h1>
-            <p className="text-muted-foreground">Gérez vos demandes de subvention auprès du MEREF</p>
+            <h1 className="text-2xl font-bold">Demandes de Prêt MEREF</h1>
+            <p className="text-muted-foreground">Gérez vos demandes de prêt auprès du MEREF</p>
           </div>
           
           <Button onClick={() => setOpenNewRequestDialog(true)}>
@@ -248,7 +248,7 @@ const SfdSubsidyRequestPage = () => {
           <TabsContent value={activeTab}>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle>Demandes de subvention</CardTitle>
+                <CardTitle>Demandes de prêt MEREF</CardTitle>
                 <CardDescription>
                   {filteredRequests.length} demande(s) trouvée(s)
                 </CardDescription>
@@ -316,13 +316,13 @@ const SfdSubsidyRequestPage = () => {
           </TabsContent>
         </Tabs>
         
-        {/* New Subsidy Request Dialog */}
+        {/* New Loan Request Dialog */}
         <Dialog open={openNewRequestDialog} onOpenChange={setOpenNewRequestDialog}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Nouvelle Demande de Subvention</DialogTitle>
+              <DialogTitle>Nouvelle Demande de Prêt MEREF</DialogTitle>
               <DialogDescription>
-                Soumettez une demande de subvention au MEREF pour financer vos activités.
+                Soumettez une demande de prêt au MEREF pour financer vos activités.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreateRequest}>
@@ -359,7 +359,7 @@ const SfdSubsidyRequestPage = () => {
                 </div>
                 
                 <div className="col-span-2">
-                  <Label htmlFor="purpose">Objet de la subvention</Label>
+                  <Label htmlFor="purpose">Objet du prêt</Label>
                   <Input
                     id="purpose"
                     name="purpose"
@@ -377,7 +377,7 @@ const SfdSubsidyRequestPage = () => {
                     name="justification"
                     value={requestForm.justification}
                     onChange={handleInputChange}
-                    placeholder="Expliquez pourquoi cette subvention est nécessaire..."
+                    placeholder="Expliquez pourquoi ce prêt est nécessaire..."
                     required
                   />
                 </div>
@@ -410,7 +410,7 @@ const SfdSubsidyRequestPage = () => {
                     name="expected_impact"
                     value={requestForm.expected_impact}
                     onChange={handleInputChange}
-                    placeholder="Décrivez l'impact socio-économique attendu de cette subvention..."
+                    placeholder="Décrivez l'impact socio-économique attendu de ce prêt..."
                     required
                   />
                 </div>

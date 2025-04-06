@@ -141,7 +141,7 @@ export function SubsidySummary() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-md font-medium">Subventions</CardTitle>
+        <CardTitle className="text-md font-medium">Prêts MEREF</CardTitle>
         <Button variant="outline" size="sm" onClick={exportReport}>
           <FileDown className="h-4 w-4 mr-2" />
           Exporter
