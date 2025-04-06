@@ -44,11 +44,11 @@ export const getUserRole = (user?: SupabaseUser | null | User): Role | null => {
 };
 
 export const isUserAdmin = (user?: User | null): boolean => {
-  return user?.role === 'admin' || user?.app_metadata?.role === 'admin';
+  return user?.role === 'admin' || user?.role === 'super_admin';
 };
 
 export const isUserSfdAdmin = (user?: User | null): boolean => {
-  return user?.role === 'sfd_admin' || user?.app_metadata?.role === 'sfd_admin';
+  return user?.role === 'sfd_admin';
 };
 
 // Fonction pour assigner la SFD "Test" lors de la création d'un nouveau compte
