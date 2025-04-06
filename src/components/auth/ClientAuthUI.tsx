@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from './Logo';
 import LoginForm from './login/LoginForm';
@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DemoAccountsCreator from './DemoAccountsCreator';
 
 const ClientAuthUI = () => {
-  const { user, loading, session } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
@@ -23,7 +23,7 @@ const ClientAuthUI = () => {
       setAuthSuccess(true);
       
       const timer = setTimeout(() => {
-        navigate('/mobile-flow');
+        navigate('/mobile-flow/main');
       }, 2000);
       
       return () => clearTimeout(timer);
@@ -31,17 +31,17 @@ const ClientAuthUI = () => {
   }, [location, navigate]);
   
   useEffect(() => {
-    if (user && !loading) {
+    if (!loading && user) {
       // Route users based on their role
       const userRole = user.app_metadata?.role;
       
       if (userRole === 'admin') {
-        navigate('/super-admin-dashboard');
+        navigate('/super-admin-dashboard', { replace: true });
       } else if (userRole === 'sfd_admin') {
-        navigate('/agency-dashboard');
+        navigate('/agency-dashboard', { replace: true });
       } else {
         // Regular user goes to mobile flow
-        navigate('/mobile-flow');
+        navigate('/mobile-flow/main', { replace: true });
       }
     }
   }, [user, loading, navigate]);

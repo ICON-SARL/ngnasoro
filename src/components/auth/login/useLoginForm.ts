@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
@@ -35,23 +35,8 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
     return () => clearTimeout(timer);
   }, [cooldownTime]);
 
-  // Check if user is already authenticated and redirect to the correct dashboard
-  useEffect(() => {
-    if (user) {
-      console.log("User already authenticated, redirecting based on role...", user);
-      
-      // Determine where to redirect based on user role
-      const userRole = user.app_metadata?.role;
-      
-      if (userRole === 'admin') {
-        navigate('/super-admin-dashboard');
-      } else if (userRole === 'sfd_admin') {
-        navigate('/agency-dashboard');
-      } else {
-        navigate('/mobile-flow');
-      }
-    }
-  }, [user, navigate]);
+  // Skip automatic redirection in the login form - this will be handled after successful login
+  // This prevents redirect loops
 
   const extractCooldownTime = (errorMessage: string): number => {
     const match = errorMessage.match(/after (\d+) seconds/);
@@ -127,21 +112,9 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
         description: "Vous êtes maintenant connecté.",
       });
       
-      // Redirect user based on role
-      // adminMode indicates if we're on the admin login page
-      // isSfdAdmin indicates if we're on the SFD admin login page
-      const userRole = user?.app_metadata?.role;
-      
-      if (adminMode) {
-        // If we're on admin login, should redirect to admin dashboard
-        navigate('/super-admin-dashboard');
-      } else if (isSfdAdmin) {
-        // If we're on SFD admin login, should redirect to SFD dashboard
-        navigate('/agency-dashboard');
-      } else {
-        // Regular login, should redirect to mobile flow
-        navigate('/mobile-flow');
-      }
+      // Do not navigate automatically here
+      // The auth state change will trigger the useEffect in the auth UI components
+      // that will handle proper redirection based on user role
       
     } catch (error: any) {
       console.error("Login error:", error);

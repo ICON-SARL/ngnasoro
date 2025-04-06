@@ -19,13 +19,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, loading } = useAuth();
   const location = useLocation();
   
+  // Show loading state while authentication is being checked
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Chargement...</div>;
   }
 
-  // If we're requiring authentication and the user isn't logged in
-  if ((requireAdmin || requireSfdAdmin) && !user) {
-    // Redirect to the appropriate login page
+  // If not authenticated at all, redirect to the appropriate login page
+  if (!user) {
     if (requireAdmin) {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
     } else if (requireSfdAdmin) {
@@ -35,21 +35,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   }
   
-  // If user is logged in, check role permissions
-  if (user) {
-    const userRole = user.app_metadata?.role;
-    
-    // Check role-based access
-    if (requireAdmin && userRole !== 'admin') {
-      return <Navigate to="/admin/auth" state={{ from: location, error: 'access_denied' }} replace />;
-    }
-    
-    if (requireSfdAdmin && userRole !== 'sfd_admin') {
-      return <Navigate to="/sfd/auth" state={{ from: location, error: 'access_denied' }} replace />;
-    }
+  // If user is authenticated but doesn't have the required role
+  const userRole = user.app_metadata?.role;
+  
+  if (requireAdmin && userRole !== 'admin') {
+    return <Navigate to="/access-denied" state={{ from: location }} replace />;
+  }
+  
+  if (requireSfdAdmin && userRole !== 'sfd_admin') {
+    return <Navigate to="/access-denied" state={{ from: location }} replace />;
   }
 
-  // If we've passed all checks, or if no special permissions are required, render the component
+  // User is authenticated and has the correct role
   return <Component {...rest} />;
 };
 

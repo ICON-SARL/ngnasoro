@@ -18,7 +18,7 @@ import CreateSfdAdminPage from './pages/CreateSfdAdminPage';
 import { useAuth } from '@/hooks/auth';
 
 function App() {
-  const { user, loading, session } = useAuth();
+  const { user, loading } = useAuth();
   const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
 
   useEffect(() => {
@@ -43,9 +43,12 @@ function App() {
         <Route path="/auth" element={<AuthUI />} />
         <Route path="/admin/auth" element={<AdminAuthUI />} />
         <Route path="/sfd/auth" element={<SfdAuthUI />} />
+        <Route path="/access-denied" element={<AccessDenied />} />
         
-        {/* Role-based protected routes */}
-        <Route path="/mobile-flow/*" element={<MobileFlow />} />
+        {/* Regular user routes */}
+        <Route path="/mobile-flow/*" element={
+          <ProtectedRoute component={MobileFlow} />
+        } />
         
         {/* Admin Routes - require admin role */}
         <Route path="/super-admin-dashboard" element={
@@ -68,9 +71,6 @@ function App() {
         
         {/* Premium Routes */}
         <Route path="/premium-dashboard" element={<PremiumDashboardPage />} />
-        
-        {/* Access Denied Route */}
-        <Route path="/access-denied" element={<AccessDenied />} />
       </Routes>
     </>
   );

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from './Logo';
 import LoginForm from './login/LoginForm';
@@ -9,7 +9,7 @@ import LanguageSelector from '../LanguageSelector';
 import DemoAccountsCreator from './DemoAccountsCreator';
 
 const AdminAuthUI = () => {
-  const { user, loading, session } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
@@ -28,15 +28,17 @@ const AdminAuthUI = () => {
   }, [location, navigate]);
   
   useEffect(() => {
-    if (user && !loading) {
-      if (user.app_metadata?.role === 'admin') {
-        navigate('/super-admin-dashboard');
-      } else if (user.app_metadata?.role === 'sfd_admin') {
+    if (!loading && user) {
+      const userRole = user.app_metadata?.role;
+      
+      if (userRole === 'admin') {
+        navigate('/super-admin-dashboard', { replace: true });
+      } else if (userRole === 'sfd_admin') {
         // Redirect SFD admin to agency dashboard
-        navigate('/agency-dashboard');
+        navigate('/agency-dashboard', { replace: true });
       } else {
         // Redirect regular users to mobile flow
-        navigate('/mobile-flow');
+        navigate('/mobile-flow/main', { replace: true });
       }
     }
   }, [user, loading, navigate]);

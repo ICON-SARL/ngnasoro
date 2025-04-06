@@ -31,16 +31,27 @@ const MobileFlow = () => {
     return !hasVisited;
   });
 
-  // Check if user is logged in, and if not, redirect to login
+  // Check if user is logged in, and redirect based on role if needed
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    } else if (user?.app_metadata?.role === 'admin') {
-      // If user is admin, redirect to admin dashboard
-      navigate('/super-admin-dashboard');
-    } else if (user?.app_metadata?.role === 'sfd_admin') {
-      // If user is SFD admin, redirect to SFD dashboard
-      navigate('/agency-dashboard');
+    if (!loading) {
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+      
+      const userRole = user.app_metadata?.role;
+      
+      if (userRole === 'admin') {
+        // Redirect admin to admin dashboard
+        navigate('/super-admin-dashboard', { replace: true });
+        return;
+      } else if (userRole === 'sfd_admin') {
+        // Redirect SFD admin to agency dashboard
+        navigate('/agency-dashboard', { replace: true });
+        return;
+      }
+      
+      // Regular users continue to mobile flow
     }
   }, [user, loading, navigate]);
 
@@ -108,7 +119,7 @@ const MobileFlow = () => {
     
     if (path === '/mobile-flow' || path === '/mobile-flow/') {
       // Direct to main dashboard if on root mobile path
-      navigate('/mobile-flow/main');
+      navigate('/mobile-flow/main', { replace: true });
     }
   }, [location.pathname, navigate]);
 
