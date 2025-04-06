@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -7,10 +7,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 interface VoiceAssistantProps {
   message: string;
   language?: 'french' | 'english' | 'bambara';
+  autoPlay?: boolean;
 }
 
-const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ message, language = 'french' }) => {
-  const handleSpeak = () => {
+const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ message, language = 'french', autoPlay = false }) => {
+  const speak = () => {
     const utterance = new SpeechSynthesisUtterance(message);
     
     // Set language
@@ -33,6 +34,13 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ message, language = 'fr
     window.speechSynthesis.speak(utterance);
   };
 
+  // Auto-play speech if enabled
+  useEffect(() => {
+    if (autoPlay) {
+      speak();
+    }
+  }, [autoPlay, message]);
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -40,7 +48,7 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ message, language = 'fr
           <Button 
             variant="outline" 
             size="icon" 
-            onClick={handleSpeak}
+            onClick={speak}
             className="rounded-full h-9 w-9"
           >
             <Volume2 className="h-4 w-4" />

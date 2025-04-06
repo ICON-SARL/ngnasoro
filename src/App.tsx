@@ -6,7 +6,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { LocalizationProvider } from '@/contexts/LocalizationContext';
 import { useAuth } from '@/hooks/useAuth';
-import AdminManagementPage from '@/components/admin/management/AdminManagementPage';
+import AdminManagement from '@/components/admin/AdminManagement';
 
 // Import the page components directly without destructuring
 import SfdManagementPage from '@/pages/SfdManagementPage';
@@ -43,7 +43,7 @@ function App() {
               <Route path="/loan-request" element={<AuthRoute><div>LoanRequestPage</div></AuthRoute>} />
               <Route path="/sfd-dashboard" element={<AuthRoute><div>SfdDashboard</div></AuthRoute>} />
               <Route path="/admin-dashboard" element={<AuthRoute><SuperAdminDashboard /></AuthRoute>} />
-              <Route path="/admin-management" element={<AuthRoute><AdminManagementPage /></AuthRoute>} />
+              <Route path="/admin-management" element={<AuthRoute><AdminManagement /></AuthRoute>} />
               <Route path="/sfd-management" element={<SfdManagementPage />} />
               <Route path="/add-sfd" element={<AddSfdPage />} />
               <Route path="/audit-logs" element={<AuthRoute><AuditLogsPage /></AuthRoute>} />
