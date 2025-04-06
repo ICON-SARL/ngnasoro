@@ -42,24 +42,21 @@ const AuthUI = () => {
       console.log('Authenticated user:', user);
       console.log('User role:', userRole);
       
-      // Redirection based on user's role
-      if (userRole === Role.SUPER_ADMIN || user.app_metadata?.role === 'admin') {  // Changed from UserRole to Role
-        if (location.pathname !== '/admin/auth' && !location.pathname.includes('admin')) {
-          // If regular auth page is accessed by admin, show a message
-          toast({
-            title: "Redirection",
-            description: "Les administrateurs doivent utiliser l'interface d'administration.",
-            variant: "default",
-          });
+      // Ensure we're not already on an auth page to prevent redirect loops
+      const isOnAuthPage = ['/auth', '/admin/auth', '/sfd/auth'].includes(location.pathname);
+      
+      if (isOnAuthPage) {
+        // Redirection based on user's role
+        if (userRole === Role.SUPER_ADMIN || user.app_metadata?.role === 'admin') {
+          navigate('/super-admin-dashboard');
+        } else if (userRole === Role.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {
+          navigate('/agency-dashboard');
+        } else {
+          navigate('/mobile-flow');
         }
-        navigate('/super-admin-dashboard');
-      } else if (userRole === Role.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {  // Changed from UserRole to Role
-        navigate('/agency-dashboard');
-      } else {
-        navigate('/mobile-flow');
       }
     }
-  }, [user, userRole, loading, navigate, location.pathname, toast]);
+  }, [user, userRole, loading, navigate, location.pathname]);
 
   // Update tab based on current route
   useEffect(() => {

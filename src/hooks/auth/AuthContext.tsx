@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 import { useState, useEffect, useContext, useCallback, createContext } from 'react';
 import { User, AuthContextProps, Role } from './types';
@@ -133,22 +132,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
     
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log("Initial session check:", currentSession?.user?.email);
-      
-      if (currentSession) {
-        setSession(currentSession);
-        if (currentSession.user) {
-          const mappedUser = createUserFromSupabaseUser(currentSession.user);
-          setUser(mappedUser);
+    setTimeout(() => {
+      supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+        console.log("Initial session check:", currentSession?.user?.email);
+        
+        if (currentSession) {
+          setSession(currentSession);
+          if (currentSession.user) {
+            const mappedUser = createUserFromSupabaseUser(currentSession.user);
+            setUser(mappedUser);
+          }
         }
-      }
-      
-      setLoading(false);
-    }).catch(error => {
-      console.error("Error fetching initial session:", error);
-      setLoading(false);
-    });
+        
+        setLoading(false);
+      }).catch(error => {
+        console.error("Error fetching initial session:", error);
+        setLoading(false);
+      });
+    }, 0);
     
     return () => {
       authListener.subscription.unsubscribe();
