@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { handleError, handleApiResponse } from "./errorHandler";
-import { sfdApi } from "./api/modules/sfdApi";
+import { sfdApi, SfdBalanceResult } from "./api/modules/sfdApi";
 import { profileApi } from "./api/modules/profileApi";
 import { transactionApi } from "./api/modules/transactionApi";
 import { storageApi } from "./api/modules/storageApi";

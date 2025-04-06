@@ -10,9 +10,6 @@ interface SyncResult {
   message?: string;
 }
 
-// Import apiClient at the end to avoid circular imports
-import { apiClient } from '@/utils/apiClient';
-
 export async function fetchUserSfds(userId: string): Promise<any[]> {
   if (!userId) return [];
   
@@ -58,6 +55,7 @@ export async function fetchUserSfds(userId: string): Promise<any[]> {
     }
     
     // Normal path for non-test users
+    const { apiClient } = await import('@/utils/apiClient');
     const sfdsList = await apiClient.getUserSfds(userId);
     return sfdsList;
   } catch (error) {
@@ -73,6 +71,8 @@ export async function fetchSfdBalance(userId: string, sfdId: string): Promise<Sf
         ['premier-sfd-id', 'deuxieme-sfd-id', 'troisieme-sfd-id'].includes(sfdId)) {
       return { balance: 0, currency: 'FCFA' };
     }
+    
+    const { apiClient } = await import('@/utils/apiClient');
     
     // First, try to get the balance from the accounts table
     const { data, error } = await apiClient.supabase
@@ -110,6 +110,7 @@ export async function fetchSfdLoans(userId: string, sfdId: string) {
       return [];
     }
     
+    const { apiClient } = await import('@/utils/apiClient');
     const loansData = await apiClient.getSfdLoans(userId, sfdId);
     return loansData;
   } catch (error) {
@@ -129,6 +130,7 @@ export async function synchronizeAccounts(userId: string): Promise<SyncResult> {
   }
   
   try {
+    const { apiClient } = await import('@/utils/apiClient');
     await apiClient.callEdgeFunction('synchronize-sfd-accounts', {
       userId: userId
     });
@@ -153,6 +155,7 @@ export async function processLoanPayment(
   }
   
   // Add a transaction record
+  const { apiClient } = await import('@/utils/apiClient');
   await apiClient.callEdgeFunction('process-repayment', {
     userId: userId,
     sfdId: activeSfdId,
@@ -177,6 +180,7 @@ export async function processMobileMoneyPayment(
   }
   
   try {
+    const { apiClient } = await import('@/utils/apiClient');
     const payload: any = {
       userId,
       phoneNumber,
