@@ -14,7 +14,7 @@ import { ReportTabContent } from './ReportTabContent';
 import { ReportTemplates } from './ReportTemplates';
 
 export const FinancialReports = () => {
-  const [reportType, setReportType] = useState('transactions');
+  const [reportType, setReportType] = useState('month');
   const [reportPeriod, setReportPeriod] = useState('month');
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subMonths(new Date(), 1),

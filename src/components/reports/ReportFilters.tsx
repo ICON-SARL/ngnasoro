@@ -36,10 +36,9 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
           <SelectValue placeholder="Type de rapport" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="transactions">Transactions</SelectItem>
-          <SelectItem value="loans">Prêts</SelectItem>
-          <SelectItem value="subsidies">Subventions</SelectItem>
-          <SelectItem value="sfds">SFDs</SelectItem>
+          <SelectItem value="month">Rapport Mensuel</SelectItem>
+          <SelectItem value="quarter">Rapport Trimestriel</SelectItem>
+          <SelectItem value="year">Rapport Annuel</SelectItem>
         </SelectContent>
       </Select>
       

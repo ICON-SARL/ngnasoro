@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Transaction } from '@/types/transactions';
 
 interface DashboardCardsProps {
@@ -14,14 +15,14 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({ transactions }) 
     : 0;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">
             Total des transactions
           </CardTitle>
           <CardDescription>
-            Période sélectionnée
+            Période actuelle
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -37,7 +38,7 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({ transactions }) 
             Volume total
           </CardTitle>
           <CardDescription>
-            Période sélectionnée
+            Période actuelle
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -59,6 +60,26 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({ transactions }) 
         <CardContent>
           <div className="text-2xl font-bold">
             {Math.round(averageAmount).toLocaleString()} FCFA
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium">
+            Transactions par type
+          </CardTitle>
+          <CardDescription>
+            Répartition
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-1">
+            {Array.from(new Set(transactions.map(tx => tx.type))).map(type => (
+              <Badge key={type} variant="secondary" className="text-xs">
+                {type}: {transactions.filter(tx => tx.type === type).length}
+              </Badge>
+            ))}
           </div>
         </CardContent>
       </Card>
