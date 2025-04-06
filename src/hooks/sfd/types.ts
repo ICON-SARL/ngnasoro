@@ -61,4 +61,6 @@ export interface QRCodeRequest {
   userId: string;
   amount: number;
   purpose: string;
+  loanId?: string;
+  isWithdrawal?: boolean;
 }

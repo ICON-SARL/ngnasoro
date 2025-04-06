@@ -23,6 +23,7 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       const result = await generateQRCode({
         userId: user.id,
         amount,
+        purpose: loanId ? 'loan_repayment' : 'payment',
         loanId,
         isWithdrawal: false
       });
@@ -52,6 +53,7 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       const result = await generateQRCode({
         userId: user.id,
         amount,
+        purpose: 'withdrawal',
         isWithdrawal: true
       });
       
