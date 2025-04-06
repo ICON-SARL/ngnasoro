@@ -22,7 +22,7 @@ export const useAuthOperations = () => {
         return { error };
       }
       
-      return { data };
+      return { data, error: undefined };
     } catch (error) {
       console.error('Unexpected sign in error:', error);
       return { error: error };
@@ -46,6 +46,8 @@ export const useAuthOperations = () => {
         console.error('Sign up error:', error);
         throw error;
       }
+      
+      return data;
     } catch (error) {
       console.error('Unexpected sign up error:', error);
       throw error;
@@ -80,6 +82,7 @@ export const useAuthOperations = () => {
       
       if (error) {
         console.error('refreshSession error:', error);
+        return null;
       }
       
       return data;

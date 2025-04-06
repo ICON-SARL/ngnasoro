@@ -1,184 +1,119 @@
 
-import React, { useState, useEffect, useContext, createContext } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Session, User } from '@supabase/supabase-js';
-import { logAuditEvent } from '@/utils/audit/auditLogger';
-import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
+import * as React from 'react';
+import { createContext, useContext } from 'react';
+import { AuthContextProps, Role, User } from './types';
+import { useAuthState } from './useAuthState';
+import { useAuthOperations } from './authOperations';
+import { createUserFromSupabaseUser } from './authUtils';
 
-interface AuthContextProps {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ data?: any, error?: any }>;
-  signOut: () => Promise<{ error?: any }>;
-  refreshSession: () => Promise<void>;
-}
+interface AuthContextType extends AuthContextProps { }
 
-const AuthContext = createContext<AuthContextProps | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  setUser: () => { },
+  signIn: async () => ({}),
+  signUp: async () => { },
+  signOut: async () => { },
+  loading: true,
+  isLoggedIn: false,
+  isAdmin: false,
+  isSfdAdmin: false,
+  activeSfdId: null,
+  setActiveSfdId: () => { },
+  userRole: null,
+  biometricEnabled: false,
+  toggleBiometricAuth: async () => { },
+  session: null,
+  isLoading: false,
+  refreshSession: async () => { }
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    user,
+    setUser,
+    session,
+    setSession,
+    loading,
+    activeSfdId,
+    setActiveSfdId,
+    biometricEnabled,
+    toggleBiometricAuth,
+    isAdmin,
+    isSfdAdmin,
+    userRole,
+    isLoggedIn
+  } = useAuthState();
 
-  useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error fetching session:', error);
-          return;
-        }
-        
-        setSession(data.session);
-        setUser(data.session?.user || null);
-        
-        // Debug log
-        if (data.session?.user) {
-          console.log('Loaded user data:', {
-            id: data.session.user.id,
-            email: data.session.user.email,
-            role: data.session.user.app_metadata?.role,
-            metadata: data.session.user.app_metadata,
-          });
-        }
-      } catch (err) {
-        console.error('Error in auth session fetching:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSession();
-
-    // Listen for auth changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        setUser(newSession?.user || null);
-        setSession(newSession);
-        setLoading(false);
-        
-        // Debug log for auth state change
-        if (newSession?.user) {
-          console.log('Auth state changed:', {
-            event,
-            userId: newSession.user.id,
-            role: newSession.user.app_metadata?.role,
-            metadata: newSession.user.app_metadata,
-          });
-        }
-        
-        // Log auth events
-        if (event === 'SIGNED_IN') {
-          await logAuditEvent({
-            user_id: newSession?.user?.id,
-            action: 'user_login',
-            category: AuditLogCategory.AUTHENTICATION,
-            severity: AuditLogSeverity.INFO,
-            status: 'success',
-            target_resource: 'auth/login',
-            details: {
-              login_method: 'password',
-              timestamp: new Date().toISOString(),
-              user_role: newSession?.user?.app_metadata?.role
-            },
-            error_message: null
-          }).catch(err => console.error('Error logging audit event:', err));
-        } else if (event === 'SIGNED_OUT') {
-          await logAuditEvent({
-            user_id: user?.id,
-            action: 'user_logout',
-            category: AuditLogCategory.AUTHENTICATION,
-            severity: AuditLogSeverity.INFO,
-            status: 'success',
-            target_resource: 'auth/logout',
-            details: {
-              timestamp: new Date().toISOString()
-            },
-            error_message: null
-          }).catch(err => console.error('Error logging audit event:', err));
-        }
-      }
-    );
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+  const {
+    signIn: authSignIn,
+    signUp: authSignUp,
+    signOut: authSignOut,
+    refreshSession: authRefreshSession,
+    isLoading
+  } = useAuthOperations();
 
   const signIn = async (email: string, password: string) => {
-    try {
-      const result = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (result.error) {
-        await logAuditEvent({
-          user_id: undefined,
-          action: 'failed_login',
-          category: AuditLogCategory.AUTHENTICATION,
-          severity: AuditLogSeverity.WARNING,
-          status: 'failure',
-          target_resource: 'auth/login',
-          details: {
-            email,
-            reason: result.error.message,
-            timestamp: new Date().toISOString()
-          },
-          error_message: result.error.message
-        }).catch(err => console.error('Error logging audit event:', err));
-      } else if (result.data.user) {
-        console.log('Login successful:', {
-          userId: result.data.user.id,
-          role: result.data.user.app_metadata?.role,
-          metadata: result.data.user.app_metadata,
-        });
+    const result = await authSignIn(email, password);
+    if (result.data?.session) {
+      setSession(result.data.session);
+      if (result.data.session.user) {
+        const mappedUser = createUserFromSupabaseUser(result.data.session.user);
+        setUser(mappedUser);
       }
-      
-      return result;
-    } catch (error: any) {
-      console.error('Error signing in:', error);
-      return { error };
     }
+    return result;
+  };
+
+  const signUp = async (email: string, password: string, metadata: Record<string, any> = {}) => {
+    return authSignUp(email, password, metadata);
   };
 
   const signOut = async () => {
-    try {
-      const result = await supabase.auth.signOut();
-      return result;
-    } catch (error: any) {
-      console.error('Error signing out:', error);
-      return { error };
-    }
+    await authSignOut();
+    setUser(null);
+    setSession(null);
   };
 
   const refreshSession = async () => {
-    try {
-      const { data, error } = await supabase.auth.refreshSession();
-      if (error) {
-        console.error('Error refreshing session:', error);
-        return;
-      }
-      
+    const data = await authRefreshSession();
+    if (data?.session) {
       setSession(data.session);
-      setUser(data.session?.user || null);
-    } catch (error) {
-      console.error('Error refreshing session:', error);
+      if (data.session.user) {
+        const mappedUser = createUserFromSupabaseUser(data.session.user);
+        setUser(mappedUser);
+      }
     }
   };
 
-  const value = {
+  const value: AuthContextType = {
     user,
-    session,
-    loading,
+    setUser,
     signIn,
+    signUp,
     signOut,
+    loading,
+    isLoggedIn,
+    isAdmin,
+    isSfdAdmin,
+    activeSfdId,
+    setActiveSfdId,
+    userRole,
+    biometricEnabled,
+    toggleBiometricAuth,
+    session,
+    isLoading,
     refreshSession
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

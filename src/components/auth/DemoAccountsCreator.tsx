@@ -1,13 +1,20 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+interface AccountResult {
+  email: string;
+  status: 'created' | 'already_exists' | 'error';
+  role?: string;
+  hasCorrectRole?: boolean;
+  message?: string;
+}
+
 export const DemoAccountsCreator = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState<any[] | null>(null);
+  const [results, setResults] = useState<AccountResult[] | null>(null);
   const { toast } = useToast();
 
   const createTestAccounts = async () => {
@@ -22,7 +29,7 @@ export const DemoAccountsCreator = () => {
         { email: 'admin@test.com', password: 'password123', role: 'admin' }
       ];
 
-      const results = [];
+      const results: AccountResult[] = [];
 
       for (const account of accounts) {
         // Check if user already exists

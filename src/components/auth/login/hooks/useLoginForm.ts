@@ -50,11 +50,11 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
     setIsLoading(true);
     
     try {
-      // Use password authentication
-      const { data, error } = await signIn(email, password);
+      // Use password authentication - fixed return type handling
+      const result = await signIn(email, password);
       
-      if (error) {
-        throw error;
+      if (result.error) {
+        throw result.error;
       }
 
       // Log successful authentication
@@ -69,7 +69,7 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       });
       
       // Get user role from the session
-      const userRole = data?.session?.user?.app_metadata?.role;
+      const userRole = result.data?.session?.user?.app_metadata?.role;
       console.log("User role:", userRole);
       
       // Redirect based on user role
