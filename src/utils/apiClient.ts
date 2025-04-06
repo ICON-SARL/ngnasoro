@@ -67,8 +67,8 @@ export const apiClient = {
     }
   },
   
-  // Use a predefined return type to avoid circular reference
-  async getSfdBalance(userId: string, sfdId: string): Promise<BalanceResult> {
+  // Explicitly define return type to break circular reference
+  async getSfdBalance(userId: string, sfdId: string): Promise<{ balance: number; currency: string }> {
     try {
       // First try to get balance from accounts table
       const { data: accountData, error: accountError } = await supabase

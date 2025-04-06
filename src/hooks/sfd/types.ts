@@ -31,7 +31,7 @@ export interface SfdAccount {
   currency: string;
 }
 
-// Define these types inline to prevent circular imports
+// Define types inline to prevent circular imports
 export interface SfdBalanceData {
   balance: number;
   currency: string;
