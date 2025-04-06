@@ -1,35 +1,100 @@
 
-import { User } from './types';
-import { User as SupabaseUser } from '@supabase/supabase-js';
+import { AuthChangeEvent, Session, User as SupabaseUser } from '@supabase/supabase-js';
+import { User, Role, AuthResponse } from './types';
+import { supabase } from '@/integrations/supabase/client';
 
-export const createUserFromSupabaseUser = (supabaseUser: SupabaseUser): User => {
+export const createUserFromSupabaseUser = (supabaseUser?: SupabaseUser | null): User | null => {
+  if (!supabaseUser) return null;
+  
   return {
     id: supabaseUser.id,
     email: supabaseUser.email || '',
-    full_name: supabaseUser.user_metadata?.full_name as string || '',
-    avatar_url: supabaseUser.user_metadata?.avatar_url as string || '',
-    phone: supabaseUser.user_metadata?.phone as string || '',
-    sfd_id: supabaseUser.user_metadata?.sfd_id as string || '',
-    user_metadata: supabaseUser.user_metadata || {},
-    app_metadata: {
-      role: supabaseUser.app_metadata?.role as string || '',
-      role_assigned: supabaseUser.app_metadata?.role_assigned as boolean || false,
-      roles: supabaseUser.app_metadata?.roles as string[] || []
-    }
+    full_name: supabaseUser.user_metadata?.full_name || '',
+    role: getUserRole(supabaseUser)
   };
 };
 
-export const isUserAdmin = (user: User | null): boolean => {
-  if (!user) return false;
-  return user.app_metadata?.role === 'admin';
-};
-
-export const isUserSfdAdmin = (user: User | null): boolean => {
-  if (!user) return false;
-  return user.app_metadata?.role === 'sfd_admin';
-};
-
-export const getUserRole = (user: User | null): string | null => {
+export const getUserRole = (user?: SupabaseUser | null | User): Role | null => {
   if (!user) return null;
-  return user.app_metadata?.role || null;
+  
+  if ('user_metadata' in user) {
+    return user.user_metadata?.role as Role || 'user';
+  } else if ('role' in user && user.role) {
+    return user.role;
+  }
+  
+  return 'user';
+};
+
+export const isUserAdmin = (user?: User | null): boolean => {
+  return user?.role === 'admin';
+};
+
+export const isUserSfdAdmin = (user?: User | null): boolean => {
+  return user?.role === 'sfd_admin';
+};
+
+// Fonction pour assigner la SFD "Test" lors de la création d'un nouveau compte
+export const assignDefaultSfd = async (userId: string): Promise<void> => {
+  try {
+    // Récupérer l'ID de la SFD "Test"
+    const { data: sfdData, error: sfdError } = await supabase
+      .from('sfds')
+      .select('id')
+      .eq('name', 'Test')
+      .single();
+    
+    if (sfdError || !sfdData) {
+      console.error("Erreur lors de la récupération de la SFD Test:", sfdError);
+      return;
+    }
+    
+    // Assigner la SFD à l'utilisateur
+    const { error } = await supabase
+      .from('user_sfds')
+      .insert({
+        user_id: userId,
+        sfd_id: sfdData.id,
+        is_default: true
+      });
+    
+    if (error) {
+      console.error("Erreur lors de l'assignation de la SFD:", error);
+    }
+  } catch (err) {
+    console.error("Une erreur est survenue:", err);
+  }
+};
+
+// Fonction pour créer un client SFD
+export const createSfdClient = async (
+  sfdId: string, 
+  fullName: string, 
+  email?: string, 
+  phone?: string,
+  userId?: string
+): Promise<{success: boolean, client?: any, error?: string}> => {
+  try {
+    const { data, error } = await supabase
+      .from('sfd_clients')
+      .insert({
+        sfd_id: sfdId,
+        user_id: userId || null,
+        full_name: fullName,
+        email: email || null,
+        phone: phone || null,
+        status: 'pending',
+        kyc_level: 0
+      })
+      .select()
+      .single();
+      
+    if (error) {
+      return {success: false, error: error.message};
+    }
+    
+    return {success: true, client: data};
+  } catch (err: any) {
+    return {success: false, error: err.message};
+  }
 };

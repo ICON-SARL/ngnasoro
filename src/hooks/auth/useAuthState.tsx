@@ -1,90 +1,46 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { User } from './types';
 import { supabase } from '@/integrations/supabase/client';
-import { createUserFromSupabaseUser } from './authUtils';
 
 export function useAuthState() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
-  // Assign user role if needed
-  const assignUserRole = useCallback(async (user: User) => {
-    if (!user || !user.app_metadata?.role || user.app_metadata.role_assigned) return;
-    
-    try {
-      const validRole = user.app_metadata.role as "admin" | "sfd_admin" | "user";
-      
-      const { data: roleData, error: roleError } = await supabase.rpc('assign_role', {
-        user_id: user.id,
-        role: validRole
-      });
-      
-      if (!roleError) {
-        const { error: updateError } = await supabase.auth.updateUser({
-          data: {
-            ...user.app_metadata,
-            role_assigned: true
-          }
-        });
-        
-        if (updateError) {
-          console.error('Error updating user metadata:', updateError);
+  // Fetch active SFD when user changes
+  useEffect(() => {
+    if (!user) {
+      setActiveSfdId(null);
+      return;
+    }
+
+    const fetchActiveSfd = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_sfds')
+          .select('sfd_id')
+          .eq('user_id', user.id)
+          .eq('is_default', true)
+          .single();
+
+        if (error) {
+          console.error('Error fetching active SFD:', error);
+          return;
         }
-      } else {
-        console.error('Error assigning role:', roleError);
-      }
-    } catch (err) {
-      console.error('Error in assign_role process:', err);
-    }
-  }, []);
 
-  // Effect to load active SFD ID from localStorage
-  useEffect(() => {
-    const storedSfdId = localStorage.getItem('activeSfdId');
-    if (storedSfdId) {
-      setActiveSfdId(storedSfdId);
-    }
-  }, []);
-
-  // Effect to save active SFD ID to localStorage
-  useEffect(() => {
-    if (activeSfdId) {
-      localStorage.setItem('activeSfdId', activeSfdId);
-    } else {
-      localStorage.removeItem('activeSfdId');
-    }
-  }, [activeSfdId]);
-
-  // Effect to check biometric support
-  useEffect(() => {
-    const checkBiometricSupport = async () => {
-      if (typeof window !== 'undefined' && 'PublicKeyCredential' in window) {
-        try {
-          const isConditionalMediationAvailable = await (window.PublicKeyCredential as any).isConditionalMediationAvailable();
-          setBiometricEnabled(!!isConditionalMediationAvailable);
-        } catch (error) {
-          console.error("Error checking biometric support:", error);
-          setBiometricEnabled(false);
+        if (data) {
+          setActiveSfdId(data.sfd_id);
         }
-      } else {
-        setBiometricEnabled(false);
+      } catch (err) {
+        console.error('Unexpected error fetching active SFD:', err);
       }
     };
 
-    checkBiometricSupport();
-  }, []);
-
-  // Assign role when user changes
-  useEffect(() => {
-    if (user) {
-      assignUserRole(user);
-    }
-  }, [user, assignUserRole]);
+    fetchActiveSfd();
+  }, [user]);
 
   return {
     user,
@@ -93,8 +49,6 @@ export function useAuthState() {
     setSession,
     loading,
     setLoading,
-    isLoading,
-    setIsLoading,
     activeSfdId,
     setActiveSfdId,
     biometricEnabled,

@@ -1,13 +1,13 @@
-
 import React from 'react';
 import { AgencyHeader } from '@/components/AgencyHeader';
 import { SfdDashboardStats } from '@/components/sfd/dashboard';
 import { CreditTrendChart } from '@/components/sfd/analytics';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, FileText, CreditCard } from 'lucide-react';
+import { Plus, Users, FileText, CreditCard, User, Badge } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
+import { useSfdClients } from '@/hooks/useSfdClients';
 
 export function SfdAdminDashboard() {
   const navigate = useNavigate();
@@ -63,70 +63,77 @@ export function SfdAdminDashboard() {
           
           <Card>
             <CardHeader>
-              <CardTitle>Demandes de Subvention</CardTitle>
+              <CardTitle>Clients récents</CardTitle>
               <CardDescription>
-                Demandes en attente de décision
+                Nouveaux clients en attente de validation
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <p>Chargement des demandes...</p>
-              ) : subsidyRequests.length === 0 ? (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground mb-4">Aucune demande en attente</p>
-                  <Button 
-                    onClick={() => navigate('/sfd-subsidy-requests?tab=create')}
-                    className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Nouvelle Demande
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {subsidyRequests.slice(0, 5).map(request => (
-                    <div key={request.id} className="border rounded p-3 flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">{request.purpose}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(request.amount)}
-                        </p>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => navigate(`/sfd-subsidy-requests/${request.id}`)}
-                      >
-                        Détails
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  {subsidyRequests.length > 5 && (
-                    <Button 
-                      variant="link" 
-                      className="w-full" 
-                      onClick={() => navigate('/sfd-subsidy-requests')}
-                    >
-                      Voir toutes les demandes ({subsidyRequests.length})
-                    </Button>
-                  )}
-                  
-                  <Button 
-                    className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-                    onClick={() => navigate('/sfd-subsidy-requests?tab=create')}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Nouvelle Demande
-                  </Button>
-                </div>
-              )}
+              <ClientsList />
             </CardContent>
+            <CardFooter>
+              <Button 
+                variant="link" 
+                className="w-full justify-center" 
+                onClick={() => navigate('/sfd-clients')}
+              >
+                Voir tous les clients
+              </Button>
+            </CardFooter>
           </Card>
         </div>
       </div>
     </div>
   );
 }
+
+const ClientsList = () => {
+  const { clients, isLoading } = useSfdClients();
+  const pendingClients = clients.filter(client => client.status === 'pending').slice(0, 3);
+  
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="flex items-center space-x-3">
+            <div className="skeleton h-10 w-10 rounded-full"></div>
+            <div className="space-y-2">
+              <div className="skeleton h-4 w-36"></div>
+              <div className="skeleton h-3 w-24"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  
+  if (pendingClients.length === 0) {
+    return (
+      <div className="text-center py-4 text-gray-500">
+        <User className="h-10 w-10 mx-auto text-gray-300 mb-2" />
+        <p>Aucun client en attente</p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-3">
+      {pendingClients.map(client => (
+        <div key={client.id} className="flex items-center justify-between border-b pb-3">
+          <div className="flex items-center space-x-3">
+            <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+              <User className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-medium text-sm">{client.full_name}</p>
+              <p className="text-xs text-gray-500">{client.phone || client.email || 'Pas de contact'}</p>
+            </div>
+          </div>
+          <Badge variant="outline" className="bg-amber-50 text-amber-600">En attente</Badge>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 export default SfdAdminDashboard;

@@ -1,97 +1,77 @@
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from '@/hooks/auth';
+import { AdminDashboard } from '@/pages/AdminDashboard';
+import { AgencyDashboard } from '@/pages/AgencyDashboard';
+import { SfdClientsPage } from '@/pages/SfdClientsPage';
+import { LoansPage } from '@/pages/LoansPage';
+import { ClientsPage } from '@/pages/ClientsPage';
+import { TransactionsPage } from '@/pages/TransactionsPage';
+import { SubsidyRequestsPage } from '@/pages/SubsidyRequestsPage';
+import { LoginPage } from '@/pages/LoginPage';
+import { SfdLoginPage } from '@/pages/SfdLoginPage';
+import { MobileLoginPage } from '@/pages/MobileLoginPage';
+import MobileDashboard from '@/components/mobile/MobileDashboard';
+import ClientList from '@/components/mobile/sfd-clients/ClientList';
+import NewClientPage from '@/pages/NewClientPage';
+import ClientDetailsPage from '@/pages/ClientDetailsPage';
+import CreateSfdPage from '@/pages/CreateSfdPage';
+import SfdAccountsPage from '@/pages/SfdAccountsPage';
+import { SiteHeader } from '@/components/SiteHeader';
+import { SuperAdminHeader } from '@/components/SuperAdminHeader';
+import { useAuth } from '@/hooks/useAuth';
 
-import React, { useState, useEffect } from 'react';
-import { Route, Routes, Navigate } from 'react-router-dom';
-import { Footer } from '@/components';
-import AuthUI from '@/components/AuthUI';
-import AdminAuthUI from '@/components/auth/AdminAuthUI';
-import SfdAuthUI from '@/components/auth/SfdAuthUI';
-import ProtectedRoute from '@/components/routes/ProtectedRoute';
-import PermissionProtectedRoute from '@/components/routes/PermissionProtectedRoute';
-import MobileFlow from '@/pages/MobileFlow';
-import ClientsPage from '@/pages/ClientsPage';
-import AccessDenied from '@/pages/AccessDeniedPage';
-import PremiumDashboardPage from '@/pages/PremiumDashboard';
-import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
-import AgencyDashboard from '@/pages/AgencyDashboard';
-import { AdminManagement } from '@/components/admin/AdminManagement';
-import CreateSfdAdminPage from './pages/CreateSfdAdminPage';
-import { useAuth } from '@/hooks/auth';
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Routes publiques */}
+          <Route path="/" element={<HomePage />} />
 
-function App() {
-  const { user, loading } = useAuth();
-  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
+          {/* Routes pour l'authentification */}
+          <Route path="/sfd/auth" element={<SfdLoginPage />} />
+          <Route path="/admin/auth" element={<LoginPage />} />
 
-  useEffect(() => {
-    // Check if biometric authentication is available (example)
-    // In a real app, use a proper biometric library
-    const checkBiometrics = () => {
-      const hasBiometrics = typeof window !== 'undefined' && 
-        (navigator.credentials !== undefined || 
-         navigator.userAgent.includes('Biometric'));
-      
-      setIsBiometricAvailable(hasBiometrics);
-    };
-    
-    checkBiometrics();
-    
-    // Log auth state on app startup
-    console.log('App initialized, auth state:', { 
-      isAuthenticated: !!user,
-      userEmail: user?.email,
-      userRole: user?.app_metadata?.role,
-      loading
-    });
-  }, [user, loading]);
+          {/* Routes pour l'administrateur */}
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/clients" element={<ClientsPage />} />
+          <Route path="/transactions" element={<TransactionsPage />} />
 
-  // Render loading state if auth is still being checked
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#0D6A51]"></div>
-        <span className="ml-3">Chargement de l'application...</span>
-      </div>
-    );
-  }
+          {/* Routes pour l'agence SFD */}
+          <Route path="/agency-dashboard" element={<AgencyDashboard />} />
+          <Route path="/sfd-clients" element={<SfdClientsPage />} />
+          <Route path="/sfd-loans" element={<LoansPage />} />
+          <Route path="/sfd-subsidy-requests" element={<SubsidyRequestsPage />} />
+
+          {/* Mobile flow routes */}
+          <Route path="/mobile-flow/auth" element={<MobileLoginPage />} />
+          <Route path="/mobile-flow/dashboard" element={<MobileDashboard />} />
+          <Route path="/mobile-flow/clients" element={<ClientList />} />
+          <Route path="/mobile-flow/client/new" element={<NewClientPage />} />
+          <Route path="/mobile-flow/client/:clientId" element={<ClientDetailsPage />} />
+          <Route path="/mobile-flow/create-sfd" element={<CreateSfdPage />} />
+          <Route path="/mobile-flow/sfd-accounts" element={<SfdAccountsPage />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+};
+
+const HomePage: React.FC = () => {
+  const { isAdmin } = useAuth();
 
   return (
-    <>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Navigate to="/auth" replace />} />
-        <Route path="/auth" element={<AuthUI />} />
-        <Route path="/admin/auth" element={<AdminAuthUI />} />
-        <Route path="/sfd/auth" element={<SfdAuthUI />} />
-        <Route path="/access-denied" element={<AccessDenied />} />
-        
-        {/* Regular user routes */}
-        <Route path="/mobile-flow/*" element={
-          <ProtectedRoute component={MobileFlow} />
-        } />
-        
-        {/* Admin Routes - require admin role */}
-        <Route path="/super-admin-dashboard" element={
-          <ProtectedRoute requireAdmin={true} component={SuperAdminDashboard} />
-        } />
-        <Route path="/admin/management" element={
-          <ProtectedRoute requireAdmin={true} component={AdminManagement} />
-        } />
-        <Route path="/admin/create-sfd-admin" element={
-          <ProtectedRoute requireAdmin={true} component={CreateSfdAdminPage} />
-        } />
-        
-        {/* SFD Admin Routes - require sfd_admin role */}
-        <Route path="/agency-dashboard" element={
-          <ProtectedRoute requireSfdAdmin={true} component={AgencyDashboard} />
-        } />
-        <Route path="/clients" element={
-          <ProtectedRoute requireSfdAdmin={true} component={ClientsPage} />
-        } />
-        
-        {/* Premium Routes */}
-        <Route path="/premium-dashboard" element={<PremiumDashboardPage />} />
-      </Routes>
-    </>
+    <div className="min-h-screen bg-gray-100">
+      {isAdmin ? <SuperAdminHeader /> : <SiteHeader />}
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold text-center mb-4">Bienvenue sur le Portail</h1>
+        <p className="text-lg text-center text-gray-700">
+          Choisissez votre rôle pour accéder à votre tableau de bord.
+        </p>
+      </div>
+    </div>
   );
-}
+};
 
 export default App;
