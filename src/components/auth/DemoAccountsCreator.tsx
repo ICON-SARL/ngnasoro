@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+// Define the AccountResult interface explicitly without circular references
 interface AccountResult {
   email: string;
   status: 'created' | 'already_exists' | 'error';
