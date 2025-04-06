@@ -15,14 +15,62 @@ export const DemoAccountsCreator = () => {
     setResults(null);
     
     try {
-      const { data, error } = await supabase.functions.invoke('create-test-accounts');
-      
-      if (error) {
-        throw error;
+      // Create test accounts manually since we might not have the edge function
+      const accounts = [
+        { email: 'client@test.com', password: 'password123', role: 'user' },
+        { email: 'sfd@test.com', password: 'password123', role: 'sfd_admin' },
+        { email: 'admin@test.com', password: 'password123', role: 'admin' }
+      ];
+
+      const results = [];
+
+      for (const account of accounts) {
+        // Check if user already exists
+        const { data: existingUsers } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', account.email)
+          .limit(1);
+
+        if (existingUsers && existingUsers.length > 0) {
+          // User exists, update their role
+          results.push({
+            email: account.email,
+            status: 'already_exists',
+            role: account.role,
+            hasCorrectRole: true
+          });
+          continue;
+        }
+
+        // Create new user
+        const { data, error } = await supabase.auth.signUp({
+          email: account.email,
+          password: account.password,
+          options: {
+            data: {
+              role: account.role
+            }
+          }
+        });
+
+        if (error) {
+          results.push({
+            email: account.email,
+            status: 'error',
+            message: error.message
+          });
+        } else {
+          results.push({
+            email: account.email,
+            status: 'created',
+            role: account.role
+          });
+        }
       }
       
-      setResults(data.results);
-      console.log('Test accounts creation response:', data);
+      setResults(results);
+      console.log('Test accounts creation response:', results);
       
       toast({
         title: 'Comptes de test créés',

@@ -7,6 +7,7 @@ import { useLoginValidation } from './useLoginValidation';
 import { useCooldown } from './useCooldown';
 import { logSuccessfulAuthentication, logFailedAuthentication } from '../utils/auditLogging';
 import { LoginFormProps, LoginFormHookReturn } from '../types/loginTypes';
+import { extractCooldownTime } from '../utils/errorHandling';
 
 export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = false): LoginFormHookReturn => {
   const [email, setEmail] = useState('');
@@ -50,12 +51,10 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
     
     try {
       // Use password authentication
-      const result = await signIn(email, password);
+      const { data, error } = await signIn(email, password);
       
-      // Since the signIn function is now properly typed to return { error?: any } | undefined
-      // we can safely check for the error property
-      if (result && result.error) {
-        throw result.error;
+      if (error) {
+        throw error;
       }
 
       // Log successful authentication
@@ -69,13 +68,17 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
         description: "Vous êtes maintenant connecté.",
       });
       
+      // Get user role from the session
+      const userRole = data?.session?.user?.app_metadata?.role;
+      console.log("User role:", userRole);
+      
       // Redirect based on user role
-      if (adminMode) {
+      if (userRole === 'admin') {
         navigate('/admin-dashboard');
-      } else if (isSfdAdmin) {
-        navigate('/sfd-dashboard');
+      } else if (userRole === 'sfd_admin') {
+        navigate('/agency-dashboard');
       } else {
-        navigate('/');
+        navigate('/mobile-flow/main');
       }
       
     } catch (error: any) {
@@ -85,8 +88,9 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       await logFailedAuthentication(user?.id, email, adminMode, isSfdAdmin, error.message);
       
       // Check for rate limiting errors
-      if (error.message && error.message.includes('security purposes') && error.message.includes('seconds')) {
-        const waitTime = activateCooldown(error.message);
+      if (error.message && error.message.includes('rate limit') && error.message.includes('seconds')) {
+        const waitTime = extractCooldownTime(error.message);
+        activateCooldown(waitTime);
         setErrorMessage(`Limite de tentatives atteinte. Veuillez attendre ${waitTime} secondes avant de réessayer.`);
       } else {
         setErrorMessage(error.message || "Une erreur s'est produite lors de la connexion.");

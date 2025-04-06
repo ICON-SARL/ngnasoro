@@ -9,8 +9,8 @@ interface AuthContextProps {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signOut: () => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ data?: any, error?: any }>;
+  signOut: () => Promise<{ error?: any }>;
   refreshSession: () => Promise<void>;
 }
 
@@ -71,29 +71,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Log auth events
         if (event === 'SIGNED_IN') {
-          await logAuditEvent(
-            AuditLogCategory.AUTHENTICATION,
-            'user_login',
-            {
+          await logAuditEvent({
+            user_id: newSession?.user?.id,
+            action: 'user_login',
+            category: AuditLogCategory.AUTHENTICATION,
+            severity: AuditLogSeverity.INFO,
+            status: 'success',
+            target_resource: 'auth/login',
+            details: {
               login_method: 'password',
               timestamp: new Date().toISOString(),
-              user_role: newSession?.user.app_metadata?.role
+              user_role: newSession?.user?.app_metadata?.role
             },
-            newSession?.user.id,
-            AuditLogSeverity.INFO,
-            'success'
-          );
+            error_message: null
+          }).catch(err => console.error('Error logging audit event:', err));
         } else if (event === 'SIGNED_OUT') {
-          await logAuditEvent(
-            AuditLogCategory.AUTHENTICATION,
-            'user_logout',
-            {
+          await logAuditEvent({
+            user_id: user?.id,
+            action: 'user_logout',
+            category: AuditLogCategory.AUTHENTICATION,
+            severity: AuditLogSeverity.INFO,
+            status: 'success',
+            target_resource: 'auth/logout',
+            details: {
               timestamp: new Date().toISOString()
             },
-            user?.id,
-            AuditLogSeverity.INFO,
-            'success'
-          );
+            error_message: null
+          }).catch(err => console.error('Error logging audit event:', err));
         }
       }
     );
@@ -108,18 +112,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await supabase.auth.signInWithPassword({ email, password });
       
       if (result.error) {
-        await logAuditEvent(
-          AuditLogCategory.AUTHENTICATION,
-          'failed_login',
-          {
+        await logAuditEvent({
+          user_id: undefined,
+          action: 'failed_login',
+          category: AuditLogCategory.AUTHENTICATION,
+          severity: AuditLogSeverity.WARNING,
+          status: 'failure',
+          target_resource: 'auth/login',
+          details: {
             email,
             reason: result.error.message,
             timestamp: new Date().toISOString()
           },
-          undefined,
-          AuditLogSeverity.WARNING,
-          'failure'
-        );
+          error_message: result.error.message
+        }).catch(err => console.error('Error logging audit event:', err));
       } else if (result.data.user) {
         console.log('Login successful:', {
           userId: result.data.user.id,
@@ -129,7 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing in:', error);
       return { error };
     }
@@ -139,7 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const result = await supabase.auth.signOut();
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing out:', error);
       return { error };
     }
