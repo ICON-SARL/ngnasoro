@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,6 @@ const SfdSetupPage = () => {
   const [activeTab, setActiveTab] = useState<string>('create');
   
   useEffect(() => {
-    // Check if user has any SFDs
     const checkUserSfds = async () => {
       if (user) {
         setIsLoading(true);
@@ -30,7 +28,6 @@ const SfdSetupPage = () => {
             .select('id')
             .eq('user_id', user.id);
             
-          // Fix: Ensure we're setting a boolean value to setHasSfds
           const hasExistingSfds = Boolean(data && data.length > 0) || Boolean(activeSfdId);
           setHasSfds(hasExistingSfds);
           setActiveTab(hasExistingSfds ? 'manage' : 'create');
