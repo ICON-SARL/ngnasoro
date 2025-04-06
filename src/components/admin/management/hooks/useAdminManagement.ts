@@ -51,7 +51,7 @@ export const useAdminManagement = () => {
         .from('admin_users')
         .select('id, email, full_name, role, has_2fa, created_at, last_sign_in_at');
       
-      // Apply filters - now handling the "all" value
+      // Apply filters - fix the type comparison issue
       if (filters.role && filters.role !== 'all') {
         query = query.eq('role', filters.role);
       }
@@ -130,16 +130,17 @@ export const useAdminManagement = () => {
       // Note: in a real app with auth setup, you'd probably create an auth user first
       // and then create the admin_user entry
       const adminData = {
+        id: crypto.randomUUID(), // Generate a UUID for the admin
         email: formData.email,
         full_name: formData.email.split('@')[0], // Default name from email
         role: formData.role,
         has_2fa: false // Default value
       };
       
-      // Fixed: Passing an array to insert since we need to conform to the type expectations
+      // Fixed: Use proper typing and values for admin_users table
       const { data, error } = await supabase
         .from('admin_users')
-        .insert([adminData])
+        .insert(adminData)
         .select();
       
       if (error) throw error;

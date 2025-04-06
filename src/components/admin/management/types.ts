@@ -30,7 +30,7 @@ export interface AdminFormData {
 }
 
 export interface AdminFilterOptions {
-  role?: AdminRole;
+  role?: string | AdminRole;
   sfd_id?: string;
   is_active?: boolean;
 }

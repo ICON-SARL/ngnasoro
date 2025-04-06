@@ -26,14 +26,13 @@ export const AdminFilters: React.FC<AdminFiltersProps> = ({
     <div className="bg-white p-4 rounded-lg border mb-4 flex flex-wrap items-center gap-4">
       <div className="flex-1 min-w-[200px]">
         <Select 
-          value={filters.role || undefined} 
-          onValueChange={(value) => handleFilterChange('role', value || undefined)}
+          value={filters.role || "all"} 
+          onValueChange={(value) => handleFilterChange('role', value === "all" ? undefined : value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Filtrer par rôle" />
           </SelectTrigger>
           <SelectContent>
-            {/* Fixed: Replaced empty string with null value */}
             <SelectItem value="all">Tous les rôles</SelectItem>
             <SelectItem value={AdminRole.SUPER_ADMIN}>Super Admin</SelectItem>
             <SelectItem value={AdminRole.SFD_ADMIN}>Admin SFD</SelectItem>
@@ -44,14 +43,13 @@ export const AdminFilters: React.FC<AdminFiltersProps> = ({
       
       <div className="flex-1 min-w-[200px]">
         <Select 
-          value={filters.sfd_id || undefined} 
-          onValueChange={(value) => handleFilterChange('sfd_id', value || undefined)}
+          value={filters.sfd_id || "all"} 
+          onValueChange={(value) => handleFilterChange('sfd_id', value === "all" ? undefined : value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Filtrer par SFD" />
           </SelectTrigger>
           <SelectContent>
-            {/* Fixed: Replaced empty string with all */}
             <SelectItem value="all">Toutes les SFD</SelectItem>
             {sfds.map(sfd => (
               <SelectItem key={sfd.id} value={sfd.id}>{sfd.name}</SelectItem>
@@ -70,7 +68,6 @@ export const AdminFilters: React.FC<AdminFiltersProps> = ({
             <SelectValue placeholder="Filtrer par statut" />
           </SelectTrigger>
           <SelectContent>
-            {/* Fixed: Replaced empty string with all */}
             <SelectItem value="all">Tous les statuts</SelectItem>
             <SelectItem value="true">Actifs</SelectItem>
             <SelectItem value="false">Inactifs</SelectItem>
