@@ -25,9 +25,9 @@ const DemoAccountsCreator = () => {
 
     try {
       const accounts = [
-        { email: 'client@test.com', password: 'test123', role: 'user' },
-        { email: 'sfd@test.com', password: 'test123', role: 'sfd_admin' },
-        { email: 'admin@test.com', password: 'test123', role: 'admin' }
+        { email: 'client@test.com', password: 'password123', role: 'user' },
+        { email: 'sfd@test.com', password: 'password123', role: 'sfd_admin' },
+        { email: 'admin@test.com', password: 'password123', role: 'admin' }
       ];
 
       const results = [];
@@ -127,21 +127,21 @@ const DemoAccountsCreator = () => {
           <div className="space-y-1 text-xs">
             <div className="flex justify-between items-center py-1 px-2 bg-white rounded border">
               <div>
-                <span className="font-medium">client@test.com</span> / test123
+                <span className="font-medium">client@test.com</span> / password123
               </div>
               <Badge variant="outline" className="bg-gray-100">Client</Badge>
             </div>
             
             <div className="flex justify-between items-center py-1 px-2 bg-white rounded border">
               <div>
-                <span className="font-medium">sfd@test.com</span> / test123
+                <span className="font-medium">sfd@test.com</span> / password123
               </div>
               <Badge variant="outline" className="bg-blue-100 text-blue-800">SFD Admin</Badge>
             </div>
             
             <div className="flex justify-between items-center py-1 px-2 bg-white rounded border">
               <div>
-                <span className="font-medium">admin@test.com</span> / test123
+                <span className="font-medium">admin@test.com</span> / password123
               </div>
               <Badge variant="outline" className="bg-amber-100 text-amber-800">MEREF Admin</Badge>
             </div>
