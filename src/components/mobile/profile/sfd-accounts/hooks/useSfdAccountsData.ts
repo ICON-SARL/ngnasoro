@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
-import { SfdAccountDisplay } from '../AccountsList';
+import { SfdAccountDisplay } from '../types/SfdAccountTypes';
 
 export default function useSfdAccountsData(
   propsSfdData?: any[],

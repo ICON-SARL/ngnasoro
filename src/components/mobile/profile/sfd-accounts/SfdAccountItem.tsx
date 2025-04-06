@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ChevronRight, CheckCircle, Clock } from 'lucide-react';
-import { SfdAccountDisplay } from './AccountsList';
+import { SfdAccountDisplay } from './types/SfdAccountTypes';
 
 interface SfdAccountItemProps {
   sfd: SfdAccountDisplay;
