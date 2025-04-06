@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { handleError } from "@/utils/errorHandler";
 
 // Define a simple type for the balance result
-interface SfdBalanceResult {
+export interface SfdBalanceResult {
   balance: number;
   currency: string;
 }
