@@ -19,7 +19,7 @@ export const getUserRole = (user?: SupabaseUser | null | User): Role | null => {
   
   // Check for role property directly on user object
   if ('role' in user && user.role) {
-    return user.role;
+    return user.role as Role;
   }
   
   // Check for role in user_metadata
