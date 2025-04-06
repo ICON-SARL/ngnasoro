@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -83,7 +84,7 @@ export const DemoAccountsCreator = () => {
         title: 'Comptes de test créés',
         description: 'Les comptes de démonstration ont été configurés avec succès.',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create test accounts:', error);
       toast({
         title: 'Erreur',
@@ -95,7 +96,7 @@ export const DemoAccountsCreator = () => {
     }
   };
 
-  const getStatusDetails = (result: any) => {
+  const getStatusDetails = (result: AccountResult) => {
     if (result.status === 'created') {
       return `Créé avec le rôle: ${result.role}`;
     } else if (result.status === 'already_exists') {
@@ -107,7 +108,7 @@ export const DemoAccountsCreator = () => {
     }
   };
 
-  const getStatusIcon = (result: any) => {
+  const getStatusIcon = (result: AccountResult) => {
     if (result.status === 'created') {
       return <CheckCircle2 className="h-3 w-3 text-green-500 mr-1" />;
     } else if (result.status === 'already_exists') {

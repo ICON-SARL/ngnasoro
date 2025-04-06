@@ -29,8 +29,8 @@ export interface User {
 export interface AuthContextProps {
   user: User | null;
   setUser: (user: User | null) => void;
-  signIn: (email: string, password: string) => Promise<{ error?: any }>;
-  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ data?: any; error?: any }>;
+  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<any>;
   signOut: () => Promise<void>;
   loading: boolean;
   isLoggedIn: boolean;

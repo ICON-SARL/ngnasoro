@@ -57,6 +57,11 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
         throw result.error;
       }
 
+      // Check if we have user data after successful login
+      if (!result.data?.session?.user) {
+        throw new Error("Session information is missing after login");
+      }
+
       // Log successful authentication
       console.log("Connexion réussie:", { email, adminMode, isSfdAdmin });
       
