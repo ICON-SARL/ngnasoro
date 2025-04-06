@@ -50,9 +50,6 @@ export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ additionalCo
             <Link to="/credit-approval" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
               Crédits
             </Link>
-            <Link to="/subsidy-management" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
-              Subventions
-            </Link>
             <Link to="/sfd-management" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
               SFDs
             </Link>
@@ -141,13 +138,6 @@ export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ additionalCo
                 onClick={() => setShowMobileMenu(false)}
               >
                 Crédits
-              </Link>
-              <Link
-                to="/subsidy-management"
-                className="px-2 py-1.5 text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-md text-sm"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                Subventions
               </Link>
               <Link
                 to="/sfd-management"
