@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Sfd } from '../../types/sfd-types';
+import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 
 export function useSfdData() {
   // Fetch SFDs from Supabase
@@ -30,15 +31,14 @@ export function useSfdData() {
             subsidy_balance = subsidies.reduce((sum, subsidy) => sum + (subsidy.remaining_amount || 0), 0);
           }
 
-          // Manually fetch stats with a generic query to avoid TypeScript errors
+          // Use edge function to fetch stats instead of RPC
           let sfdStats = null;
           try {
-            // Use a raw query approach to avoid TypeScript schema validation
-            const { data: stats, error: statsError } = await supabase
-              .rpc('fetch_sfd_stats', { sfd_id_param: sfd.id })
-              .single();
-
-            if (!statsError && stats) {
+            const stats = await edgeFunctionApi.callEdgeFunction('fetch-sfd-stats', { 
+              sfd_id: sfd.id 
+            });
+            
+            if (stats) {
               sfdStats = stats;
             } else {
               // Provide default stats structure if no stats exist

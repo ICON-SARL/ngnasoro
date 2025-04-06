@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Sfd } from '../types/sfd-types';
 import { Card } from '@/components/ui/card';
@@ -69,12 +68,7 @@ export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
       // Direct query to the admin_users table with a join
       const { data, error } = await supabase
         .from('admin_users')
-        .select(`
-          id as user_id,
-          role,
-          full_name,
-          email
-        `)
+        .select('id, role, full_name, email')
         .eq('role', 'admin_sfd');
 
       if (error) {
@@ -84,7 +78,7 @@ export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
       
       // Convert the data to the expected format
       return data.map(admin => ({
-        user_id: admin.user_id,
+        user_id: admin.id,
         role: admin.role,
         admin_users: {
           full_name: admin.full_name,
