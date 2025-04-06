@@ -13,12 +13,16 @@ const ErrorDisplay = ({ message }: ErrorDisplayProps) => {
   // Simplifier les messages d'erreur pour les rendre plus compréhensibles
   let simplifiedMessage = message;
   
-  if (message.includes('invalid email')) {
+  if (message.includes('Invalid login')) {
+    simplifiedMessage = "Email ou mot de passe incorrect.";
+  } else if (message.includes('invalid email')) {
     simplifiedMessage = "L'email n'est pas valide.";
   } else if (message.includes('rate limit')) {
     simplifiedMessage = "Veuillez attendre avant de réessayer.";
   } else if (message.includes('not found')) {
     simplifiedMessage = "Email non trouvé. Vérifiez votre saisie.";
+  } else if (message.includes('Email not confirmed')) {
+    simplifiedMessage = "Votre email n'a pas été confirmé. Veuillez vérifier votre boîte mail.";
   }
 
   return (

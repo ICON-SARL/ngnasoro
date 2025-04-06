@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, AuthContextProps, Role } from './types';
 import { supabase } from '@/integrations/supabase/client';
@@ -109,16 +110,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log("Setting up auth state listener and checking session");
     
+    // Set up auth state listener FIRST
     const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
       console.log("Auth state changed:", event, newSession?.user?.email);
       
-      if (newSession?.user) {
-        const mappedUser = createUserFromSupabaseUser(newSession.user);
-        setUser(mappedUser);
+      if (newSession) {
+        setSession(newSession);
+        if (newSession.user) {
+          const mappedUser = createUserFromSupabaseUser(newSession.user);
+          console.log("Setting user from auth state change:", mappedUser);
+          setUser(mappedUser);
+        }
       } else {
         setUser(null);
+        setSession(null);
       }
-      setSession(newSession);
+      
       setLoading(false);
       
       if (newSession?.user) {
@@ -131,6 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
     
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       console.log("Initial session check:", currentSession?.user?.email);
       
@@ -138,6 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(currentSession);
         if (currentSession.user) {
           const mappedUser = createUserFromSupabaseUser(currentSession.user);
+          console.log("Setting user from initial session:", mappedUser);
           setUser(mappedUser);
         }
       }
@@ -155,7 +164,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
+      console.log("Signing in with:", email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -166,7 +177,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
       
-      if (data.session) {
+      if (data?.session) {
+        console.log("Sign in successful, setting user session:", data.session.user.email);
         const mappedUser = createUserFromSupabaseUser(data.session.user);
         setUser(mappedUser);
         setSession(data.session);
@@ -175,9 +187,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return {};
     } catch (error) {
       console.error('Unexpected sign in error:', error);
-      return { error: error };
+      return { error };
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -213,6 +225,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       setLoading(true);
+      console.log("Signing out...");
       const { error } = await supabase.auth.signOut();
       
       if (error) {

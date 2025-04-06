@@ -17,17 +17,20 @@ export const initializeSupabase = async () => {
         .single();
         
       if (profileError) {
-        console.warn("User profile not found, creating...");
+        console.log("User profile not found, creating...");
         // Create profile if missing
         const { error: createProfileError } = await supabase
           .from('profiles')
           .insert({
             id: session.user.id,
-            full_name: session.user.user_metadata.full_name || ''
+            full_name: session.user.user_metadata?.full_name || '',
+            email: session.user.email
           });
           
         if (createProfileError) {
           console.error("Failed to create profile:", createProfileError);
+        } else {
+          console.log("User profile created successfully");
         }
       }
       
@@ -39,7 +42,7 @@ export const initializeSupabase = async () => {
         .single();
         
       if (accountError) {
-        console.warn("User account not found, creating...");
+        console.log("User account not found, creating...");
         // Create account if missing
         const { error: createAccountError } = await supabase
           .from('accounts')
@@ -51,6 +54,8 @@ export const initializeSupabase = async () => {
           
         if (createAccountError) {
           console.error("Failed to create account:", createAccountError);
+        } else {
+          console.log("User account created successfully");
         }
       }
     } else {
