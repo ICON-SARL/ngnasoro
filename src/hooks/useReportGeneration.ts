@@ -67,8 +67,28 @@ export function useReportGeneration() {
       const startDate = options.startDate.toISOString().split('T')[0];
       const endDate = options.endDate.toISOString().split('T')[0];
       
+      let tableName: string;
+      
+      // Map report types to existing tables
+      switch (options.type) {
+        case 'transactions':
+          tableName = 'transactions';
+          break;
+        case 'loans':
+          tableName = 'sfd_loans';
+          break;
+        case 'subsidies':
+          tableName = 'sfd_subsidies';
+          break;
+        case 'sfds':
+          tableName = 'sfds';
+          break;
+        default:
+          tableName = 'transactions';
+      }
+      
       const { data, error } = await apiClient.supabase
-        .from(`report_${options.type}`)
+        .from(tableName)
         .select('*')
         .gte('created_at', startDate)
         .lte('created_at', endDate);

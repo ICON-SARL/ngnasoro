@@ -27,6 +27,7 @@ import { fr } from 'date-fns/locale';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
 export const FinancialReports = () => {
   const [reportType, setReportType] = useState('transactions');
