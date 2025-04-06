@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,7 +22,6 @@ export const DemoAccountsCreator = () => {
     setResults(null);
     
     try {
-      // Create test accounts manually since we might not have the edge function
       const accounts = [
         { email: 'client@test.com', password: 'password123', role: 'user' },
         { email: 'sfd@test.com', password: 'password123', role: 'sfd_admin' },
@@ -33,7 +31,6 @@ export const DemoAccountsCreator = () => {
       const results: AccountResult[] = [];
 
       for (const account of accounts) {
-        // Check if user already exists
         const { data: existingUsers } = await supabase
           .from('profiles')
           .select('id')
@@ -41,7 +38,6 @@ export const DemoAccountsCreator = () => {
           .limit(1);
 
         if (existingUsers && existingUsers.length > 0) {
-          // User exists, update their role
           results.push({
             email: account.email,
             status: 'already_exists',
@@ -51,7 +47,6 @@ export const DemoAccountsCreator = () => {
           continue;
         }
 
-        // Create new user
         const { data, error } = await supabase.auth.signUp({
           email: account.email,
           password: account.password,
