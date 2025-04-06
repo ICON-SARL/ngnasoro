@@ -8,10 +8,10 @@ import { useLocalization } from '@/contexts/LocalizationContext';
 interface VoiceAssistantProps {
   message: string;
   autoPlay?: boolean;
-  language?: 'bambara' | 'french';
+  language?: 'french' | 'bambara';
 }
 
-const VoiceAssistant = ({ message, autoPlay = false, language = 'bambara' }: VoiceAssistantProps) => {
+const VoiceAssistant = ({ message, autoPlay = false, language = 'french' }: VoiceAssistantProps) => {
   const { voiceOverEnabled, toggleVoiceOver } = useLocalization();
   const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
