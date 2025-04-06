@@ -10,6 +10,7 @@ import LanguageSelector from './LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DemoAccountsCreator from './auth/DemoAccountsCreator';
 import { UserRole } from '@/hooks/auth/types';
+import { useToast } from '@/hooks/use-toast';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
@@ -18,6 +19,7 @@ const AuthUI = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
+  const { toast } = useToast();
   
   // Handle hash in URL for OAuth flows
   useEffect(() => {
@@ -41,15 +43,23 @@ const AuthUI = () => {
       console.log('User role:', userRole);
       
       // Redirection based on user's role
-      if (userRole === UserRole.SUPER_ADMIN) {
+      if (userRole === UserRole.SUPER_ADMIN || user.app_metadata?.role === 'admin') {
+        if (location.pathname !== '/admin/auth' && !location.pathname.includes('admin')) {
+          // If regular auth page is accessed by admin, show a message
+          toast({
+            title: "Redirection",
+            description: "Les administrateurs doivent utiliser l'interface d'administration.",
+            variant: "default",
+          });
+        }
         navigate('/super-admin-dashboard');
-      } else if (userRole === UserRole.SFD_ADMIN) {
+      } else if (userRole === UserRole.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {
         navigate('/agency-dashboard');
       } else {
         navigate('/mobile-flow');
       }
     }
-  }, [user, userRole, loading, navigate]);
+  }, [user, userRole, loading, navigate, location.pathname, toast]);
 
   // Update tab based on current route
   useEffect(() => {
@@ -122,6 +132,14 @@ const AuthUI = () => {
             <div className="p-4 bg-blue-50 border-b border-blue-100">
               <h2 className="text-blue-800 font-medium text-center">
                 Connexion Administration SFD
+              </h2>
+            </div>
+          )}
+          
+          {authMode === 'default' && (
+            <div className="p-4 bg-[#0D6A51]/10 border-b border-[#0D6A51]/20">
+              <h2 className="text-[#0D6A51] font-medium text-center">
+                Espace Client
               </h2>
             </div>
           )}

@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from './Logo';
 import LoginForm from './login/LoginForm';
-import { Check } from 'lucide-react';
+import { Check, Shield } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
 import DemoAccountsCreator from './DemoAccountsCreator';
 
@@ -69,6 +70,19 @@ const AdminAuthUI = () => {
             <h2 className="text-amber-800 font-medium text-center">
               Connexion Administration MEREF
             </h2>
+          </div>
+          
+          <div className="p-4 bg-amber-50 text-amber-800 flex items-start gap-2">
+            <Shield className="h-5 w-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium">
+                Accès réservé aux administrateurs MEREF
+              </p>
+              <p className="text-xs mt-1">
+                Cette interface est uniquement destinée aux administrateurs système. 
+                Les administrateurs n'ont pas accès à l'interface mobile.
+              </p>
+            </div>
           </div>
           
           <LoginForm adminMode={true} isSfdAdmin={false} />

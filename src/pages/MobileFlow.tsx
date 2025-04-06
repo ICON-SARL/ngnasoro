@@ -31,12 +31,26 @@ const MobileFlow = () => {
     return !hasVisited;
   });
 
-  // Check if user is authenticated
+  // Check if user is authenticated and not an admin
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
+    if (!loading) {
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+      
+      // If user is admin or super_admin, redirect to admin dashboard
+      const userRole = user.app_metadata?.role;
+      if (userRole === 'admin' || userRole === 'super_admin') {
+        toast({
+          title: "Accès refusé",
+          description: "Les administrateurs ne peuvent pas accéder à l'interface mobile.",
+          variant: "destructive",
+        });
+        navigate('/super-admin-dashboard');
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, toast]);
 
   // Save welcome screen status
   useEffect(() => {
