@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import { Footer } from '@/components';
 import AuthUI from '@/components/AuthUI';
 import AdminAuthUI from '@/components/auth/AdminAuthUI';
@@ -36,7 +36,7 @@ function App() {
   }, []);
 
   return (
-    <Router>
+    <>
       <Routes>
         <Route path="/" element={<Navigate to="/mobile-flow" />} />
         <Route path="/auth" element={<AuthUI />} />
@@ -66,7 +66,7 @@ function App() {
         {/* Access Denied Route */}
         <Route path="/access-denied" element={<AccessDenied />} />
       </Routes>
-    </Router>
+    </>
   );
 }
 
