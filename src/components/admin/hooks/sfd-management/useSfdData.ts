@@ -10,10 +10,7 @@ export function useSfdData() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sfds')
-        .select(`
-          *,
-          sfd_stats:sfd_stats(*)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -33,14 +30,22 @@ export function useSfdData() {
             subsidy_balance = subsidies.reduce((sum, subsidy) => sum + (subsidy.remaining_amount || 0), 0);
           }
 
+          // Get SFD statistics
+          const { data: stats, error: statsError } = await supabase
+            .from('sfd_stats')
+            .select('*')
+            .eq('sfd_id', sfd.id)
+            .maybeSingle();
+
           return {
             ...sfd,
-            subsidy_balance
-          };
+            subsidy_balance,
+            sfd_stats: statsError ? null : stats
+          } as Sfd; // Use type assertion to resolve the type mismatch
         })
       );
 
-      return sfdsWithSubsidyBalance as Sfd[];
+      return sfdsWithSubsidyBalance;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });

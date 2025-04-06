@@ -33,6 +33,16 @@ interface SfdDetailViewProps {
   onBack: () => void;
 }
 
+// Interface for SFD admin data
+interface SfdAdmin {
+  user_id: string;
+  role: string;
+  admin_users: {
+    full_name: string;
+    email: string;
+  } | null;
+}
+
 export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
   const [activeTab, setActiveTab] = useState('general');
 
@@ -51,21 +61,18 @@ export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
     enabled: activeTab === 'stats'
   });
 
-  // Fetch SFD admins
+  // Fetch SFD admins - fixed the query
   const { data: sfdAdmins, isLoading: isLoadingAdmins } = useQuery({
     queryKey: ['sfd-admins', sfd.id],
     queryFn: async () => {
+      // Using a raw query approach to handle the nested selection properly
       const { data, error } = await supabase
         .from('sfd_admins')
-        .select(`
-          user_id, 
-          role, 
-          admin_users(full_name, email)
-        `)
+        .select('user_id, role, admin_users:user_id(full_name, email)')
         .eq('sfd_id', sfd.id);
 
       if (error) throw error;
-      return data;
+      return data as SfdAdmin[];
     },
     enabled: activeTab === 'admins'
   });
@@ -112,7 +119,7 @@ export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
             Retour
           </Button>
           <h2 className="text-2xl font-semibold">{sfd.name}</h2>
-          <SfdStatusBadge status={sfd.status} className="ml-3" />
+          <SfdStatusBadge status={sfd.status} variant="outline" className="ml-3" />
         </div>
         {sfd.legal_document_url && (
           <Button variant="outline" className="flex items-center">

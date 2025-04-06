@@ -18,6 +18,7 @@ export function SfdManagement() {
     isLoading,
     isError,
     selectedSfd,
+    setSelectedSfd, // This was missing
     searchTerm,
     setSearchTerm,
     statusFilter,
