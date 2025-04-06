@@ -27,3 +27,38 @@ export interface UserSfd {
     logo_url?: string;
   };
 }
+
+// Add missing types that were being imported elsewhere
+export interface SfdAccount {
+  id: string;
+  name: string;
+  logoUrl?: string | null;
+  region?: string;
+  code?: string;
+  isDefault?: boolean;
+  balance: number;
+  currency: string;
+  isVerified?: boolean;
+  loans?: SfdLoan[];
+}
+
+export interface SfdLoan {
+  id: string;
+  amount: number;
+  remainingAmount: number;
+  nextDueDate: string;
+  isLate?: boolean;
+}
+
+export interface SfdData {
+  id: string;
+  name: string;
+  token: string | null;
+  lastFetched: Date | null;
+}
+
+export interface QRCodeRequest {
+  userId: string;
+  amount: number;
+  purpose: string;
+}

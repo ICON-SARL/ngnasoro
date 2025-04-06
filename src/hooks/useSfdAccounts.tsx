@@ -1,8 +1,9 @@
 
 import { useAuth } from './useAuth';
 import { useSfdList } from './sfd/useSfdList';
-import { useActiveSfd } from './sfd/useActiveSfd';
+import { useSfdAccount } from './sfd/useSfdAccount';
 import { useSfdAccountActions } from './sfd/useSfdAccountActions';
+
 // Export the SfdAccount type directly
 import { SfdAccount } from './sfd/types';
 export type { SfdAccount };
@@ -24,7 +25,7 @@ export function useSfdAccounts() {
     isLoading: isActiveSfdLoading, 
     isError: isActiveSfdError, 
     refetch: refetchActive 
-  } = useActiveSfd(user, validSfdId);
+  } = useSfdAccount(user, validSfdId);
   
   // Get SFD account actions (sync, payments)
   const { synchronizeBalances, makeLoanPayment } = useSfdAccountActions(user, validSfdId);

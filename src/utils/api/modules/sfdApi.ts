@@ -1,38 +1,31 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { handleError } from "@/utils/errorHandler";
+import { SfdBalanceData } from "@/hooks/sfd/types";
 
-// Define a simple type for the balance result
+// Define the SfdBalanceResult interface here to avoid circular dependencies
 export interface SfdBalanceResult {
   balance: number;
   currency: string;
 }
 
-/**
- * SFD data access methods
- */
 export const sfdApi = {
-  /**
-   * Get list of all available SFDs
-   */
-  async getSfdsList() {
-    try {
-      const { data, error } = await supabase
-        .from('sfds')
-        .select('id, name, region, code, logo_url');
-        
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      handleError(error);
-      return [];
+  // Get the list of available SFDs
+  getSfdsList: async () => {
+    const { data, error } = await supabase
+      .from('sfds')
+      .select('*')
+      .eq('status', 'active');
+      
+    if (error) {
+      console.error('Error fetching SFDs:', error);
+      throw error;
     }
+    
+    return data || [];
   },
   
-  /**
-   * Get SFDs associated with a user
-   */
-  async getUserSfds(userId: string) {
+  // Get SFDs associated with a user
+  getUserSfds: async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('user_sfds')
@@ -44,148 +37,97 @@ export const sfdApi = {
         .eq('user_id', userId);
         
       if (error) throw error;
-      return data || [];
-    } catch (error) {
-      handleError(error);
-      return [];
-    }
-  },
-  
-  /**
-   * Get status of client's relationship with an SFD
-   */
-  async getSfdClientStatus(userId: string, sfdId?: string) {
-    try {
-      const query = supabase
-        .from('sfd_clients')
-        .select('id, sfd_id, status, created_at, validated_at')
-        .eq('user_id', userId);
-        
-      if (sfdId) {
-        query.eq('sfd_id', sfdId);
+      
+      if (!data || data.length === 0) {
+        return [];
       }
       
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      return data || [];
+      return data;
     } catch (error) {
-      handleError(error);
-      return [];
+      console.error('Error fetching user SFDs:', error);
+      throw error;
     }
   },
   
-  /**
-   * Get SFD account balance
-   */
-  async getSfdBalance(userId: string, sfdId: string): Promise<SfdBalanceResult> {
+  // Check client status with a particular SFD
+  getSfdClientStatus: async (userId: string, sfdId: string) => {
+    const { data, error } = await supabase
+      .from('sfd_clients')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('sfd_id', sfdId)
+      .single();
+      
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      console.error('Error checking client status:', error);
+      throw error;
+    }
+    
+    return data || null;
+  },
+  
+  // Get balance for a specific SFD
+  getSfdBalance: async (userId: string, sfdId: string): Promise<SfdBalanceResult> => {
     try {
-      // First try to get balance from accounts table
-      const { data: accountData, error: accountError } = await supabase
+      const { data, error } = await supabase
         .from('accounts')
         .select('balance, currency')
         .eq('user_id', userId)
-        .eq('sfd_id', sfdId)
-        .maybeSingle();
+        .single();
         
-      if (!accountError && accountData && accountData.balance !== null) {
-        return { 
-          balance: accountData.balance, 
-          currency: accountData.currency || 'FCFA' 
-        };
+      if (error) {
+        console.error('Error fetching balance:', error);
+        // Return a default balance if there's an error
+        return { balance: 0, currency: 'FCFA' };
       }
       
-      // Fall back to a default balance with consistent generation
-      const sfdIdSum = sfdId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-      const balance = 50000 + (sfdIdSum % 5) * 30000;
-      
-      // Save this balance to the accounts table for consistency
-      await supabase
-        .from('accounts')
-        .upsert({
-          user_id: userId,
-          sfd_id: sfdId,
-          balance: balance,
-          currency: 'FCFA',
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id,sfd_id' });
-      
-      return { balance, currency: 'FCFA' };
+      return {
+        balance: data?.balance || 0,
+        currency: data?.currency || 'FCFA'
+      };
     } catch (error) {
-      handleError(error);
+      console.error('Error in getSfdBalance:', error);
       return { balance: 0, currency: 'FCFA' };
     }
   },
   
-  /**
-   * Get loans associated with an SFD
-   */
-  async getSfdLoans(userId: string, sfdId: string) {
-    try {
-      // Simulated loans data
-      if (sfdId.includes('1') || sfdId === 'sfd1') {
-        return [{
-          id: 'loan1',
-          amount: 500000,
-          remainingAmount: 350000,
-          nextDueDate: '2023-05-15',
-          isLate: false
-        }];
-      } else {
-        return [{
-          id: 'loan2',
-          amount: 300000,
-          remainingAmount: 100000,
-          nextDueDate: '2023-05-02',
-          isLate: true
-        }];
-      }
-    } catch (error) {
-      handleError(error);
+  // Get loans associated with a SFD
+  getSfdLoans: async (userId: string, sfdId: string) => {
+    const { data, error } = await supabase
+      .from('sfd_loans')
+      .select(`
+        id, 
+        amount, 
+        duration_months, 
+        interest_rate,
+        monthly_payment, 
+        next_payment_date,
+        last_payment_date, 
+        status,
+        created_at
+      `)
+      .eq('sfd_id', sfdId)
+      .eq('client_id', userId);
+      
+    if (error) {
+      console.error('Error fetching SFD loans:', error);
       return [];
     }
+    
+    return data || [];
   },
   
-  /**
-   * Get dashboard statistics for the MEREF dashboard
-   */
-  async getMerefDashboardStats() {
-    try {
-      // Get active SFDs count
-      const { data: activeSfds, error: sfdsError } = await supabase
-        .from('sfds')
-        .select('id')
-        .eq('status', 'active');
-        
-      if (sfdsError) throw sfdsError;
-      
-      // Get active users count
-      const { count: activeUsers, error: usersError } = await supabase
-        .from('profiles')
-        .select('id', { count: 'exact', head: true });
-        
-      if (usersError) throw usersError;
-      
-      // Get active credits count
-      const { data: activeCredits, error: creditsError } = await supabase
-        .from('sfd_loans')
-        .select('id')
-        .eq('status', 'approved');
-        
-      if (creditsError) throw creditsError;
-      
-      return {
-        activeSfds: activeSfds?.length || 0,
-        activeUsers: activeUsers || 0,
-        activeCredits: activeCredits?.length || 0
-      };
-    } catch (error) {
-      handleError(error);
-      return {
-        activeSfds: 24,
-        activeUsers: 1248,
-        activeCredits: 387
-      };
-    }
+  // Get MEREF dashboard stats
+  getMerefDashboardStats: async () => {
+    // This would normally be a real API call to the MEREF dashboard
+    // For now, return mock data
+    return {
+      totalSfds: 45,
+      activeSfds: 42,
+      suspendedSfds: 3,
+      totalSubsidies: 2500000000,
+      activeSubsidies: 1750000000,
+      pendingRequests: 12
+    };
   }
 };

@@ -1,6 +1,6 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { User } from '@/hooks/useAuth';
+import { User } from '../auth/types';
 import { synchronizeAccounts, processLoanPayment } from './sfdAccountsApi';
 import { useToast } from '@/hooks/use-toast';
 import { LoanPaymentParams } from './types';
