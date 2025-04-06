@@ -14,7 +14,7 @@ export function useSfdLoans() {
   
   // Fetch all loans for the current SFD using cache
   const { 
-    data: loans,
+    data: loansData,
     isLoading,
     isError,
     refetch,
@@ -25,6 +25,10 @@ export function useSfdLoans() {
     'sfd-loans',
     sfdLoanApi.getSfdLoans
   );
+  
+  // Ensure loans is always an array, even if the API returns an object
+  const loans = Array.isArray(loansData) ? loansData : 
+               (loansData && 'loans' in loansData ? loansData.loans : []);
   
   // Create a new loan
   const createLoan = useMutation({

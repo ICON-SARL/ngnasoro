@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Card, 
@@ -72,7 +71,7 @@ export const LoanManagement = () => {
   const { user } = useAuth();
 
   const { 
-    loans, 
+    loans = [],
     isLoading: isLoadingLoans, 
     createLoan,
     approveLoan,
@@ -85,7 +84,22 @@ export const LoanManagement = () => {
     isLoading: isLoadingClients 
   } = useSfdClients();
 
-  const validatedClients = clients.filter(client => client.status === 'validated');
+  const filteredLoans = Array.isArray(loans) ? loans.filter(loan => {
+    const matchesSearch = searchTerm === '' || 
+      loan.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      loan.purpose.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (activeTab === 'all') return matchesSearch;
+    if (activeTab === 'pending') return matchesSearch && loan.status === 'pending';
+    if (activeTab === 'approved') return matchesSearch && loan.status === 'approved';
+    if (activeTab === 'active') return matchesSearch && loan.status === 'active';
+    if (activeTab === 'completed') return matchesSearch && loan.status === 'completed';
+    if (activeTab === 'defaulted') return matchesSearch && loan.status === 'defaulted';
+    return matchesSearch;
+  }) : [];
+
+  const validatedClients = Array.isArray(clients) ? 
+    clients.filter(client => client.status === 'validated') : [];
 
   const handleCreateLoan = async () => {
     if (!selectedClientId) {
@@ -154,20 +168,6 @@ export const LoanManagement = () => {
       (Math.pow(1 + monthlyInterest, duration) - 1);
     return payment.toFixed(2);
   };
-
-  const filteredLoans = loans.filter(loan => {
-    const matchesSearch = searchTerm === '' || 
-      loan.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      loan.purpose.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (activeTab === 'all') return matchesSearch;
-    if (activeTab === 'pending') return matchesSearch && loan.status === 'pending';
-    if (activeTab === 'approved') return matchesSearch && loan.status === 'approved';
-    if (activeTab === 'active') return matchesSearch && loan.status === 'active';
-    if (activeTab === 'completed') return matchesSearch && loan.status === 'completed';
-    if (activeTab === 'defaulted') return matchesSearch && loan.status === 'defaulted';
-    return matchesSearch;
-  });
 
   const getClientName = (clientId: string): string => {
     const client = clients.find(c => c.id === clientId);
@@ -590,7 +590,7 @@ export const LoanManagement = () => {
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-2xl font-bold">
-                {loans.filter(loan => loan.status === 'active').length}
+                {Array.isArray(loans) ? loans.filter(loan => loan.status === 'active').length : 0}
               </div>
               <div className="p-2 bg-green-100 rounded-full">
                 <CreditCard className="h-5 w-5 text-green-600" />
@@ -608,10 +608,11 @@ export const LoanManagement = () => {
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-2xl font-bold">
-                {loans
-                  .filter(loan => loan.status === 'active' || loan.status === 'completed')
-                  .reduce((sum, loan) => sum + loan.amount, 0)
-                  .toLocaleString()} FCFA
+                {Array.isArray(loans) ? 
+                  loans
+                    .filter(loan => loan.status === 'active' || loan.status === 'completed')
+                    .reduce((sum, loan) => sum + loan.amount, 0)
+                    .toLocaleString() : 0} FCFA
               </div>
               <div className="p-2 bg-blue-100 rounded-full">
                 <DollarSign className="h-5 w-5 text-blue-600" />
@@ -629,10 +630,11 @@ export const LoanManagement = () => {
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-2xl font-bold">
-                {loans
-                  .filter(loan => loan.status === 'active' || loan.status === 'completed')
-                  .reduce((sum, loan) => sum + (loan.subsidy_amount || 0), 0)
-                  .toLocaleString()} FCFA
+                {Array.isArray(loans) ?
+                  loans
+                    .filter(loan => loan.status === 'active' || loan.status === 'completed')
+                    .reduce((sum, loan) => sum + (loan.subsidy_amount || 0), 0)
+                    .toLocaleString() : 0} FCFA
               </div>
               <div className="p-2 bg-[#0D6A51]/10 rounded-full">
                 <CircleDollarSign className="h-5 w-5 text-[#0D6A51]" />
