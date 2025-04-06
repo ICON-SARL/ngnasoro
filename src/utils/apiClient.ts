@@ -1,222 +1,35 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { handleError, handleApiResponse } from "./errorHandler";
+import { sfdApi } from "./api/modules/sfdApi";
+import { profileApi } from "./api/modules/profileApi";
+import { transactionApi } from "./api/modules/transactionApi";
+import { storageApi } from "./api/modules/storageApi";
+import { edgeFunctionApi } from "./api/modules/edgeFunctionApi";
 
-// Define simple return types to avoid deep nesting
-interface BalanceResult {
-  balance: number;
-  currency: string;
-}
-
+// Main API client facade that exposes all modules
 export const apiClient = {
   // Expose supabase for direct use
   supabase,
   
-  // SFD data access methods
-  async getSfdsList() {
-    try {
-      const { data, error } = await supabase
-        .from('sfds')
-        .select('id, name, region, code, logo_url');
-        
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      handleError(error);
-      return [];
-    }
-  },
+  // SFD operations
+  getSfdsList: sfdApi.getSfdsList,
+  getUserSfds: sfdApi.getUserSfds,
+  getSfdClientStatus: sfdApi.getSfdClientStatus,
+  getSfdBalance: sfdApi.getSfdBalance,
+  getSfdLoans: sfdApi.getSfdLoans,
   
-  async getUserSfds(userId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('user_sfds')
-        .select(`
-          id,
-          is_default,
-          sfds:sfd_id(id, name, code, region, logo_url)
-        `)
-        .eq('user_id', userId);
-        
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      handleError(error);
-      return [];
-    }
-  },
+  // User profile operations
+  getUserProfile: profileApi.getUserProfile,
+  updateUserProfile: profileApi.updateUserProfile,
   
-  async getSfdClientStatus(userId: string, sfdId?: string) {
-    try {
-      const query = supabase
-        .from('sfd_clients')
-        .select('id, sfd_id, status, created_at, validated_at')
-        .eq('user_id', userId);
-        
-      if (sfdId) {
-        query.eq('sfd_id', sfdId);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      handleError(error);
-      return [];
-    }
-  },
+  // Transaction operations
+  getUserTransactions: transactionApi.getUserTransactions,
   
-  // Explicitly define return type to break circular reference
-  async getSfdBalance(userId: string, sfdId: string): Promise<{ balance: number; currency: string }> {
-    try {
-      // First try to get balance from accounts table
-      const { data: accountData, error: accountError } = await supabase
-        .from('accounts')
-        .select('balance, currency')
-        .eq('user_id', userId)
-        .eq('sfd_id', sfdId)
-        .maybeSingle();
-        
-      if (!accountError && accountData && accountData.balance !== null) {
-        return { 
-          balance: accountData.balance, 
-          currency: accountData.currency || 'FCFA' 
-        };
-      }
-      
-      // Fall back to a default balance with consistent generation
-      const sfdIdSum = sfdId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-      const balance = 50000 + (sfdIdSum % 5) * 30000;
-      
-      // Save this balance to the accounts table for consistency
-      await supabase
-        .from('accounts')
-        .upsert({
-          user_id: userId,
-          sfd_id: sfdId,
-          balance: balance,
-          currency: 'FCFA',
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id,sfd_id' });
-      
-      return { balance, currency: 'FCFA' };
-    } catch (error) {
-      handleError(error);
-      return { balance: 0, currency: 'FCFA' };
-    }
-  },
+  // Edge functions
+  callEdgeFunction: edgeFunctionApi.callEdgeFunction,
   
-  async getSfdLoans(userId: string, sfdId: string) {
-    try {
-      // Simulated loans data
-      if (sfdId.includes('1') || sfdId === 'sfd1') {
-        return [{
-          id: 'loan1',
-          amount: 500000,
-          remainingAmount: 350000,
-          nextDueDate: '2023-05-15',
-          isLate: false
-        }];
-      } else {
-        return [{
-          id: 'loan2',
-          amount: 300000,
-          remainingAmount: 100000,
-          nextDueDate: '2023-05-02',
-          isLate: true
-        }];
-      }
-    } catch (error) {
-      handleError(error);
-      return [];
-    }
-  },
-  
-  // User profile methods
-  async getUserProfile(userId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-        
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      handleError(error);
-      return null;
-    }
-  },
-  
-  async updateUserProfile(userId: string, updates: any) {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', userId);
-        
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      handleError(error);
-      return null;
-    }
-  },
-  
-  // Transaction methods
-  async getUserTransactions(userId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('date', { ascending: false });
-        
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      handleError(error);
-      return [];
-    }
-  },
-  
-  // Edge function callers
-  async callEdgeFunction(functionName: string, payload: any) {
-    try {
-      const { data, error } = await supabase.functions.invoke(functionName, {
-        body: JSON.stringify(payload),
-      });
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      handleError(error);
-      return null;
-    }
-  },
-  
-  // Storage methods
-  async uploadFile(bucket: string, path: string, file: File) {
-    try {
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .upload(path, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-        
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      handleError(error);
-      return null;
-    }
-  },
-  
-  getFileUrl(bucket: string, path: string) {
-    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-    return data.publicUrl;
-  }
+  // Storage operations
+  uploadFile: storageApi.uploadFile,
+  getFileUrl: storageApi.getFileUrl
 };
