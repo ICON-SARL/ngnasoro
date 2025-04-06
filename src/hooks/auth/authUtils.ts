@@ -25,16 +25,19 @@ export const getUserRole = (user?: SupabaseUser | null | User): Role | null => {
   // Check for role in user_metadata
   if ('user_metadata' in user && user.user_metadata) {
     if (user.user_metadata?.role) {
-      return user.user_metadata.role as Role;
+      // Add type assertion to ensure it's a valid Role
+      const metadataRole = user.user_metadata.role as string;
+      if (isValidRole(metadataRole)) {
+        return metadataRole as Role;
+      }
     }
   } 
   
   // Check for role in app_metadata
   if ('app_metadata' in user && user.app_metadata) {
     if (user.app_metadata?.role) {
-      // Ensure the role string is a valid Role type
-      const role = user.app_metadata.role;
-      if (['user', 'admin', 'sfd_admin', 'super_admin'].includes(role)) {
+      const role = user.app_metadata.role as string;
+      if (isValidRole(role)) {
         return role as Role;
       }
     }
@@ -42,6 +45,11 @@ export const getUserRole = (user?: SupabaseUser | null | User): Role | null => {
   
   return null;
 };
+
+// Helper function to validate role strings
+function isValidRole(role: string): boolean {
+  return ['user', 'admin', 'sfd_admin', 'super_admin'].includes(role);
+}
 
 export const isUserAdmin = (user?: User | null): boolean => {
   return user?.role === 'admin' || user?.role === 'super_admin';
