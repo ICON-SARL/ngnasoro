@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export const SiteHeader: React.FC = () => {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   
   const handleSignOut = async () => {
     await signOut();
@@ -33,33 +33,40 @@ export const SiteHeader: React.FC = () => {
           <Link to="/" className="text-gray-600 hover:text-[#0D6A51] transition-colors">Accueil</Link>
           <Link to="/sfd-clients" className="text-gray-600 hover:text-[#0D6A51] transition-colors">Clients</Link>
           <Link to="/sfd-loans" className="text-gray-600 hover:text-[#0D6A51] transition-colors">Prêts</Link>
+          <Link to="/sfd-subsidy-requests" className="text-gray-600 hover:text-[#0D6A51] transition-colors">Subventions</Link>
         </nav>
         
         <div className="flex items-center space-x-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <span>Menu</span>
-                <Menu className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link to="/">Accueil</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/sfd-clients">Clients</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/sfd-loans">Prêts</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={handleSignOut}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Déconnexion
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <span>Menu</span>
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to="/">Accueil</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/sfd-clients">Clients</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/sfd-loans">Prêts</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Déconnexion
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/sfd/auth" className="inline-flex h-9 px-4 py-2 rounded-md bg-[#0D6A51] text-white text-sm font-medium hover:bg-[#0D6A51]/90 transition-colors">
+              Connexion
+            </Link>
+          )}
         </div>
       </div>
     </header>

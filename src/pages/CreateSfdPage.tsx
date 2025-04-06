@@ -2,7 +2,7 @@
 import React from 'react';
 import { CreateCaurieSfdButton } from '@/components/sfd/CreateCaurieSfdButton';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { MobileLoginPage } from '@/pages/MobileLoginPage';
+import MobileLoginPage from '@/pages/MobileLoginPage';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { useAuth } from '@/hooks/useAuth';
 

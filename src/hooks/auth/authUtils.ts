@@ -17,24 +17,28 @@ export const createUserFromSupabaseUser = (supabaseUser?: SupabaseUser | null): 
 export const getUserRole = (user?: SupabaseUser | null | User): Role | null => {
   if (!user) return null;
   
+  // Check for role property directly on user object
+  if ('role' in user && user.role) {
+    return user.role;
+  }
+  
+  // Check for role in user_metadata
   if ('user_metadata' in user && user.user_metadata) {
-    // Check for role in user_metadata
     if (user.user_metadata?.role) {
       return user.user_metadata.role as Role;
     }
   } 
   
+  // Check for role in app_metadata
   if ('app_metadata' in user && user.app_metadata) {
-    // Check for role in app_metadata
     if (user.app_metadata?.role) {
-      return user.app_metadata.role as Role;
+      // Ensure the role string is a valid Role type
+      const role = user.app_metadata.role;
+      if (['user', 'admin', 'sfd_admin', 'super_admin'].includes(role)) {
+        return role as Role;
+      }
     }
   } 
-  
-  if ('role' in user && user.role) {
-    // Direct role property on the user object
-    return user.role;
-  }
   
   return null;
 };

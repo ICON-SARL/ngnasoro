@@ -1,196 +1,141 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MobileHeader } from '@/components/mobile/MobileHeader';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { assignDefaultSfd, createSfdClient } from '@/hooks/auth/authUtils';
-import DemoAccountsCreator from '@/components/auth/DemoAccountsCreator';
-import { Loader2, LogIn } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
-const MobileLoginPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
-  const navigate = useNavigate();
-  const { signIn, signUp, isLoading } = useAuth();
+const formSchema = z.object({
+  email: z.string().email({
+    message: "Veuillez entrer une adresse email valide.",
+  }),
+  password: z.string().min(6, {
+    message: "Le mot de passe doit contenir au moins 6 caractères.",
+  }),
+});
+
+const MobileLoginPage: React.FC = () => {
+  const { signIn } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+  
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      if (isSignUp) {
-        // Inscription
-        const { error } = await signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-              role: 'user'
-            }
-          }
-        });
-        
-        if (error) throw error;
-        
-        // Attribuer la SFD Test au nouvel utilisateur
-        const { data: userData } = await supabase.auth.getUser();
-        if (userData?.user) {
-          await assignDefaultSfd(userData.user.id);
-          
-          // Créer un client SFD en attente de validation
-          await createSfdClient(
-            "Insérer l'ID de la SFD Test ici",
-            fullName,
-            email,
-            phone,
-            userData.user.id
-          );
-        }
-        
+      const { error } = await signIn({
+        email: values.email,
+        password: values.password,
+      });
+      
+      if (error) {
         toast({
-          title: "Compte créé",
-          description: "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.",
+          title: "Erreur de connexion",
+          description: "Identifiants incorrects. Veuillez réessayer.",
+          variant: "destructive",
         });
-        setIsSignUp(false);
-      } else {
-        // Connexion
-        const { error } = await signIn({
-          email,
-          password,
-        });
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Connexion réussie",
-          description: "Vous êtes maintenant connecté.",
-        });
-        navigate('/mobile-flow/dashboard');
+        return;
       }
-    } catch (error: any) {
+      
       toast({
-        title: "Erreur",
-        description: error.message,
+        title: "Connexion réussie",
+        description: "Bienvenue sur l'application mobile MEREF-SFD",
+      });
+      
+      navigate("/mobile-flow/dashboard");
+    } catch (error) {
+      toast({
+        title: "Erreur de connexion",
+        description: "Une erreur est survenue. Veuillez réessayer.",
         variant: "destructive",
       });
     }
   };
   
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-green-50 to-white p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 rounded-full bg-[#0D6A51] flex items-center justify-center">
-              <LogIn className="h-6 w-6 text-white" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl text-center">
-            {isSignUp ? "Créer un compte client" : "Connexion Client"}
-          </CardTitle>
-          <CardDescription className="text-center">
-            {isSignUp ? "Inscrivez-vous pour accéder à votre compte client" : "Connectez-vous pour accéder à votre compte client"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nom complet</Label>
-                <Input
-                  id="fullName"
-                  placeholder="Amadou Diallo"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required={isSignUp}
+    <div className="bg-gray-50 min-h-screen">
+      <MobileHeader title="Connexion" showBackButton={true} showMenu={false} />
+      
+      <div className="container p-4 max-w-md mx-auto">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl font-bold text-center">
+              Connectez-vous à votre compte
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <FormControl>
+                          <Input placeholder="nom@example.com" className="pl-10" {...field} />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="user@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            
-            {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="phone">Téléphone</Label>
-                <Input
-                  id="phone"
-                  placeholder="+223 70 00 00 00"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mot de passe</FormLabel>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" className="pl-10" {...field} />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="password">Mot de passe</Label>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isSignUp ? "Création en cours..." : "Connexion en cours..."}
-                </>
-              ) : (
-                isSignUp ? "Créer un compte" : "Se connecter"
-              )}
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="flex-col space-y-4">
-          <div className="text-center text-sm">
-            {isSignUp ? (
-              <span>
-                Vous avez déjà un compte ?{" "}
-                <Button variant="link" className="p-0 h-auto" onClick={() => setIsSignUp(false)}>
+                
+                <Button type="submit" className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90">
                   Se connecter
                 </Button>
-              </span>
-            ) : (
-              <span>
-                Vous n'avez pas de compte ?{" "}
-                <Button variant="link" className="p-0 h-auto" onClick={() => setIsSignUp(true)}>
-                  Créer un compte
-                </Button>
-              </span>
-            )}
-          </div>
-          
-          <DemoAccountsCreator />
-        </CardFooter>
-      </Card>
+                
+                <div className="text-center text-sm text-gray-500 mt-4">
+                  <p>Pas encore de compte ?</p>
+                  <Button variant="link" className="text-[#0D6A51] p-0 mt-1">
+                    Créer un compte client
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

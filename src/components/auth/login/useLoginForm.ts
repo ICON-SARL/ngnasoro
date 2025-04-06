@@ -1,175 +1,74 @@
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/auth';
+import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 
-export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = false) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [authMode, setAuthMode] = useState<'simple' | 'advanced'>('simple');
-  const [showAuthDialog, setShowAuthDialog] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [cooldownActive, setCooldownActive] = useState(false);
-  const [cooldownTime, setCooldownTime] = useState(0);
-  const [emailSent, setEmailSent] = useState(false);
-  
-  const { signIn, user } = useAuth();
+// Define the form schema
+const loginSchema = z.object({
+  email: z.string().email({
+    message: 'Veuillez entrer une adresse email valide.',
+  }),
+  password: z.string().min(8, {
+    message: 'Le mot de passe doit contenir au moins 8 caractères.',
+  }),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+
+export const useLoginForm = () => {
+  const { signIn } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
-  // Handle cooldown timer
-  useEffect(() => {
-    if (cooldownTime <= 0) {
-      setCooldownActive(false);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setCooldownTime(prev => prev - 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [cooldownTime]);
-
-  // Skip automatic redirection in the login form - this will be handled after successful login
-  // This prevents redirect loops
-
-  const extractCooldownTime = (errorMessage: string): number => {
-    const match = errorMessage.match(/after (\d+) seconds/);
-    if (match && match[1]) {
-      return parseInt(match[1], 10);
-    }
-    return 60; // Default cooldown
-  };
-
-  const toggleShowPassword = () => {
-    setShowPassword(prev => !prev);
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Clear previous errors
-    setErrorMessage(null);
-    setEmailSent(false);
-    
-    // Don't allow login during cooldown
-    if (cooldownActive) {
-      setErrorMessage(`Veuillez attendre ${cooldownTime} secondes avant de réessayer.`);
-      return;
-    }
-
-    // Email validation
-    if (!email || !email.includes('@')) {
-      setErrorMessage('Veuillez entrer une adresse e-mail valide.');
-      return;
-    }
-
-    // Password validation
-    if (!password || password.length < 6) {
-      setErrorMessage('Veuillez entrer un mot de passe valide (minimum 6 caractères).');
-      return;
-    }
-    
+  const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     
     try {
-      console.log("Attempting to sign in with:", email);
+      // Use the correct signIn parameter structure
+      const result = await signIn({
+        email: data.email,
+        password: data.password
+      });
       
-      // Use password authentication
-      const result = await signIn(email, password);
-      
-      // Since the signIn function is now properly typed to return { error?: any } | undefined
-      // we can safely check for the error property
-      if (result && result.error) {
-        throw result.error;
-      }
-      
-      console.log("Sign in successful");
-      
-      // Log successful authentication attempt
-      try {
-        if (user?.id) {
-          await logAuditEvent({
-            user_id: user.id,
-            action: isSfdAdmin ? "sfd_admin_login_attempt" : adminMode ? "admin_login_attempt" : "password_login_attempt",
-            category: AuditLogCategory.AUTHENTICATION,
-            severity: AuditLogSeverity.INFO,
-            status: 'success',
-            details: { email, admin_mode: adminMode, sfd_admin: isSfdAdmin }
-          });
-        }
-      } catch (auditErr) {
-        console.warn('Failed to log audit event:', auditErr);
+      if (result.error) {
+        toast({
+          title: 'Erreur de connexion',
+          description: result.error.message || 'Échec de la connexion. Vérifiez vos identifiants.',
+          variant: 'destructive',
+        });
+        return;
       }
       
       toast({
-        title: "Connexion réussie",
-        description: "Vous êtes maintenant connecté.",
+        title: 'Connexion réussie',
+        description: 'Bienvenue sur la plateforme MEREF-SFD.',
       });
-      
-      // Do not navigate automatically here
-      // The auth state change will trigger the useEffect in the auth UI components
-      // that will handle proper redirection based on user role
-      
     } catch (error: any) {
-      console.error("Login error:", error);
-      
-      // Log failed authentication attempt
-      try {
-        await logAuditEvent({
-          user_id: user?.id || 'anonymous',
-          action: isSfdAdmin ? "sfd_admin_login_failed" : adminMode ? "admin_login_failed" : "password_login_attempt",
-          category: AuditLogCategory.AUTHENTICATION,
-          severity: AuditLogSeverity.WARNING,
-          status: 'failure',
-          error_message: error.message,
-          details: { email, admin_mode: adminMode, sfd_admin: isSfdAdmin }
-        });
-      } catch (auditErr) {
-        console.warn('Failed to log audit event:', auditErr);
-      }
-      
-      // Check for rate limiting errors
-      if (error.message && error.message.includes('security purposes') && error.message.includes('seconds')) {
-        const waitTime = extractCooldownTime(error.message);
-        setCooldownTime(waitTime);
-        setCooldownActive(true);
-        setErrorMessage(`Limite de tentatives atteinte. Veuillez attendre ${waitTime} secondes avant de réessayer.`);
-      } else {
-        setErrorMessage(error.message || "Une erreur s'est produite lors de la connexion.");
-        toast({
-          title: "Erreur de connexion",
-          description: error.message || "Une erreur s'est produite lors de la connexion.",
-          variant: "destructive",
-        });
-      }
+      console.error('Login error:', error);
+      toast({
+        title: 'Erreur de connexion',
+        description: error.message || 'Une erreur s\'est produite lors de la connexion.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return {
-    email,
-    setEmail,
-    password,
-    setPassword,
-    showPassword,
-    toggleShowPassword,
-    authMode,
-    showAuthDialog,
-    setShowAuthDialog,
+    form,
+    onSubmit,
     isLoading,
-    errorMessage,
-    cooldownActive,
-    cooldownTime,
-    emailSent,
-    handleLogin,
-    adminMode,
-    isSfdAdmin
   };
 };
