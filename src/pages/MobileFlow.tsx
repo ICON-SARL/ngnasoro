@@ -96,13 +96,19 @@ const MobileFlow = () => {
     }
   };
 
-  // Handle welcome screen navigation
+  // Fix the infinite redirection loop
   useEffect(() => {
-    if (showWelcome && location.pathname === '/mobile-flow') {
+    // Only handle welcome screen redirection if not already on a valid mobile flow path
+    const currentPath = location.pathname;
+    const isWelcomePage = currentPath === '/mobile-flow/welcome';
+    const isMobileFlowPath = currentPath.startsWith('/mobile-flow/');
+    
+    if (showWelcome && !isMobileFlowPath) {
+      // If showing welcome and not on any mobile flow path, navigate to welcome
       navigate('/mobile-flow/welcome');
-    }
-    else if (location.pathname !== '/mobile-flow/welcome' && location.pathname !== '/mobile-flow') {
-      setShowWelcome(false);
+    } else if (currentPath === '/mobile-flow' || currentPath === '/mobile-flow/') {
+      // If on root mobile-flow path with no specific sub-route, go to main
+      navigate('/mobile-flow/main');
     }
   }, [showWelcome, location.pathname, navigate]);
 
