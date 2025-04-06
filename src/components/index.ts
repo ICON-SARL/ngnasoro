@@ -7,3 +7,5 @@ export * from './UserManagement';
 export * from './DataExport';
 export * from './ReportGenerator';
 export { default as Footer } from './Footer';
+// We're not exporting the components used in App.tsx here anymore
+// as we're importing them directly from their respective files

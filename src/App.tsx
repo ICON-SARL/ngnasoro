@@ -1,12 +1,22 @@
+
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { AuthUI, PremiumDashboardPage, AccessDenied, MobileFlow, ClientsPage, ProtectedRoute, PermissionProtectedRoute, AdminAuthUI, SfdAuthUI } from '@/components';
-import { useAuth } from '@/hooks/auth';
-import { SuperAdminDashboard } from '@/components/SuperAdminDashboard';
-import { AgencyDashboard } from '@/components/AgencyDashboard';
+import { Footer } from '@/components';
+import AuthUI from '@/components/AuthUI';
+import AdminAuthUI from '@/components/auth/AdminAuthUI';
+import SfdAuthUI from '@/components/auth/SfdAuthUI';
+import ProtectedRoute from '@/components/routes/ProtectedRoute';
+import PermissionProtectedRoute from '@/components/routes/PermissionProtectedRoute';
+import MobileFlow from '@/pages/MobileFlow';
+import ClientsPage from '@/pages/ClientsPage';
+import AccessDenied from '@/pages/AccessDeniedPage';
+import PremiumDashboardPage from '@/pages/PremiumDashboard';
+import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
+import AgencyDashboard from '@/pages/AgencyDashboard';
 import { AdminManagement } from '@/components/admin/AdminManagement';
 import { UserManagement } from '@/components/UserManagement';
 import CreateSfdAdminPage from './pages/CreateSfdAdminPage';
+import { useAuth } from '@/hooks/auth';
 
 function App() {
   const { user, loading, session } = useAuth();
@@ -15,7 +25,15 @@ function App() {
   useEffect(() => {
     // Check if biometric authentication is available (example)
     // In a real app, use a proper biometric library
-    setIsBiometricAvailable(typeof window !== 'undefined' && (navigator.credentials || navigator.userAgent.includes('Biometric')));
+    const checkBiometrics = () => {
+      const hasBiometrics = typeof window !== 'undefined' && 
+        (navigator.credentials !== undefined || 
+         navigator.userAgent.includes('Biometric'));
+      
+      setIsBiometricAvailable(hasBiometrics);
+    };
+    
+    checkBiometrics();
   }, []);
 
   return (
@@ -26,6 +44,7 @@ function App() {
         <Route path="/admin/auth" element={<AdminAuthUI />} />
         <Route path="/sfd/auth" element={<SfdAuthUI />} />
         <Route path="/mobile-flow" element={<MobileFlow />} />
+        <Route path="/mobile-flow/*" element={<MobileFlow />} />
         
         {/* Admin Routes */}
         <Route path="/super-admin-dashboard" element={
