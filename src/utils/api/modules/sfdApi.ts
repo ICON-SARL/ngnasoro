@@ -2,6 +2,12 @@
 import { supabase } from "@/integrations/supabase/client";
 import { handleError } from "@/utils/errorHandler";
 
+// Define a simple type for the balance result
+interface BalanceResult {
+  balance: number;
+  currency: string;
+}
+
 /**
  * SFD data access methods
  */
@@ -72,7 +78,7 @@ export const sfdApi = {
   /**
    * Get SFD account balance
    */
-  async getSfdBalance(userId: string, sfdId: string): Promise<{ balance: number; currency: string }> {
+  async getSfdBalance(userId: string, sfdId: string): Promise<BalanceResult> {
     try {
       // First try to get balance from accounts table
       const { data: accountData, error: accountError } = await supabase
