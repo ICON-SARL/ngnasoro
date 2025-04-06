@@ -7,7 +7,7 @@ import { useAddSfd } from '@/components/admin/hooks/sfd-management/useAddSfd';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { VoiceAssistant } from '@/components/VoiceAssistant';
+import VoiceAssistant from '@/components/VoiceAssistant';
 
 const AddSfdPage = () => {
   const { isAddDialogOpen, openAddDialog, closeAddDialog } = useAddSfd();
@@ -26,6 +26,7 @@ const AddSfdPage = () => {
             </p>
           </div>
           <div className="flex space-x-4">
+            {/* Use default import syntax */}
             <VoiceAssistant 
               message="Pour ajouter une nouvelle SFD, cliquez sur le bouton Ajouter une SFD et remplissez le formulaire avec les informations nécessaires." 
               language="french"

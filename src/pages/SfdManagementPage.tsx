@@ -6,7 +6,7 @@ import { SfdManagement } from '@/components/admin/SfdManagement';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { VoiceAssistant } from '@/components/VoiceAssistant';
+import VoiceAssistant from '@/components/VoiceAssistant';
 
 const SfdManagementPage = () => {
   return (
@@ -22,6 +22,7 @@ const SfdManagementPage = () => {
             </p>
           </div>
           <div className="flex space-x-4">
+            {/* Use default import syntax */}
             <VoiceAssistant 
               message="Cette page vous permet de gérer les institutions de microfinance. Vous pouvez voir la liste, ajouter, modifier ou suspendre des SFDs." 
               language="french"
