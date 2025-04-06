@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Footer } from '@/components';
@@ -107,7 +108,7 @@ const AppRoutes = () => {
         element={
           <PermissionProtectedRoute 
             component={SfdSubsidyRequestPage} 
-            requiredPermission={PERMISSIONS.REQUEST_SUBSIDIES}
+            requiredPermission={PERMISSIONS.MANAGE_SUBSIDIES}
             fallbackPath="/access-denied"
           />
         } 
@@ -118,7 +119,7 @@ const AppRoutes = () => {
         element={
           <PermissionProtectedRoute 
             component={SfdTransactionsPage} 
-            requiredPermission={PERMISSIONS.VIEW_SFD}
+            requiredPermission={PERMISSIONS.ACCESS_SFD_DASHBOARD}
             fallbackPath="/access-denied"
           />
         } 
@@ -129,7 +130,7 @@ const AppRoutes = () => {
         element={
           <PermissionProtectedRoute 
             component={SfdClientsPage} 
-            requiredPermission={PERMISSIONS.VIEW_CLIENTS}
+            requiredPermission={PERMISSIONS.MANAGE_CLIENTS}
             fallbackPath="/access-denied"
           />
         } 
@@ -140,7 +141,7 @@ const AppRoutes = () => {
         element={
           <PermissionProtectedRoute 
             component={SfdLoansPage} 
-            requiredPermission={PERMISSIONS.VIEW_LOANS}
+            requiredPermission={PERMISSIONS.MANAGE_LOANS}
             fallbackPath="/access-denied"
           />
         } 
@@ -152,7 +153,7 @@ const AppRoutes = () => {
         element={
           <PermissionProtectedRoute
             component={AuditLogsPage}
-            requiredPermission={PERMISSIONS.VIEW_AUDIT_LOGS}
+            requiredPermission={PERMISSIONS.EXPORT_DATA}
             fallbackPath="/access-denied"
           />
         }

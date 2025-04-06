@@ -2,23 +2,26 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logAuditEvent } from './auditLoggerCore';
 import { AuditLogCategory, AuditLogSeverity } from './auditLoggerTypes';
+import { PERMISSIONS as APP_PERMISSIONS } from '@/utils/auth/roleTypes';
 
 // Enumeration for permission types
 export enum Permission {
-  // Super Admin permissions
+  // Admin permissions
   MANAGE_SFDS = 'manage_sfds',
-  APPROVE_SUBSIDIES = 'approve_subsidies',
+  MANAGE_USERS = 'manage_users',
+  MANAGE_SUBSIDIES = 'manage_subsidies',
   MANAGE_ADMINS = 'manage_admins',
-  VIEW_ALL_DATA = 'view_all_data',
+  VIEW_REPORTS = 'view_reports',
   EXPORT_DATA = 'export_data',
+  APPROVE_CREDIT = 'approve_credit',
   VIEW_AUDIT_LOGS = 'view_audit_logs',
+  ACCESS_ADMIN_DASHBOARD = 'access_admin_dashboard',
   
   // SFD Admin permissions
   MANAGE_SFD_USERS = 'manage_sfd_users',
-  MANAGE_CLIENTS = 'manage_sfd_clients',
+  MANAGE_CLIENTS = 'manage_clients',
   MANAGE_LOANS = 'manage_loans',
-  REQUEST_SUBSIDIES = 'request_subsidies',
-  VIEW_SFD_REPORTS = 'view_sfd_reports',
+  ACCESS_SFD_DASHBOARD = 'access_sfd_dashboard',
   
   // Client permissions
   VIEW_OWN_DATA = 'view_own_data',
@@ -29,6 +32,7 @@ export enum Permission {
 // Enumeration for roles
 export enum Role {
   SUPER_ADMIN = 'admin',
+  ADMIN = 'admin',
   SFD_ADMIN = 'sfd_admin',
   CLIENT = 'client',
   USER = 'user'
@@ -92,18 +96,29 @@ export const hasPermission = async (userId: string, permission: Permission): Pro
     const rolesToPermissions = {
       [Role.SUPER_ADMIN]: [
         Permission.MANAGE_SFDS,
-        Permission.APPROVE_SUBSIDIES,
+        Permission.MANAGE_SUBSIDIES,
         Permission.MANAGE_ADMINS,
-        Permission.VIEW_ALL_DATA,
+        Permission.VIEW_REPORTS,
         Permission.EXPORT_DATA,
-        Permission.VIEW_AUDIT_LOGS
+        Permission.APPROVE_CREDIT,
+        Permission.VIEW_AUDIT_LOGS,
+        Permission.ACCESS_ADMIN_DASHBOARD
+      ],
+      [Role.ADMIN]: [
+        Permission.MANAGE_SFDS,
+        Permission.MANAGE_SUBSIDIES,
+        Permission.MANAGE_ADMINS,
+        Permission.VIEW_REPORTS,
+        Permission.EXPORT_DATA,
+        Permission.APPROVE_CREDIT,
+        Permission.VIEW_AUDIT_LOGS,
+        Permission.ACCESS_ADMIN_DASHBOARD
       ],
       [Role.SFD_ADMIN]: [
         Permission.MANAGE_SFD_USERS,
         Permission.MANAGE_CLIENTS,
         Permission.MANAGE_LOANS,
-        Permission.REQUEST_SUBSIDIES,
-        Permission.VIEW_SFD_REPORTS
+        Permission.ACCESS_SFD_DASHBOARD
       ],
       [Role.CLIENT]: [
         Permission.VIEW_OWN_DATA,
