@@ -95,7 +95,8 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       // Check for rate limiting errors
       if (error.message && error.message.includes('rate limit') && error.message.includes('seconds')) {
         const waitTime = extractCooldownTime(error.message);
-        activateCooldown(waitTime);
+        // Convert to string before passing to activateCooldown
+        activateCooldown(waitTime.toString());
         setErrorMessage(`Limite de tentatives atteinte. Veuillez attendre ${waitTime} secondes avant de réessayer.`);
       } else {
         setErrorMessage(error.message || "Une erreur s'est produite lors de la connexion.");

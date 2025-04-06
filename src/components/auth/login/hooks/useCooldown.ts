@@ -20,8 +20,12 @@ export const useCooldown = () => {
     return () => clearTimeout(timer);
   }, [cooldownTime]);
 
-  const activateCooldown = (errorMessage: string) => {
-    const waitTime = extractCooldownTime(errorMessage);
+  const activateCooldown = (waitTimeOrErrorMessage: string) => {
+    // Extract the number from the string or parse it directly if it's a numeric string
+    const waitTime = waitTimeOrErrorMessage.includes('rate limit') 
+      ? extractCooldownTime(waitTimeOrErrorMessage) 
+      : parseInt(waitTimeOrErrorMessage, 10);
+    
     setCooldownTime(waitTime);
     setCooldownActive(true);
     return waitTime;
