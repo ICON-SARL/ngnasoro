@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/auth';
 import { Card } from '@/components/ui/card';
@@ -22,25 +23,12 @@ interface LoanPlan {
   created_at: string;
 }
 
-interface SFD {
-  id: string;
-  name: string;
-}
-
-interface UserSfdResult {
-  sfd_id: string;
-  sfds: {
-    id: string;
-    name: string;
-  }
-}
-
 export default function LoanPlansDisplay() {
   const { user } = useAuth();
   const [loanPlans, setLoanPlans] = useState<LoanPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSfd, setSelectedSfd] = useState<string | null>(null);
-  const [sfdList, setSfdList] = useState<SFD[]>([]);
+  const [sfdList, setSfdList] = useState<{id: string, name: string}[]>([]);
 
   useEffect(() => {
     const fetchUserSfds = async () => {
@@ -54,8 +42,7 @@ export default function LoanPlansDisplay() {
 
         if (error) throw error;
 
-        const typedUserSfds = userSfds as unknown as UserSfdResult[];
-        const sfds = typedUserSfds.map(item => ({
+        const sfds = userSfds.map(item => ({
           id: item.sfds.id,
           name: item.sfds.name
         }));

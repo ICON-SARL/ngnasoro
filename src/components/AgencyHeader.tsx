@@ -24,10 +24,10 @@ export const AgencyHeader = () => {
     try {
       await signOut();
       toast({
-        title: "Déconnexion réussie",
+        title: "Déconnecté",
         description: "Vous avez été déconnecté avec succès",
       });
-      navigate('/sfd/auth');
+      navigate('/login');
     } catch (error) {
       toast({
         title: "Erreur",
@@ -102,23 +102,13 @@ export const AgencyHeader = () => {
           </div>
           
           <div className="flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleSignOut}
-              className="flex items-center text-gray-600 hover:text-gray-900"
-            >
-              <LogOut className="h-4 w-4 mr-1" />
-              Déconnexion
-            </Button>
-            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="/placeholder-avatar.jpg" alt={user?.full_name || 'User'} />
                     <AvatarFallback className="bg-[#0D6A51] text-white">
-                      {user?.full_name?.charAt(0) || 'S'}
+                      {user?.full_name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -126,9 +116,9 @@ export const AgencyHeader = () => {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user?.full_name || 'SFD Admin'}</p>
+                    <p className="text-sm font-medium leading-none">{user?.full_name || 'SFD User'}</p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      {user?.email || 'sfd@test.com'}
+                      {user?.email || 'sfd@example.com'}
                     </p>
                   </div>
                 </DropdownMenuLabel>

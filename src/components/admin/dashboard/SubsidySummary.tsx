@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,26 +6,16 @@ import { Button } from '@/components/ui/button';
 import { FileDown, PieChart } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-interface RecentApproval {
-  sfd_name: string;
-  amount: number;
-  date: string;
-}
-
 interface SubsidySummaryStats {
   totalAmount: number;
   allocatedAmount: number;
   pendingRequests: number;
   activeSfds: number;
-  recentApprovals: RecentApproval[];
-}
-
-interface SubsidyApprovalResult {
-  amount: number;
-  reviewed_at: string;
-  sfds: {
-    name: string;
-  };
+  recentApprovals: {
+    sfd_name: string;
+    amount: number;
+    date: string;
+  }[];
 }
 
 export function SubsidySummary() {
@@ -88,8 +79,7 @@ export function SubsidySummary() {
         const totalAmount = subsidiesData.reduce((sum, item) => sum + (item.amount || 0), 0);
         const allocatedAmount = allocatedData.reduce((sum, item) => sum + (item.used_amount || 0), 0);
         
-        const typedRecentData = recentData as unknown as SubsidyApprovalResult[];
-        const recentApprovals = typedRecentData.map(item => ({
+        const recentApprovals = recentData.map(item => ({
           sfd_name: item.sfds?.name || 'Unknown SFD',
           amount: item.amount,
           date: new Date(item.reviewed_at).toLocaleDateString()

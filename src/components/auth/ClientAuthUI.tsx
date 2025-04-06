@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from './Logo';
 import LoginForm from './login/LoginForm';
@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DemoAccountsCreator from './DemoAccountsCreator';
 
 const ClientAuthUI = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
@@ -23,7 +23,7 @@ const ClientAuthUI = () => {
       setAuthSuccess(true);
       
       const timer = setTimeout(() => {
-        navigate('/mobile-flow/main', { replace: true });
+        navigate('/mobile-flow');
       }, 2000);
       
       return () => clearTimeout(timer);
@@ -31,27 +31,9 @@ const ClientAuthUI = () => {
   }, [location, navigate]);
   
   useEffect(() => {
-    console.log('ClientAuthUI checking user:', { 
-      email: user?.email,
-      role: user?.app_metadata?.role,
-      loading
-    });
-    
-    if (!loading && user) {
-      // Route users based on their role
-      const userRole = user.app_metadata?.role;
-      
-      if (userRole === 'admin') {
-        console.log('Admin detected in ClientAuthUI, redirecting to super-admin-dashboard');
-        navigate('/super-admin-dashboard', { replace: true });
-      } else if (userRole === 'sfd_admin') {
-        console.log('SFD Admin detected in ClientAuthUI, redirecting to agency-dashboard');
-        navigate('/agency-dashboard', { replace: true });
-      } else {
-        // Regular user goes to mobile flow
-        console.log('Regular user detected in ClientAuthUI, redirecting to mobile-flow');
-        navigate('/mobile-flow/main', { replace: true });
-      }
+    if (user && !loading) {
+      // Redirection standard pour les utilisateurs clients
+      navigate('/mobile-flow');
     }
   }, [user, loading, navigate]);
 

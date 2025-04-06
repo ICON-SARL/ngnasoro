@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -14,18 +15,6 @@ interface PendingRequest {
   purpose: string;
   created_at: string;
   priority: 'low' | 'normal' | 'high' | 'urgent';
-}
-
-interface SubsidyRequestResult {
-  id: string;
-  amount: number;
-  purpose: string;
-  created_at: string;
-  priority: 'low' | 'normal' | 'high' | 'urgent';
-  sfds: {
-    id: string;
-    name: string;
-  };
 }
 
 export function PendingSubsidies() {
@@ -54,8 +43,7 @@ export function PendingSubsidies() {
         
         if (error) throw error;
         
-        const typedData = data as unknown as SubsidyRequestResult[];
-        const formattedData = typedData.map(item => ({
+        const formattedData = data.map(item => ({
           id: item.id,
           sfd_name: item.sfds?.name || 'Unknown SFD',
           amount: item.amount,

@@ -1,148 +1,167 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-
-// Define the form schema
-const loginSchema = z.object({
-  email: z.string().email({
-    message: 'Veuillez entrer une adresse email valide.',
-  }),
-  password: z.string().min(8, {
-    message: 'Le mot de passe doit contenir au moins 8 caractères.',
-  }),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
+import { useNavigate } from 'react-router-dom';
+import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 
 export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = false) => {
-  const { signIn } = useAuth();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [authMode, setAuthMode] = useState<'simple' | 'advanced'>('simple');
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cooldownActive, setCooldownActive] = useState(false);
   const [cooldownTime, setCooldownTime] = useState(0);
   const [emailSent, setEmailSent] = useState(false);
   
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
+  const { signIn, user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Handle cooldown timer
+  useEffect(() => {
+    if (cooldownTime <= 0) {
+      setCooldownActive(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCooldownTime(prev => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [cooldownTime]);
+
+  const extractCooldownTime = (errorMessage: string): number => {
+    const match = errorMessage.match(/after (\d+) seconds/);
+    if (match && match[1]) {
+      return parseInt(match[1], 10);
+    }
+    return 60; // Default cooldown
+  };
 
   const toggleShowPassword = () => {
-    setShowPassword(!showPassword);
+    setShowPassword(prev => !prev);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
-      setErrorMessage('Veuillez remplir tous les champs.');
+    // Clear previous errors
+    setErrorMessage(null);
+    setEmailSent(false);
+    
+    // Don't allow login during cooldown
+    if (cooldownActive) {
+      setErrorMessage(`Veuillez attendre ${cooldownTime} secondes avant de réessayer.`);
+      return;
+    }
+
+    // Email validation
+    if (!email || !email.includes('@')) {
+      setErrorMessage('Veuillez entrer une adresse e-mail valide.');
+      return;
+    }
+
+    // Password validation
+    if (!password || password.length < 6) {
+      setErrorMessage('Veuillez entrer un mot de passe valide (minimum 6 caractères).');
       return;
     }
     
     setIsLoading(true);
-    setErrorMessage(null);
     
     try {
-      // Use the correct signIn parameter structure
-      const result = await signIn({
-        email,
-        password
-      });
+      // Use password authentication
+      const result = await signIn(email, password);
       
-      if (result.error) {
-        setErrorMessage(result.error.message || 'Échec de la connexion. Vérifiez vos identifiants.');
-        
-        // Implement cooldown after failed attempts (simplified)
-        setCooldownActive(true);
-        setCooldownTime(30);
-        
-        const timer = setInterval(() => {
-          setCooldownTime((prev) => {
-            if (prev <= 1) {
-              clearInterval(timer);
-              setCooldownActive(false);
-              return 0;
-            }
-            return prev - 1;
+      // Since the signIn function is now properly typed to return { error?: any } | undefined
+      // we can safely check for the error property
+      if (result && result.error) {
+        throw result.error;
+      }
+      
+      // Log successful authentication attempt
+      // Use 'anonymous' instead of 'system'
+      try {
+        if (user?.id) {
+          await logAuditEvent({
+            user_id: user.id,
+            action: isSfdAdmin ? "sfd_admin_login_attempt" : adminMode ? "admin_login_attempt" : "password_login_attempt",
+            category: AuditLogCategory.AUTHENTICATION,
+            severity: AuditLogSeverity.INFO,
+            status: 'success',
+            details: { email, admin_mode: adminMode, sfd_admin: isSfdAdmin }
           });
-        }, 1000);
-        
-        return;
+        }
+      } catch (auditErr) {
+        console.warn('Failed to log audit event:', auditErr);
       }
       
-      // Success case
       toast({
-        title: 'Connexion réussie',
-        description: 'Bienvenue sur la plateforme MEREF-SFD.',
-      });
-    } catch (error: any) {
-      console.error('Login error:', error);
-      setErrorMessage(error.message || 'Une erreur s\'est produite lors de la connexion.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onSubmit = async (data: LoginFormValues) => {
-    setIsLoading(true);
-    
-    try {
-      // Use the correct signIn parameter structure
-      const result = await signIn({
-        email: data.email,
-        password: data.password
+        title: "Connexion réussie",
+        description: "Vous êtes maintenant connecté.",
       });
       
-      if (result.error) {
-        toast({
-          title: 'Erreur de connexion',
-          description: result.error.message || 'Échec de la connexion. Vérifiez vos identifiants.',
-          variant: 'destructive',
+      // No need to navigate here, the AuthProvider will handle that based on user role
+      
+    } catch (error: any) {
+      console.error("Login error:", error);
+      
+      // Log failed authentication attempt
+      try {
+        await logAuditEvent({
+          user_id: user?.id || 'anonymous', // Use 'anonymous' instead of 'system'
+          action: isSfdAdmin ? "sfd_admin_login_failed" : adminMode ? "admin_login_failed" : "password_login_attempt",
+          category: AuditLogCategory.AUTHENTICATION,
+          severity: AuditLogSeverity.WARNING,
+          status: 'failure',
+          error_message: error.message,
+          details: { email, admin_mode: adminMode, sfd_admin: isSfdAdmin }
         });
-        return;
+      } catch (auditErr) {
+        console.warn('Failed to log audit event:', auditErr);
       }
       
-      toast({
-        title: 'Connexion réussie',
-        description: 'Bienvenue sur la plateforme MEREF-SFD.',
-      });
-    } catch (error: any) {
-      console.error('Login error:', error);
-      toast({
-        title: 'Erreur de connexion',
-        description: error.message || 'Une erreur s\'est produite lors de la connexion.',
-        variant: 'destructive',
-      });
+      // Check for rate limiting errors
+      if (error.message && error.message.includes('security purposes') && error.message.includes('seconds')) {
+        const waitTime = extractCooldownTime(error.message);
+        setCooldownTime(waitTime);
+        setCooldownActive(true);
+        setErrorMessage(`Limite de tentatives atteinte. Veuillez attendre ${waitTime} secondes avant de réessayer.`);
+      } else {
+        setErrorMessage(error.message || "Une erreur s'est produite lors de la connexion.");
+        toast({
+          title: "Erreur de connexion",
+          description: error.message || "Une erreur s'est produite lors de la connexion.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return {
-    form,
-    onSubmit,
-    isLoading,
     email,
     setEmail,
     password,
     setPassword,
     showPassword,
     toggleShowPassword,
+    authMode,
+    showAuthDialog,
+    setShowAuthDialog,
+    isLoading,
     errorMessage,
     cooldownActive,
     cooldownTime,
     emailSent,
-    handleLogin
+    handleLogin,
+    adminMode,
+    isSfdAdmin
   };
 };

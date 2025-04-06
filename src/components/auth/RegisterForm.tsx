@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,33 +52,22 @@ const RegisterForm = () => {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsSubmitting(true);
     try {
-      // Create options with metadata
-      const options = {
-        data: {
-          full_name: data.fullName,
-          phone: data.phoneNumber || undefined
-        }
+      // Create a proper metadata object
+      const metadata = {
+        full_name: data.fullName,
+        phone: data.phoneNumber || undefined
       };
       
-      const result = await signUp({
-        email: data.email,
-        password: data.password,
-        options
-      });
-      
-      if (result.error) {
-        throw result.error;
-      }
-      
+      await signUp(data.email, data.password, metadata);
       toast({
         title: "Inscription réussie",
         description: "Veuillez vérifier votre email pour confirmer votre compte",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Signup error:', error);
       toast({
         title: "Erreur d'inscription",
-        description: error.message || "Une erreur s'est produite lors de l'inscription. Veuillez réessayer.",
+        description: "Une erreur s'est produite lors de l'inscription. Veuillez réessayer.",
         variant: "destructive",
       });
     } finally {

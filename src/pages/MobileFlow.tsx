@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, lazy } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { useAccount } from '@/hooks/useAccount';
 import { useTransactions } from '@/hooks/useTransactions';
 
@@ -30,36 +31,12 @@ const MobileFlow = () => {
     return !hasVisited;
   });
 
-  console.log('MobileFlow component state:', {
-    userEmail: user?.email,
-    userRole: user?.app_metadata?.role,
-    loading,
-    location: location.pathname
-  });
-
-  // Check if user is logged in, and redirect based on role if needed
+  // Check if user is authenticated
   useEffect(() => {
-    if (!loading && user) {
-      const userRole = user.app_metadata?.role;
-      console.log('MobileFlow role check:', { 
-        email: user.email, 
-        role: userRole,
-        pathname: location.pathname
-      });
-      
-      if (userRole === 'admin') {
-        // Redirect admin to admin dashboard
-        console.log('Admin detected in MobileFlow, redirecting...');
-        navigate('/super-admin-dashboard', { replace: true });
-        return;
-      } else if (userRole === 'sfd_admin') {
-        // Redirect SFD admin to agency dashboard
-        console.log('SFD Admin detected in MobileFlow, redirecting...');
-        navigate('/agency-dashboard', { replace: true });
-        return;
-      }
+    if (!loading && !user) {
+      navigate('/auth');
     }
-  }, [user, loading, navigate, location.pathname]);
+  }, [user, loading, navigate]);
 
   // Save welcome screen status
   useEffect(() => {
@@ -113,25 +90,26 @@ const MobileFlow = () => {
   const handleLogout = async () => {
     try {
       await signOut();
-      navigate('/auth', { replace: true });
+      navigate('/auth');
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
-  // If still loading, show a spinner
-  if (loading || accountLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#0D6A51]"></div>
-        <span className="ml-3">Chargement...</span>
-      </div>
-    );
-  }
+  // Handle welcome screen navigation
+  useEffect(() => {
+    if (showWelcome && location.pathname === '/mobile-flow') {
+      navigate('/mobile-flow/welcome');
+    }
+    else if (location.pathname !== '/mobile-flow/welcome' && location.pathname !== '/mobile-flow') {
+      setShowWelcome(false);
+    }
+  }, [showWelcome, location.pathname, navigate]);
 
-  if (!user) {
-    console.log('No user in MobileFlow render, rendering nothing');
-    return null;
+  const isWelcomePage = location.pathname === '/mobile-flow/welcome';
+
+  if (loading || accountLoading) {
+    return <div className="p-8 text-center">Chargement...</div>;
   }
 
   return (
@@ -153,7 +131,7 @@ const MobileFlow = () => {
         handlePaymentSubmit={handlePaymentSubmit}
       />
       
-      {location.pathname !== '/mobile-flow/welcome' && <div className="sm:hidden"><MobileNavigation onAction={onAction} /></div>}
+      {!isWelcomePage && <div className="sm:hidden"><MobileNavigation onAction={onAction} /></div>}
     </div>
   );
 };

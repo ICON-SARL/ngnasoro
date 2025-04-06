@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from './Logo';
 import LoginForm from './login/LoginForm';
@@ -9,7 +8,7 @@ import LanguageSelector from '../LanguageSelector';
 import DemoAccountsCreator from './DemoAccountsCreator';
 
 const AdminAuthUI = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
@@ -20,7 +19,7 @@ const AdminAuthUI = () => {
       setAuthSuccess(true);
       
       const timer = setTimeout(() => {
-        navigate('/super-admin-dashboard', { replace: true });
+        navigate('/super-admin-dashboard');
       }, 2000);
       
       return () => clearTimeout(timer);
@@ -28,26 +27,16 @@ const AdminAuthUI = () => {
   }, [location, navigate]);
   
   useEffect(() => {
-    console.log('AdminAuthUI checking user:', { 
-      email: user?.email,
-      role: user?.app_metadata?.role,
-      loading
-    });
-    
-    if (!loading && user) {
-      const userRole = user.app_metadata?.role;
-      
-      if (userRole === 'admin') {
-        console.log('Admin detected, redirecting to super-admin-dashboard');
-        navigate('/super-admin-dashboard', { replace: true });
-      } else if (userRole === 'sfd_admin') {
-        // Redirect SFD admin to agency dashboard
-        console.log('SFD Admin detected in AdminAuthUI, redirecting to agency dashboard');
-        navigate('/agency-dashboard', { replace: true });
+    if (user && !loading) {
+      if (user.app_metadata?.role === 'admin') {
+        navigate('/super-admin-dashboard');
       } else {
-        // Redirect regular users to mobile flow
-        console.log('Regular user detected in AdminAuthUI, redirecting to mobile flow');
-        navigate('/mobile-flow/main', { replace: true });
+        // Rediriger les utilisateurs non-admin vers leur page appropriée
+        if (user.app_metadata?.role === 'sfd_admin') {
+          navigate('/sfd/auth');
+        } else {
+          navigate('/auth');
+        }
       }
     }
   }, [user, loading, navigate]);
