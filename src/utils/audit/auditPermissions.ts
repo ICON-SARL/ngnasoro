@@ -104,16 +104,7 @@ export const hasPermission = async (userId: string, permission: Permission): Pro
         Permission.VIEW_AUDIT_LOGS,
         Permission.ACCESS_ADMIN_DASHBOARD
       ],
-      [Role.ADMIN]: [
-        Permission.MANAGE_SFDS,
-        Permission.MANAGE_SUBSIDIES,
-        Permission.MANAGE_ADMINS,
-        Permission.VIEW_REPORTS,
-        Permission.EXPORT_DATA,
-        Permission.APPROVE_CREDIT,
-        Permission.VIEW_AUDIT_LOGS,
-        Permission.ACCESS_ADMIN_DASHBOARD
-      ],
+      // We will remove the duplicate ADMIN role since SUPER_ADMIN and ADMIN are the same in the Role enum
       [Role.SFD_ADMIN]: [
         Permission.MANAGE_SFD_USERS,
         Permission.MANAGE_CLIENTS,

@@ -72,7 +72,6 @@ const SubsidyRequestDetailPage = () => {
       
       setIsLoading(true);
       try {
-        // Get request details
         const { data: requestData, error: requestError } = await supabase
           .from('subsidy_requests')
           .select(`
@@ -84,7 +83,6 @@ const SubsidyRequestDetailPage = () => {
         
         if (requestError) throw requestError;
         
-        // Get requester name
         let requesterName = 'Unknown User';
         if (requestData.requested_by) {
           const { data: userData, error: userError } = await supabase
@@ -98,11 +96,9 @@ const SubsidyRequestDetailPage = () => {
           }
         }
         
-        // Cast status and priority to the correct types to satisfy TypeScript
         const typedStatus = requestData.status as 'pending' | 'under_review' | 'approved' | 'rejected';
         const typedPriority = requestData.priority as 'low' | 'normal' | 'high' | 'urgent';
         
-        // Create a properly typed SubsidyRequest object
         const typedRequest: SubsidyRequest = {
           ...requestData,
           sfd_name: requestData.sfds?.name || 'Unknown SFD',
@@ -138,7 +134,6 @@ const SubsidyRequestDetailPage = () => {
         
         if (error) throw error;
         
-        // Get user names for each activity
         const activitiesWithNames = await Promise.all(data.map(async (activity) => {
           let performerName = 'Unknown User';
           
@@ -235,7 +230,6 @@ const SubsidyRequestDetailPage = () => {
       
       if (error) throw error;
       
-      // Create activity log
       await supabase
         .from('subsidy_request_activities')
         .insert({
@@ -246,7 +240,6 @@ const SubsidyRequestDetailPage = () => {
           details: comments ? { comments } : null
         });
       
-      // Audit log
       await logAuditEvent({
         user_id: (await supabase.auth.getUser()).data.user?.id || 'unknown',
         action: 'approve_subsidy_request',
@@ -260,9 +253,6 @@ const SubsidyRequestDetailPage = () => {
           amount: request.amount
         }
       });
-      
-      // Update subsidies
-      // In a real app, you would allocate the subsidy amount to the SFD
       
       toast({
         title: "Demande approuvée",
@@ -308,7 +298,6 @@ const SubsidyRequestDetailPage = () => {
       
       if (error) throw error;
       
-      // Create activity log
       await supabase
         .from('subsidy_request_activities')
         .insert({
@@ -319,7 +308,6 @@ const SubsidyRequestDetailPage = () => {
           details: { comments }
         });
       
-      // Audit log
       await logAuditEvent({
         user_id: (await supabase.auth.getUser()).data.user?.id || 'unknown',
         action: 'reject_subsidy_request',
@@ -368,7 +356,6 @@ const SubsidyRequestDetailPage = () => {
       
       if (error) throw error;
       
-      // Create activity log
       await supabase
         .from('subsidy_request_activities')
         .insert({
@@ -378,7 +365,6 @@ const SubsidyRequestDetailPage = () => {
           description: 'Subsidy request marked as under review'
         });
       
-      // Audit log
       await logAuditEvent({
         user_id: (await supabase.auth.getUser()).data.user?.id || 'unknown',
         action: 'review_subsidy_request',
@@ -491,7 +477,7 @@ const SubsidyRequestDetailPage = () => {
   }
 
   return (
-    <PermissionGuard requiredPermission={Permission.APPROVE_SUBSIDIES}>
+    <PermissionGuard requiredPermission={Permission.MANAGE_SUBSIDIES}>
       <div className="min-h-screen bg-gray-50">
         <SuperAdminHeader />
         <main className="container mx-auto p-4 md:p-6">
