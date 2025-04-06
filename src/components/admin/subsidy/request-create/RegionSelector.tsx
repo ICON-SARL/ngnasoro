@@ -21,7 +21,7 @@ export function RegionSelector({ value, onValueChange, regions }: RegionSelector
           <SelectValue placeholder="Sélectionner une région (optionnel)" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Toutes les régions</SelectItem>
+          <SelectItem value="all">Toutes les régions</SelectItem>
           {regions.map((region) => (
             <SelectItem key={region} value={region}>{region}</SelectItem>
           ))}
