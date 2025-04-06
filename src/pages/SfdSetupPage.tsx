@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ const SfdSetupPage = () => {
             .select('id')
             .eq('user_id', user.id);
             
+          // Ensure we're setting a boolean value
           const hasExistingSfds = Boolean(data && data.length > 0) || Boolean(activeSfdId);
           setHasSfds(hasExistingSfds);
           setActiveTab(hasExistingSfds ? 'manage' : 'create');

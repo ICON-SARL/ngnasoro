@@ -1,19 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
 import { Loader } from '@/components/ui/loader';
-import { useToast } from '@/hooks/use-toast';
-
-interface Sfd {
-  id: string;
-  name: string;
-  code: string;
-  region?: string;
-}
+import { useAvailableSfds } from '@/hooks/sfd/useAvailableSfds';
+import { AvailableSfd } from './types/SfdAccountTypes';
+import { MapPin, Building } from 'lucide-react';
 
 interface SfdSelectorProps {
   userId: string;
@@ -21,117 +15,22 @@ interface SfdSelectorProps {
 }
 
 const SfdSelector: React.FC<SfdSelectorProps> = ({ userId, onRequestSent }) => {
-  const [availableSfds, setAvailableSfds] = useState<Sfd[]>([]);
   const [selectedSfdId, setSelectedSfdId] = useState<string>('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const { toast } = useToast();
-
-  // Fetch available SFDs that the user doesn't already have
-  useEffect(() => {
-    const fetchAvailableSfds = async () => {
-      try {
-        setIsFetching(true);
-        
-        // First get user's existing SFDs
-        const { data: userSfds } = await supabase
-          .from('user_sfds')
-          .select('sfd_id')
-          .eq('user_id', userId);
-        
-        const userSfdIds = userSfds?.map(item => item.sfd_id) || [];
-        
-        // Then get all active SFDs that user doesn't already have
-        const { data: sfds, error } = await supabase
-          .from('sfds')
-          .select('id, name, code, region')
-          .eq('status', 'active')
-          .not('id', 'in', `(${userSfdIds.length > 0 ? userSfdIds.join(',') : 'null'})`);
-        
-        if (error) throw error;
-        
-        setAvailableSfds(sfds || []);
-      } catch (error) {
-        console.error('Error fetching available SFDs:', error);
-        toast({
-          title: 'Erreur',
-          description: 'Impossible de récupérer la liste des SFDs disponibles',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsFetching(false);
-      }
-    };
-    
-    if (userId) {
-      fetchAvailableSfds();
-    }
-  }, [userId, toast]);
+  const { availableSfds, isLoading, requestSfdAccess } = useAvailableSfds(userId);
 
   const handleSubmitRequest = async () => {
     if (!selectedSfdId) {
-      toast({
-        title: 'Champ requis',
-        description: 'Veuillez sélectionner une SFD',
-        variant: 'destructive',
-      });
-      return;
+      return; // Select validation is handled by the UI
     }
 
-    try {
-      setIsLoading(true);
-      
-      // Create a client request entry
-      const { data, error } = await supabase
-        .from('sfd_clients')
-        .insert({
-          user_id: userId,
-          sfd_id: selectedSfdId,
-          full_name: '', // Will be updated from user profile
-          phone: phoneNumber,
-          status: 'pending',
-          kyc_level: 0
-        })
-        .select();
-        
-      if (error) throw error;
-      
-      // Update the client with user profile data
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, avatar_url')
-        .eq('id', userId)
-        .single();
-        
-      if (profile) {
-        await supabase
-          .from('sfd_clients')
-          .update({ 
-            full_name: profile.full_name || 'Client' 
-          })
-          .eq('id', data[0].id);
-      }
-      
-      toast({
-        title: 'Demande envoyée',
-        description: 'Votre demande a été envoyée avec succès. Vous serez notifié lorsqu\'elle sera traitée.',
-      });
-      
+    const success = await requestSfdAccess(selectedSfdId, phoneNumber);
+    if (success) {
       onRequestSent();
-    } catch (error) {
-      console.error('Error sending SFD request:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible d\'envoyer votre demande. Veuillez réessayer.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center p-6">
         <Loader size="lg" />
@@ -161,8 +60,17 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ userId, onRequestSent }) => {
           </SelectTrigger>
           <SelectContent>
             {availableSfds.map(sfd => (
-              <SelectItem key={sfd.id} value={sfd.id}>
-                {sfd.name} {sfd.region ? `(${sfd.region})` : ''}
+              <SelectItem key={sfd.id} value={sfd.id} className="flex items-center py-2">
+                <div className="flex items-center">
+                  <Building className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <span>{sfd.name}</span>
+                  {sfd.region && (
+                    <span className="ml-2 text-xs text-muted-foreground flex items-center">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      {sfd.region}
+                    </span>
+                  )}
+                </div>
               </SelectItem>
             ))}
           </SelectContent>
@@ -186,11 +94,18 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ userId, onRequestSent }) => {
       <Button 
         className="w-full mt-4"
         onClick={handleSubmitRequest}
-        disabled={isLoading}
+        disabled={isLoading || !selectedSfdId}
       >
         {isLoading ? <Loader size="sm" className="mr-2" /> : null}
         Envoyer la demande
       </Button>
+
+      <div className="mt-4 p-3 bg-blue-50 rounded-md">
+        <p className="text-xs text-blue-700">
+          Après avoir envoyé votre demande, l'administrateur de la SFD devra la valider.
+          Vous recevrez une notification lorsque votre demande sera traitée.
+        </p>
+      </div>
     </div>
   );
 };
