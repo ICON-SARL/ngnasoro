@@ -23,6 +23,7 @@ import AuditLogsSummary from '@/components/audit/AuditLogsSummary';
 import { SubsidySummary } from '@/components/admin/dashboard/SubsidySummary';
 import { PendingSubsidies } from '@/components/admin/dashboard/PendingSubsidies';
 import { Footer } from '@/components';
+import { FinancialReports } from '@/components/reports/FinancialReports';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
@@ -130,6 +131,11 @@ const SuperAdminDashboard = () => {
           <DashboardCharts />
         )}
         
+        {/* Financial Reports */}
+        {activeTab === 'financial_reports' && (
+          <FinancialReports />
+        )}
+        
         {/* Reports */}
         {activeTab === 'reports' && (
           <div className="space-y-6">
@@ -141,13 +147,6 @@ const SuperAdminDashboard = () => {
         {activeTab === 'export' && (
           <div className="space-y-6">
             <DataExport />
-          </div>
-        )}
-        
-        {/* SFD Management */}
-        {activeTab === 'sfd_management' && (
-          <div className="space-y-6">
-            <SfdManagement />
           </div>
         )}
         

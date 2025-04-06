@@ -8,6 +8,7 @@ import {
   Download, 
   LayoutDashboard,
   Users,
+  PieChart,
 } from 'lucide-react';
 
 interface DashboardTabsProps {
@@ -26,6 +27,11 @@ export function DashboardTabs({ activeTab, onTabChange }: DashboardTabsProps) {
       id: 'charts',
       label: 'Graphiques',
       icon: <BarChart4 className="h-4 w-4 mr-2" />
+    },
+    {
+      id: 'financial_reports',
+      label: 'Rapports financiers',
+      icon: <PieChart className="h-4 w-4 mr-2" />
     },
     {
       id: 'reports',
