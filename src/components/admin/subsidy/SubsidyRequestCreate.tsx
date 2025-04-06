@@ -16,6 +16,8 @@ interface SubsidyRequestCreateProps {
   onSuccess?: () => void;
 }
 
+type PriorityType = 'low' | 'normal' | 'high' | 'urgent';
+
 export function SubsidyRequestCreate({ onSuccess }: SubsidyRequestCreateProps) {
   const { user } = useAuth();
   const { createSubsidyRequest } = useSubsidyRequests();
@@ -26,7 +28,7 @@ export function SubsidyRequestCreate({ onSuccess }: SubsidyRequestCreateProps) {
     amount: '',
     purpose: '',
     justification: '',
-    priority: 'normal',
+    priority: 'normal' as PriorityType,
     region: '',
     expected_impact: '',
   });
@@ -61,7 +63,11 @@ export function SubsidyRequestCreate({ onSuccess }: SubsidyRequestCreateProps) {
   };
   
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'priority') {
+      setFormData(prev => ({ ...prev, [name]: value as PriorityType }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,10 +75,11 @@ export function SubsidyRequestCreate({ onSuccess }: SubsidyRequestCreateProps) {
     setIsSubmitting(true);
     
     try {
-      // Convert amount to number
+      // Convert amount to number and ensure priority has the correct type
       const requestData = {
         ...formData,
-        amount: parseFloat(formData.amount)
+        amount: parseFloat(formData.amount),
+        priority: formData.priority as PriorityType
       };
       
       await createSubsidyRequest.mutateAsync(requestData);
@@ -83,7 +90,7 @@ export function SubsidyRequestCreate({ onSuccess }: SubsidyRequestCreateProps) {
         amount: '',
         purpose: '',
         justification: '',
-        priority: 'normal',
+        priority: 'normal' as PriorityType,
         region: '',
         expected_impact: '',
       });
