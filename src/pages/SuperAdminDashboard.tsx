@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, CreditCard, Building, Users, Shield } from 'lucide-react';
 import { AdminManagement } from '@/components/admin/AdminManagement';
 import { SubsidyRequestManagement } from '@/components/admin/subsidy';
+import { SfdManagement } from '@/components/admin/SfdManagement';
 import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommunication';
 import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
 import { IntegratedDashboard } from '@/components/admin/shared/IntegratedDashboard';
@@ -63,7 +64,7 @@ const SuperAdminDashboard = () => {
           <Button 
             variant="outline" 
             className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-            onClick={() => navigate('/credit-approval?tab=sfd-management')}
+            onClick={() => navigate('/sfd-management')}
           >
             <Building className="h-4 w-4 mr-2 text-gray-600" />
             Gestion des SFDs
@@ -148,6 +149,13 @@ const SuperAdminDashboard = () => {
         {activeTab === 'subsidy_requests' && (
           <div className="space-y-6">
             <SubsidyRequestManagement />
+          </div>
+        )}
+        
+        {/* SFD Management */}
+        {activeTab === 'sfd_management' && (
+          <div className="space-y-6">
+            <SfdManagement />
           </div>
         )}
         

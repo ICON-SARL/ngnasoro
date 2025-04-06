@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Footer } from '@/components';
@@ -29,6 +28,7 @@ import AuditLogsPage from '@/pages/AuditLogsPage';
 import SubsidyRequestDetailPage from '@/pages/SubsidyRequestDetailPage';
 import MobileFlow from '@/pages/MobileFlow';
 import LoanApplicationPage from '@/pages/LoanApplicationPage';
+import SfdManagementPage from '@/pages/SfdManagementPage';
 
 // Role types and permissions
 import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
@@ -181,6 +181,9 @@ const AppRoutes = () => {
       {/* Fallback routes */}
       <Route path="/" element={<Navigate to="/auth" replace />} />
       <Route path="*" element={<Navigate to="/auth" replace />} />
+      
+      {/* SFD Management route */}
+      <Route path="/sfd-management" element={<SfdManagementPage />} />
     </Routes>
   );
 };

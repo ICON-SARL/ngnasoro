@@ -1,15 +1,18 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useSfdManagement } from './hooks/useSfdManagement';
 import { SfdTable } from './sfd/SfdTable';
 import { SuspendSfdDialog } from './sfd/SuspendSfdDialog';
 import { ReactivateSfdDialog } from './sfd/ReactivateSfdDialog';
 import { SfdForm } from './sfd/SfdForm';
 import { SfdFilter } from './sfd/SfdFilter';
+import { SfdDetailView } from './sfd/SfdDetailView';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { Sfd } from './types/sfd-types';
 
 export function SfdManagement() {
+  const [showDetailsView, setShowDetailsView] = useState(false);
   const {
     filteredSfds,
     isLoading,
@@ -40,6 +43,20 @@ export function SfdManagement() {
     handleExportExcel
   } = useSfdManagement();
 
+  const handleViewDetails = (sfd: Sfd) => {
+    setSelectedSfd(sfd);
+    setShowDetailsView(true);
+  };
+
+  if (showDetailsView && selectedSfd) {
+    return (
+      <SfdDetailView 
+        sfd={selectedSfd} 
+        onBack={() => setShowDetailsView(false)} 
+      />
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-start mb-4">
@@ -69,6 +86,7 @@ export function SfdManagement() {
         onSuspend={handleSuspendSfd}
         onReactivate={handleReactivateSfd}
         onEdit={handleShowEditDialog}
+        onViewDetails={handleViewDetails}
       />
 
       <SuspendSfdDialog

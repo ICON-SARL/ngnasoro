@@ -8,10 +8,23 @@ export interface Sfd {
   code: string;
   region?: string;
   logo_url?: string;
+  legal_document_url?: string;
+  contact_email?: string;
+  phone?: string;
   status: SfdStatus;
   created_at: string;
   updated_at: string;
   subsidy_balance?: number;
+  sfd_stats?: SfdStats;
+}
+
+export interface SfdStats {
+  id: string;
+  sfd_id: string;
+  total_clients: number;
+  total_loans: number;
+  repayment_rate: number;
+  last_updated: string;
 }
 
 // SFD Client Types
@@ -90,4 +103,14 @@ export interface SfdAuditLog {
   status: 'success' | 'failure';
   error_message?: string;
   target_resource?: string;
+}
+
+// SFD Admin Types
+export interface SfdAdmin {
+  user_id: string;
+  sfd_id: string;
+  role: 'admin_sfd' | 'support';
+  email?: string;
+  full_name?: string;
+  created_at: string;
 }
