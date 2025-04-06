@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '@/hooks/auth';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import AgencyDashboard from '@/pages/AgencyDashboard';
@@ -24,36 +24,34 @@ import { useAuth } from '@/hooks/useAuth';
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <Routes>
-        {/* Routes publiques */}
-        <Route path="/" element={<HomePage />} />
+    <Routes>
+      {/* Routes publiques */}
+      <Route path="/" element={<HomePage />} />
 
-        {/* Routes pour l'authentification */}
-        <Route path="/sfd/auth" element={<SfdLoginPage />} />
-        <Route path="/admin/auth" element={<LoginPage />} />
+      {/* Routes pour l'authentification */}
+      <Route path="/sfd/auth" element={<SfdLoginPage />} />
+      <Route path="/admin/auth" element={<LoginPage />} />
 
-        {/* Routes pour l'administrateur */}
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="/clients" element={<ClientsPage />} />
-        <Route path="/transactions" element={<TransactionsPage />} />
+      {/* Routes pour l'administrateur */}
+      <Route path="/admin-dashboard" element={<AdminDashboard />} />
+      <Route path="/clients" element={<ClientsPage />} />
+      <Route path="/transactions" element={<TransactionsPage />} />
 
-        {/* Routes pour l'agence SFD */}
-        <Route path="/agency-dashboard" element={<AgencyDashboard />} />
-        <Route path="/sfd-clients" element={<SfdClientsPage />} />
-        <Route path="/sfd-loans" element={<LoansPage />} />
-        <Route path="/sfd-subsidy-requests" element={<SubsidyRequestsPage />} />
+      {/* Routes pour l'agence SFD */}
+      <Route path="/agency-dashboard" element={<AgencyDashboard />} />
+      <Route path="/sfd-clients" element={<SfdClientsPage />} />
+      <Route path="/sfd-loans" element={<LoansPage />} />
+      <Route path="/sfd-subsidy-requests" element={<SubsidyRequestsPage />} />
 
-        {/* Mobile flow routes */}
-        <Route path="/mobile-flow/auth" element={<MobileLoginPage />} />
-        <Route path="/mobile-flow/dashboard" element={<MobileDashboard />} />
-        <Route path="/mobile-flow/clients" element={<ClientList />} />
-        <Route path="/mobile-flow/client/new" element={<NewClientPage />} />
-        <Route path="/mobile-flow/client/:clientId" element={<ClientDetailsPage />} />
-        <Route path="/mobile-flow/create-sfd" element={<CreateSfdPage />} />
-        <Route path="/mobile-flow/sfd-accounts" element={<SfdAccountsPage />} />
-      </Routes>
-    </Router>
+      {/* Mobile flow routes */}
+      <Route path="/mobile-flow/auth" element={<MobileLoginPage />} />
+      <Route path="/mobile-flow/dashboard" element={<MobileDashboard />} />
+      <Route path="/mobile-flow/clients" element={<ClientList />} />
+      <Route path="/mobile-flow/client/new" element={<NewClientPage />} />
+      <Route path="/mobile-flow/client/:clientId" element={<ClientDetailsPage />} />
+      <Route path="/mobile-flow/create-sfd" element={<CreateSfdPage />} />
+      <Route path="/mobile-flow/sfd-accounts" element={<SfdAccountsPage />} />
+    </Routes>
   );
 };
 
