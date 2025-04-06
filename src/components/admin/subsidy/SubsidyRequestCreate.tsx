@@ -16,6 +16,7 @@ interface SubsidyRequestCreateProps {
   onSuccess?: () => void;
 }
 
+// Define the priority type explicitly to match the expected type
 type PriorityType = 'low' | 'normal' | 'high' | 'urgent';
 
 export function SubsidyRequestCreate({ onSuccess }: SubsidyRequestCreateProps) {
@@ -28,7 +29,7 @@ export function SubsidyRequestCreate({ onSuccess }: SubsidyRequestCreateProps) {
     amount: '',
     purpose: '',
     justification: '',
-    priority: 'normal' as PriorityType,
+    priority: 'normal' as PriorityType, // Explicitly type as PriorityType
     region: '',
     expected_impact: '',
   });
@@ -64,6 +65,7 @@ export function SubsidyRequestCreate({ onSuccess }: SubsidyRequestCreateProps) {
   
   const handleSelectChange = (name: string, value: string) => {
     if (name === 'priority') {
+      // Ensure we cast the priority value to the specific type when setting state
       setFormData(prev => ({ ...prev, [name]: value as PriorityType }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -79,7 +81,7 @@ export function SubsidyRequestCreate({ onSuccess }: SubsidyRequestCreateProps) {
       const requestData = {
         ...formData,
         amount: parseFloat(formData.amount),
-        priority: formData.priority as PriorityType
+        // The priority field is already correctly typed as PriorityType
       };
       
       await createSubsidyRequest.mutateAsync(requestData);
