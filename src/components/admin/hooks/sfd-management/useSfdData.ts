@@ -30,18 +30,38 @@ export function useSfdData() {
             subsidy_balance = subsidies.reduce((sum, subsidy) => sum + (subsidy.remaining_amount || 0), 0);
           }
 
-          // Get SFD statistics
-          const { data: stats, error: statsError } = await supabase
-            .from('sfd_stats')
-            .select('*')
-            .eq('sfd_id', sfd.id)
-            .maybeSingle();
+          // Instead of using a relation that might not exist, we'll fetch stats separately
+          let sfdStats = null;
+          try {
+            // Try to get existing stats or return a default structure
+            const { data: stats, error: statsError } = await supabase
+              .from('sfd_stats')
+              .select('id, sfd_id, total_clients, total_loans, repayment_rate, last_updated')
+              .eq('sfd_id', sfd.id)
+              .maybeSingle();
+
+            if (!statsError && stats) {
+              sfdStats = stats;
+            } else {
+              // Provide default stats structure if no stats exist
+              sfdStats = {
+                id: '',
+                sfd_id: sfd.id,
+                total_clients: 0,
+                total_loans: 0,
+                repayment_rate: 0,
+                last_updated: new Date().toISOString()
+              };
+            }
+          } catch (error) {
+            console.error("Error fetching SFD stats:", error);
+          }
 
           return {
             ...sfd,
             subsidy_balance,
-            sfd_stats: statsError ? null : stats
-          } as Sfd; // Use type assertion to resolve the type mismatch
+            sfd_stats: sfdStats
+          } as Sfd;
         })
       );
 

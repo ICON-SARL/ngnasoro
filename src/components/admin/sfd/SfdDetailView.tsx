@@ -27,6 +27,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import { cn } from '@/lib/utils';
 
 interface SfdDetailViewProps {
   sfd: Sfd;
@@ -61,18 +62,19 @@ export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
     enabled: activeTab === 'stats'
   });
 
-  // Fetch SFD admins - fixed the query
+  // Fetch SFD admins - manually using RPC call or separate SQL query
   const { data: sfdAdmins, isLoading: isLoadingAdmins } = useQuery({
     queryKey: ['sfd-admins', sfd.id],
     queryFn: async () => {
-      // Using a raw query approach to handle the nested selection properly
+      // Using a more compatible approach
       const { data, error } = await supabase
-        .from('sfd_admins')
-        .select('user_id, role, admin_users:user_id(full_name, email)')
-        .eq('sfd_id', sfd.id);
+        .rpc('get_sfd_admins', { sfd_id_param: sfd.id });
 
-      if (error) throw error;
-      return data as SfdAdmin[];
+      if (error) {
+        console.error("Error fetching SFD admins:", error);
+        return [] as SfdAdmin[];
+      }
+      return (data || []) as SfdAdmin[];
     },
     enabled: activeTab === 'admins'
   });
@@ -356,7 +358,7 @@ export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
                   <div>Rôle</div>
                 </div>
                 <div className="divide-y">
-                  {sfdAdmins.map((admin: any) => (
+                  {sfdAdmins.map((admin) => (
                     <div key={admin.user_id} className="grid grid-cols-3 p-3">
                       <div>{admin.admin_users?.full_name || '-'}</div>
                       <div>{admin.admin_users?.email || '-'}</div>

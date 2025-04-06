@@ -61,6 +61,7 @@ export function useSfdManagement() {
     isError,
     isExporting,
     selectedSfd,
+    setSelectedSfd, // Export this function
     searchTerm,
     setSearchTerm,
     statusFilter,
