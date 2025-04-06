@@ -67,35 +67,58 @@ export function useReportGeneration() {
       const startDate = options.startDate.toISOString().split('T')[0];
       const endDate = options.endDate.toISOString().split('T')[0];
       
-      let tableName: string;
-      
-      // Map report types to existing tables
+      // Fix: Use type assertion to address the TypeScript error
+      // We need to make sure we're passing valid table names
+      let data;
+      let error;
+
       switch (options.type) {
         case 'transactions':
-          tableName = 'transactions';
+          ({ data, error } = await apiClient.supabase
+            .from('transactions')
+            .select('*')
+            .gte('created_at', startDate)
+            .lte('created_at', endDate));
           break;
+        
         case 'loans':
-          tableName = 'sfd_loans';
+          ({ data, error } = await apiClient.supabase
+            .from('sfd_loans')
+            .select('*')
+            .gte('created_at', startDate)
+            .lte('created_at', endDate));
           break;
+        
         case 'subsidies':
-          tableName = 'sfd_subsidies';
+          ({ data, error } = await apiClient.supabase
+            .from('sfd_subsidies')
+            .select('*')
+            .gte('allocated_at', startDate)
+            .lte('allocated_at', endDate));
           break;
+        
         case 'sfds':
-          tableName = 'sfds';
+          ({ data, error } = await apiClient.supabase
+            .from('sfds')
+            .select('*, sfd_stats(*)'));
           break;
+        
         default:
-          tableName = 'transactions';
+          ({ data, error } = await apiClient.supabase
+            .from('transactions')
+            .select('*')
+            .gte('created_at', startDate)
+            .lte('created_at', endDate));
       }
-      
-      const { data, error } = await apiClient.supabase
-        .from(tableName)
-        .select('*')
-        .gte('created_at', startDate)
-        .lte('created_at', endDate);
 
       if (error) throw error;
       
-      return data;
+      if (options.sfdId && options.type !== 'sfds') {
+        // Filter by sfdId client-side if it was provided and we're not querying sfds
+        data = data?.filter(item => item.sfd_id === options.sfdId);
+      }
+      
+      return data || [];
     } catch (error: any) {
       console.error('Error fetching report data:', error);
       toast({

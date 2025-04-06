@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -64,7 +63,6 @@ export const FinancialReports = () => {
     });
   };
 
-  // Simple data for the example
   const getFilteredTransactions = () => {
     if (!dateRange?.from || !dateRange?.to) return allTransactions;
     
