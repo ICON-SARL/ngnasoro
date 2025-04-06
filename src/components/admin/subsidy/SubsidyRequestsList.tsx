@@ -1,122 +1,70 @@
 
-import React, { useState, useMemo } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import React, { useState } from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ChevronRight, 
-  AlertTriangle, 
-  Building, 
-  Calendar,
-  ArrowUpDown,
-  Search
-} from 'lucide-react';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { SubsidyRequest } from '@/types/subsidyRequests';
-import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
+import { FileText, Search, AlertTriangle } from 'lucide-react';
 
 interface SubsidyRequestsListProps {
-  requests: SubsidyRequest[];
+  requests: any[];
   isLoading: boolean;
-  onSelectRequest: (id: string) => void;
-  defaultSortBy?: 'date' | 'amount' | 'priority';
+  onSelectRequest: (requestId: string) => void;
   isAlertView?: boolean;
+  defaultSortBy?: 'date' | 'amount' | 'priority';
 }
 
 export function SubsidyRequestsList({ 
   requests, 
-  isLoading, 
+  isLoading,
   onSelectRequest,
-  defaultSortBy = 'date',
-  isAlertView = false
+  isAlertView = false,
+  defaultSortBy = 'date'
 }: SubsidyRequestsListProps) {
+  const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'priority'>(defaultSortBy);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [filterValue, setFilterValue] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
-  const { updateSubsidyRequestPriority, updateSubsidyRequestStatus } = useSubsidyRequests();
+  const handleSort = (field: 'date' | 'amount' | 'priority') => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
   
   // Filter and sort the requests
-  const filteredAndSortedRequests = useMemo(() => {
-    let filtered = [...requests];
-    
-    // Apply search filter
-    if (filterValue) {
-      const lowercaseFilter = filterValue.toLowerCase();
-      filtered = filtered.filter(req => 
-        req.sfd_name?.toLowerCase().includes(lowercaseFilter) ||
-        req.purpose.toLowerCase().includes(lowercaseFilter) ||
-        req.region?.toLowerCase().includes(lowercaseFilter) ||
-        req.amount.toString().includes(lowercaseFilter)
-      );
-    }
-    
-    // Apply priority filter
-    if (priorityFilter !== 'all') {
-      filtered = filtered.filter(req => req.priority === priorityFilter);
-    }
-    
-    // Sort the filtered requests
-    return filtered.sort((a, b) => {
-      if (sortBy === 'date') {
-        return sortDirection === 'asc'
-          ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      } else if (sortBy === 'amount') {
-        return sortDirection === 'asc'
-          ? a.amount - b.amount
-          : b.amount - a.amount;
-      } else if (sortBy === 'priority') {
-        const priorityValues = { 'urgent': 3, 'high': 2, 'normal': 1, 'low': 0 };
-        return sortDirection === 'asc'
-          ? priorityValues[a.priority] - priorityValues[b.priority]
-          : priorityValues[b.priority] - priorityValues[a.priority];
-      }
-      return 0;
-    });
-  }, [requests, filterValue, sortBy, sortDirection, priorityFilter]);
+  const filteredRequests = requests.filter(request => 
+    request.sfd_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    request.purpose?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    request.region?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   
-  // Toggle sort direction
-  const toggleSort = (column: 'date' | 'amount' | 'priority') => {
-    if (sortBy === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(column);
-      setSortDirection('desc');
+  const sortedRequests = [...filteredRequests].sort((a, b) => {
+    if (sortBy === 'date') {
+      return sortOrder === 'asc' 
+        ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    } else if (sortBy === 'amount') {
+      return sortOrder === 'asc' ? a.amount - b.amount : b.amount - a.amount;
+    } else if (sortBy === 'priority') {
+      const priorityOrder = { 'urgent': 3, 'high': 2, 'normal': 1, 'low': 0 };
+      return sortOrder === 'asc' 
+        ? priorityOrder[a.priority] - priorityOrder[b.priority]
+        : priorityOrder[b.priority] - priorityOrder[a.priority];
     }
-  };
+    return 0;
+  });
   
-  const handlePriorityChange = (requestId: string, priority: 'low' | 'normal' | 'high' | 'urgent') => {
-    updateSubsidyRequestPriority.mutate({ requestId, priority });
-  };
-  
-  const handleMarkUnderReview = (requestId: string) => {
-    updateSubsidyRequestStatus.mutate({ 
-      requestId, 
-      status: 'under_review',
-      comments: 'Demande mise en cours d\'examen'
-    });
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR');
   };
   
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    switch(status) {
       case 'pending':
-        return <Badge className="bg-amber-100 text-amber-800">En attente</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800">En attente</Badge>;
       case 'under_review':
         return <Badge className="bg-blue-100 text-blue-800">En cours d'examen</Badge>;
       case 'approved':
@@ -124,175 +72,119 @@ export function SubsidyRequestsList({
       case 'rejected':
         return <Badge className="bg-red-100 text-red-800">Rejetée</Badge>;
       default:
-        return <Badge>Inconnu</Badge>;
+        return <Badge>{status}</Badge>;
     }
   };
   
   const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'urgent':
-        return <Badge className="bg-red-100 text-red-800">Urgente</Badge>;
-      case 'high':
-        return <Badge className="bg-amber-100 text-amber-800">Haute</Badge>;
-      case 'normal':
-        return <Badge className="bg-blue-100 text-blue-800">Normale</Badge>;
+    switch(priority) {
       case 'low':
-        return <Badge className="bg-green-100 text-green-800">Basse</Badge>;
+        return <Badge variant="outline" className="bg-gray-100">Basse</Badge>;
+      case 'normal':
+        return <Badge variant="outline" className="bg-blue-100">Normale</Badge>;
+      case 'high':
+        return <Badge variant="outline" className="bg-orange-100">Haute</Badge>;
+      case 'urgent':
+        return <Badge variant="outline" className="bg-red-100">Urgente</Badge>;
       default:
-        return <Badge>Inconnue</Badge>;
+        return <Badge variant="outline">{priority}</Badge>;
     }
   };
   
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="flex flex-col items-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[#0D6A51]"></div>
-          <p className="mt-2 text-sm text-gray-500">Chargement des demandes...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  if (requests.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 text-center">
-        <Calendar className="h-12 w-12 text-gray-300 mb-2" />
-        <h3 className="text-lg font-medium">Aucune demande trouvée</h3>
-        <p className="text-sm text-gray-500 mt-1">
-          {isAlertView 
-            ? "Aucune demande n'a déclenché d'alerte de seuil"
-            : "Il n'y a pas de demandes correspondant aux critères"}
-        </p>
-      </div>
-    );
-  }
-  
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-2 justify-between">
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+      <div className="flex justify-between">
+        <div className="relative w-64">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            type="text"
             placeholder="Rechercher..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-8"
-            value={filterValue}
-            onChange={(e) => setFilterValue(e.target.value)}
           />
         </div>
         
-        <Select
-          value={priorityFilter}
-          onValueChange={setPriorityFilter}
-        >
-          <SelectTrigger className="w-full sm:w-40">
-            <SelectValue placeholder="Priorité" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes les priorités</SelectItem>
-            <SelectItem value="urgent">Urgente</SelectItem>
-            <SelectItem value="high">Haute</SelectItem>
-            <SelectItem value="normal">Normale</SelectItem>
-            <SelectItem value="low">Basse</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Trier par:</span>
+          <Button
+            variant={sortBy === 'date' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleSort('date')}
+          >
+            Date {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </Button>
+          <Button
+            variant={sortBy === 'amount' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleSort('amount')}
+          >
+            Montant {sortBy === 'amount' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </Button>
+          <Button
+            variant={sortBy === 'priority' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleSort('priority')}
+          >
+            Priorité {sortBy === 'priority' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </Button>
+        </div>
       </div>
       
-      <div className="rounded-md border">
-        <Table>
+      {isLoading ? (
+        <div className="py-8 text-center">
+          <div className="h-8 w-8 mx-auto animate-spin rounded-full border-b-2 border-[#0D6A51]"></div>
+          <p className="mt-2 text-muted-foreground">Chargement des demandes...</p>
+        </div>
+      ) : sortedRequests.length === 0 ? (
+        <div className="py-8 text-center border rounded-md bg-muted/10">
+          <p className="text-muted-foreground">Aucune demande de subvention trouvée</p>
+        </div>
+      ) : (
+        <Table className="border rounded-md">
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[100px]">Date</TableHead>
               <TableHead>SFD</TableHead>
               <TableHead>Objet</TableHead>
-              <TableHead>
-                <div className="flex items-center cursor-pointer" onClick={() => toggleSort('amount')}>
-                  Montant
-                  <ArrowUpDown className="ml-1 h-4 w-4" />
-                </div>
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center cursor-pointer" onClick={() => toggleSort('priority')}>
-                  Priorité
-                  <ArrowUpDown className="ml-1 h-4 w-4" />
-                </div>
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center cursor-pointer" onClick={() => toggleSort('date')}>
-                  Date
-                  <ArrowUpDown className="ml-1 h-4 w-4" />
-                </div>
-              </TableHead>
+              <TableHead>Montant</TableHead>
+              <TableHead>Région</TableHead>
+              <TableHead>Priorité</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAndSortedRequests.map((request) => (
-              <TableRow key={request.id} className={request.alert_triggered ? 'bg-red-50' : ''}>
+            {sortedRequests.map((request) => (
+              <TableRow key={request.id} className={request.alert_triggered && isAlertView ? 'bg-red-50' : ''}>
+                <TableCell className="font-medium">{formatDate(request.created_at)}</TableCell>
+                <TableCell>{request.sfd_name}</TableCell>
+                <TableCell className="max-w-[200px] truncate">{request.purpose}</TableCell>
+                <TableCell>{request.amount.toLocaleString()} FCFA</TableCell>
+                <TableCell>{request.region || '—'}</TableCell>
+                <TableCell>{getPriorityBadge(request.priority)}</TableCell>
                 <TableCell>
-                  <div className="flex items-center">
-                    <div className="h-8 w-8 rounded-full bg-[#0D6A51]/10 flex items-center justify-center text-[#0D6A51] mr-2">
-                      <Building className="h-4 w-4" />
-                    </div>
-                    {request.sfd_name}
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(request.status)}
                     {request.alert_triggered && (
-                      <AlertTriangle className="ml-2 h-4 w-4 text-amber-500" />
+                      <AlertTriangle className="h-4 w-4 text-amber-500" />
                     )}
                   </div>
                 </TableCell>
-                <TableCell>{request.purpose}</TableCell>
-                <TableCell className="font-medium">{request.amount.toLocaleString()} FCFA</TableCell>
-                <TableCell>
-                  {request.status === 'pending' ? (
-                    <Select
-                      defaultValue={request.priority}
-                      onValueChange={(value) => handlePriorityChange(
-                        request.id, 
-                        value as 'low' | 'normal' | 'high' | 'urgent'
-                      )}
-                    >
-                      <SelectTrigger className="w-28 h-8">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="urgent">Urgente</SelectItem>
-                        <SelectItem value="high">Haute</SelectItem>
-                        <SelectItem value="normal">Normale</SelectItem>
-                        <SelectItem value="low">Basse</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    getPriorityBadge(request.priority)
-                  )}
-                </TableCell>
-                <TableCell>{new Date(request.created_at).toLocaleDateString()}</TableCell>
-                <TableCell>{getStatusBadge(request.status)}</TableCell>
                 <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    {request.status === 'pending' && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleMarkUnderReview(request.id)}
-                      >
-                        Examiner
-                      </Button>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => onSelectRequest(request.id)}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => onSelectRequest(request.id)}
+                  >
+                    <FileText className="h-4 w-4 mr-1" />
+                    Détails
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-      </div>
+      )}
     </div>
   );
 }

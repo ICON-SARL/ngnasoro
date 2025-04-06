@@ -1,104 +1,102 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle,
-  CardFooter 
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  ChevronLeft, 
-  Building, 
-  User, 
-  CalendarClock, 
-  ClipboardList,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Clock
-} from 'lucide-react';
-import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
-import { SubsidyRequest, SubsidyRequestActivity } from '@/types/subsidyRequests';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeft, FileText, Clock, CheckCircle, XCircle, AlertTriangle, MessageCircle } from 'lucide-react';
 
-interface SubsidyRequestDetailProps {
+export interface SubsidyRequestDetailProps {
   requestId: string;
   onBack: () => void;
 }
 
 export function SubsidyRequestDetail({ requestId, onBack }: SubsidyRequestDetailProps) {
-  const [request, setRequest] = useState<SubsidyRequest | null>(null);
-  const [activities, setActivities] = useState<SubsidyRequestActivity[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [decisionComments, setDecisionComments] = useState('');
+  const [request, setRequest] = useState<any>(null);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [comments, setComments] = useState('');
+  const [tab, setTab] = useState('details');
+  const [priorityEdit, setPriorityEdit] = useState<string | null>(null);
   
   const { 
-    getSubsidyRequestById, 
+    getSubsidyRequestById,
     getSubsidyRequestActivities,
-    updateSubsidyRequestStatus
+    updateSubsidyRequestStatus,
+    updateSubsidyRequestPriority
   } = useSubsidyRequests();
   
   useEffect(() => {
-    async function fetchData() {
+    const fetchRequestDetails = async () => {
+      setLoading(true);
       try {
-        setIsLoading(true);
         const requestData = await getSubsidyRequestById(requestId);
         const activitiesData = await getSubsidyRequestActivities(requestId);
         
-        if (requestData) {
-          setRequest(requestData);
-          setDecisionComments(requestData.decision_comments || '');
-        }
-        
-        if (activitiesData) {
-          setActivities(activitiesData);
-        }
+        setRequest(requestData);
+        setActivities(activitiesData);
       } catch (error) {
         console.error('Error fetching request details:', error);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
-    }
+    };
     
-    fetchData();
+    if (requestId) {
+      fetchRequestDetails();
+    }
   }, [requestId, getSubsidyRequestById, getSubsidyRequestActivities]);
   
-  const handleStatusChange = (status: 'pending' | 'under_review' | 'approved' | 'rejected') => {
+  const handleStatusChange = async (newStatus: 'pending' | 'under_review' | 'approved' | 'rejected') => {
     if (!request) return;
     
-    updateSubsidyRequestStatus.mutate({
+    await updateSubsidyRequestStatus.mutateAsync({
       requestId: request.id,
-      status,
-      comments: decisionComments
-    }, {
-      onSuccess: () => {
-        // Refresh the request data
-        getSubsidyRequestById(requestId).then(data => {
-          if (data) {
-            setRequest(data);
-          }
-        });
-        
-        // Refresh activities
-        getSubsidyRequestActivities(requestId).then(data => {
-          if (data) {
-            setActivities(data);
-          }
-        });
-      }
+      status: newStatus,
+      comments: comments
+    });
+    
+    // Refresh the request data
+    const updatedRequest = await getSubsidyRequestById(requestId);
+    const updatedActivities = await getSubsidyRequestActivities(requestId);
+    setRequest(updatedRequest);
+    setActivities(updatedActivities);
+    setComments('');
+  };
+  
+  const handlePriorityUpdate = async () => {
+    if (!request || !priorityEdit) return;
+    
+    await updateSubsidyRequestPriority.mutateAsync({
+      requestId: request.id,
+      priority: priorityEdit as any
+    });
+    
+    // Refresh the request data
+    const updatedRequest = await getSubsidyRequestById(requestId);
+    setRequest(updatedRequest);
+    setPriorityEdit(null);
+  };
+  
+  // Format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
   
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge className="bg-amber-100 text-amber-800">En attente</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800">En attente</Badge>;
       case 'under_review':
         return <Badge className="bg-blue-100 text-blue-800">En cours d'examen</Badge>;
       case 'approved':
@@ -106,268 +104,346 @@ export function SubsidyRequestDetail({ requestId, onBack }: SubsidyRequestDetail
       case 'rejected':
         return <Badge className="bg-red-100 text-red-800">Rejetée</Badge>;
       default:
-        return <Badge>Inconnu</Badge>;
+        return <Badge>{status}</Badge>;
     }
   };
   
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case 'urgent':
-        return <Badge className="bg-red-100 text-red-800">Urgente</Badge>;
-      case 'high':
-        return <Badge className="bg-amber-100 text-amber-800">Haute</Badge>;
-      case 'normal':
-        return <Badge className="bg-blue-100 text-blue-800">Normale</Badge>;
       case 'low':
-        return <Badge className="bg-green-100 text-green-800">Basse</Badge>;
+        return <Badge variant="outline" className="bg-gray-100">Basse</Badge>;
+      case 'normal':
+        return <Badge variant="outline" className="bg-blue-100">Normale</Badge>;
+      case 'high':
+        return <Badge variant="outline" className="bg-orange-100">Haute</Badge>;
+      case 'urgent':
+        return <Badge variant="outline" className="bg-red-100">Urgente</Badge>;
       default:
-        return <Badge>Inconnue</Badge>;
+        return <Badge variant="outline">{priority}</Badge>;
     }
   };
   
-  const getActivityIcon = (activityType: string) => {
-    switch (activityType) {
+  const getActivityIcon = (type: string) => {
+    switch (type) {
       case 'request_created':
-        return <ClipboardList className="h-4 w-4 text-blue-500" />;
-      case 'request_under_review':
-        return <Clock className="h-4 w-4 text-amber-500" />;
-      case 'request_approved':
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      case 'request_rejected':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <FileText className="h-5 w-5 text-blue-500" />;
       case 'threshold_alert':
-        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+        return <AlertTriangle className="h-5 w-5 text-amber-500" />;
+      case 'request_under_review':
+        return <Clock className="h-5 w-5 text-blue-500" />;
+      case 'request_approved':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'request_rejected':
+        return <XCircle className="h-5 w-5 text-red-500" />;
       case 'priority_updated':
-        return <CalendarClock className="h-4 w-4 text-purple-500" />;
+        return <AlertTriangle className="h-5 w-5 text-purple-500" />;
       default:
-        return <ClipboardList className="h-4 w-4 text-gray-500" />;
+        return <MessageCircle className="h-5 w-5 text-gray-500" />;
     }
   };
   
-  if (isLoading || !request) {
+  if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center">
-            <Button variant="ghost" size="sm" onClick={onBack} className="mr-2">
-              <ChevronLeft className="h-4 w-4" />
+      <div className="space-y-4">
+        <div className="flex items-center">
+          <Button variant="ghost" size="sm" onClick={onBack} className="mr-4">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Retour
+          </Button>
+          <Skeleton className="h-8 w-40" />
+        </div>
+        
+        <Skeleton className="h-[400px] w-full" />
+      </div>
+    );
+  }
+  
+  if (!request) {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Retour
+        </Button>
+        
+        <Card>
+          <CardContent className="py-10 text-center">
+            <p>Demande non trouvée ou erreur lors du chargement</p>
+            <Button variant="outline" onClick={onBack} className="mt-4">
+              Retour à la liste
             </Button>
-            <CardTitle>Chargement des détails...</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center p-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[#0D6A51]"></div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
   
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center">
-          <Button variant="ghost" size="sm" onClick={onBack} className="mr-2">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              Demande de subvention - {request.sfd_name}
-              {request.alert_triggered && (
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
-              )}
-            </CardTitle>
-            <CardDescription>
-              Détails et historique de la demande de subvention
-            </CardDescription>
-          </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Retour
+        </Button>
+        
+        <div className="flex items-center gap-2">
+          {getStatusBadge(request.status)}
+          {request.alert_triggered && (
+            <Badge className="bg-red-100 text-red-800">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Alerte
+            </Badge>
+          )}
         </div>
-      </CardHeader>
+      </div>
       
-      <CardContent>
-        <Tabs defaultValue="details">
-          <TabsList className="mb-4">
-            <TabsTrigger value="details">Détails</TabsTrigger>
-            <TabsTrigger value="history">Historique</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="details">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Institution SFD</h3>
-                  <div className="flex items-center mt-1">
-                    <div className="h-8 w-8 rounded-full bg-[#0D6A51]/10 flex items-center justify-center text-[#0D6A51] mr-2">
-                      <Building className="h-4 w-4" />
-                    </div>
-                    <span className="font-medium">{request.sfd_name}</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Montant demandé</h3>
-                  <p className="text-2xl font-bold mt-1">{request.amount.toLocaleString()} FCFA</p>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Objet de la demande</h3>
-                  <p className="mt-1">{request.purpose}</p>
-                </div>
-                
-                {request.justification && (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Justification</h3>
-                    <p className="mt-1 text-sm">{request.justification}</p>
-                  </div>
-                )}
-                
-                {request.expected_impact && (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Impact attendu</h3>
-                    <p className="mt-1 text-sm">{request.expected_impact}</p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Statut</h3>
-                    <div className="mt-1">{getStatusBadge(request.status)}</div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Priorité</h3>
-                    <div className="mt-1">{getPriorityBadge(request.priority)}</div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Date de demande</h3>
-                    <p className="mt-1">{new Date(request.created_at).toLocaleDateString()}</p>
-                  </div>
-                  
-                  {request.region && (
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Région</h3>
-                      <p className="mt-1">{request.region}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Demande de Subvention</CardTitle>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Priorité:</span>
+                  {priorityEdit === null ? (
+                    <>
+                      {getPriorityBadge(request.priority)}
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setPriorityEdit(request.priority)}
+                      >
+                        Modifier
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Select 
+                        value={priorityEdit} 
+                        onValueChange={setPriorityEdit}
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Priorité" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Basse</SelectItem>
+                          <SelectItem value="normal">Normale</SelectItem>
+                          <SelectItem value="high">Haute</SelectItem>
+                          <SelectItem value="urgent">Urgente</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        size="sm" 
+                        onClick={handlePriorityUpdate}
+                      >
+                        Sauvegarder
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setPriorityEdit(null)}
+                      >
+                        Annuler
+                      </Button>
                     </div>
                   )}
                 </div>
-                
-                <Separator />
-                
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Commentaires de décision</h3>
-                  <Textarea
-                    placeholder="Entrez des commentaires sur la décision..."
-                    className="mt-2"
-                    value={decisionComments}
-                    onChange={(e) => setDecisionComments(e.target.value)}
-                    disabled={request.status === 'approved' || request.status === 'rejected'}
-                  />
-                </div>
-                
-                {(request.status === 'pending' || request.status === 'under_review') && (
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      className="flex-1"
-                      variant="outline"
-                      onClick={() => handleStatusChange('rejected')}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Rejeter
-                    </Button>
-                    
-                    <Button
-                      className="flex-1"
-                      onClick={() => handleStatusChange('approved')}
-                    >
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Approuver
-                    </Button>
-                  </div>
-                )}
-                
-                {request.alert_triggered && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-4">
-                    <div className="flex items-start">
-                      <AlertTriangle className="h-5 w-5 text-amber-500 mr-2 mt-0.5" />
-                      <div>
-                        <h4 className="font-medium text-amber-800">Alerte de seuil</h4>
-                        <p className="text-sm text-amber-700">
-                          Cette demande a déclenché une alerte car son montant dépasse un seuil prédéfini.
-                          Veuillez examiner attentivement avant d'approuver.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="history">
-            <div className="space-y-4">
-              <h3 className="font-medium">Historique des activités</h3>
-              
-              {activities.length === 0 ? (
-                <p className="text-sm text-gray-500">Aucune activité enregistrée</p>
-              ) : (
-                <div className="space-y-4">
-                  {activities.map((activity) => (
-                    <div 
-                      key={activity.id} 
-                      className="flex items-start border-l-2 border-gray-200 pl-4 pb-4"
-                    >
-                      <div className="flex-shrink-0 mr-3">
-                        {getActivityIcon(activity.activity_type)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between">
-                          <p className="font-medium">{activity.description}</p>
-                          <span className="text-xs text-gray-500">
-                            {new Date(activity.performed_at).toLocaleString()}
-                          </span>
-                        </div>
-                        
-                        {activity.details && (
-                          <div className="text-sm text-gray-600 mt-1">
-                            {activity.activity_type === 'threshold_alert' ? (
-                              <p>
-                                Seuil d'alerte: {activity.details.threshold_amount?.toLocaleString()} FCFA
-                              </p>
-                            ) : activity.details.comments ? (
-                              <p>Commentaire: {activity.details.comments}</p>
-                            ) : null}
-                          </div>
-                        )}
+            </CardHeader>
+            <CardContent>
+              <Tabs value={tab} onValueChange={setTab}>
+                <TabsList className="mb-4">
+                  <TabsTrigger value="details">Détails</TabsTrigger>
+                  <TabsTrigger value="activities">Historique</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="details" className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">SFD</h3>
+                      <p className="font-medium">{request.sfd_name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">Région</h3>
+                      <p>{request.region || 'Non spécifié'}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">Date de demande</h3>
+                      <p>{formatDate(request.created_at)}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">Montant</h3>
+                      <p className="font-medium">{request.amount.toLocaleString()} FCFA</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Objet</h3>
+                    <p className="font-medium">{request.purpose}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Justification</h3>
+                    <p className="bg-gray-50 p-3 rounded-md">{request.justification || 'Aucune justification fournie'}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Impact attendu</h3>
+                    <p className="bg-gray-50 p-3 rounded-md">{request.expected_impact || 'Non spécifié'}</p>
+                  </div>
+                  
+                  {request.supporting_documents && request.supporting_documents.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-2">Documents justificatifs</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {request.supporting_documents.map((doc: string, idx: number) => (
+                          <Button key={idx} variant="outline" size="sm">
+                            <FileText className="h-4 w-4 mr-1" />
+                            Document {idx + 1}
+                          </Button>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-      
-      <CardFooter className="flex justify-between border-t pt-5">
-        <Button variant="outline" onClick={onBack}>
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Retour à la liste
-        </Button>
+                  )}
+                  
+                  {/* Decision section */}
+                  {request.status === 'approved' || request.status === 'rejected' ? (
+                    <div className="border-t pt-4 mt-4">
+                      <h3 className="font-medium mb-2">
+                        {request.status === 'approved' ? 'Détails de l\'approbation' : 'Motif de rejet'}
+                      </h3>
+                      <p className="bg-gray-50 p-3 rounded-md">
+                        {request.decision_comments || 'Aucun commentaire fourni'}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {request.reviewed_at && `Décision prise le ${formatDate(request.reviewed_at)}`}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="border-t pt-4 mt-4">
+                      <h3 className="font-medium mb-2">Actions</h3>
+                      <div className="space-y-4">
+                        <Textarea 
+                          placeholder="Commentaires sur la décision..." 
+                          value={comments}
+                          onChange={(e) => setComments(e.target.value)}
+                        />
+                        
+                        <div className="flex gap-2">
+                          {request.status === 'pending' && (
+                            <Button 
+                              variant="outline"
+                              onClick={() => handleStatusChange('under_review')}
+                            >
+                              <Clock className="h-4 w-4 mr-1" />
+                              Marquer en cours d'examen
+                            </Button>
+                          )}
+                          
+                          {request.status !== 'approved' && (
+                            <Button 
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => handleStatusChange('approved')}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Approuver
+                            </Button>
+                          )}
+                          
+                          {request.status !== 'rejected' && (
+                            <Button 
+                              variant="destructive"
+                              onClick={() => handleStatusChange('rejected')}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Rejeter
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="activities">
+                  <div className="space-y-4">
+                    {activities.length === 0 ? (
+                      <p className="text-center py-4 text-muted-foreground">Aucune activité enregistrée</p>
+                    ) : (
+                      activities.map((activity) => (
+                        <div key={activity.id} className="flex gap-3 border-b pb-3">
+                          <div className="mt-1">
+                            {getActivityIcon(activity.activity_type)}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">{activity.description}</p>
+                            {activity.details && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {typeof activity.details === 'object' 
+                                  ? JSON.stringify(activity.details) 
+                                  : activity.details}
+                              </p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatDate(activity.performed_at)}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
         
-        {request.status === 'pending' && (
-          <Button 
-            variant="secondary"
-            onClick={() => handleStatusChange('under_review')}
-          >
-            <Clock className="h-4 w-4 mr-2" />
-            Marquer en cours d'examen
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Informations SFD</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Nom SFD</h3>
+                <p className="font-medium">{request.sfd_name}</p>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Région</h3>
+                <p>{request.region || 'Non spécifié'}</p>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Subventions précédentes</h3>
+                <p>Données non disponibles</p>
+                {/* This would be populated with real data in a production environment */}
+              </div>
+              
+              <div className="pt-4 border-t">
+                <h3 className="text-sm font-medium mb-2">Historique des demandes</h3>
+                <div className="space-y-2">
+                  <div className="text-sm">
+                    <span className="font-medium">Approuvées:</span> Données non disponibles
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium">Rejetées:</span> Données non disponibles
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium">En attente:</span> Données non disponibles
+                  </div>
+                </div>
+                {/* This would be populated with real data in a production environment */}
+                
+                <Button variant="outline" size="sm" className="w-full mt-4">
+                  <FileText className="h-4 w-4 mr-1" />
+                  Voir historique complet
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
   );
 }
