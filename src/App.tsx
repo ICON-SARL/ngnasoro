@@ -14,7 +14,6 @@ import PremiumDashboardPage from '@/pages/PremiumDashboard';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import AgencyDashboard from '@/pages/AgencyDashboard';
 import { AdminManagement } from '@/components/admin/AdminManagement';
-import { UserManagement } from '@/components/UserManagement';
 import CreateSfdAdminPage from './pages/CreateSfdAdminPage';
 import { useAuth } from '@/hooks/auth';
 
