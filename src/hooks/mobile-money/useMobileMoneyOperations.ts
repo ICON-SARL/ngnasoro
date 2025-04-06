@@ -8,7 +8,7 @@ export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
   const [isProcessing, setIsProcessing] = useState(false);
   const { user } = useAuth();
   
-  // Define mobile money providers
+  // Define mobile money providers specific to Mali
   const mobileMoneyProviders = [
     {
       id: 'orange',
@@ -17,16 +17,16 @@ export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
       icon: 'OM'
     },
     {
-      id: 'mtn',
-      name: 'MTN Mobile Money',
-      code: 'mtn',
-      icon: 'MTN'
+      id: 'moov',
+      name: 'Moov Money',
+      code: 'moov',
+      icon: 'MV'
     },
     {
-      id: 'wave',
-      name: 'Wave',
-      code: 'wave',
-      icon: 'WV'
+      id: 'malitel',
+      name: 'Malitel Money',
+      code: 'malitel',
+      icon: 'MM'
     }
   ];
   
