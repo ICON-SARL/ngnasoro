@@ -57,31 +57,25 @@ export function usePermissions() {
     };
 
     fetchUserRoles();
+    
+    // Setup listener for auth changes to refresh roles
+    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+      if (user) fetchUserRoles();
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+    
   }, [user]);
-
-  const hasPermission = (permission: string): boolean => {
-    return userPermissions.includes(permission);
-  };
-
-  const hasRole = (role: UserRole): boolean => {
-    return userRoles.includes(role);
-  };
-
-  const isSuperAdmin = (): boolean => {
-    return hasRole(UserRole.SUPER_ADMIN);
-  };
-
-  const isSfdAdmin = (): boolean => {
-    return hasRole(UserRole.SFD_ADMIN);
-  };
 
   return {
     userRoles,
     userPermissions,
-    hasPermission,
-    hasRole,
-    isSuperAdmin,
-    isSfdAdmin,
+    hasRole: (role: UserRole) => userRoles.includes(role),
+    hasPermission: (permission: string) => userPermissions.includes(permission),
+    isAdmin: () => userRoles.includes(UserRole.SUPER_ADMIN) || userRoles.includes(UserRole.ADMIN),
+    isSfdAdmin: () => userRoles.includes(UserRole.SFD_ADMIN),
     loading
   };
 }

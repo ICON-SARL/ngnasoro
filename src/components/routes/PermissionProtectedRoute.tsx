@@ -44,7 +44,7 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     });
     
     // Check for super admin access (admin has access to everything)
-    if (userRole === 'admin' || userRole === UserRole.SUPER_ADMIN) {
+    if (userRole === 'admin' || userRole === UserRole.SUPER_ADMIN || userRole === 'super_admin') {
       console.log('Super admin detected, granting access');
       setHasAccess(true);
       return;
