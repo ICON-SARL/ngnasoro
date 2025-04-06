@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
@@ -40,7 +40,7 @@ function App() {
           <Toaster />
           <Routes>
             <Route path="/" element={<div>HomePage</div>} />
-            <Route path="/auth" element={<GuestRoute><ClientAuthUI /></GuestRoute>} />
+            <Route path="/auth" element={<GuestRoute><AuthUI /></GuestRoute>} />
             <Route path="/admin/auth" element={<GuestRoute><AdminAuthUI /></GuestRoute>} />
             <Route path="/sfd/auth" element={<GuestRoute><SfdAuthUI /></GuestRoute>} />
             <Route path="/profile" element={<AuthRoute><div>ProfilePage</div></AuthRoute>} />

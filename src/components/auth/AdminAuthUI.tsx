@@ -20,7 +20,7 @@ const AdminAuthUI = () => {
       setAuthSuccess(true);
       
       const timer = setTimeout(() => {
-        navigate('/super-admin-dashboard');
+        navigate('/admin-dashboard');
       }, 2000);
       
       return () => clearTimeout(timer);
@@ -30,7 +30,7 @@ const AdminAuthUI = () => {
   useEffect(() => {
     if (user && !loading) {
       if (user.app_metadata?.role === 'admin') {
-        navigate('/super-admin-dashboard');
+        navigate('/admin-dashboard');
       } else {
         // Rediriger les utilisateurs non-admin vers leur page appropriée
         if (user.app_metadata?.role === 'sfd_admin') {

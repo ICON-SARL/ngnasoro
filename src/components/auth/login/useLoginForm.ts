@@ -83,9 +83,11 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       if (result && result.error) {
         throw result.error;
       }
+
+      // Log successful authentication
+      console.log("Connexion réussie:", { email, adminMode, isSfdAdmin });
       
       // Log successful authentication attempt
-      // Use 'anonymous' instead of 'system'
       try {
         if (user?.id) {
           await logAuditEvent({
@@ -106,7 +108,14 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
         description: "Vous êtes maintenant connecté.",
       });
       
-      // No need to navigate here, the AuthProvider will handle that based on user role
+      // Redirect based on user role
+      if (adminMode) {
+        navigate('/admin-dashboard');
+      } else if (isSfdAdmin) {
+        navigate('/sfd-dashboard');
+      } else {
+        navigate('/');
+      }
       
     } catch (error: any) {
       console.error("Login error:", error);
@@ -114,7 +123,7 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       // Log failed authentication attempt
       try {
         await logAuditEvent({
-          user_id: user?.id || 'anonymous', // Use 'anonymous' instead of 'system'
+          user_id: user?.id || 'anonymous', 
           action: isSfdAdmin ? "sfd_admin_login_failed" : adminMode ? "admin_login_failed" : "password_login_attempt",
           category: AuditLogCategory.AUTHENTICATION,
           severity: AuditLogSeverity.WARNING,
