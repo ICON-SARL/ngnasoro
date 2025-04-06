@@ -35,25 +35,34 @@ const MobileFlow = () => {
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        navigate('/auth');
+        console.log('No user found in MobileFlow, redirecting to auth');
+        navigate('/auth', { replace: true });
         return;
       }
       
       const userRole = user.app_metadata?.role;
+      console.log('MobileFlow user check:', { 
+        email: user.email, 
+        role: userRole,
+        pathname: location.pathname
+      });
       
       if (userRole === 'admin') {
         // Redirect admin to admin dashboard
+        console.log('Admin detected, redirecting to super-admin-dashboard');
         navigate('/super-admin-dashboard', { replace: true });
         return;
       } else if (userRole === 'sfd_admin') {
         // Redirect SFD admin to agency dashboard
+        console.log('SFD Admin detected, redirecting to agency-dashboard');
         navigate('/agency-dashboard', { replace: true });
         return;
       }
       
       // Regular users continue to mobile flow
+      console.log('Regular user detected, staying in mobile flow');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, location.pathname]);
 
   // Save welcome screen status
   useEffect(() => {
@@ -107,27 +116,26 @@ const MobileFlow = () => {
   const handleLogout = async () => {
     try {
       await signOut();
-      navigate('/auth');
+      navigate('/auth', { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
-  // Simplified redirect logic to prevent loops
-  useEffect(() => {
-    const path = location.pathname;
-    
-    if (path === '/mobile-flow' || path === '/mobile-flow/') {
-      // Direct to main dashboard if on root mobile path
-      navigate('/mobile-flow/main', { replace: true });
-    }
-  }, [location.pathname, navigate]);
-
-  const isWelcomePage = location.pathname === '/mobile-flow/welcome';
-
-  // Show loading only when loading user account data
+  // If still loading, show a spinner
   if (loading || accountLoading) {
-    return <div className="p-8 text-center">Chargement...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#0D6A51]"></div>
+        <span className="ml-3">Chargement...</span>
+      </div>
+    );
+  }
+
+  // If no user is logged in, return null and let the redirect happen
+  if (!user) {
+    console.log('No user in MobileFlow render, returning null');
+    return null;
   }
 
   return (
@@ -149,7 +157,7 @@ const MobileFlow = () => {
         handlePaymentSubmit={handlePaymentSubmit}
       />
       
-      {!isWelcomePage && <div className="sm:hidden"><MobileNavigation onAction={onAction} /></div>}
+      {location.pathname !== '/mobile-flow/welcome' && <div className="sm:hidden"><MobileNavigation onAction={onAction} /></div>}
     </div>
   );
 };

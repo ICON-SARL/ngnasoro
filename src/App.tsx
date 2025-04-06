@@ -33,13 +33,30 @@ function App() {
     };
     
     checkBiometrics();
-  }, []);
+    
+    // Log auth state on app startup
+    console.log('App initialized, auth state:', { 
+      isAuthenticated: !!user,
+      userRole: user?.app_metadata?.role,
+      loading
+    });
+  }, [user, loading]);
+
+  // Render loading state if auth is still being checked
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#0D6A51]"></div>
+        <span className="ml-3">Chargement de l'application...</span>
+      </div>
+    );
+  }
 
   return (
     <>
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<Navigate to="/auth" />} />
+        <Route path="/" element={<Navigate to="/auth" replace />} />
         <Route path="/auth" element={<AuthUI />} />
         <Route path="/admin/auth" element={<AdminAuthUI />} />
         <Route path="/sfd/auth" element={<SfdAuthUI />} />

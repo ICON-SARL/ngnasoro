@@ -24,8 +24,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <div className="flex items-center justify-center h-screen">Chargement...</div>;
   }
 
-  // If not authenticated at all, redirect to the appropriate login page
+  // If not authenticated at all, redirect to the login page
   if (!user) {
+    // Redirect to appropriate auth page based on the required role
     if (requireAdmin) {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
     } else if (requireSfdAdmin) {
@@ -37,12 +38,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   
   // If user is authenticated but doesn't have the required role
   const userRole = user.app_metadata?.role;
+  console.log('ProtectedRoute check:', { 
+    userRole, 
+    requireAdmin, 
+    requireSfdAdmin, 
+    path: location.pathname 
+  });
   
   if (requireAdmin && userRole !== 'admin') {
+    console.log('Access denied: Not an admin');
     return <Navigate to="/access-denied" state={{ from: location }} replace />;
   }
   
   if (requireSfdAdmin && userRole !== 'sfd_admin') {
+    console.log('Access denied: Not an SFD admin');
     return <Navigate to="/access-denied" state={{ from: location }} replace />;
   }
 
