@@ -1,47 +1,27 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
+import { useLoginValidation } from './useLoginValidation';
+import { useCooldown } from './useCooldown';
+import { logSuccessfulAuthentication, logFailedAuthentication } from '../utils/auditLogging';
+import { LoginFormProps, LoginFormHookReturn } from '../types/loginTypes';
 
-export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = false) => {
+export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = false): LoginFormHookReturn => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [authMode, setAuthMode] = useState<'simple' | 'advanced'>('simple');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [cooldownActive, setCooldownActive] = useState(false);
-  const [cooldownTime, setCooldownTime] = useState(0);
   const [emailSent, setEmailSent] = useState(false);
   
   const { signIn, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // Handle cooldown timer
-  useEffect(() => {
-    if (cooldownTime <= 0) {
-      setCooldownActive(false);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setCooldownTime(prev => prev - 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [cooldownTime]);
-
-  const extractCooldownTime = (errorMessage: string): number => {
-    const match = errorMessage.match(/after (\d+) seconds/);
-    if (match && match[1]) {
-      return parseInt(match[1], 10);
-    }
-    return 60; // Default cooldown
-  };
+  const { errorMessage, setErrorMessage, validateEmail, validatePassword, clearError } = useLoginValidation();
+  const { cooldownActive, cooldownTime, activateCooldown } = useCooldown();
 
   const toggleShowPassword = () => {
     setShowPassword(prev => !prev);
@@ -51,7 +31,7 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
     e.preventDefault();
     
     // Clear previous errors
-    setErrorMessage(null);
+    clearError();
     setEmailSent(false);
     
     // Don't allow login during cooldown
@@ -61,16 +41,10 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
     }
 
     // Email validation
-    if (!email || !email.includes('@')) {
-      setErrorMessage('Veuillez entrer une adresse e-mail valide.');
-      return;
-    }
+    if (!validateEmail(email)) return;
 
     // Password validation
-    if (!password || password.length < 6) {
-      setErrorMessage('Veuillez entrer un mot de passe valide (minimum 6 caractères).');
-      return;
-    }
+    if (!validatePassword(password)) return;
     
     setIsLoading(true);
     
@@ -88,20 +62,7 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       console.log("Connexion réussie:", { email, adminMode, isSfdAdmin });
       
       // Log successful authentication attempt
-      try {
-        if (user?.id) {
-          await logAuditEvent({
-            user_id: user.id,
-            action: isSfdAdmin ? "sfd_admin_login_attempt" : adminMode ? "admin_login_attempt" : "password_login_attempt",
-            category: AuditLogCategory.AUTHENTICATION,
-            severity: AuditLogSeverity.INFO,
-            status: 'success',
-            details: { email, admin_mode: adminMode, sfd_admin: isSfdAdmin }
-          });
-        }
-      } catch (auditErr) {
-        console.warn('Failed to log audit event:', auditErr);
-      }
+      await logSuccessfulAuthentication(user?.id, email, adminMode, isSfdAdmin);
       
       toast({
         title: "Connexion réussie",
@@ -121,25 +82,11 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       console.error("Login error:", error);
       
       // Log failed authentication attempt
-      try {
-        await logAuditEvent({
-          user_id: user?.id || 'anonymous', 
-          action: isSfdAdmin ? "sfd_admin_login_failed" : adminMode ? "admin_login_failed" : "password_login_attempt",
-          category: AuditLogCategory.AUTHENTICATION,
-          severity: AuditLogSeverity.WARNING,
-          status: 'failure',
-          error_message: error.message,
-          details: { email, admin_mode: adminMode, sfd_admin: isSfdAdmin }
-        });
-      } catch (auditErr) {
-        console.warn('Failed to log audit event:', auditErr);
-      }
+      await logFailedAuthentication(user?.id, email, adminMode, isSfdAdmin, error.message);
       
       // Check for rate limiting errors
       if (error.message && error.message.includes('security purposes') && error.message.includes('seconds')) {
-        const waitTime = extractCooldownTime(error.message);
-        setCooldownTime(waitTime);
-        setCooldownActive(true);
+        const waitTime = activateCooldown(error.message);
         setErrorMessage(`Limite de tentatives atteinte. Veuillez attendre ${waitTime} secondes avant de réessayer.`);
       } else {
         setErrorMessage(error.message || "Une erreur s'est produite lors de la connexion.");
