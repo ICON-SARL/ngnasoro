@@ -3,7 +3,8 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Building, Users, CreditCard, ArrowUpDown, BarChart3, Activity } from 'lucide-react';
+import { ArrowUpDown, BarChart3, Activity } from 'lucide-react';
+import { SimplifiedMerefDashboard } from '../dashboard/SimplifiedMerefDashboard';
 
 export function IntegratedDashboard() {
   return (
@@ -21,39 +22,9 @@ export function IntegratedDashboard() {
           </TabsList>
           
           <TabsContent value="overview">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <Card className="border border-gray-100 shadow-sm">
-                <CardHeader className="py-2">
-                  <CardDescription>Agences SFD actives</CardDescription>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xl">24</CardTitle>
-                    <Building className="h-4 w-4 text-gray-400" />
-                  </div>
-                </CardHeader>
-              </Card>
-              
-              <Card className="border border-gray-100 shadow-sm">
-                <CardHeader className="py-2">
-                  <CardDescription>Utilisateurs actifs</CardDescription>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xl">1,248</CardTitle>
-                    <Users className="h-4 w-4 text-gray-400" />
-                  </div>
-                </CardHeader>
-              </Card>
-              
-              <Card className="border border-gray-100 shadow-sm">
-                <CardHeader className="py-2">
-                  <CardDescription>Crédits actifs</CardDescription>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xl">387</CardTitle>
-                    <CreditCard className="h-4 w-4 text-gray-400" />
-                  </div>
-                </CardHeader>
-              </Card>
-            </div>
+            <SimplifiedMerefDashboard />
             
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mt-6 mb-4">
               <h3 className="text-base font-medium text-gray-800">Performance du Réseau SFD</h3>
               <Button variant="outline" size="sm" className="text-xs border-gray-200 hover:bg-gray-50">
                 <ArrowUpDown className="h-3 w-3 mr-1" />

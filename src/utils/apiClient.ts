@@ -6,6 +6,7 @@ import { profileApi } from "./api/modules/profileApi";
 import { transactionApi } from "./api/modules/transactionApi";
 import { storageApi } from "./api/modules/storageApi";
 import { edgeFunctionApi } from "./api/modules/edgeFunctionApi";
+import { dashboardApi } from "./api/modules/dashboardApi";
 
 // Main API client facade that exposes all modules
 export const apiClient = {
@@ -18,6 +19,7 @@ export const apiClient = {
   getSfdClientStatus: sfdApi.getSfdClientStatus,
   getSfdBalance: sfdApi.getSfdBalance,
   getSfdLoans: sfdApi.getSfdLoans,
+  getMerefDashboardStats: sfdApi.getMerefDashboardStats,
   
   // User profile operations
   getUserProfile: profileApi.getUserProfile,
@@ -28,6 +30,10 @@ export const apiClient = {
   
   // Edge functions
   callEdgeFunction: edgeFunctionApi.callEdgeFunction,
+  
+  // Dashboard operations
+  getDashboardData: dashboardApi.getDashboardData,
+  refreshDashboardData: dashboardApi.refreshDashboardData,
   
   // Storage operations
   uploadFile: storageApi.uploadFile,
