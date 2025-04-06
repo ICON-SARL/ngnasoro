@@ -46,6 +46,27 @@ export const apiClient = {
     }
   },
   
+  async getSfdClientStatus(userId: string, sfdId?: string) {
+    try {
+      const query = supabase
+        .from('sfd_clients')
+        .select('id, sfd_id, status, created_at, validated_at')
+        .eq('user_id', userId);
+        
+      if (sfdId) {
+        query.eq('sfd_id', sfdId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      handleError(error);
+      return [];
+    }
+  },
+  
   async getSfdBalance(userId: string, sfdId: string): Promise<BalanceResult> {
     try {
       // First try to get balance from accounts table
@@ -53,6 +74,7 @@ export const apiClient = {
         .from('accounts')
         .select('balance, currency')
         .eq('user_id', userId)
+        .eq('sfd_id', sfdId)
         .maybeSingle();
         
       if (!accountError && accountData && accountData.balance !== null) {
@@ -62,18 +84,7 @@ export const apiClient = {
         };
       }
       
-      // Fall back to the user_sfds table to determine a consistent balance
-      const { data: userSfd, error: sfdError } = await supabase
-        .from('user_sfds')
-        .select('id, sfd_id')
-        .eq('user_id', userId)
-        .eq('sfd_id', sfdId)
-        .maybeSingle();
-        
-      if (sfdError) throw sfdError;
-      
-      // Generate a consistent balance based on SFD ID
-      // This ensures the same balance is shown across the app
+      // Fall back to a default balance with consistent generation
       const sfdIdSum = sfdId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
       const balance = 50000 + (sfdIdSum % 5) * 30000;
       

@@ -1,111 +1,177 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader } from '@/components/ui/loader';
 import { useAvailableSfds } from '@/hooks/sfd/useAvailableSfds';
-import { AvailableSfd } from './types/SfdAccountTypes';
-import { MapPin, Building } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 interface SfdSelectorProps {
   userId: string;
-  onRequestSent: () => void;
+  onRequestSent?: () => void;
 }
 
 const SfdSelector: React.FC<SfdSelectorProps> = ({ userId, onRequestSent }) => {
-  const [selectedSfdId, setSelectedSfdId] = useState<string>('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const { availableSfds, isLoading, requestSfdAccess } = useAvailableSfds(userId);
+  const [selectedSfd, setSelectedSfd] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState<string>('');
+  const [isSending, setIsSending] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmitRequest = async () => {
-    if (!selectedSfdId) {
-      return; // Select validation is handled by the UI
+  const {
+    availableSfds,
+    pendingRequests,
+    isLoading,
+    requestSfdAccess
+  } = useAvailableSfds(userId);
+  
+  const handleRequestAccess = async () => {
+    if (!selectedSfd) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner une SFD",
+        variant: "destructive"
+      });
+      return;
     }
-
-    const success = await requestSfdAccess(selectedSfdId, phoneNumber);
-    if (success) {
-      onRequestSent();
+    
+    setIsSending(true);
+    
+    try {
+      const success = await requestSfdAccess(selectedSfd, phoneNumber);
+      if (success && onRequestSent) {
+        onRequestSent();
+        setSelectedSfd(null);
+      }
+    } finally {
+      setIsSending(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center p-6">
-        <Loader size="lg" />
-      </div>
-    );
-  }
-
-  if (availableSfds.length === 0) {
-    return (
-      <div className="text-center p-6">
-        <p className="text-gray-500">Aucune SFD disponible à ajouter.</p>
-        <p className="text-sm text-gray-400 mt-2">Vous êtes déjà connecté à toutes les SFDs disponibles.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4 p-2">
-      <div className="space-y-2">
-        <Label htmlFor="sfd-select">Sélectionnez une SFD</Label>
-        <Select 
-          value={selectedSfdId} 
-          onValueChange={setSelectedSfdId}
-        >
-          <SelectTrigger id="sfd-select">
-            <SelectValue placeholder="Choisir une SFD" />
-          </SelectTrigger>
-          <SelectContent>
-            {availableSfds.map(sfd => (
-              <SelectItem key={sfd.id} value={sfd.id} className="flex items-center py-2">
-                <div className="flex items-center">
-                  <Building className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{sfd.name}</span>
-                  {sfd.region && (
-                    <span className="ml-2 text-xs text-muted-foreground flex items-center">
-                      <MapPin className="h-3 w-3 mr-1" />
-                      {sfd.region}
-                    </span>
-                  )}
+    <div className="space-y-6">
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <>
+          {pendingRequests?.length > 0 && (
+            <div className="mb-6">
+              <h3 className="font-medium text-lg mb-2">Demandes en cours</h3>
+              <div className="space-y-2">
+                {pendingRequests.map(request => (
+                  <Card key={request.id} className="bg-amber-50 border-amber-200">
+                    <CardContent className="p-3 flex justify-between items-center">
+                      <div>
+                        <p className="font-medium">Demande en attente</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(request.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs">
+                          En attente
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {availableSfds.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <p className="text-gray-600">Aucune SFD disponible pour le moment.</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Toutes les SFDs sont déjà associées à votre compte ou en attente de validation.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-4">
+                <h3 className="font-medium text-lg">SFDs disponibles</h3>
+                <div className="grid gap-3">
+                  {availableSfds.map(sfd => (
+                    <Card 
+                      key={sfd.id}
+                      className={`cursor-pointer border transition-colors ${
+                        selectedSfd === sfd.id 
+                          ? 'border-primary bg-primary/5' 
+                          : 'hover:bg-gray-50'
+                      }`}
+                      onClick={() => setSelectedSfd(sfd.id)}
+                    >
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center">
+                          {sfd.logo_url ? (
+                            <img 
+                              src={sfd.logo_url} 
+                              alt={sfd.name} 
+                              className="h-10 w-10 mr-3 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 mr-3 rounded-full bg-primary/10 flex items-center justify-center">
+                              <span className="font-bold text-primary">{sfd.name.charAt(0)}</span>
+                            </div>
+                          )}
+                          <div>
+                            <h4 className="font-medium">{sfd.name}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {sfd.region || sfd.code}
+                            </p>
+                          </div>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border-2 ${
+                          selectedSfd === sfd.id 
+                            ? 'border-primary bg-primary' 
+                            : 'border-gray-300'
+                        }`}/>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="phone">Numéro de téléphone (optionnel)</Label>
-        <Input
-          id="phone"
-          type="tel"
-          value={phoneNumber}
-          onChange={(e) => setPhoneNumber(e.target.value)}
-          placeholder="Votre numéro de téléphone"
-        />
-        <p className="text-xs text-gray-500">
-          Votre numéro de téléphone permettra à la SFD de vous contacter plus facilement.
-        </p>
-      </div>
-      
-      <Button 
-        className="w-full mt-4"
-        onClick={handleSubmitRequest}
-        disabled={isLoading || !selectedSfdId}
-      >
-        {isLoading ? <Loader size="sm" className="mr-2" /> : null}
-        Envoyer la demande
-      </Button>
-
-      <div className="mt-4 p-3 bg-blue-50 rounded-md">
-        <p className="text-xs text-blue-700">
-          Après avoir envoyé votre demande, l'administrateur de la SFD devra la valider.
-          Vous recevrez une notification lorsque votre demande sera traitée.
-        </p>
-      </div>
+              </div>
+              
+              {selectedSfd && (
+                <div className="mt-6 space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                      Numéro de téléphone (facultatif)
+                    </label>
+                    <Input
+                      id="phoneNumber"
+                      type="tel"
+                      placeholder="+223 00 00 00 00"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Votre numéro aidera la SFD à vous identifier
+                    </p>
+                  </div>
+                  
+                  <Button
+                    onClick={handleRequestAccess}
+                    disabled={isSending}
+                    className="w-full"
+                  >
+                    {isSending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      "Envoyer une demande d'accès"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 };

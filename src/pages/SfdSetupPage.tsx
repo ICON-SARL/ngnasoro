@@ -18,21 +18,41 @@ const SfdSetupPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasSfds, setHasSfds] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('create');
+  const [hasRequests, setHasRequests] = useState(false);
   
   useEffect(() => {
     const checkUserSfds = async () => {
       if (user) {
         setIsLoading(true);
         try {
-          const { data } = await supabase
+          // Check for existing SFDs
+          const { data: sfds } = await supabase
             .from('user_sfds')
             .select('id')
             .eq('user_id', user.id);
             
-          // Ensure we're setting a boolean value
-          const hasExistingSfds = Boolean(data && data.length > 0) || Boolean(activeSfdId);
+          // Check for pending requests
+          const { data: requests } = await supabase
+            .from('sfd_clients')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('status', 'pending');
+            
+          // Ensure we're setting boolean values
+          const hasExistingSfds = Boolean(sfds && sfds.length > 0) || Boolean(activeSfdId);
+          const hasPendingRequests = Boolean(requests && requests.length > 0);
+          
           setHasSfds(hasExistingSfds);
-          setActiveTab(hasExistingSfds ? 'manage' : 'create');
+          setHasRequests(hasPendingRequests);
+          
+          // Set active tab based on user's state
+          if (hasExistingSfds) {
+            setActiveTab('manage');
+          } else if (hasPendingRequests) {
+            setActiveTab('requests');
+          } else {
+            setActiveTab('create');
+          }
         } catch (error) {
           console.error('Error checking user SFDs:', error);
         } finally {
@@ -62,6 +82,7 @@ const SfdSetupPage = () => {
       title: "Demande envoyée",
       description: "Votre demande a été envoyée avec succès",
     });
+    setHasRequests(true);
     setActiveTab('manage');
   };
   

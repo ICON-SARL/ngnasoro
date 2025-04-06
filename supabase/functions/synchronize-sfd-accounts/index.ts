@@ -58,7 +58,51 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Get the user's SFDs
+    // First check for validated SFD client entries
+    const { data: validatedSfdClients, error: clientError } = await supabase
+      .from('sfd_clients')
+      .select(`
+        id,
+        sfd_id,
+        status,
+        sfds:sfd_id(id, name)
+      `)
+      .eq('user_id', userId)
+      .eq('status', 'validated')
+      .conditionalFilter(sfdId ? `sfd_id.eq.${sfdId}` : '')
+    
+    if (clientError) {
+      console.error('Error fetching validated client SFDs:', clientError)
+      // Continue to check user_sfds as a fallback
+    }
+    
+    // If we have validated clients, ensure they have corresponding user_sfds entries
+    if (validatedSfdClients && validatedSfdClients.length > 0) {
+      for (const client of validatedSfdClients) {
+        // Check if an entry already exists in user_sfds
+        const { data: existingSfd } = await supabase
+          .from('user_sfds')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('sfd_id', client.sfd_id)
+          .maybeSingle()
+        
+        // Create user_sfds entry if it doesn't exist
+        if (!existingSfd) {
+          await supabase
+            .from('user_sfds')
+            .insert({
+              user_id: userId,
+              sfd_id: client.sfd_id,
+              is_default: false
+            })
+          
+          console.log(`Created new user_sfds entry for validated client: ${client.sfds.name}`)
+        }
+      }
+    }
+
+    // Now get the user's SFDs from user_sfds table
     const { data: userSfds, error: sfdsError } = await supabase
       .from('user_sfds')
       .select(`

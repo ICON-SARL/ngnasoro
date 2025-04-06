@@ -2,13 +2,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { AvailableSfd } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
+import { AvailableSfd, SfdClientRequest } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 
 /**
  * Hook to fetch and manage available SFDs that can be added to a user account
  */
 export function useAvailableSfds(userId?: string) {
   const [availableSfds, setAvailableSfds] = useState<AvailableSfd[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<SfdClientRequest[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -31,12 +32,28 @@ export function useAvailableSfds(userId?: string) {
       
       const userSfdIds = userSfds?.map(item => item.sfd_id) || [];
       
-      // Then get all active SFDs that user doesn't already have
+      // Get pending client requests to avoid duplicate requests
+      const { data: pendingSfdRequests, error: pendingRequestsError } = await supabase
+        .from('sfd_clients')
+        .select('id, sfd_id, status, created_at')
+        .eq('user_id', userId);
+        
+      if (pendingRequestsError) throw pendingRequestsError;
+      
+      setPendingRequests(pendingSfdRequests || []);
+      
+      // Get IDs of SFDs that user has pending requests for
+      const pendingSfdIds = pendingSfdRequests?.map(request => request.sfd_id) || [];
+      
+      // Combine existing SFDs and pending SFDs to exclude from available list
+      const excludeSfdIds = [...userSfdIds, ...pendingSfdIds];
+      
+      // Then get all active SFDs that user doesn't already have or has pending requests for
       const { data: sfds, error: sfdsError } = await supabase
         .from('sfds')
         .select('id, name, code, region, logo_url, status')
         .eq('status', 'active')
-        .not('id', 'in', `(${userSfdIds.length > 0 ? userSfdIds.join(',') : 'null'})`);
+        .not('id', 'in', `(${excludeSfdIds.length > 0 ? excludeSfdIds.join(',') : 'null'})`);
       
       if (sfdsError) throw sfdsError;
       
@@ -67,6 +84,16 @@ export function useAvailableSfds(userId?: string) {
 
     try {
       setIsLoading(true);
+      
+      // Check if user already has a pending request for this SFD
+      const existingRequest = pendingRequests.find(req => req.sfd_id === sfdId);
+      if (existingRequest) {
+        toast({
+          title: 'Demande déjà envoyée',
+          description: 'Vous avez déjà une demande en cours pour cette SFD',
+        });
+        return false;
+      }
       
       // Create a client request entry
       const { data, error } = await supabase
@@ -99,6 +126,9 @@ export function useAvailableSfds(userId?: string) {
           .eq('id', data[0].id);
       }
       
+      // Refresh the pending requests list
+      fetchAvailableSfds();
+      
       toast({
         title: 'Demande envoyée',
         description: 'Votre demande a été envoyée avec succès. Vous serez notifié lorsqu\'elle sera traitée.',
@@ -126,6 +156,7 @@ export function useAvailableSfds(userId?: string) {
 
   return {
     availableSfds,
+    pendingRequests,
     isLoading,
     error,
     fetchAvailableSfds,
