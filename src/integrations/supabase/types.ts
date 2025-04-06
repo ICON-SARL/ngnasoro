@@ -543,6 +543,41 @@ export type Database = {
           },
         ]
       }
+      sfd_stats: {
+        Row: {
+          id: string
+          last_updated: string
+          repayment_rate: number
+          sfd_id: string
+          total_clients: number
+          total_loans: number
+        }
+        Insert: {
+          id?: string
+          last_updated?: string
+          repayment_rate?: number
+          sfd_id: string
+          total_clients?: number
+          total_loans?: number
+        }
+        Update: {
+          id?: string
+          last_updated?: string
+          repayment_rate?: number
+          sfd_id?: string
+          total_clients?: number
+          total_loans?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sfd_stats_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sfd_subsidies: {
         Row: {
           allocated_at: string
@@ -955,6 +990,16 @@ export type Database = {
       create_sample_transactions: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_sfd_admins: {
+        Args: {
+          sfd_id_param: string
+        }
+        Returns: {
+          user_id: string
+          role: string
+          admin_users: Json
+        }[]
       }
       has_role: {
         Args: {

@@ -33,7 +33,6 @@ export function useSfdData() {
           // Instead of using a relation that might not exist, we'll fetch stats separately
           let sfdStats = null;
           try {
-            // Try to get existing stats or return a default structure
             const { data: stats, error: statsError } = await supabase
               .from('sfd_stats')
               .select('id, sfd_id, total_clients, total_loans, repayment_rate, last_updated')
@@ -45,7 +44,7 @@ export function useSfdData() {
             } else {
               // Provide default stats structure if no stats exist
               sfdStats = {
-                id: '',
+                id: null,
                 sfd_id: sfd.id,
                 total_clients: 0,
                 total_loans: 0,
@@ -55,8 +54,18 @@ export function useSfdData() {
             }
           } catch (error) {
             console.error("Error fetching SFD stats:", error);
+            // Provide default stats on error
+            sfdStats = {
+              id: null,
+              sfd_id: sfd.id,
+              total_clients: 0,
+              total_loans: 0,
+              repayment_rate: 0,
+              last_updated: new Date().toISOString()
+            };
           }
 
+          // Combine the data
           return {
             ...sfd,
             subsidy_balance,

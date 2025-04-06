@@ -62,11 +62,11 @@ export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
     enabled: activeTab === 'stats'
   });
 
-  // Fetch SFD admins - manually using RPC call or separate SQL query
+  // Fetch SFD admins using the RPC function
   const { data: sfdAdmins, isLoading: isLoadingAdmins } = useQuery({
     queryKey: ['sfd-admins', sfd.id],
     queryFn: async () => {
-      // Using a more compatible approach
+      // Use the Supabase RPC function
       const { data, error } = await supabase
         .rpc('get_sfd_admins', { sfd_id_param: sfd.id });
 
