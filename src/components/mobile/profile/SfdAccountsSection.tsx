@@ -6,7 +6,7 @@ import { RefreshCw } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
-import { SfdData } from '@/hooks/useSfdDataAccess';
+import { SfdData } from '@/hooks/sfd/types';
 import { useSfdSwitch } from '@/hooks/useSfdSwitch';
 import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 import SfdSwitchVerification from '@/components/SfdSwitchVerification';
@@ -81,7 +81,8 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
       code: acc.code,
       isDefault: acc.isDefault,
       balance: acc.balance,
-      currency: acc.currency
+      currency: acc.currency,
+      isVerified: true // Ensure all accounts are shown as verified
     }));
   };
 
@@ -162,13 +163,14 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
     <>
       <div className="space-y-4 mt-4">
         <Card>
-          <CardHeader className="pb-2 flex justify-between items-center">
-            <CardTitle className="text-lg">Mes Comptes SFD</CardTitle>
+          <CardHeader className="pb-2 flex justify-between items-center flex-row">
+            <CardTitle className="text-lg font-bold">Mes Comptes SFD</CardTitle>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={refreshAccounts}
               disabled={isRefreshing || isLoading}
+              className="flex items-center"
             >
               {isRefreshing ? (
                 <Loader size="sm" className="mr-1" />

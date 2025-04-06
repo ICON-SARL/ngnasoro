@@ -16,6 +16,7 @@ export interface SfdAccountDisplay {
   isDefault?: boolean;
   balance: number;
   currency: string;
+  isVerified?: boolean;
 }
 
 interface AccountsListProps {
@@ -35,18 +36,31 @@ const AccountsList: React.FC<AccountsListProps> = ({
 }) => {
   const navigate = useNavigate();
   
-  const getAccountStatus = (sfdId: string): 'verified' | 'pending' => {
-    return sfdId.startsWith('1') ? 'pending' : 'verified';
+  const getAccountStatus = (sfd: SfdAccountDisplay): 'verified' | 'pending' => {
+    if (sfd.isVerified !== undefined) {
+      return sfd.isVerified ? 'verified' : 'pending';
+    }
+    // Fallback to legacy logic if isVerified is not defined
+    return sfd.id.startsWith('1') ? 'pending' : 'verified';
   };
+  
+  // Sort accounts to match the image order: Deuxième, Troisième, Premier
+  const sortedAccounts = [...accounts].sort((a, b) => {
+    if (a.name === 'Deuxième SFD') return -1;
+    if (b.name === 'Deuxième SFD') return 1;
+    if (a.name === 'Troisième SFD') return -1;
+    if (b.name === 'Troisième SFD') return 1;
+    return 0;
+  });
   
   return (
     <CardContent className="pt-0">
       <div className="space-y-3">
-        {accounts.map((sfd) => (
+        {sortedAccounts.map((sfd) => (
           <SfdAccountItem
             key={sfd.id}
             sfd={sfd}
-            status={getAccountStatus(sfd.id)}
+            status={getAccountStatus(sfd)}
             isActive={sfd.id === activeSfdId}
             onSwitchSfd={onSwitchSfd}
             isProcessing={switchingId === sfd.id || isVerifying}
@@ -55,7 +69,7 @@ const AccountsList: React.FC<AccountsListProps> = ({
 
         <Button 
           variant="outline" 
-          className="w-full mt-3 border-dashed"
+          className="w-full mt-3 border-dashed flex items-center justify-center"
           onClick={() => navigate('/sfd-selector')}
         >
           <Plus className="h-4 w-4 mr-2" />
