@@ -13,9 +13,8 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { ReportGenerator } from '@/components/ReportGenerator';
 import { DataExport } from '@/components/DataExport';
 import { Button } from '@/components/ui/button';
-import { FileText, CreditCard, Building, Users, Shield } from 'lucide-react';
+import { FileText, Building, Users, Shield } from 'lucide-react';
 import { AdminManagement } from '@/components/admin/AdminManagement';
-import { SubsidyRequestManagement } from '@/components/admin/subsidy';
 import { SfdManagement } from '@/components/admin/SfdManagement';
 import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommunication';
 import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
@@ -57,7 +56,7 @@ const SuperAdminDashboard = () => {
             className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm" 
             onClick={() => navigate('/credit-approval')}
           >
-            <CreditCard className="h-4 w-4 mr-2 text-gray-600" />
+            <FileText className="h-4 w-4 mr-2 text-gray-600" />
             Approbation de Crédit
           </Button>
           
@@ -142,13 +141,6 @@ const SuperAdminDashboard = () => {
         {activeTab === 'export' && (
           <div className="space-y-6">
             <DataExport />
-          </div>
-        )}
-        
-        {/* Subsidy Requests */}
-        {activeTab === 'subsidy_requests' && (
-          <div className="space-y-6">
-            <SubsidyRequestManagement />
           </div>
         )}
         
