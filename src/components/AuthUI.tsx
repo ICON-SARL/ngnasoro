@@ -9,7 +9,7 @@ import { Check } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DemoAccountsCreator from './auth/DemoAccountsCreator';
-import { UserRole } from '@/hooks/auth/types';
+import { Role } from '@/hooks/auth/types'; // Changed from UserRole to Role
 import { useToast } from '@/hooks/use-toast';
 
 const AuthUI = () => {
@@ -43,7 +43,7 @@ const AuthUI = () => {
       console.log('User role:', userRole);
       
       // Redirection based on user's role
-      if (userRole === UserRole.SUPER_ADMIN || user.app_metadata?.role === 'admin') {
+      if (userRole === Role.SUPER_ADMIN || user.app_metadata?.role === 'admin') {  // Changed from UserRole to Role
         if (location.pathname !== '/admin/auth' && !location.pathname.includes('admin')) {
           // If regular auth page is accessed by admin, show a message
           toast({
@@ -53,7 +53,7 @@ const AuthUI = () => {
           });
         }
         navigate('/super-admin-dashboard');
-      } else if (userRole === UserRole.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {
+      } else if (userRole === Role.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {  // Changed from UserRole to Role
         navigate('/agency-dashboard');
       } else {
         navigate('/mobile-flow');

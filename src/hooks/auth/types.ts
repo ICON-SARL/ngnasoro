@@ -8,6 +8,9 @@ export enum Role {
   USER = 'user'
 }
 
+// Export Role as UserRole for backward compatibility
+export { Role as UserRole };
+
 export interface User {
   id: string;
   email: string;
