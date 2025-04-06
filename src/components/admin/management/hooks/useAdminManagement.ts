@@ -51,8 +51,8 @@ export const useAdminManagement = () => {
         .from('admin_users')
         .select('id, email, full_name, role, has_2fa, created_at, last_sign_in_at');
       
-      // Apply filters
-      if (filters.role) {
+      // Apply filters - now handling the "all" value
+      if (filters.role && filters.role !== 'all') {
         query = query.eq('role', filters.role);
       }
       
@@ -93,7 +93,7 @@ export const useAdminManagement = () => {
       setIsLoading(false);
     }
   }, [filters]);
-  
+
   // We're not actually loading permissions from DB yet, just using hardcoded values
   const loadPermissions = useCallback(async () => {
     // In a real app, we'd load permissions from the database
@@ -136,9 +136,10 @@ export const useAdminManagement = () => {
         has_2fa: false // Default value
       };
       
+      // Fixed: Passing an array to insert since we need to conform to the type expectations
       const { data, error } = await supabase
         .from('admin_users')
-        .insert(adminData)
+        .insert([adminData])
         .select();
       
       if (error) throw error;
