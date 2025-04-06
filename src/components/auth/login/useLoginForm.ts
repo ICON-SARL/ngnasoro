@@ -35,15 +35,17 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
     return () => clearTimeout(timer);
   }, [cooldownTime]);
 
-  // Check if user is already authenticated
+  // Check if user is already authenticated and redirect to the correct dashboard
   useEffect(() => {
     if (user) {
-      console.log("User already authenticated, redirecting...", user);
+      console.log("User already authenticated, redirecting based on role...", user);
       
       // Determine where to redirect based on user role
-      if (user.app_metadata?.role === 'admin') {
+      const userRole = user.app_metadata?.role;
+      
+      if (userRole === 'admin') {
         navigate('/super-admin-dashboard');
-      } else if (user.app_metadata?.role === 'sfd_admin') {
+      } else if (userRole === 'sfd_admin') {
         navigate('/agency-dashboard');
       } else {
         navigate('/mobile-flow');
@@ -126,11 +128,18 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       });
       
       // Redirect user based on role
-      if (user?.app_metadata?.role === 'admin') {
+      // adminMode indicates if we're on the admin login page
+      // isSfdAdmin indicates if we're on the SFD admin login page
+      const userRole = user?.app_metadata?.role;
+      
+      if (adminMode) {
+        // If we're on admin login, should redirect to admin dashboard
         navigate('/super-admin-dashboard');
-      } else if (user?.app_metadata?.role === 'sfd_admin') {
+      } else if (isSfdAdmin) {
+        // If we're on SFD admin login, should redirect to SFD dashboard
         navigate('/agency-dashboard');
       } else {
+        // Regular login, should redirect to mobile flow
         navigate('/mobile-flow');
       }
       

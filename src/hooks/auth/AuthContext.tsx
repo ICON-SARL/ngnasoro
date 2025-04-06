@@ -35,7 +35,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
-  const navigate = useNavigate();
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
   const assignUserRole = useCallback(async (user: User) => {
@@ -235,7 +234,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setUser(null);
       setSession(null);
-      navigate('/auth');
     } catch (error) {
       console.error('Unexpected sign out error:', error);
       throw error;

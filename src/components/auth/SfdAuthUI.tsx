@@ -31,13 +31,12 @@ const SfdAuthUI = () => {
     if (user && !loading) {
       if (user.app_metadata?.role === 'sfd_admin') {
         navigate('/agency-dashboard');
+      } else if (user.app_metadata?.role === 'admin') {
+        // Redirect admin to admin dashboard
+        navigate('/super-admin-dashboard');
       } else {
-        // Rediriger les utilisateurs non-SFD vers leur page appropriée
-        if (user.app_metadata?.role === 'admin') {
-          navigate('/admin/auth');
-        } else {
-          navigate('/auth');
-        }
+        // Redirect regular users to mobile flow
+        navigate('/mobile-flow');
       }
     }
   }, [user, loading, navigate]);

@@ -31,7 +31,18 @@ const MobileFlow = () => {
     return !hasVisited;
   });
 
-  // Removed authentication check that was causing redirect loop
+  // Check if user is logged in, and if not, redirect to login
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    } else if (user?.app_metadata?.role === 'admin') {
+      // If user is admin, redirect to admin dashboard
+      navigate('/super-admin-dashboard');
+    } else if (user?.app_metadata?.role === 'sfd_admin') {
+      // If user is SFD admin, redirect to SFD dashboard
+      navigate('/agency-dashboard');
+    }
+  }, [user, loading, navigate]);
 
   // Save welcome screen status
   useEffect(() => {
@@ -104,7 +115,7 @@ const MobileFlow = () => {
   const isWelcomePage = location.pathname === '/mobile-flow/welcome';
 
   // Show loading only when loading user account data
-  if (accountLoading) {
+  if (loading || accountLoading) {
     return <div className="p-8 text-center">Chargement...</div>;
   }
 

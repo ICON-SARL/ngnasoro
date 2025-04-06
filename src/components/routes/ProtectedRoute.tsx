@@ -2,7 +2,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth';
-import { getRoleFromSession } from '@/hooks/auth/authUtils';
 
 interface ProtectedRouteProps {
   component: React.ComponentType<any>;
@@ -17,36 +16,40 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireSfdAdmin = false,
   ...rest 
 }) => {
-  const { user, loading, session } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Chargement...</div>;
   }
 
-  if (!user) {
-    // Only redirect if we require authentication for this route
+  // If we're requiring authentication and the user isn't logged in
+  if ((requireAdmin || requireSfdAdmin) && !user) {
+    // Redirect to the appropriate login page
     if (requireAdmin) {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
     } else if (requireSfdAdmin) {
       return <Navigate to="/sfd/auth" state={{ from: location }} replace />;
     } else {
-      // For non-protected routes, just render the component
-      return <Component {...rest} />;
+      return <Navigate to="/auth" state={{ from: location }} replace />;
     }
   }
   
-  const userRole = user.app_metadata?.role;
-  
-  // Vérifier les permissions basées sur le rôle
-  if (requireAdmin && userRole !== 'admin') {
-    return <Navigate to="/admin/auth" state={{ from: location, error: 'access_denied' }} replace />;
-  }
-  
-  if (requireSfdAdmin && userRole !== 'sfd_admin') {
-    return <Navigate to="/sfd/auth" state={{ from: location, error: 'access_denied' }} replace />;
+  // If user is logged in, check role permissions
+  if (user) {
+    const userRole = user.app_metadata?.role;
+    
+    // Check role-based access
+    if (requireAdmin && userRole !== 'admin') {
+      return <Navigate to="/admin/auth" state={{ from: location, error: 'access_denied' }} replace />;
+    }
+    
+    if (requireSfdAdmin && userRole !== 'sfd_admin') {
+      return <Navigate to="/sfd/auth" state={{ from: location, error: 'access_denied' }} replace />;
+    }
   }
 
+  // If we've passed all checks, or if no special permissions are required, render the component
   return <Component {...rest} />;
 };
 

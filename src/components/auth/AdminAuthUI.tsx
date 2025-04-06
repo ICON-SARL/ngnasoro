@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -30,13 +31,12 @@ const AdminAuthUI = () => {
     if (user && !loading) {
       if (user.app_metadata?.role === 'admin') {
         navigate('/super-admin-dashboard');
+      } else if (user.app_metadata?.role === 'sfd_admin') {
+        // Redirect SFD admin to agency dashboard
+        navigate('/agency-dashboard');
       } else {
-        // Rediriger les utilisateurs non-admin vers leur page appropriée
-        if (user.app_metadata?.role === 'sfd_admin') {
-          navigate('/sfd/auth');
-        } else {
-          navigate('/auth');
-        }
+        // Redirect regular users to mobile flow
+        navigate('/mobile-flow');
       }
     }
   }, [user, loading, navigate]);

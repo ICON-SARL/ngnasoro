@@ -32,8 +32,17 @@ const ClientAuthUI = () => {
   
   useEffect(() => {
     if (user && !loading) {
-      // Redirection standard pour les utilisateurs clients
-      navigate('/mobile-flow');
+      // Route users based on their role
+      const userRole = user.app_metadata?.role;
+      
+      if (userRole === 'admin') {
+        navigate('/super-admin-dashboard');
+      } else if (userRole === 'sfd_admin') {
+        navigate('/agency-dashboard');
+      } else {
+        // Regular user goes to mobile flow
+        navigate('/mobile-flow');
+      }
     }
   }, [user, loading, navigate]);
 

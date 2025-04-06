@@ -38,26 +38,33 @@ function App() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Navigate to="/mobile-flow" />} />
+        {/* Public routes */}
+        <Route path="/" element={<Navigate to="/auth" />} />
         <Route path="/auth" element={<AuthUI />} />
         <Route path="/admin/auth" element={<AdminAuthUI />} />
         <Route path="/sfd/auth" element={<SfdAuthUI />} />
+        
+        {/* Role-based protected routes */}
         <Route path="/mobile-flow/*" element={<MobileFlow />} />
         
-        {/* Admin Routes */}
+        {/* Admin Routes - require admin role */}
         <Route path="/super-admin-dashboard" element={
           <ProtectedRoute requireAdmin={true} component={SuperAdminDashboard} />
         } />
         <Route path="/admin/management" element={
           <ProtectedRoute requireAdmin={true} component={AdminManagement} />
         } />
-        <Route path="/admin/create-sfd-admin" element={<CreateSfdAdminPage />} />
+        <Route path="/admin/create-sfd-admin" element={
+          <ProtectedRoute requireAdmin={true} component={CreateSfdAdminPage} />
+        } />
         
-        {/* SFD Admin Routes */}
+        {/* SFD Admin Routes - require sfd_admin role */}
         <Route path="/agency-dashboard" element={
           <ProtectedRoute requireSfdAdmin={true} component={AgencyDashboard} />
         } />
-        <Route path="/clients" element={<ClientsPage />} />
+        <Route path="/clients" element={
+          <ProtectedRoute requireSfdAdmin={true} component={ClientsPage} />
+        } />
         
         {/* Premium Routes */}
         <Route path="/premium-dashboard" element={<PremiumDashboardPage />} />
