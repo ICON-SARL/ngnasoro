@@ -40,7 +40,7 @@ export function DashboardTabs({ activeTab, onTabChange }: DashboardTabsProps) {
     },
     {
       id: 'subsidy_requests',
-      label: 'Demandes de subvention',
+      label: 'Subventions',
       icon: <CreditCard className="h-4 w-4 mr-2" />
     },
     {
@@ -51,8 +51,8 @@ export function DashboardTabs({ activeTab, onTabChange }: DashboardTabsProps) {
   ];
   
   return (
-    <div className="fixed bottom-4 left-0 right-0 flex justify-center z-50">
-      <div className="bg-white rounded-full shadow-lg border px-2 py-1.5">
+    <div className="fixed bottom-8 left-0 right-0 flex justify-center z-50 px-4">
+      <div className="bg-white rounded-full shadow-md border-gray-100 border px-2 py-1.5">
         <ScrollArea className="w-full whitespace-nowrap">
           <div className="flex space-x-1 p-1">
             {tabs.map((tab) => (
@@ -60,7 +60,11 @@ export function DashboardTabs({ activeTab, onTabChange }: DashboardTabsProps) {
                 key={tab.id}
                 variant={activeTab === tab.id ? "default" : "ghost"}
                 size="sm"
-                className="rounded-full"
+                className={`rounded-full text-xs ${
+                  activeTab === tab.id 
+                    ? "bg-green-600 hover:bg-green-700" 
+                    : "hover:bg-gray-100 hover:text-gray-900"
+                }`}
                 onClick={() => onTabChange(tab.id)}
               >
                 {tab.icon}

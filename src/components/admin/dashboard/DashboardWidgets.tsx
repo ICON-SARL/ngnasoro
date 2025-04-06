@@ -19,18 +19,18 @@ export const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
   isLoadingSubsidies
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-      <Card>
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <Card className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-gray-500">SFDs Actives</CardTitle>
+          <CardTitle className="text-sm font-normal text-gray-500">SFDs Actives</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-gray-800">
               {isLoading ? "..." : stats.activeSfds}
             </div>
             <div className="p-2 bg-green-50 rounded-full">
-              <Building className="h-5 w-5 text-green-500" />
+              <Building className="h-4 w-4 text-green-600" />
             </div>
           </div>
           <div className="text-xs text-gray-500 mt-1 flex items-center">
@@ -40,17 +40,17 @@ export const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-gray-500">Administrateurs</CardTitle>
+          <CardTitle className="text-sm font-normal text-gray-500">Administrateurs</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-gray-800">
               {isLoading ? "..." : stats.admins}
             </div>
             <div className="p-2 bg-blue-50 rounded-full">
-              <Users className="h-5 w-5 text-blue-500" />
+              <Users className="h-4 w-4 text-blue-600" />
             </div>
           </div>
           <div className="text-xs text-gray-500 mt-1 flex items-center">
@@ -60,17 +60,17 @@ export const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-gray-500">Utilisateurs Totaux</CardTitle>
+          <CardTitle className="text-sm font-normal text-gray-500">Utilisateurs Totaux</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-gray-800">
               {isLoading ? "..." : stats.totalUsers.toLocaleString('fr-FR')}
             </div>
             <div className="p-2 bg-purple-50 rounded-full">
-              <Users className="h-5 w-5 text-purple-500" />
+              <Users className="h-4 w-4 text-purple-600" />
             </div>
           </div>
           <div className="text-xs text-gray-500 mt-1 flex items-center">
@@ -80,19 +80,19 @@ export const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-gray-500">Subventions Allouées</CardTitle>
+          <CardTitle className="text-sm font-normal text-gray-500">Subventions Allouées</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-gray-800">
               {isLoadingSubsidies 
                 ? "..." 
                 : `${(subsidies.reduce((sum, subsidy) => sum + subsidy.amount, 0) / 1000000).toFixed(1)}M FCFA`}
             </div>
-            <div className="p-2 bg-[#0D6A51]/10 rounded-full">
-              <CircleDollarSign className="h-5 w-5 text-[#0D6A51]" />
+            <div className="p-2 bg-green-50 rounded-full">
+              <CircleDollarSign className="h-4 w-4 text-green-600" />
             </div>
           </div>
           <div className="text-xs text-gray-500 mt-1 flex items-center">

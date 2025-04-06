@@ -20,12 +20,9 @@ import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommuni
 import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
 import { IntegratedDashboard } from '@/components/admin/shared/IntegratedDashboard';
 import AuditLogsSummary from '@/components/audit/AuditLogsSummary';
-import PermissionGuard from '@/components/PermissionGuard';
-import { Permission } from '@/utils/audit/auditPermissions';
 import { SubsidySummary } from '@/components/admin/dashboard/SubsidySummary';
 import { PendingSubsidies } from '@/components/admin/dashboard/PendingSubsidies';
 import { Footer } from '@/components';
-import AdminLogout from '@/components/admin/shared/AdminLogout';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
@@ -56,46 +53,46 @@ const SuperAdminDashboard = () => {
         <div className="mb-6 flex flex-wrap gap-2">
           <Button 
             variant="outline" 
-            className="flex items-center bg-white" 
+            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm" 
             onClick={() => navigate('/credit-approval')}
           >
-            <CreditCard className="h-4 w-4 mr-2 text-[#0D6A51]" />
+            <CreditCard className="h-4 w-4 mr-2 text-gray-600" />
             Approbation de Crédit
           </Button>
           
           <Button 
             variant="outline" 
-            className="flex items-center bg-white"
+            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
             onClick={() => navigate('/credit-approval?tab=sfd-management')}
           >
-            <Building className="h-4 w-4 mr-2 text-[#0D6A51]" />
+            <Building className="h-4 w-4 mr-2 text-gray-600" />
             Gestion des SFDs
           </Button>
           
           <Button 
             variant="outline" 
-            className="flex items-center bg-white"
+            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
             onClick={() => setSearchParams({ tab: 'reports' })}
           >
-            <FileText className="h-4 w-4 mr-2 text-[#0D6A51]" />
+            <FileText className="h-4 w-4 mr-2 text-gray-600" />
             Générer des Rapports
           </Button>
           
           <Button 
             variant="outline" 
-            className="flex items-center bg-white"
+            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
             onClick={() => setSearchParams({ tab: 'admins' })}
           >
-            <Users className="h-4 w-4 mr-2 text-[#0D6A51]" />
+            <Users className="h-4 w-4 mr-2 text-gray-600" />
             Gestion Administrateurs
           </Button>
           
           <Button 
             variant="outline" 
-            className="flex items-center bg-white"
+            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
             onClick={() => navigate('/audit-logs')}
           >
-            <Shield className="h-4 w-4 mr-2 text-[#0D6A51]" />
+            <Shield className="h-4 w-4 mr-2 text-gray-600" />
             Journal d'Audit
           </Button>
           
