@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Sfd } from '../types/sfd-types';
 import { Card } from '@/components/ui/card';
@@ -7,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AddSfdAdminDialog } from './AddSfdAdminDialog';
+import { useSfdAdminManagement } from '@/hooks/useSfdAdminManagement';
 import { 
   Download,
   Users,
@@ -14,7 +17,8 @@ import {
   BarChart,
   ChevronLeft,
   Mail,
-  Phone
+  Phone,
+  UserPlus
 } from 'lucide-react';
 import {
   LineChart,
@@ -26,7 +30,6 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { cn } from '@/lib/utils';
 
 interface SfdDetailViewProps {
   sfd: Sfd;
@@ -45,6 +48,8 @@ interface SfdAdmin {
 
 export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
   const [activeTab, setActiveTab] = useState('general');
+  const [showAddAdminDialog, setShowAddAdminDialog] = useState(false);
+  const { addSfdAdmin, isLoading: isAddingAdmin } = useSfdAdminManagement();
 
   // Fetch SFD stats
   const { data: loanStats, isLoading: isLoadingLoanStats } = useQuery({
@@ -117,6 +122,18 @@ export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
   };
 
   const monthlyLoanData = generateMonthlyData();
+
+  const handleAddAdmin = async (data: {
+    email: string;
+    password: string;
+    full_name: string;
+    role: string;
+    sfd_id: string;
+    notify: boolean;
+  }) => {
+    await addSfdAdmin(data);
+    setShowAddAdminDialog(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -385,12 +402,22 @@ export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
               </div>
             )}
             
-            <Button className="mt-4">
+            <Button className="mt-4" onClick={() => setShowAddAdminDialog(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
               Ajouter un administrateur
             </Button>
           </Card>
         </TabsContent>
       </Tabs>
+      
+      <AddSfdAdminDialog 
+        open={showAddAdminDialog}
+        onOpenChange={setShowAddAdminDialog}
+        sfdId={sfd.id}
+        sfdName={sfd.name}
+        onAddAdmin={handleAddAdmin}
+        isLoading={isAddingAdmin}
+      />
     </div>
   );
 }
