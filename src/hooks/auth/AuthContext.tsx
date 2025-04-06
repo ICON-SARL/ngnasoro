@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, AuthContextProps, Role } from './types';
 import { supabase } from '@/integrations/supabase/client';
@@ -125,7 +126,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (currentSession) {
           console.log('Found existing session for:', currentSession.user.email);
           setSession(currentSession);
-          setUser(currentSession.user);
+          // Convert Supabase User to our User type
+          setUser(createUserFromSupabaseUser(currentSession.user));
         } else {
           console.log('No session found');
           setSession(null);
@@ -145,7 +147,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (newSession) {
         setSession(newSession);
-        setUser(newSession.user);
+        // Convert Supabase User to our User type
+        setUser(createUserFromSupabaseUser(newSession.user));
       } else {
         setSession(null);
         setUser(null);
@@ -180,7 +183,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log("Login success, session established for:", data?.session?.user.email);
       setSession(data?.session);
-      setUser(data?.session?.user);
+      // Convert Supabase User to our User type
+      if (data?.session?.user) {
+        setUser(createUserFromSupabaseUser(data.session.user));
+      }
       
       return {};
     } catch (error) {
@@ -209,7 +215,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (data.session) {
         setSession(data.session);
-        setUser(data.session.user);
+        // Convert Supabase User to our User type
+        setUser(createUserFromSupabaseUser(data.session.user));
       }
     } catch (error) {
       console.error('Unexpected sign up error:', error);
@@ -251,7 +258,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (data?.session) {
         setSession(data.session);
-        setUser(data.session.user);
+        // Convert Supabase User to our User type
+        setUser(createUserFromSupabaseUser(data.session.user));
       }
     } catch (error) {
       console.error('Unexpected refreshSession error:', error);
