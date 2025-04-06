@@ -30,6 +30,7 @@ import SubsidyRequestDetailPage from '@/pages/SubsidyRequestDetailPage';
 import MobileFlow from '@/pages/MobileFlow';
 import LoanApplicationPage from '@/pages/LoanApplicationPage';
 import SfdManagementPage from '@/pages/SfdManagementPage';
+import CreditApprovalPage from '@/pages/CreditApprovalPage';
 
 // Role types and permissions
 import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
@@ -77,6 +78,18 @@ const AppRoutes = () => {
           <PermissionProtectedRoute 
             component={SuperAdminDashboard} 
             requiredRole={UserRole.SUPER_ADMIN}
+            fallbackPath="/access-denied"
+          />
+        } 
+      />
+      
+      {/* Credit Approval route */}
+      <Route 
+        path="/credit-approval" 
+        element={
+          <PermissionProtectedRoute 
+            component={CreditApprovalPage} 
+            requiredPermission={PERMISSIONS.APPROVE_CREDIT}
             fallbackPath="/access-denied"
           />
         } 
