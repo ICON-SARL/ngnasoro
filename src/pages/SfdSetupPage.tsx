@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import SfdAccountRequest from '@/components/SfdAccountRequest';
 import SfdAccountsSection from '@/components/mobile/profile/SfdAccountsSection';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import SfdSelector from '@/components/mobile/profile/sfd-accounts/SfdSelector';
 
 const SfdSetupPage = () => {
   const navigate = useNavigate();
@@ -26,6 +26,10 @@ const SfdSetupPage = () => {
     }, 1500);
     
     return true;
+  };
+  
+  const handleRequestSent = () => {
+    setActiveTab('manage');
   };
   
   return (
@@ -47,13 +51,13 @@ const SfdSetupPage = () => {
         
         <CardContent className="pb-6">
           <Tabs 
-            defaultValue={activeTab} 
+            value={activeTab} 
             onValueChange={setActiveTab}
             className="w-full"
           >
             <TabsList className="grid grid-cols-2 w-full mb-4">
               <TabsTrigger value="manage">Mes comptes</TabsTrigger>
-              <TabsTrigger value="create">Créer un compte</TabsTrigger>
+              <TabsTrigger value="create">Ajouter une SFD</TabsTrigger>
             </TabsList>
             
             <TabsContent value="manage">
@@ -63,7 +67,7 @@ const SfdSetupPage = () => {
             </TabsContent>
             
             <TabsContent value="create">
-              <SfdAccountRequest />
+              {user && <SfdSelector userId={user.id} onRequestSent={handleRequestSent} />}
             </TabsContent>
           </Tabs>
         </CardContent>

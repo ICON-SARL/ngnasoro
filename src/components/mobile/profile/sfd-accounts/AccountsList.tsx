@@ -70,7 +70,7 @@ const AccountsList: React.FC<AccountsListProps> = ({
         <Button 
           variant="outline" 
           className="w-full mt-3 border-dashed flex items-center justify-center"
-          onClick={() => navigate('/sfd-selector')}
+          onClick={() => navigate('/sfd-setup')}
         >
           <Plus className="h-4 w-4 mr-2" />
           Ajouter une SFD

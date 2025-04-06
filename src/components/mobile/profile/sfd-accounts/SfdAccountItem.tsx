@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ChevronRight, CheckCircle } from 'lucide-react';
+import { ChevronRight, CheckCircle, Clock } from 'lucide-react';
 import { SfdAccountDisplay } from './AccountsList';
 
 interface SfdAccountItemProps {
@@ -43,14 +43,17 @@ const SfdAccountItem: React.FC<SfdAccountItemProps> = ({
         <div>
           <h4 className="font-medium">{sfd.name}</h4>
           <div className="flex items-center text-sm">
-            <span className="text-gray-500 mr-2">0 FCFA</span>
+            <span className="text-gray-500 mr-2">{sfd.balance || 0} {sfd.currency || 'FCFA'}</span>
             {status === 'verified' ? (
               <span className="text-green-600 flex items-center">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Vérifié
               </span>
             ) : (
-              <span className="text-amber-600">En attente</span>
+              <span className="text-amber-600 flex items-center">
+                <Clock className="h-3 w-3 mr-1" />
+                En attente
+              </span>
             )}
           </div>
         </div>

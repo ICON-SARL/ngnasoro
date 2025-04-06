@@ -49,10 +49,32 @@ serve(async (req) => {
         .single();
       
       if (userSfdError || !userSfd) {
+        // If user doesn't have access to this SFD yet, check if there's a pending request
+        const { data: pendingClient, error: clientError } = await supabase
+          .from('sfd_clients')
+          .select('*')
+          .eq('user_id', requestData.userId)
+          .eq('sfd_id', requestData.sfdId)
+          .eq('status', 'pending')
+          .single();
+          
+        // If there's no pending request either, deny access
+        if (clientError || !pendingClient) {
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              message: "Vous n'avez pas accès à cette SFD ou votre demande est encore en attente de validation" 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+          );
+        }
+        
+        // If there's a pending request, inform the user
         return new Response(
           JSON.stringify({ 
             success: false, 
-            message: "Vous n'avez pas accès à cette SFD" 
+            requiresApproval: true,
+            message: "Votre demande d'accès à cette SFD est en cours de traitement" 
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
         );
