@@ -30,6 +30,7 @@ const SfdAccountItem: React.FC<SfdAccountItemProps> = ({
         isActive ? 'bg-gray-50 border-gray-300' : 'hover:bg-gray-50'
       } ${isProcessing ? 'opacity-70 pointer-events-none' : ''}`}
       onClick={handleClick}
+      data-testid={`sfd-account-${sfd.id}`}
     >
       <div className="flex items-center space-x-3">
         <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center">

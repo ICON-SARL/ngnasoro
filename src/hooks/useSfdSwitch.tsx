@@ -2,14 +2,16 @@
 import { useState } from 'react';
 import { useAuth } from './useAuth';
 import { verifySfdSwitch, completeSfdSwitch } from '@/utils/sfdSwitchVerifier';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export function useSfdSwitch() {
   const { user, setActiveSfdId } = useAuth();
+  const { toast } = useToast();
   const [isVerifying, setIsVerifying] = useState(false);
   const [pendingSfdId, setPendingSfdId] = useState<string | null>(null);
   const [verificationId, setVerificationId] = useState<string | null>(null);
   const [verificationRequired, setVerificationRequired] = useState(false);
+  const [pendingApproval, setPendingApproval] = useState(false);
 
   // Initiate the SFD switch process
   const initiateSwitch = async (sfdId: string) => {
@@ -24,18 +26,26 @@ export function useSfdSwitch() {
 
     setIsVerifying(true);
     setPendingSfdId(sfdId);
+    setPendingApproval(false);
 
     try {
       const verificationResult = await verifySfdSwitch(user.id, sfdId);
       
       if (!verificationResult.success) {
-        toast({
-          title: "Erreur",
-          description: verificationResult.message,
-          variant: "destructive",
-        });
+        if (verificationResult.requiresApproval) {
+          setPendingApproval(true);
+          toast({
+            title: "Demande en cours",
+            description: verificationResult.message,
+          });
+        } else {
+          toast({
+            title: "Erreur",
+            description: verificationResult.message,
+            variant: "destructive",
+          });
+        }
         setIsVerifying(false);
-        setPendingSfdId(null);
         return false;
       }
       
@@ -125,6 +135,7 @@ export function useSfdSwitch() {
     setVerificationId(null);
     setVerificationRequired(false);
     setIsVerifying(false);
+    setPendingApproval(false);
   };
 
   return {
@@ -132,6 +143,7 @@ export function useSfdSwitch() {
     pendingSfdId,
     verificationRequired,
     verificationId,
+    pendingApproval,
     initiateSwitch,
     completeSwitch,
     cancelSwitch

@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 interface VerificationRequest {
   userId: string;
@@ -11,6 +10,7 @@ interface VerificationRequest {
 interface VerificationResponse {
   success: boolean;
   requiresVerification: boolean;
+  requiresApproval?: boolean;
   verificationId?: string;
   message: string;
   verificationCode?: string; // Only for demo purposes
@@ -31,6 +31,25 @@ export async function verifySfdSwitch(userId: string, sfdId: string): Promise<Ve
       .single();
     
     if (userSfdError || !userSfd) {
+      // Check if there's a pending client request
+      const { data: pendingClient, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('sfd_id', sfdId)
+        .eq('status', 'pending')
+        .single();
+      
+      if (!clientError && pendingClient) {
+        // If there's a pending request, inform the user
+        return {
+          success: false,
+          requiresVerification: false,
+          requiresApproval: true,
+          message: "Votre demande d'accès à cette SFD est en cours de traitement"
+        };
+      }
+      
       return {
         success: false,
         requiresVerification: false,

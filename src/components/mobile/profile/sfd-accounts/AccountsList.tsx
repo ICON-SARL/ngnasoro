@@ -25,6 +25,7 @@ interface AccountsListProps {
   onSwitchSfd: (sfdId: string) => Promise<void>;
   switchingId: string | null;
   isVerifying: boolean;
+  onAddSfd?: () => void;
 }
 
 const AccountsList: React.FC<AccountsListProps> = ({
@@ -32,7 +33,8 @@ const AccountsList: React.FC<AccountsListProps> = ({
   activeSfdId,
   onSwitchSfd,
   switchingId,
-  isVerifying
+  isVerifying,
+  onAddSfd
 }) => {
   const navigate = useNavigate();
   
@@ -50,8 +52,18 @@ const AccountsList: React.FC<AccountsListProps> = ({
     if (b.name === 'Deuxième SFD') return 1;
     if (a.name === 'Troisième SFD') return -1;
     if (b.name === 'Troisième SFD') return 1;
+    if (a.name === 'Premier SFD') return 1;
+    if (b.name === 'Premier SFD') return -1;
     return 0;
   });
+  
+  const handleAddSfd = () => {
+    if (onAddSfd) {
+      onAddSfd();
+    } else {
+      navigate('/sfd-setup');
+    }
+  };
   
   return (
     <CardContent className="pt-0">
@@ -70,7 +82,7 @@ const AccountsList: React.FC<AccountsListProps> = ({
         <Button 
           variant="outline" 
           className="w-full mt-3 border-dashed flex items-center justify-center"
-          onClick={() => navigate('/sfd-setup')}
+          onClick={handleAddSfd}
         >
           <Plus className="h-4 w-4 mr-2" />
           Ajouter une SFD

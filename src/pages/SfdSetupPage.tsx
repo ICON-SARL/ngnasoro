@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,12 +8,41 @@ import SfdAccountsSection from '@/components/mobile/profile/SfdAccountsSection';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import SfdSelector from '@/components/mobile/profile/sfd-accounts/SfdSelector';
+import { Loader } from '@/components/ui/loader';
+import { supabase } from '@/integrations/supabase/client';
 
 const SfdSetupPage = () => {
   const navigate = useNavigate();
   const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<string>(activeSfdId ? 'manage' : 'create');
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasSfds, setHasSfds] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('create');
+  
+  useEffect(() => {
+    // Check if user has any SFDs
+    const checkUserSfds = async () => {
+      if (user) {
+        setIsLoading(true);
+        try {
+          const { data } = await supabase
+            .from('user_sfds')
+            .select('id')
+            .eq('user_id', user.id);
+            
+          const hasExistingSfds = (data && data.length > 0) || activeSfdId;
+          setHasSfds(hasExistingSfds);
+          setActiveTab(hasExistingSfds ? 'manage' : 'create');
+        } catch (error) {
+          console.error('Error checking user SFDs:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    checkUserSfds();
+  }, [user, activeSfdId]);
   
   const handleSwitchSfd = async (sfdId: string) => {
     toast({
@@ -29,6 +58,10 @@ const SfdSetupPage = () => {
   };
   
   const handleRequestSent = () => {
+    toast({
+      title: "Demande envoyée",
+      description: "Votre demande a été envoyée avec succès",
+    });
     setActiveTab('manage');
   };
   
@@ -50,26 +83,32 @@ const SfdSetupPage = () => {
         </CardHeader>
         
         <CardContent className="pb-6">
-          <Tabs 
-            value={activeTab} 
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <TabsList className="grid grid-cols-2 w-full mb-4">
-              <TabsTrigger value="manage">Mes comptes</TabsTrigger>
-              <TabsTrigger value="create">Ajouter une SFD</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="manage">
-              <SfdAccountsSection 
-                onSwitchSfd={handleSwitchSfd}
-              />
-            </TabsContent>
-            
-            <TabsContent value="create">
-              {user && <SfdSelector userId={user.id} onRequestSent={handleRequestSent} />}
-            </TabsContent>
-          </Tabs>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader size="lg" />
+            </div>
+          ) : (
+            <Tabs 
+              value={activeTab} 
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
+              <TabsList className="grid grid-cols-2 w-full mb-4">
+                <TabsTrigger value="manage">Mes comptes</TabsTrigger>
+                <TabsTrigger value="create">Ajouter une SFD</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="manage">
+                <SfdAccountsSection 
+                  onSwitchSfd={handleSwitchSfd}
+                />
+              </TabsContent>
+              
+              <TabsContent value="create">
+                {user && <SfdSelector userId={user.id} onRequestSent={handleRequestSent} />}
+              </TabsContent>
+            </Tabs>
+          )}
         </CardContent>
       </Card>
     </div>
