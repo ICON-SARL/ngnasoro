@@ -40,7 +40,8 @@ export function useAvailableSfds(userId?: string) {
         
       if (pendingRequestsError) throw pendingRequestsError;
       
-      setPendingRequests(pendingSfdRequests || []);
+      // Cast the response to the correct type
+      setPendingRequests(pendingSfdRequests as SfdClientRequest[] || []);
       
       // Get IDs of SFDs that user has pending requests for
       const pendingSfdIds = pendingSfdRequests?.map(request => request.sfd_id) || [];

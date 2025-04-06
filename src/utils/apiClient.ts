@@ -67,6 +67,7 @@ export const apiClient = {
     }
   },
   
+  // Break circular reference by using a predefined type
   async getSfdBalance(userId: string, sfdId: string): Promise<BalanceResult> {
     try {
       // First try to get balance from accounts table

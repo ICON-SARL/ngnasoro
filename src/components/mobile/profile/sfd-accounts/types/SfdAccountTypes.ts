@@ -27,6 +27,6 @@ export interface AvailableSfd {
 export interface SfdClientRequest {
   id: string;
   sfd_id: string;
-  status: 'pending' | 'validated' | 'rejected';
+  status: 'pending' | 'validated' | 'rejected' | string; // Allow any string to accommodate database values
   created_at: string;
 }
