@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, AuthContextProps, Role } from './types';
 import { supabase } from '@/integrations/supabase/client';
@@ -106,58 +105,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user, assignUserRole]);
 
+  // Authentication state listener and session management
   useEffect(() => {
-    console.log("Setting up auth state listener and checking session");
+    console.log('Setting up authentication listeners...');
+    setLoading(true);
+
+    // Get the current session first
+    const getInitialSession = async () => {
+      try {
+        console.log('Checking for existing session...');
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setLoading(false);
+          return;
+        }
+        
+        if (currentSession) {
+          console.log('Found existing session for:', currentSession.user.email);
+          setSession(currentSession);
+          setUser(currentSession.user);
+        } else {
+          console.log('No session found');
+          setSession(null);
+          setUser(null);
+        }
+        
+      } catch (err) {
+        console.error('Unexpected error getting session:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    // Set up auth state listener FIRST
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
-      console.log("Auth state changed:", event, newSession?.user?.email);
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      console.log('Auth state changed:', event, newSession?.user?.email);
       
       if (newSession) {
         setSession(newSession);
-        if (newSession.user) {
-          const mappedUser = createUserFromSupabaseUser(newSession.user);
-          console.log("Setting user from auth state change:", mappedUser);
-          setUser(mappedUser);
-        }
+        setUser(newSession.user);
       } else {
-        setUser(null);
         setSession(null);
+        setUser(null);
       }
       
-      setLoading(false);
-      
-      if (newSession?.user) {
-        console.log("User authenticated:", {
-          email: newSession.user.email,
-          role: newSession.user.app_metadata?.role
-        });
-      } else if (event === 'SIGNED_OUT') {
-        console.log("User signed out");
-      }
-    });
-    
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log("Initial session check:", currentSession?.user?.email);
-      
-      if (currentSession) {
-        setSession(currentSession);
-        if (currentSession.user) {
-          const mappedUser = createUserFromSupabaseUser(currentSession.user);
-          console.log("Setting user from initial session:", mappedUser);
-          setUser(mappedUser);
-        }
-      }
-      
-      setLoading(false);
-    }).catch(error => {
-      console.error("Error fetching initial session:", error);
       setLoading(false);
     });
+
+    // Initialize auth state
+    getInitialSession();
     
+    // Cleanup subscription on unmount
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -176,12 +178,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
       
-      if (data?.session) {
-        console.log("Sign in successful, setting user session:", data.session.user.email);
-        const mappedUser = createUserFromSupabaseUser(data.session.user);
-        setUser(mappedUser);
-        setSession(data.session);
-      }
+      console.log("Login success, session established for:", data?.session?.user.email);
+      setSession(data?.session);
+      setUser(data?.session?.user);
       
       return {};
     } catch (error) {
@@ -194,7 +193,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, metadata: Record<string, any> = {}) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -209,21 +208,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (data.session) {
-        const mappedUser = createUserFromSupabaseUser(data.session.user);
-        setUser(mappedUser);
         setSession(data.session);
+        setUser(data.session.user);
       }
     } catch (error) {
       console.error('Unexpected sign up error:', error);
       throw error;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       console.log("Signing out...");
       const { error } = await supabase.auth.signOut();
       
@@ -238,7 +236,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Unexpected sign out error:', error);
       throw error;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -253,10 +251,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (data?.session) {
         setSession(data.session);
-        if (data.session.user) {
-          const mappedUser = createUserFromSupabaseUser(data.session.user);
-          setUser(mappedUser);
-        }
+        setUser(data.session.user);
       }
     } catch (error) {
       console.error('Unexpected refreshSession error:', error);

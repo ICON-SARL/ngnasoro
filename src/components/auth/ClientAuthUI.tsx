@@ -23,7 +23,7 @@ const ClientAuthUI = () => {
       setAuthSuccess(true);
       
       const timer = setTimeout(() => {
-        navigate('/mobile-flow/main');
+        navigate('/mobile-flow/main', { replace: true });
       }, 2000);
       
       return () => clearTimeout(timer);
@@ -31,16 +31,25 @@ const ClientAuthUI = () => {
   }, [location, navigate]);
   
   useEffect(() => {
+    console.log('ClientAuthUI checking user:', { 
+      email: user?.email,
+      role: user?.app_metadata?.role,
+      loading
+    });
+    
     if (!loading && user) {
       // Route users based on their role
       const userRole = user.app_metadata?.role;
       
       if (userRole === 'admin') {
+        console.log('Admin detected in ClientAuthUI, redirecting to super-admin-dashboard');
         navigate('/super-admin-dashboard', { replace: true });
       } else if (userRole === 'sfd_admin') {
+        console.log('SFD Admin detected in ClientAuthUI, redirecting to agency-dashboard');
         navigate('/agency-dashboard', { replace: true });
       } else {
         // Regular user goes to mobile flow
+        console.log('Regular user detected in ClientAuthUI, redirecting to mobile-flow');
         navigate('/mobile-flow/main', { replace: true });
       }
     }

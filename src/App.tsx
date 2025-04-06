@@ -37,6 +37,7 @@ function App() {
     // Log auth state on app startup
     console.log('App initialized, auth state:', { 
       isAuthenticated: !!user,
+      userEmail: user?.email,
       userRole: user?.app_metadata?.role,
       loading
     });

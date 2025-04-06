@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
@@ -31,17 +30,18 @@ const MobileFlow = () => {
     return !hasVisited;
   });
 
+  console.log('MobileFlow component state:', {
+    userEmail: user?.email,
+    userRole: user?.app_metadata?.role,
+    loading,
+    location: location.pathname
+  });
+
   // Check if user is logged in, and redirect based on role if needed
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        console.log('No user found in MobileFlow, redirecting to auth');
-        navigate('/auth', { replace: true });
-        return;
-      }
-      
+    if (!loading && user) {
       const userRole = user.app_metadata?.role;
-      console.log('MobileFlow user check:', { 
+      console.log('MobileFlow role check:', { 
         email: user.email, 
         role: userRole,
         pathname: location.pathname
@@ -49,18 +49,15 @@ const MobileFlow = () => {
       
       if (userRole === 'admin') {
         // Redirect admin to admin dashboard
-        console.log('Admin detected, redirecting to super-admin-dashboard');
+        console.log('Admin detected in MobileFlow, redirecting...');
         navigate('/super-admin-dashboard', { replace: true });
         return;
       } else if (userRole === 'sfd_admin') {
         // Redirect SFD admin to agency dashboard
-        console.log('SFD Admin detected, redirecting to agency-dashboard');
+        console.log('SFD Admin detected in MobileFlow, redirecting...');
         navigate('/agency-dashboard', { replace: true });
         return;
       }
-      
-      // Regular users continue to mobile flow
-      console.log('Regular user detected, staying in mobile flow');
     }
   }, [user, loading, navigate, location.pathname]);
 
@@ -132,9 +129,8 @@ const MobileFlow = () => {
     );
   }
 
-  // If no user is logged in, return null and let the redirect happen
   if (!user) {
-    console.log('No user in MobileFlow render, returning null');
+    console.log('No user in MobileFlow render, rendering nothing');
     return null;
   }
 

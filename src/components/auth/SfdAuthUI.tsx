@@ -20,7 +20,7 @@ const SfdAuthUI = () => {
       setAuthSuccess(true);
       
       const timer = setTimeout(() => {
-        navigate('/agency-dashboard');
+        navigate('/agency-dashboard', { replace: true });
       }, 2000);
       
       return () => clearTimeout(timer);
@@ -28,16 +28,25 @@ const SfdAuthUI = () => {
   }, [location, navigate]);
   
   useEffect(() => {
+    console.log('SfdAuthUI checking user:', { 
+      email: user?.email,
+      role: user?.app_metadata?.role,
+      loading
+    });
+    
     if (!loading && user) {
       const userRole = user.app_metadata?.role;
       
       if (userRole === 'sfd_admin') {
+        console.log('SFD Admin detected, redirecting to agency dashboard');
         navigate('/agency-dashboard', { replace: true });
       } else if (userRole === 'admin') {
         // Redirect admin to admin dashboard
+        console.log('Admin detected in SfdAuthUI, redirecting to super-admin-dashboard');
         navigate('/super-admin-dashboard', { replace: true });
       } else {
         // Redirect regular users to mobile flow
+        console.log('Regular user detected in SfdAuthUI, redirecting to mobile flow');
         navigate('/mobile-flow/main', { replace: true });
       }
     }
