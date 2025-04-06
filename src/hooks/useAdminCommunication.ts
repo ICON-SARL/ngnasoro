@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/auth';
@@ -32,11 +32,13 @@ export function useAdminCommunication() {
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [hasError, setHasError] = useState(false);
 
   const fetchNotifications = async (userId?: string) => {
     if (!userId) return [];
     
     setIsLoading(true);
+    setHasError(false);
     
     try {
       // Get notifications where user is specifically the recipient or
@@ -49,20 +51,19 @@ export function useAdminCommunication() {
         
       if (error) throw error;
       
-      setNotifications(data as AdminNotification[]);
+      const notificationsData = data as AdminNotification[];
+      setNotifications(notificationsData);
       
       // Count unread notifications
-      const unread = data.filter(n => !n.read).length;
+      const unread = notificationsData.filter(n => !n.read).length;
       setUnreadCount(unread);
       
-      return data;
+      return notificationsData;
     } catch (error) {
       console.error('Error fetching notifications:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les notifications",
-        variant: "destructive"
-      });
+      setHasError(true);
+      // Ne pas afficher de toast à chaque échec de chargement
+      // pour éviter les multiples messages d'erreur
       return [];
     } finally {
       setIsLoading(false);
@@ -151,11 +152,32 @@ export function useAdminCommunication() {
     }
   };
 
+  // Utiliser retryFetch pour réessayer le chargement en cas d'échec réseau
+  const retryFetch = async (userId?: string, maxRetries = 1) => {
+    let retries = 0;
+    let success = false;
+    
+    while (retries <= maxRetries && !success) {
+      try {
+        await fetchNotifications(userId);
+        success = true;
+      } catch (error) {
+        console.log(`Retry attempt ${retries + 1} failed.`);
+        retries++;
+        if (retries <= maxRetries) {
+          // Attendre avant de réessayer (backoff exponentiel)
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries)));
+        }
+      }
+    }
+  };
+
   return {
     notifications,
     unreadCount,
     isLoading,
-    fetchNotifications,
+    hasError,
+    fetchNotifications: retryFetch,
     markAsRead,
     markAllAsRead,
     sendNotification,

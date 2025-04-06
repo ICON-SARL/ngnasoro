@@ -15,12 +15,14 @@ import {
   AlertTriangle, 
   Info, 
   Clock, 
-  CheckCheck
+  CheckCheck,
+  BellOff
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function AdminNotifications() {
   const { user } = useAuth();
@@ -29,7 +31,9 @@ export function AdminNotifications() {
     unreadCount,
     fetchNotifications, 
     markAsRead,
-    markAllAsRead
+    markAllAsRead,
+    hasError,
+    isLoading
   } = useAdminCommunication();
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
@@ -96,15 +100,27 @@ export function AdminNotifications() {
       await markAllAsRead(user.id);
     }
   };
+  
+  // Handle retry fetch
+  const handleRetryFetch = () => {
+    if (user?.id) {
+      fetchNotifications(user.id);
+    }
+  };
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <BellIcon className="h-5 w-5" />
-          {unreadCount > 0 && (
+          {unreadCount > 0 && !hasError && (
             <Badge className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 p-0 text-white">
               {unreadCount > 9 ? '9+' : unreadCount}
+            </Badge>
+          )}
+          {hasError && (
+            <Badge className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 p-0 text-white">
+              !
             </Badge>
           )}
         </Button>
@@ -112,7 +128,7 @@ export function AdminNotifications() {
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between p-3 bg-muted">
           <div className="font-semibold">Notifications</div>
-          {unreadCount > 0 && (
+          {unreadCount > 0 && !hasError && (
             <Button 
               variant="ghost" 
               size="sm" 
@@ -125,38 +141,55 @@ export function AdminNotifications() {
           )}
         </div>
         <ScrollArea className="max-h-80">
-          {notifications.length === 0 ? (
+          {hasError && (
+            <div className="p-3">
+              <Alert variant="destructive" className="bg-red-50">
+                <AlertDescription className="flex items-center justify-between">
+                  <span>Impossible de charger les notifications</span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRetryFetch}
+                  >
+                    Réessayer
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+          
+          {!hasError && notifications.length === 0 && (
             <div className="py-8 text-center">
-              <Info className="h-8 w-8 mx-auto text-muted-foreground" />
+              <BellOff className="h-8 w-8 mx-auto text-muted-foreground" />
               <p className="mt-2 text-sm text-muted-foreground">Aucune notification</p>
             </div>
-          ) : (
-            notifications.map((notification, index) => (
-              <div key={notification.id}>
-                <button
-                  className={`w-full text-left px-3 py-3 hover:bg-muted transition-colors ${!notification.read ? 'bg-blue-50' : ''}`}
-                  onClick={() => handleNotificationClick(notification.id, notification.read, notification.action_link)}
-                >
-                  <div className="flex items-start">
-                    <div className="mr-3 mt-0.5">
-                      {getNotificationIcon(notification.type)}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">{notification.title}</div>
-                      <div className="text-xs text-muted-foreground mt-1">{notification.message}</div>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        {formatNotificationDate(notification.created_at)}
-                      </div>
-                    </div>
-                    {!notification.read && (
-                      <div className="h-2 w-2 rounded-full bg-blue-500 mt-1"></div>
-                    )}
-                  </div>
-                </button>
-                {index < notifications.length - 1 && <Separator />}
-              </div>
-            ))
           )}
+          
+          {!hasError && notifications.map((notification, index) => (
+            <div key={notification.id}>
+              <button
+                className={`w-full text-left px-3 py-3 hover:bg-muted transition-colors ${!notification.read ? 'bg-blue-50' : ''}`}
+                onClick={() => handleNotificationClick(notification.id, notification.read, notification.action_link)}
+              >
+                <div className="flex items-start">
+                  <div className="mr-3 mt-0.5">
+                    {getNotificationIcon(notification.type)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{notification.title}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{notification.message}</div>
+                    <div className="text-xs text-muted-foreground mt-2">
+                      {formatNotificationDate(notification.created_at)}
+                    </div>
+                  </div>
+                  {!notification.read && (
+                    <div className="h-2 w-2 rounded-full bg-blue-500 mt-1"></div>
+                  )}
+                </div>
+              </button>
+              {index < notifications.length - 1 && <Separator />}
+            </div>
+          ))}
         </ScrollArea>
       </PopoverContent>
     </Popover>
