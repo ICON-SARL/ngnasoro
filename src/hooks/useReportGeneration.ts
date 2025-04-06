@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/utils/apiClient';
 
-type ReportFormat = 'pdf' | 'excel' | 'csv';
-type ReportType = 'transactions' | 'loans' | 'subsidies' | 'sfds';
+export type ReportFormat = 'pdf' | 'excel' | 'csv';
+export type ReportType = 'transactions' | 'loans' | 'subsidies' | 'sfds';
 
-interface ReportOptions {
+export interface ReportOptions {
   type: ReportType;
   startDate: Date;
   endDate: Date;
