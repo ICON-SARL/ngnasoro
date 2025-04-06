@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast'; // Correct import path
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -34,6 +33,16 @@ interface LoanPlan {
   fees: number;
   requirements: string[];
   sfd_id: string;
+}
+
+interface UserSfdResult {
+  id: string;
+  is_default: boolean;
+  sfd_id: string;
+  sfds: {
+    id: string;
+    name: string;
+  }
 }
 
 const formSchema = z.object({
@@ -96,11 +105,12 @@ const LoanApplicationPage: React.FC = () => {
           
         if (error) throw error;
         
-        const transformedData = Array.isArray(data) ? data.map(item => ({
-          id: item.sfd_id,
+        const typedData = data as unknown as UserSfdResult[];
+        const transformedData = typedData.map(item => ({
+          id: item.sfds.id,
           name: item.sfds.name,
           is_default: item.is_default
-        })) : [];
+        }));
         
         setSfds(transformedData);
         
@@ -421,7 +431,6 @@ const LoanApplicationPage: React.FC = () => {
         </CardContent>
       </Card>
       
-      {/* Footer for repayment functionality */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex justify-center">
         <Button 
           onClick={navigateToRepayment}

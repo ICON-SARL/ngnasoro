@@ -5,6 +5,17 @@ import { useToast } from '@/hooks/use-toast';
 import { SfdData } from './types';
 import { User } from '@/hooks/useAuth';
 
+interface UserSfdResult {
+  id: string;
+  is_default: boolean;
+  sfds: {
+    id: string;
+    name: string;
+    code: string;
+    region: string;
+  };
+}
+
 export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateAction<SfdData[]>>) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +42,8 @@ export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateActio
       if (error) throw error;
       
       if (data) {
-        const sfdList: SfdData[] = data.map(item => ({
+        const typedData = data as unknown as UserSfdResult[];
+        const sfdList: SfdData[] = typedData.map(item => ({
           id: item.sfds.id,
           name: item.sfds.name,
           token: null,
