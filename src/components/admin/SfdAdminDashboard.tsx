@@ -1,10 +1,12 @@
+
 import React from 'react';
 import { AgencyHeader } from '@/components/AgencyHeader';
 import { SfdDashboardStats } from '@/components/sfd/dashboard';
 import { CreditTrendChart } from '@/components/sfd/analytics';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, FileText, CreditCard, User, Badge } from 'lucide-react';
+import { Plus, Users, FileText, CreditCard, User } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
 import { useSfdClients } from '@/hooks/useSfdClients';

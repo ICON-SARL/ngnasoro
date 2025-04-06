@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { assignDefaultSfd, createSfdClient } from '@/hooks/auth/authUtils';
 import DemoAccountsCreator from '@/components/auth/DemoAccountsCreator';
 import { Loader2, LogIn } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const MobileLoginPage = () => {
   const [email, setEmail] = useState('');

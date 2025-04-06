@@ -7,10 +7,12 @@ export interface User {
   avatar_url?: string;
   phone?: string;
   sfd_id?: string;
+  role?: Role; // Add role property directly to the User interface
   user_metadata?: {
     full_name?: string;
     avatar_url?: string;
     phone?: string;
+    role?: Role; // Add role property to user_metadata
   };
   app_metadata?: {
     role?: string; // Single role string
@@ -35,8 +37,8 @@ export interface AuthContextProps {
   session: any | null;
   isLoading: boolean;
   setUser: (user: User | null) => void;
-  signIn: (email: string, password: string) => Promise<{ error?: any }>;
-  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
+  signIn: ({ email, password }: { email: string, password: string }) => Promise<{ error?: any }>;
+  signUp: ({ email, password, options }: { email: string, password: string, options?: any }) => Promise<{ error?: any, data?: any }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }
@@ -47,4 +49,10 @@ export enum UserRole {
   SFD_ADMIN = 'sfd_admin',
   CLIENT = 'client',
   USER = 'user'
+}
+
+// Add AuthResponse interface for authUtils.ts
+export interface AuthResponse {
+  error?: any;
+  data?: any;
 }

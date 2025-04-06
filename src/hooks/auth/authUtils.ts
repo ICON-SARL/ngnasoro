@@ -17,21 +17,26 @@ export const createUserFromSupabaseUser = (supabaseUser?: SupabaseUser | null): 
 export const getUserRole = (user?: SupabaseUser | null | User): Role | null => {
   if (!user) return null;
   
-  if ('user_metadata' in user) {
-    return user.user_metadata?.role as Role || 'user';
+  if ('user_metadata' in user && user.user_metadata) {
+    // Check for role in user_metadata
+    return (user.user_metadata?.role as Role) || null;
+  } else if ('app_metadata' in user && user.app_metadata) {
+    // Check for role in app_metadata
+    return (user.app_metadata?.role as Role) || null;
   } else if ('role' in user && user.role) {
+    // Direct role property on the user object
     return user.role;
   }
   
-  return 'user';
+  return null;
 };
 
 export const isUserAdmin = (user?: User | null): boolean => {
-  return user?.role === 'admin';
+  return user?.role === 'admin' || user?.app_metadata?.role === 'admin';
 };
 
 export const isUserSfdAdmin = (user?: User | null): boolean => {
-  return user?.role === 'sfd_admin';
+  return user?.role === 'sfd_admin' || user?.app_metadata?.role === 'sfd_admin';
 };
 
 // Fonction pour assigner la SFD "Test" lors de la création d'un nouveau compte
