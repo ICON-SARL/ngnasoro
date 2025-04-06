@@ -42,7 +42,6 @@ function App() {
         <Route path="/auth" element={<AuthUI />} />
         <Route path="/admin/auth" element={<AdminAuthUI />} />
         <Route path="/sfd/auth" element={<SfdAuthUI />} />
-        <Route path="/mobile-flow" element={<MobileFlow />} />
         <Route path="/mobile-flow/*" element={<MobileFlow />} />
         
         {/* Admin Routes */}

@@ -5,7 +5,7 @@ import MobileNavigation from '@/components/MobileNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth';
 import { useAccount } from '@/hooks/useAccount';
 import { useTransactions } from '@/hooks/useTransactions';
 
@@ -31,12 +31,7 @@ const MobileFlow = () => {
     return !hasVisited;
   });
 
-  // Check if user is authenticated
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
+  // Removed authentication check that was causing redirect loop
 
   // Save welcome screen status
   useEffect(() => {
@@ -96,25 +91,20 @@ const MobileFlow = () => {
     }
   };
 
-  // Fix the infinite redirection loop
+  // Simplified redirect logic to prevent loops
   useEffect(() => {
-    // Only handle welcome screen redirection if not already on a valid mobile flow path
-    const currentPath = location.pathname;
-    const isWelcomePage = currentPath === '/mobile-flow/welcome';
-    const isMobileFlowPath = currentPath.startsWith('/mobile-flow/');
+    const path = location.pathname;
     
-    if (showWelcome && !isMobileFlowPath) {
-      // If showing welcome and not on any mobile flow path, navigate to welcome
-      navigate('/mobile-flow/welcome');
-    } else if (currentPath === '/mobile-flow' || currentPath === '/mobile-flow/') {
-      // If on root mobile-flow path with no specific sub-route, go to main
+    if (path === '/mobile-flow' || path === '/mobile-flow/') {
+      // Direct to main dashboard if on root mobile path
       navigate('/mobile-flow/main');
     }
-  }, [showWelcome, location.pathname, navigate]);
+  }, [location.pathname, navigate]);
 
   const isWelcomePage = location.pathname === '/mobile-flow/welcome';
 
-  if (loading || accountLoading) {
+  // Show loading only when loading user account data
+  if (accountLoading) {
     return <div className="p-8 text-center">Chargement...</div>;
   }
 

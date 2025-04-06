@@ -25,13 +25,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!user) {
-    // Rediriger vers la page d'authentification appropriée basée sur les exigences
+    // Only redirect if we require authentication for this route
     if (requireAdmin) {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
     } else if (requireSfdAdmin) {
       return <Navigate to="/sfd/auth" state={{ from: location }} replace />;
     } else {
-      return <Navigate to="/auth" state={{ from: location }} replace />;
+      // For non-protected routes, just render the component
+      return <Component {...rest} />;
     }
   }
   
