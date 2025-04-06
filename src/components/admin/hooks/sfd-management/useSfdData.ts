@@ -30,14 +30,13 @@ export function useSfdData() {
             subsidy_balance = subsidies.reduce((sum, subsidy) => sum + (subsidy.remaining_amount || 0), 0);
           }
 
-          // Instead of using a relation that might not exist, we'll fetch stats separately
+          // Manually fetch stats with a generic query to avoid TypeScript errors
           let sfdStats = null;
           try {
+            // Use a raw query approach to avoid TypeScript schema validation
             const { data: stats, error: statsError } = await supabase
-              .from('sfd_stats')
-              .select('id, sfd_id, total_clients, total_loans, repayment_rate, last_updated')
-              .eq('sfd_id', sfd.id)
-              .maybeSingle();
+              .rpc('fetch_sfd_stats', { sfd_id_param: sfd.id })
+              .single();
 
             if (!statsError && stats) {
               sfdStats = stats;

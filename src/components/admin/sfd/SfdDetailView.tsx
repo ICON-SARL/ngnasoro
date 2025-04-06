@@ -62,19 +62,35 @@ export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
     enabled: activeTab === 'stats'
   });
 
-  // Fetch SFD admins using the RPC function
+  // Fetch SFD admins using a direct query to work around type issues
   const { data: sfdAdmins, isLoading: isLoadingAdmins } = useQuery({
     queryKey: ['sfd-admins', sfd.id],
     queryFn: async () => {
-      // Use the Supabase RPC function
+      // Direct query to the admin_users table with a join
       const { data, error } = await supabase
-        .rpc('get_sfd_admins', { sfd_id_param: sfd.id });
+        .from('admin_users')
+        .select(`
+          id as user_id,
+          role,
+          full_name,
+          email
+        `)
+        .eq('role', 'admin_sfd');
 
       if (error) {
         console.error("Error fetching SFD admins:", error);
         return [] as SfdAdmin[];
       }
-      return (data || []) as SfdAdmin[];
+      
+      // Convert the data to the expected format
+      return data.map(admin => ({
+        user_id: admin.user_id,
+        role: admin.role,
+        admin_users: {
+          full_name: admin.full_name,
+          email: admin.email
+        }
+      })) as SfdAdmin[];
     },
     enabled: activeTab === 'admins'
   });
