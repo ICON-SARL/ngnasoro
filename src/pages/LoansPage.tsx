@@ -5,7 +5,7 @@ import { AgencyHeader } from '@/components/AgencyHeader';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { useAuth } from '@/hooks/useAuth';
 
-const LoansPage = () => {
+export const LoansPage = () => {
   const { isAdmin } = useAuth();
   
   return (

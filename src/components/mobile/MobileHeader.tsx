@@ -1,60 +1,63 @@
 
-import React, { useState } from 'react';
-import ContextualHeader from './ContextualHeader';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { Shield } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, Menu } from 'lucide-react';
 
-const MobileHeader = () => {
-  const { toast } = useToast();
-  const [selectedSfd, setSelectedSfd] = useState('primary');
-  
-  const handleSfdChange = (value: string) => {
-    setSelectedSfd(value);
-    toast({
-      title: "SFD changée",
-      description: `Vous êtes maintenant connecté à ${value === 'primary' ? 'SFD Primaire' : 
-        value === 'secondary' ? 'SFD Secondaire' : 'SFD Micro-Finance'}`,
-    });
-  };
+interface MobileHeaderProps {
+  title?: string;
+  showBackButton?: boolean;
+  showMenu?: boolean;
+  onMenuClick?: () => void;
+}
+
+export const MobileHeader: React.FC<MobileHeaderProps> = ({
+  title = "MEREF-SFD",
+  showBackButton = false,
+  showMenu = true,
+  onMenuClick
+}) => {
+  const navigate = useNavigate();
   
   return (
-    <div className="p-2">
-      <ContextualHeader />
-      
-      <div className="mt-3 flex justify-end">
-        <div className="w-[180px]">
-          <Select value={selectedSfd} onValueChange={handleSfdChange}>
-            <SelectTrigger className="bg-blue-700/80 text-white border-blue-500 text-sm py-1 h-8">
-              <SelectValue placeholder="Choisir une SFD" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="primary" className="text-sm">
-                <div className="flex items-center">
-                  <Shield className="h-3 w-3 mr-1 text-green-600" />
-                  SFD Primaire
+    <header className="bg-[#0D6A51] text-white sticky top-0 z-30">
+      <div className="container py-3 px-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            {showBackButton ? (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="mr-2 text-white hover:bg-[#0D6A51]/20"
+                onClick={() => navigate(-1)}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+            ) : null}
+            
+            <div className="flex items-center gap-2">
+              <Link to="/" className="flex items-center gap-2">
+                <div className="h-6 w-6 rounded bg-white text-[#0D6A51] flex items-center justify-center font-medium text-sm">
+                  M
                 </div>
-              </SelectItem>
-              <SelectItem value="secondary" className="text-sm">
-                <Shield className="h-3 w-3 mr-1 text-amber-600" />
-                SFD Secondaire
-              </SelectItem>
-              <SelectItem value="micro" className="text-sm">
-                <Shield className="h-3 w-3 mr-1 text-blue-600" />
-                SFD Micro-Finance
-              </SelectItem>
-            </SelectContent>
-          </Select>
+                <span className="font-medium">{title}</span>
+              </Link>
+            </div>
+          </div>
+          
+          {showMenu && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-white hover:bg-[#0D6A51]/20"
+              onClick={onMenuClick}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
         </div>
       </div>
-    </div>
+    </header>
   );
 };
 

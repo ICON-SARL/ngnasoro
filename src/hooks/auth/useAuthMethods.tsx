@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { User } from './types';
+import { User, AuthResponse } from './types';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useAuthMethods(
@@ -33,7 +33,7 @@ export function useAuthMethods(
   };
 
   // Sign up with email and password
-  const signUp = async ({ email, password, options }: { email: string, password: string, options?: any }) => {
+  const signUp = async ({ email, password, options }: { email: string, password: string, options?: any }): Promise<AuthResponse> => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase.auth.signUp({

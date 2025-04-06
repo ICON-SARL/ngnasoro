@@ -2,23 +2,23 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '@/hooks/auth';
-import AdminDashboard from '@/components/admin/AdminDashboard';
+import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import AgencyDashboard from '@/pages/AgencyDashboard';
 import SfdClientsPage from '@/pages/SfdClientsPage';
-import { LoansPage } from '@/components/sfd/loans/LoanList';
+import LoansPage from '@/pages/LoansPage';
 import ClientsPage from '@/pages/ClientsPage';
 import TransactionsPage from '@/pages/TransactionsPage';
-import { SubsidyRequestsPage } from '@/components/sfd/loans/SubsidyRequestDialog';
+import SubsidyRequestsPage from '@/pages/SubsidyRequestsPage';
 import LoginPage from '@/pages/LoginPage';
 import SfdLoginPage from '@/pages/SfdLoginPage';
 import MobileLoginPage from '@/pages/MobileLoginPage';
 import MobileDashboard from '@/components/mobile/dashboard/MainDashboard';
 import ClientList from '@/components/mobile/sfd-clients/ClientList';
 import NewClientPage from '@/pages/NewClientPage';
-import ClientDetailsPage from '@/components/sfd/ClientDetails';
-import CreateSfdPage from '@/components/sfd/CreateCaurieSfdButton';
-import SfdAccountsPage from '@/components/admin/sfd/SfdAccountsManager';
-import SiteHeader from '@/components/SiteHeader';
+import ClientDetailsPage from '@/pages/ClientDetailsPage';
+import CreateSfdPage from '@/pages/CreateSfdPage';
+import SfdAccountsPage from '@/pages/SfdAccountsPage';
+import { SiteHeader } from '@/components/SiteHeader';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -50,7 +50,7 @@ const App: React.FC = () => {
           <Route path="/mobile-flow/dashboard" element={<MobileDashboard />} />
           <Route path="/mobile-flow/clients" element={<ClientList />} />
           <Route path="/mobile-flow/client/new" element={<NewClientPage />} />
-          <Route path="/mobile-flow/client/:clientId" element={<ClientDetailsPage client={undefined} />} />
+          <Route path="/mobile-flow/client/:clientId" element={<ClientDetailsPage />} />
           <Route path="/mobile-flow/create-sfd" element={<CreateSfdPage />} />
           <Route path="/mobile-flow/sfd-accounts" element={<SfdAccountsPage />} />
         </Routes>

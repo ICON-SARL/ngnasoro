@@ -19,11 +19,19 @@ export const getUserRole = (user?: SupabaseUser | null | User): Role | null => {
   
   if ('user_metadata' in user && user.user_metadata) {
     // Check for role in user_metadata
-    return (user.user_metadata?.role as Role) || null;
-  } else if ('app_metadata' in user && user.app_metadata) {
+    if (user.user_metadata?.role) {
+      return user.user_metadata.role as Role;
+    }
+  } 
+  
+  if ('app_metadata' in user && user.app_metadata) {
     // Check for role in app_metadata
-    return (user.app_metadata?.role as Role) || null;
-  } else if ('role' in user && user.role) {
+    if (user.app_metadata?.role) {
+      return user.app_metadata.role as Role;
+    }
+  } 
+  
+  if ('role' in user && user.role) {
     // Direct role property on the user object
     return user.role;
   }

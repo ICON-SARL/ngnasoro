@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext } from 'react';
-import { User, AuthContextProps, Role } from './types';
+import { User, AuthContextProps, Role, AuthResponse } from './types';
 import { isUserAdmin, isUserSfdAdmin, getUserRole } from './authUtils';
 import { useAuthState } from './useAuthState';
 import { useAuthListeners } from './useAuthListeners';
@@ -12,7 +12,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   setUser: () => { },
   signIn: async () => ({}),
-  signUp: async () => { },
+  signUp: async () => ({ error: undefined, data: undefined }),
   signOut: async () => { },
   loading: true,
   isLoggedIn: false,
