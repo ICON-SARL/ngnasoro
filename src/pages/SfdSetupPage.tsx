@@ -30,7 +30,8 @@ const SfdSetupPage = () => {
             .select('id')
             .eq('user_id', user.id);
             
-          const hasExistingSfds = (data && data.length > 0) || activeSfdId;
+          // Fix: Ensure we're setting a boolean value to setHasSfds
+          const hasExistingSfds = (data && data.length > 0) || Boolean(activeSfdId);
           setHasSfds(hasExistingSfds);
           setActiveTab(hasExistingSfds ? 'manage' : 'create');
         } catch (error) {
