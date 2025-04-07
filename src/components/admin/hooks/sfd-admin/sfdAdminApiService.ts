@@ -78,8 +78,8 @@ export async function createSfdAdmin(adminData: {
       // Continue despite role assignment error, we'll handle it separately
     }
     
-    // 3. Add user to admin_users table using the security definer function
-    // Use a direct SQL query with the function call instead of rpc
+    // 3. Add user to admin_users table using a direct insert
+    // Use the RLS policies we've created instead of the RPC function
     const { error: adminError } = await supabase
       .from('admin_users')
       .insert({
