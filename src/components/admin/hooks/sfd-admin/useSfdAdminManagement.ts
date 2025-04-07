@@ -1,31 +1,31 @@
 
+import { useState } from 'react';
+import { useSfdAdminsList } from './useSfdAdminsList';
 import { useAddSfdAdmin } from './useAddSfdAdmin';
 import { useDeleteSfdAdmin } from './useDeleteSfdAdmin';
-import { useSfdAdminsList } from './useSfdAdminsList';
 
-/**
- * Combined hook for managing SFD administrators
- */
 export function useSfdAdminManagement() {
+  const { sfdAdmins, isLoading: isLoadingAdmins, error: listError, refetch } = useSfdAdminsList();
   const { addSfdAdmin, isAdding, error: addError } = useAddSfdAdmin();
   const { deleteSfdAdmin, isDeleting, error: deleteError } = useDeleteSfdAdmin();
-  const { sfdAdmins, isLoading: isLoadingList, error: listError, refetch } = useSfdAdminsList();
-
+  
+  // Combine the isLoading states
+  const isLoading = isLoadingAdmins || isAdding || isDeleting;
+  
+  // Combine errors (use the most recent/relevant one)
+  const error = addError || deleteError || listError;
+  
   return {
-    // List operations
+    // Admin list data and operations
     sfdAdmins,
-    refetch,
+    isLoading,
+    error,
+    refetchAdmins: refetch,
     
-    // Add operations
+    // Admin creation
     addSfdAdmin,
     
-    // Delete operations
-    deleteSfdAdmin,
-    
-    // Loading states
-    isLoading: isLoadingList || isAdding || isDeleting,
-    
-    // Error states
-    error: addError || deleteError || listError
+    // Admin deletion
+    deleteSfdAdmin
   };
 }
