@@ -1,10 +1,10 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SfdFormValues } from '../../../sfd/schemas/sfdFormSchema';
 import { useAuth } from '@/hooks/useAuth';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
+import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 
 export function useAddSfdMutation() {
   const { toast } = useToast();
@@ -30,28 +30,22 @@ export function useAddSfdMutation() {
       };
 
       try {
-        // 1. Utiliser le service role pour contourner les politiques RLS
-        const { data: adminData } = await supabase.auth.getSession();
-        
-        // 2. Création de la SFD avec appel à une fonction RPC
-        const { data: sfdData, error: sfdError } = await supabase.rpc('create_sfd', {
+        // 1. Création de la SFD avec appel à la fonction edge
+        const sfdResponse = await edgeFunctionApi.callEdgeFunction('create_sfd', {
           sfd_data: newSfd,
           admin_id: user.id
         });
 
-        if (sfdError) {
-          console.error("Erreur lors de l'ajout de la SFD via RPC:", sfdError);
-          throw new Error(`Erreur lors de l'ajout de la SFD: ${sfdError.message}`);
+        if (!sfdResponse) {
+          throw new Error("Erreur lors de l'ajout de la SFD");
         }
         
-        if (!sfdData || !sfdData.id) {
-          throw new Error("La SFD a été créée mais l'ID n'a pas été retourné");
-        }
-
+        const newSfdData = sfdResponse;
+        
         // 3. Si nous avons une subvention initiale, créons-la
         if (sfdData.subsidy_balance && sfdData.subsidy_balance > 0) {
-          const newSubsidy = {
-            sfd_id: sfdData.id,
+          const subsidyData = {
+            sfd_id: newSfdData.id,
             amount: parseFloat(String(sfdData.subsidy_balance)),
             remaining_amount: parseFloat(String(sfdData.subsidy_balance)),
             allocated_by: user.id,
@@ -59,17 +53,17 @@ export function useAddSfdMutation() {
             description: 'Subvention initiale lors de la création de la SFD'
           };
 
-          const { error: subsidyError } = await supabase.rpc('create_sfd_subsidy', {
-            subsidy_data: newSubsidy
+          const subsidyResponse = await edgeFunctionApi.callEdgeFunction('create_sfd_subsidy', {
+            subsidy_data: subsidyData
           });
 
-          if (subsidyError) {
-            console.warn("Erreur lors de la création de la subvention initiale:", subsidyError);
+          if (!subsidyResponse) {
+            console.warn("Erreur lors de la création de la subvention initiale");
             // Nous continuons malgré l'erreur de subvention
           }
         }
 
-        return [sfdData];
+        return [newSfdData];
       } catch (error: any) {
         console.error("Erreur critique lors de l'ajout de la SFD:", error);
         throw error;
@@ -82,13 +76,13 @@ export function useAddSfdMutation() {
         description: 'La nouvelle SFD a été ajoutée avec succès.',
       });
 
-      if (user) {
+      if (user && data[0]) {
         logAuditEvent({
           user_id: user.id,
           action: 'create_sfd',
           category: AuditLogCategory.SFD_OPERATIONS,
           severity: AuditLogSeverity.INFO,
-          details: { sfd_id: data?.[0]?.id },
+          details: { sfd_id: data[0].id },
           status: 'success',
         });
       }

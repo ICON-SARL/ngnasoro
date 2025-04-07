@@ -26,8 +26,9 @@ export function SfdFinanceFields({ form }: SfdFinanceFieldsProps) {
                 className="pl-9 focus:border-[#0D6A51] focus:ring-[#0D6A51]/20"
                 placeholder="0" 
                 {...field} 
+                value={field.value || ''}
                 onChange={(e) => {
-                  const value = e.target.value ? parseFloat(e.target.value) : undefined;
+                  const value = e.target.value ? Number(e.target.value) : 0;
                   field.onChange(value);
                 }}
                 disabled={form.formState.isSubmitting}
