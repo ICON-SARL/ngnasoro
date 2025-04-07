@@ -46,7 +46,8 @@ export function MerefSfdCommunication() {
   const [notification, setNotification] = useState<AdminNotificationRequest>({
     title: '',
     message: '',
-    type: 'info'
+    type: 'info',
+    recipient_id: undefined // Add this to match the required type
   });
 
   // Fetch SFD admins when the dialog is opened
@@ -126,7 +127,7 @@ export function MerefSfdCommunication() {
       
       const notificationToSend: AdminNotificationRequest = {
         ...notification,
-        recipient_id: selectedRecipientId === 'all' ? undefined : selectedRecipientId, // Changed logic to match new default
+        recipient_id: selectedRecipientId === 'all' ? undefined : selectedRecipientId,
         recipient_role: selectedRecipientId === 'all' ? 'sfd_admin' : undefined
       };
       
@@ -146,7 +147,8 @@ export function MerefSfdCommunication() {
       setNotification({
         title: '',
         message: '',
-        type: 'info'
+        type: 'info',
+        recipient_id: undefined
       });
       setSelectedRecipientId('all');
       setOpen(false);
@@ -231,7 +233,7 @@ export function MerefSfdCommunication() {
                 <div className="col-span-3">
                   <Select 
                     value={notification.type} 
-                    onValueChange={(val: any) => setNotification({ ...notification, type: val })}
+                    onValueChange={(val: string) => setNotification(prev => ({ ...prev, type: val }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner un type" />
@@ -254,7 +256,7 @@ export function MerefSfdCommunication() {
                   id="title"
                   className="col-span-3"
                   value={notification.title}
-                  onChange={(e) => setNotification({ ...notification, title: e.target.value })}
+                  onChange={(e) => setNotification(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="Titre du message"
                 />
               </div>
@@ -267,7 +269,7 @@ export function MerefSfdCommunication() {
                   id="link"
                   className="col-span-3"
                   value={notification.action_link || ''}
-                  onChange={(e) => setNotification({ ...notification, action_link: e.target.value })}
+                  onChange={(e) => setNotification(prev => ({ ...prev, action_link: e.target.value }))}
                   placeholder="/credit-approval"
                 />
               </div>
@@ -280,7 +282,7 @@ export function MerefSfdCommunication() {
                   id="message"
                   className="col-span-3"
                   value={notification.message}
-                  onChange={(e) => setNotification({ ...notification, message: e.target.value })}
+                  onChange={(e) => setNotification(prev => ({ ...prev, message: e.target.value }))}
                   placeholder="Contenu de votre message"
                   rows={5}
                 />

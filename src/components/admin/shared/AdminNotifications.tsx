@@ -41,7 +41,7 @@ export function AdminNotifications() {
   // Fetch notifications on component mount or when user changes
   useEffect(() => {
     if (user?.id) {
-      fetchNotifications(user.id);
+      fetchNotifications();
     }
   }, [user, fetchNotifications]);
 
@@ -104,7 +104,7 @@ export function AdminNotifications() {
   // Handle retry fetch
   const handleRetryFetch = () => {
     if (user?.id) {
-      fetchNotifications(user.id);
+      fetchNotifications();
     }
   };
 
@@ -169,7 +169,7 @@ export function AdminNotifications() {
             <div key={notification.id}>
               <button
                 className={`w-full text-left px-3 py-3 hover:bg-muted transition-colors ${!notification.read ? 'bg-blue-50' : ''}`}
-                onClick={() => handleNotificationClick(notification.id, notification.read, notification.action_link)}
+                onClick={() => handleNotificationClick(notification.id || '', notification.read || false, notification.action_link)}
               >
                 <div className="flex items-start">
                   <div className="mr-3 mt-0.5">
@@ -179,7 +179,7 @@ export function AdminNotifications() {
                     <div className="font-medium text-sm">{notification.title}</div>
                     <div className="text-xs text-muted-foreground mt-1">{notification.message}</div>
                     <div className="text-xs text-muted-foreground mt-2">
-                      {formatNotificationDate(notification.created_at)}
+                      {formatNotificationDate(notification.created_at || '')}
                     </div>
                   </div>
                   {!notification.read && (

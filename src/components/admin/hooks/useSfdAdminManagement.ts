@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { logAuditEvent } from '@/utils/audit/auditLoggerCore';
+import { UserRole } from '@/hooks/auth/types';
 
 export function useSfdAdminManagement() {
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +60,8 @@ export function useSfdAdminManagement() {
             sfd_id: adminData.sfd_id
           },
           app_metadata: {
-            role: adminData.role,
+            // Ensure role is one of the allowed values
+            role: 'sfd_admin' as 'admin' | 'sfd_admin' | 'user',
           }
         });
         
@@ -74,7 +76,7 @@ export function useSfdAdminManagement() {
         // 2. Assign role in the database
         const { error: roleError } = await supabase.rpc('assign_role', {
           user_id: authData.user.id,
-          role: adminData.role
+          role: 'sfd_admin'
         });
         
         if (roleError) {
@@ -90,7 +92,7 @@ export function useSfdAdminManagement() {
               id: authData.user.id,
               email: adminData.email,
               full_name: adminData.full_name,
-              role: adminData.role,
+              role: 'sfd_admin',
               sfd_id: adminData.sfd_id
             }
           ]);
@@ -98,16 +100,16 @@ export function useSfdAdminManagement() {
         if (adminError) throw adminError;
         
         // 4. Log audit event
-        await logAuditEvent(
-          AuditLogCategory.ADMIN_ACTION,
-          'sfd_admin_created',
-          {
+        await logAuditEvent({
+          category: AuditLogCategory.ADMIN_ACTION,
+          action: 'sfd_admin_created',
+          details: {
             email: adminData.email,
             sfd_id: adminData.sfd_id
           },
-          authData.user.id,
-          AuditLogSeverity.INFO
-        );
+          user_id: authData.user.id,
+          severity: AuditLogSeverity.INFO
+        });
         
         // 5. Send notification if requested
         if (adminData.notify) {
@@ -127,7 +129,7 @@ export function useSfdAdminManagement() {
       toast({
         title: "Succès",
         description: "L'administrateur SFD a été créé avec succès.",
-        variant: "success",
+        variant: "default",
       });
     },
     onError: (err: Error) => {
@@ -161,15 +163,15 @@ export function useSfdAdminManagement() {
         if (adminError) throw adminError;
         
         // 3. Log audit event
-        await logAuditEvent(
-          AuditLogCategory.ADMIN_ACTION,
-          'sfd_admin_deleted',
-          {
+        await logAuditEvent({
+          category: AuditLogCategory.ADMIN_ACTION,
+          action: 'sfd_admin_deleted',
+          details: {
             admin_id: adminId
           },
-          undefined,
-          AuditLogSeverity.WARNING
-        );
+          user_id: undefined,
+          severity: AuditLogSeverity.WARNING
+        });
         
         return true;
       } catch (err: any) {
@@ -183,7 +185,7 @@ export function useSfdAdminManagement() {
       toast({
         title: "Succès",
         description: "L'administrateur SFD a été supprimé avec succès.",
-        variant: "success",
+        variant: "default",
       });
     },
     onError: (err: Error) => {
