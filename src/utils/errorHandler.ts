@@ -1,5 +1,4 @@
-
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export enum ErrorType {
   AUTHENTICATION = "AUTHENTICATION",

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Fingerprint, AlertCircle, Shield, Check, ArrowUp, ArrowDown, AlertTriangle, RotateCw, Smartphone, Building } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export const SecurePaymentLayer = () => {
   const { toast } = useToast();
@@ -20,10 +19,8 @@ export const SecurePaymentLayer = () => {
   const [balanceStatus, setBalanceStatus] = useState<'sufficient' | 'insufficient'>('sufficient');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed' | null>(null);
   
-  // Simule la détection automatique du compte SFD principal
   useEffect(() => {
     const detectPrimaryAccount = () => {
-      // Simulation d'une API qui vérifie le solde
       const randomBalance = Math.random();
       if (randomBalance < 0.3) {
         setBalanceStatus('insufficient');
@@ -45,7 +42,6 @@ export const SecurePaymentLayer = () => {
   const handlePayment = () => {
     setPaymentStatus('pending');
     
-    // Simuler un traitement de paiement
     setTimeout(() => {
       const success = Math.random() > 0.2;
       
@@ -73,7 +69,6 @@ export const SecurePaymentLayer = () => {
       description: "Veuillez valider votre identité via votre appareil mobile.",
     });
     
-    // Simuler une vérification biométrique
     setTimeout(() => {
       toast({
         title: "Identité confirmée",
@@ -218,7 +213,6 @@ export const SecurePaymentLayer = () => {
           </TabsContent>
         </Tabs>
         
-        {/* Section de sécurité avancée */}
         <div className="mt-6 pt-6 border-t border-gray-200">
           <h3 className="text-sm font-medium mb-4 flex items-center">
             <Shield className="h-4 w-4 mr-2 text-[#0D6A51]" />
@@ -267,7 +261,6 @@ export const SecurePaymentLayer = () => {
           </div>
         </div>
         
-        {/* Section de réconciliation */}
         <div className="mt-6 pt-6 border-t border-gray-200">
           <h3 className="text-sm font-medium mb-2 flex items-center">
             <ArrowUp className="h-4 w-4 mr-2 text-[#0D6A51]" />
