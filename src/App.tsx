@@ -1,6 +1,6 @@
 
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth, AuthProvider } from '@/hooks/auth';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
@@ -112,10 +112,8 @@ function App() {
   return (
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <AuthProvider>
-        <Router>
-          <AppRoutes />
-          <Toaster />
-        </Router>
+        <AppRoutes />
+        <Toaster />
       </AuthProvider>
     </ThemeProvider>
   );
