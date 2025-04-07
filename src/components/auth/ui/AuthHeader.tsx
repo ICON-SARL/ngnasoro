@@ -6,30 +6,27 @@ interface AuthHeaderProps {
 }
 
 const AuthHeader: React.FC<AuthHeaderProps> = ({ mode }) => {
-  if (mode === 'admin') {
-    return (
-      <div className="p-4 bg-amber-50 border-b border-amber-100">
-        <h2 className="text-amber-800 font-medium text-center">
-          Connexion Administration
-        </h2>
-      </div>
-    );
-  }
+  let title = "Connexion Utilisateur";
+  let bgColor = "bg-green-50";
+  let borderColor = "border-green-100";
+  let textColor = "text-green-800";
   
-  if (mode === 'sfd_admin') {
-    return (
-      <div className="p-4 bg-blue-50 border-b border-blue-100">
-        <h2 className="text-blue-800 font-medium text-center">
-          Connexion Administration SFD
-        </h2>
-      </div>
-    );
+  if (mode === 'admin') {
+    title = "Connexion Administration MEREF";
+    bgColor = "bg-amber-50";
+    borderColor = "border-amber-100";
+    textColor = "text-amber-800";
+  } else if (mode === 'sfd_admin') {
+    title = "Connexion Administration SFD";
+    bgColor = "bg-blue-50";
+    borderColor = "border-blue-100";
+    textColor = "text-blue-800";
   }
   
   return (
-    <div className="p-4 bg-[#0D6A51]/10 border-b border-[#0D6A51]/20">
-      <h2 className="text-[#0D6A51] font-medium text-center">
-        Espace Client
+    <div className={`p-4 ${bgColor} border-b ${borderColor}`}>
+      <h2 className={`${textColor} font-medium text-center`}>
+        {title}
       </h2>
     </div>
   );

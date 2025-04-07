@@ -3,55 +3,55 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const logSuccessfulAuthentication = async (
   userId: string, 
-  email: string, 
-  isAdminLogin: boolean = false,
-  isSfdAdminLogin: boolean = false
+  email: string,
+  adminMode: boolean = false,
+  isSfdAdmin: boolean = false
 ) => {
   try {
     await supabase.from('audit_logs').insert({
       user_id: userId,
-      action: 'login_success',
-      category: 'authentication',
-      severity: 'info',
-      details: { 
+      action: 'authentication',
+      details: {
         email,
-        isAdminLogin,
-        isSfdAdminLogin,
-        loginMethod: 'password',
-        timestamp: new Date().toISOString()
+        success: true,
+        admin_mode: adminMode,
+        sfd_admin_mode: isSfdAdmin
       },
-      status: 'success'
+      status: 'success',
+      category: 'auth',
+      severity: 'info',
+      target_resource: 'auth/login'
     });
   } catch (error) {
-    console.warn('Failed to log successful authentication:', error);
+    console.error("Failed to log successful auth:", error);
   }
 };
 
 export const logFailedAuthentication = async (
-  userId: string, 
-  email: string, 
-  isAdminLogin: boolean = false,
-  isSfdAdminLogin: boolean = false,
-  errorMessage?: string
+  userId: string,
+  email: string,
+  adminMode: boolean = false,
+  isSfdAdmin: boolean = false,
+  errorMessage: string = "Unknown error"
 ) => {
   try {
     await supabase.from('audit_logs').insert({
       user_id: userId,
-      action: 'login_failure',
-      category: 'authentication',
-      severity: 'warning',
-      details: { 
+      action: 'authentication_attempt',
+      details: {
         email,
-        isAdminLogin,
-        isSfdAdminLogin,
-        loginMethod: 'password',
-        errorMessage,
-        timestamp: new Date().toISOString()
+        success: false,
+        admin_mode: adminMode,
+        sfd_admin_mode: isSfdAdmin,
+        error: errorMessage
       },
-      status: 'failure',
+      status: 'failed',
+      category: 'auth',
+      severity: 'warning',
+      target_resource: 'auth/login',
       error_message: errorMessage
     });
   } catch (error) {
-    console.warn('Failed to log failed authentication:', error);
+    console.error("Failed to log auth attempt:", error);
   }
 };

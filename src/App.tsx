@@ -6,6 +6,9 @@ import './App.css';
 import AuthUI from './components/AuthUI';
 import MobileFlow from './pages/MobileFlow';
 import MobileRoutes from './routes/MobileRoutes';
+import AdminLoginPage from './pages/AdminLoginPage';
+import ClientLoginPage from './pages/ClientLoginPage';
+import SfdLoginPage from './pages/SfdLoginPage';
 
 // Lazy loaded components for better performance
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
@@ -19,7 +22,9 @@ function App() {
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/auth/*" element={<AuthUI />} />
+          <Route path="/auth" element={<ClientLoginPage />} />
+          <Route path="/admin/auth" element={<AdminLoginPage />} />
+          <Route path="/sfd/auth" element={<AdminLoginPage isSfdAdmin={true} />} />
           <Route path="/mobile-flow/*" element={<MobileFlow />} />
           <Route path="/admin-dashboard/*" element={<AdminDashboard />} />
           <Route path="/agency-dashboard/*" element={<AgencyDashboard />} />

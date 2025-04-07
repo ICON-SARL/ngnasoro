@@ -1,169 +1,53 @@
 
-import React, { useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { SuperAdminHeader } from '@/components/SuperAdminHeader';
-import { 
-  DashboardWidgets, 
-  SuperAdminDashboardHeader, 
-  DashboardTabs,
-  DashboardCharts
-} from '@/components/admin/dashboard';
-import { useSubsidies } from '@/hooks/useSubsidies';
-import { useDashboardStats } from '@/hooks/useDashboardStats';
-import { ReportGenerator } from '@/components/ReportGenerator';
-import { DataExport } from '@/components/DataExport';
-import { Button } from '@/components/ui/button';
-import { FileText, Building, Users, Shield } from 'lucide-react';
-import { AdminManagement } from '@/components/admin/AdminManagement';
-import { SfdManagement } from '@/components/admin/SfdManagement';
-import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommunication';
-import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
-import { IntegratedDashboard } from '@/components/admin/shared/IntegratedDashboard';
-import AuditLogsSummary from '@/components/audit/AuditLogsSummary';
-import { SubsidySummary } from '@/components/admin/dashboard/SubsidySummary';
-import { PendingSubsidies } from '@/components/admin/dashboard/PendingSubsidies';
-import { Footer } from '@/components';
-import { FinancialReports } from '@/components/reports/FinancialReports';
+import React from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 const SuperAdminDashboard = () => {
-  const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'dashboard';
-  const { stats, isLoading: isLoadingStats } = useDashboardStats();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   
-  // Set the active tab based on query parameter
-  useEffect(() => {
-    if (!searchParams.get('tab')) {
-      setSearchParams({ tab: 'dashboard' });
+  // Check authentication and redirect if needed
+  React.useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+      return;
     }
-  }, [searchParams, setSearchParams]);
 
-  const handleTabChange = (value: string) => {
-    setSearchParams({ tab: value });
-  };
+    // Check role
+    const userRole = user?.app_metadata?.role;
+    if (userRole !== 'admin' && userRole !== 'super_admin') {
+      navigate('/access-denied');
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return <div className="p-8 text-center">Chargement du tableau de bord administrateur...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <SuperAdminHeader additionalComponents={<AdminNotifications />} />
-      
       <main className="flex-1 container mx-auto p-4 md:p-6">
-        <SuperAdminDashboardHeader />
+        <h1 className="text-2xl font-bold text-amber-700 mb-4">Tableau de Bord Admin MEREF</h1>
+        <p className="mb-4">Bienvenue sur votre tableau de bord d'administration.</p>
         
-        {/* Quick Actions */}
-        <div className="mb-6 flex flex-wrap gap-2">
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm" 
-            onClick={() => navigate('/credit-approval')}
-          >
-            <FileText className="h-4 w-4 mr-2 text-gray-600" />
-            Approbation de Crédit
-          </Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="font-medium text-lg mb-2">Gestion des SFD</h2>
+            <p>Gérer les structures de microfinance.</p>
+          </div>
           
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-            onClick={() => navigate('/sfd-management')}
-          >
-            <Building className="h-4 w-4 mr-2 text-gray-600" />
-            Gestion des SFDs
-          </Button>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="font-medium text-lg mb-2">Subventions</h2>
+            <p>Gérer les demandes de subventions.</p>
+          </div>
           
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-            onClick={() => setSearchParams({ tab: 'reports' })}
-          >
-            <FileText className="h-4 w-4 mr-2 text-gray-600" />
-            Générer des Rapports
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-            onClick={() => setSearchParams({ tab: 'admins' })}
-          >
-            <Users className="h-4 w-4 mr-2 text-gray-600" />
-            Gestion Administrateurs
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-            onClick={() => navigate('/audit-logs')}
-          >
-            <Shield className="h-4 w-4 mr-2 text-gray-600" />
-            Journal d'Audit
-          </Button>
-          
-          <MerefSfdCommunication />
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="font-medium text-lg mb-2">Rapports</h2>
+            <p>Consulter et générer des rapports.</p>
+          </div>
         </div>
-        
-        {/* Dashboard Widgets */}
-        {activeTab === 'dashboard' && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div className="md:col-span-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <SubsidySummary />
-                  <PendingSubsidies />
-                </div>
-                <DashboardWidgets 
-                  stats={stats} 
-                  isLoading={isLoadingStats} 
-                  subsidies={subsidies} 
-                  isLoadingSubsidies={isLoadingSubsidies} 
-                />
-              </div>
-              <div>
-                <AuditLogsSummary />
-              </div>
-            </div>
-            <div className="mt-6">
-              <IntegratedDashboard />
-            </div>
-          </>
-        )}
-        
-        {/* Charts */}
-        {activeTab === 'charts' && (
-          <DashboardCharts />
-        )}
-        
-        {/* Financial Reports */}
-        {activeTab === 'financial_reports' && (
-          <FinancialReports />
-        )}
-        
-        {/* Reports */}
-        {activeTab === 'reports' && (
-          <div className="space-y-6">
-            <ReportGenerator />
-          </div>
-        )}
-        
-        {/* Data Export */}
-        {activeTab === 'export' && (
-          <div className="space-y-6">
-            <DataExport />
-          </div>
-        )}
-        
-        {/* Admin Management */}
-        {activeTab === 'admins' && (
-          <div className="space-y-6">
-            <AdminManagement />
-          </div>
-        )}
-        
-        <DashboardTabs 
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
       </main>
-      
-      <Footer />
     </div>
   );
 };

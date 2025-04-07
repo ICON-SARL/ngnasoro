@@ -1,37 +1,41 @@
 
 import { useState, useEffect } from 'react';
 
-export const useCooldown = (initialValue: number = 0) => {
-  const [cooldownTime, setCooldownTime] = useState<number>(initialValue);
-  const [cooldownActive, setCooldownActive] = useState<boolean>(initialValue > 0);
-
+export const useCooldown = () => {
+  const [cooldownActive, setCooldownActive] = useState(false);
+  const [cooldownTime, setCooldownTime] = useState(0);
+  
   useEffect(() => {
-    if (cooldownTime <= 0) {
-      setCooldownActive(false);
-      return;
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (cooldownActive && cooldownTime > 0) {
+      interval = setInterval(() => {
+        setCooldownTime(prev => {
+          const newTime = prev - 1;
+          if (newTime <= 0) {
+            setCooldownActive(false);
+            if (interval) clearInterval(interval);
+            return 0;
+          }
+          return newTime;
+        });
+      }, 1000);
     }
     
-    const timer = setInterval(() => {
-      setCooldownTime((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setCooldownActive(false);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, [cooldownTime]);
-
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [cooldownActive, cooldownTime]);
+  
   const activateCooldown = (seconds: string | number) => {
     const time = typeof seconds === 'string' ? parseInt(seconds, 10) : seconds;
-    if (isNaN(time) || time <= 0) return;
-    
     setCooldownTime(time);
     setCooldownActive(true);
   };
-
-  return { cooldownActive, cooldownTime, activateCooldown };
+  
+  return {
+    cooldownActive,
+    cooldownTime,
+    activateCooldown
+  };
 };
