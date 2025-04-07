@@ -30,6 +30,17 @@ export function useSfdAdminManagement() {
       try {
         console.log("Starting SFD admin creation process", data);
         
+        // Check if user already exists
+        const { data: existingUser } = await supabase
+          .from('admin_users')
+          .select('email')
+          .eq('email', data.email)
+          .single();
+        
+        if (existingUser) {
+          throw new Error("This email is already registered. Please use a different email.");
+        }
+        
         // 1. Create a user using Supabase's public API
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: data.email,
@@ -54,8 +65,7 @@ export function useSfdAdminManagement() {
 
         console.log("User created successfully:", signUpData.user.id);
 
-        // 2. Create entry in admin_users - using the service role client to bypass RLS
-        // Instead of using RPC, we'll use direct insert with appropriate credentials
+        // 2. Create entry in admin_users
         const { error: adminError } = await supabase
           .from('admin_users')
           .insert({
@@ -134,26 +144,10 @@ export function useSfdAdminManagement() {
     }
   });
 
-  // Convert our mutation to a Promise<void> function as expected by the dialog
-  const addSfdAdmin = async (data: {
-    email: string;
-    password: string;
-    full_name: string;
-    role: string;
-    sfd_id: string;
-    notify: boolean;
-  }): Promise<void> => {
-    try {
-      await addSfdAdminMutation.mutateAsync(data);
-    } catch (error) {
-      // Error is already handled by the mutation's onError
-      console.error("Error in addSfdAdmin:", error);
-    }
-  };
-
   return {
     isLoading,
     error,
-    addSfdAdmin
+    addSfdAdmin: addSfdAdminMutation.mutate,
+    addSfdAdminAsync: addSfdAdminMutation.mutateAsync
   };
 }
