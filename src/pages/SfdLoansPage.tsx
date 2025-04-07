@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SfdAdminDashboard } from '@/components/admin/SfdAdminDashboard';
 import { LoanWorkflow } from '@/components/sfd/loans/LoanWorkflow';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LoanPlansManager from '@/components/sfd/loans/LoanPlansManager';
-import { useAuth } from '@/hooks/auth/AuthContext';
+import { CreditCard, BookOpen } from 'lucide-react';
+import { useAuth } from '@/hooks/auth';
 
 const SfdLoansPage = () => {
   const [activeTab, setActiveTab] = useState('loans');
@@ -27,20 +28,31 @@ const SfdLoansPage = () => {
       <SfdAdminDashboard />
       
       <div className="container mx-auto p-4 md:p-6 mt-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="loans">Prêts</TabsTrigger>
-            <TabsTrigger value="plans">Plans de Prêts</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="loans">
-            <LoanWorkflow />
-          </TabsContent>
-          
-          <TabsContent value="plans">
-            <LoanPlansManager />
-          </TabsContent>
-        </Tabs>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-bold">Gestion des Prêts</h1>
+              <TabsList>
+                <TabsTrigger value="loans" className="flex items-center">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Prêts
+                </TabsTrigger>
+                <TabsTrigger value="plans" className="flex items-center">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Plans de Prêts
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            
+            <TabsContent value="loans">
+              <LoanWorkflow />
+            </TabsContent>
+            
+            <TabsContent value="plans">
+              <LoanPlansManager />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   );

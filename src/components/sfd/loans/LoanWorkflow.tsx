@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Plus, Settings } from 'lucide-react';
+import { FileText, Plus, Settings, Calendar, Clock, CheckSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/auth/AuthContext';
@@ -100,9 +101,18 @@ export const LoanWorkflow = () => {
       
       <Tabs defaultValue="requests" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="mb-4">
-          <TabsTrigger value="requests">Demandes de prêt</TabsTrigger>
-          <TabsTrigger value="active">Prêts actifs</TabsTrigger>
-          <TabsTrigger value="history">Historique</TabsTrigger>
+          <TabsTrigger value="requests" className="flex items-center">
+            <Clock className="h-4 w-4 mr-2" />
+            Demandes de prêt
+          </TabsTrigger>
+          <TabsTrigger value="active" className="flex items-center">
+            <CheckSquare className="h-4 w-4 mr-2" />
+            Prêts actifs
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center">
+            <Calendar className="h-4 w-4 mr-2" />
+            Historique
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value={activeTab}>
