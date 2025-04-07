@@ -9,7 +9,7 @@ import { UserRole } from '@/utils/auth/roleTypes';
 interface PermissionProtectedRouteProps {
   component: React.ComponentType<any>;
   requiredPermission?: string;
-  requiredRole?: UserRole;
+  requiredRole?: UserRole | string;
   fallbackPath?: string;
   [x: string]: any;
 }
@@ -67,12 +67,13 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     } else if (typeof requiredRole === 'string') {
       roleMatch = userRole === requiredRole;
     } else {
-      roleMatch = userRole === requiredRole.toString() || 
+      // Using string comparison instead of toString()
+      roleMatch = userRole === UserRole[requiredRole] || 
                (requiredRole === UserRole.SFD_ADMIN && userRole === 'sfd_admin');
     }
     
     // Check permissions - comparing string values with string literal enum values
-    let permissionMatch = !requiredPermission || userRole === 'admin';
+    let permissionMatch = !requiredPermission || userRole === UserRole.ADMIN;
     
     // SFD admin has SFD-related permissions
     if (!permissionMatch && userRole === 'sfd_admin' && requiredPermission && 
@@ -100,7 +101,7 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
         logPermissionFailure(user.id, requiredPermission, location.pathname);
       }
       if (requiredRole && !roleMatch) {
-        logPermissionFailure(user.id, `role:${requiredRole}`, location.pathname);
+        logPermissionFailure(user.id, `role:${typeof requiredRole === 'string' ? requiredRole : UserRole[requiredRole]}`, location.pathname);
       }
     }
   }, [user, requiredPermission, requiredRole, location.pathname]);
