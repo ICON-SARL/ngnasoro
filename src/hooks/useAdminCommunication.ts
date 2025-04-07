@@ -1,185 +1,153 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/auth';
+import { useToast } from './use-toast';
 
-export type AdminNotificationRequest = {
+interface Notification {
+  id?: string;
   title: string;
   message: string;
-  type: 'info' | 'warning' | 'critical' | 'action_required';
-  recipient_id?: string;
-  recipient_role?: string;
-  action_link?: string;
-};
-
-export type AdminNotification = {
-  id: string;
-  created_at: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'critical' | 'action_required';
-  recipient_id?: string;
-  recipient_role?: string;
-  sender_id: string;
-  read: boolean;
-  action_link?: string;
-};
+  type: 'info' | 'warning' | 'success' | 'error';
+  recipient_id: string;
+  sender_id?: string;
+  created_at?: string;
+  read?: boolean;
+}
 
 export function useAdminCommunication() {
-  const { toast } = useToast();
-  const { user } = useAuth();
-  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [hasError, setHasError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const fetchNotifications = async (userId?: string) => {
-    if (!userId) return [];
-    
-    setIsLoading(true);
-    setHasError(false);
-    
+  // Function to send notification to a specific admin
+  const sendNotification = useCallback(async (notification: Notification) => {
     try {
-      // Get notifications where user is specifically the recipient or
-      // where the notification is for the user's role
+      setIsLoading(true);
+      setError(null);
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('You must be logged in to send notifications');
+      }
+      
+      const { data, error } = await supabase
+        .from('admin_notifications')
+        .insert([
+          {
+            title: notification.title,
+            message: notification.message,
+            type: notification.type,
+            recipient_id: notification.recipient_id,
+            sender_id: user.id,
+            read: false
+          }
+        ])
+        .select();
+      
+      if (error) {
+        console.error('Error sending notification:', error);
+        throw error;
+      }
+      
+      return data[0];
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error in sendNotification:', err);
+      toast({
+        title: "Erreur",
+        description: `Impossible d'envoyer la notification: ${err.message}`,
+        variant: "destructive",
+      });
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  // Function to fetch notifications for current user
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Vous devez être connecté pour recevoir des notifications');
+      }
+      
+      const { data: userProfile } = await supabase
+        .from('admin_users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      // If we can't get the user profile, just fetch notifications for this user specifically
+      if (!userProfile) {
+        const { data, error } = await supabase
+          .from('admin_notifications')
+          .select('*')
+          .eq('recipient_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching notifications:', error);
+          throw error;
+        }
+        
+        return data || [];
+      }
+      
+      // Fetch notifications for this user or for their role
       const { data, error } = await supabase
         .from('admin_notifications')
         .select('*')
-        .or(`recipient_id.eq.${userId},recipient_role.eq.sfd_admin`)
+        .or(`recipient_id.eq.${user.id},recipient_role.eq.${userProfile.role}`)
         .order('created_at', { ascending: false });
-        
-      if (error) throw error;
       
-      const notificationsData = data as AdminNotification[];
-      setNotifications(notificationsData);
+      if (error) {
+        console.error('Error fetching notifications:', error);
+        throw error;
+      }
       
-      // Count unread notifications
-      const unread = notificationsData.filter(n => !n.read).length;
-      setUnreadCount(unread);
-      
-      return notificationsData;
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      setHasError(true);
-      // Ne pas afficher de toast à chaque échec de chargement
-      // pour éviter les multiples messages d'erreur
+      return data || [];
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error fetching notifications:', err);
       return [];
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const markAsRead = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('admin_notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
-        
-      if (error) throw error;
-      
-      // Update local state
-      setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-      );
-      
-      // Update unread count
-      setUnreadCount(prev => Math.max(0, prev - 1));
-      
-      return true;
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-      return false;
-    }
-  };
-
-  const markAllAsRead = async (userId: string) => {
-    try {
-      const { error } = await supabase
-        .from('admin_notifications')
-        .update({ read: true })
-        .or(`recipient_id.eq.${userId},recipient_role.eq.sfd_admin`)
-        .eq('read', false);
-        
-      if (error) throw error;
-      
-      // Update local state
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-      
-      // Reset unread count
-      setUnreadCount(0);
-      
-      return true;
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-      return false;
-    }
-  };
-
-  const sendNotification = async (notification: AdminNotificationRequest) => {
-    if (!user) {
-      throw new Error('Utilisateur non authentifié');
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('admin_notifications')
-        .insert({
-          title: notification.title,
-          message: notification.message,
-          type: notification.type,
-          recipient_id: notification.recipient_id,
-          recipient_role: notification.recipient_role,
-          sender_id: user.id,
-          action_link: notification.action_link,
-          read: false
-        })
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      return { success: true, data };
-    } catch (error) {
-      console.error('Error sending notification:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'envoyer la notification",
-        variant: "destructive"
-      });
-      return { success: false, error };
-    }
-  };
-
-  // Utiliser retryFetch pour réessayer le chargement en cas d'échec réseau
-  const retryFetch = async (userId?: string, maxRetries = 1) => {
+  // Function to retry fetch with exponential backoff
+  const retryFetch = useCallback(async (
+    fn: () => Promise<any>, 
+    maxRetries = 3, 
+    delay = 1000
+  ) => {
     let retries = 0;
-    let success = false;
-    
-    while (retries <= maxRetries && !success) {
+    while (retries < maxRetries) {
       try {
-        await fetchNotifications(userId);
-        success = true;
-      } catch (error) {
-        console.log(`Retry attempt ${retries + 1} failed.`);
+        return await fn();
+      } catch (err) {
         retries++;
-        if (retries <= maxRetries) {
-          // Attendre avant de réessayer (backoff exponentiel)
-          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries)));
+        if (retries >= maxRetries) {
+          throw err;
         }
+        await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, retries - 1)));
       }
     }
-  };
+  }, []);
 
   return {
-    notifications,
-    unreadCount,
-    isLoading,
-    hasError,
-    fetchNotifications: retryFetch,
-    markAsRead,
-    markAllAsRead,
     sendNotification,
+    fetchNotifications,
+    retryFetch,
+    isLoading,
+    error
   };
 }

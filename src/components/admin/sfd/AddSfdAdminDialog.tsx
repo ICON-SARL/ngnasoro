@@ -54,6 +54,7 @@ export function AddSfdAdminDialog({
 
   const handleSubmit = async (values: FormValues) => {
     try {
+      console.log("Form submitted with values:", values);
       onAddAdmin({
         email: values.email,
         password: values.password,
@@ -63,11 +64,9 @@ export function AddSfdAdminDialog({
         notify: values.sendNotification
       });
       
-      // Reset form after successful submission
-      form.reset();
+      // Form will be reset after successful submission by the parent component
     } catch (error) {
-      console.error("Error adding SFD admin:", error);
-      // Toast will be shown by the mutation's onError callback
+      console.error("Error in form submission:", error);
     }
   };
 

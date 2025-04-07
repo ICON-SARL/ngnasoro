@@ -2,10 +2,11 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useAdminCommunication } from '@/hooks/useAdminCommunication';
 import { useAuth } from '@/hooks/auth';
 import { AdminRole } from '@/components/admin/management/types';
+import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 
 export function useSfdAdminManagement() {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,6 +14,7 @@ export function useSfdAdminManagement() {
   const queryClient = useQueryClient();
   const { sendNotification } = useAdminCommunication();
   const { user } = useAuth();
+  const { toast } = useToast();
   
   // Mutation to add an SFD admin
   const addSfdAdminMutation = useMutation({
@@ -31,17 +33,22 @@ export function useSfdAdminManagement() {
         console.log("Starting SFD admin creation process", data);
         
         // Check if user already exists
-        const { data: existingUser } = await supabase
+        const { data: existingUser, error: checkError } = await supabase
           .from('admin_users')
           .select('email')
           .eq('email', data.email)
           .single();
         
-        if (existingUser) {
-          throw new Error("This email is already registered. Please use a different email.");
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.error("Error checking existing user:", checkError);
+          throw new Error("Erreur lors de la vérification de l'email");
         }
         
-        // 1. Create a user using Supabase's public API
+        if (existingUser) {
+          throw new Error("Cet email est déjà enregistré. Veuillez utiliser une adresse différente.");
+        }
+        
+        // 1. Create a user using Supabase Auth API
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
@@ -60,7 +67,7 @@ export function useSfdAdminManagement() {
         }
         
         if (!signUpData.user) {
-          throw new Error("No user created");
+          throw new Error("Aucun utilisateur créé");
         }
 
         console.log("User created successfully:", signUpData.user.id);
@@ -73,7 +80,9 @@ export function useSfdAdminManagement() {
             email: data.email,
             full_name: data.full_name,
             role: 'sfd_admin',
-            has_2fa: false
+            sfd_id: data.sfd_id,
+            has_2fa: false,
+            is_active: true
           });
 
         if (adminError) {
@@ -88,23 +97,32 @@ export function useSfdAdminManagement() {
           'assign_role',
           {
             user_id: signUpData.user.id,
-            role: 'sfd_admin'
+            role_name: 'sfd_admin'
           }
         );
 
         if (roleError) {
           console.error("Error assigning role:", roleError);
-          throw roleError;
+          // Don't throw here, attempt to continue even if role assignment fails
+          // We'll log this issue instead
+          logAuditEvent({
+            user_id: user?.id || "",
+            action: "assign_role_failed",
+            category: AuditLogCategory.ADMIN_OPERATIONS,
+            severity: AuditLogSeverity.WARNING,
+            details: { target_user: signUpData.user.id, error: roleError.message },
+            status: 'failure',
+          });
+        } else {
+          console.log("SFD admin role assigned successfully");
         }
-
-        console.log("SFD admin role assigned successfully");
         
         // 4. Send notification to admin if requested
-        if (data.notify && user) {
+        if (data.notify && signUpData.user.id) {
           try {
             await sendNotification({
-              title: "SFD admin account created",
-              message: `An admin account has been created for you. Please log in with the email ${data.email}.`,
+              title: "Compte administrateur SFD créé",
+              message: `Un compte administrateur a été créé pour vous. Veuillez vous connecter avec l'email ${data.email}.`,
               type: "info",
               recipient_id: signUpData.user.id
             });
@@ -115,12 +133,44 @@ export function useSfdAdminManagement() {
           }
         }
         
+        // Log the successful creation
+        if (user) {
+          logAuditEvent({
+            user_id: user.id,
+            action: "create_sfd_admin",
+            category: AuditLogCategory.ADMIN_OPERATIONS,
+            severity: AuditLogSeverity.INFO,
+            details: { 
+              admin_email: data.email,
+              sfd_id: data.sfd_id
+            },
+            status: 'success',
+          });
+        }
+        
         // 5. Return the created user data
         return signUpData.user;
         
       } catch (error: any) {
         console.error("Error creating SFD admin:", error);
-        setError(error.message || "An error occurred while creating the administrator");
+        
+        // Log the failed attempt
+        if (user) {
+          logAuditEvent({
+            user_id: user.id,
+            action: "create_sfd_admin_failed",
+            category: AuditLogCategory.ADMIN_OPERATIONS,
+            severity: AuditLogSeverity.ERROR,
+            details: { 
+              error: error.message,
+              sfd_id: data.sfd_id
+            },
+            status: 'failure',
+            error_message: error.message,
+          });
+        }
+        
+        setError(error.message || "Une erreur s'est produite lors de la création de l'administrateur");
         throw error;
       } finally {
         setIsLoading(false);
@@ -131,14 +181,14 @@ export function useSfdAdminManagement() {
       queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
       
       toast({
-        title: "Success",
-        description: "The SFD administrator has been successfully created",
+        title: "Succès",
+        description: "L'administrateur SFD a été créé avec succès",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: `Unable to create the administrator: ${error.message}`,
+        title: "Erreur",
+        description: `Impossible de créer l'administrateur: ${error.message}`,
         variant: "destructive",
       });
     }
