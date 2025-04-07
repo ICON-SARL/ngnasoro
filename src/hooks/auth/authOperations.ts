@@ -21,6 +21,17 @@ export const useAuthOperations = () => {
         console.error('Sign in error:', error);
         return { error };
       }
+
+      if (!data || !data.session || !data.session.user) {
+        console.error('Sign in successful but session or user is missing:', data);
+        return { error: new Error('Session information is incomplete') };
+      }
+      
+      console.log('Sign in successful:', { 
+        hasSession: !!data.session,
+        hasUser: !!data.session?.user,
+        userData: data.session?.user 
+      });
       
       return { data, error: undefined };
     } catch (error) {

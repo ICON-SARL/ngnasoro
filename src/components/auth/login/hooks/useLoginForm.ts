@@ -50,31 +50,36 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
     setIsLoading(true);
     
     try {
-      // Use password authentication - fixed return type handling
+      // Use password authentication
       const result = await signIn(email, password);
       
       if (result.error) {
         throw result.error;
       }
 
-      // Check if we have user data after successful login
-      if (!result.data?.session?.user) {
-        throw new Error("Session information is missing after login");
-      }
-
       // Log successful authentication
       console.log("Connexion réussie:", { email, adminMode, isSfdAdmin });
       
+      // Get user information - we need to handle the case where user might be null initially
+      const userId = user?.id || 'pending';
+      
       // Log successful authentication attempt
-      await logSuccessfulAuthentication(user?.id, email, adminMode, isSfdAdmin);
+      try {
+        if (user?.id) {
+          await logSuccessfulAuthentication(user.id, email, adminMode, isSfdAdmin);
+        }
+      } catch (logError) {
+        console.warn("Failed to log authentication:", logError);
+      }
       
       toast({
         title: "Connexion réussie",
         description: "Vous êtes maintenant connecté.",
       });
       
-      // Get user role from the session
-      const userRole = result.data?.session?.user?.app_metadata?.role;
+      // Get user role from the result
+      const userData = result.data?.session?.user;
+      const userRole = userData?.app_metadata?.role;
       console.log("User role:", userRole);
       
       // Redirect based on user role
@@ -90,7 +95,14 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       console.error("Login error:", error);
       
       // Log failed authentication attempt
-      await logFailedAuthentication(user?.id, email, adminMode, isSfdAdmin, error.message);
+      try {
+        // Only log if user exists to avoid the "invalid input syntax for type uuid" error
+        if (user?.id) {
+          await logFailedAuthentication(user.id, email, adminMode, isSfdAdmin, error.message);
+        }
+      } catch (logError) {
+        console.warn("Error logging audit event:", logError);
+      }
       
       // Check for rate limiting errors
       if (error.message && error.message.includes('rate limit') && error.message.includes('seconds')) {
