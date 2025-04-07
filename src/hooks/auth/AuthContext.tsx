@@ -184,6 +184,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, metadata: Record<string, any> = {}) => {
     try {
       setLoading(true);
+      console.log("Attempting to sign up user:", email, "with metadata:", metadata);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -201,6 +203,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const mappedUser = createUserFromSupabaseUser(data.session.user);
         setUser(mappedUser);
         setSession(data.session);
+        console.log("User signed up successfully:", data.user);
+      } else {
+        console.log("Sign up successful but no session returned (email confirmation might be required)");
       }
     } catch (error) {
       console.error('Unexpected sign up error:', error);

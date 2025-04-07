@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, Phone, Lock, User } from 'lucide-react';
+import { Mail, Phone, Lock, User, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import * as z from 'zod';
@@ -15,6 +16,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const registerSchema = z.object({
   fullName: z.string()
@@ -38,6 +40,7 @@ const RegisterForm = () => {
   const { signUp } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -51,23 +54,39 @@ const RegisterForm = () => {
 
   const onSubmit = async (data: RegisterFormValues) => {
     setIsSubmitting(true);
+    setErrorMessage(null);
+    
     try {
-      // Create a proper metadata object
+      // Create a proper metadata object with user details
       const metadata = {
         full_name: data.fullName,
         phone: data.phoneNumber || undefined
       };
       
       await signUp(data.email, data.password, metadata);
+      
       toast({
         title: "Inscription réussie",
         description: "Veuillez vérifier votre email pour confirmer votre compte",
       });
-    } catch (error) {
+      
+      // Reset form after successful registration
+      form.reset();
+    } catch (error: any) {
       console.error('Signup error:', error);
+      
+      // Show more specific error messages based on the error type
+      if (error.message?.includes('Database error saving new user')) {
+        setErrorMessage("Erreur lors de l'enregistrement des données utilisateur. Veuillez réessayer avec une adresse email différente.");
+      } else if (error.message?.includes('already registered')) {
+        setErrorMessage("Cette adresse email est déjà associée à un compte.");
+      } else {
+        setErrorMessage(error.message || "Une erreur s'est produite lors de l'inscription. Veuillez réessayer.");
+      }
+      
       toast({
         title: "Erreur d'inscription",
-        description: "Une erreur s'est produite lors de l'inscription. Veuillez réessayer.",
+        description: error.message || "Une erreur s'est produite lors de l'inscription. Veuillez réessayer.",
         variant: "destructive",
       });
     } finally {
@@ -77,6 +96,14 @@ const RegisterForm = () => {
 
   return (
     <div className="p-6">
+      {errorMessage && (
+        <Alert className="mb-6 bg-red-50 border-red-200 text-red-800">
+          <AlertTriangle className="h-5 w-5" />
+          <AlertTitle>Erreur d'inscription</AlertTitle>
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
+      
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
