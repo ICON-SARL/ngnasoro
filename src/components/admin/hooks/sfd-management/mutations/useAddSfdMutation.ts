@@ -13,6 +13,7 @@ export function useAddSfdMutation() {
 
   return useMutation({
     mutationFn: async (sfdData: SfdFormValues) => {
+      // Préparer les données pour l'insertion
       const newSfd = {
         name: sfdData.name,
         code: sfdData.code,
@@ -22,15 +23,47 @@ export function useAddSfdMutation() {
         // We don't store subsidy_balance directly in the sfds table
       };
 
-      const { data, error } = await supabase
-        .from('sfds')
-        .insert([newSfd])
-        .select();
+      // Utiliser l'API RPC pour contourner les politiques RLS
+      // ou utiliser directement l'API avec une meilleure gestion des erreurs
+      try {
+        const { data, error } = await supabase
+          .from('sfds')
+          .insert([newSfd])
+          .select();
 
-      if (error) throw error;
-      return data;
+        if (error) {
+          console.error("Erreur lors de l'ajout de la SFD:", error);
+          throw new Error(`Erreur lors de l'ajout de la SFD: ${error.message}`);
+        }
+
+        // Si nous avons une subvention initiale, créons-la
+        if (sfdData.subsidy_balance && sfdData.subsidy_balance > 0 && data && data[0]) {
+          const newSubsidy = {
+            sfd_id: data[0].id,
+            amount: sfdData.subsidy_balance,
+            remaining_amount: sfdData.subsidy_balance,
+            allocated_by: user?.id || null,
+            status: 'active',
+            description: 'Subvention initiale lors de la création de la SFD'
+          };
+
+          const { error: subsidyError } = await supabase
+            .from('sfd_subsidies')
+            .insert([newSubsidy]);
+
+          if (subsidyError) {
+            console.warn("Erreur lors de la création de la subvention initiale:", subsidyError);
+            // Nous continuons malgré l'erreur de subvention
+          }
+        }
+
+        return data;
+      } catch (error: any) {
+        console.error("Erreur critique lors de l'ajout de la SFD:", error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
       toast({
         title: 'SFD ajoutée',
@@ -43,12 +76,12 @@ export function useAddSfdMutation() {
           action: 'create_sfd',
           category: AuditLogCategory.SFD_OPERATIONS,
           severity: AuditLogSeverity.INFO,
-          details: { },
+          details: { sfd_id: data?.[0]?.id },
           status: 'success',
         });
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: 'Erreur',
         description: `Une erreur est survenue: ${error.message}`,

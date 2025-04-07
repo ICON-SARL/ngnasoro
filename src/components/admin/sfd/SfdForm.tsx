@@ -41,9 +41,9 @@ export function SfdForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[650px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[650px] p-0 overflow-hidden bg-white rounded-xl">
         <DialogHeader className="bg-gradient-to-r from-[#0D6A51]/10 to-[#0D6A51]/5 px-6 py-4 border-b">
-          <DialogTitle className="text-[#0D6A51] flex items-center">
+          <DialogTitle className="text-[#0D6A51] flex items-center text-xl">
             {title}
           </DialogTitle>
         </DialogHeader>

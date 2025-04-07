@@ -23,10 +23,10 @@ export function SfdFinanceFields({ form }: SfdFinanceFieldsProps) {
               <CircleDollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 
                 type="number" 
-                className="pl-9"
+                className="pl-9 focus:border-[#0D6A51] focus:ring-[#0D6A51]/20"
                 placeholder="0" 
                 {...field} 
-                onChange={(e) => field.onChange(Number(e.target.value))}
+                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                 disabled={form.formState.isSubmitting}
               />
             </div>
