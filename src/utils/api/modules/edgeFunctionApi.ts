@@ -15,11 +15,15 @@ export const edgeFunctionApi = {
         body: JSON.stringify(payload),
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error(`Error calling ${functionName}:`, error);
+        throw error;
+      }
       return data;
     } catch (error) {
+      console.error(`Error in callEdgeFunction for ${functionName}:`, error);
       handleError(error);
-      return null;
+      throw error;
     }
   }
 };
