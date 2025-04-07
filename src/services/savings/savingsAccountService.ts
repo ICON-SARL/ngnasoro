@@ -88,12 +88,28 @@ export const savingsAccountService = {
     const { clientId, amount, description, adminId, transactionType, referenceId } = options;
     
     try {
+      // Calculate the transaction amount based on type
+      let transactionAmount: number;
+      
+      switch(transactionType) {
+        case 'deposit':
+        case 'loan_disbursement':
+          transactionAmount = Math.abs(amount); // Always positive for deposits/disbursements
+          break;
+        case 'withdrawal':
+        case 'loan_repayment':
+          transactionAmount = -Math.abs(amount); // Always negative for withdrawals/repayments
+          break;
+        default:
+          throw new Error(`Type de transaction non supporté: ${transactionType}`);
+      }
+      
       // Create the transaction
       const { data: transaction, error: txError } = await supabase
         .from('transactions')
         .insert({
           user_id: clientId,
-          amount: transactionType === 'deposit' || transactionType === 'loan_disbursement' ? amount : -amount,
+          amount: transactionAmount,
           type: transactionType,
           name: description || `${transactionType.charAt(0).toUpperCase() + transactionType.slice(1)}`,
           description: description || `Transaction de type ${transactionType}`,
@@ -111,13 +127,13 @@ export const savingsAccountService = {
       // Log the transaction
       await logAuditEvent({
         action: `client_account_${transactionType}`,
-        category: AuditLogCategory.SFD_OPERATIONS, // Changed from FINANCIAL to SFD_OPERATIONS
+        category: AuditLogCategory.SFD_OPERATIONS,
         severity: AuditLogSeverity.INFO,
         status: 'success',
         user_id: adminId,
         details: { 
           client_id: clientId,
-          amount,
+          amount: Math.abs(amount),
           transaction_id: transaction.id
         }
       });
@@ -129,7 +145,7 @@ export const savingsAccountService = {
       // Log the failed transaction
       await logAuditEvent({
         action: `client_account_${transactionType}_failed`,
-        category: AuditLogCategory.SFD_OPERATIONS, // Changed from FINANCIAL to SFD_OPERATIONS
+        category: AuditLogCategory.SFD_OPERATIONS,
         severity: AuditLogSeverity.ERROR,
         status: 'failure',
         user_id: adminId,

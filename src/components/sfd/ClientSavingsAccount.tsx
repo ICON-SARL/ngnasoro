@@ -19,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Banknote, ArrowDownUp, PiggyBank, RefreshCw } from 'lucide-react';
+import { Banknote, ArrowDownUp, PiggyBank, RefreshCw, ArrowDown, ArrowUp } from 'lucide-react';
 
 interface ClientSavingsAccountProps {
   clientId: string;
@@ -31,13 +31,16 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
   const [amount, setAmount] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);
+  const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
   
   const {
     account,
     transactions,
     isLoading,
+    isTransactionLoading,
     createAccount,
     processDeposit,
+    processWithdrawal,
     refreshData
   } = useClientSavingsAccount(clientId);
   
@@ -52,6 +55,20 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
       setAmount('');
       setDescription('');
       setIsDepositDialogOpen(false);
+    }
+  };
+  
+  // Handle withdrawal submission
+  const handleWithdrawal = async () => {
+    if (!user?.id || !amount || parseFloat(amount) <= 0) return;
+    
+    const success = await processWithdrawal(parseFloat(amount), description);
+    
+    if (success) {
+      // Reset form
+      setAmount('');
+      setDescription('');
+      setIsWithdrawalDialogOpen(false);
     }
   };
   
@@ -108,6 +125,7 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
           size="sm"
           onClick={() => refreshData()}
           className="h-8 w-8 p-0"
+          disabled={isLoading || isTransactionLoading}
         >
           <RefreshCw className="h-4 w-4" />
         </Button>
@@ -131,7 +149,7 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
             <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="flex-1 bg-[#0D6A51] hover:bg-[#0D6A51]/90">
-                  <Banknote className="mr-2 h-4 w-4" />
+                  <ArrowDown className="mr-2 h-4 w-4" />
                   Créditer le compte
                 </Button>
               </DialogTrigger>
@@ -185,10 +203,82 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
                   </Button>
                   <Button
                     onClick={handleDeposit}
-                    disabled={!amount || parseFloat(amount) <= 0}
+                    disabled={!amount || parseFloat(amount) <= 0 || isTransactionLoading}
                     className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
                   >
-                    Confirmer le dépôt
+                    {isTransactionLoading ? 'Traitement...' : 'Confirmer le dépôt'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            
+            {/* Withdrawal Dialog */}
+            <Dialog open={isWithdrawalDialogOpen} onOpenChange={setIsWithdrawalDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex-1 bg-amber-600 hover:bg-amber-700">
+                  <ArrowUp className="mr-2 h-4 w-4" />
+                  Retrait
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Effectuer un retrait</DialogTitle>
+                  <DialogDescription>
+                    Retirer des fonds du compte d'épargne du client
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="withdrawal-amount" className="text-right">
+                      Montant
+                    </Label>
+                    <div className="col-span-3 relative">
+                      <Input
+                        id="withdrawal-amount"
+                        type="number"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        min="0"
+                        max={account?.balance || 0}
+                        className="pr-16"
+                      />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                        {account?.currency || 'FCFA'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="withdrawal-description" className="text-right">
+                      Description
+                    </Label>
+                    <Input
+                      id="withdrawal-description"
+                      className="col-span-3"
+                      placeholder="Motif du retrait (optionnel)"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="text-sm text-amber-600 col-span-4 text-right">
+                    Solde disponible: {account?.balance?.toLocaleString('fr-FR')} {account?.currency || 'FCFA'}
+                  </div>
+                </div>
+                
+                <DialogFooter>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsWithdrawalDialogOpen(false)}
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    onClick={handleWithdrawal}
+                    disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > (account?.balance || 0) || isTransactionLoading}
+                    className="bg-amber-600 hover:bg-amber-700"
+                  >
+                    {isTransactionLoading ? 'Traitement...' : 'Confirmer le retrait'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -201,7 +291,11 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
               <TabsTrigger value="transactions">Historique des transactions</TabsTrigger>
             </TabsList>
             <TabsContent value="transactions" className="mt-4">
-              {transactions && transactions.length > 0 ? (
+              {isTransactionLoading ? (
+                <div className="flex justify-center p-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#0D6A51]"></div>
+                </div>
+              ) : transactions && transactions.length > 0 ? (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>

@@ -81,6 +81,35 @@ export function useSavingsAccount(clientId?: string) {
     }
   });
   
+  // Process a withdrawal transaction
+  const processWithdrawal = useMutation({
+    mutationFn: async ({ amount, description, adminId }: Omit<SavingsTransactionOptions, 'clientId' | 'transactionType'>) => {
+      if (!clientId) throw new Error('Client ID is required');
+      return savingsAccountService.processTransaction({
+        clientId,
+        amount,
+        description,
+        adminId,
+        transactionType: 'withdrawal'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
+      queryClient.invalidateQueries({ queryKey: ['client-transactions', clientId] });
+      toast({
+        title: "Retrait effectué",
+        description: "Le retrait a été effectué avec succès"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: `Impossible d'effectuer le retrait: ${error.message}`,
+        variant: "destructive"
+      });
+    }
+  });
+  
   // Process a loan disbursement
   const processLoanDisbursement = useMutation({
     mutationFn: async ({ amount, loanId, adminId, description }: { amount: number, loanId: string, adminId: string, description?: string }) => {
@@ -119,6 +148,7 @@ export function useSavingsAccount(clientId?: string) {
     isError: accountQuery.isError || transactionsQuery.isError,
     createAccount,
     processDeposit,
+    processWithdrawal,
     processLoanDisbursement,
     refetch: () => {
       accountQuery.refetch();
