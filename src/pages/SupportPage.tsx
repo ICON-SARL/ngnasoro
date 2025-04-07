@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
-import SupportSystem from '@/components/SupportSystem';
+import { SupportSystem } from '@/components/SupportSystem';
 
 const SupportPage = () => {
   return (

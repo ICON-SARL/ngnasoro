@@ -21,7 +21,7 @@ export function SubsidyRequestCreate({ onSuccess }: SubsidyRequestCreateProps) {
     handleInputChange,
     handleSelectChange,
     handleSubmit
-  } = useSubsidyForm(onSuccess);
+  } = useSubsidyForm(onSuccess || (() => {}));
   
   return (
     <Card>
@@ -71,7 +71,7 @@ export function SubsidyRequestCreate({ onSuccess }: SubsidyRequestCreateProps) {
           <DocumentsUploader />
           
           <FormActions
-            onCancel={onSuccess}
+            onCancel={onSuccess || (() => {})}
             isSubmitting={isSubmitting}
           />
         </form>
