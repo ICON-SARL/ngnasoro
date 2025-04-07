@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -44,7 +45,7 @@ export function PendingSubsidies() {
         
         const formattedData = data.map(item => ({
           id: item.id,
-          sfd_name: item.sfds && 'name' in item.sfds ? item.sfds.name : 'Unknown SFD',
+          sfd_name: item.sfds && typeof item.sfds === 'object' && 'name' in item.sfds ? String(item.sfds.name) : 'Unknown SFD',
           amount: item.amount,
           purpose: item.purpose,
           created_at: item.created_at,
@@ -173,4 +174,4 @@ export function PendingSubsidies() {
       </CardContent>
     </Card>
   );
-};
+}
