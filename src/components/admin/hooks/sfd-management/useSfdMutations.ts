@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -11,10 +10,8 @@ export function useSfdMutations() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Add SFD mutation
   const addSfdMutation = useMutation({
     mutationFn: async (sfdData: SfdFormValues) => {
-      // Ensure required fields are provided
       const newSfd = {
         name: sfdData.name,
         code: sfdData.code,
@@ -39,7 +36,6 @@ export function useSfdMutations() {
         description: 'La nouvelle SFD a été ajoutée avec succès.',
       });
 
-      // Log audit event
       if (user) {
         logAuditEvent({
           user_id: user.id,
@@ -58,7 +54,6 @@ export function useSfdMutations() {
         variant: 'destructive',
       });
 
-      // Log audit event for failure
       if (user) {
         logAuditEvent({
           user_id: user.id,
@@ -73,7 +68,6 @@ export function useSfdMutations() {
     },
   });
 
-  // Edit SFD mutation
   const editSfdMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: SfdFormValues }) => {
       const { data: updatedData, error } = await supabase
@@ -92,7 +86,6 @@ export function useSfdMutations() {
         description: 'Les informations de la SFD ont été mises à jour avec succès.',
       });
 
-      // Log audit event
       if (user) {
         logAuditEvent({
           user_id: user.id,
@@ -111,7 +104,6 @@ export function useSfdMutations() {
         variant: 'destructive',
       });
 
-      // Log audit event for failure
       if (user) {
         logAuditEvent({
           user_id: user.id,
@@ -126,7 +118,6 @@ export function useSfdMutations() {
     },
   });
 
-  // Mutation to suspend a SFD
   const suspendSfdMutation = useMutation({
     mutationFn: async (sfdId: string) => {
       const { data, error } = await supabase
@@ -145,7 +136,6 @@ export function useSfdMutations() {
         description: `Le compte SFD a été suspendu avec succès.`,
       });
 
-      // Log audit event
       if (user) {
         logAuditEvent({
           user_id: user.id,
@@ -164,7 +154,6 @@ export function useSfdMutations() {
         variant: 'destructive',
       });
 
-      // Log audit event for failure
       if (user) {
         logAuditEvent({
           user_id: user.id,
@@ -179,7 +168,6 @@ export function useSfdMutations() {
     },
   });
 
-  // Mutation to reactivate a SFD
   const reactivateSfdMutation = useMutation({
     mutationFn: async (sfdId: string) => {
       const { data, error } = await supabase
@@ -198,7 +186,6 @@ export function useSfdMutations() {
         description: `Le compte SFD a été réactivé avec succès.`,
       });
 
-      // Log audit event
       if (user) {
         logAuditEvent({
           user_id: user.id,
@@ -217,7 +204,6 @@ export function useSfdMutations() {
         variant: 'destructive',
       });
 
-      // Log audit event for failure
       if (user) {
         logAuditEvent({
           user_id: user.id,

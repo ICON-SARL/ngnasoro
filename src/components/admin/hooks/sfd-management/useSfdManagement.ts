@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Sfd } from '../../types/sfd-types';
 import { SfdFormValues } from '../../sfd/schemas/sfdFormSchema';
@@ -61,7 +60,7 @@ export function useSfdManagement() {
     isError,
     isExporting,
     selectedSfd,
-    setSelectedSfd, // Export this function
+    setSelectedSfd,
     searchTerm,
     setSearchTerm,
     statusFilter,
