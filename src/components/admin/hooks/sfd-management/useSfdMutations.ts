@@ -1,7 +1,8 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { SfdFormValues } from '../../sfd/SfdForm';
+import { SfdFormValues } from '../../sfd/schemas/sfdFormSchema';
 import { useAuth } from '@/hooks/useAuth';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 
