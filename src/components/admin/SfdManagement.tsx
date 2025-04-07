@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSfdManagement } from './hooks/useSfdManagement';
 import { SfdTable } from './sfd/SfdTable';
@@ -10,15 +9,19 @@ import { SfdDetailView } from './sfd/SfdDetailView';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Sfd } from './types/sfd-types';
+import { useSfdAdminManagement } from './hooks/useSfdAdminManagement';
+import { AddSfdAdminDialog } from './sfd/AddSfdAdminDialog';
 
 export function SfdManagement() {
   const [showDetailsView, setShowDetailsView] = useState(false);
+  const [showAddAdminDialog, setShowAddAdminDialog] = useState(false);
+  const [selectedSfdForAdmin, setSelectedSfdForAdmin] = useState<Sfd | null>(null);
   const {
     filteredSfds,
     isLoading,
     isError,
     selectedSfd,
-    setSelectedSfd, // This was missing
+    setSelectedSfd,
     searchTerm,
     setSearchTerm,
     statusFilter,
@@ -44,16 +47,24 @@ export function SfdManagement() {
     handleExportExcel
   } = useSfdManagement();
 
+  const { isLoading: isLoadingAdmin, error: adminError, addSfdAdmin } = useSfdAdminManagement();
+
   const handleViewDetails = (sfd: Sfd) => {
     setSelectedSfd(sfd);
     setShowDetailsView(true);
+  };
+
+  const handleAddAdmin = (sfd: Sfd) => {
+    setSelectedSfdForAdmin(sfd);
+    setShowAddAdminDialog(true);
   };
 
   if (showDetailsView && selectedSfd) {
     return (
       <SfdDetailView 
         sfd={selectedSfd} 
-        onBack={() => setShowDetailsView(false)} 
+        onBack={() => setShowDetailsView(false)}
+        onAddAdmin={() => handleAddAdmin(selectedSfd)}
       />
     );
   }
@@ -88,6 +99,7 @@ export function SfdManagement() {
         onReactivate={handleReactivateSfd}
         onEdit={handleShowEditDialog}
         onViewDetails={handleViewDetails}
+        onAddAdmin={handleAddAdmin}
       />
 
       <SuspendSfdDialog
@@ -122,6 +134,18 @@ export function SfdManagement() {
         title="Modifier la SFD"
         isPending={editSfdMutation.isPending}
       />
+
+      {selectedSfdForAdmin && (
+        <AddSfdAdminDialog
+          open={showAddAdminDialog}
+          onOpenChange={setShowAddAdminDialog}
+          sfdId={selectedSfdForAdmin.id}
+          sfdName={selectedSfdForAdmin.name}
+          onAddAdmin={addSfdAdmin}
+          isLoading={isLoadingAdmin}
+          error={adminError}
+        />
+      )}
     </div>
   );
 }

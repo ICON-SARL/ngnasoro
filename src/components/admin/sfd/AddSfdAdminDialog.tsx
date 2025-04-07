@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { AdminRole } from '@/components/admin/management/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 // Schema for form validation
 const formSchema = z.object({
@@ -29,6 +29,7 @@ interface AddSfdAdminDialogProps {
   sfdName: string;
   onAddAdmin: (data: { email: string; password: string; full_name: string; role: string; sfd_id: string; notify: boolean }) => Promise<void>;
   isLoading: boolean;
+  error?: string | null;
 }
 
 export function AddSfdAdminDialog({ 
@@ -37,7 +38,8 @@ export function AddSfdAdminDialog({
   sfdId, 
   sfdName, 
   onAddAdmin, 
-  isLoading 
+  isLoading,
+  error 
 }: AddSfdAdminDialogProps) {
   // Initialize form with react-hook-form and zod validation
   const form = useForm<FormValues>({
@@ -65,11 +67,7 @@ export function AddSfdAdminDialog({
       form.reset();
     } catch (error) {
       console.error("Error adding SFD admin:", error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de l'ajout de l'administrateur",
-        variant: "destructive"
-      });
+      // Toast will be shown by the mutation's onError callback
     }
   };
 
@@ -147,6 +145,13 @@ export function AddSfdAdminDialog({
                 </FormItem>
               )}
             />
+            
+            {error && (
+              <div className="bg-red-100 p-2 rounded-md flex items-center text-red-800">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                <p className="text-sm">{error}</p>
+              </div>
+            )}
             
             <DialogFooter>
               <Button variant="outline" onClick={() => onOpenChange(false)} type="button">

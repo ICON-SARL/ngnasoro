@@ -1,28 +1,23 @@
 
 import React from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+import { 
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Eye, UserPlus, Ban, CheckCircle } from 'lucide-react';
 import { Sfd } from '../types/sfd-types';
-import { SfdLogo } from './SfdLogo';
-import { SfdStatusBadge } from './SfdStatusBadge';
-import { SfdActionsMenu } from './SfdActionsMenu';
-import { Progress } from '@/components/ui/progress';
+import { formatDate } from '@/utils/formatDate';
 
 interface SfdTableProps {
-  sfds: Sfd[] | null;
+  sfds: Sfd[];
   isLoading: boolean;
   isError: boolean;
   onSuspend: (sfd: Sfd) => void;
   onReactivate: (sfd: Sfd) => void;
   onEdit: (sfd: Sfd) => void;
-  onViewDetails?: (sfd: Sfd) => void;
+  onViewDetails: (sfd: Sfd) => void;
+  onAddAdmin?: (sfd: Sfd) => void;
 }
 
 export function SfdTable({ 
@@ -30,88 +25,111 @@ export function SfdTable({
   isLoading, 
   isError, 
   onSuspend, 
-  onReactivate,
-  onEdit,
-  onViewDetails
+  onReactivate, 
+  onEdit, 
+  onViewDetails,
+  onAddAdmin
 }: SfdTableProps) {
   if (isLoading) {
     return (
-      <div className="p-4 space-y-4">
-        <Skeleton className="h-8 w-64" />
-        <div className="space-y-2">
-          {Array(5).fill(0).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full" />
-          ))}
-        </div>
+      <div className="bg-white rounded-md border p-8 text-center">
+        <p className="text-muted-foreground">Chargement des SFDs...</p>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="p-4 text-center text-red-500">
-        Une erreur est survenue lors de la récupération des SFDs.
+      <div className="bg-red-50 rounded-md border border-red-200 p-8 text-center">
+        <p className="text-red-600">Une erreur est survenue lors du chargement des SFDs</p>
       </div>
     );
   }
 
-  if (!sfds || sfds.length === 0) {
+  if (sfds.length === 0) {
     return (
-      <div className="p-8 text-center text-muted-foreground">
-        Aucune SFD trouvée avec les critères de filtrage actuels.
+      <div className="bg-white rounded-md border p-8 text-center">
+        <p className="text-muted-foreground">Aucune SFD trouvée</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border bg-white">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[50px]"></TableHead>
             <TableHead>Nom</TableHead>
-            <TableHead>Code</TableHead>
-            <TableHead>Région</TableHead>
-            <TableHead>Subvention</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Téléphone</TableHead>
             <TableHead>Statut</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
+            <TableHead>Date de création</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sfds?.map((sfd) => (
+          {sfds.map((sfd) => (
             <TableRow key={sfd.id}>
-              <TableCell>
-                <SfdLogo sfd={sfd} />
-              </TableCell>
               <TableCell className="font-medium">{sfd.name}</TableCell>
-              <TableCell>{sfd.code}</TableCell>
-              <TableCell>{sfd.region || '-'}</TableCell>
+              <TableCell>{sfd.email || '-'}</TableCell>
+              <TableCell>{sfd.phone || '-'}</TableCell>
               <TableCell>
-                {sfd.subsidy_balance !== undefined ? (
-                  <div className="space-y-1">
-                    <div className="text-sm text-muted-foreground">
-                      {new Intl.NumberFormat('fr-FR').format(sfd.subsidy_balance)} FCFA
-                    </div>
-                    <Progress 
-                      value={Math.min(100, (sfd.subsidy_balance / 1000000) * 100)} 
-                      className="h-2" 
-                    />
-                  </div>
-                ) : (
-                  '-'
+                <Badge 
+                  className={
+                    sfd.status === 'active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : sfd.status === 'suspended' 
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }
+                >
+                  {sfd.status === 'active' 
+                    ? 'Active' 
+                    : sfd.status === 'suspended'
+                    ? 'Suspendue'
+                    : 'En attente'
+                  }
+                </Badge>
+              </TableCell>
+              <TableCell>
+                {sfd.created_at ? formatDate(sfd.created_at) : '-'}
+              </TableCell>
+              <TableCell className="text-right space-x-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => onViewDetails(sfd)}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+                {onAddAdmin && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => onAddAdmin(sfd)}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                  </Button>
                 )}
-              </TableCell>
-              <TableCell>
-                <SfdStatusBadge status={sfd.status} />
-              </TableCell>
-              <TableCell>
-                <SfdActionsMenu 
-                  sfd={sfd} 
-                  onSuspend={onSuspend} 
-                  onReactivate={onReactivate}
-                  onEdit={onEdit}
-                  onViewDetails={onViewDetails}
-                />
+                {sfd.status === 'active' ? (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => onSuspend(sfd)}
+                    className="text-red-600"
+                  >
+                    <Ban className="h-4 w-4" />
+                  </Button>
+                ) : sfd.status === 'suspended' ? (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => onReactivate(sfd)}
+                    className="text-green-600"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                  </Button>
+                ) : null}
               </TableCell>
             </TableRow>
           ))}
