@@ -10,19 +10,7 @@ import LoanConfigDialog from './LoanConfigDialog';
 import NewLoanDialog from './NewLoanDialog';
 import LoanDetailsDialog from './LoanDetailsDialog';
 import LoadingSpinner from '@/components/ui/loading-spinner';
-
-export interface Loan {
-  id: string;
-  reference?: string;
-  client_id: string;
-  client_name?: string;
-  amount: number;
-  duration_months: number;
-  interest_rate: number;
-  status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'defaulted';
-  purpose: string;
-  created_at: string;
-}
+import { Loan } from '@/types/sfdClients';
 
 export const LoanWorkflow = () => {
   const [activeTab, setActiveTab] = useState('requests');

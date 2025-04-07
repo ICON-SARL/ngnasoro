@@ -64,3 +64,15 @@ export interface QRCodeRequest {
   loanId?: string;
   isWithdrawal?: boolean;
 }
+
+// Make sure we're importing the Loan type from the main types file
+import { Loan } from '@/types/sfdClients';
+
+// Loan pagination data type to match what's used in useLoansPage.ts
+export interface LoanPaginationData {
+  loans: Loan[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}

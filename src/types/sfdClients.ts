@@ -1,4 +1,5 @@
 
+
 export interface SfdClient {
   id: string;
   full_name: string;
@@ -37,7 +38,7 @@ export interface ClientActivity {
   performed_by?: string;
 }
 
-// Add missing types for Loan, LoanPayment and SfdSubsidy
+// Updated Loan interface with all required properties
 export interface Loan {
   id: string;
   client_id: string;
@@ -45,6 +46,7 @@ export interface Loan {
   amount: number;
   interest_rate: number;
   term_months: number;
+  duration_months: number; // Added this property
   status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'defaulted';
   purpose?: string;
   approved_at?: string;
@@ -54,6 +56,13 @@ export interface Loan {
   end_date?: string;
   created_at: string;
   updated_at: string;
+  monthly_payment?: number; // Added this property
+  next_payment_date?: string; // Added this property
+  last_payment_date?: string; // Added this property
+  subsidy_amount?: number; // Added this property
+  subsidy_rate?: number; // Added this property
+  client_name?: string; // Added for convenience in components
+  reference?: string; // Added for display purposes
 }
 
 export interface LoanPayment {
@@ -67,11 +76,12 @@ export interface LoanPayment {
   notes?: string;
 }
 
+// Updated SfdSubsidy interface with all required properties
 export interface SfdSubsidy {
   id: string;
   sfd_id: string;
   amount: number;
-  status: 'pending' | 'approved' | 'rejected' | 'disbursed';
+  status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'active' | 'depleted' | 'expired' | 'cancelled'; // Added more status options
   purpose: string;
   region?: string;
   requested_by: string;
@@ -82,4 +92,12 @@ export interface SfdSubsidy {
   disbursed_at?: string;
   priority: 'low' | 'medium' | 'high';
   documents?: string[];
+  // Additional properties based on error messages
+  used_amount: number;
+  remaining_amount: number;
+  allocated_at: string;
+  allocated_by: string;
+  end_date?: string;
+  description?: string;
 }
+
