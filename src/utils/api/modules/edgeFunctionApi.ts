@@ -14,6 +14,12 @@ export const edgeFunctionApi = {
     try {
       console.log(`Calling edge function: ${functionName}`, payload);
       
+      // Check if we're in development mode and if we should use mock data
+      if (process.env.NODE_ENV === 'development' && shouldUseMockData(functionName)) {
+        console.log(`Using mock data for ${functionName} in development mode`);
+        return getMockDataForFunction(functionName, payload);
+      }
+      
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: JSON.stringify(payload),
       });
@@ -37,11 +43,12 @@ export const edgeFunctionApi = {
     } catch (error) {
       console.error(`Error in callEdgeFunction for ${functionName}:`, error);
       
-      // Handle network errors differently
+      // Handle network errors
       if (error instanceof Error && 
           (error.message.includes('Failed to fetch') || 
            error.message.includes('NetworkError') ||
-           error.message.includes('Failed to send a request'))) {
+           error.message.includes('Failed to send') ||
+           error.message.includes('network connection'))) {
         
         if (options.showToast) {
           toast({
@@ -51,11 +58,13 @@ export const edgeFunctionApi = {
           });
         }
         
-        // Return mock data for development purposes if needed
-        // This is useful during development when edge functions are not available
+        // Return mock data for development purposes
         if (process.env.NODE_ENV === 'development') {
           console.warn(`Returning mock data for ${functionName} in development mode`);
-          return getMockDataForFunction(functionName, payload);
+          const mockData = getMockDataForFunction(functionName, payload);
+          if (mockData) {
+            return mockData;
+          }
         }
       }
       
@@ -66,11 +75,36 @@ export const edgeFunctionApi = {
 };
 
 /**
+ * Determine if we should use mock data for a specific function
+ * This allows developers to test specific features without edge functions
+ */
+function shouldUseMockData(functionName: string): boolean {
+  // Add specific functions that should always use mock data in development
+  const alwaysMockFunctions = [
+    'fetch-sfd-stats',
+    'create_sfd',
+    'create_sfd_subsidy'
+  ];
+  
+  return alwaysMockFunctions.includes(functionName);
+}
+
+/**
  * Get mock data for a function during development
  * This is useful when edge functions are not available
  */
 function getMockDataForFunction(functionName: string, payload: any) {
   switch (functionName) {
+    case 'fetch-sfd-stats':
+      return {
+        id: `mock-stats-${Date.now()}`,
+        sfd_id: payload.sfd_id,
+        total_clients: Math.floor(Math.random() * 100) + 10,
+        total_loans: Math.floor(Math.random() * 50) + 5,
+        repayment_rate: Math.random() * 100,
+        last_updated: new Date().toISOString()
+      };
+      
     case 'create_sfd':
       return {
         id: 'mock-uuid-' + Date.now(),
