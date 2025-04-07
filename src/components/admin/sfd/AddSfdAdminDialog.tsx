@@ -27,7 +27,7 @@ interface AddSfdAdminDialogProps {
   onOpenChange: (open: boolean) => void;
   sfdId: string;
   sfdName: string;
-  onAddAdmin: (data: { email: string; password: string; full_name: string; role: string; sfd_id: string; notify: boolean }) => Promise<void>;
+  onAddAdmin: (data: { email: string; password: string; full_name: string; role: string; sfd_id: string; notify: boolean; }) => void;
   isLoading: boolean;
   error?: string | null;
 }
@@ -54,7 +54,7 @@ export function AddSfdAdminDialog({
 
   const handleSubmit = async (values: FormValues) => {
     try {
-      await onAddAdmin({
+      onAddAdmin({
         email: values.email,
         password: values.password,
         full_name: values.fullName,

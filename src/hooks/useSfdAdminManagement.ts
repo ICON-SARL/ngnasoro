@@ -14,7 +14,7 @@ export function useSfdAdminManagement() {
   const { sendNotification } = useAdminCommunication();
   const { user } = useAuth();
   
-  // Mutation pour ajouter un administrateur SFD
+  // Mutation to add an SFD admin
   const addSfdAdminMutation = useMutation({
     mutationFn: async (data: {
       email: string;
@@ -28,7 +28,20 @@ export function useSfdAdminManagement() {
       setError(null);
       
       try {
-        // 1. Créer un utilisateur en utilisant l'API publique de Supabase
+        console.log("Starting SFD admin creation process", data);
+        
+        // Check if user already exists
+        const { data: existingUser } = await supabase
+          .from('admin_users')
+          .select('email')
+          .eq('email', data.email)
+          .single();
+        
+        if (existingUser) {
+          throw new Error("This email is already registered. Please use a different email.");
+        }
+        
+        // 1. Create a user using Supabase's public API
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
@@ -41,13 +54,18 @@ export function useSfdAdminManagement() {
           }
         });
 
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          console.error("Error signing up user:", signUpError);
+          throw signUpError;
+        }
         
         if (!signUpData.user) {
-          throw new Error("Aucun utilisateur créé");
+          throw new Error("No user created");
         }
 
-        // 2. Créer l'entrée dans admin_users
+        console.log("User created successfully:", signUpData.user.id);
+
+        // 2. Create entry in admin_users
         const { error: adminError } = await supabase
           .from('admin_users')
           .insert({
@@ -58,9 +76,14 @@ export function useSfdAdminManagement() {
             has_2fa: false
           });
 
-        if (adminError) throw adminError;
+        if (adminError) {
+          console.error("Error creating admin user record:", adminError);
+          throw adminError;
+        }
 
-        // 3. Assigner le rôle SFD_ADMIN
+        console.log("Admin user record created successfully");
+
+        // 3. Assign SFD_ADMIN role
         const { error: roleError } = await supabase.rpc(
           'assign_role',
           {
@@ -69,47 +92,53 @@ export function useSfdAdminManagement() {
           }
         );
 
-        if (roleError) throw roleError;
+        if (roleError) {
+          console.error("Error assigning role:", roleError);
+          throw roleError;
+        }
+
+        console.log("SFD admin role assigned successfully");
         
-        // 4. Envoyer une notification à l'administrateur si demandé
+        // 4. Send notification to admin if requested
         if (data.notify && user) {
           try {
             await sendNotification({
-              title: "Compte administrateur SFD créé",
-              message: `Un compte administrateur a été créé pour vous. Veuillez vous connecter avec l'adresse email ${data.email}.`,
+              title: "SFD admin account created",
+              message: `An admin account has been created for you. Please log in with the email ${data.email}.`,
               type: "info",
               recipient_id: signUpData.user.id
             });
+            console.log("Notification sent successfully");
           } catch (notifError) {
-            console.warn("Impossible d'envoyer la notification:", notifError);
+            console.warn("Unable to send notification:", notifError);
             // Continue even if notification fails
           }
         }
         
-        // 5. Retourner les données de l'utilisateur créé
+        // 5. Return the created user data
         return signUpData.user;
         
       } catch (error: any) {
         console.error("Error creating SFD admin:", error);
-        setError(error.message || "Une erreur est survenue lors de la création de l'administrateur");
+        setError(error.message || "An error occurred while creating the administrator");
         throw error;
       } finally {
         setIsLoading(false);
       }
     },
     onSuccess: () => {
-      // Invalider les requêtes pour forcer un rafraîchissement des données
+      // Invalidate queries to force data refresh
       queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
       
       toast({
-        title: "Succès",
-        description: "L'administrateur SFD a été créé avec succès",
+        title: "Success",
+        description: "The SFD administrator has been successfully created",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Erreur",
-        description: `Impossible de créer l'administrateur: ${error.message}`,
+        title: "Error",
+        description: `Unable to create the administrator: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -118,7 +147,6 @@ export function useSfdAdminManagement() {
   return {
     isLoading,
     error,
-    addSfdAdmin: addSfdAdminMutation.mutate,
-    addSfdAdminAsync: addSfdAdminMutation.mutateAsync
+    addSfdAdmin: addSfdAdminMutation.mutate
   };
 }
