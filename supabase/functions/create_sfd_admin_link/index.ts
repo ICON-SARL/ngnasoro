@@ -59,26 +59,28 @@ serve(async (req) => {
       );
     }
 
-    // Créer l'association
-    const { data: linkData, error: linkError } = await supabase
-      .from('sfd_admins_link')
-      .insert({
-        admin_id,
-        sfd_id,
-        is_primary: is_primary === true
-      })
-      .select();
+    // Pour l'instant, stocker l'association dans les métadonnées utilisateur (comme solution temporaire)
+    // et nous pouvons créer une véritable table d'association plus tard si nécessaire
+    const { data: userData, error: userError } = await supabase.auth.admin.updateUserById(
+      admin_id,
+      {
+        user_metadata: { 
+          sfd_id: sfd_id,
+          is_primary_admin: is_primary === true
+        }
+      }
+    );
     
-    if (linkError) {
+    if (userError) {
       return new Response(
-        JSON.stringify({ error: `Erreur lors de la création de l'association: ${linkError.message}` }),
+        JSON.stringify({ error: `Erreur lors de la mise à jour des métadonnées: ${userError.message}` }),
         { headers: { 'Content-Type': 'application/json', ...corsHeaders }, status: 500 }
       );
     }
 
-    // Retourner les données créées
+    // Retourner les données mises à jour
     return new Response(
-      JSON.stringify({ success: true, data: linkData }),
+      JSON.stringify({ success: true, data: userData }),
       { headers: { 'Content-Type': 'application/json', ...corsHeaders }, status: 200 }
     );
 

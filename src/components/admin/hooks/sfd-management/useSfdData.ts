@@ -45,13 +45,15 @@ export function useSfdData() {
     refetchOnWindowFocus: true,
     staleTime: 30000, // 30 secondes
     retry: 2,
-    onError: (err: any) => {
-      console.error("Query error:", err);
-      toast({
-        title: "Erreur de chargement",
-        description: err.message || "Impossible de charger la liste des SFDs",
-        variant: "destructive",
-      });
+    meta: {
+      onError: (err: any) => {
+        console.error("Query error:", err);
+        toast({
+          title: "Erreur de chargement",
+          description: err.message || "Impossible de charger la liste des SFDs",
+          variant: "destructive",
+        });
+      }
     }
   });
 

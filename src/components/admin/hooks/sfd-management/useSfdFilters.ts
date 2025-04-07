@@ -1,27 +1,32 @@
 
 import { useState, useMemo } from 'react';
-import { Sfd } from '../../types/sfd-types';
+import { Sfd, SfdStatus } from '../../types/sfd-types';
 
-export function useSfdFilters(sfds: Sfd[] | undefined) {
+export function useSfdFilters(sfds: any[]) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
-  // Filter SFDs based on search term and status filter
   const filteredSfds = useMemo(() => {
-    if (!sfds) return [];
-    
     return sfds.filter((sfd) => {
-      const matchesSearch = 
-        sfd.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sfd.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (sfd.region && sfd.region.toLowerCase().includes(searchTerm.toLowerCase()));
+      // Convert incoming status to proper SfdStatus type
+      const typedSfd = {
+        ...sfd,
+        status: sfd.status as SfdStatus
+      };
       
-      const matchesStatus =
-        statusFilter === 'all' ||
-        sfd.status === statusFilter;
-      
+      const matchesSearch =
+        !searchTerm ||
+        typedSfd.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        typedSfd.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (typedSfd.region && typedSfd.region.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const matchesStatus = !statusFilter || typedSfd.status === statusFilter;
+
       return matchesSearch && matchesStatus;
-    });
+    }).map(sfd => ({
+      ...sfd,
+      status: sfd.status as SfdStatus
+    }));
   }, [sfds, searchTerm, statusFilter]);
 
   return {

@@ -97,18 +97,20 @@ export async function createSfdAdmin(adminData: SfdAdminData) {
       throw adminError;
     }
     
-    // 3. Association avec l'SFD spécifique
-    const { error: sfdLinkError } = await supabase
-      .from('sfd_admins_link') // Nouvelle table pour lier admins et SFDs
-      .insert({
-        admin_id: signUpData.user.id,
-        sfd_id: adminData.sfd_id,
-        is_primary: true // Premier admin ajouté est l'admin principal
-      })
-      .select();
+    // 3. Association avec l'SFD spécifique via l'edge function
+    const { data: linkData, error: linkError } = await supabase.functions.invoke(
+      'create_sfd_admin_link', 
+      {
+        body: {
+          admin_id: signUpData.user.id,
+          sfd_id: adminData.sfd_id,
+          is_primary: true // Premier admin ajouté est l'admin principal
+        }
+      }
+    );
       
-    if (sfdLinkError) {
-      console.error("Error linking admin to SFD:", sfdLinkError);
+    if (linkError) {
+      console.error("Error linking admin to SFD:", linkError);
       // Continuer malgré l'erreur, car l'association est aussi dans les métadonnées
     }
 

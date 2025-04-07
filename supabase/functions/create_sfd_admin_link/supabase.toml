@@ -1,0 +1,5 @@
+
+
+[functions.create_sfd_admin_link]
+verify_jwt = false
+
