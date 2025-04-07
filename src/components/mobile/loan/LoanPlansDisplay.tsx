@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/auth';
 import { Card } from '@/components/ui/card';
@@ -47,10 +48,16 @@ export default function LoanPlansDisplay() {
         if (error) throw error;
 
         if (userSfds && Array.isArray(userSfds)) {
-          const sfds = userSfds.map(item => ({
-            id: item.sfds ? item.sfds.id : '',
-            name: item.sfds ? item.sfds.name : ''
-          }));
+          const sfds = userSfds.map(item => {
+            // Properly access nested properties with type checking
+            if (item.sfds && typeof item.sfds === 'object') {
+              return {
+                id: String(item.sfds.id || ''),
+                name: String(item.sfds.name || '')
+              };
+            }
+            return { id: '', name: '' };
+          });
           
           setSfdList(sfds);
           

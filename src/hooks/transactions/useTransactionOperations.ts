@@ -52,7 +52,7 @@ export function useTransactionOperations(userId?: string, sfdId?: string) {
   };
 
   const makeDeposit = useMutation({
-    mutationFn: async (params: DepositParams | number, description?: string, paymentMethod?: string): Promise<Transaction | null> => {
+    mutationFn: async (params: DepositParams | number): Promise<Transaction | null> => {
       if (!userId || !sfdId) return null;
       
       // Handle both function signatures (object param or individual params)
@@ -66,8 +66,8 @@ export function useTransactionOperations(userId?: string, sfdId?: string) {
         method = params.paymentMethod;
       } else {
         amount = params;
-        desc = description;
-        method = paymentMethod;
+        desc = undefined;
+        method = undefined;
       }
       
       const transactionData = {
@@ -102,10 +102,10 @@ export function useTransactionOperations(userId?: string, sfdId?: string) {
   });
 
   const makeWithdrawal = useMutation({
-    mutationFn: async (params: WithdrawalParams | number, description?: string, paymentMethod?: string): Promise<Transaction | null> => {
+    mutationFn: async (params: WithdrawalParams | number): Promise<Transaction | null> => {
       if (!userId || !sfdId) return null;
       
-      // Handle both function signatures (object param or individual params)
+      // Handle both function signatures
       let amount: number;
       let desc: string | undefined;
       let method: string | undefined;
@@ -116,8 +116,8 @@ export function useTransactionOperations(userId?: string, sfdId?: string) {
         method = params.paymentMethod;
       } else {
         amount = params;
-        desc = description;
-        method = paymentMethod;
+        desc = undefined;
+        method = undefined;
       }
       
       const transactionData = {
@@ -152,31 +152,34 @@ export function useTransactionOperations(userId?: string, sfdId?: string) {
   });
 
   const makeLoanRepayment = useMutation({
-    mutationFn: async (params: LoanRepaymentParams | string, amount?: number, description?: string, paymentMethod?: string): Promise<Transaction | null> => {
+    mutationFn: async (params: LoanRepaymentParams | string): Promise<Transaction | null> => {
       if (!userId || !sfdId) return null;
       
-      // Handle both function signatures (object param or individual params)
+      // Handle both function signatures (object param or loanId string)
       let loanId: string;
-      let amt: number;
+      let amount: number;
       let desc: string | undefined;
       let method: string | undefined;
       
       if (typeof params === 'object') {
         loanId = params.loanId;
-        amt = params.amount;
+        amount = params.amount;
         desc = params.description;
         method = params.paymentMethod;
       } else {
         loanId = params;
-        amt = amount || 0;
-        desc = description;
-        method = paymentMethod;
+        // When called with just a string, we need a second parameter for amount
+        // This function signature doesn't match our requirements
+        // We'll handle this case better in the component that uses it
+        amount = 0;
+        desc = undefined;
+        method = undefined;
       }
       
       const transactionData = {
         user_id: userId,
         sfd_id: sfdId,
-        amount: -Math.abs(amt), // Ensure negative amount for repayments
+        amount: -Math.abs(amount), // Ensure negative amount for repayments
         type: 'loan_repayment',
         name: desc || 'Remboursement de prêt',
         description: desc || `Remboursement pour le prêt ${loanId}`,

@@ -31,12 +31,23 @@ export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateActio
       if (error) throw error;
       
       if (data && Array.isArray(data)) {
-        const sfdList: SfdData[] = data.map(item => ({
-          id: item.sfds?.id || '',
-          name: item.sfds?.name || '',
-          token: null,
-          lastFetched: null
-        }));
+        const sfdList: SfdData[] = data.map(item => {
+          // Ensure proper type checking and access to nested properties
+          if (item.sfds && typeof item.sfds === 'object') {
+            return {
+              id: String(item.sfds.id || ''),
+              name: String(item.sfds.name || ''),
+              token: null,
+              lastFetched: null
+            };
+          }
+          return {
+            id: '',
+            name: '',
+            token: null,
+            lastFetched: null
+          };
+        });
         
         setSfdData(sfdList);
       }
