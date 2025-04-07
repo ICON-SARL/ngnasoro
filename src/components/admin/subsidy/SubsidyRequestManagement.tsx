@@ -6,14 +6,13 @@ import { SubsidyRequestCreate } from './request-create';
 import { SubsidyAlertSettings } from './SubsidyAlertSettings';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useSubsidyRequests } from '../hooks/useSubsidyRequests'; // Create this hook if it doesn't exist
+import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
 
 export function SubsidyRequestManagement() {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('list');
   
-  // Create a hook to fetch subsidy requests and thresholds
-  const { requests, isLoading, thresholds, isLoadingThresholds } = useSubsidyRequests();
+  const { subsidyRequests, isLoading, alertThresholds, isLoadingThresholds } = useSubsidyRequests();
 
   const handleSelectRequest = (requestId: string) => {
     setSelectedRequestId(requestId);
@@ -37,7 +36,7 @@ export function SubsidyRequestManagement() {
         
         <TabsContent value="list">
           <SubsidyRequestsList 
-            requests={requests} 
+            subsidyRequests={subsidyRequests} 
             isLoading={isLoading} 
             onSelectRequest={handleSelectRequest}
           />
@@ -58,7 +57,7 @@ export function SubsidyRequestManagement() {
         
         <TabsContent value="settings">
           <SubsidyAlertSettings 
-            thresholds={thresholds} 
+            thresholds={alertThresholds} 
             isLoading={isLoadingThresholds}
           />
         </TabsContent>

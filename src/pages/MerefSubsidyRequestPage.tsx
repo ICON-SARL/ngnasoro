@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SubsidyRequestForm } from '@/components/sfd/subsidy/SubsidyRequestForm';
 import { SubsidyRequestsList } from '@/components/sfd/subsidy/SubsidyRequestsList';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileText } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 
 const MerefSubsidyRequestPage: React.FC = () => {
   const navigate = useNavigate();
