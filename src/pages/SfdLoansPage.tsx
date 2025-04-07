@@ -1,9 +1,8 @@
 
 import React, { useState } from 'react';
 import { SfdAdminDashboard } from '@/components/admin/SfdAdminDashboard';
-import { LoanWorkflow } from '@/components/sfd/loans/LoanWorkflow';
+import { LoanWorkflow, LoanPlansManager } from '@/components/sfd/loans';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import LoanPlansManager from '@/components/sfd/loans/LoanPlansManager';
 import { CreditCard, BookOpen } from 'lucide-react';
 import { useAuth } from '@/hooks/auth';
 
