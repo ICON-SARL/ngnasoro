@@ -75,7 +75,7 @@ export function SfdAdminDashboard() {
               <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
-                <User className="h-4 w-4 mr-2" />
+                <Users className="h-4 w-4 mr-2" />
                 Profil
               </DropdownMenuItem>
               <DropdownMenuItem>
