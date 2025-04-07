@@ -4,10 +4,15 @@ import { Route, Routes } from 'react-router-dom';
 import MobileMainPage from '@/pages/MobileMainPage';
 import SfdSetupPage from '@/pages/SfdSetupPage';
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
+import MobileFlowPage from '@/pages/MobileFlowPage';
 
 const MobileRoutes: React.FC = () => {
   return (
     <Routes>
+      <Route 
+        path="/" 
+        element={<ProtectedRoute component={MobileFlowPage} />} 
+      />
       <Route 
         path="main" 
         element={<ProtectedRoute component={MobileMainPage} />} 
