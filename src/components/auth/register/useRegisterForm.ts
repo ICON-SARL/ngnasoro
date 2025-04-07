@@ -112,19 +112,19 @@ export const useRegisterForm = () => {
         await initializeUserAccount(sessionData.session.user.id, data.fullName);
       }
       
-      setSuccessMessage("Inscription réussie! Vous allez être redirigé vers la page de connexion.");
+      setSuccessMessage("Inscription réussie! Vous allez être redirigé vers la page de sélection SFD.");
       
       toast({
         title: "Inscription réussie",
-        description: "Votre compte a été créé avec succès",
+        description: "Votre compte a été créé avec succès. Vous devez maintenant ajouter une SFD.",
       });
       
       // Reset form after successful registration
       form.reset();
       
-      // Redirection vers la page de connexion après un délai
+      // Redirection vers la page de sélection SFD après un délai
       setTimeout(() => {
-        navigate('/auth', { replace: true });
+        navigate('/sfd-selector', { replace: true });
       }, 2000);
     } catch (error: any) {
       console.error('Erreur lors de l\'inscription:', error);
