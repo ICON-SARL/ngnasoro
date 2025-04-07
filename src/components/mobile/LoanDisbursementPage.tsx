@@ -13,11 +13,11 @@ const LoanDisbursementPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { language } = useLocalization();
+  const { language, t } = useLocalization();
   const [animationComplete, setAnimationComplete] = useState(false);
   const [progressValue, setProgressValue] = useState(0);
   
-  // Get loan data from location state or use defaults
+  // Obtenir les données du prêt à partir de l'état de localisation ou utiliser des valeurs par défaut
   const loanData = location.state?.loanData || {
     amount: 250000,
     duration: 12,
@@ -27,13 +27,13 @@ const LoanDisbursementPage = () => {
     interestRate: 5.5
   };
   
-  // Voice assistant messages
+  // Messages d'assistance vocale
   const voiceMessage = language === 'bambara' 
     ? "I ni ce, i ka juru daani bonya ye. I ka juru kɛra. Wari bɛna don i ka konto kɔnɔ o ye lɛrɛ 24 kɔnɔ. I bɛna dɛmɛni don ka i ka koɲɛ kɛ."
     : "Félicitations, votre prêt a été approuvé. Les fonds seront déposés sur votre compte dans les 24 heures. Vous recevrez une notification dès que le transfert sera effectué.";
 
   useEffect(() => {
-    // Animate loading progress
+    // Animer la progression du chargement
     const interval = setInterval(() => {
       if (progressValue < 100) {
         setProgressValue(prev => {
@@ -57,26 +57,26 @@ const LoanDisbursementPage = () => {
   const goHome = () => {
     navigate('/mobile-flow/main');
     toast({
-      title: "Navigation terminée",
-      description: "Vous avez été redirigé vers la page d'accueil"
+      title: language === 'bambara' ? "Taamaséré bannta" : "Navigation terminée",
+      description: language === 'bambara' ? "I táara so nabilaw ma" : "Vous avez été redirigé vers la page d'accueil"
     });
   };
   
   const shareContract = () => {
     toast({
-      title: "Contrat partagé",
-      description: "Le contrat a été envoyé à votre adresse email"
+      title: language === 'bambara' ? "Sɛbɛn dilali" : "Contrat partagé",
+      description: language === 'bambara' ? "Juru sɛbɛn ci la i ka email kan" : "Le contrat a été envoyé à votre adresse email"
     });
   };
   
   const downloadContract = () => {
     toast({
-      title: "Téléchargement",
-      description: "Le contrat a été téléchargé sur votre appareil"
+      title: language === 'bambara' ? "A tajuru" : "Téléchargement",
+      description: language === 'bambara' ? "I ka sɛbɛn tajurula i ka téléphone kan" : "Le contrat a été téléchargé sur votre appareil"
     });
   };
 
-  // Calculate first payment date
+  // Calculer la date du premier paiement
   const getFirstPaymentDate = () => {
     const date = new Date();
     date.setMonth(date.getMonth() + 1);
@@ -85,16 +85,18 @@ const LoanDisbursementPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header with gradient background */}
+      {/* En-tête avec arrière-plan dégradé */}
       <div className="bg-gradient-to-r from-green-600 to-green-500 text-white py-5 px-4 rounded-b-3xl shadow-md">
         <div className="flex items-center mb-2">
           <Button variant="ghost" className="p-1 mr-2 text-white" onClick={goBack}>
             <ArrowLeft className="h-6 w-6" />
           </Button>
-          <h1 className="text-xl font-bold">Prêt approuvé</h1>
+          <h1 className="text-xl font-bold">
+            {language === 'bambara' ? 'Juru daaniyalen' : 'Prêt approuvé'}
+          </h1>
         </div>
         
-        {/* Animation showing completed progress */}
+        {/* Animation montrant la progression terminée */}
         <div className="flex flex-col items-center mt-8 mb-4">
           <div className="relative w-32 h-32 mb-6">
             <div className="absolute inset-0 bg-white/20 rounded-full"></div>
@@ -126,11 +128,19 @@ const LoanDisbursementPage = () => {
             )}
           </div>
 
-          <h2 className="text-2xl font-bold mb-2">{animationComplete ? "Prêt approuvé!" : "En cours..."}</h2>
+          <h2 className="text-2xl font-bold mb-2">
+            {animationComplete 
+              ? (language === 'bambara' ? 'Juru daaniyalen!' : 'Prêt approuvé!')
+              : (language === 'bambara' ? 'A bɛ kɛla...' : 'En cours...')}
+          </h2>
           <p className="text-center text-white/80 max-w-xs">
             {animationComplete 
-              ? "Votre prêt a été approuvé et sera déboursé sous peu." 
-              : "Traitement de votre demande en cours..."}
+              ? (language === 'bambara' 
+                 ? 'I ka juru daaniyalen bɛ na di i ma sisan.' 
+                 : 'Votre prêt a été approuvé et sera déboursé sous peu.') 
+              : (language === 'bambara' 
+                 ? 'I ka ɲini sɛgɛsɛgɛli bɛ kɛla...' 
+                 : 'Traitement de votre demande en cours...')}
           </p>
         </div>
       </div>
@@ -140,19 +150,21 @@ const LoanDisbursementPage = () => {
           <CardContent className="p-5">
             <div className="flex flex-col items-center border-b pb-4 mb-4">
               <div className="text-center mb-2">
-                <h3 className="text-sm font-medium text-gray-500">Montant approuvé</h3>
+                <h3 className="text-sm font-medium text-gray-500">
+                  {language === 'bambara' ? 'Juru hakɛ daanitɔ' : 'Montant approuvé'}
+                </h3>
                 <div className="flex items-center justify-center">
                   <span className="text-3xl font-bold mr-1">{loanData.amount.toLocaleString()}</span>
                   <span className="text-gray-500">FCFA</span>
                 </div>
               </div>
               
-              {/* Colorful progress bar */}
+              {/* Barre de progression colorée */}
               {!animationComplete && (
                 <div className="w-full mt-2">
                   <Progress value={progressValue} className="h-2" />
                   <div className="text-center text-xs text-gray-500 mt-1">
-                    {progressValue}% traité
+                    {progressValue}% {language === 'bambara' ? 'kɛlen' : 'traité'}
                   </div>
                 </div>
               )}
@@ -162,7 +174,9 @@ const LoanDisbursementPage = () => {
               <div className="flex justify-between items-center p-3 border-b border-gray-100">
                 <div className="flex items-center">
                   <Landmark className="h-5 w-5 text-blue-500 mr-2" />
-                  <p className="text-gray-600">Compte de réception</p>
+                  <p className="text-gray-600">
+                    {language === 'bambara' ? 'Wari mina konto' : 'Compte de réception'}
+                  </p>
                 </div>
                 <span className="font-medium">**** 7890</span>
               </div>
@@ -170,15 +184,21 @@ const LoanDisbursementPage = () => {
               <div className="flex justify-between items-center p-3 border-b border-gray-100">
                 <div className="flex items-center">
                   <Calendar className="h-5 w-5 text-green-500 mr-2" />
-                  <p className="text-gray-600">Date de déboursement</p>
+                  <p className="text-gray-600">
+                    {language === 'bambara' ? 'Wari di lon' : 'Date de déboursement'}
+                  </p>
                 </div>
-                <span className="font-medium">Aujourd'hui</span>
+                <span className="font-medium">
+                  {language === 'bambara' ? 'Bi' : 'Aujourd\'hui'}
+                </span>
               </div>
               
               <div className="flex justify-between items-center p-3 border-b border-gray-100">
                 <div className="flex items-center">
                   <CreditCard className="h-5 w-5 text-amber-500 mr-2" />
-                  <p className="text-gray-600">Premier paiement</p>
+                  <p className="text-gray-600">
+                    {language === 'bambara' ? 'Sara fɔlɔ' : 'Premier paiement'}
+                  </p>
                 </div>
                 <span className="font-medium">{getFirstPaymentDate()}</span>
               </div>
@@ -191,7 +211,7 @@ const LoanDisbursementPage = () => {
                 onClick={downloadContract}
               >
                 <DownloadCloud className="h-4 w-4 mr-2" />
-                Télécharger le contrat
+                {language === 'bambara' ? 'Juru sɛbɛn tajuru' : 'Télécharger le contrat'}
               </Button>
               
               <Button
@@ -200,19 +220,37 @@ const LoanDisbursementPage = () => {
                 onClick={shareContract}
               >
                 <Share2 className="h-4 w-4 mr-2" />
-                Partager par email
+                {language === 'bambara' ? 'A tilala email fɛ' : 'Partager par email'}
               </Button>
             </div>
           </CardContent>
         </Card>
         
         <div className="bg-blue-50 p-4 rounded-xl mb-6">
-          <h4 className="font-medium text-blue-700 mb-2">Prochaines étapes</h4>
+          <h4 className="font-medium text-blue-700 mb-2">
+            {language === 'bambara' ? 'Ko nataw' : 'Prochaines étapes'}
+          </h4>
           <ol className="list-decimal list-inside space-y-1 text-sm text-blue-600">
-            <li>Fonds disponibles dans 24h</li>
-            <li>Notification par SMS de déboursement</li>
-            <li>Premier remboursement le {getFirstPaymentDate()}</li>
-            <li>Vous pouvez consulter votre prêt à tout moment</li>
+            <li>
+              {language === 'bambara' 
+                ? 'Wari bɛ i bolo lɛrɛ 24 kɔnɔ' 
+                : 'Fonds disponibles dans 24h'}
+            </li>
+            <li>
+              {language === 'bambara' 
+                ? 'I bɛna sɛbɛnni dɔ sɔrɔ wari di waati la' 
+                : 'Notification par SMS de déboursement'}
+            </li>
+            <li>
+              {language === 'bambara' 
+                ? `Sara fɔlɔ bɛ kɛ ${getFirstPaymentDate()}` 
+                : `Premier remboursement le ${getFirstPaymentDate()}`}
+            </li>
+            <li>
+              {language === 'bambara' 
+                ? 'I bɛ se ka i ka juru ɲɛ fɛ tuma bɛɛ' 
+                : 'Vous pouvez consulter votre prêt à tout moment'}
+            </li>
           </ol>
         </div>
         
@@ -220,11 +258,11 @@ const LoanDisbursementPage = () => {
           className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-xl font-bold text-lg"
           onClick={goHome}
         >
-          Retourner à l'accueil
+          {language === 'bambara' ? 'Segin so' : 'Retourner à l\'accueil'}
         </Button>
       </div>
       
-      {/* Voice assistant */}
+      {/* Assistant vocal */}
       <div className="fixed bottom-24 right-4 z-50">
         <VoiceAssistant 
           message={voiceMessage}

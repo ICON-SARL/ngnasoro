@@ -14,7 +14,7 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ message, language = 'fr
   const speak = () => {
     const utterance = new SpeechSynthesisUtterance(message);
     
-    // Set language
+    // Définir la langue
     switch(language) {
       case 'french':
         utterance.lang = 'fr-FR';
@@ -23,18 +23,18 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ message, language = 'fr
         utterance.lang = 'en-US';
         break;
       case 'bambara':
-        // Bambara doesn't have a standard voice, using French as fallback
+        // Le bambara n'a pas de voix standard, utilisation du français comme solution de repli
         utterance.lang = 'fr-FR';
         break;
       default:
         utterance.lang = 'fr-FR';
     }
     
-    // Speak the message
+    // Parler le message
     window.speechSynthesis.speak(utterance);
   };
 
-  // Auto-play speech if enabled
+  // Lecture automatique si activée
   useEffect(() => {
     if (autoPlay) {
       speak();
