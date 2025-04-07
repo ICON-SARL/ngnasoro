@@ -1,46 +1,32 @@
-
 import React, { useState } from 'react';
 import { MessageSquare, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { useAdminCommunication, AdminNotificationRequest } from '@/hooks/useAdminCommunication';
-import { useSfdAdminManagement } from '@/components/admin/hooks/sfd-admin/useSfdAdminManagement';
+import { useAdminCommunication } from '@/hooks/useAdminCommunication';
+import { useSfdAdminManagement } from '../hooks/sfd-admin/useSfdAdminManagement';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Le titre doit contenir au moins 5 caractères'),
   message: z.string().min(10, 'Le message doit contenir au moins 10 caractères'),
 });
 
-export const MerefSfdCommunication: React.FC = () => {
+export const MerefSfdCommunication = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { sfdAdmins } = useSfdAdminManagement();
   const { sendNotification } = useAdminCommunication();
-  const [notification, setNotification] = useState<AdminNotificationRequest>({
+  const [notification, setNotification] = useState({
     title: '',
     message: '',
     type: 'info',
     recipient_id: '',
-    recipient_role: 'sfd_admin',
+    recipient_role: 'sfd_admin'
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -57,7 +43,7 @@ export const MerefSfdCommunication: React.FC = () => {
         ...notification,
         title: values.title,
         message: values.message,
-        recipient_role: 'sfd_admin' // Ensuring we're sending to SFD admins
+        recipient_role: 'sfd_admin'
       };
 
       const result = await sendNotification(notificationToSend);

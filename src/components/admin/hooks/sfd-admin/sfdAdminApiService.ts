@@ -67,7 +67,7 @@ export async function createSfdAdmin(adminData: {
     
     console.log('Auth user created:', authData.user.id);
     
-    // 2. Assign role in the database
+    // 2. Assign role in the database using RPC
     const { error: roleError } = await supabase.rpc('assign_role', {
       user_id: authData.user.id,
       role: 'sfd_admin'
@@ -78,19 +78,15 @@ export async function createSfdAdmin(adminData: {
       // Continue despite role assignment error, we'll handle it separately
     }
     
-    // 3. Add user to admin_users table
-    const { error: adminError } = await supabase
-      .from('admin_users')
-      .insert([
-        {
-          id: authData.user.id,
-          email: adminData.email,
-          full_name: adminData.full_name,
-          role: 'sfd_admin',
-          sfd_id: adminData.sfd_id
-        }
-      ]);
-      
+    // 3. Add user to admin_users table using the security definer function
+    const { error: adminError } = await supabase.rpc('create_admin_user', {
+      admin_id: authData.user.id,
+      admin_email: adminData.email,
+      admin_full_name: adminData.full_name,
+      admin_role: 'sfd_admin',
+      admin_sfd_id: adminData.sfd_id
+    });
+    
     if (adminError) {
       console.error('Error creating admin user record:', adminError);
       throw new Error(`Erreur lors de l'ajout de l'administrateur: ${adminError.message}`);
