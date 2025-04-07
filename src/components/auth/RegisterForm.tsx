@@ -131,13 +131,15 @@ const RegisterForm = () => {
         phone: data.phoneNumber || undefined
       };
       
-      const result = await signUp(data.email, data.password, metadata);
+      // Appeler la méthode signUp sans essayer d'accéder au résultat directement
+      await signUp(data.email, data.password, metadata);
       
-      console.log("Résultat de l'inscription:", result);
+      // Puisque signUp ne retourne pas d'utilisateur, obtenons la session actuelle
+      const { data: sessionData } = await supabase.auth.getSession();
       
-      // Initialize user account data
-      if (result?.user?.id) {
-        await initializeUserAccount(result.user.id, data.fullName);
+      // Si nous avons un utilisateur dans la session, initialisons son compte
+      if (sessionData?.session?.user?.id) {
+        await initializeUserAccount(sessionData.session.user.id, data.fullName);
       }
       
       setSuccessMessage("Inscription réussie! Vous allez être redirigé vers la page de connexion.");
