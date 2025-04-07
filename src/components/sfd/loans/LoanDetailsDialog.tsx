@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loan } from '@/types/sfdClients';
 import { sfdLoanApi } from '@/utils/sfdLoanApi';
+import { sfdClientApi } from '@/utils/sfdClientApi';
 import { useAuth } from '@/hooks/auth/AuthContext';
 import { Separator } from '@/components/ui/separator';
 import { CheckCircle, XCircle, Ban, ArrowRight, Calendar, CreditCard, Phone, AlertCircle } from 'lucide-react';
@@ -41,9 +42,10 @@ const LoanDetailsDialog = ({ isOpen, onClose, loan, onLoanUpdated }: LoanDetails
   
   const fetchClientInfo = async () => {
     try {
-      const { data, error } = await sfdLoanApi.getClientById(loan.client_id);
-      if (error) throw error;
-      setClientInfo(data);
+      const clientData = await sfdClientApi.getClientById(loan.client_id);
+      if (clientData) {
+        setClientInfo(clientData);
+      }
     } catch (error) {
       console.error('Error fetching client info:', error);
     }
