@@ -1,25 +1,33 @@
 
 import React from 'react';
-import { XCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import VoiceAssistant from '@/components/VoiceAssistant';
 
 interface ErrorDisplayProps {
   message: string | null;
 }
 
-const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ message }) => {
+const ErrorDisplay = ({ message }: ErrorDisplayProps) => {
   if (!message) return null;
+
+  // Simplifier les messages d'erreur pour les rendre plus compréhensibles
+  let simplifiedMessage = message;
   
+  if (message.includes('invalid email')) {
+    simplifiedMessage = "L'email n'est pas valide.";
+  } else if (message.includes('rate limit')) {
+    simplifiedMessage = "Veuillez attendre avant de réessayer.";
+  } else if (message.includes('not found')) {
+    simplifiedMessage = "Email non trouvé. Vérifiez votre saisie.";
+  }
+
   return (
-    <div className="bg-red-50 border border-red-200 rounded-md p-4">
-      <div className="flex">
-        <XCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
-        <div>
-          <h3 className="text-sm font-medium text-red-800">
-            Erreur de connexion
-          </h3>
-          <div className="mt-1 text-sm text-red-700">
-            <p>{message}</p>
-          </div>
+    <div className="bg-red-50 p-4 rounded-lg flex items-start">
+      <AlertCircle className="h-5 w-5 text-red-600 mr-3 mt-0.5 flex-shrink-0" />
+      <div className="flex-1">
+        <p className="font-medium text-red-800">{simplifiedMessage}</p>
+        <div className="mt-2">
+          <VoiceAssistant message={simplifiedMessage} autoPlay={true} />
         </div>
       </div>
     </div>

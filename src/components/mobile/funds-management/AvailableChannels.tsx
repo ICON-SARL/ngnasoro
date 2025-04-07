@@ -18,7 +18,7 @@ const AvailableChannels: React.FC = () => {
         <CardContent className="p-3 flex flex-col items-center">
           <Phone className="h-8 w-8 text-orange-500 mb-2" />
           <p className="text-sm font-medium">Mobile Money</p>
-          <p className="text-xs text-gray-500">Orange Money, Moov, Malitel</p>
+          <p className="text-xs text-gray-500">Orange, MTN, Wave</p>
         </CardContent>
       </Card>
     </div>

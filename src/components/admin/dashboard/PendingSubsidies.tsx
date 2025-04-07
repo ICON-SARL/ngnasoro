@@ -45,7 +45,7 @@ export function PendingSubsidies() {
         
         const formattedData = data.map(item => ({
           id: item.id,
-          sfd_name: item.sfds && typeof item.sfds === 'object' && 'name' in item.sfds ? String(item.sfds.name) : 'Unknown SFD',
+          sfd_name: item.sfds?.name || 'Unknown SFD',
           amount: item.amount,
           purpose: item.purpose,
           created_at: item.created_at,
@@ -62,6 +62,7 @@ export function PendingSubsidies() {
     
     fetchPendingRequests();
     
+    // Set up real-time subscription for updates
     const requestsChannel = supabase
       .channel('pending_requests_changes')
       .on('postgres_changes', { 

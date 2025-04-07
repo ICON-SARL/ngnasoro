@@ -8,7 +8,7 @@ import { Check, Shield } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
 import DemoAccountsCreator from './DemoAccountsCreator';
 
-const AdminAuthUI = ({ isSfdAdmin = false }) => {
+const AdminAuthUI = () => {
   const { user, loading, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -20,25 +20,27 @@ const AdminAuthUI = ({ isSfdAdmin = false }) => {
       setAuthSuccess(true);
       
       const timer = setTimeout(() => {
-        navigate(isSfdAdmin ? '/agency-dashboard' : '/admin-dashboard');
+        navigate('/super-admin-dashboard');
       }, 2000);
       
       return () => clearTimeout(timer);
     }
-  }, [location, navigate, isSfdAdmin]);
+  }, [location, navigate]);
   
-  // Modified redirect logic to prevent infinite loops
   useEffect(() => {
     if (user && !loading) {
-      console.log("AdminAuthUI: Authenticated user detected", {
-        email: user.email,
-        role: user.app_metadata?.role
-      });
-      
-      // Don't auto-redirect when on auth pages to prevent loops
-      // Users will need to click login button to proceed
+      if (user.app_metadata?.role === 'admin') {
+        navigate('/super-admin-dashboard');
+      } else {
+        // Rediriger les utilisateurs non-admin vers leur page appropriée
+        if (user.app_metadata?.role === 'sfd_admin') {
+          navigate('/sfd/auth');
+        } else {
+          navigate('/auth');
+        }
+      }
     }
-  }, [user, loading, navigate, location.pathname]);
+  }, [user, loading, navigate]);
 
   if (authSuccess) {
     return (
@@ -49,20 +51,6 @@ const AdminAuthUI = ({ isSfdAdmin = false }) => {
           </div>
           <h1 className="text-3xl font-bold text-amber-700 mb-3">Connexion réussie!</h1>
           <p className="mt-2 text-gray-600 text-lg">Vous allez être redirigé vers le tableau de bord administrateur...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-          <div className="h-20 w-20 bg-amber-100 text-amber-600 rounded-full mx-auto flex items-center justify-center mb-6">
-            <div className="animate-spin h-8 w-8 border-4 border-amber-500 border-t-transparent rounded-full"></div>
-          </div>
-          <h1 className="text-2xl font-bold text-amber-700 mb-3">Chargement en cours...</h1>
-          <p className="mt-2 text-gray-600">Veuillez patienter pendant la vérification de votre session.</p>
         </div>
       </div>
     );
@@ -80,7 +68,7 @@ const AdminAuthUI = ({ isSfdAdmin = false }) => {
         <div className="bg-white shadow-lg rounded-lg overflow-hidden">
           <div className="p-4 bg-amber-50 border-b border-amber-100">
             <h2 className="text-amber-800 font-medium text-center">
-              {isSfdAdmin ? "Connexion Administration SFD" : "Connexion Administration MEREF"}
+              Connexion Administration MEREF
             </h2>
           </div>
           
@@ -88,10 +76,7 @@ const AdminAuthUI = ({ isSfdAdmin = false }) => {
             <Shield className="h-5 w-5 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium">
-                {isSfdAdmin 
-                  ? "Accès réservé aux administrateurs SFD"
-                  : "Accès réservé aux administrateurs MEREF"
-                }
+                Accès réservé aux administrateurs MEREF
               </p>
               <p className="text-xs mt-1">
                 Cette interface est uniquement destinée aux administrateurs système. 
@@ -100,7 +85,7 @@ const AdminAuthUI = ({ isSfdAdmin = false }) => {
             </div>
           </div>
           
-          <LoginForm adminMode={!isSfdAdmin} isSfdAdmin={isSfdAdmin} />
+          <LoginForm adminMode={true} isSfdAdmin={false} />
           
           <div className="mt-4 text-center pb-6 flex flex-col gap-2">
             <a 
@@ -109,22 +94,12 @@ const AdminAuthUI = ({ isSfdAdmin = false }) => {
             >
               Connexion Utilisateur Standard
             </a>
-            {!isSfdAdmin && (
-              <a 
-                href="/sfd/auth"
-                className="text-blue-600 hover:underline font-medium"
-              >
-                Accès Administrateur SFD
-              </a>
-            )}
-            {isSfdAdmin && (
-              <a 
-                href="/admin/auth"
-                className="text-amber-600 hover:underline font-medium"
-              >
-                Accès Administrateur MEREF
-              </a>
-            )}
+            <a 
+              href="/sfd/auth"
+              className="text-blue-600 hover:underline font-medium"
+            >
+              Accès Administrateur SFD
+            </a>
           </div>
           
           <DemoAccountsCreator />

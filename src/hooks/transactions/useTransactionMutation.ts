@@ -1,61 +1,36 @@
 
-import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Transaction } from '@/types/transactions';
-import { PaymentMethod } from '@/services/transactions/types';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { transactionService } from '@/services/transactions/transactionService';
+import { CreateTransactionOptions } from '@/services/transactions/types';
+import { useToast } from '@/hooks/use-toast';
 
-type CreateTransactionParams = {
-  user_id: string;
-  sfd_id: string;
-  name: string;
-  type: string;
-  amount: number;
-  description?: string;
-  payment_method?: PaymentMethod;
-  reference_id?: string;
-};
-
+/**
+ * Hook for transaction creation mutations
+ */
 export function useTransactionMutation() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const createTransaction = useMutation({
-    mutationFn: async (params: CreateTransactionParams): Promise<Transaction> => {
-      const { 
-        user_id, 
-        sfd_id, 
-        name, 
-        type, 
-        amount, 
-        description, 
-        payment_method, 
-        reference_id 
-      } = params;
-
-      const transactionData = {
-        user_id,
-        sfd_id,
-        name,
-        type,
-        amount,
-        description: description || `Transaction ${type}`,
-        payment_method: payment_method || 'sfd_account',
-        reference_id: reference_id || `tx-${Date.now()}`,
-        date: new Date().toISOString(),
-        status: 'success'
-      };
-
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert(transactionData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating transaction:', error);
-        throw error;
-      }
-
-      return data as Transaction;
+    mutationFn: (options: CreateTransactionOptions) => 
+      transactionService.createTransaction(options),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      toast({
+        title: 'Transaction créée',
+        description: 'La transaction a été créée avec succès',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Une erreur est survenue lors de la création de la transaction',
+        variant: 'destructive',
+      });
     }
   });
 
-  return { createTransaction };
+  return {
+    createTransaction
+  };
 }

@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Percent, CreditCard, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { asString } from '@/utils/typeSafeAccess';
 
 interface LoanPlan {
   id: string;
@@ -24,17 +23,12 @@ interface LoanPlan {
   created_at: string;
 }
 
-interface SfdItem {
-  id: string;
-  name: string;
-}
-
 export default function LoanPlansDisplay() {
   const { user } = useAuth();
   const [loanPlans, setLoanPlans] = useState<LoanPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSfd, setSelectedSfd] = useState<string | null>(null);
-  const [sfdList, setSfdList] = useState<SfdItem[]>([]);
+  const [sfdList, setSfdList] = useState<{id: string, name: string}[]>([]);
 
   useEffect(() => {
     const fetchUserSfds = async () => {
@@ -48,25 +42,16 @@ export default function LoanPlansDisplay() {
 
         if (error) throw error;
 
-        if (userSfds && Array.isArray(userSfds)) {
-          const sfds: SfdItem[] = userSfds.map(item => {
-            // Properly access nested properties with type checking
-            if (item && item.sfds && typeof item.sfds === 'object') {
-              const sfdObject = item.sfds as Record<string, any>;
-              return {
-                id: asString(sfdObject.id, ''),
-                name: asString(sfdObject.name, '')
-              };
-            }
-            return { id: '', name: '' };
-          }).filter(sfd => sfd.id !== ''); // Filter out invalid SFDs
-          
-          setSfdList(sfds);
-          
-          // Select first SFD by default
-          if (sfds.length > 0 && !selectedSfd) {
-            setSelectedSfd(sfds[0].id);
-          }
+        const sfds = userSfds.map(item => ({
+          id: item.sfds.id,
+          name: item.sfds.name
+        }));
+
+        setSfdList(sfds);
+        
+        // Select first SFD by default
+        if (sfds.length > 0 && !selectedSfd) {
+          setSelectedSfd(sfds[0].id);
         }
       } catch (error) {
         console.error('Error fetching user SFDs:', error);
@@ -74,7 +59,7 @@ export default function LoanPlansDisplay() {
     };
 
     fetchUserSfds();
-  }, [user, selectedSfd]);
+  }, [user]);
 
   useEffect(() => {
     const fetchLoanPlans = async () => {

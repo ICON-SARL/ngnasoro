@@ -1,211 +1,106 @@
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Transaction } from '@/types/transactions';
+import { useQueryClient } from '@tanstack/react-query';
+import { transactionService } from '@/services/transactions/transactionService';
 import { PaymentMethod } from '@/services/transactions/types';
-
-type DepositParams = {
-  amount: number;
-  description?: string;
-  paymentMethod?: string;
-};
-
-type WithdrawalParams = {
-  amount: number;
-  description?: string;
-  paymentMethod?: string;
-};
-
-type LoanRepaymentParams = {
-  loanId: string;
-  amount: number;
-  description?: string;
-  paymentMethod?: string;
-};
+import { useTransactionMutation } from './useTransactionMutation';
+import { Transaction } from '@/types/transactions';
 
 /**
  * Hook for common transaction operations like deposit, withdrawal, etc.
  */
 export function useTransactionOperations(userId?: string, sfdId?: string) {
   const queryClient = useQueryClient();
+  const { createTransaction } = useTransactionMutation();
 
   const getBalance = async (): Promise<number> => {
     try {
-      if (!userId) return 0;
-      
-      const { data, error } = await supabase
-        .from('accounts')
-        .select('balance')
-        .eq('user_id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching balance:', error);
-        return 0;
-      }
-
-      return data?.balance || 0;
+      if (!userId || !sfdId) return 0;
+      return await transactionService.getAccountBalance(userId, sfdId);
     } catch (error) {
       console.error('Error fetching balance:', error);
       return 0;
     }
   };
 
-  const makeDeposit = useMutation({
-    mutationFn: async (params: DepositParams | number): Promise<Transaction | null> => {
+  const makeDeposit = async (
+    amount: number, 
+    description?: string, 
+    paymentMethod?: string
+  ): Promise<Transaction | null> => {
+    try {
       if (!userId || !sfdId) return null;
       
-      // Handle both function signatures (object param or individual params)
-      let amount: number;
-      let desc: string | undefined;
-      let method: string | undefined;
-      
-      if (typeof params === 'object') {
-        amount = params.amount;
-        desc = params.description;
-        method = params.paymentMethod;
-      } else {
-        amount = params;
-        desc = undefined;
-        method = undefined;
-      }
-      
-      const transactionData = {
-        user_id: userId,
-        sfd_id: sfdId,
-        amount: amount,
+      const result = await createTransaction.mutateAsync({
+        userId,
+        sfdId,
+        amount,
         type: 'deposit',
-        name: desc || 'Dépôt',
-        description: desc || 'Dépôt de fonds',
-        payment_method: method || 'sfd_account',
-        reference_id: `tx-${Date.now()}`,
-        date: new Date().toISOString(),
-        status: 'success'
-      };
-
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert(transactionData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error making deposit:', error);
-        return null;
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      await queryClient.invalidateQueries({ queryKey: ['account-balance'] });
+        name: description || 'Dépôt',
+        description: description || 'Dépôt de fonds',
+        paymentMethod: (paymentMethod || 'sfd_account') as PaymentMethod
+      });
       
-      return data as Transaction;
+      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      return result;
+    } catch (error) {
+      console.error('Error making deposit:', error);
+      return null;
     }
-  });
+  };
 
-  const makeWithdrawal = useMutation({
-    mutationFn: async (params: WithdrawalParams | number): Promise<Transaction | null> => {
+  const makeWithdrawal = async (
+    amount: number, 
+    description?: string, 
+    paymentMethod?: string
+  ): Promise<Transaction | null> => {
+    try {
       if (!userId || !sfdId) return null;
       
-      // Handle both function signatures
-      let amount: number;
-      let desc: string | undefined;
-      let method: string | undefined;
-      
-      if (typeof params === 'object') {
-        amount = params.amount;
-        desc = params.description;
-        method = params.paymentMethod;
-      } else {
-        amount = params;
-        desc = undefined;
-        method = undefined;
-      }
-      
-      const transactionData = {
-        user_id: userId,
-        sfd_id: sfdId,
+      const result = await createTransaction.mutateAsync({
+        userId,
+        sfdId,
         amount: -Math.abs(amount), // Ensure negative amount for withdrawals
         type: 'withdrawal',
-        name: desc || 'Retrait',
-        description: desc || 'Retrait de fonds',
-        payment_method: method || 'sfd_account',
-        reference_id: `tx-${Date.now()}`,
-        date: new Date().toISOString(),
-        status: 'success'
-      };
-
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert(transactionData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error making withdrawal:', error);
-        return null;
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      await queryClient.invalidateQueries({ queryKey: ['account-balance'] });
+        name: description || 'Retrait',
+        description: description || 'Retrait de fonds',
+        paymentMethod: (paymentMethod || 'sfd_account') as PaymentMethod
+      });
       
-      return data as Transaction;
+      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      return result;
+    } catch (error) {
+      console.error('Error making withdrawal:', error);
+      return null;
     }
-  });
+  };
 
-  const makeLoanRepayment = useMutation({
-    mutationFn: async (params: LoanRepaymentParams | string): Promise<Transaction | null> => {
+  const makeLoanRepayment = async (
+    loanId: string, 
+    amount: number, 
+    description?: string, 
+    paymentMethod?: string
+  ): Promise<Transaction | null> => {
+    try {
       if (!userId || !sfdId) return null;
       
-      // Handle both function signatures (object param or loanId string)
-      let loanId: string;
-      let amount: number;
-      let desc: string | undefined;
-      let method: string | undefined;
-      
-      if (typeof params === 'object') {
-        loanId = params.loanId;
-        amount = params.amount;
-        desc = params.description;
-        method = params.paymentMethod;
-      } else {
-        loanId = params;
-        // When called with just a string, we need a second parameter for amount
-        // This function signature doesn't match our requirements
-        // We'll handle this case better in the component that uses it
-        amount = 0;
-        desc = undefined;
-        method = undefined;
-      }
-      
-      const transactionData = {
-        user_id: userId,
-        sfd_id: sfdId,
+      const result = await createTransaction.mutateAsync({
+        userId,
+        sfdId,
         amount: -Math.abs(amount), // Ensure negative amount for repayments
         type: 'loan_repayment',
-        name: desc || 'Remboursement de prêt',
-        description: desc || `Remboursement pour le prêt ${loanId}`,
-        payment_method: method || 'sfd_account',
-        reference_id: loanId,
-        date: new Date().toISOString(),
-        status: 'success'
-      };
-
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert(transactionData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error making loan repayment:', error);
-        return null;
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      await queryClient.invalidateQueries({ queryKey: ['loans'] });
+        name: description || 'Remboursement de prêt',
+        description: description || `Remboursement pour le prêt ${loanId}`,
+        paymentMethod: (paymentMethod || 'sfd_account') as PaymentMethod,
+        referenceId: loanId
+      });
       
-      return data as Transaction;
+      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      return result;
+    } catch (error) {
+      console.error('Error making loan repayment:', error);
+      return null;
     }
-  });
+  };
 
   return {
     getBalance,

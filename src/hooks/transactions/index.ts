@@ -8,7 +8,7 @@ import { TransactionFilters } from '@/services/transactions/types';
  * Combined hook for transaction management
  */
 export function useTransactions(userId?: string, sfdId?: string, filters?: TransactionFilters) {
-  const query = useTransactionQuery(userId, sfdId);
+  const query = useTransactionQuery(userId, sfdId, filters);
   const { createTransaction } = useTransactionMutation();
   const operations = useTransactionOperations(userId, sfdId);
 
@@ -25,9 +25,9 @@ export function useTransactions(userId?: string, sfdId?: string, filters?: Trans
     
     // From useTransactionOperations
     getBalance: operations.getBalance,
-    makeDeposit: operations.makeDeposit.mutateAsync,
-    makeWithdrawal: operations.makeWithdrawal.mutateAsync,
-    makeLoanRepayment: operations.makeLoanRepayment.mutateAsync
+    makeDeposit: operations.makeDeposit,
+    makeWithdrawal: operations.makeWithdrawal,
+    makeLoanRepayment: operations.makeLoanRepayment
   };
 }
 

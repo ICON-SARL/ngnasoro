@@ -36,10 +36,10 @@ const LanguageSelector = () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setLanguage('french')} className={language === 'french' ? 'bg-muted' : ''}>
-            <span className="mr-2">🇲🇱</span> Français
+            <span className="mr-2">🇫🇷</span> Français
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setLanguage('bambara')} className={language === 'bambara' ? 'bg-muted' : ''}>
-            <span className="mr-2">🇲🇱</span> Bamanankan
+            <span className="mr-2">🇲🇱</span> Bambara
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

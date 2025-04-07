@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect, lazy } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
@@ -13,7 +13,6 @@ import { useTransactions } from '@/hooks/useTransactions';
 import MobileMenu from '@/components/mobile/menu/MobileMenu';
 import MobileFlowRoutes from '@/components/mobile/routes/MobileFlowRoutes';
 import { useActionHandler } from '@/utils/actionHandler';
-import MobileFlowPage from './MobileFlowPage';
 
 const MobileFlow = () => {
   const isMobile = useIsMobile();
@@ -60,14 +59,6 @@ const MobileFlow = () => {
     }
   }, [showWelcome]);
 
-  // Handle current path
-  useEffect(() => {
-    // Force redirect to a specific route if we're at the root
-    if (location.pathname === '/mobile-flow' || location.pathname === '/mobile-flow/') {
-      navigate('/mobile-flow/main', { replace: true });
-    }
-  }, [location.pathname, navigate]);
-
   // Custom action handler that uses the toast notification
   const onAction = (action: string, data?: any) => {
     handleAction(action, data);
@@ -84,14 +75,13 @@ const MobileFlow = () => {
       
       if (createTransaction) {
         await createTransaction.mutateAsync({
-          user_id: user?.id || '',
-          sfd_id: 'default-sfd', 
+          userId: user?.id || '',
+          sfdId: 'default-sfd', 
           name: data.recipient,
           type: 'payment',
           amount: -data.amount,
-          payment_method: 'sfd_account',
-          description: data.note || 'Payment transaction',
-          status: 'success' // Add the required status field
+          paymentMethod: 'sfd_account',
+          description: data.note || 'Payment transaction'
         });
       }
       
@@ -144,20 +134,16 @@ const MobileFlow = () => {
         onLogout={handleLogout} 
       />
 
-      <Routes>
-        <Route path="/*" element={
-          <MobileFlowRoutes 
-            onAction={onAction}
-            account={account}
-            transactions={transactions}
-            transactionsLoading={transactionsLoading}
-            toggleMenu={toggleMenu}
-            showWelcome={showWelcome}
-            setShowWelcome={setShowWelcome}
-            handlePaymentSubmit={handlePaymentSubmit}
-          />
-        } />
-      </Routes>
+      <MobileFlowRoutes 
+        onAction={onAction}
+        account={account}
+        transactions={transactions}
+        transactionsLoading={transactionsLoading}
+        toggleMenu={toggleMenu}
+        showWelcome={showWelcome}
+        setShowWelcome={setShowWelcome}
+        handlePaymentSubmit={handlePaymentSubmit}
+      />
       
       {!isWelcomePage && <div className="sm:hidden"><MobileNavigation onAction={onAction} /></div>}
     </div>

@@ -1,68 +1,37 @@
 
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { transactionService } from '@/services/transactions/transactionService';
+import { TransactionFilters } from '@/services/transactions/types';
 import { Transaction } from '@/types/transactions';
 
-export const useTransactionQuery = (userId?: string, sfdId?: string) => {
-  const { data: transactions = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ['transactions', userId, sfdId],
-    queryFn: async () => {
-      if (!userId) return [];
-
-      let query = supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-        
-      if (sfdId) {
-        query = query.eq('sfd_id', sfdId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw error;
-      }
-
-      return data || [];
-    },
-    enabled: !!userId,
+/**
+ * Hook for querying transactions data
+ */
+export function useTransactionQuery(userId?: string, sfdId?: string, filters?: TransactionFilters) {
+  const transactionsQuery = useQuery({
+    queryKey: ['transactions', userId, sfdId, filters],
+    queryFn: () => transactionService.getUserTransactions(userId || '', sfdId || '', filters),
+    enabled: !!userId && !!sfdId
   });
 
-  const fetchTransactions = async (limit?: number) => {
-    if (!userId) return { transactions: [] };
-
-    let query = supabase
-      .from('transactions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-      
-    if (sfdId) {
-      query = query.eq('sfd_id', sfdId);
+  const fetchTransactions = async (limit: number = 10): Promise<Transaction[]> => {
+    try {
+      return await transactionService.getUserTransactions(
+        userId || '', 
+        sfdId || '', 
+        { ...filters, limit }
+      );
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      return [];
     }
-    
-    if (limit) {
-      query = query.limit(limit);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error("Error fetching transactions:", error);
-      return { transactions: [] };
-    }
-
-    return { transactions: data || [] };
   };
 
   return {
-    transactions,
-    isLoading,
-    isError,
-    refetch,
+    transactions: transactionsQuery.data || [],
+    isLoading: transactionsQuery.isLoading,
+    isError: transactionsQuery.isError,
+    refetch: transactionsQuery.refetch,
     fetchTransactions
   };
-};
+}

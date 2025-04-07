@@ -41,7 +41,7 @@ export const AdminEditDialog: React.FC<AdminEditDialogProps> = ({
     setEditedPermissions({});
   }, [admin]);
   
-  if (!isOpen || !admin) return null;
+  if (!admin) return null;
   
   const handleChange = (key: keyof AdminUser, value: any) => {
     if (editedAdmin) {
@@ -68,7 +68,7 @@ export const AdminEditDialog: React.FC<AdminEditDialogProps> = ({
   const canEditRole = currentUserRole === AdminRole.SUPER_ADMIN;
   const canEditPermissions = currentUserRole === AdminRole.SUPER_ADMIN;
   const canEditSfd = currentUserRole === AdminRole.SUPER_ADMIN && 
-                     editedAdmin && editedAdmin.role === AdminRole.SFD_ADMIN;
+                     editedAdmin.role === AdminRole.SFD_ADMIN;
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -80,14 +80,14 @@ export const AdminEditDialog: React.FC<AdminEditDialogProps> = ({
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label>Email</Label>
-            <p className="text-sm font-medium">{editedAdmin?.email}</p>
+            <p className="text-sm font-medium">{editedAdmin.email}</p>
           </div>
           
           {canEditRole && (
             <div className="space-y-2">
               <Label htmlFor="role">Rôle</Label>
               <Select 
-                value={editedAdmin?.role} 
+                value={editedAdmin.role} 
                 onValueChange={(value) => handleChange('role', value as AdminRole)}
                 disabled={!canEditRole}
               >
@@ -107,7 +107,7 @@ export const AdminEditDialog: React.FC<AdminEditDialogProps> = ({
             <div className="space-y-2">
               <Label htmlFor="sfd">SFD Associée</Label>
               <Select 
-                value={editedAdmin?.sfd_id} 
+                value={editedAdmin.sfd_id} 
                 onValueChange={(value) => handleChange('sfd_id', value)}
                 disabled={!canEditSfd}
               >
@@ -127,11 +127,11 @@ export const AdminEditDialog: React.FC<AdminEditDialogProps> = ({
             <Label htmlFor="status">Statut</Label>
             <div className="flex items-center">
               <Switch 
-                checked={editedAdmin?.is_active} 
+                checked={editedAdmin.is_active} 
                 onCheckedChange={(checked) => handleChange('is_active', checked)}
                 id="status"
               />
-              <span className="ml-2">{editedAdmin?.is_active ? 'Actif' : 'Inactif'}</span>
+              <span className="ml-2">{editedAdmin.is_active ? 'Actif' : 'Inactif'}</span>
             </div>
           </div>
           
@@ -180,7 +180,7 @@ export const AdminEditDialog: React.FC<AdminEditDialogProps> = ({
                     />
                   </div>
                   
-                  {editedAdmin && editedAdmin.role === AdminRole.SUPER_ADMIN && (
+                  {editedAdmin.role === AdminRole.SUPER_ADMIN && (
                     <div className="flex items-center justify-between">
                       <Label htmlFor="can_manage_admins" className="cursor-pointer">
                         Gestion des administrateurs

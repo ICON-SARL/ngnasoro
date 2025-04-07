@@ -1,47 +1,50 @@
 
-import { User as SupabaseUser, Session } from '@supabase/supabase-js';
-
-export enum Role {
-  SUPER_ADMIN = 'admin',
-  ADMIN = 'admin',
-  SFD_ADMIN = 'sfd_admin',
-  USER = 'user'
-}
-
-// Export Role as UserRole for backward compatibility
-export { Role as UserRole };
-
+// Create this file if it doesn't exist
 export interface User {
   id: string;
-  email: string;
-  full_name?: string;
+  email?: string;
+  full_name?: string; 
   avatar_url?: string;
-  sfd_id?: string;
   phone?: string;
-  user_metadata: Record<string, any>;
-  app_metadata: {
-    role?: string;
+  sfd_id?: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+    phone?: string;
+  };
+  app_metadata?: {
+    role?: string; // Single role string
     role_assigned?: boolean;
-    roles?: string[];
+    roles?: string[]; // Array of roles
   };
 }
 
+export type Role = 'user' | 'admin' | 'sfd_admin' | 'super_admin';
+
 export interface AuthContextProps {
   user: User | null;
-  setUser: (user: User | null) => void;
-  signIn: (email: string, password: string) => Promise<{ data?: any; error?: any }>;
-  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<any>;
-  signOut: () => Promise<void>;
   loading: boolean;
   isLoggedIn: boolean;
   isAdmin: boolean;
   isSfdAdmin: boolean;
   activeSfdId: string | null;
-  setActiveSfdId: (id: string | null) => void;
+  setActiveSfdId: (sfdId: string | null) => void;
   userRole: Role | null;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
-  session: Session | null;
+  session: any | null;
   isLoading: boolean;
+  setUser: (user: User | null) => void;
+  signIn: (email: string, password: string) => Promise<{ error?: any }>;
+  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
+  signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+}
+
+// Define an enum to be used as a value (not just a type)
+export enum UserRole {
+  SUPER_ADMIN = 'admin',
+  SFD_ADMIN = 'sfd_admin',
+  CLIENT = 'client',
+  USER = 'user'
 }

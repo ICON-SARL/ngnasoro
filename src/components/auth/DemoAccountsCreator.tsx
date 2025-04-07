@@ -2,102 +2,111 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { Loader2, CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-const DemoAccountsCreator = () => {
-  const [isCreating, setIsCreating] = useState(false);
+export const DemoAccountsCreator = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [results, setResults] = useState<any[] | null>(null);
   const { toast } = useToast();
 
-  const createDemoAccounts = async () => {
-    setIsCreating(true);
+  const createTestAccounts = async () => {
+    setIsLoading(true);
+    setResults(null);
     
     try {
-      // Créer un compte client
-      const { error: clientError } = await supabase.auth.signUp({
-        email: 'client@example.com',
-        password: 'password123',
-        options: {
-          data: {
-            role: 'client',
-            full_name: 'Jean Durand'
-          }
-        }
-      });
-
-      if (clientError) throw new Error(`Erreur lors de la création du compte client: ${clientError.message}`);
-
-      // Créer un compte admin SFD
-      const { error: sfdAdminError } = await supabase.auth.signUp({
-        email: 'sfd@example.com',
-        password: 'password123',
-        options: {
-          data: {
-            role: 'sfd_admin',
-            full_name: 'Marie Koné',
-            sfd_id: 'sfd_1'
-          }
-        }
-      });
-
-      if (sfdAdminError) throw new Error(`Erreur lors de la création du compte SFD: ${sfdAdminError.message}`);
-
-      // Créer un compte super admin
-      const { error: adminError } = await supabase.auth.signUp({
-        email: 'admin@example.com',
-        password: 'password123',
-        options: {
-          data: {
-            role: 'admin',
-            full_name: 'Amadou Diallo'
-          }
-        }
-      });
-
-      if (adminError) throw new Error(`Erreur lors de la création du compte admin: ${adminError.message}`);
-
-      // Afficher un message de succès
+      const { data, error } = await supabase.functions.invoke('create-test-accounts');
+      
+      if (error) {
+        throw error;
+      }
+      
+      setResults(data.results);
+      console.log('Test accounts creation response:', data);
+      
       toast({
-        title: "Comptes de démonstration créés",
-        description: "Vous pouvez maintenant vous connecter avec les identifiants suivants:\n\nClient: client@example.com / password123\nSFD: sfd@example.com / password123\nAdmin: admin@example.com / password123",
-        duration: 10000
+        title: 'Comptes de test créés',
+        description: 'Les comptes de démonstration ont été configurés avec succès.',
       });
-
     } catch (error) {
-      console.error('Erreur lors de la création des comptes:', error);
+      console.error('Failed to create test accounts:', error);
       toast({
-        title: "Erreur de création des comptes",
-        description: error.message || "Une erreur s'est produite lors de la création des comptes de démonstration.",
-        variant: "destructive"
+        title: 'Erreur',
+        description: 'Impossible de créer les comptes de test. Vérifiez la console pour plus de détails.',
+        variant: 'destructive'
       });
     } finally {
-      setIsCreating(false);
+      setIsLoading(false);
+    }
+  };
+
+  const getStatusDetails = (result: any) => {
+    if (result.status === 'created') {
+      return `Créé avec le rôle: ${result.role}`;
+    } else if (result.status === 'already_exists') {
+      return result.hasCorrectRole 
+        ? `Existant avec le rôle: ${result.role}` 
+        : `Existant, rôle mis à jour: ${result.role}`;
+    } else {
+      return `Erreur: ${result.message || 'Inconnue'}`;
+    }
+  };
+
+  const getStatusIcon = (result: any) => {
+    if (result.status === 'created') {
+      return <CheckCircle2 className="h-3 w-3 text-green-500 mr-1" />;
+    } else if (result.status === 'already_exists') {
+      return result.hasCorrectRole 
+        ? <CheckCircle2 className="h-3 w-3 text-blue-500 mr-1" />
+        : <Info className="h-3 w-3 text-orange-500 mr-1" />;
+    } else {
+      return <AlertCircle className="h-3 w-3 text-red-500 mr-1" />;
     }
   };
 
   return (
-    <div className="p-4 border-t text-center">
-      <p className="text-sm text-gray-500 mb-2">Vous avez besoin de comptes pour tester?</p>
+    <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
+      <h3 className="text-sm font-medium mb-2">Comptes de démonstration</h3>
+      
+      <div className="mb-2 text-xs text-gray-500">
+        <p>Créer des comptes de test avec les identifiants suivants:</p>
+        <ul className="list-disc pl-5 mt-1 space-y-1">
+          <li>Client: client@test.com / password123</li>
+          <li>SFD Admin: sfd@test.com / password123</li>
+          <li>MEREF Admin: admin@test.com / password123</li>
+        </ul>
+      </div>
+      
       <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={createDemoAccounts}
-        disabled={isCreating}
+        onClick={createTestAccounts} 
+        disabled={isLoading}
+        variant="outline"
+        size="sm"
+        className="w-full"
       >
-        {isCreating ? (
+        {isLoading ? (
           <>
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             Création en cours...
           </>
         ) : (
-          'Créer des comptes de démonstration'
+          'Créer les comptes de test'
         )}
       </Button>
-      {!isCreating && (
-        <div className="mt-2 text-xs text-gray-400">
-          <p>Client: client@example.com / password123</p>
-          <p>SFD: sfd@example.com / password123</p>
-          <p>Admin: admin@example.com / password123</p>
+      
+      {results && (
+        <div className="mt-3 text-xs">
+          <p className="font-medium">Résultats:</p>
+          <ul className="space-y-1 mt-1">
+            {results.map((result, idx) => (
+              <li key={idx} className="flex items-center">
+                {getStatusIcon(result)}
+                <span>
+                  {result.email}: {getStatusDetails(result)}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

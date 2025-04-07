@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SfdData } from './types';
 import { User } from '@/hooks/useAuth';
-import { asString } from '@/utils/typeSafeAccess';
 
 export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateAction<SfdData[]>>) {
   const [loading, setLoading] = useState(true);
@@ -31,25 +30,13 @@ export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateActio
         
       if (error) throw error;
       
-      if (data && Array.isArray(data)) {
-        const sfdList: SfdData[] = data.map(item => {
-          // Ensure proper type checking and access to nested properties
-          if (item && item.sfds && typeof item.sfds === 'object') {
-            const sfdItem = item.sfds as Record<string, any>;
-            return {
-              id: asString(sfdItem.id, ''),
-              name: asString(sfdItem.name, ''),
-              token: null,
-              lastFetched: null
-            };
-          }
-          return {
-            id: '',
-            name: '',
-            token: null,
-            lastFetched: null
-          };
-        });
+      if (data) {
+        const sfdList: SfdData[] = data.map(item => ({
+          id: item.sfds.id,
+          name: item.sfds.name,
+          token: null,
+          lastFetched: null
+        }));
         
         setSfdData(sfdList);
       }

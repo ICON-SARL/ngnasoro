@@ -1,39 +1,25 @@
 
-export type TransactionType = 
-  'deposit' | 
-  'withdrawal' | 
-  'transfer' | 
-  'payment' | 
-  'loan_disbursement' | 
-  'loan_repayment' | 
-  'other';
-
-export type TransactionStatus = 'pending' | 'success' | 'failed' | 'flagged';
-
-export type PaymentMethod = 
-  'sfd_account' | 
-  'mobile_money' | 
-  'bank_transfer' | 
-  'cash' | 
-  'card' | 
-  'other';
+export type TransactionType = 'deposit' | 'withdrawal' | 'transfer' | 'payment' | 'loan_repayment' | 'loan_disbursement' | 'other';
+export type TransactionStatus = 'pending' | 'success' | 'failed' | 'cancelled';
+export type PaymentMethod = 'sfd_account' | 'mobile_money' | 'cash' | 'bank_transfer' | 'qr_code' | 'agency_qr' | 'other';
 
 export interface TransactionFilters {
   type?: TransactionType | TransactionType[];
-  status?: TransactionStatus;
   startDate?: string;
   endDate?: string;
+  status?: TransactionStatus;
+  limit?: number;
+  referenceId?: string;
   minAmount?: number;
   maxAmount?: number;
   searchTerm?: string;
   category?: string;
   paymentMethod?: PaymentMethod;
-  limit?: number;
 }
 
 export interface CreateTransactionOptions {
   userId: string;
-  sfdId?: string;
+  sfdId: string;
   name: string;
   amount: number;
   type: TransactionType;

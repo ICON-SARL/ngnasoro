@@ -48,7 +48,7 @@ const VocalChatbot = () => {
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
     
-    // Ajouter le message de l'utilisateur
+    // Add user message
     const userMessage: Message = {
       id: messages.length + 1,
       text: newMessage,
@@ -59,7 +59,7 @@ const VocalChatbot = () => {
     setMessages(prev => [...prev, userMessage]);
     setNewMessage('');
     
-    // Simuler la réponse du bot
+    // Simulate bot response
     setTimeout(() => {
       const responsePool = language === 'bambara' ? bambaraResponses : frenchResponses;
       const botResponse: Message = {
@@ -74,12 +74,12 @@ const VocalChatbot = () => {
   };
 
   const toggleRecording = () => {
-    // Dans une implémentation réelle, ceci utiliserait l'API Web Speech
-    // ou se connecterait à un service comme Rasa NLP
+    // In a real implementation, this would use the Web Speech API
+    // or connect to a service like Rasa NLP
     setIsRecording(!isRecording);
     
     if (isRecording) {
-      // Simuler un résultat de reconnaissance vocale
+      // Simulate speech recognition result
       setTimeout(() => {
         setNewMessage(
           language === 'bambara' 
@@ -91,7 +91,7 @@ const VocalChatbot = () => {
     }
   };
 
-  // Défiler vers le bas quand les messages sont mis à jour
+  // Scroll to bottom when messages update
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
