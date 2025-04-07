@@ -79,13 +79,17 @@ export async function createSfdAdmin(adminData: {
     }
     
     // 3. Add user to admin_users table using the security definer function
-    const { error: adminError } = await supabase.rpc('create_admin_user', {
-      admin_id: authData.user.id,
-      admin_email: adminData.email,
-      admin_full_name: adminData.full_name,
-      admin_role: 'sfd_admin',
-      admin_sfd_id: adminData.sfd_id
-    });
+    // Use a direct SQL query with the function call instead of rpc
+    const { error: adminError } = await supabase
+      .from('admin_users')
+      .insert({
+        id: authData.user.id,
+        email: adminData.email,
+        full_name: adminData.full_name,
+        role: 'sfd_admin',
+        sfd_id: adminData.sfd_id,
+        has_2fa: false
+      });
     
     if (adminError) {
       console.error('Error creating admin user record:', adminError);
