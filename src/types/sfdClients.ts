@@ -36,3 +36,50 @@ export interface ClientActivity {
   performed_at: string;
   performed_by?: string;
 }
+
+// Add missing types for Loan, LoanPayment and SfdSubsidy
+export interface Loan {
+  id: string;
+  client_id: string;
+  sfd_id: string;
+  amount: number;
+  interest_rate: number;
+  term_months: number;
+  status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'defaulted';
+  purpose?: string;
+  approved_at?: string;
+  approved_by?: string;
+  disbursed_at?: string;
+  start_date?: string;
+  end_date?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LoanPayment {
+  id: string;
+  loan_id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: string;
+  status: 'pending' | 'completed' | 'failed';
+  reference_number?: string;
+  notes?: string;
+}
+
+export interface SfdSubsidy {
+  id: string;
+  sfd_id: string;
+  amount: number;
+  status: 'pending' | 'approved' | 'rejected' | 'disbursed';
+  purpose: string;
+  region?: string;
+  requested_by: string;
+  requested_at: string;
+  approved_at?: string;
+  approved_by?: string;
+  rejected_reason?: string;
+  disbursed_at?: string;
+  priority: 'low' | 'medium' | 'high';
+  documents?: string[];
+}
