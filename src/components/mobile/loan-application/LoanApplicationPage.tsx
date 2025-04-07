@@ -14,6 +14,7 @@ import * as z from 'zod';
 import LoanPlansSelector from './LoanPlansSelector';
 import SfdSelector from './SfdSelector';
 import { LoaderCircle, ArrowLeft } from 'lucide-react';
+import { asString } from '@/utils/typeSafeAccess';
 
 interface SFD {
   id: string;
@@ -97,7 +98,7 @@ const LoanApplicationPage: React.FC = () => {
         
         const transformedData = Array.isArray(data) ? data.map(item => ({
           id: item.sfd_id,
-          name: item.sfds.name,
+          name: asString(item.sfds?.name, 'Unknown SFD'),
           is_default: item.is_default
         })) : [];
         

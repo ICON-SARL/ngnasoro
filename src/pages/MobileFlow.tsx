@@ -90,7 +90,8 @@ const MobileFlow = () => {
           type: 'payment',
           amount: -data.amount,
           payment_method: 'sfd_account',
-          description: data.note || 'Payment transaction'
+          description: data.note || 'Payment transaction',
+          status: 'success' // Add the required status field
         });
       }
       

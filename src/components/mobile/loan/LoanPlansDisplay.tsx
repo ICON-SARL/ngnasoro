@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Percent, CreditCard, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import { asString } from '@/utils/typeSafeAccess';
 
 interface LoanPlan {
   id: string;
@@ -52,8 +53,8 @@ export default function LoanPlansDisplay() {
             // Properly access nested properties with type checking
             if (item.sfds && typeof item.sfds === 'object') {
               return {
-                id: String(item.sfds.id || ''),
-                name: String(item.sfds.name || '')
+                id: asString(item.sfds.id, ''),
+                name: asString(item.sfds.name, '')
               };
             }
             return { id: '', name: '' };
