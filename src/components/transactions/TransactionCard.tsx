@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
@@ -116,7 +117,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
                 {getStatusBadge()}
               </div>
               <p className={`font-semibold text-sm ${amount >= 0 ? 'text-green-600' : 'text-gray-800'}`}>
-                {formatTransactionAmount(amount)}
+                {formatTransactionAmount(amount, type)}
               </p>
             </div>
             <div className="flex justify-between mt-1">

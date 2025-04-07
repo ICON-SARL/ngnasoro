@@ -81,7 +81,7 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
           <div className="bg-gray-50 rounded-xl p-4 text-center">
             <h3 className="text-sm text-gray-500 mb-1">Montant</h3>
             <div className={`text-2xl font-bold ${transaction.amount >= 0 ? 'text-green-600' : 'text-gray-800'}`}>
-              {formatTransactionAmount(transaction.amount)}
+              {formatTransactionAmount(transaction.amount, transaction.type)}
             </div>
             <p className="text-sm text-gray-500 mt-1 capitalize">
               {transaction.type.replace('_', ' ')}
