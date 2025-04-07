@@ -1,9 +1,11 @@
 
-export type Role = 'admin' | 'sfd_admin' | 'user' | null;
+export type Role = 'admin' | 'sfd_admin' | 'user' | 'client' | null;
 
 export enum UserRole {
   SUPER_ADMIN = 'admin',
+  ADMIN = 'admin',
   SFD_ADMIN = 'sfd_admin',
+  CLIENT = 'client',
   USER = 'user'
 }
 
