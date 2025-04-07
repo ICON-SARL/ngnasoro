@@ -12,17 +12,19 @@ import {
   AccountStats, 
   BalanceDisplay,
   NoAccountState,
-  LoadingState
+  LoadingState,
+  ErrorState
 } from './sfd-savings';
 
 const SFDSavingsOverview = () => {
   const navigate = useNavigate();
   const { activeSfdAccount, isLoading, refetch } = useSfdAccounts();
-  const { activeSfdId } = useAuth();
+  const { user, activeSfdId } = useAuth();
   const { dashboardData, isLoading: isDashboardLoading, refreshDashboardData } = useMobileDashboard();
   const { isSyncing, synchronizeWithSfd } = useRealtimeSynchronization();
   const [isHidden, setIsHidden] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [hasError, setHasError] = useState(false);
   
   // Get active SFD data from dashboard if available
   const activeSfd = dashboardData?.sfdAccounts?.find(sfd => sfd.is_default);
@@ -35,7 +37,13 @@ const SFDSavingsOverview = () => {
     // Initial synchronization on component mount
     const performInitialSync = async () => {
       if (activeSfdId) {
-        await synchronizeWithSfd();
+        try {
+          await synchronizeWithSfd();
+          setHasError(false);
+        } catch (error) {
+          console.error("Synchronization error:", error);
+          setHasError(true);
+        }
       }
     };
     
@@ -44,7 +52,9 @@ const SFDSavingsOverview = () => {
     // Set up a timer to periodically check for updates (every 5 minutes)
     const syncInterval = setInterval(() => {
       if (activeSfdId) {
-        synchronizeWithSfd();
+        synchronizeWithSfd().catch(err => {
+          console.error("Periodic sync error:", err);
+        });
       }
     }, 5 * 60 * 1000);
     
@@ -53,24 +63,39 @@ const SFDSavingsOverview = () => {
     };
   }, [activeSfdId, synchronizeWithSfd]);
   
-  const refreshBalance = () => {
+  // Effect to detect account errors
+  useEffect(() => {
+    // If not loading and no data found, set error state
+    if (!isLoading && !isDashboardLoading && !activeSfd && !activeSfdAccount && user) {
+      setHasError(true);
+    } else {
+      setHasError(false);
+    }
+  }, [isLoading, isDashboardLoading, activeSfd, activeSfdAccount, user]);
+
+  const refreshBalance = async () => {
     setIsUpdating(true);
     
-    // Use the synchronizeWithSfd function for more reliable updates
-    synchronizeWithSfd().then(() => {
-      // Refresh local data as well
+    try {
+      // Use synchronizeWithSfd for reliable updates
+      await synchronizeWithSfd();
+      
+      // Refresh local data
       if (refreshDashboardData) {
-        refreshDashboardData();
+        await refreshDashboardData();
       }
-      refetch();
+      await refetch();
       
       // Add a slight delay before removing the loading state
       setTimeout(() => {
         setIsUpdating(false);
+        setHasError(false);
       }, 1000);
-    }).catch(() => {
+    } catch (error) {
+      console.error("Error refreshing balance:", error);
+      setHasError(true);
       setIsUpdating(false);
-    });
+    }
   };
   
   const toggleVisibility = () => {
@@ -86,8 +111,19 @@ const SFDSavingsOverview = () => {
     return <NoAccountState />;
   }
   
+  // Show loading state
   if (!activeSfdAccount && !activeSfd && (isLoading || isDashboardLoading)) {
     return <LoadingState />;
+  }
+  
+  // Show error state
+  if (hasError) {
+    return (
+      <ErrorState 
+        message="Impossible de récupérer les informations de votre compte" 
+        retryFn={refreshBalance} 
+      />
+    );
   }
   
   return (

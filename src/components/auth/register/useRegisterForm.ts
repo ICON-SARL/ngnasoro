@@ -27,59 +27,64 @@ export const useRegisterForm = () => {
     },
   });
 
-  // Fonction pour initialiser le compte utilisateur
+  // Function to initialize user account
   const initializeUserAccount = async (userId: string, fullName: string) => {
     try {
-      // Créer un compte utilisateur s'il n'existe pas déjà
-      const { data: existingAccount, error: accountCheckError } = await supabase
-        .from('accounts')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (accountCheckError && accountCheckError.code === 'PGRST116') {
-        // Compte non existant, créer un nouveau compte
-        const { error: createAccountError } = await supabase
-          .from('accounts')
-          .insert({
-            user_id: userId,
-            balance: 200000, // Solde par défaut
-            currency: 'FCFA'
-          });
-          
-        if (createAccountError) {
-          console.error("Erreur lors de la création du compte:", createAccountError);
-        }
-      }
+      console.log("Initializing account for user:", userId);
       
-      // Vérifier si le profil existe et le créer ou mettre à jour si nécessaire
+      // Check if profile exists first
       const { data: existingProfile, error: profileCheckError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
         
-      if (profileCheckError && profileCheckError.code === 'PGRST116') {
-        // Profil non existant, créer un nouveau profil
+      if (profileCheckError) {
+        // Create profile if it doesn't exist
         const { error: createProfileError } = await supabase
           .from('profiles')
           .insert({
             id: userId,
-            full_name: fullName
+            full_name: fullName,
+            email: form.getValues('email')
           });
           
         if (createProfileError) {
-          console.error("Erreur lors de la création du profil:", createProfileError);
+          console.error("Error creating profile:", createProfileError);
+          throw new Error("Failed to create user profile");
         }
       }
       
-      // Initialiser les données associées à Supabase
+      // Check if account exists
+      const { data: existingAccount, error: accountCheckError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+        
+      if (accountCheckError) {
+        // Create account if it doesn't exist
+        const { error: createAccountError } = await supabase
+          .from('accounts')
+          .insert({
+            user_id: userId,
+            balance: 200000,
+            currency: 'FCFA'
+          });
+          
+        if (createAccountError) {
+          console.error("Error creating account:", createAccountError);
+          throw new Error("Failed to create user account");
+        }
+      }
+      
+      // Initialize Supabase data
       await initializeSupabase();
       
       return true;
     } catch (error) {
-      console.error("Erreur lors de l'initialisation du compte:", error);
-      return false;
+      console.error("Error initializing user account:", error);
+      throw error;
     }
   };
 
@@ -89,28 +94,34 @@ export const useRegisterForm = () => {
     setSuccessMessage(null);
     
     try {
-      console.log("Début de l'inscription avec les données:", { 
+      console.log("Starting registration with data:", { 
         email: data.email, 
         fullName: data.fullName, 
         hasPhone: !!data.phoneNumber 
       });
       
-      // Create a proper metadata object with user details
+      // Create metadata object
       const metadata = {
         full_name: data.fullName,
         phone: data.phoneNumber || undefined
       };
       
-      // Appeler la méthode signUp sans essayer d'accéder au résultat directement
+      // Register the user
       await signUp(data.email, data.password, metadata);
       
-      // Puisque signUp ne retourne pas d'utilisateur, obtenons la session actuelle
-      const { data: sessionData } = await supabase.auth.getSession();
+      // Get the session to access the user ID
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
-      // Si nous avons un utilisateur dans la session, initialisons son compte
-      if (sessionData?.session?.user?.id) {
-        await initializeUserAccount(sessionData.session.user.id, data.fullName);
+      if (sessionError) {
+        throw new Error("Failed to get user session after registration");
       }
+      
+      if (!sessionData?.session?.user?.id) {
+        throw new Error("No user ID found after registration");
+      }
+      
+      // Initialize the user account
+      await initializeUserAccount(sessionData.session.user.id, data.fullName);
       
       setSuccessMessage("Inscription réussie! Vous allez être redirigé vers la page de sélection SFD.");
       
@@ -122,14 +133,14 @@ export const useRegisterForm = () => {
       // Reset form after successful registration
       form.reset();
       
-      // Redirection vers la page de sélection SFD après un délai
+      // Redirect to SFD selector page after a delay
       setTimeout(() => {
         navigate('/sfd-selector', { replace: true });
       }, 2000);
     } catch (error: any) {
-      console.error('Erreur lors de l\'inscription:', error);
+      console.error('Registration error:', error);
       
-      // Show more specific error messages based on the error type
+      // Show specific error messages
       if (error.message?.includes('Database error saving new user')) {
         setErrorMessage("Erreur lors de l'enregistrement des données utilisateur. Veuillez réessayer.");
       } else if (error.message?.includes('already registered')) {
