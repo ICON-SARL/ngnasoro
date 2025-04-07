@@ -1,25 +1,45 @@
 
-import React from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/auth/AuthContext';
+import { sfdLoanApi } from '@/utils/sfdLoanApi';
 
-interface Client {
-  id: string;
-  full_name: string;
+interface NewLoanDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onLoanCreated: () => void;
 }
 
-interface NewLoanFormData {
+interface LoanFormData {
   client_id: string;
   amount: string;
   duration_months: string;
@@ -30,151 +50,313 @@ interface NewLoanFormData {
   subsidy_justification: string;
 }
 
-interface NewLoanDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  formData: NewLoanFormData;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onSelectChange: (name: string, value: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  clients: Client[];
-}
-
 const NewLoanDialog: React.FC<NewLoanDialogProps> = ({
-  open,
-  onOpenChange,
-  formData,
-  onInputChange,
-  onSelectChange,
-  onSubmit,
-  clients
+  isOpen,
+  onClose,
+  onLoanCreated
 }) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [clients, setClients] = useState<Array<{ id: string; full_name: string }>>([]);
+  const [loading, setLoading] = useState(false);
+  
+  const form = useForm<LoanFormData>({
+    defaultValues: {
+      client_id: '',
+      amount: '',
+      duration_months: '12',
+      interest_rate: '5.5',
+      purpose: '',
+      subsidy_requested: false,
+      subsidy_amount: '',
+      subsidy_justification: ''
+    }
+  });
+
+  const subsidy_requested = form.watch('subsidy_requested');
+
+  useEffect(() => {
+    // Fetch clients for the select dropdown
+    const fetchClients = async () => {
+      // In a real app, this would fetch from the API
+      // For now, use dummy data
+      setClients([
+        { id: 'client1', full_name: 'Aissatou Diallo' },
+        { id: 'client2', full_name: 'Mamadou Sy' },
+        { id: 'client3', full_name: 'Fatou Ndiaye' },
+        { id: 'client4', full_name: 'Ibrahim Sow' },
+      ]);
+    };
+
+    fetchClients();
+  }, []);
+
+  const handleSubmit = async (data: LoanFormData) => {
+    try {
+      setLoading(true);
+      
+      // Calculate monthly payment
+      const amount = parseFloat(data.amount);
+      const rate = parseFloat(data.interest_rate) / 100 / 12; // Monthly interest rate
+      const duration = parseInt(data.duration_months);
+      
+      // Calculate monthly payment using the formula for an amortizing loan
+      let monthlyPayment = 0;
+      if (rate === 0) {
+        // Special case: no interest
+        monthlyPayment = amount / duration;
+      } else {
+        // Standard formula with interest
+        monthlyPayment = (amount * rate * Math.pow(1 + rate, duration)) / (Math.pow(1 + rate, duration) - 1);
+      }
+      
+      // Create loan data
+      const loanData = {
+        client_id: data.client_id,
+        sfd_id: user?.app_metadata?.sfd_id || '',
+        amount: amount,
+        duration_months: duration,
+        interest_rate: parseFloat(data.interest_rate),
+        purpose: data.purpose,
+        monthly_payment: monthlyPayment,
+        subsidy_amount: data.subsidy_requested ? parseFloat(data.subsidy_amount) : 0,
+      };
+      
+      await sfdLoanApi.createLoan(loanData);
+      
+      toast({
+        title: 'Prêt créé',
+        description: 'La demande de prêt a été créée avec succès',
+      });
+      
+      onLoanCreated();
+      
+    } catch (error) {
+      console.error('Error creating loan:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de créer la demande de prêt',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Nouveau Prêt</DialogTitle>
-          <DialogDescription>
-            Créez un nouveau prêt pour un client. Remplissez tous les champs obligatoires.
-          </DialogDescription>
+          <DialogTitle>Nouvelle Demande de Prêt</DialogTitle>
         </DialogHeader>
-        <form onSubmit={onSubmit}>
-          <div className="grid grid-cols-2 gap-4 py-4">
-            <div className="col-span-2">
-              <Label htmlFor="client_id">Client</Label>
-              <Select 
-                name="client_id" 
-                value={formData.client_id} 
-                onValueChange={(value) => onSelectChange('client_id', value)}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un client" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map(client => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.full_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="client_id"
+              rules={{ required: "Veuillez sélectionner un client" }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Client</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un client" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
-            <div className="col-span-1">
-              <Label htmlFor="amount">Montant (FCFA)</Label>
-              <Input
-                id="amount"
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
                 name="amount"
-                type="number"
-                value={formData.amount}
-                onChange={onInputChange}
-                required
+                rules={{ 
+                  required: "Ce champ est requis",
+                  min: {
+                    value: 10000,
+                    message: "Le montant minimum est de 10,000 FCFA"
+                  },
+                  max: {
+                    value: 5000000,
+                    message: "Le montant maximum est de 5,000,000 FCFA"
+                  }
+                }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Montant (FCFA)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="250000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div className="col-span-1">
-              <Label htmlFor="duration_months">Durée (mois)</Label>
-              <Input
-                id="duration_months"
+              
+              <FormField
+                control={form.control}
                 name="duration_months"
-                type="number"
-                value={formData.duration_months}
-                onChange={onInputChange}
-                required
+                rules={{ 
+                  required: "Ce champ est requis"
+                }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Durée (mois)</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Durée du prêt" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {[3, 6, 12, 18, 24, 36].map((months) => (
+                          <SelectItem key={months} value={months.toString()}>
+                            {months} mois
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div className="col-span-1">
-              <Label htmlFor="interest_rate">Taux d'intérêt (%)</Label>
-              <Input
-                id="interest_rate"
+              
+              <FormField
+                control={form.control}
                 name="interest_rate"
-                type="number"
-                step="0.01"
-                value={formData.interest_rate}
-                onChange={onInputChange}
-                required
+                rules={{ required: "Ce champ est requis" }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Taux d'intérêt (%)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.1" placeholder="5.5" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div className="col-span-2">
-              <Label htmlFor="purpose">Objet du prêt</Label>
-              <Textarea
-                id="purpose"
+              
+              <FormField
+                control={form.control}
                 name="purpose"
-                value={formData.purpose}
-                onChange={onInputChange}
-                required
+                rules={{ required: "Ce champ est requis" }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Objet du prêt</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Objet du prêt" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Commerce">Commerce</SelectItem>
+                        <SelectItem value="Agriculture">Agriculture</SelectItem>
+                        <SelectItem value="Éducation">Éducation</SelectItem>
+                        <SelectItem value="Construction">Construction</SelectItem>
+                        <SelectItem value="Fonds de roulement">Fonds de roulement</SelectItem>
+                        <SelectItem value="Autre">Autre</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
             
-            <div className="col-span-2">
-              <div className="flex items-center space-x-2">
-                <Input
-                  id="subsidy_requested"
-                  name="subsidy_requested"
-                  type="checkbox"
-                  className="w-4 h-4"
-                  checked={formData.subsidy_requested}
-                  onChange={onInputChange}
-                />
-                <Label htmlFor="subsidy_requested">Demander une subvention du MEREF</Label>
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name="subsidy_requested"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel>Subvention demandée</FormLabel>
+                    <FormDescription>
+                      Demander une subvention du MEREF pour ce prêt
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
             
-            {formData.subsidy_requested && (
+            {subsidy_requested && (
               <>
-                <div className="col-span-1">
-                  <Label htmlFor="subsidy_amount">Montant de la subvention (FCFA)</Label>
-                  <Input
-                    id="subsidy_amount"
-                    name="subsidy_amount"
-                    type="number"
-                    value={formData.subsidy_amount}
-                    onChange={onInputChange}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="subsidy_amount"
+                  rules={{ required: subsidy_requested ? "Ce champ est requis" : false }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Montant de la subvention (FCFA)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="50000" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Montant de la subvention demandée au MEREF
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
-                <div className="col-span-2">
-                  <Label htmlFor="subsidy_justification">Justification de la subvention</Label>
-                  <Textarea
-                    id="subsidy_justification"
-                    name="subsidy_justification"
-                    value={formData.subsidy_justification}
-                    onChange={onInputChange}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="subsidy_justification"
+                  rules={{ required: subsidy_requested ? "Ce champ est requis" : false }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Justification de la subvention</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Expliquez pourquoi ce client devrait bénéficier d'une subvention..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </>
             )}
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Annuler
-            </Button>
-            <Button type="submit">Créer le prêt</Button>
-          </DialogFooter>
-        </form>
+            
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose}
+                disabled={loading}
+              >
+                Annuler
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Création...' : 'Créer la demande'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

@@ -1,53 +1,74 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 
-/**
- * Service for handling loan notification operations
- */
+// Services for sending notifications related to loans
 export const loanNotificationService = {
-  /**
-   * Send a notification for a loan status change
-   * @param loanId - The loan ID
-   * @param status - The new status
-   * @param event - Optional event type for more specific notifications
-   */
-  async notifyLoanStatusChange(
-    loanId: string, 
-    status: 'pending' | 'approved' | 'rejected' | 'active' | 'closed', 
-    event?: string
-  ): Promise<any> {
+  // Send a payment reminder to the client
+  async sendPaymentReminder(loanId: string) {
     try {
-      // Call the consolidated api-gateway function instead of dedicated loan-status-webhooks
-      const { data, error } = await supabase.functions.invoke('api-gateway', {
-        body: JSON.stringify({
-          path: '/loan-status-webhooks',
+      // Get the loan details first
+      const { data: loan, error: loanError } = await supabase
+        .from('sfd_loans')
+        .select('*')
+        .eq('id', loanId)
+        .single();
+        
+      if (loanError) throw loanError;
+      
+      // Call the webhook function to send the notification
+      const { data, error } = await supabase.functions.invoke('loan-status-webhooks', {
+        body: {
           loanId,
-          status,
-          event
-        }),
+          status: loan.status,
+          event: 'payment_reminder'
+        }
       });
       
       if (error) throw error;
+      
+      // Add an activity entry for the reminder
+      await supabase
+        .from('loan_activities')
+        .insert({
+          loan_id: loanId,
+          activity_type: 'payment_reminder_sent',
+          description: 'Rappel de paiement envoyé au client'
+        });
+        
       return data;
     } catch (error) {
-      console.error('Error notifying loan status change:', error);
+      console.error('Error sending payment reminder:', error);
       throw error;
     }
   },
   
-  /**
-   * Send a payment reminder notification
-   * @param loanId - The loan ID
-   */
-  async sendPaymentReminder(loanId: string): Promise<any> {
-    return this.notifyLoanStatusChange(loanId, 'active', 'payment_reminder');
-  },
-  
-  /**
-   * Send a payment received notification
-   * @param loanId - The loan ID
-   */
-  async sendPaymentReceived(loanId: string): Promise<any> {
-    return this.notifyLoanStatusChange(loanId, 'active', 'payment_received');
+  // Confirm payment received and notify the client
+  async confirmPaymentReceived(loanId: string, paymentId: string) {
+    try {
+      // Call the webhook function
+      const { data, error } = await supabase.functions.invoke('loan-status-webhooks', {
+        body: {
+          loanId,
+          paymentId,
+          event: 'payment_received'
+        }
+      });
+      
+      if (error) throw error;
+      
+      // Add an activity entry
+      await supabase
+        .from('loan_activities')
+        .insert({
+          loan_id: loanId,
+          activity_type: 'payment_received',
+          description: 'Paiement reçu et confirmé'
+        });
+        
+      return data;
+    } catch (error) {
+      console.error('Error confirming payment:', error);
+      throw error;
+    }
   }
 };
