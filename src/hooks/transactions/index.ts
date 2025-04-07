@@ -8,7 +8,7 @@ import { TransactionFilters } from '@/services/transactions/types';
  * Combined hook for transaction management
  */
 export function useTransactions(userId?: string, sfdId?: string, filters?: TransactionFilters) {
-  const query = useTransactionQuery(userId, sfdId, filters);
+  const query = useTransactionQuery(userId, sfdId);
   const { createTransaction } = useTransactionMutation();
   const operations = useTransactionOperations(userId, sfdId);
 

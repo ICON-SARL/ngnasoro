@@ -30,10 +30,10 @@ export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateActio
         
       if (error) throw error;
       
-      if (data) {
+      if (data && Array.isArray(data)) {
         const sfdList: SfdData[] = data.map(item => ({
-          id: item.sfds.id,
-          name: item.sfds.name,
+          id: item.sfds?.id || '',
+          name: item.sfds?.name || '',
           token: null,
           lastFetched: null
         }));

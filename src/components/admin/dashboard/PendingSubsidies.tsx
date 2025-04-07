@@ -175,4 +175,4 @@ export function PendingSubsidies() {
       </CardContent>
     </Card>
   );
-}
+};
