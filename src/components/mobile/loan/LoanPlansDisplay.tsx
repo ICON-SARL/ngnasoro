@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/auth';
 import { Card } from '@/components/ui/card';
@@ -47,16 +46,18 @@ export default function LoanPlansDisplay() {
 
         if (error) throw error;
 
-        const sfds = userSfds.map(item => ({
-          id: item.sfds?.id || '',
-          name: item.sfds?.name || ''
-        }));
-
-        setSfdList(sfds);
-        
-        // Select first SFD by default
-        if (sfds.length > 0 && !selectedSfd) {
-          setSelectedSfd(sfds[0].id);
+        if (userSfds && Array.isArray(userSfds)) {
+          const sfds = userSfds.map(item => ({
+            id: item.sfds ? item.sfds.id : '',
+            name: item.sfds ? item.sfds.name : ''
+          }));
+          
+          setSfdList(sfds);
+          
+          // Select first SFD by default
+          if (sfds.length > 0 && !selectedSfd) {
+            setSelectedSfd(sfds[0].id);
+          }
         }
       } catch (error) {
         console.error('Error fetching user SFDs:', error);
@@ -64,7 +65,7 @@ export default function LoanPlansDisplay() {
     };
 
     fetchUserSfds();
-  }, [user]);
+  }, [user, selectedSfd]);
 
   useEffect(() => {
     const fetchLoanPlans = async () => {

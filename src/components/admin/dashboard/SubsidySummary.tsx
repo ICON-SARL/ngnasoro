@@ -80,7 +80,7 @@ export function SubsidySummary() {
         const allocatedAmount = allocatedData.reduce((sum, item) => sum + (item.used_amount || 0), 0);
         
         const recentApprovals = recentData.map(item => ({
-          sfd_name: item.sfds?.name || 'Unknown SFD',
+          sfd_name: item.sfds ? item.sfds.name : 'Unknown SFD',
           amount: item.amount,
           date: new Date(item.reviewed_at).toLocaleDateString()
         }));
