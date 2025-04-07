@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSfdManagement } from '../hooks/useSfdManagement';
 import { SfdTable } from '../sfd/SfdTable';
@@ -8,7 +7,7 @@ import { SfdDialogs } from './SfdDialogs';
 import { SfdDetailView } from '../sfd/SfdDetailView';
 import { Sfd, SfdStatus } from '../types/sfd-types';
 import { useSfdAdminManagement } from '../hooks/useSfdAdminManagement';
-import { AddSfdAdminDialog } from '../sfd/AddSfdAdminDialog';
+import { AddSfdAdminDialog } from '../sfd/add-admin-dialog';
 
 export function SfdManagementContainer() {
   const [showDetailsView, setShowDetailsView] = useState(false);
@@ -58,7 +57,6 @@ export function SfdManagementContainer() {
     setShowAddAdminDialog(true);
   };
 
-  // Function to handle status filter changes with type conversion
   const handleStatusFilterChange = (value: string) => {
     setStatusFilter(value as SfdStatus | null);
   };

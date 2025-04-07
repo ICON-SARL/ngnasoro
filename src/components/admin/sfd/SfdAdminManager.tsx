@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useSfdAdminManagement } from '@/components/admin/hooks/useSfdAdminManagement';
-import { AddSfdAdminDialog } from '@/components/admin/sfd/AddSfdAdminDialog';
+import { AddSfdAdminDialog } from '@/components/admin/sfd/add-admin-dialog';
 import { Plus, Loader2 } from 'lucide-react';
 
 interface SfdAdminManagerProps {
