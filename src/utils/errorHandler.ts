@@ -1,94 +1,45 @@
 
-import { toast } from "@/components/ui/use-toast";
+import { AxiosError } from 'axios';
+import { toast } from '@/hooks/use-toast';
 
-export enum ErrorType {
-  AUTHENTICATION = "AUTHENTICATION",
-  NETWORK = "NETWORK",
-  SERVER = "SERVER",
-  VALIDATION = "VALIDATION",
-  DATABASE = "DATABASE",
-  UNKNOWN = "UNKNOWN"
-}
-
-export interface AppError {
-  type: ErrorType;
-  message: string;
-  technical?: string;
-  statusCode?: number;
-}
-
-export const handleError = (error: unknown): AppError => {
-  console.error("Error caught:", error);
+export const handleError = (error: unknown, customMessage?: string) => {
+  const message = customMessage || 'An error occurred';
   
-  // Default error
-  let appError: AppError = {
-    type: ErrorType.UNKNOWN,
-    message: "Une erreur inattendue s'est produite"
-  };
+  console.error('Error:', error);
   
-  // Handle Supabase errors
-  if (error instanceof Error) {
-    if (error.message.includes("PGRST")) {
-      appError = {
-        type: ErrorType.DATABASE,
-        message: "Erreur d'accès aux données",
-        technical: error.message
-      };
-    } else if (error.message.includes("NetworkError") || error.message.includes("Failed to fetch")) {
-      appError = {
-        type: ErrorType.NETWORK,
-        message: "Problème de connexion au serveur. Vérifiez votre connexion internet.",
-        technical: error.message
-      };
-    } else if (error.message.includes("Email")) {
-      appError = {
-        type: ErrorType.AUTHENTICATION,
-        message: "Informations d'identification invalides",
-        technical: error.message
-      };
-    } else {
-      appError = {
-        type: ErrorType.UNKNOWN,
-        message: "Une erreur s'est produite",
-        technical: error.message
-      };
-    }
-  }
+  if (error instanceof AxiosError) {
+    const serverMessage = error.response?.data?.message || error.message;
+    toast({
+      title: 'Error',
+      description: serverMessage,
+      variant: 'destructive',
+    });
+    return serverMessage;
+  } 
   
-  // Show toast for user feedback
   toast({
-    title: "Erreur",
-    description: appError.message,
-    variant: "destructive",
+    title: 'Error',
+    description: message,
+    variant: 'destructive',
   });
   
-  return appError;
+  return message;
 };
 
-export const handleApiResponse = async (response: Response) => {
-  if (!response.ok) {
-    let errorDetail = "Erreur serveur inconnue";
-    
-    try {
-      const errorData = await response.json();
-      errorDetail = errorData.message || errorData.error || errorDetail;
-    } catch (e) {
-      // Couldn't parse JSON error response
-    }
-    
-    const appError: AppError = {
-      type: response.status === 401 || response.status === 403 
-        ? ErrorType.AUTHENTICATION 
-        : ErrorType.SERVER,
-      message: response.status === 401 || response.status === 403
-        ? "Accès non autorisé"
-        : "Erreur serveur",
-      technical: errorDetail,
-      statusCode: response.status
-    };
-    
-    throw appError;
+export const handleApiResponse = (response: any, successMessage: string) => {
+  if (response.error) {
+    toast({
+      title: 'Error',
+      description: response.error.message || 'An error occurred',
+      variant: 'destructive',
+    });
+    return false;
   }
   
-  return response;
+  toast({
+    title: 'Success',
+    description: successMessage,
+  });
+  
+  return true;
 };

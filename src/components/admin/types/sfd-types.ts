@@ -12,4 +12,20 @@ export interface Sfd {
   legal_document_url?: string;
   created_at: string;
   updated_at?: string;
+  // Add missing properties from the type errors
+  email?: string;
+  phone?: string;
+  contact_email?: string;
+}
+
+export interface SfdAuditLog {
+  id: string;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  changes: Record<string, any>;
+  performed_by: string;
+  performed_at: string;
+  ip_address?: string;
+  user_agent?: string;
 }
