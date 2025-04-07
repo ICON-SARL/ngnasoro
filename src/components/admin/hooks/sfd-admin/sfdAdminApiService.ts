@@ -81,60 +81,35 @@ export async function createSfdAdmin(adminData: SfdAdminData) {
 
     console.log("User created successfully:", signUpData.user.id);
 
-    // 2. Créer une entrée dans admin_users
-    const { error: adminError } = await supabase
-      .from('admin_users')
-      .insert({
-        id: signUpData.user.id,
-        email: adminData.email,
-        full_name: adminData.full_name,
-        role: 'sfd_admin',
-        has_2fa: false
-      });
+    // 2. Utiliser la fonction Edge pour créer l'entrée dans admin_users et associer à la SFD
+    // Cette approche contourne la RLS et gère toutes les opérations côté serveur
+    const { data: adminData, error: adminError } = await supabase.functions.invoke(
+      'create_sfd_admin',
+      {
+        body: {
+          admin_id: signUpData.user.id,
+          email: adminData.email,
+          full_name: adminData.full_name,
+          role: 'sfd_admin',
+          sfd_id: adminData.sfd_id,
+          is_primary: true
+        }
+      }
+    );
 
     if (adminError) {
       console.error("Error creating admin user record:", adminError);
       throw adminError;
     }
     
-    // 3. Association avec l'SFD spécifique via l'edge function
-    const { data: linkData, error: linkError } = await supabase.functions.invoke(
-      'create_sfd_admin_link', 
-      {
-        body: {
-          admin_id: signUpData.user.id,
-          sfd_id: adminData.sfd_id,
-          is_primary: true // Premier admin ajouté est l'admin principal
-        }
-      }
-    );
-      
-    if (linkError) {
-      console.error("Error linking admin to SFD:", linkError);
-      // Continuer malgré l'erreur, car l'association est aussi dans les métadonnées
-    }
+    console.log("Admin user record created successfully via edge function");
 
-    // 4. Assigner le rôle SFD_ADMIN
-    const { error: roleError } = await supabase.rpc(
-      'assign_role',
-      {
-        user_id: signUpData.user.id,
-        role: 'sfd_admin'
-      }
-    );
-
-    if (roleError) {
-      console.error("Error assigning role:", roleError);
-      throw roleError;
-    }
-
-    console.log("SFD admin role assigned successfully");
-    
     return {
       success: true,
       user_id: signUpData.user.id,
       email: adminData.email,
-      full_name: adminData.full_name
+      full_name: adminData.full_name,
+      sfd_id: adminData.sfd_id
     };
   } catch (error: any) {
     console.error("Error creating SFD admin:", error);
@@ -157,33 +132,14 @@ export async function deleteSfdAdmin(adminId: string) {
       throw new Error("Administrateur SFD non trouvé");
     }
     
-    // Supprimer l'entrée de la table admin_users
-    const { error } = await supabase
-      .from('admin_users')
-      .delete()
-      .eq('id', adminId);
+    // Utiliser une edge function pour supprimer l'administrateur
+    // afin de contourner les problèmes de RLS
+    const { error } = await supabase.functions.invoke(
+      'delete_sfd_admin',
+      { body: { admin_id: adminId } }
+    );
       
     if (error) throw error;
-    
-    // Supprimer le rôle SFD_ADMIN
-    const { error: roleError } = await supabase
-      .from('user_roles')
-      .delete()
-      .eq('user_id', adminId)
-      .eq('role', 'sfd_admin');
-      
-    if (roleError) {
-      console.warn("Warning: Failed to delete role entry:", roleError);
-      // Continuer malgré l'erreur
-    }
-    
-    // Supprimer l'utilisateur de l'authentification Supabase si possible
-    const { error: authError } = await supabase.auth.admin.deleteUser(adminId);
-    
-    if (authError) {
-      console.warn("Warning: Failed to delete auth user:", authError);
-      // Continuer malgré l'erreur
-    }
     
     return { success: true };
   } catch (error: any) {

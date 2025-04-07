@@ -60,10 +60,8 @@ export function useAddSfdAdmin() {
           console.warn("Erreur lors de la vérification de l'e-mail:", checkError);
         }
         
-        const result = await createSfdAdmin({
-          ...adminData,
-          sfd_id: adminData.sfd_id // Assurez-vous que sfd_id est bien transmis
-        });
+        // Utiliser le service API amélioré pour créer l'administrateur SFD
+        const result = await createSfdAdmin(adminData);
         
         return result;
       } catch (err: any) {

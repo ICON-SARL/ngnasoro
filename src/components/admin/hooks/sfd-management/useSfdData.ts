@@ -50,6 +50,18 @@ export function useSfdData() {
     }
   });
 
+  // Handle errors outside the useQuery options
+  useEffect(() => {
+    if (isError && error) {
+      console.error("Query error:", error);
+      toast({
+        title: "Erreur de chargement",
+        description: error instanceof Error ? error.message : "Impossible de charger la liste des SFDs",
+        variant: "destructive",
+      });
+    }
+  }, [isError, error, toast]);
+
   // Effet pour désactiver l'intervalle de refetch après un certain temps
   useEffect(() => {
     if (refetchInterval) {
