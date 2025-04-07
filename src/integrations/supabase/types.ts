@@ -1006,6 +1006,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      propagate_client_transaction: {
+        Args: { p_transaction_id: string }
+        Returns: boolean
+      }
+      sync_client_accounts: {
+        Args: { p_sfd_id: string; p_client_id?: string }
+        Returns: boolean
+      }
       update_subsidy_usage: {
         Args: { p_sfd_id: string; p_amount: number }
         Returns: undefined
