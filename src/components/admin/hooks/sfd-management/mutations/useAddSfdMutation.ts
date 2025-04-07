@@ -19,7 +19,7 @@ export function useAddSfdMutation() {
         region: sfdData.region || null,
         status: sfdData.status || 'active',
         logo_url: sfdData.logo_url || null,
-        subsidy_balance: sfdData.subsidy_balance || 0
+        // We don't store subsidy_balance directly in the sfds table
       };
 
       const { data, error } = await supabase

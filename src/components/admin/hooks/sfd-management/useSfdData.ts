@@ -16,7 +16,7 @@ export function useSfdData() {
 
       if (error) throw error;
       
-      // Calculate subsidy balance for each SFD
+      // Calculate subsidy balance for each SFD separately from the sfd_subsidies table
       const sfdsWithSubsidyBalance = await Promise.all(
         data.map(async (sfd) => {
           const { data: subsidies, error: subsidiesError } = await supabase
@@ -64,7 +64,7 @@ export function useSfdData() {
             };
           }
 
-          // Combine the data
+          // Combine the data - subsidy_balance is calculated, not directly fetched
           return {
             ...sfd,
             subsidy_balance,

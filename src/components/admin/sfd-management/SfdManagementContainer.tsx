@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useSfdManagement } from '../hooks/sfd-management/useSfdManagement';
+import { useSfdManagement } from '../hooks/useSfdManagement';
 import { SfdTable } from '../sfd/SfdTable';
 import { SfdFilter } from '../sfd/SfdFilter';
 import { SfdToolbar } from './SfdToolbar';

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { UseFormReturn } from 'react-hook-form';
 import { SfdFormValues } from '../schemas/sfdFormSchema';
@@ -23,8 +23,12 @@ export function SfdFinanceFields({ form }: SfdFinanceFieldsProps) {
               placeholder="0" 
               {...field} 
               onChange={(e) => field.onChange(Number(e.target.value))}
+              disabled={form.formState.isSubmitting}
             />
           </FormControl>
+          <FormDescription>
+            Ce montant sera utilisé pour créer une subvention initiale pour cette SFD.
+          </FormDescription>
           <FormMessage />
         </FormItem>
       )}

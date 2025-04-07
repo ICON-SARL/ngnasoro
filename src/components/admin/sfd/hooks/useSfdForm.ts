@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +17,8 @@ export function useSfdForm({ initialData, onSubmit }: UseSfdFormProps) {
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  // We handle subsidy_balance as a calculated field,
+  // but keep it in the form for UI display purposes
   const form = useForm<SfdFormValues>({
     resolver: zodResolver(sfdFormSchema),
     defaultValues: {
