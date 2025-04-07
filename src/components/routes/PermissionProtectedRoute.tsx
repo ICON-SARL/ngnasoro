@@ -44,8 +44,8 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     });
     
     // Check for admin access (admin has access to everything)
-    if (userRole === 'admin' || userRole === 'super_admin') {
-      console.log('Super admin detected, granting access');
+    if (userRole === 'admin') {
+      console.log('Admin detected, granting access');
       setHasAccess(true);
       return;
     }
@@ -59,7 +59,7 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
       return;
     }
     
-    // Fix for SFD_ADMIN matching sfd_admin
+    // Fix for SFD_ADMIN matching sfd_admin string value
     let roleMatch = !requiredRole || 
       userRole === requiredRole || 
       (requiredRole === UserRole.SFD_ADMIN && userRole === 'sfd_admin');

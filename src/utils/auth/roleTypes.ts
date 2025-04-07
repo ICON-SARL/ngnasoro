@@ -1,6 +1,6 @@
 
 export enum UserRole {
-  SUPER_ADMIN = 'super_admin',
+  SUPER_ADMIN = 'admin',
   ADMIN = 'admin',
   SFD_ADMIN = 'sfd_admin',
   CLIENT = 'client', // Added CLIENT role
