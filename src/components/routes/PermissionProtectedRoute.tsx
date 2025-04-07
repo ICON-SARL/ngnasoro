@@ -73,8 +73,13 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     }
     
     // Check permissions - comparing string values with string literal enum values
-    // Use string literal 'admin' instead of UserRole.ADMIN/SUPER_ADMIN for comparison with userRole
-    let permissionMatch = !requiredPermission || userRole === 'admin';
+    // We need to properly type-check when comparing userRole with 'admin'
+    let permissionMatch = !requiredPermission;
+    
+    // Admin has all permissions
+    if (userRole && userRole === 'admin') {
+      permissionMatch = true;
+    }
     
     // SFD admin has SFD-related permissions
     if (!permissionMatch && userRole === 'sfd_admin' && requiredPermission && 
