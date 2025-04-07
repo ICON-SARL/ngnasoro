@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,7 +37,8 @@ import {
   Upload,
   Shield,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Wallet
 } from 'lucide-react';
 import { useSfdClients } from '@/hooks/useSfdClients';
 import { useAuth } from '@/hooks/useAuth';
@@ -47,6 +47,7 @@ import { useToast } from '@/hooks/use-toast';
 import ClientDetails from './ClientDetails';
 import ClientDocuments from './ClientDocuments';
 import { NewClientForm } from './NewClientForm';
+import { useClientAccountOperations } from '@/components/admin/hooks/sfd-client/useClientAccountOperations';
 
 const ClientsManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -98,6 +99,10 @@ const ClientsManagement = () => {
       }
     });
   };
+
+  const handleClientDeleted = () => {
+    setIsDialogOpen(false);
+  };
   
   const filteredClients = clients.filter(client => 
     client.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -105,7 +110,6 @@ const ClientsManagement = () => {
     (client.phone && client.phone.includes(searchTerm))
   );
   
-  // Separate clients by status
   const pendingClients = filteredClients.filter(client => client.status === 'pending');
   const validatedClients = filteredClients.filter(client => client.status === 'validated');
   const rejectedClients = filteredClients.filter(client => client.status === 'rejected');
@@ -190,7 +194,6 @@ const ClientsManagement = () => {
         </TabsContent>
       </Tabs>
       
-      {/* Client Details Dialog */}
       {selectedClient && (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="max-w-4xl h-[80vh]">
@@ -217,7 +220,7 @@ const ClientsManagement = () => {
               </TabsList>
               
               <TabsContent value="details">
-                <ClientDetails client={selectedClient} />
+                <ClientDetails client={selectedClient} onDeleted={handleClientDeleted} />
               </TabsContent>
               
               <TabsContent value="documents">
@@ -283,7 +286,6 @@ const ClientsManagement = () => {
         </Dialog>
       )}
       
-      {/* New Client Dialog */}
       <Dialog open={isNewClientDialogOpen} onOpenChange={setIsNewClientDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -319,6 +321,25 @@ const ClientsTable = ({ clients, onViewClient, isLoading, getStatusBadge }: Clie
       </div>
     );
   }
+
+  const validatedClientIds = clients
+    .filter(client => client.status === 'validated')
+    .map(client => client.id);
+
+  const ClientBalance = ({ clientId }: { clientId: string }) => {
+    const { balance, currency, isLoading } = useClientAccountOperations(clientId);
+    
+    if (isLoading) {
+      return <div className="text-sm">Chargement...</div>;
+    }
+
+    return (
+      <div className="flex items-center text-sm">
+        <Wallet className="h-3 w-3 mr-1 text-gray-500" />
+        <span>{new Intl.NumberFormat('fr-FR').format(balance)} {currency}</span>
+      </div>
+    );
+  };
   
   return (
     <Table>
@@ -348,6 +369,9 @@ const ClientsTable = ({ clients, onViewClient, isLoading, getStatusBadge }: Clie
                     <Mail className="h-3 w-3 mr-1 text-gray-500" />
                     <span>{client.email}</span>
                   </div>
+                )}
+                {client.status === 'validated' && (
+                  <ClientBalance clientId={client.id} />
                 )}
               </div>
             </TableCell>
