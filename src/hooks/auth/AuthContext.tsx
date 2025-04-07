@@ -1,6 +1,4 @@
-
-import React from 'react';
-import { useState, useEffect, useContext, useCallback, createContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback, createContext } from 'react';
 import { User, AuthContextProps, Role } from './types';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
