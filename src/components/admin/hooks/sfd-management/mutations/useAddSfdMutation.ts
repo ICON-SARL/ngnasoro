@@ -99,7 +99,12 @@ export function useAddSfdMutation() {
       }
     },
     onSuccess: (data) => {
+      // Invalidate both 'sfds' query and specific SFD query if needed
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      
+      // Force refetch the list immediately to ensure UI is updated
+      queryClient.refetchQueries({ queryKey: ['sfds'] });
+      
       toast({
         title: 'SFD ajoutée',
         description: 'La nouvelle SFD a été ajoutée avec succès.',
