@@ -4,7 +4,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Footer } from '@/components';
 
 // Auth components
-import { AuthProvider } from '@/hooks/auth';
+import { AuthProvider } from '@/hooks/auth/AuthContext';
 
 // Auth pages
 import LoginPage from '@/pages/LoginPage';
