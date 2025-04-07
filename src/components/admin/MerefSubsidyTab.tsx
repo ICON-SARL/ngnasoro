@@ -21,7 +21,7 @@ export const MerefSubsidyTab = () => {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <TabsList className="mb-4">
-        <TabsTrigger value="requests">Demandes de subvention</TabsTrigger>
+        <TabsTrigger value="requests">Demandes de prêts</TabsTrigger>
         <TabsTrigger value="details" disabled={!selectedRequestId}>Détails</TabsTrigger>
         <TabsTrigger value="settings">Paramètres d'alerte</TabsTrigger>
       </TabsList>
@@ -29,7 +29,7 @@ export const MerefSubsidyTab = () => {
       <TabsContent value="requests">
         <Card>
           <CardHeader>
-            <CardTitle>Demandes de subvention</CardTitle>
+            <CardTitle>Demandes de prêts</CardTitle>
           </CardHeader>
           <CardContent>
             <SubsidyRequestsList 
@@ -59,7 +59,7 @@ export const MerefSubsidyTab = () => {
       <TabsContent value="settings">
         <Card>
           <CardHeader>
-            <CardTitle>Paramètres d'alerte de subvention</CardTitle>
+            <CardTitle>Paramètres d'alerte de prêts</CardTitle>
           </CardHeader>
           <CardContent>
             <SubsidyAlertSettings 

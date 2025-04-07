@@ -44,7 +44,7 @@ const CreditApprovalPage = () => {
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="sfd-management">Gestion des SFDs</TabsTrigger>
             <TabsTrigger value="sfd-audit">Historique SFDs</TabsTrigger>
-            <TabsTrigger value="subsidy-requests">Demandes de Subvention</TabsTrigger>
+            <TabsTrigger value="subsidy-requests">Demandes de prêts</TabsTrigger>
           </TabsList>
           
           <TabsContent value="credit-applications">
