@@ -43,14 +43,14 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
       path: location.pathname
     });
     
-    // Check for super admin access (admin has access to everything)
-    if (userRole === 'admin' || userRole === UserRole.SUPER_ADMIN || userRole === 'super_admin') {
+    // Check for admin access (admin has access to everything)
+    if (userRole === 'admin' || userRole === 'super_admin') {
       console.log('Super admin detected, granting access');
       setHasAccess(true);
       return;
     }
     
-    // Fix pour les rôles SFD_ADMIN et la permission manage_subsidies
+    // Fix for SFD_ADMIN role and manage_subsidies permission
     if (userRole === 'sfd_admin' && (
       requiredRole === UserRole.SFD_ADMIN || requiredPermission === 'manage_subsidies'
     )) {
@@ -64,7 +64,7 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
       userRole === requiredRole || 
       (requiredRole === UserRole.SFD_ADMIN && userRole === 'sfd_admin');
     
-    // Super admin has all permissions
+    // Check permissions
     let permissionMatch = !requiredPermission || userRole === 'admin';
     
     // SFD admin has SFD-related permissions

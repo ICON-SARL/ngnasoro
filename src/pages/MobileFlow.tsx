@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, lazy } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
@@ -41,7 +40,7 @@ const MobileFlow = () => {
       
       // If user is admin or super_admin, redirect to admin dashboard
       const userRole = user.app_metadata?.role;
-      if (userRole === 'admin' || userRole === 'super_admin') {
+      if (userRole === 'admin') {
         toast({
           title: "Accès refusé",
           description: "Les administrateurs ne peuvent pas accéder à l'interface mobile.",

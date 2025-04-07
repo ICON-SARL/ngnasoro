@@ -16,11 +16,13 @@ export interface User {
   phone?: string;
   user_metadata: {
     [key: string]: any;
+    sfd_id?: string;
   };
   app_metadata: {
     role?: Role;
     role_assigned?: boolean;
     roles?: string[];
+    sfd_id?: string;
   };
 }
 

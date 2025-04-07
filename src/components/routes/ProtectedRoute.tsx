@@ -2,7 +2,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth';
-import { getRoleFromSession } from '@/hooks/auth/authUtils';
 
 interface ProtectedRouteProps {
   component: React.ComponentType<any>;
