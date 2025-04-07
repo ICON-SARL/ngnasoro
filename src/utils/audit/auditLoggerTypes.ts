@@ -8,7 +8,8 @@ export enum AuditLogCategory {
   SUBSIDY_OPERATIONS = 'subsidy_operations',
   USER_MANAGEMENT = 'user_management',
   SYSTEM = 'system',
-  TOKEN_MANAGEMENT = 'token_management'
+  TOKEN_MANAGEMENT = 'token_management',
+  FINANCIAL = 'financial'  // Added FINANCIAL category
 }
 
 export enum AuditLogSeverity {

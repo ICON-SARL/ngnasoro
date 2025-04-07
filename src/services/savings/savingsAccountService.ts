@@ -6,13 +6,15 @@ import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTyp
 // Interface for savings account data
 export interface SavingsAccount {
   id: string;
-  client_id: string;
+  user_id: string;
+  client_id?: string; // Optional since the database table doesn't have this field
   balance: number;
   currency: string;
-  status: 'active' | 'frozen' | 'closed';
-  created_at: string;
+  status?: 'active' | 'frozen' | 'closed'; // Optional since the database table doesn't have this field
+  created_at?: string; // Optional since the database table doesn't have this field
   updated_at: string;
   last_transaction_date?: string;
+  last_updated?: string;
 }
 
 // Interface for transaction options
@@ -109,7 +111,7 @@ export const savingsAccountService = {
       // Log the transaction
       await logAuditEvent({
         action: `client_account_${transactionType}`,
-        category: AuditLogCategory.FINANCIAL,
+        category: AuditLogCategory.SFD_OPERATIONS, // Changed from FINANCIAL to SFD_OPERATIONS
         severity: AuditLogSeverity.INFO,
         status: 'success',
         user_id: adminId,
@@ -127,7 +129,7 @@ export const savingsAccountService = {
       // Log the failed transaction
       await logAuditEvent({
         action: `client_account_${transactionType}_failed`,
-        category: AuditLogCategory.FINANCIAL,
+        category: AuditLogCategory.SFD_OPERATIONS, // Changed from FINANCIAL to SFD_OPERATIONS
         severity: AuditLogSeverity.ERROR,
         status: 'failure',
         user_id: adminId,

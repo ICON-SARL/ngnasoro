@@ -61,7 +61,7 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     
     // Fix for SFD_ADMIN matching sfd_admin string value
     let roleMatch = !requiredRole || 
-      userRole === requiredRole || 
+      userRole === requiredRole.toString() || 
       (requiredRole === UserRole.SFD_ADMIN && userRole === 'sfd_admin');
     
     // Check permissions - comparing string values with string literal enum values
