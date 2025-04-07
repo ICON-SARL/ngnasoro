@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,7 +19,7 @@ export interface Loan {
   amount: number;
   duration_months: number;
   interest_rate: number;
-  status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected';
+  status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'defaulted';
   purpose: string;
   created_at: string;
 }
@@ -84,7 +83,7 @@ export const LoanWorkflow = () => {
     return loans.filter(loan => {
       if (status === 'requests') return loan.status === 'pending';
       if (status === 'active') return loan.status === 'active' || loan.status === 'approved';
-      if (status === 'history') return loan.status === 'completed' || loan.status === 'rejected';
+      if (status === 'history') return loan.status === 'completed' || loan.status === 'rejected' || loan.status === 'defaulted';
       return loan.status === status;
     });
   };
@@ -161,6 +160,9 @@ export const LoanWorkflow = () => {
                           )}
                           {loan.status === 'rejected' && (
                             <Badge className="bg-red-100 text-red-800">Rejeté</Badge>
+                          )}
+                          {loan.status === 'defaulted' && (
+                            <Badge className="bg-red-200 text-red-900">En défaut</Badge>
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm text-right">

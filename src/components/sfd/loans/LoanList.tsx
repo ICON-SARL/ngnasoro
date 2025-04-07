@@ -78,6 +78,8 @@ const LoanList: React.FC<LoanListProps> = ({ loans, loading }) => {
               {loan.status === 'approved' && <Badge className="bg-blue-100 text-blue-800">Approuvé</Badge>}
               {loan.status === 'active' && <Badge className="bg-green-100 text-green-800">Actif</Badge>}
               {loan.status === 'rejected' && <Badge className="bg-red-100 text-red-800">Rejeté</Badge>}
+              {loan.status === 'completed' && <Badge className="bg-gray-100 text-gray-800">Terminé</Badge>}
+              {loan.status === 'defaulted' && <Badge className="bg-red-200 text-red-900">En défaut</Badge>}
             </TableCell>
             <TableCell>
               {loan.subsidy_amount > 0 ? 

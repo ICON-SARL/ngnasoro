@@ -33,6 +33,7 @@ const LoanStatusTabs: React.FC<LoanStatusTabsProps> = ({
   // Filter loans based on active tab
   const filteredLoans = loans.filter(loan => {
     if (activeTab === 'all') return true;
+    if (activeTab === 'defaulted' && loan.status === 'defaulted') return true;
     return loan.status === activeTab;
   });
   
@@ -48,17 +49,26 @@ const LoanStatusTabs: React.FC<LoanStatusTabsProps> = ({
         <TabsTrigger value="pending">En attente</TabsTrigger>
         <TabsTrigger value="approved">Approuvés</TabsTrigger>
         <TabsTrigger value="active">Actifs</TabsTrigger>
+        <TabsTrigger value="defaulted">En défaut</TabsTrigger>
         <TabsTrigger value="rejected">Rejetés</TabsTrigger>
       </TabsList>
       
       <TabsContent value={activeTab} className="space-y-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle>Prêts {activeTab === 'all' ? '' : activeTab}</CardTitle>
+            <CardTitle>
+              {activeTab === 'all' && 'Tous les prêts'}
+              {activeTab === 'pending' && 'Prêts en attente'}
+              {activeTab === 'approved' && 'Prêts approuvés'}
+              {activeTab === 'active' && 'Prêts actifs'}
+              {activeTab === 'defaulted' && 'Prêts en défaut'}
+              {activeTab === 'rejected' && 'Prêts rejetés'}
+            </CardTitle>
             <CardDescription>
               {activeTab === 'pending' && 'Prêts en attente d\'approbation'}
               {activeTab === 'approved' && 'Prêts approuvés en attente de décaissement'}
               {activeTab === 'active' && 'Prêts actifs en cours de remboursement'}
+              {activeTab === 'defaulted' && 'Prêts avec retards de paiement significatifs'}
               {activeTab === 'rejected' && 'Prêts rejetés'}
               {activeTab === 'all' && 'Tous les prêts de la SFD'}
             </CardDescription>
