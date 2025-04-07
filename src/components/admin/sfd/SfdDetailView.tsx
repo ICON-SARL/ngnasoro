@@ -1,168 +1,176 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, UserPlus, AlertTriangle, Check, X } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sfd } from '../types/sfd-types';
-import { formatDate } from '@/utils/formatDate';
+import { ArrowLeft, Building, Users, CreditCard, User, FileText } from 'lucide-react';
+import { SfdAdminManager } from './SfdAdminManager';
+import { formatCurrency } from '@/utils/formatters';
 
 interface SfdDetailViewProps {
   sfd: Sfd;
   onBack: () => void;
-  onAddAdmin?: () => void; // Nouvelle prop pour ajouter un admin
 }
 
-export function SfdDetailView({ sfd, onBack, onAddAdmin }: SfdDetailViewProps) {
+export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <Button variant="outline" onClick={onBack} className="flex items-center gap-1">
-          <ArrowLeft className="h-4 w-4" />
-          Retour
-        </Button>
-        <div className="flex gap-2">
-          {onAddAdmin && (
-            <Button onClick={onAddAdmin} className="flex items-center gap-1">
-              <UserPlus className="h-4 w-4" />
-              Ajouter un administrateur
-            </Button>
-          )}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Retour
+          </Button>
+          <h2 className="text-2xl font-semibold">Détails de la SFD</h2>
+          <Badge variant={sfd.status === 'active' ? 'success' : 'destructive'}>
+            {sfd.status === 'active' ? 'Active' : 'Suspendue'}
+          </Badge>
         </div>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle className="text-2xl font-bold">{sfd.name}</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">ID: {sfd.id}</p>
-              </div>
-              <Badge 
-                className={
-                  sfd.status === 'active' 
-                    ? 'bg-green-100 text-green-800' 
-                    : sfd.status === 'suspended'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                }
-              >
-                {sfd.status === 'active' 
-                  ? 'Active' 
-                  : sfd.status === 'suspended'
-                  ? 'Suspendue'
-                  : 'En attente'}
-              </Badge>
-            </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Nom</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Adresse</h3>
-                  <p className="mt-1">{sfd.address || 'Non renseignée'}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Contact</h3>
-                  <p className="mt-1">{sfd.phone || 'Non renseigné'}</p>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Email</h3>
-                <p className="mt-1">{sfd.email || 'Non renseigné'}</p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
-                <p className="mt-1">{sfd.description || 'Aucune description'}</p>
-              </div>
-              
-              <Separator />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Date de création</h3>
-                  <p className="mt-1">{sfd.created_at ? formatDate(sfd.created_at) : 'Inconnue'}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Dernière mise à jour</h3>
-                  <p className="mt-1">{sfd.updated_at ? formatDate(sfd.updated_at) : 'Inconnue'}</p>
-                </div>
-              </div>
-              
-              {sfd.status === 'suspended' && (
-                <div className="bg-red-50 p-4 rounded-md border border-red-200 flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-red-800">SFD suspendue</h4>
-                    <p className="text-sm text-red-700 mt-1">
-                      Cette SFD a été suspendue le {sfd.suspended_at ? formatDate(sfd.suspended_at) : 'date inconnue'}.
-                      {sfd.suspension_reason && (
-                        <span> Raison: {sfd.suspension_reason}</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
+            <div className="flex items-center">
+              {sfd.logo_url ? (
+                <img 
+                  src={sfd.logo_url} 
+                  alt={`Logo ${sfd.name}`} 
+                  className="h-8 w-8 mr-2 rounded-full"
+                />
+              ) : (
+                <Building className="h-8 w-8 mr-2 text-primary" />
               )}
+              <span className="text-xl font-bold">{sfd.name}</span>
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardHeader>
-            <CardTitle>Statistiques</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Code</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Nombre de clients</h3>
-                <p className="text-2xl font-bold mt-1">{sfd.client_count || 0}</p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Nombre de prêts</h3>
-                <p className="text-2xl font-bold mt-1">{sfd.loan_count || 0}</p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Volume total des prêts</h3>
-                <p className="text-2xl font-bold mt-1">
-                  {sfd.total_loan_amount 
-                    ? `${sfd.total_loan_amount.toLocaleString()} FCFA` 
-                    : '0 FCFA'}
-                </p>
-              </div>
-              
-              <Separator />
-              
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Administrateurs</h3>
-                <p className="text-2xl font-bold mt-1">{sfd.admin_count || 0}</p>
-                {(!sfd.admin_count || sfd.admin_count === 0) && (
-                  <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200 mt-2">
-                    <p className="text-sm text-yellow-700 flex items-center">
-                      <AlertTriangle className="h-4 w-4 mr-1" />
-                      Aucun administrateur configuré
-                    </p>
-                  </div>
-                )}
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Dernière connexion admin</h3>
-                <p className="mt-1">
-                  {sfd.last_admin_login 
-                    ? formatDate(sfd.last_admin_login) 
-                    : 'Jamais'}
-                </p>
-              </div>
-            </div>
+            <div className="text-xl font-bold">{sfd.code}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Région</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl font-bold">{sfd.region || "Non spécifié"}</div>
           </CardContent>
         </Card>
       </div>
+
+      <Tabs defaultValue="admins">
+        <TabsList className="mb-4">
+          <TabsTrigger value="admins">
+            <Users className="h-4 w-4 mr-2" />
+            Administrateurs
+          </TabsTrigger>
+          <TabsTrigger value="finances">
+            <CreditCard className="h-4 w-4 mr-2" />
+            Finances
+          </TabsTrigger>
+          <TabsTrigger value="clients">
+            <User className="h-4 w-4 mr-2" />
+            Clients
+          </TabsTrigger>
+          <TabsTrigger value="documents">
+            <FileText className="h-4 w-4 mr-2" />
+            Documents
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="admins" className="space-y-4">
+          <SfdAdminManager sfdId={sfd.id} sfdName={sfd.name} />
+        </TabsContent>
+        
+        <TabsContent value="finances">
+          <Card>
+            <CardHeader>
+              <CardTitle>Informations financières</CardTitle>
+              <CardDescription>
+                Aperçu des données financières de la SFD
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <p className="text-sm font-medium text-muted-foreground">Solde des subventions</p>
+                <p className="text-2xl font-bold mt-1">
+                  {formatCurrency(sfd.subsidy_balance || 0)}
+                </p>
+              </div>
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <p className="text-sm font-medium text-muted-foreground">Prêts actifs</p>
+                <p className="text-2xl font-bold mt-1">
+                  {sfd.active_loans || 0}
+                </p>
+              </div>
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <p className="text-sm font-medium text-muted-foreground">Taux de remboursement</p>
+                <p className="text-2xl font-bold mt-1">
+                  {sfd.repayment_rate ? `${sfd.repayment_rate}%` : 'N/A'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="clients">
+          <Card>
+            <CardHeader>
+              <CardTitle>Liste des clients</CardTitle>
+              <CardDescription>
+                Clients enregistrés avec cette SFD
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12 text-muted-foreground">
+                Cette fonctionnalité sera disponible prochainement
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="documents">
+          <Card>
+            <CardHeader>
+              <CardTitle>Documents légaux</CardTitle>
+              <CardDescription>
+                Documents officiels de la SFD
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {sfd.legal_document_url ? (
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <a 
+                    href={sfd.legal_document_url} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    Document légal
+                  </a>
+                </div>
+              ) : (
+                <div className="text-center py-6 text-muted-foreground">
+                  Aucun document n'a été téléchargé
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
