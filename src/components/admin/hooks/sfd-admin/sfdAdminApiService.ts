@@ -53,19 +53,19 @@ export async function fetchSfdAdmins() {
 }
 
 // Créer un nouvel administrateur SFD
-export async function createSfdAdmin(adminData: SfdAdminData) {
+export async function createSfdAdmin(userData: SfdAdminData) {
   try {
-    console.log("Creating SFD admin:", { ...adminData, password: "***" });
+    console.log("Creating SFD admin:", { ...userData, password: "***" });
     
     // 1. Créer un utilisateur avec l'API Supabase Auth
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: adminData.email,
-      password: adminData.password,
+      email: userData.email,
+      password: userData.password,
       options: {
         data: {
-          full_name: adminData.full_name,
+          full_name: userData.full_name,
           role: 'sfd_admin',
-          sfd_id: adminData.sfd_id // Important: stocker l'ID SFD dans les métadonnées utilisateur
+          sfd_id: userData.sfd_id // Important: stocker l'ID SFD dans les métadonnées utilisateur
         }
       }
     });
@@ -83,15 +83,15 @@ export async function createSfdAdmin(adminData: SfdAdminData) {
 
     // 2. Utiliser la fonction Edge pour créer l'entrée dans admin_users et associer à la SFD
     // Cette approche contourne la RLS et gère toutes les opérations côté serveur
-    const { data: adminData, error: adminError } = await supabase.functions.invoke(
+    const { data: edgeFunctionData, error: adminError } = await supabase.functions.invoke(
       'create_sfd_admin',
       {
         body: {
           admin_id: signUpData.user.id,
-          email: adminData.email,
-          full_name: adminData.full_name,
+          email: userData.email,
+          full_name: userData.full_name,
           role: 'sfd_admin',
-          sfd_id: adminData.sfd_id,
+          sfd_id: userData.sfd_id,
           is_primary: true
         }
       }
@@ -107,9 +107,9 @@ export async function createSfdAdmin(adminData: SfdAdminData) {
     return {
       success: true,
       user_id: signUpData.user.id,
-      email: adminData.email,
-      full_name: adminData.full_name,
-      sfd_id: adminData.sfd_id
+      email: userData.email,
+      full_name: userData.full_name,
+      sfd_id: userData.sfd_id
     };
   } catch (error: any) {
     console.error("Error creating SFD admin:", error);
