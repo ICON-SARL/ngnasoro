@@ -1,45 +1,94 @@
 
-import { AxiosError } from 'axios';
-import { toast } from '@/hooks/use-toast';
+import { toast } from "@/components/ui/use-toast";
 
-export const handleError = (error: unknown, customMessage?: string) => {
-  const message = customMessage || 'An error occurred';
-  
-  console.error('Error:', error);
-  
-  if (error instanceof AxiosError) {
-    const serverMessage = error.response?.data?.message || error.message;
-    toast({
-      title: 'Error',
-      description: serverMessage,
-      variant: 'destructive',
-    });
-    return serverMessage;
-  } 
-  
-  toast({
-    title: 'Error',
-    description: message,
-    variant: 'destructive',
-  });
-  
-  return message;
-};
+export enum ErrorType {
+  AUTHENTICATION = "AUTHENTICATION",
+  NETWORK = "NETWORK",
+  SERVER = "SERVER",
+  VALIDATION = "VALIDATION",
+  DATABASE = "DATABASE",
+  UNKNOWN = "UNKNOWN"
+}
 
-export const handleApiResponse = (response: any, successMessage: string) => {
-  if (response.error) {
-    toast({
-      title: 'Error',
-      description: response.error.message || 'An error occurred',
-      variant: 'destructive',
-    });
-    return false;
+export interface AppError {
+  type: ErrorType;
+  message: string;
+  technical?: string;
+  statusCode?: number;
+}
+
+export const handleError = (error: unknown): AppError => {
+  console.error("Error caught:", error);
+  
+  // Default error
+  let appError: AppError = {
+    type: ErrorType.UNKNOWN,
+    message: "Une erreur inattendue s'est produite"
+  };
+  
+  // Handle Supabase errors
+  if (error instanceof Error) {
+    if (error.message.includes("PGRST")) {
+      appError = {
+        type: ErrorType.DATABASE,
+        message: "Erreur d'accès aux données",
+        technical: error.message
+      };
+    } else if (error.message.includes("NetworkError") || error.message.includes("Failed to fetch")) {
+      appError = {
+        type: ErrorType.NETWORK,
+        message: "Problème de connexion au serveur. Vérifiez votre connexion internet.",
+        technical: error.message
+      };
+    } else if (error.message.includes("Email")) {
+      appError = {
+        type: ErrorType.AUTHENTICATION,
+        message: "Informations d'identification invalides",
+        technical: error.message
+      };
+    } else {
+      appError = {
+        type: ErrorType.UNKNOWN,
+        message: "Une erreur s'est produite",
+        technical: error.message
+      };
+    }
   }
   
+  // Show toast for user feedback
   toast({
-    title: 'Success',
-    description: successMessage,
+    title: "Erreur",
+    description: appError.message,
+    variant: "destructive",
   });
   
-  return true;
+  return appError;
+};
+
+export const handleApiResponse = async (response: Response) => {
+  if (!response.ok) {
+    let errorDetail = "Erreur serveur inconnue";
+    
+    try {
+      const errorData = await response.json();
+      errorDetail = errorData.message || errorData.error || errorDetail;
+    } catch (e) {
+      // Couldn't parse JSON error response
+    }
+    
+    const appError: AppError = {
+      type: response.status === 401 || response.status === 403 
+        ? ErrorType.AUTHENTICATION 
+        : ErrorType.SERVER,
+      message: response.status === 401 || response.status === 403
+        ? "Accès non autorisé"
+        : "Erreur serveur",
+      technical: errorDetail,
+      statusCode: response.status
+    };
+    
+    throw appError;
+  }
+  
+  return response;
 };

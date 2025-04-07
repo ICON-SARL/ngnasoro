@@ -2,18 +2,18 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { deleteSfdAdmin as deleteSfdAdminApi } from './sfdAdminApiService';
+import { deleteSfdAdmin as deleteSfdAdminService } from './sfdAdminApiService';
 
 export function useDeleteSfdAdmin() {
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   const { mutate: deleteSfdAdmin, isPending: isDeleting } = useMutation({
     mutationFn: async (adminId: string) => {
       try {
         setError(null);
-        return await deleteSfdAdminApi(adminId);
+        return await deleteSfdAdminService(adminId);
       } catch (err: any) {
         console.error('Error deleting SFD admin:', err);
         setError(err.message || "Une erreur s'est produite lors de la suppression de l'administrateur");

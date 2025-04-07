@@ -1,11 +1,9 @@
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 export function useSubsidyForm(onSuccess: () => void) {
   const { toast } = useToast();
-  const { register, handleSubmit: formHandleSubmit, formState: { errors } } = useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -41,7 +39,7 @@ export function useSubsidyForm(onSuccess: () => void) {
     }));
   };
   
-  const submitForm = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
@@ -69,8 +67,6 @@ export function useSubsidyForm(onSuccess: () => void) {
     availableSfds,
     handleInputChange,
     handleSelectChange,
-    handleSubmit: submitForm,
-    register,
-    errors
+    handleSubmit
   };
 }

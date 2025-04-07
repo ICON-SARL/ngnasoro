@@ -1,23 +1,14 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { CreditCard, Smartphone, QrCode, Check, Building, BadgeCheck, ShieldCheck, RefreshCw } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { 
-  CreditCard, 
-  Smartphone, 
-  Building, 
-  QrCode, 
-  Check, 
-  RefreshCw,
-  ShieldCheck,
-  BadgeCheck
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 export const PaymentOptions = () => {
   const { toast } = useToast();

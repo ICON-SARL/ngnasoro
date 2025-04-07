@@ -5,23 +5,22 @@ import { fetchSfdAdmins } from './sfdAdminApiService';
 
 export function useSfdAdminsList() {
   const [error, setError] = useState<string | null>(null);
-  
-  const { data: sfdAdmins, isLoading, refetch } = useQuery({
+
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['sfd-admins'],
     queryFn: async () => {
       try {
-        const data = await fetchSfdAdmins();
-        return data;
+        setError(null);
+        return await fetchSfdAdmins();
       } catch (err: any) {
-        console.error('Error fetching SFD admins:', err);
-        setError(err.message || "Erreur lors de la récupération des administrateurs SFD");
-        return [];
+        setError(err.message || "Une erreur s'est produite lors de la récupération des administrateurs SFD");
+        throw err;
       }
     }
   });
-  
+
   return {
-    sfdAdmins,
+    sfdAdmins: data || [],
     isLoading,
     error,
     refetch

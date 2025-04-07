@@ -1,166 +1,172 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2 } from 'lucide-react';
+import { z } from 'zod';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { toast } from '@/hooks/use-toast';
+import { AdminRole } from '@/components/admin/management/types';
+import { Loader2, AlertCircle } from 'lucide-react';
+
+// Schema for form validation
+const formSchema = z.object({
+  fullName: z.string().min(3, "Le nom complet doit contenir au moins 3 caractères"),
+  email: z.string().email("Email invalide"),
+  password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
+  sendNotification: z.boolean().default(true)
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface AddSfdAdminDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sfdId: string;
   sfdName: string;
-  onAddAdmin: (data: {
-    email: string;
-    password: string;
-    full_name: string;
-    role: string;
-    sfd_id: string;
-    notify: boolean;
-  }) => void;
+  onAddAdmin: (data: { email: string; password: string; full_name: string; role: string; sfd_id: string; notify: boolean; }) => void;
   isLoading: boolean;
-  error: string | null;
+  error?: string | null;
 }
 
-export function AddSfdAdminDialog({
-  open,
-  onOpenChange,
-  sfdId,
-  sfdName,
-  onAddAdmin,
+export function AddSfdAdminDialog({ 
+  open, 
+  onOpenChange, 
+  sfdId, 
+  sfdName, 
+  onAddAdmin, 
   isLoading,
-  error
+  error 
 }: AddSfdAdminDialogProps) {
-  const { register, handleSubmit, formState: { errors }, reset } = useForm();
-  const [notifyUser, setNotifyUser] = useState(true);
+  // Initialize form with react-hook-form and zod validation
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      password: '',
+      sendNotification: true
+    }
+  });
 
-  const onSubmit = (data: any) => {
-    const adminData = {
-      email: data.email,
-      password: data.password,
-      full_name: data.fullName,
-      role: 'sfd_admin',
-      sfd_id: sfdId,
-      notify: notifyUser
-    };
-    onAddAdmin(adminData);
+  const handleSubmit = async (values: FormValues) => {
+    try {
+      console.log("Form submitted with values:", values);
+      onAddAdmin({
+        email: values.email,
+        password: values.password,
+        full_name: values.fullName,
+        role: AdminRole.SFD_ADMIN,
+        sfd_id: sfdId,
+        notify: values.sendNotification
+      });
+      
+      // Form will be reset after successful submission by the parent component
+    } catch (error) {
+      console.error("Error in form submission:", error);
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
-      if (!newOpen) reset();
-      onOpenChange(newOpen);
-    }}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Ajouter un administrateur SFD</DialogTitle>
           <DialogDescription>
-            Créez un compte administrateur pour la SFD {sfdName}.
+            Créer un compte administrateur pour la SFD {sfdName}
           </DialogDescription>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid gap-2">
-            <Label htmlFor="fullName">Nom complet</Label>
-            <Input
-              id="fullName"
-              placeholder="Prénom et nom"
-              {...register("fullName", { required: "Le nom est requis" })}
-              className={errors.fullName ? "border-red-500" : ""}
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nom complet</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Prénom Nom" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.fullName && (
-              <p className="text-red-500 text-xs italic">
-                {errors.fullName.message as string}
-              </p>
+            
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="admin@exemple.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mot de passe</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="••••••••" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="sendNotification"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Envoyer une notification</FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Envoyer un email d'invitation à l'administrateur
+                    </p>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            {error && (
+              <div className="bg-red-100 p-2 rounded-md flex items-center text-red-800">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                <p className="text-sm">{error}</p>
+              </div>
             )}
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              placeholder="email@example.com"
-              type="email"
-              {...register("email", { 
-                required: "L'email est requis",
-                pattern: {
-                  value: /^\S+@\S+\.\S+$/,
-                  message: "Format d'email invalide"
-                }
-              })}
-              className={errors.email ? "border-red-500" : ""}
-            />
-            {errors.email && (
-              <p className="text-red-500 text-xs italic">
-                {errors.email.message as string}
-              </p>
-            )}
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="password">Mot de passe</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              {...register("password", { 
-                required: "Le mot de passe est requis",
-                minLength: {
-                  value: 8,
-                  message: "Le mot de passe doit contenir au moins 8 caractères"
-                }
-              })}
-              className={errors.password ? "border-red-500" : ""}
-            />
-            {errors.password && (
-              <p className="text-red-500 text-xs italic">
-                {errors.password.message as string}
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="notify" 
-              checked={notifyUser}
-              onCheckedChange={(checked) => setNotifyUser(checked as boolean)}
-            />
-            <Label htmlFor="notify" className="text-sm">
-              Envoyer un email d'invitation à l'utilisateur
-            </Label>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 text-red-600 p-2 rounded text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="flex justify-end space-x-2 mt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              disabled={isLoading}
-            >
-              Annuler
-            </Button>
-            <Button 
-              type="submit"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Chargement...
-                </>
-              ) : 'Ajouter'}
-            </Button>
-          </div>
-        </form>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => onOpenChange(false)} type="button">
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Création...
+                  </>
+                ) : 'Créer le compte'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
