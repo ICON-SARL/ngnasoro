@@ -1,4 +1,3 @@
-
 // SFD Types
 export type SfdStatus = 'active' | 'suspended' | 'pending' | 'closed';
 
@@ -9,13 +8,25 @@ export interface Sfd {
   region?: string;
   logo_url?: string;
   legal_document_url?: string;
+  description?: string;
+  email?: string;
   contact_email?: string;
+  address?: string;
   phone?: string;
   status: SfdStatus;
   created_at: string;
   updated_at: string;
+  suspended_at?: string;
+  suspension_reason?: string;
   subsidy_balance?: number;
   sfd_stats?: SfdStats;
+  
+  // Stats fields
+  client_count?: number;
+  loan_count?: number;
+  total_loan_amount?: number;
+  admin_count?: number;
+  last_admin_login?: string;
 }
 
 export interface SfdStats {
