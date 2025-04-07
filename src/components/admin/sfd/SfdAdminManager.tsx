@@ -111,7 +111,7 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
                   <TableCell className="font-medium">{admin.full_name}</TableCell>
                   <TableCell>{admin.email}</TableCell>
                   <TableCell>
-                    <Badge variant={admin.has_2fa ? "success" : "default"}>
+                    <Badge variant="default" className={admin.has_2fa ? "bg-green-500 text-white" : ""}>
                       {admin.has_2fa ? "2FA activé" : "Standard"}
                     </Badge>
                   </TableCell>

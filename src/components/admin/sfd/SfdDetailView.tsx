@@ -12,9 +12,10 @@ import { formatCurrency } from '@/utils/formatters';
 interface SfdDetailViewProps {
   sfd: Sfd;
   onBack: () => void;
+  onAddAdmin?: () => void;
 }
 
-export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
+export function SfdDetailView({ sfd, onBack, onAddAdmin }: SfdDetailViewProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -24,7 +25,7 @@ export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
             Retour
           </Button>
           <h2 className="text-2xl font-semibold">Détails de la SFD</h2>
-          <Badge variant={sfd.status === 'active' ? 'success' : 'destructive'}>
+          <Badge variant={sfd.status === 'active' ? 'default' : 'destructive'} className={sfd.status === 'active' ? 'bg-green-500' : ''}>
             {sfd.status === 'active' ? 'Active' : 'Suspendue'}
           </Badge>
         </div>
@@ -112,13 +113,13 @@ export function SfdDetailView({ sfd, onBack }: SfdDetailViewProps) {
               <div className="bg-muted/50 p-4 rounded-lg">
                 <p className="text-sm font-medium text-muted-foreground">Prêts actifs</p>
                 <p className="text-2xl font-bold mt-1">
-                  {sfd.active_loans || 0}
+                  {sfd.active_loans_count || 0}
                 </p>
               </div>
               <div className="bg-muted/50 p-4 rounded-lg">
                 <p className="text-sm font-medium text-muted-foreground">Taux de remboursement</p>
                 <p className="text-2xl font-bold mt-1">
-                  {sfd.repayment_rate ? `${sfd.repayment_rate}%` : 'N/A'}
+                  {sfd.repayment_rate_pct ? `${sfd.repayment_rate_pct}%` : 'N/A'}
                 </p>
               </div>
             </CardContent>

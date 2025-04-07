@@ -63,7 +63,6 @@ export function SfdManagementContainer() {
       <SfdDetailView 
         sfd={selectedSfd} 
         onBack={() => setShowDetailsView(false)}
-        onAddAdmin={() => handleAddAdmin(selectedSfd)}
       />
     );
   }
