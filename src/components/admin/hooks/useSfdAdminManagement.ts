@@ -115,10 +115,26 @@ export function useSfdAdminManagement() {
     }
   });
 
+  // Now let's modify this to return a Promise<void> function that matches what AddSfdAdminDialog expects
+  const addSfdAdmin = async (data: {
+    email: string;
+    password: string;
+    full_name: string;
+    role: string;
+    sfd_id: string;
+    notify: boolean;
+  }): Promise<void> => {
+    try {
+      await addSfdAdminMutation.mutateAsync(data);
+    } catch (error) {
+      // Error is already handled by the mutation's onError
+      console.error("Error in addSfdAdmin:", error);
+    }
+  };
+
   return {
     isLoading,
     error,
-    addSfdAdmin: addSfdAdminMutation.mutate,
-    addSfdAdminAsync: addSfdAdminMutation.mutateAsync
+    addSfdAdmin
   };
 }

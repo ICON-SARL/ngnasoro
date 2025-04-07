@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSfdManagement } from './hooks/useSfdManagement';
+import { useSfdManagement } from './hooks/sfd-management/useSfdManagement';
 import { SfdTable } from './sfd/SfdTable';
 import { SuspendSfdDialog } from './sfd/SuspendSfdDialog';
 import { ReactivateSfdDialog } from './sfd/ReactivateSfdDialog';
@@ -16,6 +16,7 @@ export function SfdManagement() {
   const [showDetailsView, setShowDetailsView] = useState(false);
   const [showAddAdminDialog, setShowAddAdminDialog] = useState(false);
   const [selectedSfdForAdmin, setSelectedSfdForAdmin] = useState<Sfd | null>(null);
+  
   const {
     filteredSfds,
     isLoading,
