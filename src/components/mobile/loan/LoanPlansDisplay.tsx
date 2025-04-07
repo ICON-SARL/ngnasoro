@@ -52,13 +52,14 @@ export default function LoanPlansDisplay() {
           const sfds: SfdItem[] = userSfds.map(item => {
             // Properly access nested properties with type checking
             if (item && item.sfds && typeof item.sfds === 'object') {
+              const sfdObject = item.sfds as Record<string, any>;
               return {
-                id: asString(item.sfds.id, ''),
-                name: asString(item.sfds.name, '')
+                id: asString(sfdObject.id, ''),
+                name: asString(sfdObject.name, '')
               };
             }
             return { id: '', name: '' };
-          });
+          }).filter(sfd => sfd.id !== ''); // Filter out invalid SFDs
           
           setSfdList(sfds);
           

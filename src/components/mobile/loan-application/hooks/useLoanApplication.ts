@@ -81,9 +81,10 @@ export function useLoanApplication() {
         
         const transformedData: SFD[] = Array.isArray(data) ? data.map(item => {
           if (item && item.sfds && typeof item.sfds === 'object') {
+            const sfdObject = item.sfds as Record<string, any>;
             return {
               id: asString(item.sfd_id, ''),
-              name: asString(item.sfds.name, 'Unknown SFD'),
+              name: asString(sfdObject.name, 'Unknown SFD'),
               is_default: item.is_default
             };
           }
@@ -92,7 +93,7 @@ export function useLoanApplication() {
             name: 'Unknown SFD',
             is_default: false
           };
-        }) : [];
+        }).filter(sfd => sfd.id !== '') : [];
         
         setSfds(transformedData);
         
