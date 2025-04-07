@@ -6,7 +6,7 @@ import { SfdFilter } from '../sfd/SfdFilter';
 import { SfdToolbar } from './SfdToolbar';
 import { SfdDialogs } from './SfdDialogs';
 import { SfdDetailView } from '../sfd/SfdDetailView';
-import { Sfd } from '../types/sfd-types';
+import { Sfd, SfdStatus } from '../types/sfd-types';
 import { useSfdAdminManagement } from '../hooks/useSfdAdminManagement';
 import { AddSfdAdminDialog } from '../sfd/AddSfdAdminDialog';
 
@@ -58,6 +58,11 @@ export function SfdManagementContainer() {
     setShowAddAdminDialog(true);
   };
 
+  // Function to handle status filter changes with type conversion
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value as SfdStatus | null);
+  };
+
   if (showDetailsView && selectedSfd) {
     return (
       <SfdDetailView 
@@ -79,7 +84,7 @@ export function SfdManagementContainer() {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
+        onStatusFilterChange={handleStatusFilterChange}
         onExportPdf={handleExportPdf}
         onExportExcel={handleExportExcel}
       />

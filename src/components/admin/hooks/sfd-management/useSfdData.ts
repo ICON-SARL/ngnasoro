@@ -47,14 +47,6 @@ export function useSfdData() {
     retry: 2,
     meta: {
       errorMessage: "Impossible de charger la liste des SFDs"
-    },
-    onError: (err: any) => {
-      console.error("Query error:", err);
-      toast({
-        title: "Erreur de chargement",
-        description: err.message || "Impossible de charger la liste des SFDs",
-        variant: "destructive",
-      });
     }
   });
 
