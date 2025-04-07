@@ -6,4 +6,4 @@ import { useAuth as useAuthOriginal } from './auth/AuthContext';
 export const useAuth = useAuthOriginal;
 
 // Re-export types to maintain backward compatibility
-export { User, AuthContextProps, Role } from './auth/types';
+export type { User, AuthContextProps, Role } from './auth/types';

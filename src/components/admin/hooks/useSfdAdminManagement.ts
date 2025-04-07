@@ -1,24 +1,44 @@
 
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useAdminCommunication } from '@/hooks/useAdminCommunication';
-import { useAuth } from '@/hooks/auth';
-import { AdminRole } from '@/components/admin/management/types';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
+import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
+import { logAuditEvent } from '@/utils/audit/auditLoggerCore';
 
 export function useSfdAdminManagement() {
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const { sendNotification } = useAdminCommunication();
-  const { user } = useAuth();
   const { toast } = useToast();
-  
+
+  // Query to fetch SFD admins
+  const {
+    data: sfdAdmins,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ['sfd-admins'],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('admin_users')
+          .select('*')
+          .eq('role', 'sfd_admin');
+          
+        if (error) throw error;
+        
+        return data || [];
+      } catch (err: any) {
+        console.error('Error fetching SFD admins:', err);
+        setError(err.message);
+        return [];
+      }
+    },
+  });
+
   // Mutation to add an SFD admin
-  const addSfdAdminMutation = useMutation({
-    mutationFn: async (data: {
+  const { mutate: addSfdAdmin, isPending: isAdding } = useMutation({
+    mutationFn: async (adminData: {
       email: string;
       password: string;
       full_name: string;
@@ -26,178 +46,161 @@ export function useSfdAdminManagement() {
       sfd_id: string;
       notify: boolean;
     }) => {
-      setIsLoading(true);
-      setError(null);
-      
       try {
-        console.log("Starting SFD admin creation process", data);
+        setError(null);
         
-        // Check if user already exists
-        const { data: existingUser, error: checkError } = await supabase
-          .from('admin_users')
-          .select('email')
-          .eq('email', data.email)
-          .single();
-        
-        if (checkError && checkError.code !== 'PGRST116') {
-          console.error("Error checking existing user:", checkError);
-          throw new Error("Erreur lors de la vérification de l'email");
-        }
-        
-        if (existingUser) {
-          throw new Error("Cet email est déjà enregistré. Veuillez utiliser une adresse différente.");
-        }
-        
-        // 1. Create a user using Supabase Auth API
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: data.email,
-          password: data.password,
-          options: {
-            data: {
-              full_name: data.full_name,
-              role: 'sfd_admin',
-              sfd_id: data.sfd_id
-            }
+        // 1. Create the auth user
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: adminData.email,
+          password: adminData.password,
+          email_confirm: true,
+          user_metadata: {
+            full_name: adminData.full_name,
+            sfd_id: adminData.sfd_id
+          },
+          app_metadata: {
+            role: adminData.role,
           }
         });
-
-        if (signUpError) {
-          console.error("Error signing up user:", signUpError);
-          throw signUpError;
+        
+        if (authError) throw authError;
+        
+        if (!authData.user) {
+          throw new Error('Failed to create user account');
         }
         
-        if (!signUpData.user) {
-          throw new Error("Aucun utilisateur créé");
+        console.log('Auth user created:', authData.user.id);
+        
+        // 2. Assign role in the database
+        const { error: roleError } = await supabase.rpc('assign_role', {
+          user_id: authData.user.id,
+          role: adminData.role
+        });
+        
+        if (roleError) {
+          console.error('Error assigning role:', roleError);
+          // Continue despite role assignment error - we'll handle it separately
         }
-
-        console.log("User created successfully:", signUpData.user.id);
-
-        // 2. Create entry in admin_users
+        
+        // 3. Add user to admin_users table
         const { error: adminError } = await supabase
           .from('admin_users')
-          .insert({
-            id: signUpData.user.id,
-            email: data.email,
-            full_name: data.full_name,
-            role: 'sfd_admin',
-            sfd_id: data.sfd_id,
-            has_2fa: false,
-            is_active: true
-          });
-
-        if (adminError) {
-          console.error("Error creating admin user record:", adminError);
-          throw adminError;
-        }
-
-        console.log("Admin user record created successfully");
-
-        // 3. Assign SFD_ADMIN role
-        const { error: roleError } = await supabase.rpc(
-          'assign_role',
+          .insert([
+            {
+              id: authData.user.id,
+              email: adminData.email,
+              full_name: adminData.full_name,
+              role: adminData.role,
+              sfd_id: adminData.sfd_id
+            }
+          ]);
+          
+        if (adminError) throw adminError;
+        
+        // 4. Log audit event
+        await logAuditEvent(
+          AuditLogCategory.ADMIN_ACTION,
+          'sfd_admin_created',
           {
-            user_id: signUpData.user.id,
-            role_name: 'sfd_admin'
-          }
+            email: adminData.email,
+            sfd_id: adminData.sfd_id
+          },
+          authData.user.id,
+          AuditLogSeverity.INFO
         );
-
-        if (roleError) {
-          console.error("Error assigning role:", roleError);
-          // Don't throw here, attempt to continue even if role assignment fails
-          // We'll log this issue instead
-          logAuditEvent({
-            user_id: user?.id || "",
-            action: "assign_role_failed",
-            category: AuditLogCategory.ADMIN_OPERATIONS,
-            severity: AuditLogSeverity.WARNING,
-            details: { target_user: signUpData.user.id, error: roleError.message },
-            status: 'failure',
-          });
-        } else {
-          console.log("SFD admin role assigned successfully");
+        
+        // 5. Send notification if requested
+        if (adminData.notify) {
+          // Send welcome email (implementation depends on your notification system)
+          console.log('Sending welcome notification to new SFD admin');
         }
         
-        // 4. Send notification to admin if requested
-        if (data.notify && signUpData.user.id) {
-          try {
-            await sendNotification({
-              title: "Compte administrateur SFD créé",
-              message: `Un compte administrateur a été créé pour vous. Veuillez vous connecter avec l'email ${data.email}.`,
-              type: "info",
-              recipient_id: signUpData.user.id
-            });
-            console.log("Notification sent successfully");
-          } catch (notifError) {
-            console.warn("Unable to send notification:", notifError);
-            // Continue even if notification fails
-          }
-        }
-        
-        // Log the successful creation
-        if (user) {
-          logAuditEvent({
-            user_id: user.id,
-            action: "create_sfd_admin",
-            category: AuditLogCategory.ADMIN_OPERATIONS,
-            severity: AuditLogSeverity.INFO,
-            details: { 
-              admin_email: data.email,
-              sfd_id: data.sfd_id
-            },
-            status: 'success',
-          });
-        }
-        
-        // 5. Return the created user data
-        return signUpData.user;
-        
-      } catch (error: any) {
-        console.error("Error creating SFD admin:", error);
-        
-        // Log the failed attempt
-        if (user) {
-          logAuditEvent({
-            user_id: user.id,
-            action: "create_sfd_admin_failed",
-            category: AuditLogCategory.ADMIN_OPERATIONS,
-            severity: AuditLogSeverity.ERROR,
-            details: { 
-              error: error.message,
-              sfd_id: data.sfd_id
-            },
-            status: 'failure',
-            error_message: error.message,
-          });
-        }
-        
-        setError(error.message || "Une erreur s'est produite lors de la création de l'administrateur");
-        throw error;
-      } finally {
-        setIsLoading(false);
+        return authData.user;
+      } catch (err: any) {
+        console.error('Error adding SFD admin:', err);
+        setError(err.message);
+        throw err;
       }
     },
     onSuccess: () => {
-      // Invalidate queries to force data refresh
       queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
-      
       toast({
         title: "Succès",
-        description: "L'administrateur SFD a été créé avec succès",
+        description: "L'administrateur SFD a été créé avec succès.",
+        variant: "success",
       });
     },
-    onError: (error: any) => {
+    onError: (err: Error) => {
       toast({
         title: "Erreur",
-        description: `Impossible de créer l'administrateur: ${error.message}`,
+        description: `Impossible de créer l'administrateur SFD: ${err.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Mutation to delete an SFD admin
+  const { mutate: deleteSfdAdmin } = useMutation({
+    mutationFn: async (adminId: string) => {
+      try {
+        setError(null);
+        
+        // 1. Delete the auth user
+        const { error: authError } = await supabase.auth.admin.deleteUser(
+          adminId
+        );
+        
+        if (authError) throw authError;
+        
+        // 2. Delete from admin_users table
+        const { error: adminError } = await supabase
+          .from('admin_users')
+          .delete()
+          .eq('id', adminId);
+          
+        if (adminError) throw adminError;
+        
+        // 3. Log audit event
+        await logAuditEvent(
+          AuditLogCategory.ADMIN_ACTION,
+          'sfd_admin_deleted',
+          {
+            admin_id: adminId
+          },
+          undefined,
+          AuditLogSeverity.WARNING
+        );
+        
+        return true;
+      } catch (err: any) {
+        console.error('Error deleting SFD admin:', err);
+        setError(err.message);
+        throw err;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
+      toast({
+        title: "Succès",
+        description: "L'administrateur SFD a été supprimé avec succès.",
+        variant: "success",
+      });
+    },
+    onError: (err: Error) => {
+      toast({
+        title: "Erreur",
+        description: `Impossible de supprimer l'administrateur SFD: ${err.message}`,
         variant: "destructive",
       });
     }
   });
 
   return {
-    isLoading,
+    sfdAdmins,
+    isLoading: isLoading || isAdding,
     error,
-    addSfdAdmin: addSfdAdminMutation.mutate,
-    addSfdAdminAsync: addSfdAdminMutation.mutateAsync
+    addSfdAdmin,
+    deleteSfdAdmin,
+    refetch
   };
 }

@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
 
-interface Notification {
+export interface Notification {
   id?: string;
   title: string;
   message: string;
@@ -12,6 +12,17 @@ interface Notification {
   sender_id?: string;
   created_at?: string;
   read?: boolean;
+  recipient_role?: string;
+  action_link?: string;
+}
+
+export interface AdminNotificationRequest {
+  title: string;
+  message: string;
+  type: string;
+  recipient_id: string;
+  recipient_role?: string;
+  action_link?: string;
 }
 
 export function useAdminCommunication() {
@@ -40,6 +51,8 @@ export function useAdminCommunication() {
             message: notification.message,
             type: notification.type,
             recipient_id: notification.recipient_id,
+            recipient_role: notification.recipient_role,
+            action_link: notification.action_link,
             sender_id: user.id,
             read: false
           }
