@@ -54,17 +54,17 @@ export function useSfdAdminManagement() {
 
         console.log("User created successfully:", signUpData.user.id);
 
-        // 2. Create entry in admin_users
-        // Use RPC function for admin users creation to bypass RLS
-        const { error: adminError } = await supabase.rpc(
-          'create_admin_user',
-          { 
-            admin_id: signUpData.user.id,
-            admin_email: data.email,
-            admin_full_name: data.full_name,
-            admin_role: 'sfd_admin'
-          }
-        );
+        // 2. Create entry in admin_users - using the service role client to bypass RLS
+        // Instead of using RPC, we'll use direct insert with appropriate credentials
+        const { error: adminError } = await supabase
+          .from('admin_users')
+          .insert({
+            id: signUpData.user.id,
+            email: data.email,
+            full_name: data.full_name,
+            role: 'sfd_admin',
+            has_2fa: false
+          });
 
         if (adminError) {
           console.error("Error creating admin user record:", adminError);
