@@ -38,8 +38,8 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Redirect to login page - Force a full page reload to clear any remaining state
-      window.location.href = '/auth';
+      // Redirect to the logout page which will properly handle the session cleanup
+      navigate('/auth/logout');
     } catch (error: any) {
       console.error('Logout error:', error);
       toast({
