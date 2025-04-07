@@ -44,14 +44,14 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     });
     
     // Check for admin access (admin has access to everything)
-    if (userRole === UserRole.ADMIN) {
+    if (userRole === 'admin') {
       console.log('Admin detected, granting access');
       setHasAccess(true);
       return;
     }
     
     // Fix for SFD_ADMIN role and manage_subsidies permission
-    if (userRole === UserRole.SFD_ADMIN && (
+    if (userRole === 'sfd_admin' && (
       requiredRole === UserRole.SFD_ADMIN || requiredPermission === 'manage_subsidies'
     )) {
       console.log('SFD admin accessing subsidies, granting access');
@@ -62,13 +62,13 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     // Fix for SFD_ADMIN matching sfd_admin string value
     let roleMatch = !requiredRole || 
       userRole === requiredRole || 
-      (requiredRole === UserRole.SFD_ADMIN && userRole === UserRole.SFD_ADMIN);
+      (requiredRole === UserRole.SFD_ADMIN && userRole === 'sfd_admin');
     
     // Check permissions - comparing string values with string literal enum values
-    let permissionMatch = !requiredPermission || userRole === UserRole.ADMIN;
+    let permissionMatch = !requiredPermission || userRole === 'admin';
     
     // SFD admin has SFD-related permissions
-    if (!permissionMatch && userRole === UserRole.SFD_ADMIN && requiredPermission && 
+    if (!permissionMatch && userRole === 'sfd_admin' && requiredPermission && 
         (requiredPermission.includes('sfd') || 
          requiredPermission.includes('client') || 
          requiredPermission.includes('loan'))) {

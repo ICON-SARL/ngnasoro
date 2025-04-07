@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SfdClient } from '@/types/sfdClients';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { useClientAccountOperations } from '@/components/admin/hooks/sfd-client/useClientAccountOperations';
 import { useAuth } from '@/hooks/useAuth';
+import ClientSavingsAccount from './ClientSavingsAccount';
 
 interface ClientDetailsProps {
   client: SfdClient;
@@ -51,7 +52,7 @@ interface ClientDetailsProps {
 }
 
 const ClientDetails = ({ client, onDeleted }: ClientDetailsProps) => {
-  const { isSfdAdmin } = useAuth();
+  const { isSfdAdmin, activeSfdId } = useAuth();
   const [isCreditDialogOpen, setIsCreditDialogOpen] = useState(false);
   const [creditAmount, setCreditAmount] = useState<string>('');
   const [creditDescription, setCreditDescription] = useState<string>('');
@@ -325,6 +326,11 @@ const ClientDetails = ({ client, onDeleted }: ClientDetailsProps) => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Display the savings account section for validated clients */}
+      {client.status === 'validated' && activeSfdId && (
+        <ClientSavingsAccount clientId={client.id} sfdId={activeSfdId} />
+      )}
       
       {isSfdAdmin && client.status === 'validated' && (
         <Card>
