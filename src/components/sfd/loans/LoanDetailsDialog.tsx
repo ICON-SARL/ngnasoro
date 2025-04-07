@@ -23,7 +23,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/auth/AuthContext';
 import { sfdLoanApi } from '@/utils/sfdLoanApi';
-import { Loan } from './LoanWorkflow';
+import { Loan } from '@/types/sfdClients';
 import {
   Tabs,
   TabsContent,
