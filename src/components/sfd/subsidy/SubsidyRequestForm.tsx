@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload } from 'lucide-react';
 import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   Select,
   SelectContent,
@@ -53,7 +53,10 @@ export const SubsidyRequestForm: React.FC<SubsidyRequestFormProps> = ({ onSucces
   });
   
   const onSubmit = async (data: FormValues) => {
-    if (!user?.app_metadata?.sfd_id) {
+    // Use optional chaining to safely access sfd_id
+    const sfdId = user?.app_metadata?.sfd_id;
+    
+    if (!sfdId) {
       toast({
         title: "Erreur",
         description: "Votre compte n'est associé à aucune SFD. Veuillez contacter l'administrateur.",
@@ -66,7 +69,7 @@ export const SubsidyRequestForm: React.FC<SubsidyRequestFormProps> = ({ onSucces
       setIsSubmitting(true);
       
       await createSubsidyRequest.mutateAsync({
-        sfd_id: user.app_metadata.sfd_id,
+        sfd_id: sfdId,
         amount: data.amount,
         purpose: data.purpose,
         justification: data.justification,

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

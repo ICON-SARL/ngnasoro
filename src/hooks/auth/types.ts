@@ -16,6 +16,7 @@ export interface User {
     role?: string; // Single role string
     role_assigned?: boolean;
     roles?: string[]; // Array of roles
+    sfd_id?: string; // Added sfd_id property to fix type errors
   };
 }
 
