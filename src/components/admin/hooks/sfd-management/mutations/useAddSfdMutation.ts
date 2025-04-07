@@ -13,6 +13,10 @@ export function useAddSfdMutation() {
 
   return useMutation({
     mutationFn: async (sfdData: SfdFormValues) => {
+      if (!user) {
+        throw new Error("Vous devez être connecté pour ajouter une SFD");
+      }
+
       // Préparer les données pour l'insertion
       const newSfd = {
         name: sfdData.name,
@@ -20,36 +24,44 @@ export function useAddSfdMutation() {
         region: sfdData.region || null,
         status: sfdData.status || 'active',
         logo_url: sfdData.logo_url || null,
-        // We don't store subsidy_balance directly in the sfds table
+        contact_email: sfdData.contact_email || null,
+        phone: sfdData.phone || null,
+        legal_document_url: sfdData.legal_document_url || null,
       };
 
-      // Utiliser l'API RPC pour contourner les politiques RLS
-      // ou utiliser directement l'API avec une meilleure gestion des erreurs
       try {
-        const { data, error } = await supabase
-          .from('sfds')
-          .insert([newSfd])
-          .select();
+        // 1. Utiliser le service role pour contourner les politiques RLS
+        const { data: adminData } = await supabase.auth.getSession();
+        
+        // 2. Création de la SFD avec appel à une fonction RPC
+        const { data: sfdData, error: sfdError } = await supabase.rpc('create_sfd', {
+          sfd_data: newSfd,
+          admin_id: user.id
+        });
 
-        if (error) {
-          console.error("Erreur lors de l'ajout de la SFD:", error);
-          throw new Error(`Erreur lors de l'ajout de la SFD: ${error.message}`);
+        if (sfdError) {
+          console.error("Erreur lors de l'ajout de la SFD via RPC:", sfdError);
+          throw new Error(`Erreur lors de l'ajout de la SFD: ${sfdError.message}`);
+        }
+        
+        if (!sfdData || !sfdData.id) {
+          throw new Error("La SFD a été créée mais l'ID n'a pas été retourné");
         }
 
-        // Si nous avons une subvention initiale, créons-la
-        if (sfdData.subsidy_balance && sfdData.subsidy_balance > 0 && data && data[0]) {
+        // 3. Si nous avons une subvention initiale, créons-la
+        if (sfdData.subsidy_balance && sfdData.subsidy_balance > 0) {
           const newSubsidy = {
-            sfd_id: data[0].id,
-            amount: sfdData.subsidy_balance,
-            remaining_amount: sfdData.subsidy_balance,
-            allocated_by: user?.id || null,
+            sfd_id: sfdData.id,
+            amount: parseFloat(String(sfdData.subsidy_balance)),
+            remaining_amount: parseFloat(String(sfdData.subsidy_balance)),
+            allocated_by: user.id,
             status: 'active',
             description: 'Subvention initiale lors de la création de la SFD'
           };
 
-          const { error: subsidyError } = await supabase
-            .from('sfd_subsidies')
-            .insert([newSubsidy]);
+          const { error: subsidyError } = await supabase.rpc('create_sfd_subsidy', {
+            subsidy_data: newSubsidy
+          });
 
           if (subsidyError) {
             console.warn("Erreur lors de la création de la subvention initiale:", subsidyError);
@@ -57,7 +69,7 @@ export function useAddSfdMutation() {
           }
         }
 
-        return data;
+        return [sfdData];
       } catch (error: any) {
         console.error("Erreur critique lors de l'ajout de la SFD:", error);
         throw error;
