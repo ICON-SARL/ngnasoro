@@ -1,268 +1,271 @@
 
 import React, { useState } from 'react';
 import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { AlertTriangle, Plus, Edit, Trash2 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Plus, Trash, Edit, Save, X } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SubsidyAlertSettingsProps {
   thresholds: any[];
   isLoading: boolean;
 }
 
-export function SubsidyAlertSettings({ thresholds, isLoading }: SubsidyAlertSettingsProps) {
-  const [openDialog, setOpenDialog] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentThreshold, setCurrentThreshold] = useState<any>(null);
-  const [formData, setFormData] = useState({
+export const SubsidyAlertSettings: React.FC<SubsidyAlertSettingsProps> = ({ 
+  thresholds, 
+  isLoading 
+}) => {
+  const { createAlertThreshold, updateAlertThreshold, deleteAlertThreshold } = useSubsidyRequests();
+  const [newThreshold, setNewThreshold] = useState({
     threshold_name: '',
     threshold_amount: '',
-    notification_emails: '',
+    is_active: true
+  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState({
+    threshold_name: '',
+    threshold_amount: '',
     is_active: true
   });
   
-  const { 
-    createAlertThreshold, 
-    updateAlertThreshold,
-    deleteAlertThreshold 
-  } = useSubsidyRequests();
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-  
-  const handleEditThreshold = (threshold: any) => {
-    setCurrentThreshold(threshold);
-    setFormData({
-      threshold_name: threshold.threshold_name,
-      threshold_amount: threshold.threshold_amount.toString(),
-      notification_emails: threshold.notification_emails ? threshold.notification_emails.join(', ') : '',
-      is_active: threshold.is_active
-    });
-    setIsEditing(true);
-    setOpenDialog(true);
-  };
-  
-  const handleCreateThreshold = () => {
-    setCurrentThreshold(null);
-    setFormData({
-      threshold_name: '',
-      threshold_amount: '',
-      notification_emails: '',
-      is_active: true
-    });
-    setIsEditing(false);
-    setOpenDialog(true);
-  };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCreateThreshold = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Parse the notification emails
-    const emails = formData.notification_emails
-      ? formData.notification_emails.split(',').map(email => email.trim())
-      : [];
-      
-    const thresholdData = {
-      threshold_name: formData.threshold_name,
-      threshold_amount: parseFloat(formData.threshold_amount),
-      notification_emails: emails.length > 0 ? emails : null,
-      is_active: formData.is_active
-    };
+    if (!newThreshold.threshold_name || !newThreshold.threshold_amount) return;
     
-    if (isEditing && currentThreshold) {
-      await updateAlertThreshold.mutateAsync({
-        id: currentThreshold.id,
-        updates: thresholdData
-      });
-    } else {
-      await createAlertThreshold.mutateAsync(thresholdData);
-    }
+    const amount = parseFloat(newThreshold.threshold_amount.replace(/\s/g, '').replace(',', '.'));
     
-    setOpenDialog(false);
+    await createAlertThreshold.mutateAsync({
+      threshold_name: newThreshold.threshold_name,
+      threshold_amount: amount,
+      is_active: newThreshold.is_active
+    });
+    
+    setNewThreshold({
+      threshold_name: '',
+      threshold_amount: '',
+      is_active: true
+    });
   };
   
-  const handleDeleteThreshold = async (id: string) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce seuil d\'alerte ?')) {
+  const startEditing = (threshold: any) => {
+    setEditingId(threshold.id);
+    setEditValues({
+      threshold_name: threshold.threshold_name,
+      threshold_amount: threshold.threshold_amount.toString(),
+      is_active: threshold.is_active
+    });
+  };
+  
+  const cancelEditing = () => {
+    setEditingId(null);
+  };
+  
+  const handleSaveEdit = async (id: string) => {
+    const amount = parseFloat(editValues.threshold_amount.replace(/\s/g, '').replace(',', '.'));
+    
+    await updateAlertThreshold.mutateAsync({
+      id,
+      updates: {
+        threshold_name: editValues.threshold_name,
+        threshold_amount: amount,
+        is_active: editValues.is_active
+      }
+    });
+    
+    setEditingId(null);
+  };
+  
+  const handleDelete = async (id: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce seuil d\'alerte ?')) {
       await deleteAlertThreshold.mutateAsync(id);
     }
   };
   
+  const formatAmountInput = (value: string) => {
+    value = value.replace(/\D/g, ''); // Enlever tous les caractères non numériques
+    
+    if (value) {
+      const numberValue = parseInt(value, 10);
+      return numberValue.toLocaleString('fr-FR');
+    }
+    
+    return value;
+  };
+  
   return (
-    <>
+    <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Paramètres d'Alerte</CardTitle>
-              <CardDescription>
-                Configurez les seuils d'alerte pour les demandes de subvention
-              </CardDescription>
-            </div>
-            <Button onClick={handleCreateThreshold}>
-              <Plus className="h-4 w-4 mr-1" />
-              Nouveau seuil
-            </Button>
-          </div>
+          <CardTitle>Seuils d'alerte pour les demandes de subvention</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">
-              <p>Chargement des seuils d'alerte...</p>
+          <form onSubmit={handleCreateThreshold} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="threshold_name">Nom du seuil</Label>
+                <Input
+                  id="threshold_name"
+                  value={newThreshold.threshold_name}
+                  onChange={(e) => setNewThreshold({...newThreshold, threshold_name: e.target.value})}
+                  placeholder="Ex: Demande importante"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="threshold_amount">Montant (FCFA)</Label>
+                <Input
+                  id="threshold_amount"
+                  value={newThreshold.threshold_amount}
+                  onChange={(e) => setNewThreshold({
+                    ...newThreshold, 
+                    threshold_amount: formatAmountInput(e.target.value)
+                  })}
+                  placeholder="Ex: 5 000 000"
+                  required
+                />
+              </div>
+              <div className="flex items-end">
+                <div className="flex items-center mr-4 space-x-2">
+                  <Switch
+                    checked={newThreshold.is_active}
+                    onCheckedChange={(checked) => setNewThreshold({...newThreshold, is_active: checked})}
+                    id="is_active"
+                  />
+                  <Label htmlFor="is_active">Actif</Label>
+                </div>
+                <Button type="submit" className="flex-grow">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Ajouter
+                </Button>
+              </div>
             </div>
-          ) : thresholds.length === 0 ? (
-            <div className="text-center py-8 bg-muted/20 rounded-md">
-              <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground">Aucun seuil d'alerte configuré</p>
-              <Button onClick={handleCreateThreshold} variant="outline" className="mt-4">
-                <Plus className="h-4 w-4 mr-1" />
-                Configurer un seuil d'alerte
-              </Button>
+          </form>
+          
+          <Separator className="my-6" />
+          
+          {isLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
             </div>
           ) : (
-            <div className="space-y-4">
-              {thresholds.map((threshold) => (
-                <div 
-                  key={threshold.id} 
-                  className={`p-4 rounded-md border ${threshold.is_active ? '' : 'bg-gray-50'}`}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center">
-                      <AlertTriangle className={`h-5 w-5 mr-2 ${threshold.is_active ? 'text-amber-500' : 'text-gray-400'}`} />
-                      <h3 className="font-medium">{threshold.threshold_name}</h3>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleEditThreshold(threshold)}
-                      >
-                        <Edit className="h-4 w-4" />
-                        <span className="sr-only">Modifier</span>
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleDeleteThreshold(threshold.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Supprimer</span>
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Montant seuil</p>
-                      <p className="font-medium">{threshold.threshold_amount.toLocaleString()} FCFA</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Statut</p>
-                      <p className={threshold.is_active ? 'text-green-600' : 'text-muted-foreground'}>
-                        {threshold.is_active ? 'Actif' : 'Inactif'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Notifications</p>
-                      <p className="truncate max-w-[200px]">
-                        {threshold.notification_emails && threshold.notification_emails.length > 0
-                          ? threshold.notification_emails.join(', ')
-                          : 'Aucune'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Montant</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {thresholds.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-4">
+                      Aucun seuil d'alerte défini
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  thresholds.map((threshold) => (
+                    <TableRow key={threshold.id}>
+                      <TableCell>
+                        {editingId === threshold.id ? (
+                          <Input
+                            value={editValues.threshold_name}
+                            onChange={(e) => setEditValues({...editValues, threshold_name: e.target.value})}
+                          />
+                        ) : (
+                          threshold.threshold_name
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingId === threshold.id ? (
+                          <Input
+                            value={editValues.threshold_amount}
+                            onChange={(e) => setEditValues({
+                              ...editValues, 
+                              threshold_amount: formatAmountInput(e.target.value)
+                            })}
+                          />
+                        ) : (
+                          `${threshold.threshold_amount.toLocaleString()} FCFA`
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingId === threshold.id ? (
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={editValues.is_active}
+                              onCheckedChange={(checked) => setEditValues({...editValues, is_active: checked})}
+                            />
+                            <span>{editValues.is_active ? 'Actif' : 'Inactif'}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <div className={`h-2 w-2 rounded-full ${threshold.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
+                            <span>{threshold.is_active ? 'Actif' : 'Inactif'}</span>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {editingId === threshold.id ? (
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => handleSaveEdit(threshold.id)}
+                            >
+                              <Save className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={cancelEditing}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => startEditing(threshold)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              className="text-red-500 hover:text-red-700"
+                              onClick={() => handleDelete(threshold.id)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
-      
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {isEditing ? 'Modifier le seuil d\'alerte' : 'Nouveau seuil d\'alerte'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="threshold_name">Nom du seuil</Label>
-                <Input 
-                  id="threshold_name" 
-                  name="threshold_name"
-                  value={formData.threshold_name}
-                  onChange={handleInputChange}
-                  placeholder="ex: Subventions élevées"
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="threshold_amount">Montant seuil (FCFA)</Label>
-                <Input 
-                  id="threshold_amount" 
-                  name="threshold_amount"
-                  value={formData.threshold_amount}
-                  onChange={handleInputChange}
-                  type="number"
-                  placeholder="ex: 5000000"
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  Les demandes égales ou supérieures à ce montant déclencheront une alerte
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="notification_emails">Emails de notification (séparés par des virgules)</Label>
-                <Input 
-                  id="notification_emails" 
-                  name="notification_emails"
-                  value={formData.notification_emails}
-                  onChange={handleInputChange}
-                  placeholder="ex: admin@meref.org, finance@meref.org"
-                />
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="is_active" 
-                  name="is_active"
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData(prev => ({...prev, is_active: checked}))}
-                />
-                <Label htmlFor="is_active">Activer ce seuil d'alerte</Label>
-              </div>
-            </div>
-            
-            <DialogFooter>
-              <Button 
-                type="button"
-                variant="outline" 
-                onClick={() => setOpenDialog(false)}
-              >
-                Annuler
-              </Button>
-              <Button type="submit">
-                {isEditing ? 'Mettre à jour' : 'Créer'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </>
+    </div>
   );
-}
+};

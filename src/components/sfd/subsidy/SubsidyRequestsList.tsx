@@ -1,29 +1,57 @@
 
-import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/auth/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Search, AlertTriangle, FileText, Filter } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FileText, AlertTriangle, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
-interface SubsidyRequestsListProps {
-  subsidyRequests: any[];
-  isLoading: boolean;
-  onSelectRequest: (id: string) => void;
-}
-
-export const SubsidyRequestsList = ({ 
-  subsidyRequests, 
-  isLoading, 
-  onSelectRequest 
-}: SubsidyRequestsListProps) => {
-  const [searchQuery, setSearchQuery] = React.useState('');
+export const SubsidyRequestsList: React.FC = () => {
+  const { activeSfdId } = useAuth();
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   
-  const filteredRequests = subsidyRequests.filter(req => 
-    req.sfd_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    req.purpose?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    req.status?.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    const fetchRequests = async () => {
+      if (!activeSfdId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('subsidy_requests')
+          .select('*')
+          .eq('sfd_id', activeSfdId)
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          console.error('Erreur lors de la récupération des demandes:', error);
+          return;
+        }
+        
+        setRequests(data || []);
+      } catch (error) {
+        console.error('Erreur:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchRequests();
+  }, [activeSfdId]);
+  
+  const filteredRequests = requests.filter(req => 
+    req.purpose.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    req.status.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
   const formatDate = (dateString: string) => {
@@ -62,7 +90,7 @@ export const SubsidyRequestsList = ({
   
   return (
     <div className="space-y-4">
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center">
         <div className="relative w-64">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -72,14 +100,9 @@ export const SubsidyRequestsList = ({
             className="pl-8"
           />
         </div>
-        
-        <Button variant="outline" size="sm" className="flex items-center gap-1">
-          <Filter className="h-4 w-4" />
-          Filtres
-        </Button>
       </div>
       
-      {isLoading ? (
+      {loading ? (
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
@@ -89,7 +112,6 @@ export const SubsidyRequestsList = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>SFD</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Montant</TableHead>
               <TableHead>Objet</TableHead>
@@ -102,7 +124,6 @@ export const SubsidyRequestsList = ({
           <TableBody>
             {filteredRequests.map((request) => (
               <TableRow key={request.id}>
-                <TableCell>{request.sfd_name}</TableCell>
                 <TableCell>{formatDate(request.created_at)}</TableCell>
                 <TableCell className="font-medium">{request.amount?.toLocaleString()} FCFA</TableCell>
                 <TableCell>{request.purpose}</TableCell>
@@ -117,11 +138,7 @@ export const SubsidyRequestsList = ({
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => onSelectRequest(request.id)}
-                  >
+                  <Button variant="ghost" size="sm">
                     <FileText className="h-4 w-4 mr-1" />
                     Détails
                   </Button>
@@ -135,7 +152,7 @@ export const SubsidyRequestsList = ({
           <FileText className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-lg font-medium">Aucune demande trouvée</h3>
           <p className="text-muted-foreground mt-1">
-            Il n'y a pas encore de demandes de subvention.
+            Vous n'avez pas encore soumis de demande de subvention.
           </p>
         </div>
       )}

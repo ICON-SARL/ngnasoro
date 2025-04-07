@@ -10,6 +10,7 @@ import { SfdAuditLog } from '@/components/admin/SfdAuditLog';
 import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
 import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommunication';
 import { MerefApprovalDashboard } from '@/components/admin/MerefApprovalDashboard';
+import { MerefSubsidyTab } from '@/components/admin/MerefSubsidyTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const CreditApprovalPage = () => {
@@ -45,6 +46,7 @@ const CreditApprovalPage = () => {
             <TabsTrigger value="sfd-management">Gestion des SFDs</TabsTrigger>
             <TabsTrigger value="sfd-audit">Historique SFDs</TabsTrigger>
             <TabsTrigger value="meref-approval">Approbations MEREF</TabsTrigger>
+            <TabsTrigger value="subsidy-requests">Demandes de Subvention</TabsTrigger>
           </TabsList>
           
           <TabsContent value="applications">
@@ -69,6 +71,10 @@ const CreditApprovalPage = () => {
           
           <TabsContent value="meref-approval">
             <MerefApprovalDashboard />
+          </TabsContent>
+          
+          <TabsContent value="subsidy-requests">
+            <MerefSubsidyTab />
           </TabsContent>
         </Tabs>
       </main>

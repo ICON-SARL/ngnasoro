@@ -31,6 +31,7 @@ import MobileFlow from '@/pages/MobileFlow';
 import LoanApplicationPage from '@/pages/LoanApplicationPage';
 import SfdManagementPage from '@/pages/SfdManagementPage';
 import CreditApprovalPage from '@/pages/CreditApprovalPage';
+import MerefSubsidyRequestPage from '@/pages/MerefSubsidyRequestPage'; // Ajout de la nouvelle page
 
 // Role types and permissions
 import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
@@ -100,6 +101,14 @@ const AppRoutes = () => {
         path="/loan-application"
         element={
           <ProtectedRoute component={LoanApplicationPage} />
+        }
+      />
+
+      {/* Add MEREF Subsidy Request route */}
+      <Route
+        path="/meref-subsidy-request"
+        element={
+          <ProtectedRoute component={MerefSubsidyRequestPage} />
         }
       />
       
