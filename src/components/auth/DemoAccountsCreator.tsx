@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Define the AccountResult interface explicitly without circular references
+// Define the AccountResult interface explicitly to avoid circular references
 interface AccountResult {
   email: string;
   status: 'created' | 'already_exists' | 'error';
@@ -93,7 +92,7 @@ export const DemoAccountsCreator = () => {
     }
   };
 
-  const getStatusDetails = (result: AccountResult) => {
+  function getStatusDetails(result: AccountResult) {
     if (result.status === 'created') {
       return `Créé avec le rôle: ${result.role}`;
     } else if (result.status === 'already_exists') {
@@ -103,9 +102,9 @@ export const DemoAccountsCreator = () => {
     } else {
       return `Erreur: ${result.message || 'Inconnue'}`;
     }
-  };
+  }
 
-  const getStatusIcon = (result: AccountResult) => {
+  function getStatusIcon(result: AccountResult) {
     if (result.status === 'created') {
       return <CheckCircle2 className="h-3 w-3 text-green-500 mr-1" />;
     } else if (result.status === 'already_exists') {
@@ -115,7 +114,7 @@ export const DemoAccountsCreator = () => {
     } else {
       return <AlertCircle className="h-3 w-3 text-red-500 mr-1" />;
     }
-  };
+  }
 
   return (
     <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
