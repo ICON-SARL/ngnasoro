@@ -1,24 +1,45 @@
 
-import React from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Clock } from 'lucide-react';
 
 interface CooldownAlertProps {
   active: boolean;
   remainingTime: number;
 }
 
-const CooldownAlert = ({ active, remainingTime }: CooldownAlertProps) => {
+const CooldownAlert: React.FC<CooldownAlertProps> = ({ active, remainingTime }) => {
+  const [timeLeft, setTimeLeft] = useState(remainingTime);
+
+  useEffect(() => {
+    if (!active) return;
+    
+    setTimeLeft(remainingTime);
+    
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [active, remainingTime]);
+
   if (!active) return null;
-  
+
   return (
-    <Alert className="mb-4 bg-amber-50 border-amber-200 rounded-xl shadow-sm">
-      <AlertCircle className="h-5 w-5 text-amber-600" />
-      <AlertTitle className="text-amber-800 font-medium text-sm">Délai d'attente</AlertTitle>
-      <AlertDescription className="text-amber-700 text-sm mt-1">
-        Vous pourrez réessayer dans <span className="font-semibold">{remainingTime}</span> secondes
-      </AlertDescription>
-    </Alert>
+    <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-md flex items-start gap-3">
+      <Clock className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+      <div>
+        <p className="text-sm font-medium">Connexion temporairement bloquée</p>
+        <p className="text-xs mt-1">
+          Veuillez attendre <span className="font-semibold">{timeLeft}</span> secondes avant de réessayer
+        </p>
+      </div>
+    </div>
   );
 };
 

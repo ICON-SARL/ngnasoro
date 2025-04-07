@@ -1,66 +1,57 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Log successful authentication attempt
 export const logSuccessfulAuthentication = async (
-  userId: string | undefined,
-  email: string,
-  adminMode: boolean,
-  isSfdAdmin: boolean
+  userId: string, 
+  email: string, 
+  isAdminLogin: boolean = false,
+  isSfdAdminLogin: boolean = false
 ) => {
   try {
-    // Skip logging if userId is not available
-    if (!userId || userId === 'pending') {
-      console.log('Skipping audit log - no userId available');
-      return;
-    }
-
-    const { error } = await supabase.from('audit_logs').insert({
+    await supabase.from('audit_logs').insert({
       user_id: userId,
-      action: 'password_login',
+      action: 'login_success',
       category: 'authentication',
       severity: 'info',
-      status: 'success',
-      details: { email, admin_mode: adminMode, sfd_admin: isSfdAdmin }
+      details: { 
+        email,
+        isAdminLogin,
+        isSfdAdminLogin,
+        loginMethod: 'password',
+        timestamp: new Date().toISOString()
+      },
+      status: 'success'
     });
-
-    if (error) {
-      console.error('Error logging successful authentication:', error);
-    }
   } catch (error) {
-    console.error('Failed to log successful authentication:', error);
+    console.warn('Failed to log successful authentication:', error);
   }
 };
 
-// Log failed authentication attempt
 export const logFailedAuthentication = async (
-  userId: string | undefined,
-  email: string,
-  adminMode: boolean,
-  isSfdAdmin: boolean,
-  errorMessage: string
+  userId: string, 
+  email: string, 
+  isAdminLogin: boolean = false,
+  isSfdAdminLogin: boolean = false,
+  errorMessage?: string
 ) => {
   try {
-    // Skip logging if userId is not valid
-    if (!userId || userId === 'pending' || userId === 'anonymous') {
-      console.log('Skipping audit log - invalid userId');
-      return;
-    }
-    
-    const { error } = await supabase.from('audit_logs').insert({
+    await supabase.from('audit_logs').insert({
       user_id: userId,
-      action: 'password_login_attempt',
+      action: 'login_failure',
       category: 'authentication',
       severity: 'warning',
+      details: { 
+        email,
+        isAdminLogin,
+        isSfdAdminLogin,
+        loginMethod: 'password',
+        errorMessage,
+        timestamp: new Date().toISOString()
+      },
       status: 'failure',
-      error_message: errorMessage,
-      details: { email, admin_mode: adminMode, sfd_admin: isSfdAdmin }
+      error_message: errorMessage
     });
-
-    if (error) {
-      console.error('Error logging failed authentication:', error);
-    }
   } catch (error) {
-    console.error('Failed to log failed authentication:', error);
+    console.warn('Failed to log failed authentication:', error);
   }
 };

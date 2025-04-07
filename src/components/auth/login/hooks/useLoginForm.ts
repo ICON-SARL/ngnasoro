@@ -6,10 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import { useLoginValidation } from './useLoginValidation';
 import { useCooldown } from './useCooldown';
 import { logSuccessfulAuthentication, logFailedAuthentication } from '../utils/auditLogging';
-import { LoginFormProps, LoginFormHookReturn } from '../types/loginTypes';
-import { extractCooldownTime } from '../utils/errorHandling';
 
-export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = false): LoginFormHookReturn => {
+export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = false) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -121,6 +119,12 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Utility function to extract cooldown time from error message
+  const extractCooldownTime = (errorMessage: string): string => {
+    const match = errorMessage.match(/(\d+) seconds/);
+    return match ? match[1] : '60';
   };
 
   return {

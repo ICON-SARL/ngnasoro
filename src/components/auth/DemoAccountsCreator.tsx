@@ -1,108 +1,106 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
-
-interface AccountResult {
-  email: string;
-  status: 'success' | 'error';
-  role: string;
-  hasCorrectRole: boolean;
-  message?: string;
-}
+import { useToast } from '@/components/ui/use-toast';
 
 const DemoAccountsCreator = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState<AccountResult[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
+  const { toast } = useToast();
 
-  const createAccounts = async () => {
-    setIsLoading(true);
-    setResults([]);
+  const createDemoAccounts = async () => {
+    setIsCreating(true);
     
     try {
-      // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulated results
-      setResults([
-        {
-          email: 'admin@meref-mali.ml',
-          status: 'success',
-          role: 'super_admin',
-          hasCorrectRole: true,
-        },
-        {
-          email: 'sfd@example.com',
-          status: 'success',
-          role: 'sfd_admin',
-          hasCorrectRole: true,
-        },
-        {
-          email: 'client@example.com',
-          status: 'success',
-          role: 'client',
-          hasCorrectRole: true,
+      // Créer un compte client
+      const { error: clientError } = await supabase.auth.signUp({
+        email: 'client@example.com',
+        password: 'password123',
+        options: {
+          data: {
+            role: 'client',
+            full_name: 'Jean Durand'
+          }
         }
-      ]);
+      });
+
+      if (clientError) throw new Error(`Erreur lors de la création du compte client: ${clientError.message}`);
+
+      // Créer un compte admin SFD
+      const { error: sfdAdminError } = await supabase.auth.signUp({
+        email: 'sfd@example.com',
+        password: 'password123',
+        options: {
+          data: {
+            role: 'sfd_admin',
+            full_name: 'Marie Koné',
+            sfd_id: 'sfd_1'
+          }
+        }
+      });
+
+      if (sfdAdminError) throw new Error(`Erreur lors de la création du compte SFD: ${sfdAdminError.message}`);
+
+      // Créer un compte super admin
+      const { error: adminError } = await supabase.auth.signUp({
+        email: 'admin@example.com',
+        password: 'password123',
+        options: {
+          data: {
+            role: 'admin',
+            full_name: 'Amadou Diallo'
+          }
+        }
+      });
+
+      if (adminError) throw new Error(`Erreur lors de la création du compte admin: ${adminError.message}`);
+
+      // Afficher un message de succès
+      toast({
+        title: "Comptes de démonstration créés",
+        description: "Vous pouvez maintenant vous connecter avec les identifiants suivants:\n\nClient: client@example.com / password123\nSFD: sfd@example.com / password123\nAdmin: admin@example.com / password123",
+        duration: 10000
+      });
+
     } catch (error) {
-      console.error('Error creating demo accounts:', error);
+      console.error('Erreur lors de la création des comptes:', error);
+      toast({
+        title: "Erreur de création des comptes",
+        description: error.message || "Une erreur s'est produite lors de la création des comptes de démonstration.",
+        variant: "destructive"
+      });
     } finally {
-      setIsLoading(false);
+      setIsCreating(false);
     }
   };
 
   return (
-    <>
+    <div className="p-4 border-t text-center">
+      <p className="text-sm text-gray-500 mb-2">Vous avez besoin de comptes pour tester?</p>
       <Button 
         variant="outline" 
-        className="w-full mt-4"
-        onClick={() => setIsOpen(true)}
+        size="sm" 
+        onClick={createDemoAccounts}
+        disabled={isCreating}
       >
-        Créer des comptes de démo
+        {isCreating ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Création en cours...
+          </>
+        ) : (
+          'Créer des comptes de démonstration'
+        )}
       </Button>
-
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Comptes de démo</DialogTitle>
-            <DialogDescription>
-              Créez des comptes de test pour essayer l'application.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="py-4">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="mt-2 text-sm text-muted-foreground">Création des comptes en cours...</p>
-              </div>
-            ) : results.length > 0 ? (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">Comptes créés avec succès:</p>
-                <ul className="space-y-2">
-                  {results.map((result, index) => (
-                    <li key={index} className="text-sm border rounded-md p-3">
-                      <p><strong>Email:</strong> {result.email}</p>
-                      <p><strong>Rôle:</strong> {result.role}</p>
-                      <p><strong>Mot de passe:</strong> password123</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <Button 
-                onClick={createAccounts}
-                className="w-full"
-              >
-                Créer des comptes de test
-              </Button>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+      {!isCreating && (
+        <div className="mt-2 text-xs text-gray-400">
+          <p>Client: client@example.com / password123</p>
+          <p>SFD: sfd@example.com / password123</p>
+          <p>Admin: admin@example.com / password123</p>
+        </div>
+      )}
+    </div>
   );
 };
 
