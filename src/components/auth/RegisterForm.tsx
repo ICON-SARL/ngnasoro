@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, Phone, Lock, User, AlertTriangle } from 'lucide-react';
+import { Mail, Phone, Lock, User, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,8 +40,10 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 const RegisterForm = () => {
   const { signUp } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -55,38 +58,56 @@ const RegisterForm = () => {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsSubmitting(true);
     setErrorMessage(null);
+    setSuccessMessage(null);
     
     try {
+      console.log("Début de l'inscription avec les données:", { 
+        email: data.email, 
+        fullName: data.fullName, 
+        hasPhone: !!data.phoneNumber 
+      });
+      
       // Create a proper metadata object with user details
       const metadata = {
         full_name: data.fullName,
         phone: data.phoneNumber || undefined
       };
       
-      await signUp(data.email, data.password, metadata);
+      const result = await signUp(data.email, data.password, metadata);
+      
+      console.log("Résultat de l'inscription:", result);
+      
+      setSuccessMessage("Inscription réussie! Vous allez être redirigé vers la page de connexion.");
       
       toast({
         title: "Inscription réussie",
-        description: "Veuillez vérifier votre email pour confirmer votre compte",
+        description: "Votre compte a été créé avec succès",
       });
       
       // Reset form after successful registration
       form.reset();
+      
+      // Redirection vers la page de connexion après un délai
+      setTimeout(() => {
+        navigate('/auth', { replace: true });
+      }, 2000);
     } catch (error: any) {
-      console.error('Signup error:', error);
+      console.error('Erreur lors de l\'inscription:', error);
       
       // Show more specific error messages based on the error type
       if (error.message?.includes('Database error saving new user')) {
-        setErrorMessage("Erreur lors de l'enregistrement des données utilisateur. Veuillez réessayer avec une adresse email différente.");
+        setErrorMessage("Erreur lors de l'enregistrement des données utilisateur. Veuillez réessayer.");
       } else if (error.message?.includes('already registered')) {
         setErrorMessage("Cette adresse email est déjà associée à un compte.");
+      } else if (error.message?.includes('rate limit')) {
+        setErrorMessage("Trop de tentatives. Veuillez réessayer dans quelques minutes.");
       } else {
         setErrorMessage(error.message || "Une erreur s'est produite lors de l'inscription. Veuillez réessayer.");
       }
       
       toast({
         title: "Erreur d'inscription",
-        description: error.message || "Une erreur s'est produite lors de l'inscription. Veuillez réessayer.",
+        description: "Une erreur s'est produite lors de l'inscription",
         variant: "destructive",
       });
     } finally {
@@ -101,6 +122,14 @@ const RegisterForm = () => {
           <AlertTriangle className="h-5 w-5" />
           <AlertTitle>Erreur d'inscription</AlertTitle>
           <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
+      
+      {successMessage && (
+        <Alert className="mb-6 bg-green-50 border-green-200 text-green-800">
+          <CheckCircle className="h-5 w-5" />
+          <AlertTitle>Inscription réussie</AlertTitle>
+          <AlertDescription>{successMessage}</AlertDescription>
         </Alert>
       )}
       
@@ -206,7 +235,11 @@ const RegisterForm = () => {
             )}
           />
           
-          <Button type="submit" className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90" disabled={isSubmitting}>
+          <Button 
+            type="submit" 
+            className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90" 
+            disabled={isSubmitting}
+          >
             {isSubmitting ? "Inscription en cours..." : "Créer un compte"}
           </Button>
           
