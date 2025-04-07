@@ -58,17 +58,20 @@ const Header = () => {
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex space-x-8">
+          <a href="#features" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
+            Avantages
+          </a>
+          <a href="#services" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
+            Services
+          </a>
+          <a href="#partners" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
+            Partenaires
+          </a>
           <Link to="/sfd-selector" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
             SFDs
           </Link>
           <Link to="/mobile-flow" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
             App Mobile
-          </Link>
-          <Link to="/loan-system" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
-            Microcrédits
-          </Link>
-          <Link to="/solvency-engine" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
-            Financement
           </Link>
         </nav>
         
@@ -88,7 +91,7 @@ const Header = () => {
                   Profil
                 </DropdownMenuItem>
                 {user.email?.endsWith('@meref-mali.ml') && (
-                  <DropdownMenuItem onClick={() => navigate('/super-admin')}>
+                  <DropdownMenuItem onClick={() => navigate('/super-admin-dashboard')}>
                     Admin
                   </DropdownMenuItem>
                 )}
@@ -129,17 +132,20 @@ const Header = () => {
       {mobileMenuOpen && (
         <div className="md:hidden bg-white dark:bg-gray-900 p-4 shadow-md">
           <nav className="flex flex-col space-y-4">
+            <a href="#features" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+              Avantages
+            </a>
+            <a href="#services" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+              Services
+            </a>
+            <a href="#partners" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+              Partenaires
+            </a>
             <Link to="/sfd-selector" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
               SFDs
             </Link>
             <Link to="/mobile-flow" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
               App Mobile
-            </Link>
-            <Link to="/loan-system" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
-              Microcrédits
-            </Link>
-            <Link to="/solvency-engine" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
-              Financement
             </Link>
             {!user && (
               <Link to="/auth" className="text-sm font-medium bg-[#FFAB2E] text-white px-4 py-2 rounded-md hover:bg-[#FFAB2E]/90 transition-colors">

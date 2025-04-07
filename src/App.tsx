@@ -3,6 +3,9 @@ import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Footer } from '@/components';
 
+// Landing page
+import LandingPage from '@/pages/LandingPage';
+
 // Auth components
 import { AuthProvider } from '@/hooks/auth/AuthContext';
 
@@ -49,7 +52,7 @@ const AppWithFooter = () => {
   return (
     <>
       <AppRoutes />
-      {isHomePage && <Footer />}
+      {!isHomePage && <Footer />}
       <Toaster />
     </>
   );
@@ -59,6 +62,10 @@ const AppWithFooter = () => {
 const AppRoutes = () => {
   return (
     <Routes>
+      {/* Landing page route */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/index" element={<LandingPage />} />
+      
       {/* Public Authentication routes */}
       <Route path="/auth" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -128,7 +135,7 @@ const AppRoutes = () => {
         } 
       />
       
-      {/* SFD functionality routes - Modifier pour utiliser le rôle plutôt que la permission */}
+      {/* SFD functionality routes */}
       <Route 
         path="/sfd-subsidy-requests" 
         element={
@@ -205,12 +212,11 @@ const AppRoutes = () => {
         }
       />
       
-      {/* Fallback routes */}
-      <Route path="/" element={<Navigate to="/auth" replace />} />
-      <Route path="*" element={<Navigate to="/auth" replace />} />
-      
       {/* SFD Management route */}
       <Route path="/sfd-management" element={<SfdManagementPage />} />
+      
+      {/* Fallback route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
