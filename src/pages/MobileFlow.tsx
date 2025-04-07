@@ -89,7 +89,7 @@ const MobileFlow = () => {
           name: data.recipient,
           type: 'payment',
           amount: -data.amount,
-          paymentMethod: 'sfd_account',
+          payment_method: 'sfd_account',
           description: data.note || 'Payment transaction'
         });
       }

@@ -6,13 +6,13 @@ import { PaymentMethod } from '@/services/transactions/types';
 
 type CreateTransactionParams = {
   user_id: string;
-  sfdId: string;
+  sfd_id: string;
   name: string;
   type: string;
   amount: number;
   description?: string;
-  paymentMethod?: PaymentMethod;
-  referenceId?: string;
+  payment_method?: PaymentMethod;
+  reference_id?: string;
 };
 
 export function useTransactionMutation() {
@@ -20,24 +20,24 @@ export function useTransactionMutation() {
     mutationFn: async (params: CreateTransactionParams): Promise<Transaction> => {
       const { 
         user_id, 
-        sfdId, 
+        sfd_id, 
         name, 
         type, 
         amount, 
         description, 
-        paymentMethod, 
-        referenceId 
+        payment_method, 
+        reference_id 
       } = params;
 
       const transactionData = {
         user_id,
-        sfd_id: sfdId,
+        sfd_id,
         name,
         type,
         amount,
         description: description || `Transaction ${type}`,
-        payment_method: paymentMethod || 'sfd_account',
-        reference_id: referenceId || `tx-${Date.now()}`,
+        payment_method: payment_method || 'sfd_account',
+        reference_id: reference_id || `tx-${Date.now()}`,
         date: new Date().toISOString(),
         status: 'success'
       };

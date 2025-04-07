@@ -61,7 +61,6 @@ export function PendingSubsidies() {
     
     fetchPendingRequests();
     
-    // Set up real-time subscription for updates
     const requestsChannel = supabase
       .channel('pending_requests_changes')
       .on('postgres_changes', { 
