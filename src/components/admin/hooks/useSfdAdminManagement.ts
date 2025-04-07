@@ -61,7 +61,7 @@ export function useSfdAdminManagement() {
           },
           app_metadata: {
             // Ensure role is one of the allowed values
-            role: 'sfd_admin' as 'admin' | 'sfd_admin' | 'user',
+            role: 'sfd_admin' as UserRole,
           }
         });
         
@@ -108,7 +108,8 @@ export function useSfdAdminManagement() {
             sfd_id: adminData.sfd_id
           },
           user_id: authData.user.id,
-          severity: AuditLogSeverity.INFO
+          severity: AuditLogSeverity.INFO,
+          status: 'success' // Adding the required status property
         });
         
         // 5. Send notification if requested
@@ -170,7 +171,8 @@ export function useSfdAdminManagement() {
             admin_id: adminId
           },
           user_id: undefined,
-          severity: AuditLogSeverity.WARNING
+          severity: AuditLogSeverity.WARNING,
+          status: 'success' // Adding the required status property
         });
         
         return true;
