@@ -18,6 +18,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
+import { initializeSupabase } from '@/utils/initSupabase';
 
 const registerSchema = z.object({
   fullName: z.string()
@@ -55,6 +57,62 @@ const RegisterForm = () => {
     },
   });
 
+  // Fonction pour initialiser le compte utilisateur
+  const initializeUserAccount = async (userId: string, fullName: string) => {
+    try {
+      // Créer un compte utilisateur s'il n'existe pas déjà
+      const { data: existingAccount, error: accountCheckError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (accountCheckError && accountCheckError.code === 'PGRST116') {
+        // Compte non existant, créer un nouveau compte
+        const { error: createAccountError } = await supabase
+          .from('accounts')
+          .insert({
+            user_id: userId,
+            balance: 200000, // Solde par défaut
+            currency: 'FCFA'
+          });
+          
+        if (createAccountError) {
+          console.error("Erreur lors de la création du compte:", createAccountError);
+        }
+      }
+      
+      // Vérifier si le profil existe et le créer ou mettre à jour si nécessaire
+      const { data: existingProfile, error: profileCheckError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (profileCheckError && profileCheckError.code === 'PGRST116') {
+        // Profil non existant, créer un nouveau profil
+        const { error: createProfileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            full_name: fullName
+          });
+          
+        if (createProfileError) {
+          console.error("Erreur lors de la création du profil:", createProfileError);
+        }
+      }
+      
+      // Initialiser les données associées à Supabase
+      await initializeSupabase();
+      
+      return true;
+    } catch (error) {
+      console.error("Erreur lors de l'initialisation du compte:", error);
+      return false;
+    }
+  };
+
   const onSubmit = async (data: RegisterFormValues) => {
     setIsSubmitting(true);
     setErrorMessage(null);
@@ -76,6 +134,11 @@ const RegisterForm = () => {
       const result = await signUp(data.email, data.password, metadata);
       
       console.log("Résultat de l'inscription:", result);
+      
+      // Initialize user account data
+      if (result?.user?.id) {
+        await initializeUserAccount(result.user.id, data.fullName);
+      }
       
       setSuccessMessage("Inscription réussie! Vous allez être redirigé vers la page de connexion.");
       
