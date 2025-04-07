@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
-import { Sfd } from './types/sfd-types';
-import { SfdFormValues } from './sfd/schemas/sfdFormSchema';
+import { Sfd } from '../types/sfd-types';
+import { SfdFormValues } from '../sfd/schemas/sfdFormSchema';
 import { useSfdData } from './sfd-management/useSfdData';
 import { useSfdMutations } from './sfd-management/useSfdMutations';
 import { useSfdFilters } from './sfd-management/useSfdFilters';

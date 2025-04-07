@@ -4,15 +4,12 @@ import { Sfd, SfdStatus } from '../../types/sfd-types';
 
 export function useSfdFilters(sfds: any[]) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<SfdStatus | null>(null);
 
   const filteredSfds = useMemo(() => {
     return sfds.filter((sfd) => {
-      // Convert incoming status to proper SfdStatus type
-      const typedSfd = {
-        ...sfd,
-        status: sfd.status as SfdStatus
-      };
+      // Make sure the SFD is properly typed
+      const typedSfd = sfd as Sfd;
       
       const matchesSearch =
         !searchTerm ||
@@ -23,10 +20,7 @@ export function useSfdFilters(sfds: any[]) {
       const matchesStatus = !statusFilter || typedSfd.status === statusFilter;
 
       return matchesSearch && matchesStatus;
-    }).map(sfd => ({
-      ...sfd,
-      status: sfd.status as SfdStatus
-    }));
+    });
   }, [sfds, searchTerm, statusFilter]);
 
   return {
