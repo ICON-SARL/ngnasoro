@@ -1,200 +1,153 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { X, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import LoadingSpinner from '@/components/ui/loading-spinner';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2, Plus, X, Check } from 'lucide-react';
 
 interface LoanPlanDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSaved: () => void;
-  planToEdit?: LoanPlan | null;
+  planToEdit: any | null;
 }
 
-interface LoanPlan {
-  id?: string;
-  name: string;
-  description: string;
-  min_amount: number;
-  max_amount: number;
-  min_duration: number;
-  max_duration: number;
-  interest_rate: number;
-  fees: number;
-  requirements: string[];
-  is_active: boolean;
-}
-
-const LoanPlanDialog = ({ isOpen, onClose, onSaved, planToEdit }: LoanPlanDialogProps) => {
-  const { user } = useAuth();
+const LoanPlanDialog = ({
+  isOpen,
+  onClose,
+  onSaved,
+  planToEdit
+}: LoanPlanDialogProps) => {
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+  const { user, activeSfdId } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [minAmount, setMinAmount] = useState<string>('10000');
+  const [maxAmount, setMaxAmount] = useState<string>('5000000');
+  const [minDuration, setMinDuration] = useState<string>('1');
+  const [maxDuration, setMaxDuration] = useState<string>('36');
+  const [interestRate, setInterestRate] = useState<string>('5.0');
+  const [fees, setFees] = useState<string>('1.0');
+  const [requirements, setRequirements] = useState<string[]>([]);
   const [newRequirement, setNewRequirement] = useState('');
-  
-  const [formData, setFormData] = useState<LoanPlan>({
-    name: '',
-    description: '',
-    min_amount: 10000,
-    max_amount: 500000,
-    min_duration: 1,
-    max_duration: 12,
-    interest_rate: 10,
-    fees: 2,
-    requirements: [],
-    is_active: true
-  });
   
   useEffect(() => {
     if (planToEdit) {
-      setFormData({
-        id: planToEdit.id,
-        name: planToEdit.name,
-        description: planToEdit.description || '',
-        min_amount: planToEdit.min_amount,
-        max_amount: planToEdit.max_amount,
-        min_duration: planToEdit.min_duration,
-        max_duration: planToEdit.max_duration,
-        interest_rate: planToEdit.interest_rate,
-        fees: planToEdit.fees,
-        requirements: planToEdit.requirements || [],
-        is_active: planToEdit.is_active
-      });
+      setName(planToEdit.name || '');
+      setDescription(planToEdit.description || '');
+      setMinAmount(planToEdit.min_amount?.toString() || '10000');
+      setMaxAmount(planToEdit.max_amount?.toString() || '5000000');
+      setMinDuration(planToEdit.min_duration?.toString() || '1');
+      setMaxDuration(planToEdit.max_duration?.toString() || '36');
+      setInterestRate(planToEdit.interest_rate?.toString() || '5.0');
+      setFees(planToEdit.fees?.toString() || '1.0');
+      setRequirements(planToEdit.requirements || []);
     } else {
-      // Reset form when opening for a new plan
-      setFormData({
-        name: '',
-        description: '',
-        min_amount: 10000,
-        max_amount: 500000,
-        min_duration: 1,
-        max_duration: 12,
-        interest_rate: 10,
-        fees: 2,
-        requirements: [],
-        is_active: true
-      });
+      resetForm();
     }
   }, [planToEdit, isOpen]);
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setMinAmount('10000');
+    setMaxAmount('5000000');
+    setMinDuration('1');
+    setMaxDuration('36');
+    setInterestRate('5.0');
+    setFees('1.0');
+    setRequirements([]);
+    setNewRequirement('');
   };
   
-  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: parseFloat(value) });
-  };
-  
-  const handleSwitchChange = (checked: boolean) => {
-    setFormData({ ...formData, is_active: checked });
-  };
-  
-  const addRequirement = () => {
-    if (newRequirement.trim()) {
-      setFormData({
-        ...formData,
-        requirements: [...formData.requirements, newRequirement.trim()]
-      });
+  const handleAddRequirement = () => {
+    if (newRequirement.trim() && !requirements.includes(newRequirement.trim())) {
+      setRequirements([...requirements, newRequirement.trim()]);
       setNewRequirement('');
     }
   };
   
-  const removeRequirement = (index: number) => {
-    const updatedRequirements = [...formData.requirements];
-    updatedRequirements.splice(index, 1);
-    setFormData({ ...formData, requirements: updatedRequirements });
+  const handleRemoveRequirement = (index: number) => {
+    const updated = [...requirements];
+    updated.splice(index, 1);
+    setRequirements(updated);
   };
   
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.name) {
+  const handleSave = async () => {
+    if (!name) {
       toast({
-        title: 'Erreur',
-        description: 'Veuillez fournir un nom pour ce plan',
-        variant: 'destructive',
+        title: "Erreur",
+        description: "Veuillez spécifier un nom pour ce plan",
+        variant: "destructive",
       });
       return;
     }
     
-    if (formData.min_amount > formData.max_amount) {
+    if (!activeSfdId) {
       toast({
-        title: 'Erreur',
-        description: 'Le montant minimum ne peut pas être supérieur au montant maximum',
-        variant: 'destructive',
+        title: "Erreur",
+        description: "SFD non identifié",
+        variant: "destructive",
       });
       return;
     }
     
-    if (formData.min_duration > formData.max_duration) {
-      toast({
-        title: 'Erreur',
-        description: 'La durée minimum ne peut pas être supérieure à la durée maximum',
-        variant: 'destructive',
-      });
-      return;
-    }
+    setIsLoading(true);
     
     try {
-      setLoading(true);
+      const planData = {
+        name,
+        description,
+        min_amount: parseFloat(minAmount),
+        max_amount: parseFloat(maxAmount),
+        min_duration: parseInt(minDuration),
+        max_duration: parseInt(maxDuration),
+        interest_rate: parseFloat(interestRate),
+        fees: parseFloat(fees),
+        requirements,
+        sfd_id: activeSfdId
+      };
       
-      if (formData.id) {
+      if (planToEdit) {
         // Update existing plan
         const { error } = await supabase
           .from('sfd_loan_plans')
           .update({
-            name: formData.name,
-            description: formData.description,
-            min_amount: formData.min_amount,
-            max_amount: formData.max_amount,
-            min_duration: formData.min_duration,
-            max_duration: formData.max_duration,
-            interest_rate: formData.interest_rate,
-            fees: formData.fees,
-            requirements: formData.requirements,
-            is_active: formData.is_active,
+            ...planData,
             updated_at: new Date().toISOString()
           })
-          .eq('id', formData.id);
+          .eq('id', planToEdit.id);
           
         if (error) throw error;
         
         toast({
-          title: 'Plan mis à jour',
-          description: 'Le plan de prêt a été modifié avec succès',
+          title: "Plan mis à jour",
+          description: "Le plan de prêt a été modifié avec succès",
         });
       } else {
         // Create new plan
         const { error } = await supabase
           .from('sfd_loan_plans')
-          .insert({
-            sfd_id: user?.sfd_id,
-            name: formData.name,
-            description: formData.description,
-            min_amount: formData.min_amount,
-            max_amount: formData.max_amount,
-            min_duration: formData.min_duration,
-            max_duration: formData.max_duration,
-            interest_rate: formData.interest_rate,
-            fees: formData.fees,
-            requirements: formData.requirements,
-            is_active: formData.is_active
-          });
+          .insert(planData);
           
         if (error) throw error;
         
         toast({
-          title: 'Plan créé',
-          description: 'Le nouveau plan de prêt a été créé avec succès',
+          title: "Plan créé",
+          description: "Le nouveau plan de prêt a été créé avec succès",
         });
       }
       
@@ -203,196 +156,194 @@ const LoanPlanDialog = ({ isOpen, onClose, onSaved, planToEdit }: LoanPlanDialog
     } catch (error: any) {
       console.error('Error saving loan plan:', error);
       toast({
-        title: 'Erreur',
-        description: 'Impossible de sauvegarder le plan de prêt',
-        variant: 'destructive',
+        title: "Erreur",
+        description: `Impossible d'enregistrer le plan : ${error.message}`,
+        variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {planToEdit ? 'Modifier le plan de prêt' : 'Nouveau plan de prêt'}
-          </DialogTitle>
+          <DialogTitle>{planToEdit ? "Modifier le plan de prêt" : "Nouveau plan de prêt"}</DialogTitle>
+          <DialogDescription>
+            {planToEdit 
+              ? "Modifiez les détails du plan de prêt existant." 
+              : "Configurez un nouveau type de prêt à offrir aux clients."}
+          </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nom du plan</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Ex: Prêt Express"
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="is_active">Statut</Label>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="is_active"
-                    checked={formData.is_active}
-                    onCheckedChange={handleSwitchChange}
-                  />
-                  <Label htmlFor="is_active" className="cursor-pointer">
-                    {formData.is_active ? 'Actif' : 'Inactif'}
-                  </Label>
-                </div>
-              </div>
-            </div>
-            
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-1 gap-2">
+            <Label htmlFor="name">Nom du plan *</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex: Prêt Agricole, Microprêt Commercial..."
+              required
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 gap-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Décrivez ce plan de prêt et ses conditions particulières..."
+              rows={3}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Description du plan de prêt"
-                rows={2}
+              <Label htmlFor="minAmount">Montant minimum (FCFA) *</Label>
+              <Input
+                id="minAmount"
+                type="number"
+                value={minAmount}
+                onChange={(e) => setMinAmount(e.target.value)}
+                required
+                min="0"
               />
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="min_amount">Montant minimum (FCFA)</Label>
-                <Input
-                  id="min_amount"
-                  name="min_amount"
-                  type="number"
-                  min="1000"
-                  step="1000"
-                  value={formData.min_amount}
-                  onChange={handleNumberChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="max_amount">Montant maximum (FCFA)</Label>
-                <Input
-                  id="max_amount"
-                  name="max_amount"
-                  type="number"
-                  min="10000"
-                  step="10000"
-                  value={formData.max_amount}
-                  onChange={handleNumberChange}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="min_duration">Durée minimum (mois)</Label>
-                <Input
-                  id="min_duration"
-                  name="min_duration"
-                  type="number"
-                  min="1"
-                  value={formData.min_duration}
-                  onChange={handleNumberChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="max_duration">Durée maximum (mois)</Label>
-                <Input
-                  id="max_duration"
-                  name="max_duration"
-                  type="number"
-                  min="1"
-                  value={formData.max_duration}
-                  onChange={handleNumberChange}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="interest_rate">Taux d'intérêt (%)</Label>
-                <Input
-                  id="interest_rate"
-                  name="interest_rate"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={formData.interest_rate}
-                  onChange={handleNumberChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="fees">Frais (%)</Label>
-                <Input
-                  id="fees"
-                  name="fees"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={formData.fees}
-                  onChange={handleNumberChange}
-                />
-              </div>
-            </div>
-            
             <div className="space-y-2">
-              <Label>Documents requis</Label>
-              <div className="flex space-x-2">
-                <Input
-                  placeholder="Ajouter un document requis"
-                  value={newRequirement}
-                  onChange={(e) => setNewRequirement(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addRequirement();
-                    }
-                  }}
-                />
-                <Button type="button" variant="outline" onClick={addRequirement}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              {formData.requirements.length > 0 && (
-                <div className="mt-2 space-y-2">
-                  {formData.requirements.map((req, index) => (
-                    <div key={index} className="flex items-center justify-between bg-muted p-2 rounded-md">
-                      <span className="text-sm">{req}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeRequirement(index)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <Label htmlFor="maxAmount">Montant maximum (FCFA) *</Label>
+              <Input
+                id="maxAmount"
+                type="number"
+                value={maxAmount}
+                onChange={(e) => setMaxAmount(e.target.value)}
+                required
+                min="0"
+              />
             </div>
           </div>
           
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-              Annuler
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? <LoadingSpinner /> : planToEdit ? 'Mettre à jour' : 'Créer le plan'}
-            </Button>
-          </DialogFooter>
-        </form>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="minDuration">Durée minimum (mois) *</Label>
+              <Input
+                id="minDuration"
+                type="number"
+                value={minDuration}
+                onChange={(e) => setMinDuration(e.target.value)}
+                required
+                min="1"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="maxDuration">Durée maximum (mois) *</Label>
+              <Input
+                id="maxDuration"
+                type="number"
+                value={maxDuration}
+                onChange={(e) => setMaxDuration(e.target.value)}
+                required
+                min="1"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="interestRate">Taux d'intérêt (%) *</Label>
+              <Input
+                id="interestRate"
+                type="number"
+                value={interestRate}
+                onChange={(e) => setInterestRate(e.target.value)}
+                required
+                min="0"
+                step="0.1"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fees">Frais administratifs (%) *</Label>
+              <Input
+                id="fees"
+                type="number"
+                value={fees}
+                onChange={(e) => setFees(e.target.value)}
+                required
+                min="0"
+                step="0.1"
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Documents requis</Label>
+            <div className="flex space-x-2">
+              <Input
+                value={newRequirement}
+                onChange={(e) => setNewRequirement(e.target.value)}
+                placeholder="Ajouter un document requis"
+                className="flex-1"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddRequirement();
+                  }
+                }}
+              />
+              <Button 
+                type="button" 
+                onClick={handleAddRequirement}
+                variant="outline"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {requirements.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {requirements.map((req, index) => (
+                  <li key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                    <span>{req}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleRemoveRequirement(index)}
+                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            Annuler
+          </Button>
+          <Button onClick={handleSave} disabled={isLoading} className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {planToEdit ? "Mise à jour..." : "Création..."}
+              </>
+            ) : planToEdit ? (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Mettre à jour
+              </>
+            ) : (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Créer
+              </>
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useSavingsAccount } from '@/hooks/useSavingsAccount';
+import { useClientSavingsAccount } from '@/hooks/useClientSavingsAccount';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Banknote, ArrowDownUp, PiggyBank, RefreshCw } from 'lucide-react';
@@ -38,29 +38,27 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
     isLoading,
     createAccount,
     processDeposit,
-    refetch
-  } = useSavingsAccount(clientId);
+    refreshData
+  } = useClientSavingsAccount(clientId);
   
   // Handle deposit submission
   const handleDeposit = async () => {
     if (!user?.id || !amount || parseFloat(amount) <= 0) return;
     
-    await processDeposit.mutateAsync({
-      amount: parseFloat(amount),
-      description,
-      adminId: user.id
-    });
+    const success = await processDeposit(parseFloat(amount), description);
     
-    // Reset form
-    setAmount('');
-    setDescription('');
-    setIsDepositDialogOpen(false);
+    if (success) {
+      // Reset form
+      setAmount('');
+      setDescription('');
+      setIsDepositDialogOpen(false);
+    }
   };
   
   // Handle account creation if it doesn't exist
   const handleCreateAccount = async () => {
     if (!user?.id) return;
-    await createAccount.mutateAsync({ sfdId });
+    await createAccount(0);
   };
   
   if (isLoading) {
@@ -88,10 +86,9 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
             <Button
               onClick={handleCreateAccount}
               className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-              disabled={createAccount.isPending}
             >
               <PiggyBank className="mr-2 h-4 w-4" />
-              {createAccount.isPending ? 'Création en cours...' : 'Créer un compte d\'épargne'}
+              Créer un compte d'épargne
             </Button>
           </div>
         </CardContent>
@@ -109,7 +106,7 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
         <Button
           variant="outline"
           size="sm"
-          onClick={() => refetch()}
+          onClick={() => refreshData()}
           className="h-8 w-8 p-0"
         >
           <RefreshCw className="h-4 w-4" />
@@ -125,7 +122,7 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
               {account?.balance?.toLocaleString('fr-FR')} {account?.currency || 'FCFA'}
             </div>
             <div className="mt-1 text-xs text-gray-500">
-              Dernière mise à jour: {format(new Date(account?.updated_at || Date.now()), 'PPP', { locale: fr })}
+              Dernière mise à jour: {format(new Date(account?.last_updated || Date.now()), 'PPP', { locale: fr })}
             </div>
           </div>
           
@@ -188,10 +185,10 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
                   </Button>
                   <Button
                     onClick={handleDeposit}
-                    disabled={!amount || parseFloat(amount) <= 0 || processDeposit.isPending}
+                    disabled={!amount || parseFloat(amount) <= 0}
                     className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
                   >
-                    {processDeposit.isPending ? 'Traitement...' : 'Confirmer le dépôt'}
+                    Confirmer le dépôt
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -233,7 +230,7 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
                               {getTransactionType(tx.type)}
                             </div>
                           </TableCell>
-                          <TableCell>{tx.description || tx.name}</TableCell>
+                          <TableCell>{tx.description}</TableCell>
                           <TableCell className={`text-right font-medium ${
                             tx.amount >= 0 ? 'text-green-600' : 'text-red-600'
                           }`}>

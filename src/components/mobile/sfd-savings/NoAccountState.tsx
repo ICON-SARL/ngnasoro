@@ -1,26 +1,24 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { AlertOctagon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const NoAccountState: React.FC = () => {
   const navigate = useNavigate();
   
   return (
-    <div className="bg-white rounded-xl p-6 text-center shadow-sm">
-      <AlertCircle className="h-12 w-12 mx-auto text-amber-500 mb-3" />
-      <h3 className="text-lg font-medium mb-2">Aucun compte SFD</h3>
-      <p className="text-gray-500 mb-4">
-        Vous n'avez pas encore connecté de compte auprès d'une institution SFD.
-        Connectez un compte pour accéder à vos soldes et prêts.
+    <div className="flex flex-col items-center justify-center p-5 h-40">
+      <AlertOctagon className="h-10 w-10 text-amber-500 mb-2" />
+      <h3 className="text-lg font-semibold text-gray-800 mb-1">Pas de compte SFD</h3>
+      <p className="text-sm text-center text-gray-600 mb-3">
+        Vous n'avez pas encore de compte auprès d'un SFD partenaire
       </p>
       <Button 
+        onClick={() => navigate('/mobile-flow/sfds')}
         className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-        onClick={() => navigate('/sfd-selector')}
       >
-        <Plus className="h-4 w-4 mr-2" />
-        Ajouter une SFD
+        Découvrir les SFDs
       </Button>
     </div>
   );
