@@ -23,12 +23,17 @@ interface LoanPlan {
   created_at: string;
 }
 
+interface SfdItem {
+  id: string;
+  name: string;
+}
+
 export default function LoanPlansDisplay() {
   const { user } = useAuth();
   const [loanPlans, setLoanPlans] = useState<LoanPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSfd, setSelectedSfd] = useState<string | null>(null);
-  const [sfdList, setSfdList] = useState<{id: string, name: string}[]>([]);
+  const [sfdList, setSfdList] = useState<SfdItem[]>([]);
 
   useEffect(() => {
     const fetchUserSfds = async () => {
@@ -43,8 +48,8 @@ export default function LoanPlansDisplay() {
         if (error) throw error;
 
         const sfds = userSfds.map(item => ({
-          id: item.sfds.id,
-          name: item.sfds.name
+          id: item.sfds?.id || '',
+          name: item.sfds?.name || ''
         }));
 
         setSfdList(sfds);

@@ -25,9 +25,9 @@ export function useTransactions(userId?: string, sfdId?: string, filters?: Trans
     
     // From useTransactionOperations
     getBalance: operations.getBalance,
-    makeDeposit: operations.makeDeposit,
-    makeWithdrawal: operations.makeWithdrawal,
-    makeLoanRepayment: operations.makeLoanRepayment
+    makeDeposit: operations.makeDeposit.mutateAsync,
+    makeWithdrawal: operations.makeWithdrawal.mutateAsync,
+    makeLoanRepayment: operations.makeLoanRepayment.mutateAsync
   };
 }
 

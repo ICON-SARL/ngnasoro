@@ -84,8 +84,8 @@ const MobileFlow = () => {
       
       if (createTransaction) {
         await createTransaction.mutateAsync({
-          user_id: user?.id || '', // Changed from userId to user_id
-          sfdId: 'default-sfd', 
+          user_id: user?.id || '',
+          sfd_id: 'default-sfd', 
           name: data.recipient,
           type: 'payment',
           amount: -data.amount,
