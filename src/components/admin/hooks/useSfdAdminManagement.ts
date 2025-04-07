@@ -28,6 +28,8 @@ export function useSfdAdminManagement() {
       setError(null);
       
       try {
+        console.log("Starting SFD admin creation process", data);
+        
         // 1. Create a user using Supabase's public API
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: data.email,
@@ -41,24 +43,35 @@ export function useSfdAdminManagement() {
           }
         });
 
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          console.error("Error signing up user:", signUpError);
+          throw signUpError;
+        }
         
         if (!signUpData.user) {
           throw new Error("No user created");
         }
 
-        // 2. Create entry in admin_users
-        const { error: adminError } = await supabase
-          .from('admin_users')
-          .insert({
-            id: signUpData.user.id,
-            email: data.email,
-            full_name: data.full_name,
-            role: 'sfd_admin',
-            has_2fa: false
-          });
+        console.log("User created successfully:", signUpData.user.id);
 
-        if (adminError) throw adminError;
+        // 2. Create entry in admin_users
+        // Use RPC function for admin users creation to bypass RLS
+        const { error: adminError } = await supabase.rpc(
+          'create_admin_user',
+          { 
+            admin_id: signUpData.user.id,
+            admin_email: data.email,
+            admin_full_name: data.full_name,
+            admin_role: 'sfd_admin'
+          }
+        );
+
+        if (adminError) {
+          console.error("Error creating admin user record:", adminError);
+          throw adminError;
+        }
+
+        console.log("Admin user record created successfully");
 
         // 3. Assign SFD_ADMIN role
         const { error: roleError } = await supabase.rpc(
@@ -69,7 +82,12 @@ export function useSfdAdminManagement() {
           }
         );
 
-        if (roleError) throw roleError;
+        if (roleError) {
+          console.error("Error assigning role:", roleError);
+          throw roleError;
+        }
+
+        console.log("SFD admin role assigned successfully");
         
         // 4. Send notification to admin if requested
         if (data.notify && user) {
@@ -80,6 +98,7 @@ export function useSfdAdminManagement() {
               type: "info",
               recipient_id: signUpData.user.id
             });
+            console.log("Notification sent successfully");
           } catch (notifError) {
             console.warn("Unable to send notification:", notifError);
             // Continue even if notification fails
@@ -115,7 +134,7 @@ export function useSfdAdminManagement() {
     }
   });
 
-  // Now let's modify this to return a Promise<void> function that matches what AddSfdAdminDialog expects
+  // Convert our mutation to a Promise<void> function as expected by the dialog
   const addSfdAdmin = async (data: {
     email: string;
     password: string;
