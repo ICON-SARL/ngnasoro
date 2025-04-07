@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Message, Send } from 'lucide-react';
+import { MessageSquare, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
@@ -24,7 +24,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import { useAdminCommunication, AdminNotificationRequest } from '@/hooks/useAdminCommunication';
-import { useSfdAdminManagement } from './useSfdAdminManagement';
+import { useSfdAdminManagement } from '@/components/admin/hooks/sfd-admin/useSfdAdminManagement';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Le titre doit contenir au moins 5 caractères'),
@@ -83,7 +83,7 @@ export const MerefSfdCommunication: React.FC = () => {
           size="sm"
           className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
         >
-          <Message className="h-4 w-4 mr-2 text-gray-600" />
+          <MessageSquare className="h-4 w-4 mr-2 text-gray-600" />
           Communiquer avec SFDs
         </Button>
       </DialogTrigger>
