@@ -9,13 +9,12 @@ import { SfdManagement } from '@/components/admin/SfdManagement';
 import { SfdAuditLog } from '@/components/admin/SfdAuditLog';
 import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
 import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommunication';
-import { MerefApprovalDashboard } from '@/components/admin/MerefApprovalDashboard';
 import { MerefSubsidyTab } from '@/components/admin/MerefSubsidyTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const CreditApprovalPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'applications';
+  const activeTab = searchParams.get('tab') || 'credit-applications';
 
   const handleTabChange = (tab: string) => {
     setSearchParams({ tab });
@@ -34,22 +33,21 @@ const CreditApprovalPage = () => {
         <div className="mb-6">
           <h2 className="text-2xl font-bold">Approbation de Crédit et Gestion des SFDs</h2>
           <p className="text-muted-foreground">
-            Gérez les demandes de crédit des SFDs, configurez le système de scoring et gérez les SFDs
+            Évaluez les dossiers de crédit, paramétrez le système de scoring et administrez les partenaires SFDs
           </p>
         </div>
         
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList>
-            <TabsTrigger value="applications">Demandes</TabsTrigger>
+            <TabsTrigger value="credit-applications">Dossiers de crédit</TabsTrigger>
             <TabsTrigger value="scoring">Système de Scoring</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="sfd-management">Gestion des SFDs</TabsTrigger>
             <TabsTrigger value="sfd-audit">Historique SFDs</TabsTrigger>
-            <TabsTrigger value="meref-approval">Approbations MEREF</TabsTrigger>
             <TabsTrigger value="subsidy-requests">Demandes de Subvention</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="applications">
+          <TabsContent value="credit-applications">
             <CreditApplicationList />
           </TabsContent>
           
@@ -67,10 +65,6 @@ const CreditApprovalPage = () => {
           
           <TabsContent value="sfd-audit">
             <SfdAuditLog />
-          </TabsContent>
-          
-          <TabsContent value="meref-approval">
-            <MerefApprovalDashboard />
           </TabsContent>
           
           <TabsContent value="subsidy-requests">
