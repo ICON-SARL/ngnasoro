@@ -44,6 +44,15 @@ export const SfdHeader: React.FC = () => {
                 <Button 
                   variant="ghost" 
                   className="text-white hover:text-white hover:bg-primary-foreground"
+                  onClick={() => navigate('/sfd-loans')}
+                >
+                  Gestion des Prêts
+                </Button>
+              </li>
+              <li>
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:text-white hover:bg-primary-foreground"
                   onClick={() => signOut()}
                 >
                   Déconnexion
