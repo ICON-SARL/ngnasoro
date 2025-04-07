@@ -1,17 +1,13 @@
 
-export const SENEGAL_REGIONS = [
-  'Dakar',
-  'Diourbel',
-  'Fatick',
-  'Kaffrine',
-  'Kaolack',
-  'Kédougou',
-  'Kolda',
-  'Louga',
-  'Matam',
-  'Saint-Louis',
-  'Sédhiou',
-  'Tambacounda',
-  'Thiès',
-  'Ziguinchor',
+export const MALI_REGIONS = [
+  'Bamako',
+  'Gao',
+  'Kayes',
+  'Kidal',
+  'Koulikoro',
+  'Mopti',
+  'Ségou',
+  'Sikasso',
+  'Taoudénit',
+  'Tombouctou',
 ].sort();

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Search, Loader2, Building, Filter, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -48,12 +47,12 @@ const GeoAgencySelector: React.FC<GeoAgencySelectorProps> = ({ onSelectAgency })
   const [servicesFilter, setServicesFilter] = useState<string[]>([]);
   const mapRef = useRef<HTMLDivElement>(null);
 
-  // Mock data for agencies with enhanced details
+  // Mock data for agencies with Mali-specific details
   const mockAgencies: Agency[] = [
     { 
       id: '1', 
       name: 'Agence Centrale Bamako', 
-      address: '123 Rue du Commerce, Bamako', 
+      address: '123 Avenue de l\'Indépendance, Bamako', 
       distance: 1.2, 
       lat: 12.65, 
       lng: -8.00,
@@ -70,7 +69,7 @@ const GeoAgencySelector: React.FC<GeoAgencySelectorProps> = ({ onSelectAgency })
     { 
       id: '2', 
       name: 'Microfinance Sikasso', 
-      address: '45 Avenue Principale, Sikasso', 
+      address: '45 Rue du Commerce, Sikasso', 
       distance: 3.5, 
       lat: 11.31, 
       lng: -5.67,
@@ -87,7 +86,7 @@ const GeoAgencySelector: React.FC<GeoAgencySelectorProps> = ({ onSelectAgency })
     { 
       id: '3', 
       name: 'SFD Mopti', 
-      address: '78 Boulevard Rivière, Mopti', 
+      address: '78 Boulevard du Fleuve, Mopti', 
       distance: 5.7, 
       lat: 14.48, 
       lng: -4.18,
@@ -104,7 +103,7 @@ const GeoAgencySelector: React.FC<GeoAgencySelectorProps> = ({ onSelectAgency })
     { 
       id: '4', 
       name: 'Centre Financier Ségou', 
-      address: '90 Rue du Marché, Ségou', 
+      address: '90 Avenue Principale, Ségou', 
       distance: 8.1, 
       lat: 13.45, 
       lng: -6.26,
@@ -138,7 +137,7 @@ const GeoAgencySelector: React.FC<GeoAgencySelectorProps> = ({ onSelectAgency })
     { 
       id: '6', 
       name: 'Microfinance Kayes', 
-      address: '34 Route Principale, Kayes', 
+      address: '34 Route Nationale, Kayes', 
       distance: 42.7, 
       lat: 14.44, 
       lng: -11.44,

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,11 +24,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSfdClients } from '@/hooks/useSfdClients';
 import { Loader2 } from 'lucide-react';
 
+// Validation améliorée pour numéro de téléphone malien
+const phoneRegex = /^(\+223|00223)?[67]\d{7}$/;
+
 // Form validation schema
 const formSchema = z.object({
   fullName: z.string().min(3, { message: 'Le nom doit contenir au moins 3 caractères' }),
   email: z.string().email({ message: 'Email invalide' }).optional().or(z.literal('')),
-  phone: z.string().min(8, { message: 'Numéro de téléphone invalide' }).optional().or(z.literal('')),
+  phone: z.string()
+    .regex(phoneRegex, { message: "Numéro de téléphone malien invalide (format: +223 7XXXXXXX ou +223 6XXXXXXX)" })
+    .optional()
+    .or(z.literal('')),
   address: z.string().optional().or(z.literal('')),
   idType: z.string().optional().or(z.literal('')),
   idNumber: z.string().optional().or(z.literal('')),
@@ -117,7 +122,7 @@ export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
               <FormItem>
                 <FormLabel>Téléphone*</FormLabel>
                 <FormControl>
-                  <Input placeholder="+223 XX XX XX XX" {...field} />
+                  <Input placeholder="+223 6XXXXXXX ou +223 7XXXXXXX" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

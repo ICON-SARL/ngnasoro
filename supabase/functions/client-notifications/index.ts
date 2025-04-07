@@ -19,17 +19,16 @@ interface NotificationRequest {
   amount?: number;
   payment_date?: string;
   message?: string;
-  phone_number?: string; // For SMS notifications
+  phone_number?: string; // Pour les notifications SMS
 }
 
 const sendSmsNotification = async (phoneNumber: string, message: string): Promise<boolean> => {
-  console.log(`SMS would be sent to ${phoneNumber}: ${message}`);
+  console.log(`SMS serait envoyé à ${phoneNumber}: ${message}`);
   
-  // This is a placeholder for an actual SMS service integration
-  // You would integrate with a service like Twilio, Vonage, or a local SMS gateway
+  // Ici nous pourrions intégrer un service SMS malien comme Orange Mali ou Malitel
+  // Pour l'instant, c'est juste un placeholder pour une intégration future
   
-  // For demonstration purposes, we're just logging the message
-  // In a real implementation, you would make an API call to your SMS provider
+  // Pour une implémentation réelle, nous ferions un appel API à un fournisseur SMS local
   
   return true;
 };
@@ -40,12 +39,12 @@ const sendNotification = async (req: Request) => {
     
     if (!type || !recipient_id) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Informations requises manquantes' }),
         { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
     
-    // Create notification in database
+    // Créer la notification dans la base de données
     const { data: notificationData, error: notificationError } = await supabase
       .from('admin_notifications')
       .insert({
@@ -64,20 +63,20 @@ const sendNotification = async (req: Request) => {
       .single();
       
     if (notificationError) {
-      console.error('Error creating notification:', notificationError);
+      console.error('Erreur lors de la création de la notification:', notificationError);
       throw notificationError;
     }
     
-    // If phone number is provided, send SMS
+    // Si un numéro de téléphone est fourni, envoyer un SMS
     if (phone_number) {
       let smsMessage = message || '';
       
-      // Generate default message if none provided
+      // Générer un message par défaut si aucun n'est fourni
       if (!smsMessage) {
         if (type.includes('approved')) {
-          smsMessage = `Votre demande de prêt de ${amount?.toLocaleString('fr-FR')} FCFA a été approuvée.`;
+          smsMessage = `Votre demande de prêt de ${amount?.toLocaleString('fr-ML')} FCFA a été approuvée.`;
         } else if (type.includes('payment')) {
-          smsMessage = `Rappel: Votre paiement de ${amount?.toLocaleString('fr-FR')} FCFA est dû pour le ${payment_date}.`;
+          smsMessage = `Rappel: Votre paiement de ${amount?.toLocaleString('fr-ML')} FCFA est dû pour le ${payment_date}.`;
         }
       }
       
@@ -92,7 +91,7 @@ const sendNotification = async (req: Request) => {
       { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   } catch (error) {
-    console.error('Error in client-notifications:', error);
+    console.error('Erreur dans client-notifications:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
@@ -101,19 +100,19 @@ const sendNotification = async (req: Request) => {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Gérer les requêtes CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders, status: 204 });
   }
   
-  // Route the request based on method
+  // Router la requête selon la méthode
   if (req.method === 'POST') {
     return sendNotification(req);
   }
   
-  // Default response for unsupported methods
+  // Réponse par défaut pour les méthodes non supportées
   return new Response(
-    JSON.stringify({ error: 'Method not allowed' }),
+    JSON.stringify({ error: 'Méthode non autorisée' }),
     { status: 405, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
   );
 });
