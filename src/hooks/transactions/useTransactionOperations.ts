@@ -33,14 +33,8 @@ export function useTransactionOperations(userId?: string, sfdId?: string) {
   };
 
   const makeDeposit = useMutation({
-    mutationFn: async (params: {
-      amount: number;
-      description?: string;
-      paymentMethod?: string;
-    }): Promise<Transaction | null> => {
+    mutationFn: async (amount: number, description?: string, paymentMethod?: string): Promise<Transaction | null> => {
       if (!userId || !sfdId) return null;
-      
-      const { amount, description, paymentMethod } = params;
       
       const transactionData = {
         user_id: userId,
@@ -74,14 +68,8 @@ export function useTransactionOperations(userId?: string, sfdId?: string) {
   });
 
   const makeWithdrawal = useMutation({
-    mutationFn: async (params: {
-      amount: number;
-      description?: string;
-      paymentMethod?: string;
-    }): Promise<Transaction | null> => {
+    mutationFn: async (amount: number, description?: string, paymentMethod?: string): Promise<Transaction | null> => {
       if (!userId || !sfdId) return null;
-      
-      const { amount, description, paymentMethod } = params;
       
       const transactionData = {
         user_id: userId,
@@ -115,15 +103,8 @@ export function useTransactionOperations(userId?: string, sfdId?: string) {
   });
 
   const makeLoanRepayment = useMutation({
-    mutationFn: async (params: {
-      loanId: string;
-      amount: number;
-      description?: string;
-      paymentMethod?: string;
-    }): Promise<Transaction | null> => {
+    mutationFn: async (loanId: string, amount: number, description?: string, paymentMethod?: string): Promise<Transaction | null> => {
       if (!userId || !sfdId) return null;
-      
-      const { loanId, amount, description, paymentMethod } = params;
       
       const transactionData = {
         user_id: userId,
