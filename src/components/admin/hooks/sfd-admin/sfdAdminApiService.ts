@@ -57,7 +57,31 @@ export async function createSfdAdmin(userData: SfdAdminData) {
   try {
     console.log("Creating SFD admin:", { ...userData, password: "***" });
     
-    // 1. Créer un utilisateur avec l'API Supabase Auth
+    // 1. Vérifier que la SFD existe
+    const { data: sfdCheck, error: sfdError } = await supabase
+      .from('sfds')
+      .select('id, name')
+      .eq('id', userData.sfd_id)
+      .single();
+      
+    if (sfdError || !sfdCheck) {
+      throw new Error(`La SFD avec l'ID ${userData.sfd_id} n'existe pas ou n'est pas accessible`);
+    }
+    
+    console.log("SFD vérifiée:", sfdCheck.name);
+    
+    // 2. Vérifier si l'e-mail est déjà utilisé
+    const { data: existingUser, error: checkError } = await supabase
+      .from('admin_users')
+      .select('id')
+      .eq('email', userData.email)
+      .maybeSingle();
+      
+    if (existingUser) {
+      throw new Error("Cet e-mail est déjà associé à un compte administrateur. Veuillez utiliser une autre adresse e-mail.");
+    }
+    
+    // 3. Créer un utilisateur avec l'API Supabase Auth
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: userData.email,
       password: userData.password,
@@ -65,7 +89,7 @@ export async function createSfdAdmin(userData: SfdAdminData) {
         data: {
           full_name: userData.full_name,
           role: 'sfd_admin',
-          sfd_id: userData.sfd_id // Important: stocker l'ID SFD dans les métadonnées utilisateur
+          sfd_id: userData.sfd_id
         }
       }
     });
@@ -81,8 +105,7 @@ export async function createSfdAdmin(userData: SfdAdminData) {
 
     console.log("User created successfully:", signUpData.user.id);
 
-    // 2. Utiliser la fonction Edge pour créer l'entrée dans admin_users et associer à la SFD
-    // Cette approche contourne la RLS et gère toutes les opérations côté serveur
+    // 4. Utiliser la fonction Edge pour créer l'entrée dans admin_users et associer à la SFD
     const { data: edgeFunctionData, error: adminError } = await supabase.functions.invoke(
       'create_sfd_admin',
       {

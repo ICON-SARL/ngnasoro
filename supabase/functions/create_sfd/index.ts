@@ -1,104 +1,102 @@
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.3';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-interface SfdData {
-  name: string;
-  code: string;
-  region: string | null;
-  status: string;
-  logo_url: string | null;
-  contact_email: string | null;
-  phone: string | null;
-  legal_document_url: string | null;
-}
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
-interface RequestBody {
-  sfd_data: SfdData;
-  admin_id: string;
-}
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders, status: 204 });
+  }
 
-serve(async (req: Request) => {
   try {
-    // Création du client supabase avec le rôle service_role
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    );
+    // Create a Supabase client with the service role key
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Récupérer et vérifier les données envoyées
-    const { sfd_data, admin_id }: RequestBody = await req.json();
-
-    // Vérifier si l'utilisateur est admin
-    const { data: userRoles, error: roleError } = await supabaseClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', admin_id)
-      .eq('role', 'admin');
-
-    if (roleError) {
+    // Parse request body
+    const { sfd_data, admin_id } = await req.json();
+    
+    if (!sfd_data || !sfd_data.name || !sfd_data.code) {
       return new Response(
-        JSON.stringify({ error: 'Erreur lors de la vérification des droits', details: roleError }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Missing required SFD data (name, code)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!userRoles || userRoles.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'Droits insuffisants pour créer une SFD' }),
-        { status: 403, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Insérer la nouvelle SFD
-    const { data: newSfd, error: insertError } = await supabaseClient
+    console.log("Creating new SFD:", sfd_data);
+    
+    // 1. Insert the SFD data
+    const { data: sfdData, error: sfdError } = await supabase
       .from('sfds')
-      .insert([sfd_data])
+      .insert(sfd_data)
       .select()
       .single();
-
-    if (insertError) {
+    
+    if (sfdError) {
+      console.error("Error creating SFD:", sfdError);
       return new Response(
-        JSON.stringify({ error: 'Erreur lors de la création de la SFD', details: insertError }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: `Error creating SFD: ${sfdError.message}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Créer une entrée dans les stats pour la nouvelle SFD
-    await supabaseClient
+    
+    console.log("SFD created successfully:", sfdData);
+    
+    // 2. Create initial SFD stats
+    const { error: statsError } = await supabase
       .from('sfd_stats')
       .insert({
-        sfd_id: newSfd.id,
+        sfd_id: sfdData.id,
         total_clients: 0,
         total_loans: 0,
-        repayment_rate: 0,
+        repayment_rate: 0
       });
-
-    // Enregistrer un audit log
-    await supabaseClient.from('audit_logs').insert({
-      user_id: admin_id,
-      action: 'create_sfd',
-      category: 'SFD_OPERATIONS',
-      severity: 'INFO',
-      status: 'success',
-      details: { sfd_id: newSfd.id, sfd_name: newSfd.name },
-    });
-
+    
+    if (statsError) {
+      console.warn("Error creating initial SFD stats:", statsError);
+      // Not critical, continue
+    } else {
+      console.log("Initial SFD stats created");
+    }
+    
+    // 3. If admin_id is provided, associate the admin with the SFD
+    if (admin_id) {
+      const { error: userSfdError } = await supabase
+        .from('user_sfds')
+        .insert({
+          user_id: admin_id,
+          sfd_id: sfdData.id,
+          is_default: true
+        });
+        
+      if (userSfdError) {
+        console.warn("Error associating admin with SFD:", userSfdError);
+        // Not critical, continue
+      } else {
+        console.log(`Admin ${admin_id} associated with SFD ${sfdData.id}`);
+      }
+    }
+    
+    // Success response
     return new Response(
-      JSON.stringify(newSfd),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify(sfdData),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-
+    
   } catch (error) {
+    console.error("Edge function error:", error);
+    
     return new Response(
-      JSON.stringify({ error: 'Erreur interne du serveur', details: error.message }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        error: `Error creating SFD: ${error.message}` 
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

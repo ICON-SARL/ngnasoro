@@ -9,3 +9,10 @@ verify_jwt = false
 
 [functions.create_sfd_admin_link]
 verify_jwt = false
+
+[functions.create_sfd]
+verify_jwt = false
+
+[functions.client-notifications]
+verify_jwt = false
+

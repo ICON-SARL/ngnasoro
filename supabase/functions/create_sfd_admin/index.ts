@@ -14,12 +14,17 @@ serve(async (req) => {
   }
 
   try {
-    // Create a Supabase client with the service role key (has admin privileges)
+    // Create a Supabase client with the service role key
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { admin_id, email, full_name, role, sfd_id, is_primary } = await req.json();
+    // Parse request body
+    const requestData = await req.json();
+    
+    console.log("Edge function received data:", requestData);
+    
+    const { admin_id, email, full_name, role, sfd_id, is_primary } = requestData;
     
     if (!admin_id || !email || !full_name || !sfd_id) {
       return new Response(
@@ -30,7 +35,24 @@ serve(async (req) => {
 
     console.log(`Creating admin user: ${email} for SFD ${sfd_id}`);
 
-    // 1. Insert into admin_users table
+    // 1. Verify the SFD exists
+    const { data: sfdData, error: sfdError } = await supabase
+      .from('sfds')
+      .select('id, name')
+      .eq('id', sfd_id)
+      .single();
+      
+    if (sfdError || !sfdData) {
+      console.error("SFD not found:", sfdError);
+      return new Response(
+        JSON.stringify({ error: `SFD with ID ${sfd_id} not found` }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    console.log(`Verified SFD exists: ${sfdData.name}`);
+
+    // 2. Insert into admin_users table
     const { data: adminData, error: adminError } = await supabase
       .from('admin_users')
       .insert({
@@ -45,12 +67,15 @@ serve(async (req) => {
     
     if (adminError) {
       console.error("Error inserting admin user:", adminError);
-      throw adminError;
+      return new Response(
+        JSON.stringify({ error: `Error creating admin user: ${adminError.message}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
     
     console.log("Admin user created:", adminData);
     
-    // 2. Assign SFD_ADMIN role using RPC
+    // 3. Assign SFD_ADMIN role
     const { error: roleError } = await supabase.rpc(
       'assign_role',
       {
@@ -61,12 +86,31 @@ serve(async (req) => {
 
     if (roleError) {
       console.error("Error assigning role:", roleError);
-      throw roleError;
+      return new Response(
+        JSON.stringify({ error: `Error assigning role: ${roleError.message}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    console.log("SFD admin role assigned successfully");
+
+    // 4. Create an entry in user_sfds table to associate the admin with the SFD
+    const { error: userSfdError } = await supabase
+      .from('user_sfds')
+      .insert({
+        user_id: admin_id,
+        sfd_id: sfd_id,
+        is_default: true
+      });
+      
+    if (userSfdError) {
+      console.warn("Error creating user_sfds association:", userSfdError);
+      // Continue despite error - not critical
+    } else {
+      console.log("User-SFD association created successfully");
     }
 
-    // 3. Store SFD association in a join table if needed
-    // This would be implemented if you have a specific sfd_admins table
-    
+    // Success response
     return new Response(
       JSON.stringify({ 
         success: true,
