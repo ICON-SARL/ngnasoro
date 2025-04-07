@@ -24,9 +24,11 @@ export function useAccountSynchronization() {
     try {
       // If clientId is provided, sync only that client account
       // Otherwise sync all client accounts in the SFD
-      const { data, error } = await supabase.rpc('sync_client_accounts', { 
-        p_sfd_id: activeSfdId,
-        p_client_id: clientId || null
+      const { data, error } = await supabase.functions.invoke('sync-client-accounts', {
+        body: { 
+          sfdId: activeSfdId,
+          clientId: clientId || null
+        }
       });
       
       if (error) throw error;
@@ -61,8 +63,10 @@ export function useAccountSynchronization() {
     setIsLoading(true);
     
     try {
-      const { data, error } = await supabase.rpc('propagate_client_transaction', { 
-        p_transaction_id: transactionId
+      const { data, error } = await supabase.functions.invoke('propagate-transaction', {
+        body: { 
+          transactionId: transactionId
+        }
       });
       
       if (error) throw error;

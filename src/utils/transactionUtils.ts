@@ -15,6 +15,21 @@ export const formatCurrencyAmount = (amount: number, prefix: string = ""): strin
 };
 
 /**
+ * Formats a transaction amount with the appropriate prefix based on transaction type
+ * @param amount Transaction amount
+ * @param type Transaction type
+ * @returns Formatted amount string with + or - prefix
+ */
+export const formatTransactionAmount = (amount: number, type: string): string => {
+  if (amount === undefined || amount === null) return "0 FCFA";
+  
+  const isPositive = type === 'deposit' || type === 'loan_disbursement';
+  const prefix = isPositive ? "+ " : "- ";
+  
+  return `${prefix}${Math.abs(amount).toLocaleString('fr-FR')} FCFA`;
+};
+
+/**
  * Gets a color for a transaction type
  * @param type Transaction type
  * @returns CSS color class
