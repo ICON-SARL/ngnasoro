@@ -41,7 +41,7 @@ export const AdminEditDialog: React.FC<AdminEditDialogProps> = ({
     setEditedPermissions({});
   }, [admin]);
   
-  if (!admin) return null;
+  if (!admin || !editedAdmin) return null;
   
   const handleChange = (key: keyof AdminUser, value: any) => {
     if (editedAdmin) {
@@ -180,7 +180,7 @@ export const AdminEditDialog: React.FC<AdminEditDialogProps> = ({
                     />
                   </div>
                   
-                  {editedAdmin.role === AdminRole.SUPER_ADMIN && (
+                  {editedAdmin?.role === AdminRole.SUPER_ADMIN && (
                     <div className="flex items-center justify-between">
                       <Label htmlFor="can_manage_admins" className="cursor-pointer">
                         Gestion des administrateurs
