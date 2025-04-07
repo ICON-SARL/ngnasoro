@@ -23,16 +23,9 @@ export const PERMISSIONS = {
 
 // Define default permissions for each role
 export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
-  [UserRole.SUPER_ADMIN]: Object.values(PERMISSIONS),
-  [UserRole.ADMIN]: [
-    PERMISSIONS.MANAGE_USERS,
-    PERMISSIONS.MANAGE_SFDS,
-    PERMISSIONS.MANAGE_SUBSIDIES,
-    PERMISSIONS.VIEW_REPORTS,
-    PERMISSIONS.EXPORT_DATA,
-    PERMISSIONS.APPROVE_CREDIT,
-    PERMISSIONS.ACCESS_ADMIN_DASHBOARD,
-  ],
+  // Since SUPER_ADMIN and ADMIN have the same enum value ('admin'),
+  // we only need to define it once
+  [UserRole.ADMIN]: Object.values(PERMISSIONS),
   [UserRole.SFD_ADMIN]: [
     PERMISSIONS.MANAGE_CLIENTS,
     PERMISSIONS.MANAGE_LOANS,
