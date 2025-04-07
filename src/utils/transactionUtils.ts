@@ -1,138 +1,74 @@
 
 /**
- * Formats a number as currency amount
- * @param amount Number to format
- * @param prefix Currency prefix (e.g. "$")
- * @returns Formatted amount string
+ * Formats a transaction amount for display, applying the appropriate sign and currency symbol
+ * based on the transaction type.
  */
-export const formatCurrencyAmount = (amount: number, prefix: string = ""): string => {
-  if (amount === undefined || amount === null) return `${prefix}0`;
+export function formatTransactionAmount(amount: number, type: string): string {
+  const formattedAmount = Math.abs(amount).toLocaleString('fr-FR');
   
-  return `${prefix}${amount.toLocaleString('fr-FR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  })}`;
-};
-
-/**
- * Formats a transaction amount with the appropriate prefix based on transaction type
- * @param amount Transaction amount
- * @param type Transaction type
- * @returns Formatted amount string with + or - prefix
- */
-export const formatTransactionAmount = (amount: number, type: string): string => {
-  if (amount === undefined || amount === null) return "0 FCFA";
-  
-  const isPositive = type === 'deposit' || type === 'loan_disbursement';
-  const prefix = isPositive ? "+ " : "- ";
-  
-  return `${prefix}${Math.abs(amount).toLocaleString('fr-FR')} FCFA`;
-};
-
-/**
- * Gets a color for a transaction type
- * @param type Transaction type
- * @returns CSS color class
- */
-export const getTransactionTypeColor = (type: string): string => {
-  switch (type.toLowerCase()) {
-    case 'deposit':
-    case 'loan_disbursement':
-      return 'text-green-600';
-    case 'withdrawal':
-    case 'loan_repayment':
-      return 'text-red-600';
-    case 'transfer':
-      return 'text-blue-600';
-    default:
-      return 'text-gray-600';
+  if (type === 'deposit' || type === 'loan_disbursement' || 
+      (type === 'transfer' && amount > 0)) {
+    return `+${formattedAmount} FCFA`;
+  } else if (type === 'withdrawal' || type === 'loan_repayment' || 
+             (type === 'transfer' && amount < 0)) {
+    return `-${formattedAmount} FCFA`;
+  } else {
+    // Default for other transaction types
+    return amount >= 0 ? 
+      `+${formattedAmount} FCFA` : 
+      `-${formattedAmount} FCFA`;
   }
-};
+}
 
 /**
- * Gets a label for a transaction type
- * @param type Transaction type
- * @returns Human-readable label
+ * Formats a currency amount for display with the appropriate currency symbol
  */
-export const getTransactionTypeLabel = (type: string): string => {
-  switch (type.toLowerCase()) {
-    case 'deposit':
-      return 'Dépôt';
-    case 'withdrawal':
-      return 'Retrait';
-    case 'loan_disbursement':
-      return 'Décaissement prêt';
-    case 'loan_repayment':
-      return 'Remboursement prêt';
-    case 'transfer':
-      return 'Transfert';
-    default:
-      return type.charAt(0).toUpperCase() + type.slice(1);
-  }
-};
+export function formatCurrencyAmount(amount: number, currency: string = 'FCFA'): string {
+  return `${Math.abs(amount).toLocaleString('fr-FR')} ${currency}`;
+}
 
 /**
- * Converts database transaction records to the Transaction type
- * @param records Database records to convert
- * @param sfdId Optional SFD ID to associate with transactions
- * @returns Array of Transaction objects
+ * Converts database records to Transaction objects
  */
-export const convertDatabaseRecordsToTransactions = (records: any[], sfdId?: string): any[] => {
+export function convertDatabaseRecordsToTransactions(records: any[], sfdId: string): any[] {
   return records.map(record => ({
-    id: record.id,
-    user_id: record.user_id,
-    sfd_id: record.sfd_id || sfdId,
-    client_id: record.client_id,
-    type: record.type,
-    amount: record.amount,
-    currency: record.currency || 'FCFA',
-    status: record.status || 'success',
-    description: record.description || `Transaction for ${record.name || 'client'}`,
-    metadata: record.metadata,
-    payment_method: record.payment_method,
-    reference_id: record.reference_id,
-    created_at: record.created_at || record.date || new Date().toISOString(),
-    updated_at: record.updated_at,
-    date: record.date,
-    name: record.name,
-    avatar_url: record.avatar_url
+    ...record,
+    sfd_id: sfdId
   }));
-};
+}
 
 /**
- * Generates mock transactions for testing/demo purposes
- * @param sfdId SFD ID to associate with transactions
- * @returns Array of mock Transaction objects
+ * Generates mock transactions for development and testing
  */
-export const generateMockTransactions = (sfdId: string): any[] => {
-  const mockTransactions = [];
-  const types = ['deposit', 'withdrawal', 'transfer', 'loan_disbursement', 'loan_repayment'];
-  const names = ['Amadou Diallo', 'Fatou Sow', 'Ibrahim Keita', 'Aïcha Camara', 'Moussa Traoré'];
+export function generateMockTransactions(sfdId: string, count: number = 10): any[] {
+  const transactionTypes = ['deposit', 'withdrawal', 'transfer', 'payment', 'loan_repayment'];
+  const names = [
+    'Dépôt de fonds', 
+    'Retrait d\'espèces', 
+    'Transfert interne', 
+    'Paiement mensuel', 
+    'Remboursement de prêt'
+  ];
+  const statuses = ['success', 'pending', 'failed'];
   
-  // Generate 10 random transactions
-  for (let i = 0; i < 10; i++) {
-    const type = types[Math.floor(Math.random() * types.length)];
-    const name = names[Math.floor(Math.random() * names.length)];
-    const amount = Math.floor(Math.random() * 500000) + 10000; // Random amount between 10,000 and 510,000
-    const daysAgo = Math.floor(Math.random() * 30); // Random date within the last 30 days
-    const date = new Date();
-    date.setDate(date.getDate() - daysAgo);
+  return Array(count).fill(0).map((_, i) => {
+    const typeIndex = Math.floor(Math.random() * transactionTypes.length);
+    const type = transactionTypes[typeIndex];
+    const isDeposit = type === 'deposit' || (type === 'transfer' && Math.random() > 0.5);
     
-    mockTransactions.push({
-      id: `TX-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-      user_id: `USER-${i}`,
+    return {
+      id: `mock-${i}-${Date.now()}`,
+      user_id: `user-${i}`,
       sfd_id: sfdId,
       type,
-      amount,
-      currency: 'FCFA',
-      status: Math.random() > 0.9 ? 'pending' : 'success',
-      description: `${type === 'deposit' ? 'Dépôt' : type === 'withdrawal' ? 'Retrait' : 'Transaction'} par ${name}`,
-      created_at: date.toISOString(),
-      date: date.toISOString(),
-      name,
-      avatar_url: null
-    });
-  }
-  
-  return mockTransactions;
-};
+      amount: isDeposit ? 
+        Math.floor(Math.random() * 100000) + 5000 : 
+        -1 * (Math.floor(Math.random() * 50000) + 1000),
+      name: names[typeIndex],
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      date: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString(),
+      created_at: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString(),
+      description: `Transaction ${i + 1} pour test`
+    };
+  });
+}
