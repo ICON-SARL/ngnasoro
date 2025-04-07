@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { FormLabel } from '@/components/ui/form';
-import { UploadCloud } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ImageIcon, FileIcon, UploadIcon } from 'lucide-react';
 
 interface SfdFileUploadFieldsProps {
   logoFile: File | null;
@@ -17,53 +18,103 @@ export function SfdFileUploadFields({
   handleDocumentChange
 }: SfdFileUploadFieldsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-2">
-        <FormLabel>Logo (optionnel)</FormLabel>
-        <div className="flex items-center justify-center w-full">
-          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <UploadCloud className="w-8 h-8 mb-2 text-gray-500" />
-              <p className="mb-2 text-sm text-gray-500">
-                <span className="font-semibold">Cliquez pour uploader</span>
-              </p>
-              <p className="text-xs text-gray-500">SVG, PNG, JPG (MAX. 2MB)</p>
+        <FormLabel htmlFor="logo">Logo (optionnel)</FormLabel>
+        <div className="border border-dashed rounded-lg bg-gray-50 overflow-hidden">
+          {logoFile ? (
+            <div className="p-4">
+              <div className="flex items-center space-x-2 text-sm">
+                <ImageIcon className="h-5 w-5 text-blue-500" />
+                <span className="flex-1 truncate">{logoFile.name}</span>
+                <span className="text-gray-500">
+                  {(logoFile.size / 1024 / 1024).toFixed(2)} MB
+                </span>
+              </div>
+              <div className="mt-3 flex justify-center">
+                <label htmlFor="logo" className="cursor-pointer text-blue-600 text-sm font-medium hover:underline">
+                  Changer le fichier
+                </label>
+                <input
+                  id="logo"
+                  name="logo"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogoChange}
+                />
+              </div>
             </div>
-            <input 
-              type="file" 
-              className="hidden" 
-              accept="image/*"
-              onChange={handleLogoChange}
-            />
-          </label>
+          ) : (
+            <label
+              htmlFor="logo"
+              className="flex flex-col items-center justify-center p-6 cursor-pointer group"
+            >
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-blue-50 mb-2">
+                <UploadIcon className="h-5 w-5 text-gray-500 group-hover:text-blue-500" />
+              </div>
+              <span className="font-medium text-sm">Cliquez pour uploader</span>
+              <span className="text-gray-500 text-xs mt-1">SVG, PNG, JPG (MAX. 2MB)</span>
+              <input
+                id="logo"
+                name="logo"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleLogoChange}
+              />
+            </label>
+          )}
         </div>
-        {logoFile && (
-          <p className="text-sm text-blue-600">{logoFile.name}</p>
-        )}
       </div>
-      
+
       <div className="space-y-2">
-        <FormLabel>Document légal (optionnel)</FormLabel>
-        <div className="flex items-center justify-center w-full">
-          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <UploadCloud className="w-8 h-8 mb-2 text-gray-500" />
-              <p className="mb-2 text-sm text-gray-500">
-                <span className="font-semibold">Cliquez pour uploader</span>
-              </p>
-              <p className="text-xs text-gray-500">PDF (MAX. 10MB)</p>
+        <FormLabel htmlFor="document">Document légal (optionnel)</FormLabel>
+        <div className="border border-dashed rounded-lg bg-gray-50 overflow-hidden">
+          {documentFile ? (
+            <div className="p-4">
+              <div className="flex items-center space-x-2 text-sm">
+                <FileIcon className="h-5 w-5 text-red-500" />
+                <span className="flex-1 truncate">{documentFile.name}</span>
+                <span className="text-gray-500">
+                  {(documentFile.size / 1024 / 1024).toFixed(2)} MB
+                </span>
+              </div>
+              <div className="mt-3 flex justify-center">
+                <label htmlFor="document" className="cursor-pointer text-blue-600 text-sm font-medium hover:underline">
+                  Changer le fichier
+                </label>
+                <input
+                  id="document"
+                  name="document"
+                  type="file"
+                  accept=".pdf"
+                  className="hidden"
+                  onChange={handleDocumentChange}
+                />
+              </div>
             </div>
-            <input 
-              type="file" 
-              className="hidden" 
-              accept=".pdf"
-              onChange={handleDocumentChange}
-            />
-          </label>
+          ) : (
+            <label
+              htmlFor="document"
+              className="flex flex-col items-center justify-center p-6 cursor-pointer group"
+            >
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-red-50 mb-2">
+                <UploadIcon className="h-5 w-5 text-gray-500 group-hover:text-red-500" />
+              </div>
+              <span className="font-medium text-sm">Cliquez pour uploader</span>
+              <span className="text-gray-500 text-xs mt-1">PDF (MAX. 10MB)</span>
+              <input
+                id="document"
+                name="document"
+                type="file"
+                accept=".pdf"
+                className="hidden"
+                onChange={handleDocumentChange}
+              />
+            </label>
+          )}
         </div>
-        {documentFile && (
-          <p className="text-sm text-blue-600">{documentFile.name}</p>
-        )}
       </div>
     </div>
   );

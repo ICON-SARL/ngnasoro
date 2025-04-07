@@ -4,6 +4,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescripti
 import { Input } from '@/components/ui/input';
 import { UseFormReturn } from 'react-hook-form';
 import { SfdFormValues } from '../schemas/sfdFormSchema';
+import { CircleDollarSign } from 'lucide-react';
 
 interface SfdFinanceFieldsProps {
   form: UseFormReturn<SfdFormValues>;
@@ -18,15 +19,19 @@ export function SfdFinanceFields({ form }: SfdFinanceFieldsProps) {
         <FormItem>
           <FormLabel>Solde de Subvention (FCFA)</FormLabel>
           <FormControl>
-            <Input 
-              type="number" 
-              placeholder="0" 
-              {...field} 
-              onChange={(e) => field.onChange(Number(e.target.value))}
-              disabled={form.formState.isSubmitting}
-            />
+            <div className="relative">
+              <CircleDollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input 
+                type="number" 
+                className="pl-9"
+                placeholder="0" 
+                {...field} 
+                onChange={(e) => field.onChange(Number(e.target.value))}
+                disabled={form.formState.isSubmitting}
+              />
+            </div>
           </FormControl>
-          <FormDescription>
+          <FormDescription className="text-sm text-blue-600">
             Ce montant sera utilisé pour créer une subvention initiale pour cette SFD.
           </FormDescription>
           <FormMessage />
