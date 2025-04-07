@@ -88,28 +88,39 @@ export const useAuthState = () => {
   useEffect(() => {
     console.log("Setting up auth state listener and checking session");
     
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
-      console.log("Auth state changed:", event, newSession?.user?.email);
-      
-      if (newSession?.user) {
-        const mappedUser = createUserFromSupabaseUser(newSession.user);
-        setUser(mappedUser);
-      } else {
-        setUser(null);
-      }
-      setSession(newSession);
-      setLoading(false);
-      
-      if (newSession?.user) {
-        console.log("User authenticated:", {
-          email: newSession.user.email,
-          role: newSession.user.app_metadata?.role
-        });
-      } else if (event === 'SIGNED_OUT') {
-        console.log("User signed out");
-      }
-    });
+    let authListenerSubscription: { subscription: { unsubscribe: () => void } } | null = null;
     
+    // Set up the auth state change listener
+    const setupAuthListener = () => {
+      const { data } = supabase.auth.onAuthStateChange((event, newSession) => {
+        console.log("Auth state changed:", event, newSession?.user?.email);
+        
+        if (newSession?.user) {
+          const mappedUser = createUserFromSupabaseUser(newSession.user);
+          setUser(mappedUser);
+        } else {
+          setUser(null);
+        }
+        setSession(newSession);
+        setLoading(false);
+        
+        if (newSession?.user) {
+          console.log("User authenticated:", {
+            email: newSession.user.email,
+            role: newSession.user.app_metadata?.role
+          });
+        } else if (event === 'SIGNED_OUT') {
+          console.log("User signed out");
+        }
+      });
+      
+      return data;
+    };
+    
+    // Initialize the auth listener
+    authListenerSubscription = setupAuthListener();
+    
+    // Check for existing session - but use setTimeout to avoid race conditions
     setTimeout(() => {
       supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
         console.log("Initial session check:", currentSession?.user?.email);
@@ -122,15 +133,18 @@ export const useAuthState = () => {
           }
         }
         
+        // Set loading to false regardless of outcome
         setLoading(false);
       }).catch(error => {
         console.error("Error fetching initial session:", error);
         setLoading(false);
       });
-    }, 0);
+    }, 100); // Small delay to ensure auth listener is set up first
     
     return () => {
-      authListener.subscription.unsubscribe();
+      if (authListenerSubscription) {
+        authListenerSubscription.subscription.unsubscribe();
+      }
     };
   }, []);
 

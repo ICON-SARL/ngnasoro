@@ -59,12 +59,12 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       console.log("Connexion réussie:", { email, adminMode, isSfdAdmin });
       
       // Get user information - we need to handle the case where user might be null initially
-      const userId = user?.id || 'pending';
+      const userId = result.data?.session?.user?.id || 'pending';
       
       // Log successful authentication attempt
       try {
-        if (user?.id) {
-          await logSuccessfulAuthentication(user.id, email, adminMode, isSfdAdmin);
+        if (userId && userId !== 'pending') {
+          await logSuccessfulAuthentication(userId, email, adminMode, isSfdAdmin);
         }
       } catch (logError) {
         console.warn("Failed to log authentication:", logError);
@@ -94,10 +94,8 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       
       // Log failed authentication attempt
       try {
-        // Only log if user exists to avoid the "invalid input syntax for type uuid" error
-        if (user?.id) {
-          await logFailedAuthentication(user.id, email, adminMode, isSfdAdmin, error.message);
-        }
+        // Only log failed attempts (don't need a user for this)
+        await logFailedAuthentication('anonymous', email, adminMode, isSfdAdmin, error.message);
       } catch (logError) {
         console.warn("Error logging audit event:", logError);
       }

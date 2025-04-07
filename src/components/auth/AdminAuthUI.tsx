@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -7,7 +8,7 @@ import { Check, Shield } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
 import DemoAccountsCreator from './DemoAccountsCreator';
 
-const AdminAuthUI = () => {
+const AdminAuthUI = ({ isSfdAdmin = false }) => {
   const { user, loading, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -19,23 +20,23 @@ const AdminAuthUI = () => {
       setAuthSuccess(true);
       
       const timer = setTimeout(() => {
-        navigate('/admin-dashboard');
+        navigate(isSfdAdmin ? '/agency-dashboard' : '/admin-dashboard');
       }, 2000);
       
       return () => clearTimeout(timer);
     }
-  }, [location, navigate]);
+  }, [location, navigate, isSfdAdmin]);
   
+  // Modified redirect logic to prevent infinite loops
   useEffect(() => {
     if (user && !loading) {
-      const currentPath = location.pathname;
+      console.log("AdminAuthUI: Authenticated user detected", {
+        email: user.email,
+        role: user.app_metadata?.role
+      });
       
-      // Prevent redirect loop
-      if (currentPath === '/admin/auth') {
-        if (user.app_metadata?.role === 'admin') {
-          navigate('/admin-dashboard');
-        }
-      }
+      // Don't auto-redirect when on auth pages to prevent loops
+      // Users will need to click login button to proceed
     }
   }, [user, loading, navigate, location.pathname]);
 
@@ -79,7 +80,7 @@ const AdminAuthUI = () => {
         <div className="bg-white shadow-lg rounded-lg overflow-hidden">
           <div className="p-4 bg-amber-50 border-b border-amber-100">
             <h2 className="text-amber-800 font-medium text-center">
-              Connexion Administration MEREF
+              {isSfdAdmin ? "Connexion Administration SFD" : "Connexion Administration MEREF"}
             </h2>
           </div>
           
@@ -87,7 +88,10 @@ const AdminAuthUI = () => {
             <Shield className="h-5 w-5 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium">
-                Accès réservé aux administrateurs MEREF
+                {isSfdAdmin 
+                  ? "Accès réservé aux administrateurs SFD"
+                  : "Accès réservé aux administrateurs MEREF"
+                }
               </p>
               <p className="text-xs mt-1">
                 Cette interface est uniquement destinée aux administrateurs système. 
@@ -96,7 +100,7 @@ const AdminAuthUI = () => {
             </div>
           </div>
           
-          <LoginForm adminMode={true} isSfdAdmin={false} />
+          <LoginForm adminMode={!isSfdAdmin} isSfdAdmin={isSfdAdmin} />
           
           <div className="mt-4 text-center pb-6 flex flex-col gap-2">
             <a 
@@ -105,12 +109,22 @@ const AdminAuthUI = () => {
             >
               Connexion Utilisateur Standard
             </a>
-            <a 
-              href="/sfd/auth"
-              className="text-blue-600 hover:underline font-medium"
-            >
-              Accès Administrateur SFD
-            </a>
+            {!isSfdAdmin && (
+              <a 
+                href="/sfd/auth"
+                className="text-blue-600 hover:underline font-medium"
+              >
+                Accès Administrateur SFD
+              </a>
+            )}
+            {isSfdAdmin && (
+              <a 
+                href="/admin/auth"
+                className="text-amber-600 hover:underline font-medium"
+              >
+                Accès Administrateur MEREF
+              </a>
+            )}
           </div>
           
           <DemoAccountsCreator />

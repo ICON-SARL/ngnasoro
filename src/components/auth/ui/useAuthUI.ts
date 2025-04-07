@@ -35,12 +35,15 @@ export const useAuthUI = () => {
       console.log('User role:', userRole);
       
       // Ensure we're not already on an auth page to prevent redirect loops
-      const isOnAuthPage = ['/auth', '/admin/auth', '/sfd/auth'].includes(location.pathname);
+      const isOnAuthPage = ['/auth', '/admin/auth', '/sfd/auth'].some(path => 
+        location.pathname.includes(path)
+      );
       
-      if (isOnAuthPage) {
+      // Don't redirect when we're already on an auth page
+      if (!isOnAuthPage) {
         // Redirection based on user's role
         if (userRole === Role.SUPER_ADMIN || user.app_metadata?.role === 'admin') {
-          navigate('/super-admin-dashboard');
+          navigate('/admin-dashboard');
         } else if (userRole === Role.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {
           navigate('/agency-dashboard');
         } else {

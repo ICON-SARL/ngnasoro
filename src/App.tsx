@@ -1,11 +1,10 @@
 
 import React, { Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import './App.css';
 import AuthUI from './components/AuthUI';
 import MobileFlow from './pages/MobileFlow';
-import MobileRoutes from './routes/MobileRoutes';
 import AdminLoginPage from './pages/AdminLoginPage';
 import ClientLoginPage from './pages/ClientLoginPage';
 import SfdLoginPage from './pages/SfdLoginPage';
@@ -19,9 +18,9 @@ const AccessDeniedPage = React.lazy(() => import('./pages/AccessDeniedPage'));
 function App() {
   return (
     <div className="App">
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<div className="flex items-center justify-center h-screen">Chargement...</div>}>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<Navigate to="/auth" replace />} />
           <Route path="/auth" element={<ClientLoginPage />} />
           <Route path="/admin/auth" element={<AdminLoginPage />} />
           <Route path="/sfd/auth" element={<AdminLoginPage isSfdAdmin={true} />} />
@@ -29,6 +28,9 @@ function App() {
           <Route path="/admin-dashboard/*" element={<AdminDashboard />} />
           <Route path="/agency-dashboard/*" element={<AgencyDashboard />} />
           <Route path="/access-denied" element={<AccessDeniedPage />} />
+          
+          {/* Catch all unknown routes */}
+          <Route path="*" element={<Navigate to="/auth" replace />} />
         </Routes>
       </Suspense>
       <Toaster />
