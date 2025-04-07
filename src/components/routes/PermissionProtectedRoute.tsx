@@ -64,8 +64,8 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
       userRole === requiredRole || 
       (requiredRole === UserRole.SFD_ADMIN && userRole === UserRole.SFD_ADMIN);
     
-    // Check permissions
-    let permissionMatch = !requiredPermission || userRole === UserRole.ADMIN;
+    // Check permissions - comparing string value with string value
+    let permissionMatch = !requiredPermission || userRole === 'admin';
     
     // SFD admin has SFD-related permissions
     if (!permissionMatch && userRole === UserRole.SFD_ADMIN && requiredPermission && 
