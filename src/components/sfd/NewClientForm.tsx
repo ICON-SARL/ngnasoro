@@ -19,8 +19,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdClients } from '@/hooks/useSfdClients';
+import { Loader2 } from 'lucide-react';
+
+// Form validation schema
+const formSchema = z.object({
+  fullName: z.string().min(3, { message: 'Le nom doit contenir au moins 3 caractères' }),
+  email: z.string().email({ message: 'Email invalide' }).optional().or(z.literal('')),
+  phone: z.string().min(8, { message: 'Numéro de téléphone invalide' }).optional().or(z.literal('')),
+  address: z.string().optional().or(z.literal('')),
+  idType: z.string().optional().or(z.literal('')),
+  idNumber: z.string().optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal('')),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface NewClientFormProps {
   onSuccess?: () => void;
@@ -30,27 +46,28 @@ export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
   const { activeSfdId } = useAuth();
   const { createClient } = useSfdClients();
   
-  const form = useForm({
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: '',
       email: '',
       phone: '',
       address: '',
-      idNumber: '',
       idType: '',
+      idNumber: '',
       notes: '',
     }
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: FormValues) => {
     try {
       await createClient.mutateAsync({
         full_name: data.fullName,
         email: data.email,
         phone: data.phone,
         address: data.address,
-        id_number: data.idNumber,
         id_type: data.idType,
+        id_number: data.idNumber,
         notes: data.notes,
       });
       
@@ -69,7 +86,7 @@ export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
           name="fullName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nom complet</FormLabel>
+              <FormLabel>Nom complet*</FormLabel>
               <FormControl>
                 <Input placeholder="Nom et prénom" {...field} />
               </FormControl>
@@ -98,7 +115,7 @@ export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Téléphone</FormLabel>
+                <FormLabel>Téléphone*</FormLabel>
                 <FormControl>
                   <Input placeholder="+223 XX XX XX XX" {...field} />
                 </FormControl>
@@ -115,7 +132,7 @@ export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
             <FormItem>
               <FormLabel>Adresse</FormLabel>
               <FormControl>
-                <Input placeholder="Adresse du client" {...field} />
+                <Textarea placeholder="Adresse du client" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -129,7 +146,7 @@ export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Type de pièce d'identité</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner un type" />
@@ -179,7 +196,14 @@ export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
         
         <div className="flex justify-end pt-4">
           <Button type="submit" disabled={createClient.isPending}>
-            {createClient.isPending ? 'Création...' : 'Créer le client'}
+            {createClient.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Création...
+              </>
+            ) : (
+              "Créer le client"
+            )}
           </Button>
         </div>
       </form>

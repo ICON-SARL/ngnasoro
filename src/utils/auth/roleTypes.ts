@@ -3,6 +3,7 @@ export enum UserRole {
   SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
   SFD_ADMIN = 'sfd_admin',
+  CLIENT = 'client', // Added CLIENT role
   USER = 'user'
 }
 
@@ -36,7 +37,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     PERMISSIONS.MANAGE_CLIENTS,
     PERMISSIONS.MANAGE_LOANS,
     PERMISSIONS.ACCESS_SFD_DASHBOARD,
-    PERMISSIONS.MANAGE_SUBSIDIES, // Ajout de la permission MANAGE_SUBSIDIES aux SFD_ADMIN
+    PERMISSIONS.MANAGE_SUBSIDIES,
   ],
+  [UserRole.CLIENT]: [],
   [UserRole.USER]: [],
 };

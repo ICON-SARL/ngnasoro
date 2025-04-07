@@ -20,7 +20,7 @@ export interface User {
   };
 }
 
-export type Role = 'user' | 'admin' | 'sfd_admin' | 'super_admin';
+export type Role = 'user' | 'admin' | 'sfd_admin' | 'super_admin' | 'client';
 
 export interface AuthContextProps {
   user: User | null;
@@ -44,7 +44,8 @@ export interface AuthContextProps {
 
 // Define an enum to be used as a value (not just a type)
 export enum UserRole {
-  SUPER_ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin',
+  ADMIN = 'admin',
   SFD_ADMIN = 'sfd_admin',
   CLIENT = 'client',
   USER = 'user'
