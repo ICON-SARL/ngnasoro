@@ -34,7 +34,7 @@ export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateActio
       if (data && Array.isArray(data)) {
         const sfdList: SfdData[] = data.map(item => {
           // Ensure proper type checking and access to nested properties
-          if (item.sfds && typeof item.sfds === 'object') {
+          if (item && item.sfds && typeof item.sfds === 'object') {
             return {
               id: asString(item.sfds.id, ''),
               name: asString(item.sfds.name, ''),

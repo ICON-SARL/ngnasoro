@@ -79,11 +79,20 @@ export function useLoanApplication() {
           
         if (error) throw error;
         
-        const transformedData = Array.isArray(data) ? data.map(item => ({
-          id: item.sfd_id,
-          name: asString(item.sfds?.name, 'Unknown SFD'),
-          is_default: item.is_default
-        })) : [];
+        const transformedData: SFD[] = Array.isArray(data) ? data.map(item => {
+          if (item && item.sfds && typeof item.sfds === 'object') {
+            return {
+              id: asString(item.sfd_id, ''),
+              name: asString(item.sfds.name, 'Unknown SFD'),
+              is_default: item.is_default
+            };
+          }
+          return {
+            id: '',
+            name: 'Unknown SFD',
+            is_default: false
+          };
+        }) : [];
         
         setSfds(transformedData);
         

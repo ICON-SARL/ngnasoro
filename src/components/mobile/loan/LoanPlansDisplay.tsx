@@ -49,9 +49,9 @@ export default function LoanPlansDisplay() {
         if (error) throw error;
 
         if (userSfds && Array.isArray(userSfds)) {
-          const sfds = userSfds.map(item => {
+          const sfds: SfdItem[] = userSfds.map(item => {
             // Properly access nested properties with type checking
-            if (item.sfds && typeof item.sfds === 'object') {
+            if (item && item.sfds && typeof item.sfds === 'object') {
               return {
                 id: asString(item.sfds.id, ''),
                 name: asString(item.sfds.name, '')
