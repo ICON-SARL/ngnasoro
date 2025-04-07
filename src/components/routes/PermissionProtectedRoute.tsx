@@ -50,6 +50,15 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
       return;
     }
     
+    // Fix pour les rôles SFD_ADMIN et la permission manage_subsidies
+    if (userRole === 'sfd_admin' && (
+      requiredRole === UserRole.SFD_ADMIN || requiredPermission === 'manage_subsidies'
+    )) {
+      console.log('SFD admin accessing subsidies, granting access');
+      setHasAccess(true);
+      return;
+    }
+    
     // Fix for SFD_ADMIN matching sfd_admin
     let roleMatch = !requiredRole || 
       userRole === requiredRole || 

@@ -31,7 +31,7 @@ import MobileFlow from '@/pages/MobileFlow';
 import LoanApplicationPage from '@/pages/LoanApplicationPage';
 import SfdManagementPage from '@/pages/SfdManagementPage';
 import CreditApprovalPage from '@/pages/CreditApprovalPage';
-import MerefSubsidyRequestPage from '@/pages/MerefSubsidyRequestPage'; // Ajout de la nouvelle page
+import MerefSubsidyRequestPage from '@/pages/MerefSubsidyRequestPage';
 
 // Role types and permissions
 import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
@@ -104,11 +104,15 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Add MEREF Subsidy Request route */}
+      {/* Add MEREF Subsidy Request route - Modifier pour permettre l'accès avec le rôle SFD_ADMIN */}
       <Route
         path="/meref-subsidy-request"
         element={
-          <ProtectedRoute component={MerefSubsidyRequestPage} />
+          <PermissionProtectedRoute 
+            component={MerefSubsidyRequestPage} 
+            requiredRole={UserRole.SFD_ADMIN}
+            fallbackPath="/access-denied"
+          />
         }
       />
       
@@ -124,13 +128,13 @@ const AppRoutes = () => {
         } 
       />
       
-      {/* SFD functionality routes */}
+      {/* SFD functionality routes - Modifier pour utiliser le rôle plutôt que la permission */}
       <Route 
         path="/sfd-subsidy-requests" 
         element={
           <PermissionProtectedRoute 
             component={SfdSubsidyRequestPage} 
-            requiredPermission={PERMISSIONS.MANAGE_SUBSIDIES}
+            requiredRole={UserRole.SFD_ADMIN}
             fallbackPath="/access-denied"
           />
         } 
