@@ -11,7 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { 
   MessageSquare, PhoneCall, Mail, HelpCircle, Search, 
-  Clock, CheckCircle, AlertCircle, LifeBuoy, Users, Video
+  Clock, CheckCircle, AlertCircle, LifeBuoy, Users, Video,
+  FileText
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -272,9 +273,9 @@ export const SupportSystem = () => {
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Ouvrir un ticket de support</DialogTitle>
-              <DialogDescription>
+              <p className="text-sm text-muted-foreground">
                 Décrivez votre problème et notre équipe vous contactera sous peu.
-              </DialogDescription>
+              </p>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
