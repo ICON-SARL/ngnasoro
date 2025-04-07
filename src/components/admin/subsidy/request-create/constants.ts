@@ -1,4 +1,3 @@
-
 export const MALI_REGIONS = [
   'Bamako',
   'Gao',
@@ -11,3 +10,7 @@ export const MALI_REGIONS = [
   'Taoudénit',
   'Tombouctou',
 ].sort();
+
+export const REGIONS = MALI_REGIONS;
+
+export const SENEGAL_REGIONS = MALI_REGIONS;

@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useSubsidyForm } from './useSubsidyForm';
-import { SENEGAL_REGIONS } from './constants';
+import { REGIONS } from './constants';
 import { SfdSelector } from './SfdSelector';
 import { AmountInput } from './AmountInput';
 import { PrioritySelector } from './PrioritySelector';
@@ -54,7 +54,7 @@ export function SubsidyRequestCreate({ onSuccess }: SubsidyRequestCreateProps) {
               <RegionSelector
                 value={formData.region}
                 onValueChange={(value) => handleSelectChange('region', value)}
-                regions={SENEGAL_REGIONS}
+                regions={REGIONS}
               />
             </div>
             

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,13 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { SENEGAL_REGIONS } from '@/components/admin/subsidy/request-create/constants';
+import { REGIONS } from '@/components/admin/subsidy/request-create/constants';
 import { Textarea } from '@/components/ui/textarea';
 import { UploadCloud } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// Form schema validation
 const formSchema = z.object({
   name: z.string().min(3, {
     message: 'Le nom doit contenir au moins 3 caractères',
@@ -73,7 +71,6 @@ export function SfdForm({
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Initialize the form
   const form = useForm<SfdFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -99,14 +96,12 @@ export function SfdForm({
     if (file) setDocumentFile(file);
   };
 
-  // Handle file uploads
   const uploadFiles = async (formData: SfdFormValues) => {
     setIsUploading(true);
     const fileUploads = [];
     const updatedFormData = { ...formData };
 
     try {
-      // Upload logo if selected
       if (logoFile) {
         const logoFileName = `${Date.now()}-${logoFile.name}`;
         const { error: logoError } = await supabase.storage
@@ -122,7 +117,6 @@ export function SfdForm({
         updatedFormData.logo_url = logoUrlData.publicUrl;
       }
 
-      // Upload legal document if selected
       if (documentFile) {
         const docFileName = `${Date.now()}-${documentFile.name}`;
         const { error: docError } = await supabase.storage
@@ -151,7 +145,6 @@ export function SfdForm({
     }
   };
 
-  // Handle form submission
   const handleSubmit = async (values: SfdFormValues) => {
     if (logoFile || documentFile) {
       const dataWithUploads = await uploadFiles(values);
@@ -218,7 +211,7 @@ export function SfdForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {SENEGAL_REGIONS.map((region) => (
+                        {REGIONS.map((region) => (
                           <SelectItem key={region} value={region}>{region}</SelectItem>
                         ))}
                       </SelectContent>
