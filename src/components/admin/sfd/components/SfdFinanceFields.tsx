@@ -26,10 +26,18 @@ export function SfdFinanceFields({ form }: SfdFinanceFieldsProps) {
                 className="pl-9 focus:border-[#0D6A51] focus:ring-[#0D6A51]/20"
                 placeholder="0" 
                 {...field} 
-                value={field.value === undefined ? '' : field.value}
+                value={field.value === undefined || field.value === null ? '' : field.value}
                 onChange={(e) => {
-                  const value = e.target.value === '' ? undefined : Number(e.target.value);
+                  // Handle empty string to return undefined instead of 0
+                  const value = e.target.value === '' ? undefined : 
+                                Number.isNaN(Number(e.target.value)) ? 0 : Number(e.target.value);
                   field.onChange(value);
+                }}
+                onBlur={() => {
+                  // Make sure we don't have NaN values on blur
+                  if (field.value === undefined || field.value === null || Number.isNaN(field.value)) {
+                    field.onChange(0);
+                  }
                 }}
                 disabled={form.formState.isSubmitting}
               />
