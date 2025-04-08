@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext, useCallback, createContext } from 'react';
 import { User, AuthContextProps, Role } from './types';
 import { supabase } from '@/integrations/supabase/client';
@@ -139,6 +140,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (currentSession.user) {
           const mappedUser = createUserFromSupabaseUser(currentSession.user);
           setUser(mappedUser);
+          
+          // Log the user role for debugging
+          console.log("User session found, logged in as:", currentSession.user.email, 
+            "with role:", currentSession.user.app_metadata?.role);
         }
       }
       

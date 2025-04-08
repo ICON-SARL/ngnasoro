@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Footer } from '@/components';
@@ -135,6 +134,18 @@ const AppRoutes = () => {
         } 
       />
       
+      {/* SFD dashboard routes - ensure they use requireSfdAdmin=true */}
+      <Route 
+        path="/agency-dashboard" 
+        element={
+          <PermissionProtectedRoute 
+            component={SfdAdminDashboard} 
+            requiredRole={UserRole.SFD_ADMIN}
+            fallbackPath="/access-denied"
+          />
+        }
+      />
+
       {/* SFD functionality routes */}
       <Route 
         path="/sfd-subsidy-requests" 

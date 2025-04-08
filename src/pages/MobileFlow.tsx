@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, lazy } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
@@ -20,7 +21,7 @@ const MobileFlow = () => {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   
-  const { user, loading, signOut } = useAuth();
+  const { user, userRole, loading, signOut } = useAuth();
   const { account, isLoading: accountLoading, updateBalance } = useAccount();
   const { transactions, isLoading: transactionsLoading, createTransaction } = useTransactions(user?.id || '', user?.id ? 'default-sfd' : '');
   const { handleAction } = useActionHandler();
@@ -38,7 +39,7 @@ const MobileFlow = () => {
         return;
       }
       
-      // If user is admin or super_admin, redirect to admin dashboard
+      // If user is admin or sfd_admin, redirect to appropriate dashboard
       const userRole = user.app_metadata?.role;
       if (userRole === 'admin') {
         toast({
@@ -47,6 +48,18 @@ const MobileFlow = () => {
           variant: "destructive",
         });
         navigate('/super-admin-dashboard');
+        return;
+      }
+      
+      // Redirect SFD admins to their dashboard
+      if (userRole === 'sfd_admin') {
+        toast({
+          title: "Redirection",
+          description: "Les administrateurs SFD doivent utiliser l'interface d'administration SFD.",
+          variant: "default",
+        });
+        navigate('/agency-dashboard');
+        return;
       }
     }
   }, [user, loading, navigate, toast]);
