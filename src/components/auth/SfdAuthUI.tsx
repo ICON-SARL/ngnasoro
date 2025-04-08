@@ -36,17 +36,17 @@ const SfdAuthUI = () => {
       if (userRole === 'sfd_admin') {
         console.log("SfdAuthUI - Redirecting to agency dashboard");
         navigate('/agency-dashboard');
-      } else if (userRole === 'admin') {
-        // Redirect main administrators to their own dashboard
-        console.log("SfdAuthUI - Redirecting admin to super-admin-dashboard");
-        navigate('/super-admin-dashboard');
       } else {
-        // For all other users, redirect to the client interface
-        console.log("SfdAuthUI - Redirecting regular user to mobile flow");
-        navigate('/mobile-flow');
+        // If not an SFD admin, redirect to access denied page
+        toast({
+          title: "Accès refusé",
+          description: "Ce portail est réservé aux administrateurs SFD.",
+          variant: "destructive",
+        });
+        navigate('/auth', { state: { error: 'not_sfd_admin' } });
       }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, toast]);
 
   if (authSuccess) {
     return (
