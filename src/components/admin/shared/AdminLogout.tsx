@@ -1,10 +1,9 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/auth/AuthContext';
 
 interface AdminLogoutProps {
   variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link';
@@ -17,20 +16,22 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
   size = 'sm',
   className = ''
 }) => {
-  const navigate = useNavigate();
   const { toast } = useToast();
+  const { signOut } = useAuth();
 
   const handleLogout = async () => {
     try {
-      // Clear any client-side states or cookies before calling sign out
+      // Clear any client-side states or cookies
       localStorage.removeItem('adminLastSeen');
       
-      // Call Supabase auth signOut method
-      const { error } = await supabase.auth.signOut();
+      // Show pending toast
+      toast({
+        title: "Déconnexion en cours",
+        description: "Veuillez patienter...",
+      });
       
-      if (error) {
-        throw error;
-      }
+      // Call auth signOut method
+      await signOut();
       
       // Show success toast
       toast({
@@ -38,8 +39,7 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Redirect to login page - Force a full page reload to clear any remaining state
-      window.location.href = '/auth';
+      // Redirect is handled in the signOut method
     } catch (error: any) {
       console.error('Logout error:', error);
       toast({

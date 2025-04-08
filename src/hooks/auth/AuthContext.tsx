@@ -223,6 +223,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       setLoading(true);
+      console.log('Attempting to sign out user');
+      
+      // Clear any local storage items first
+      localStorage.removeItem('activeSfdId');
+      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -230,9 +235,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       
+      // Reset state
       setUser(null);
       setSession(null);
-      navigate('/auth');
+      
+      console.log('User signed out successfully, redirecting to /auth');
+      
+      // Force navigation to auth page
+      window.location.href = '/auth';
+      
+      return Promise.resolve();
     } catch (error) {
       console.error('Unexpected sign out error:', error);
       throw error;
