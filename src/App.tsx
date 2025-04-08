@@ -1,7 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
@@ -28,16 +27,6 @@ import SubsidyRequestDetailPage from '@/pages/SubsidyRequestDetailPage';
 import SolvencyEnginePage from '@/pages/SolvencyEnginePage';
 import SfdLoansPage from '@/pages/SfdLoansPage';
 
-// Create a client for React Query
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1
-    }
-  }
-});
-
 function AppContent() {
   const { user, loading, isAdmin, isSfdAdmin } = useAuth();
   const { toast } = useToast();
@@ -46,7 +35,7 @@ function AppContent() {
   useEffect(() => {
     // Show a toast when the user logs in
     if (user && location.pathname === '/') {
-      const displayName = user.full_name || user.email;
+      const displayName = user.displayName || user.email;
       toast({
         title: `Bienvenue, ${displayName}!`,
         description: "Vous êtes connecté avec succès."
@@ -223,14 +212,10 @@ function AppContent() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <AppContent />
-          <Toaster />
-        </Router>
-      </AuthProvider>
-    </QueryClientProvider>
+    <AuthProvider>
+      <AppContent />
+      <Toaster />
+    </AuthProvider>
   );
 }
 

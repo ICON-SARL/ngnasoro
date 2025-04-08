@@ -1,64 +1,38 @@
-
-import { Session, User as SupabaseUser } from '@supabase/supabase-js';
-
+// Define user roles
 export enum UserRole {
-  SUPER_ADMIN = 'super_admin',
-  SFD_ADMIN = 'sfd_admin',
-  USER = 'user'
+  USER = 'USER',
+  SFD_ADMIN = 'SFD_ADMIN',
+  SUPER_ADMIN = 'SUPER_ADMIN'
 }
 
-export interface User extends Omit<SupabaseUser, 'aud' | 'created_at'> {
-  role?: UserRole;
-  full_name?: string;
+export interface User {
+  id: string;
+  email: string;
+  displayName?: string;
+  role: UserRole;
   avatar_url?: string;
   sfd_id?: string;
-  email?: string;
-  aud?: string;
-  created_at?: string;
+  full_name?: string;
+  // Add any other relevant fields
 }
 
-export type Role = UserRole;
+export interface Role {
+  name: string;
+  permissions: string[];
+}
 
+// AuthContext interface
 export interface AuthContextProps {
   user: User | null;
-  session: Session | null;
   loading: boolean;
   isAdmin: boolean;
   isSfdAdmin: boolean;
-  isAuthenticated: boolean;
-  userRole?: UserRole; 
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, userData: Partial<User>) => Promise<void>;
+  signOut: () => Promise<void>;
   activeSfdId?: string;
   setActiveSfdId: (sfdId: string) => void;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp?: (email: string, password: string, metadata?: any) => Promise<{ error: any }>;
-  signOut: () => Promise<{ error: any }>;
-  refreshSession: () => Promise<void>;
   biometricEnabled?: boolean;
-  toggleBiometricAuth?: (enable: boolean) => Promise<void>;
+  toggleBiometricAuth?: () => void;
+  // Add any other auth-related functions
 }
-
-export const ROLE_PERMISSIONS = {
-  [UserRole.SUPER_ADMIN]: [
-    'view_dashboard',
-    'manage_sfds',
-    'approve_subsidies',
-    'manage_admins',
-    'view_reports',
-    'view_audit_logs',
-    'export_data'
-  ],
-  [UserRole.SFD_ADMIN]: [
-    'view_sfd_dashboard', 
-    'manage_clients',
-    'manage_loans',
-    'request_subsidies',
-    'view_sfd_reports'
-  ],
-  [UserRole.USER]: [
-    'view_account',
-    'view_loans',
-    'make_payments'
-  ]
-};
-
-export const DEFAULT_ROLE_PERMISSIONS = ROLE_PERMISSIONS;
