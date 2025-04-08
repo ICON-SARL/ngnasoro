@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 
 interface SfdAdminData {
   email: string;
@@ -95,9 +94,15 @@ export async function createSfdAdmin(userData: SfdAdminData) {
       }
     });
     
-    if (error || !result || !result.success) {
-      console.error("Failed to create SFD admin:", error || "Invalid response");
-      throw new Error(error?.message || result?.error || "Échec de la création de l'administrateur SFD");
+    if (error) {
+      console.error("Edge function error:", error);
+      throw new Error(`Erreur lors de la création de l'administrateur SFD: ${error.message}`);
+    }
+    
+    if (!result || !result.success) {
+      const errorMsg = result?.error || "Échec de la création de l'administrateur SFD";
+      console.error("Failed to create SFD admin:", errorMsg);
+      throw new Error(errorMsg);
     }
     
     console.log("SFD admin created successfully:", result);

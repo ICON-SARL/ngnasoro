@@ -35,28 +35,38 @@ serve(async (req) => {
       );
     }
 
-    // Vérifier les colonnes existantes dans la table sfds
-    const { data: tableInfo, error: tableError } = await supabase
+    // Vérifier l'existence d'une SFD avec le même code
+    const { data: existingSfd, error: checkError } = await supabase
       .from('sfds')
-      .select('*')
-      .limit(1);
+      .select('id, code')
+      .eq('code', sfd_data.code)
+      .maybeSingle();
       
-    if (tableError) {
-      console.error("Error checking SFD table structure:", tableError);
+    if (checkError) {
+      console.error("Error checking existing SFD:", checkError);
       return new Response(
-        JSON.stringify({ error: `Error checking SFD table structure: ${tableError.message}` }),
+        JSON.stringify({ error: `Error checking existing SFD: ${checkError.message}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    // Extraire uniquement les champs qui existent réellement dans la table
+    if (existingSfd) {
+      console.error(`SFD with code ${sfd_data.code} already exists`);
+      return new Response(
+        JSON.stringify({ error: `Une SFD avec le code ${sfd_data.code} existe déjà` }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Extraire uniquement les champs qui existent dans la table
     const cleanedSfdData = {
       name: sfd_data.name,
       code: sfd_data.code,
       region: sfd_data.region || null,
       status: sfd_data.status || 'active',
       logo_url: sfd_data.logo_url || null,
-      phone: sfd_data.phone || null
+      phone: sfd_data.phone || null,
+      legal_document_url: sfd_data.legal_document_url || null
     };
     
     console.log("Creating new SFD with cleaned data:", cleanedSfdData);
@@ -115,7 +125,10 @@ serve(async (req) => {
     
     // Success response with proper headers to prevent caching issues
     return new Response(
-      JSON.stringify(sfdData),
+      JSON.stringify({
+        success: true,
+        data: sfdData
+      }),
       { 
         status: 200, 
         headers: { 

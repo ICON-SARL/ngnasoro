@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Cache-Control': 'no-cache, no-store, must-revalidate', // Prevent caching
 };
 
 serve(async (req) => {
@@ -55,7 +56,21 @@ serve(async (req) => {
     
     console.log(`Verified SFD exists: ${sfdData.name}`);
 
-    // 2. Create user in auth system
+    // 2. Check if email already exists
+    const { data: existingUser, error: existingUserError } = await supabase
+      .from('admin_users')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+      
+    if (!existingUserError && existingUser) {
+      return new Response(
+        JSON.stringify({ error: "Email déjà utilisé par un autre compte" }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 3. Create user in auth system
     const { data: userData, error: userError } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -84,7 +99,7 @@ serve(async (req) => {
     
     console.log(`User created successfully with ID: ${userData.user.id}`);
 
-    // 3. Insert into admin_users table
+    // 4. Insert into admin_users table
     const { data: adminData, error: adminError } = await supabase
       .from('admin_users')
       .insert({
@@ -110,7 +125,7 @@ serve(async (req) => {
     
     console.log("Admin user created successfully");
     
-    // 4. Assign SFD_ADMIN role
+    // 5. Assign SFD_ADMIN role
     const { error: roleError } = await supabase
       .from('user_roles')
       .insert({
@@ -125,7 +140,7 @@ serve(async (req) => {
       console.log("SFD admin role assigned successfully");
     }
 
-    // 5. Create an entry in user_sfds table to associate the admin with the SFD
+    // 6. Create an entry in user_sfds table to associate the admin with the SFD
     const { error: userSfdError } = await supabase
       .from('user_sfds')
       .insert({

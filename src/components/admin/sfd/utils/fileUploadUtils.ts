@@ -1,53 +1,56 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { SfdFormValues } from '../schemas/sfdFormSchema';
+import { SfdFormValues } from "../schemas/sfdFormSchema";
+import { apiClient } from "@/utils/apiClient";
 
+/**
+ * Upload SFD logo and legal document files and return the updated form data
+ */
 export async function uploadSfdFiles(
   formData: SfdFormValues,
   logoFile: File | null,
   documentFile: File | null,
   setIsUploading: (isUploading: boolean) => void,
-  onError: (message: string) => void
-) {
+  showError: (message: string) => void
+): Promise<SfdFormValues | null> {
+  // If no files to upload, just return the original data
+  if (!logoFile && !documentFile) {
+    return formData;
+  }
+
   setIsUploading(true);
-  const updatedFormData = { ...formData };
-
+  
   try {
+    const updatedData = { ...formData };
+
+    // Upload logo if present
     if (logoFile) {
-      const logoFileName = `${Date.now()}-${logoFile.name}`;
-      const { error: logoError } = await supabase.storage
-        .from('sfd-logos')
-        .upload(logoFileName, logoFile);
-
-      if (logoError) throw new Error(`Erreur lors de l'upload du logo: ${logoError.message}`);
-
-      const { data: logoUrlData } = supabase.storage
-        .from('sfd-logos')
-        .getPublicUrl(logoFileName);
-
-      updatedFormData.logo_url = logoUrlData.publicUrl;
+      const logoPath = `sfds/logos/${formData.code}-${Date.now()}`;
+      const logoUrl = await apiClient.uploadFile(logoFile, logoPath);
+      
+      if (logoUrl) {
+        updatedData.logo_url = logoUrl;
+      } else {
+        throw new Error("Échec du téléchargement du logo");
+      }
     }
-
+    
+    // Upload legal document if present
     if (documentFile) {
-      const docFileName = `${Date.now()}-${documentFile.name}`;
-      const { error: docError } = await supabase.storage
-        .from('sfd-documents')
-        .upload(docFileName, documentFile);
-
-      if (docError) throw new Error(`Erreur lors de l'upload du document: ${docError.message}`);
-
-      const { data: docUrlData } = supabase.storage
-        .from('sfd-documents')
-        .getPublicUrl(docFileName);
-
-      updatedFormData.legal_document_url = docUrlData.publicUrl;
+      const docPath = `sfds/documents/${formData.code}-${Date.now()}`;
+      const docUrl = await apiClient.uploadFile(documentFile, docPath);
+      
+      if (docUrl) {
+        updatedData.legal_document_url = docUrl;
+      } else {
+        throw new Error("Échec du téléchargement du document légal");
+      }
     }
 
-    setIsUploading(false);
-    return updatedFormData;
+    return updatedData;
   } catch (error: any) {
-    setIsUploading(false);
-    onError(error.message || "Une erreur est survenue pendant l'upload des fichiers");
+    showError(`Erreur lors du téléchargement des fichiers: ${error.message}`);
     return null;
+  } finally {
+    setIsUploading(false);
   }
 }

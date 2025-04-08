@@ -24,7 +24,8 @@ export function useAddSfdMutation() {
         region: sfdData.region || null,
         status: sfdData.status || 'active',
         logo_url: sfdData.logo_url || null,
-        phone: sfdData.phone || null
+        phone: sfdData.phone || null,
+        legal_document_url: sfdData.legal_document_url || null
       };
 
       try {
@@ -48,25 +49,28 @@ export function useAddSfdMutation() {
           throw new Error(`Erreur lors de l'ajout de la SFD: ${error.message}`);
         }
 
-        if (!sfdResponse) {
-          console.error("Aucune réponse reçue lors de la création de la SFD");
-          throw new Error("Erreur lors de l'ajout de la SFD: Aucune réponse du serveur");
+        if (!sfdResponse || !sfdResponse.success) {
+          const errorMsg = sfdResponse?.error || "Échec de la création de la SFD";
+          console.error("Échec de la création de la SFD:", errorMsg);
+          throw new Error(errorMsg);
         }
         
+        const sfdData = sfdResponse.data;
+        
         // Make sure we have a proper SFD object with an id
-        if (typeof sfdResponse !== 'object' || !sfdResponse.id) {
-          console.error("Réponse invalide reçue:", sfdResponse);
+        if (!sfdData || typeof sfdData !== 'object' || !sfdData.id) {
+          console.error("Réponse invalide reçue:", sfdData);
           throw new Error("Réponse invalide du serveur lors de la création de la SFD");
         }
         
-        console.log("SFD créée avec succès:", sfdResponse);
+        console.log("SFD créée avec succès:", sfdData);
         
         // 3. Si nous avons une subvention initiale, créons-la
         if (sfdData.subsidy_balance && sfdData.subsidy_balance > 0) {
           console.log("Création de la subvention initiale...");
           
           const subsidyData = {
-            sfd_id: sfdResponse.id,
+            sfd_id: sfdData.id,
             amount: parseFloat(String(sfdData.subsidy_balance)),
             remaining_amount: parseFloat(String(sfdData.subsidy_balance)),
             allocated_by: user.id,
@@ -74,15 +78,20 @@ export function useAddSfdMutation() {
             description: 'Subvention initiale lors de la création de la SFD'
           };
 
-          const { data: subsidyResponse, error: subsidyError } = await supabase.functions.invoke('create_sfd_subsidy', {
-            body: { subsidy_data: subsidyData }
-          });
+          try {
+            const { data: subsidyResponse, error: subsidyError } = await supabase.functions.invoke('create_sfd_subsidy', {
+              body: { subsidy_data: subsidyData }
+            });
 
-          if (subsidyError) {
+            if (subsidyError) {
+              console.warn("Erreur lors de la création de la subvention initiale:", subsidyError);
+              // Nous continuons malgré l'erreur de subvention
+            } else {
+              console.log("Subvention créée avec succès:", subsidyResponse);
+            }
+          } catch (subsidyError) {
             console.warn("Erreur lors de la création de la subvention initiale:", subsidyError);
             // Nous continuons malgré l'erreur de subvention
-          } else {
-            console.log("Subvention créée avec succès:", subsidyResponse);
           }
         }
 
@@ -92,7 +101,7 @@ export function useAddSfdMutation() {
         queryClient.refetchQueries({ queryKey: ['sfds'] });
 
         return {
-          sfd: sfdResponse,
+          sfd: sfdData,
           hasSubsidy: sfdData.subsidy_balance && sfdData.subsidy_balance > 0
         };
       } catch (error: any) {
