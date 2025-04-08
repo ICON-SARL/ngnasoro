@@ -4,32 +4,39 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/auth/index';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export const SfdHeader: React.FC = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   
   const handleSignOut = async () => {
     try {
       console.log("SfdHeader - Déconnexion initiée");
       
-      // First perform the signOut action
-      await signOut();
+      // Clear all storage to remove any session data
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Call Supabase auth signOut method directly
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      
+      if (error) {
+        console.error("SfdHeader - Error during sign out:", error);
+        throw error;
+      }
       
       console.log("SfdHeader - Déconnexion réussie");
       
-      // Show success message
+      // Show success toast
       toast({
         title: "Déconnecté",
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Force a full page reload to clear any remaining state
-      // and guarantee a complete reset of the application
-      setTimeout(() => {
-        window.location.href = '/auth';
-      }, 100);
+      // Force a complete page reload to reset all state
+      window.location.replace('/auth');
       
     } catch (error) {
       console.error("SfdHeader - Erreur lors de la déconnexion:", error);
