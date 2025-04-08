@@ -62,7 +62,7 @@ export function SfdBasicInfoFields({ form }: SfdBasicInfoFieldsProps) {
                 </FormControl>
                 <SelectContent>
                   {REGIONS.map((region) => (
-                    <SelectItem key={region} value={region}>{region}</SelectItem>
+                    <SelectItem key={region.id} value={region.id}>{region.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
