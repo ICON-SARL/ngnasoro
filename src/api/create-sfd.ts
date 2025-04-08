@@ -88,10 +88,28 @@ export default async function handler(req: Request) {
       'subsidy_balance', 'created_at', 'updated_at'
     ];
     
-    // Filter to valid columns only
-    const cleanedSfdData = Object.fromEntries(
-      Object.entries(sfd_data).filter(([key]) => validColumns.includes(key))
-    );
+    // Filter to valid columns only and ensure required fields are present
+    const cleanedSfdData: { 
+      name: string; 
+      code: string; 
+      region?: string; 
+      status?: string; 
+      logo_url?: string;
+      phone?: string;
+      subsidy_balance?: number;
+      created_at?: string;
+      updated_at?: string;
+    } = {
+      name: sfd_data.name,
+      code: sfd_data.code
+    };
+    
+    // Add optional properties if they exist
+    for (const key of validColumns) {
+      if (key !== 'name' && key !== 'code' && key in sfd_data) {
+        cleanedSfdData[key as keyof typeof cleanedSfdData] = sfd_data[key];
+      }
+    }
     
     console.log("Creating new SFD with cleaned data:", cleanedSfdData);
     

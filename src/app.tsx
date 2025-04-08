@@ -6,13 +6,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import './index.css';
 import { Toaster } from "@/components/ui/toaster";
-import api from './api';
-
-// Initialize the API handlers
-import { createServer } from '@mswjs/simulate-fetch';
-if (typeof window !== 'undefined') {
-  createServer(api);
-}
 
 // Create a client
 const queryClient = new QueryClient({
