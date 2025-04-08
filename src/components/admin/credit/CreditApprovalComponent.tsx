@@ -62,7 +62,7 @@ export const CreditApprovalComponent = () => {
   
   const confirmApprove = async () => {
     if (selectedApplication) {
-      await approveApplication({ 
+      await approveApplication.mutate({ 
         applicationId: selectedApplication.id,
         comments: comments 
       });
@@ -72,7 +72,7 @@ export const CreditApprovalComponent = () => {
   
   const confirmReject = async () => {
     if (selectedApplication) {
-      await rejectApplication({
+      await rejectApplication.mutate({
         applicationId: selectedApplication.id,
         rejectionReason: rejectionReason,
         comments: comments
