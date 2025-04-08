@@ -1,5 +1,5 @@
 
-project_id = "your-project-id"
+project_id = "xnqysvnychmsockivqhb"
 
 [api]
 enabled = true
@@ -33,3 +33,21 @@ port = 54327
 # Configure Edge Functions
 [functions]
 enabled = true
+
+[functions.create_sfd_admin]
+verify_jwt = false
+
+[functions.delete_sfd_admin]
+verify_jwt = false
+
+[functions.create_sfd_admin_link]
+verify_jwt = false
+
+[functions.create_sfd]
+verify_jwt = false
+
+[functions.client-notifications]
+verify_jwt = false
+
+[functions.create_admin_user]
+verify_jwt = false

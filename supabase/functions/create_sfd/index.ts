@@ -42,7 +42,9 @@ serve(async (req) => {
       code: sfd_data.code,
       region: sfd_data.region || null,
       status: sfd_data.status || 'active',
-      logo_url: sfd_data.logo_url || null
+      logo_url: sfd_data.logo_url || null,
+      phone: sfd_data.phone || null, 
+      legal_document_url: sfd_data.legal_document_url || null
     };
     
     console.log("Creating new SFD with cleaned data:", cleanedSfdData);
