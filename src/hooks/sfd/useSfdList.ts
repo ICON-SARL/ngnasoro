@@ -50,48 +50,6 @@ export function useSfdList(user: User | null) {
         ];
       }
       
-      // For sfd@example.com user, ensure the first SFD is the default
-      if (user.email === 'sfd@test.com' || user.email === 'sfd@example.com') {
-        const sfdsList = await fetchUserSfds(user.id);
-        
-        if (sfdsList.length === 0) {
-          console.log('User has no SFD accounts');
-          return [];
-        }
-        
-        // Transform the data format with first SFD as default for sfd@example.com
-        return Promise.all(sfdsList.map(async (sfd, index) => {
-          try {
-            const balanceData = await fetchSfdBalance(user.id, sfd.sfds.id);
-            return {
-              id: sfd.sfds.id,
-              name: sfd.sfds.name,
-              logoUrl: sfd.sfds.logo_url,
-              region: sfd.sfds.region,
-              code: sfd.sfds.code,
-              isDefault: index === 0, // Make the first SFD the default for this user
-              balance: balanceData.balance,
-              currency: balanceData.currency,
-              isVerified: true
-            };
-          } catch (error) {
-            console.error(`Failed to fetch balance for SFD ${sfd.sfds.name}:`, error);
-            return {
-              id: sfd.sfds.id,
-              name: sfd.sfds.name,
-              logoUrl: sfd.sfds.logo_url,
-              region: sfd.sfds.region,
-              code: sfd.sfds.code,
-              isDefault: index === 0, // Make the first SFD the default
-              balance: 0,
-              currency: 'FCFA',
-              isVerified: true
-            };
-          }
-        }));
-      }
-      
-      // Standard case for other users
       const sfdsList = await fetchUserSfds(user.id);
       
       if (sfdsList.length === 0) {
@@ -112,10 +70,11 @@ export function useSfdList(user: User | null) {
             isDefault: sfd.is_default,
             balance: balanceData.balance,
             currency: balanceData.currency,
-            isVerified: true
+            isVerified: true // All existing accounts are considered verified
           };
         } catch (error) {
           console.error(`Failed to fetch balance for SFD ${sfd.sfds.name}:`, error);
+          // Return account with zero balance in case of error
           return {
             id: sfd.sfds.id,
             name: sfd.sfds.name,

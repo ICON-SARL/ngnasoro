@@ -2,8 +2,8 @@
 export type Role = 'admin' | 'sfd_admin' | 'user' | 'client' | null;
 
 export enum UserRole {
-  ADMIN = 'admin',
   SUPER_ADMIN = 'admin',
+  ADMIN = 'admin',
   SFD_ADMIN = 'sfd_admin',
   CLIENT = 'client',
   USER = 'user'
@@ -14,30 +14,33 @@ export interface User {
   email: string;
   full_name: string;
   avatar_url?: string;
-  phone?: string; // Added phone property
-  user_metadata: Record<string, any>;
+  sfd_id?: string;
+  phone?: string;
+  user_metadata: {
+    [key: string]: any;
+    sfd_id?: string;
+  };
   app_metadata: {
     role?: Role;
     role_assigned?: boolean;
     roles?: string[];
     sfd_id?: string;
   };
-  sfd_id?: string; // Added sfd_id at the root level for backward compatibility
 }
 
 export interface AuthContextProps {
   user: User | null;
   setUser: (user: User | null) => void;
-  signIn: (email: string, password: string) => Promise<{ success?: boolean; error?: any; data?: any }>;
+  signIn: (email: string, password: string) => Promise<{ error?: any }>;
   signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
-  signOut: () => Promise<{ success?: boolean; error?: any }>;
+  signOut: () => Promise<void>;
   loading: boolean;
   isLoggedIn: boolean;
   isAdmin: boolean;
   isSfdAdmin: boolean;
   activeSfdId: string | null;
   setActiveSfdId: (sfdId: string | null) => void;
-  userRole: Role | null;
+  userRole: Role;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
   session: any | null;
