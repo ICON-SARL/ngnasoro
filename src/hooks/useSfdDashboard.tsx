@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useDashboardStats, DashboardStats } from './useDashboardStats';
 import { useSubsidyStatistics, SubsidyStatistics } from './useSubsidyStatistics';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SfdInfo {
   name: string;

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,6 +15,13 @@ export interface DashboardStats {
     total: number;
     pending: number;
   };
+  activeSfds?: number;
+  newSfdsThisMonth?: number;
+  admins?: number;
+  newAdminsThisMonth?: number;
+  totalUsers?: number;
+  newUsersThisMonth?: number;
+  newSubsidiesThisMonth?: string | number;
 }
 
 export const useDashboardStats = () => {
