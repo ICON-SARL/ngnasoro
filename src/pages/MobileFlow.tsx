@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MobileFlowRoutes } from '@/components/mobile/routes/MobileFlowRoutes';
+import MobileFlowRoutes from '@/components/mobile/routes/MobileFlowRoutes';
 
 const MobileFlow: React.FC = () => {
   return <MobileFlowRoutes />;
