@@ -25,7 +25,7 @@ export const MerefSfdCommunication = () => {
   const [notification, setNotification] = useState({
     title: '',
     message: '',
-    type: 'info',
+    type: 'info' as 'info' | 'warning' | 'error' | 'success',
     recipient_id: '',
     recipient_role: 'sfd_admin'
   });
@@ -49,12 +49,13 @@ export const MerefSfdCommunication = () => {
 
       const result = await sendNotification(notificationToSend);
       
-      if (result.success) {
+      // Since result could be null, we check if it exists first
+      if (result) {
         toast.success('Message envoyé aux administrateurs SFD');
         setIsOpen(false);
         form.reset();
       } else {
-        toast.error(`Erreur lors de l'envoi du message: ${result.error}`);
+        toast.error('Erreur lors de l\'envoi du message');
       }
     } catch (error) {
       console.error('Erreur lors de l\'envoi du message:', error);
