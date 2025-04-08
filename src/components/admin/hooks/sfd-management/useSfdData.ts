@@ -8,15 +8,20 @@ export function useSfdData() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [refetchInterval, setRefetchInterval] = useState<number | false>(false);
+  const [forceRefresh, setForceRefresh] = useState(0);
 
-  // Fonction pour récupérer les SFDs
+  // Fonction pour récupérer les SFDs avec options de cache optimisées
   const fetchSfds = async () => {
     try {
       console.log("Fetching SFDs from database...");
+      
+      // Ajouter des paramètres pour contourner le cache
+      const timestamp = new Date().getTime();
       const { data, error } = await supabase
         .from('sfds')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .throwOnError();
       
       if (error) {
         console.error("Error fetching SFDs:", error);
@@ -31,7 +36,7 @@ export function useSfdData() {
     }
   };
   
-  // Utilisation de React Query pour gérer les données avec des paramètres plus agressifs
+  // Utilisation de React Query avec des paramètres optimisés pour les problèmes de mise à jour
   const {
     data: sfds,
     isLoading,
@@ -39,19 +44,20 @@ export function useSfdData() {
     error,
     refetch
   } = useQuery({
-    queryKey: ['sfds'],
+    queryKey: ['sfds', forceRefresh], // Inclure forceRefresh pour forcer un refetch
     queryFn: fetchSfds,
     refetchInterval,
     refetchOnWindowFocus: true,
-    staleTime: 30000, // Considérer les données comme obsolètes après 30 secondes
-    gcTime: 60000, // Garder en cache pendant 1 minute
-    retry: 2,
+    staleTime: 5000, // 5 secondes jusqu'à ce que les données soient considérées comme obsolètes
+    gcTime: 10000, // 10 secondes en cache
+    retry: 3,
+    retryDelay: 1000,
     meta: {
       errorMessage: "Impossible de charger la liste des SFDs"
     }
   });
 
-  // Handle errors outside the useQuery options
+  // Traiter les erreurs en dehors des options useQuery
   useEffect(() => {
     if (isError && error) {
       console.error("Query error:", error);
@@ -63,20 +69,30 @@ export function useSfdData() {
     }
   }, [isError, error, toast]);
 
-  // Définir la fonction startPolling en dehors des effets pour pouvoir l'exporter
+  // Définir la fonction startPolling de manière optimisée
   const startPolling = useCallback(() => {
     console.log("Starting polling for SFDs...");
-    setRefetchInterval(2000); // Refetch toutes les 2 secondes
     
-    // Force an immediate refetch
+    // Forcer un refetch immédiat
     queryClient.removeQueries({ queryKey: ['sfds'] });
-    refetch();
+    setForceRefresh(prev => prev + 1);
+    
+    // Configurer un polling agressif
+    setRefetchInterval(2000); // Refetch toutes les 2 secondes
     
     // Désactiver le polling après un certain temps
     setTimeout(() => {
       console.log("Stopping polling for SFDs");
       setRefetchInterval(false);
     }, 10000); // Arrêter le polling après 10 secondes
+  }, [queryClient]);
+
+  // Fonction pour forcer manuellement un refetch complet
+  const forceRefetchAll = useCallback(() => {
+    console.log("Forcing complete refresh of SFD data...");
+    queryClient.removeQueries({ queryKey: ['sfds'] });
+    setForceRefresh(prev => prev + 1);
+    refetch();
   }, [queryClient, refetch]);
 
   return {
@@ -85,6 +101,7 @@ export function useSfdData() {
     isError,
     error,
     refetch,
-    startPolling
+    startPolling,
+    forceRefetchAll
   };
 }

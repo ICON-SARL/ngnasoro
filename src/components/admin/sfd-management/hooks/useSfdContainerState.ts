@@ -84,21 +84,33 @@ export function useSfdContainerState() {
           title: 'SFD ajoutée avec succès',
           description: 'La nouvelle SFD a été ajoutée et apparaîtra dans quelques instants'
         });
-        console.log("SFD added successfully, starting aggressive polling...");
         
-        // Invalidate and refetch queries
+        // Force une invalidation immédiate et un refetch des SFDs
+        queryClient.removeQueries({ queryKey: ['sfds'] });
         queryClient.invalidateQueries({ queryKey: ['sfds'] });
         
-        // Start polling if available
+        // Implémenter une stratégie de polling plus agressive
         if (typeof startPolling === 'function') {
+          console.log("Démarrage d'un polling agressif après l'ajout de SFD...");
           startPolling();
         }
         
-        // Double-check after a short delay
+        // Effectuer plusieurs tentatives de refetch à intervalles
         setTimeout(() => {
-          console.log("Performing backup refetch after SFD creation");
+          console.log("Premier refetch après la création de SFD");
+          refetch();
+        }, 500);
+        
+        setTimeout(() => {
+          console.log("Deuxième refetch après la création de SFD");
+          queryClient.resetQueries({ queryKey: ['sfds'] });
           refetch();
         }, 2000);
+        
+        setTimeout(() => {
+          console.log("Troisième refetch après la création de SFD");
+          refetch();
+        }, 4000);
       },
       onError: (error) => {
         toast({
