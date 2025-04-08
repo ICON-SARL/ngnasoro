@@ -51,3 +51,4 @@ verify_jwt = false
 
 [functions.create_admin_user]
 verify_jwt = false
+

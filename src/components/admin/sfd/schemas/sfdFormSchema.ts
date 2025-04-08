@@ -14,7 +14,6 @@ export const sfdFormSchema = z.object({
   phone: z.string().optional(),
   status: z.enum(['active', 'pending', 'suspended']),
   logo_url: z.string().optional(),
-  legal_document_url: z.string().optional(),
   subsidy_balance: z.number().optional(),
 });
 

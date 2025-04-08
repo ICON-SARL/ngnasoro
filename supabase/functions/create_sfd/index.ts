@@ -35,15 +35,28 @@ serve(async (req) => {
       );
     }
 
-    // Ne garder que les colonnes qui existent réellement dans la table sfds
+    // Vérifier les colonnes existantes dans la table sfds
+    const { data: tableInfo, error: tableError } = await supabase
+      .from('sfds')
+      .select('*')
+      .limit(1);
+      
+    if (tableError) {
+      console.error("Error checking SFD table structure:", tableError);
+      return new Response(
+        JSON.stringify({ error: `Error checking SFD table structure: ${tableError.message}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Extraire uniquement les champs qui existent réellement dans la table
     const cleanedSfdData = {
       name: sfd_data.name,
       code: sfd_data.code,
       region: sfd_data.region || null,
       status: sfd_data.status || 'active',
       logo_url: sfd_data.logo_url || null,
-      phone: sfd_data.phone || null, 
-      legal_document_url: sfd_data.legal_document_url || null
+      phone: sfd_data.phone || null
     };
     
     console.log("Creating new SFD with cleaned data:", cleanedSfdData);

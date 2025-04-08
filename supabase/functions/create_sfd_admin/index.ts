@@ -111,13 +111,12 @@ serve(async (req) => {
     console.log("Admin user created successfully");
     
     // 4. Assign SFD_ADMIN role
-    const { error: roleError } = await supabase.rpc(
-      'assign_role',
-      {
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .insert({
         user_id: userData.user.id,
         role: 'sfd_admin'
-      }
-    );
+      });
 
     if (roleError) {
       console.error("Error assigning role:", roleError);

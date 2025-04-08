@@ -24,6 +24,7 @@ export function useAddSfdMutation() {
         region: sfdData.region || null,
         status: sfdData.status || 'active',
         logo_url: sfdData.logo_url || null,
+        phone: sfdData.phone || null
       };
 
       try {
