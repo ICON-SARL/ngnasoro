@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth';
@@ -127,9 +126,10 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     );
   }
 
+  // Redirect to appropriate auth page based on required role
   if (!user) {
     // Redirect to appropriate auth page based on required role
-    if (requiredRole === UserRole.SUPER_ADMIN) {
+    if (requiredRole === UserRole.SUPER_ADMIN || requiredRole === 'admin') {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
     } else if (requiredRole === UserRole.SFD_ADMIN || requiredRole === 'sfd_admin') {
       return <Navigate to="/sfd/auth" state={{ from: location }} replace />;

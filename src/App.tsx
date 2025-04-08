@@ -41,18 +41,18 @@ function App() {
         <Route path="/auth" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/client/login" element={<ClientLoginPage />} />
-        <Route path="/sfd/login" element={<SfdLoginPage />} />
-        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/sfd/auth" element={<SfdLoginPage />} />
+        <Route path="/admin/auth" element={<AdminLoginPage />} />
         <Route path="/access-denied" element={<AccessDeniedPage />} />
         
         {/* Protected routes */}
-        <Route path="/super-admin" element={
+        <Route path="/super-admin-dashboard" element={
           <PermissionProtectedRoute requiredRole="admin">
             <SuperAdminDashboard />
           </PermissionProtectedRoute>
         } />
         
-        <Route path="/sfd-admin" element={
+        <Route path="/agency-dashboard" element={
           <PermissionProtectedRoute requiredRole="sfd_admin">
             <SfdAdminDashboard />
           </PermissionProtectedRoute>
