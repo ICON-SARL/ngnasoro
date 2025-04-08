@@ -35,12 +35,22 @@ serve(async (req) => {
       );
     }
 
-    console.log("Creating new SFD:", sfd_data);
+    // Ne garder que les colonnes qui existent réellement dans la table sfds
+    // En se basant sur l'erreur des logs, contact_email n'existe pas
+    const cleanedSfdData = {
+      name: sfd_data.name,
+      code: sfd_data.code,
+      region: sfd_data.region || null,
+      status: sfd_data.status || 'active',
+      logo_url: sfd_data.logo_url || null
+    };
+    
+    console.log("Creating new SFD with cleaned data:", cleanedSfdData);
     
     // 1. Insert the SFD data
     const { data: sfdData, error: sfdError } = await supabase
       .from('sfds')
-      .insert(sfd_data)
+      .insert(cleanedSfdData)
       .select()
       .single();
     

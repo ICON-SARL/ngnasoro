@@ -11,9 +11,6 @@ export const sfdFormSchema = z.object({
   region: z.string().min(2, {
     message: 'La région doit être spécifiée',
   }),
-  contact_email: z.string().email({
-    message: 'Format d\'email invalide',
-  }).optional().or(z.literal('')),
   phone: z.string().optional(),
   status: z.enum(['active', 'pending', 'suspended']),
   logo_url: z.string().optional(),

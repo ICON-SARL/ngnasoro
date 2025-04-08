@@ -4,7 +4,6 @@ import { useToast } from '@/hooks/use-toast';
 import { SfdFormValues } from '../../../sfd/schemas/sfdFormSchema';
 import { useAuth } from '@/hooks/useAuth';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
-import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useAddSfdMutation() {
@@ -25,9 +24,6 @@ export function useAddSfdMutation() {
         region: sfdData.region || null,
         status: sfdData.status || 'active',
         logo_url: sfdData.logo_url || null,
-        contact_email: sfdData.contact_email || null,
-        phone: sfdData.phone || null,
-        legal_document_url: sfdData.legal_document_url || null,
       };
 
       try {
