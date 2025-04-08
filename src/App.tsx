@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Footer } from '@/components';
@@ -32,6 +31,7 @@ import LoanApplicationPage from '@/pages/LoanApplicationPage';
 import SfdManagementPage from '@/pages/SfdManagementPage';
 import CreditApprovalPage from '@/pages/CreditApprovalPage';
 import MerefSubsidyRequestPage from '@/pages/MerefSubsidyRequestPage';
+import UsersManagementPage from '@/pages/UsersManagementPage';
 
 // Role types and permissions
 import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
@@ -204,6 +204,13 @@ const AppRoutes = () => {
           />
         }
       />
+      
+      {/* Admin Routes */}
+      <Route path="/admin/users" element={
+        <PermissionProtectedRoute requiredPermission="manage_users">
+          <UsersManagementPage />
+        </PermissionProtectedRoute>
+      } />
       
       {/* Fallback routes */}
       <Route path="/" element={<Navigate to="/auth" replace />} />

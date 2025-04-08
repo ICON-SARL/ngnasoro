@@ -1,4 +1,3 @@
-
 export type Role = 'admin' | 'sfd_admin' | 'user' | 'client' | null;
 
 export enum UserRole {
@@ -46,4 +45,16 @@ export interface AuthContextProps {
   session: any | null;
   isLoading: boolean;
   refreshSession: () => Promise<void>;
+}
+
+export interface AssociateSfdParams {
+  userId: string;
+  sfdId: string;
+  makeDefault?: boolean;
+}
+
+export interface AssociateSfdResult {
+  success: boolean;
+  error?: string;
+  userSfd?: any;
 }
