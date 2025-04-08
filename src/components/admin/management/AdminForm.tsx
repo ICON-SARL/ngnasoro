@@ -74,6 +74,14 @@ export const AdminForm: React.FC<AdminFormProps> = ({ onSubmit, isLoading, error
     }
   };
   
+  // Translate error message to French if available
+  const translateError = (errorMsg: string): string => {
+    if (errorMsg.includes("duplicate key")) return "Ce compte existe déjà dans la base de données.";
+    if (errorMsg.includes("violates row-level security")) return "Violation de la politique de sécurité. Veuillez contacter l'administrateur.";
+    if (errorMsg.includes("already registered")) return "Cette adresse email est déjà utilisée.";
+    return errorMsg;
+  };
+  
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -146,7 +154,7 @@ export const AdminForm: React.FC<AdminFormProps> = ({ onSubmit, isLoading, error
       {error && (
         <div className="bg-red-100 p-2 rounded-md flex items-center text-red-800">
           <AlertCircle className="h-4 w-4 mr-2" />
-          <p className="text-sm">{error}</p>
+          <p className="text-sm">{translateError(error)}</p>
         </div>
       )}
       

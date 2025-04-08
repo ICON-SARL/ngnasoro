@@ -28,78 +28,37 @@ export function useSfdAdminManagement() {
       try {
         console.log("Starting SFD admin creation process", data);
         
-        const { data: existingUser } = await supabase
-          .from('admin_users')
-          .select('email')
-          .eq('email', data.email)
-          .single();
-        
-        if (existingUser) {
-          throw new Error("This email is already registered. Please use a different email.");
-        }
-        
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: data.email,
-          password: data.password,
-          options: {
-            data: {
+        const { data: response, error: edgeFunctionError } = await supabase.functions.invoke(
+          'create_admin_user',
+          {
+            body: {
+              email: data.email,
+              password: data.password,
               full_name: data.full_name,
               role: 'sfd_admin',
               sfd_id: data.sfd_id
             }
           }
-        });
-
-        if (signUpError) {
-          console.error("Error signing up user:", signUpError);
-          throw signUpError;
-        }
-        
-        if (!signUpData.user) {
-          throw new Error("No user created");
-        }
-
-        console.log("User created successfully:", signUpData.user.id);
-
-        const { error: adminError } = await supabase
-          .from('admin_users')
-          .insert({
-            id: signUpData.user.id,
-            email: data.email,
-            full_name: data.full_name,
-            role: 'sfd_admin',
-            has_2fa: false
-          });
-
-        if (adminError) {
-          console.error("Error creating admin user record:", adminError);
-          throw adminError;
-        }
-
-        console.log("Admin user record created successfully");
-
-        const { error: roleError } = await supabase.rpc(
-          'assign_role',
-          {
-            user_id: signUpData.user.id,
-            role: 'sfd_admin'
-          }
         );
-
-        if (roleError) {
-          console.error("Error assigning role:", roleError);
-          throw roleError;
-        }
-
-        console.log("SFD admin role assigned successfully");
         
-        if (data.notify && user) {
+        if (edgeFunctionError) {
+          console.error("Edge function error:", edgeFunctionError);
+          throw new Error(`Edge function error: ${edgeFunctionError.message}`);
+        }
+        
+        if (!response.success) {
+          throw new Error(response.error || "Failed to create SFD admin");
+        }
+        
+        console.log("SFD admin created successfully:", response);
+        
+        if (data.notify && response.user_id && user) {
           try {
             await sendNotification({
               title: "SFD admin account created",
               message: `An admin account has been created for you. Please log in with the email ${data.email}.`,
               type: "info",
-              recipient_id: signUpData.user.id
+              recipient_id: response.user_id
             });
             console.log("Notification sent successfully");
           } catch (notifError) {
@@ -107,7 +66,7 @@ export function useSfdAdminManagement() {
           }
         }
         
-        return signUpData.user;
+        return response;
         
       } catch (error: any) {
         console.error("Error creating SFD admin:", error);
@@ -121,14 +80,14 @@ export function useSfdAdminManagement() {
       queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
       
       toast({
-        title: "Success",
-        description: "The SFD administrator has been successfully created",
+        title: "Succès",
+        description: "L'administrateur SFD a été créé avec succès",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: `Unable to create the administrator: ${error.message}`,
+        title: "Erreur",
+        description: `Impossible de créer l'administrateur: ${error.message}`,
         variant: "destructive",
       });
     }
