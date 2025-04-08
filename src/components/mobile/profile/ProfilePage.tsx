@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -22,12 +21,6 @@ const ProfilePage = () => {
 
   const handleGoBack = () => {
     navigate('/mobile-flow/main');
-  };
-
-  // Create a wrapper function that returns void
-  const handleSignOut = async () => {
-    await signOut();
-    // No need to return anything
   };
 
   return (
@@ -67,7 +60,7 @@ const ProfilePage = () => {
         <TabsContent value="security" className="px-4">
           <SecuritySection />
           <NotificationsSection />
-          <AdvancedSettingsSection onLogout={handleSignOut} />
+          <AdvancedSettingsSection onLogout={signOut} />
         </TabsContent>
         
         <TabsContent value="profile" className="px-4">

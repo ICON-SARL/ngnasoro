@@ -12,15 +12,7 @@ import { Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
-interface MobileHeaderProps {
-  title?: string;
-  showBackButton?: boolean;
-}
-
-const MobileHeader: React.FC<MobileHeaderProps> = ({ 
-  title = "Tableau de Bord", 
-  showBackButton = true 
-}) => {
+const MobileHeader = () => {
   const { toast } = useToast();
   const [selectedSfd, setSelectedSfd] = useState('primary');
   
@@ -35,7 +27,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   
   return (
     <div className="p-2">
-      <ContextualHeader title={title} showBackButton={showBackButton} />
+      <ContextualHeader />
       
       <div className="mt-3 flex justify-end">
         <div className="w-[180px]">

@@ -1,70 +1,49 @@
 
-// Define user roles
-export enum UserRole {
-  USER = 'USER',
-  SFD_ADMIN = 'SFD_ADMIN',
-  SUPER_ADMIN = 'SUPER_ADMIN'
-}
+export type Role = 'admin' | 'sfd_admin' | 'user' | 'client' | null;
 
-// Import the Session type from Supabase
-import { Session } from '@supabase/supabase-js';
+export enum UserRole {
+  SUPER_ADMIN = 'admin',
+  ADMIN = 'admin',
+  SFD_ADMIN = 'sfd_admin',
+  CLIENT = 'client',
+  USER = 'user'
+}
 
 export interface User {
   id: string;
   email: string;
-  displayName?: string;
-  full_name?: string;
-  role: UserRole;
+  full_name: string;
   avatar_url?: string;
   sfd_id?: string;
   phone?: string;
-  user_metadata?: Record<string, any>;
-  app_metadata?: Record<string, any>;
+  user_metadata: {
+    [key: string]: any;
+    sfd_id?: string;
+  };
+  app_metadata: {
+    role?: Role;
+    role_assigned?: boolean;
+    roles?: string[];
+    sfd_id?: string;
+  };
 }
 
-export interface Role {
-  name: string;
-  permissions: string[];
-}
-
-// Define role permissions
-export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
-  [UserRole.SUPER_ADMIN]: [
-    'view_dashboard',
-    'manage_sfds',
-    'approve_subsidies',
-    'manage_admins',
-    'view_reports',
-    'view_audit_logs',
-    'export_data'
-  ],
-  [UserRole.SFD_ADMIN]: [
-    'view_sfd_dashboard', 
-    'manage_clients',
-    'manage_loans',
-    'request_subsidies',
-    'view_sfd_reports'
-  ],
-  [UserRole.USER]: [
-    'view_account',
-    'view_loans',
-    'make_payments'
-  ]
-};
-
-// AuthContext interface
 export interface AuthContextProps {
   user: User | null;
-  session: Session | null; // Added missing session property
+  setUser: (user: User | null) => void;
+  signIn: (email: string, password: string) => Promise<{ error?: any }>;
+  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
+  signOut: () => Promise<void>;
   loading: boolean;
+  isLoggedIn: boolean;
   isAdmin: boolean;
   isSfdAdmin: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, userData: Partial<User>) => Promise<{ error: any }>;
-  signOut: () => Promise<{ error: any }>;
-  activeSfdId?: string;
-  setActiveSfdId: (sfdId: string) => void;
-  biometricEnabled?: boolean;
-  toggleBiometricAuth?: (enabled: boolean) => void; // Updated to accept a boolean parameter
-  refreshSession?: () => Promise<void>;
+  activeSfdId: string | null;
+  setActiveSfdId: (sfdId: string | null) => void;
+  userRole: Role;
+  biometricEnabled: boolean;
+  toggleBiometricAuth: () => Promise<void>;
+  session: any | null;
+  isLoading: boolean;
+  refreshSession: () => Promise<void>;
 }

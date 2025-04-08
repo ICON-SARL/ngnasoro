@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from './useAuth';
 import { verifySfdSwitch, completeSfdSwitch } from '@/utils/sfdSwitchVerifier';
@@ -12,6 +13,7 @@ export function useSfdSwitch() {
   const [verificationRequired, setVerificationRequired] = useState(false);
   const [pendingApproval, setPendingApproval] = useState(false);
 
+  // Initiate the SFD switch process
   const initiateSwitch = async (sfdId: string) => {
     if (!user) {
       toast({
@@ -57,6 +59,7 @@ export function useSfdSwitch() {
         setIsVerifying(false);
         return true;
       } else {
+        // No verification required, complete the switch directly
         return await completeSwitch();
       }
     } catch (error) {
@@ -72,6 +75,7 @@ export function useSfdSwitch() {
     }
   };
 
+  // Complete the switch with verification code if required
   const completeSwitch = async (verificationCode?: string) => {
     if (!user || !pendingSfdId) {
       toast({
@@ -98,6 +102,7 @@ export function useSfdSwitch() {
           description: result.message,
         });
         
+        // Reset state
         setPendingSfdId(null);
         setVerificationId(null);
         setVerificationRequired(false);
@@ -124,6 +129,7 @@ export function useSfdSwitch() {
     }
   };
 
+  // Cancel the switch process
   const cancelSwitch = () => {
     setPendingSfdId(null);
     setVerificationId(null);

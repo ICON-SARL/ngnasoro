@@ -1,42 +1,34 @@
 
 import React from 'react';
-import { ArrowLeft, Menu } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/auth';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
-interface ContextualHeaderProps {
-  title?: string;
-  showBackButton?: boolean;
-}
-
-const ContextualHeader: React.FC<ContextualHeaderProps> = ({ 
-  title = "Page", 
-  showBackButton = true 
-}) => {
-  const navigate = useNavigate();
-
-  const handleBack = () => {
-    navigate(-1);
-  };
+const ContextualHeader = () => {
+  const { user } = useAuth();
+  const { activeSfdId, sfdData } = useSfdDataAccess();
+  
+  const activeSFD = sfdData.find(sfd => sfd.id === activeSfdId);
+  const activeSFDName = activeSFD?.name || 'SFD Primaire';
 
   return (
-    <div className="flex items-center justify-between p-2">
+    <div className="flex flex-col py-4">
       <div className="flex items-center">
-        {showBackButton && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="mr-2"
-            onClick={handleBack}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        )}
-        <h1 className="text-xl font-semibold">{title}</h1>
+        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mr-3 shadow-md">
+          <img 
+            src="/lovable-uploads/2941965d-fd44-4815-bb4a-2c77549e1380.png" 
+            alt="Logo SFD" 
+            className="h-10 w-10 object-contain"
+          />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-white">
+            <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-white">SÔRÔ!</span>
+          </h1>
+          <div className="flex items-center">
+            <span className="text-white/90 text-sm">{activeSFDName}</span>
+          </div>
+        </div>
       </div>
-      <Button variant="ghost" size="icon">
-        <Menu className="h-5 w-5" />
-      </Button>
     </div>
   );
 };
