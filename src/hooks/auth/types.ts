@@ -11,6 +11,16 @@ export interface User {
   id: string;
   email: string;
   full_name?: string;
+  avatar_url?: string;
+  phone?: string;
+  sfd_id?: string;
+  user_metadata?: {
+    [key: string]: any;
+    full_name?: string;
+    avatar_url?: string;
+    phone?: string;
+    sfd_id?: string;
+  };
   app_metadata?: {
     role: Role;
     role_assigned?: boolean;

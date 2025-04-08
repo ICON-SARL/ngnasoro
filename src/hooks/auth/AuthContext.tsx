@@ -31,6 +31,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             id: data.session.user.id,
             email: data.session.user.email || '',
             full_name: data.session.user.user_metadata?.full_name || '',
+            avatar_url: data.session.user.user_metadata?.avatar_url,
+            phone: data.session.user.user_metadata?.phone,
+            sfd_id: data.session.user.user_metadata?.sfd_id,
+            user_metadata: data.session.user.user_metadata || {},
             app_metadata: {
               role: data.session.user.app_metadata?.role as Role || null,
               role_assigned: data.session.user.app_metadata?.role_assigned || false,
@@ -79,6 +83,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: session.user.id,
           email: session.user.email || '',
           full_name: session.user.user_metadata?.full_name || '',
+          avatar_url: session.user.user_metadata?.avatar_url,
+          phone: session.user.user_metadata?.phone,
+          sfd_id: session.user.user_metadata?.sfd_id,
+          user_metadata: session.user.user_metadata || {},
           app_metadata: {
             role: session.user.app_metadata?.role as Role || null,
             role_assigned: session.user.app_metadata?.role_assigned || false,
