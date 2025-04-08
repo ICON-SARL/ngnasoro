@@ -71,3 +71,6 @@ export const SfdClientStatsDashboard: React.FC<SfdClientStatsDashboardProps> = (
     </div>
   );
 };
+
+// Add a default export for backward compatibility
+export default SfdClientStatsDashboard;

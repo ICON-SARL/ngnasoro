@@ -1,10 +1,22 @@
-
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AuthContextProps, User, UserRole } from './types';
-import { Session } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 import { logAuditEvent } from '@/utils/audit/auditLogger';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
+
+interface AuthContextProps {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signOut: () => Promise<{ error: any }>;
+  refreshSession: () => Promise<void>;
+  isAdmin: boolean;
+  isSfdAdmin: boolean;
+  isAuthenticated: boolean;
+  activeSfdId?: string;
+  setActiveSfdId: (sfdId: string) => void;
+}
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
@@ -12,6 +24,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeSfdId, setActiveSfdId] = useState<string | undefined>(undefined);
+
+  // Added computed properties for role-based checks
+  const isAdmin = user?.app_metadata?.role === 'super_admin';
+  const isSfdAdmin = user?.app_metadata?.role === 'sfd_admin';
+  const isAuthenticated = !!user;
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -24,27 +42,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         setSession(data.session);
+        setUser(data.session?.user || null);
         
+        // Debug log
         if (data.session?.user) {
-          // Extend the user object with additional properties
-          const extendedUser: User = {
-            ...data.session.user,
-            role: data.session.user.app_metadata?.role as UserRole,
-            full_name: data.session.user.user_metadata?.full_name,
-            avatar_url: data.session.user.user_metadata?.avatar_url,
-            sfd_id: data.session.user.user_metadata?.sfd_id
-          };
-          
-          setUser(extendedUser);
-          
-          // Debug log
           console.log('Loaded user data:', {
-            id: extendedUser.id,
-            email: extendedUser.email,
-            role: extendedUser.role,
-            metadata: extendedUser.user_metadata,
-            full_name: extendedUser.full_name,
-            sfd_id: extendedUser.sfd_id
+            id: data.session.user.id,
+            email: data.session.user.email,
+            role: data.session.user.app_metadata?.role,
+            metadata: data.session.user.app_metadata,
           });
         }
       } catch (err) {
@@ -59,33 +65,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        setUser(newSession?.user || null);
         setSession(newSession);
+        setLoading(false);
         
+        // Debug log for auth state change
         if (newSession?.user) {
-          // Extend the user object with additional properties
-          const extendedUser: User = {
-            ...newSession.user,
-            role: newSession.user.app_metadata?.role as UserRole,
-            full_name: newSession.user.user_metadata?.full_name,
-            avatar_url: newSession.user.user_metadata?.avatar_url,
-            sfd_id: newSession.user.user_metadata?.sfd_id
-          };
-          
-          setUser(extendedUser);
-          
-          // Debug log for auth state change
           console.log('Auth state changed:', {
             event,
-            userId: extendedUser.id,
-            role: extendedUser.role,
-            full_name: extendedUser.full_name,
-            sfd_id: extendedUser.sfd_id
+            userId: newSession.user.id,
+            role: newSession.user.app_metadata?.role,
+            metadata: newSession.user.app_metadata,
           });
-        } else {
-          setUser(null);
         }
-        
-        setLoading(false);
         
         // Log auth events
         if (event === 'SIGNED_IN') {
@@ -152,22 +144,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error };
     }
   };
-  
-  const signUp = async (email: string, password: string, metadata?: any) => {
-    try {
-      const result = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          data: metadata
-        }
-      });
-      return result;
-    } catch (error) {
-      console.error('Error signing up:', error);
-      return { error };
-    }
-  };
 
   const signOut = async () => {
     try {
@@ -188,32 +164,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       setSession(data.session);
-      setUser(data.session?.user as User || null);
+      setUser(data.session?.user || null);
     } catch (error) {
       console.error('Error refreshing session:', error);
     }
   };
 
-  // Check if user is an admin or SFD admin
-  const isAdmin = !!user?.role && user.role === UserRole.SUPER_ADMIN;
-  const isSfdAdmin = !!user?.role && user.role === UserRole.SFD_ADMIN;
-  const isAuthenticated = !!user;
-
-  // Get active SFD ID from user metadata
-  const activeSfdId = user?.sfd_id;
-
   const value = {
     user,
     session,
     loading,
+    signIn,
+    signOut,
+    refreshSession,
     isAdmin,
     isSfdAdmin,
     isAuthenticated,
     activeSfdId,
-    signIn,
-    signUp,
-    signOut,
-    refreshSession
+    setActiveSfdId
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

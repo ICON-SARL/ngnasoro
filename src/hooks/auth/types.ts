@@ -7,7 +7,7 @@ export enum UserRole {
   USER = 'user'
 }
 
-export interface User extends SupabaseUser {
+export interface User extends Omit<SupabaseUser, 'aud' | 'created_at'> {
   role?: UserRole;
   full_name?: string;
   avatar_url?: string;
@@ -26,12 +26,12 @@ export interface AuthContextProps {
   isAdmin: boolean;
   isSfdAdmin: boolean;
   isAuthenticated: boolean;
-  userRole?: UserRole; // Added missing property
+  userRole?: UserRole; 
   activeSfdId?: string;
-  setActiveSfdId: (sfdId: string) => void; // Added missing property
+  setActiveSfdId: (sfdId: string) => void;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp?: (email: string, password: string, metadata?: any) => Promise<{ error: any }>;
-  signOut: () => Promise<void>; // Changed return type to match usage
+  signOut: () => Promise<{ error: any }>;
   refreshSession: () => Promise<void>;
   biometricEnabled?: boolean;
   toggleBiometricAuth?: (enable: boolean) => Promise<void>;

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
@@ -24,7 +23,7 @@ import { SubsidySummary } from '@/components/admin/dashboard/SubsidySummary';
 import { PendingSubsidies } from '@/components/admin/dashboard/PendingSubsidies';
 import { Footer } from '@/components';
 import { FinancialReports } from '@/components/reports/FinancialReports';
-import SfdClientStatsDashboard from '@/components/admin/meref/SfdClientStatsDashboard';
+import { SfdClientStatsDashboard } from '@/components/admin/meref/SfdClientStatsDashboard';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
@@ -33,7 +32,6 @@ const SuperAdminDashboard = () => {
   const { stats, isLoading: isLoadingStats } = useDashboardStats();
   const navigate = useNavigate();
   
-  // Set the active tab based on query parameter
   useEffect(() => {
     if (!searchParams.get('tab')) {
       setSearchParams({ tab: 'dashboard' });
@@ -51,7 +49,6 @@ const SuperAdminDashboard = () => {
       <main className="flex-1 container mx-auto p-4 md:p-6">
         <SuperAdminDashboardHeader />
         
-        {/* Quick Actions */}
         <div className="mb-6 flex flex-wrap gap-2">
           <Button 
             variant="outline" 
@@ -110,7 +107,6 @@ const SuperAdminDashboard = () => {
           <MerefSfdCommunication />
         </div>
         
-        {/* Dashboard Widgets */}
         {activeTab === 'dashboard' && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -136,36 +132,30 @@ const SuperAdminDashboard = () => {
           </>
         )}
         
-        {/* Charts */}
         {activeTab === 'charts' && (
           <DashboardCharts />
         )}
         
-        {/* Client Statistics */}
         {activeTab === 'client-stats' && (
           <SfdClientStatsDashboard />
         )}
         
-        {/* Financial Reports */}
         {activeTab === 'financial_reports' && (
           <FinancialReports />
         )}
         
-        {/* Reports */}
         {activeTab === 'reports' && (
           <div className="space-y-6">
             <ReportGenerator />
           </div>
         )}
         
-        {/* Data Export */}
         {activeTab === 'export' && (
           <div className="space-y-6">
             <DataExport />
           </div>
         )}
         
-        {/* Admin Management */}
         {activeTab === 'admins' && (
           <div className="space-y-6">
             <AdminManagement />
