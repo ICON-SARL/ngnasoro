@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import ContextualHeader from './ContextualHeader';
 import { 
-  Select,
+  Select, 
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -11,17 +11,21 @@ import {
 import { Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
 const MobileHeader = () => {
   const { toast } = useToast();
-  const [selectedSfd, setSelectedSfd] = useState('primary');
+  const { activeSfdId, setActiveSfdId, sfdData } = useSfdDataAccess();
   
   const handleSfdChange = (value: string) => {
-    setSelectedSfd(value);
+    setActiveSfdId(value);
+    
+    const selectedSfd = sfdData.find(sfd => sfd.id === value);
+    const sfdName = selectedSfd?.name || 'SFD Inconnue';
+    
     toast({
       title: "SFD changée",
-      description: `Vous êtes maintenant connecté à ${value === 'primary' ? 'SFD Primaire' : 
-        value === 'secondary' ? 'SFD Secondaire' : 'SFD Micro-Finance'}`,
+      description: `Vous êtes maintenant connecté à ${sfdName}`,
     });
   };
   
@@ -31,25 +35,22 @@ const MobileHeader = () => {
       
       <div className="mt-3 flex justify-end">
         <div className="w-[180px]">
-          <Select value={selectedSfd} onValueChange={handleSfdChange}>
+          <Select value={activeSfdId || ''} onValueChange={handleSfdChange}>
             <SelectTrigger className="bg-blue-700/80 text-white border-blue-500 text-sm py-1 h-8">
               <SelectValue placeholder="Choisir une SFD" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="primary" className="text-sm">
-                <div className="flex items-center">
-                  <Shield className="h-3 w-3 mr-1 text-green-600" />
-                  SFD Primaire
-                </div>
-              </SelectItem>
-              <SelectItem value="secondary" className="text-sm">
-                <Shield className="h-3 w-3 mr-1 text-amber-600" />
-                SFD Secondaire
-              </SelectItem>
-              <SelectItem value="micro" className="text-sm">
-                <Shield className="h-3 w-3 mr-1 text-blue-600" />
-                SFD Micro-Finance
-              </SelectItem>
+              {sfdData.map(sfd => (
+                <SelectItem key={sfd.id} value={sfd.id} className="text-sm">
+                  <div className="flex items-center">
+                    <Shield className={`h-3 w-3 mr-1 ${
+                      sfd.id === 'primary-sfd' ? 'text-green-600' : 
+                      sfd.id === 'secondary-sfd' ? 'text-amber-600' : 'text-blue-600'
+                    }`} />
+                    {sfd.name}
+                  </div>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -72,7 +71,8 @@ export const DemoAccountsCreator = () => {
         <p>Créer des comptes de test avec les identifiants suivants:</p>
         <ul className="list-disc pl-5 mt-1 space-y-1">
           <li>Client: client@test.com / password123</li>
-          <li>SFD Admin: sfd@test.com / password123</li>
+          <li>SFD Admin 1: sfd@test.com / password123</li>
+          <li>SFD Admin 2: sfd2@test.com / password123</li>
           <li>MEREF Admin: admin@test.com / password123</li>
         </ul>
       </div>

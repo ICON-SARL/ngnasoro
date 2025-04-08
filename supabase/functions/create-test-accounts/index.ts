@@ -1,160 +1,199 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.33.1'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
-
+  
   try {
-    // Create a Supabase client with the service role key
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Create test accounts with defined passwords
-    const accounts = [
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    const testAccounts = [
       {
-        email: 'client@test.com',
-        password: 'password123',
-        role: 'user',
-        full_name: 'Client Test'
+        email: "client@test.com",
+        password: "password123",
+        data: { full_name: "Client Test", role: "client" },
+        role: "client"
       },
       {
-        email: 'sfd@test.com',
-        password: 'password123',
-        role: 'sfd_admin',
-        full_name: 'SFD Admin Test'
+        email: "sfd@test.com",
+        password: "password123",
+        data: { full_name: "SFD Admin 1", role: "sfd_admin", sfd_id: "primary-sfd" },
+        role: "sfd_admin"
       },
       {
-        email: 'admin@test.com',
-        password: 'password123',
-        role: 'admin',
-        full_name: 'MEREF Admin Test'
+        email: "admin@test.com",
+        password: "password123",
+        data: { full_name: "MEREF Admin", role: "admin" },
+        role: "admin"
+      },
+      {
+        email: "sfd2@test.com",
+        password: "password123",
+        data: { full_name: "SFD Admin 2", role: "sfd_admin", sfd_id: "secondary-sfd" },
+        role: "sfd_admin"
       }
     ];
-
+    
     const results = [];
-
-    for (const account of accounts) {
-      // Check if user already exists
-      const { data: existingUsers, error: userCheckError } = await supabase.auth.admin.listUsers();
-      if (userCheckError) throw userCheckError;
-      
-      const existingUser = existingUsers.users.find(u => u.email === account.email);
-      
-      if (existingUser) {
-        console.log(`User ${account.email} already exists with ID ${existingUser.id}, updating role`);
+    
+    // Create accounts one by one
+    for (const account of testAccounts) {
+      try {
+        // First check if user exists
+        const { data: existingUsers } = await supabaseClient
+          .from('admin_users')
+          .select('id, role')
+          .eq('email', account.email);
         
-        // Check if the user already has the correct role in app_metadata
-        const hasCorrectMetadataRole = existingUser.app_metadata?.role === account.role;
-        
-        // Update user app_metadata with role if needed
-        if (!hasCorrectMetadataRole) {
-          console.log(`Updating app_metadata role for ${account.email} to ${account.role}`);
-          await supabase.auth.admin.updateUserById(existingUser.id, {
-            app_metadata: { role: account.role }
+        // If user already exists
+        if (existingUsers && existingUsers.length > 0) {
+          const existingUser = existingUsers[0];
+          const hasCorrectRole = existingUser.role === account.role;
+          
+          // Update role if needed
+          if (!hasCorrectRole) {
+            await supabaseClient
+              .from('admin_users')
+              .update({ role: account.role })
+              .eq('id', existingUser.id);
+              
+            // Also update user_roles table
+            await supabaseClient.rpc(
+              'assign_role',
+              {
+                user_id: existingUser.id,
+                role: account.role
+              }
+            );
+          }
+          
+          results.push({
+            email: account.email,
+            status: 'already_exists',
+            role: account.role,
+            hasCorrectRole: hasCorrectRole
           });
+          continue;
         }
         
-        // Check if user has role in user_roles table
-        const { data: userRoles, error: rolesError } = await supabase
-          .from('user_roles')
-          .select('*')
-          .eq('user_id', existingUser.id)
-          .eq('role', account.role);
-          
-        if (rolesError) throw rolesError;
+        // Create new user
+        const { data: userData, error: userError } = await supabaseClient.auth.admin.createUser({
+          email: account.email,
+          password: account.password,
+          email_confirm: true,
+          user_metadata: account.data
+        });
         
-        // Assign role to the user if it doesn't exist in user_roles
-        if (!userRoles || userRoles.length === 0) {
-          console.log(`Assigning role ${account.role} to user ${account.email} in user_roles table`);
-          await supabase.rpc('assign_role', {
-            user_id: existingUser.id,
-            role: account.role
+        if (userError) {
+          throw userError;
+        }
+        
+        // Add user to admin_users table
+        const { error: adminError } = await supabaseClient
+          .from('admin_users')
+          .insert({
+            id: userData.user.id,
+            email: account.email,
+            full_name: account.data.full_name,
+            role: account.role,
+            has_2fa: false
           });
+        
+        if (adminError) {
+          throw adminError;
+        }
+        
+        // Assign role
+        const { error: roleError } = await supabaseClient.rpc(
+          'assign_role',
+          {
+            user_id: userData.user.id,
+            role: account.role
+          }
+        );
+        
+        if (roleError) {
+          throw roleError;
+        }
+        
+        // If this is an SFD admin, make sure the SFD exists
+        if (account.role === "sfd_admin") {
+          // Check if the SFD already exists
+          const { data: existingSfds } = await supabaseClient
+            .from('sfds')
+            .select('id')
+            .eq('code', account.data.sfd_id);
+          
+          if (!existingSfds || existingSfds.length === 0) {
+            const sfdName = account.data.sfd_id === "primary-sfd" ? 
+              "SFD Primaire" : "SFD Secondaire";
+            
+            // Create the SFD if it doesn't exist
+            const { error: sfdError } = await supabaseClient
+              .from('sfds')
+              .insert({
+                name: sfdName,
+                code: account.data.sfd_id,
+                region: "Bamako",
+                status: "active"
+              });
+            
+            if (sfdError) {
+              console.error("Error creating SFD:", sfdError);
+            }
+          }
         }
         
         results.push({
           email: account.email,
-          status: 'already_exists',
-          role: account.role,
-          hasCorrectRole: hasCorrectMetadataRole || (userRoles && userRoles.length > 0)
+          status: 'created',
+          role: account.role
         });
-        continue;
-      }
-
-      // Create the user
-      const { data: userData, error: userError } = await supabase.auth.admin.createUser({
-        email: account.email,
-        password: account.password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: account.full_name
-        },
-        app_metadata: { 
-          role: account.role  // Set role in app_metadata
-        }
-      });
-
-      if (userError) {
+        
+      } catch (error) {
+        console.error(`Error processing account ${account.email}:`, error);
         results.push({
           email: account.email,
           status: 'error',
-          message: userError.message
+          message: error.message
         });
-        continue;
       }
-
-      console.log(`Created user ${account.email} with ID ${userData.user.id} and role ${account.role}`);
-
-      // Assign role to the user in user_roles table
-      try {
-        await supabase.rpc('assign_role', {
-          user_id: userData.user.id,
-          role: account.role
-        });
-        console.log(`Assigned role ${account.role} to user ${account.email} in user_roles table`);
-      } catch (roleError) {
-        console.error(`Error assigning role to ${account.email}:`, roleError);
-      }
-
-      results.push({
-        email: account.email,
-        status: 'created',
-        role: account.role
-      });
     }
-
-    // Log success for debugging
-    console.log("Test accounts processed successfully:", results);
-
+    
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Test accounts processed', 
-        results 
-      }), 
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
+      JSON.stringify({ results }),
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json' 
+        } 
       }
     );
+    
   } catch (error) {
-    console.error("Error creating test accounts:", error);
+    console.error('Error:', error);
+    
     return new Response(
-      JSON.stringify({ success: false, error: error.message, stack: error.stack }), 
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      JSON.stringify({ error: error.message }),
+      { 
         status: 500,
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json' 
+        } 
       }
     );
   }
-})
+});
