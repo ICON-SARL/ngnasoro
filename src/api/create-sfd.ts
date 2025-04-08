@@ -88,18 +88,22 @@ export default async function handler(req: Request) {
       'subsidy_balance', 'created_at', 'updated_at'
     ];
     
-    // Filter to valid columns only and ensure required fields are present
-    const cleanedSfdData: { 
-      name: string; 
-      code: string; 
-      region?: string; 
-      status?: string; 
+    // Define interface for SFD data to fix type issues
+    interface SfdData {
+      name: string;
+      code: string;
+      region?: string;
+      status?: string;
       logo_url?: string;
       phone?: string;
       subsidy_balance?: number;
       created_at?: string;
       updated_at?: string;
-    } = {
+      [key: string]: string | number | undefined;
+    }
+    
+    // Filter to valid columns only and ensure required fields are present
+    const cleanedSfdData: SfdData = {
       name: sfd_data.name,
       code: sfd_data.code
     };
@@ -107,8 +111,7 @@ export default async function handler(req: Request) {
     // Add optional properties if they exist
     for (const key of validColumns) {
       if (key !== 'name' && key !== 'code' && key in sfd_data) {
-        // Fix the type issue by adding type assertion
-        cleanedSfdData[key as keyof typeof cleanedSfdData] = sfd_data[key] as any;
+        cleanedSfdData[key] = sfd_data[key];
       }
     }
     
