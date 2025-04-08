@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSfdManagement } from '../hooks/useSfdManagement';
 import { SfdTable } from '../sfd/SfdTable';
 import { SfdFilter } from '../sfd/SfdFilter';
@@ -49,6 +49,12 @@ export function SfdManagementContainer() {
   } = useSfdManagement();
 
   const { isLoading: isLoadingAdmin, error: adminError, addSfdAdmin } = useSfdAdminManagement();
+
+  // Rafraîchir la liste des SFDs au chargement initial
+  useEffect(() => {
+    console.log("Rafraîchissement initial de la liste des SFDs");
+    refetch();
+  }, [refetch]);
 
   const handleViewDetails = (sfd: Sfd) => {
     setSelectedSfd(sfd);

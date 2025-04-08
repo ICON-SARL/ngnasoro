@@ -83,10 +83,17 @@ serve(async (req) => {
       }
     }
     
-    // Success response
+    // Success response with proper headers
     return new Response(
       JSON.stringify(sfdData),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { 
+        status: 200, 
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate"
+        } 
+      }
     );
     
   } catch (error) {

@@ -43,7 +43,7 @@ export function useSfdData() {
     queryFn: fetchSfds,
     refetchInterval,
     refetchOnWindowFocus: true,
-    staleTime: 30000, // 30 secondes
+    staleTime: 5000, // Réduire à 5 secondes pour rafraîchir plus souvent
     retry: 2,
     meta: {
       errorMessage: "Impossible de charger la liste des SFDs"
@@ -75,7 +75,7 @@ export function useSfdData() {
 
   // Fonction pour forcer un refetch périodique temporaire (utile après des opérations de création)
   const startPolling = () => {
-    setRefetchInterval(3000); // Refetch toutes les 3 secondes
+    setRefetchInterval(2000); // Refetch toutes les 2 secondes (plus fréquent)
   };
 
   return {
