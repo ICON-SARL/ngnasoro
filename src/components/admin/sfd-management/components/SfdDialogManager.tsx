@@ -27,7 +27,7 @@ interface SfdDialogManagerProps {
   handleEditSfd: (formData: SfdFormValues) => void;
   handleSubmitAddAdmin: (data: any) => void;
   isLoadingAdmin: boolean;
-  adminError: Error | null;
+  adminError: string | Error | null;
 }
 
 export function SfdDialogManager({
@@ -53,6 +53,12 @@ export function SfdDialogManager({
   isLoadingAdmin,
   adminError,
 }: SfdDialogManagerProps) {
+  // Helper function to handle different error types
+  const getErrorMessage = (error: string | Error | null): string | null => {
+    if (!error) return null;
+    return typeof error === 'string' ? error : error.message;
+  };
+
   return (
     <>
       <SfdDialogs 
@@ -81,7 +87,7 @@ export function SfdDialogManager({
           sfdName={selectedSfdForAdmin.name}
           onAddAdmin={handleSubmitAddAdmin}
           isLoading={isLoadingAdmin}
-          error={adminError ? (typeof adminError === 'string' ? adminError : adminError.message) : null}
+          error={getErrorMessage(adminError)}
         />
       )}
     </>
