@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -10,7 +9,7 @@ import {
   XCircle,
   Clock,
   User,
-  BuildingBank
+  Building
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -99,7 +98,7 @@ export const SubsidyRequestDetailView: React.FC<SubsidyRequestDetailViewProps> =
           )}
           {request.sfd_name && (
             <div className="flex items-center gap-2 mt-1 text-muted-foreground">
-              <BuildingBank className="h-4 w-4" />
+              <Building className="h-4 w-4" />
               <span>SFD: {request.sfd_name}</span>
             </div>
           )}
