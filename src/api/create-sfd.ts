@@ -88,32 +88,10 @@ export default async function handler(req: Request) {
       'subsidy_balance', 'created_at', 'updated_at'
     ];
     
-    // Define interface for SFD data to fix type issues
-    interface SfdData {
-      name: string;
-      code: string;
-      region?: string;
-      status?: string;
-      logo_url?: string;
-      phone?: string;
-      subsidy_balance?: number;
-      created_at?: string;
-      updated_at?: string;
-      [key: string]: string | number | undefined;
-    }
-    
-    // Filter to valid columns only and ensure required fields are present
-    const cleanedSfdData: SfdData = {
-      name: sfd_data.name,
-      code: sfd_data.code
-    };
-    
-    // Add optional properties if they exist
-    for (const key of validColumns) {
-      if (key !== 'name' && key !== 'code' && key in sfd_data) {
-        cleanedSfdData[key] = sfd_data[key];
-      }
-    }
+    // Filter to valid columns only
+    const cleanedSfdData = Object.fromEntries(
+      Object.entries(sfd_data).filter(([key]) => validColumns.includes(key))
+    );
     
     console.log("Creating new SFD with cleaned data:", cleanedSfdData);
     

@@ -1,11 +1,167 @@
 
-import React from 'react';
+import React, { useState, useEffect, lazy } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import MobileNavigation from '@/components/MobileNavigation';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/hooks/use-toast';
+
+import { useAuth } from '@/hooks/useAuth';
+import { useAccount } from '@/hooks/useAccount';
+import { useTransactions } from '@/hooks/useTransactions';
+
+// Import refactored components
+import MobileMenu from '@/components/mobile/menu/MobileMenu';
+import MobileFlowRoutes from '@/components/mobile/routes/MobileFlowRoutes';
+import { useActionHandler } from '@/utils/actionHandler';
 
 const MobileFlow = () => {
+  const isMobile = useIsMobile();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  
+  const { user, userRole, loading, signOut } = useAuth();
+  const { account, isLoading: accountLoading, updateBalance } = useAccount();
+  const { transactions, isLoading: transactionsLoading, createTransaction } = useTransactions(user?.id || '', user?.id ? 'default-sfd' : '');
+  const { handleAction } = useActionHandler();
+
+  const [showWelcome, setShowWelcome] = useState(() => {
+    const hasVisited = localStorage.getItem('hasVisitedApp');
+    return !hasVisited;
+  });
+
+  // Check for special roles that should be redirected elsewhere
+  useEffect(() => {
+    if (!loading) {
+      // If user is not logged in, redirect to login
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+      
+      // Get role directly from user metadata
+      const userRole = user.app_metadata?.role;
+      
+      // Admin users should be redirected to admin dashboard
+      if (userRole === 'admin') {
+        toast({
+          title: "Accès refusé",
+          description: "Les administrateurs ne peuvent pas accéder à l'interface mobile.",
+          variant: "destructive",
+        });
+        navigate('/super-admin-dashboard');
+        return;
+      }
+      
+      // SFD admin users should be redirected to SFD dashboard
+      if (userRole === 'sfd_admin') {
+        console.log('SFD admin detected, redirecting to agency dashboard');
+        toast({
+          title: "Redirection",
+          description: "Les administrateurs SFD doivent utiliser l'interface d'administration SFD.",
+          variant: "default",
+        });
+        navigate('/agency-dashboard');
+        return;
+      }
+    }
+  }, [user, loading, navigate, toast]);
+
+  // Save welcome screen status
+  useEffect(() => {
+    if (!showWelcome) {
+      localStorage.setItem('hasVisitedApp', 'true');
+    }
+  }, [showWelcome]);
+
+  // Custom action handler that uses the toast notification
+  const onAction = (action: string, data?: any) => {
+    handleAction(action, data);
+    
+    if (action === 'Start') {
+      setShowWelcome(false);
+    }
+  };
+
+  // Handler for payment submission
+  const handlePaymentSubmit = async (data: { recipient: string, amount: number, note: string }) => {
+    try {
+      await updateBalance.mutateAsync({ amount: -data.amount });
+      
+      if (createTransaction) {
+        await createTransaction.mutateAsync({
+          userId: user?.id || '',
+          sfdId: 'default-sfd', 
+          name: data.recipient,
+          type: 'payment',
+          amount: -data.amount,
+          paymentMethod: 'sfd_account',
+          description: data.note || 'Payment transaction'
+        });
+      }
+      
+      navigate('/mobile-flow/main');
+      
+      toast({
+        title: 'Paiement réussi',
+        description: `Vous avez envoyé ${data.amount} FCFA à ${data.recipient}`,
+      });
+    } catch (error) {
+      console.error('Payment error:', error);
+    }
+  };
+
+  // Menu handlers
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  // Handle welcome screen navigation
+  useEffect(() => {
+    if (showWelcome && location.pathname === '/mobile-flow') {
+      navigate('/mobile-flow/welcome');
+    }
+    else if (location.pathname !== '/mobile-flow/welcome' && location.pathname !== '/mobile-flow') {
+      setShowWelcome(false);
+    }
+  }, [showWelcome, location.pathname, navigate]);
+
+  const isWelcomePage = location.pathname === '/mobile-flow/welcome';
+
+  if (loading || accountLoading) {
+    return <div className="p-8 text-center">Chargement...</div>;
+  }
+
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Application Mobile</h1>
-      <p>Flux de l'application mobile pour les agents de terrain.</p>
+    <div className="min-h-screen bg-white relative">
+      <MobileMenu 
+        isOpen={menuOpen} 
+        onClose={toggleMenu} 
+        onLogout={handleLogout} 
+      />
+
+      <MobileFlowRoutes 
+        onAction={onAction}
+        account={account}
+        transactions={transactions}
+        transactionsLoading={transactionsLoading}
+        toggleMenu={toggleMenu}
+        showWelcome={showWelcome}
+        setShowWelcome={setShowWelcome}
+        handlePaymentSubmit={handlePaymentSubmit}
+      />
+      
+      {!isWelcomePage && <div className="sm:hidden"><MobileNavigation onAction={onAction} /></div>}
     </div>
   );
 };
