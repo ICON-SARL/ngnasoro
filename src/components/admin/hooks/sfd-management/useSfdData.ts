@@ -76,6 +76,9 @@ export function useSfdData() {
   // Fonction pour forcer un refetch périodique temporaire (utile après des opérations de création)
   const startPolling = () => {
     setRefetchInterval(1000); // Refetch toutes les 1 seconde (plus fréquent)
+    
+    // Force an immediate refetch
+    refetch();
   };
 
   return {

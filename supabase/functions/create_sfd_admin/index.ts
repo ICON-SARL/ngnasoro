@@ -22,7 +22,10 @@ serve(async (req) => {
     // Parse request body
     const requestData = await req.json();
     
-    console.log("Edge function received data:", requestData);
+    console.log("Edge function received data:", {
+      ...requestData,
+      password: "***" // Hide password in logs
+    });
     
     const { email, password, full_name, role, sfd_id, is_primary } = requestData;
     
@@ -146,7 +149,14 @@ serve(async (req) => {
         user_id: userData.user.id,
         message: "SFD admin created successfully" 
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { 
+        status: 200, 
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate"
+        } 
+      }
     );
     
   } catch (error) {

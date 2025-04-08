@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 
 interface SfdAdminData {
   email: string;
@@ -82,39 +83,26 @@ export async function createSfdAdmin(userData: SfdAdminData) {
     }
     
     // Utiliser la fonction Edge pour créer l'administrateur SFD
-    console.log("Calling create_admin_user edge function with:", {
-      ...userData,
-      password: "***" // Masquer le mot de passe dans les logs
+    console.log("Calling create_sfd_admin edge function");
+    
+    const result = await edgeFunctionApi.callEdgeFunction('create_sfd_admin', {
+      email: userData.email,
+      password: userData.password,
+      full_name: userData.full_name,
+      role: 'sfd_admin',
+      sfd_id: userData.sfd_id
     });
-
-    const { data: edgeData, error: edgeError } = await supabase.functions.invoke(
-      'create_admin_user',
-      {
-        body: {
-          email: userData.email,
-          password: userData.password,
-          full_name: userData.full_name,
-          role: 'sfd_admin',
-          sfd_id: userData.sfd_id
-        }
-      }
-    );
     
-    if (edgeError) {
-      console.error("Edge function error:", edgeError);
-      throw new Error(`Erreur lors de la création de l'administrateur SFD: ${edgeError.message}`);
+    if (!result || !result.success) {
+      console.error("Invalid response from edge function:", result);
+      throw new Error(result?.error || "Échec de la création de l'administrateur SFD");
     }
     
-    if (!edgeData || !edgeData.success) {
-      console.error("Invalid response from edge function:", edgeData);
-      throw new Error(edgeData?.error || "Échec de la création de l'administrateur SFD");
-    }
-    
-    console.log("SFD admin created successfully:", edgeData);
+    console.log("SFD admin created successfully:", result);
     
     return {
       success: true,
-      user_id: edgeData.user_id,
+      user_id: result.user_id,
       email: userData.email,
       full_name: userData.full_name,
       sfd_id: userData.sfd_id
@@ -145,19 +133,12 @@ export async function deleteSfdAdmin(adminId: string) {
       throw new Error("L'utilisateur n'est pas un administrateur SFD");
     }
     
-    // Utiliser une edge function pour supprimer l'administrateur
-    const { data, error } = await supabase.functions.invoke(
-      'delete_sfd_admin',
-      { body: { admin_id: adminId } }
-    );
+    // Supprimer l'administrateur (cette opération devra être complétée avec une fonction edge)
+    const { data, error } = await supabase.auth.admin.deleteUser(adminId);
       
     if (error) {
-      console.error("Error calling delete_sfd_admin function:", error);
+      console.error("Error deleting admin user:", error);
       throw error;
-    }
-    
-    if (!data.success) {
-      throw new Error(data.message || "Failed to delete administrator");
     }
     
     return { success: true };

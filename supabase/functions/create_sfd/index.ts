@@ -20,9 +20,14 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Parse request body
-    const { sfd_data, admin_id } = await req.json();
+    const body = await req.json();
+    const sfd_data = body.sfd_data;
+    const admin_id = body.admin_id;
+    
+    console.log("Request received for SFD creation:", { sfd_data, admin_id });
     
     if (!sfd_data || !sfd_data.name || !sfd_data.code) {
+      console.error("Missing required SFD data (name, code)");
       return new Response(
         JSON.stringify({ error: "Missing required SFD data (name, code)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

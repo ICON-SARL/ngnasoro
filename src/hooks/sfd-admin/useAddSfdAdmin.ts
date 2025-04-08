@@ -1,9 +1,9 @@
 
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/auth';
+import { createSfdAdmin } from '@/components/admin/hooks/sfd-admin/sfdAdminApiService';
 
 export function useAddSfdAdmin() {
   const [isLoading, setIsLoading] = useState(false);
@@ -34,28 +34,11 @@ export function useAddSfdAdmin() {
           throw new Error("Vous devez être connecté pour effectuer cette action");
         }
         
-        // Call edge function to create the admin user
-        const { data: response, error: edgeFunctionError } = await supabase.functions.invoke(
-          'create_admin_user',
-          {
-            body: {
-              email: data.email,
-              password: data.password,
-              full_name: data.full_name,
-              role: 'sfd_admin',
-              sfd_id: data.sfd_id
-            }
-          }
-        );
+        // Call the API function to create the admin
+        const response = await createSfdAdmin(data);
         
-        if (edgeFunctionError) {
-          console.error("Edge function error:", edgeFunctionError);
-          throw new Error(`Erreur de fonction: ${edgeFunctionError.message}`);
-        }
-        
-        if (!response || !response.success) {
-          console.error("Invalid response:", response);
-          throw new Error(response?.error || "Échec de la création de l'administrateur SFD");
+        if (!response.success) {
+          throw new Error("Échec de la création de l'administrateur SFD");
         }
         
         console.log("SFD admin created successfully:", response);

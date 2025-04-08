@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { handleError } from "@/utils/errorHandler";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * Edge function caller methods
@@ -21,13 +21,14 @@ export const edgeFunctionApi = {
       }
       
       const { data, error } = await supabase.functions.invoke(functionName, {
-        body: JSON.stringify(payload),
+        body: payload,
       });
       
       if (error) {
         console.error(`Error calling ${functionName}:`, error);
         
         if (options.showToast) {
+          const { toast } = useToast();
           toast({
             title: "Erreur de connexion",
             description: "Impossible de contacter le serveur. Veuillez réessayer.",
@@ -51,6 +52,7 @@ export const edgeFunctionApi = {
            error.message.includes('network connection'))) {
         
         if (options.showToast) {
+          const { toast } = useToast();
           toast({
             title: "Erreur de connexion",
             description: "Impossible de contacter le serveur. Veuillez vérifier votre connexion réseau.",
@@ -129,7 +131,12 @@ function getMockDataForFunction(functionName: string, payload: any) {
         status: payload.subsidy_data.status,
       };
     
-    // Add more function mocks as needed
+    case 'create_sfd_admin':
+      return {
+        success: true,
+        user_id: `mock-user-${Date.now()}`,
+        message: "SFD admin created successfully"
+      };
     
     default:
       console.warn(`No mock data available for ${functionName}`);
