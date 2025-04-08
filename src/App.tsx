@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Footer } from '@/components';
@@ -207,9 +208,11 @@ const AppRoutes = () => {
       
       {/* Admin Routes */}
       <Route path="/admin/users" element={
-        <PermissionProtectedRoute requiredPermission="manage_users">
-          <UsersManagementPage />
-        </PermissionProtectedRoute>
+        <PermissionProtectedRoute 
+          component={UsersManagementPage} 
+          requiredPermission="manage_users"
+          fallbackPath="/access-denied"
+        />
       } />
       
       {/* Fallback routes */}
