@@ -24,22 +24,30 @@ export async function uploadSfdFiles(
 
     // Upload logo if present
     if (logoFile) {
+      // Ensure the logos bucket exists
+      await storageApi.createBucketIfNotExists('logos', true);
+      
       const logoPath = `sfds/logos/${formData.code}-${Date.now()}`;
       try {
         const uploadResult = await storageApi.uploadFile("logos", logoPath, logoFile);
         updatedData.logo_url = uploadResult.url;
       } catch (error) {
+        console.error("Logo upload error:", error);
         throw new Error("Échec du téléchargement du logo");
       }
     }
     
     // Upload legal document if present
     if (documentFile) {
+      // Ensure the documents bucket exists
+      await storageApi.createBucketIfNotExists('documents', false);
+      
       const docPath = `sfds/documents/${formData.code}-${Date.now()}`;
       try {
         const uploadResult = await storageApi.uploadFile("documents", docPath, documentFile);
         updatedData.legal_document_url = uploadResult.url;
       } catch (error) {
+        console.error("Document upload error:", error);
         throw new Error("Échec du téléchargement du document légal");
       }
     }

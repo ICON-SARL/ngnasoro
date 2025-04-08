@@ -42,16 +42,113 @@ serve(async (req) => {
     ];
 
     const results = [];
+    const userIds = {};
 
+    // Set up the default SFDs
+    const defaultSfds = [
+      {
+        name: 'Premier SFD',
+        code: 'P',
+        region: 'Centre',
+        logo_url: null,
+        status: 'active'
+      },
+      {
+        name: 'Deuxième SFD',
+        code: 'D',
+        region: 'Nord',
+        logo_url: null,
+        status: 'active'
+      },
+      {
+        name: 'Troisième SFD',
+        code: 'T',
+        region: 'Sud',
+        logo_url: null,
+        status: 'active'
+      }
+    ];
+
+    // Create or update the SFDs
+    for (const sfdData of defaultSfds) {
+      // Check if SFD already exists
+      const { data: existingSfds, error: sfdCheckError } = await supabase
+        .from('sfds')
+        .select('id')
+        .eq('name', sfdData.name)
+        .eq('code', sfdData.code);
+        
+      if (sfdCheckError) {
+        console.error(`Error checking SFD ${sfdData.name}:`, sfdCheckError);
+        continue;
+      }
+      
+      let sfdId;
+      
+      if (!existingSfds || existingSfds.length === 0) {
+        // Create the SFD
+        const { data: newSfd, error: sfdCreateError } = await supabase
+          .from('sfds')
+          .insert(sfdData)
+          .select('id')
+          .single();
+          
+        if (sfdCreateError) {
+          console.error(`Error creating SFD ${sfdData.name}:`, sfdCreateError);
+          continue;
+        }
+        
+        sfdId = newSfd.id;
+        console.log(`Created SFD: ${sfdData.name} with ID: ${sfdId}`);
+        
+        // Create SFD stats
+        await supabase
+          .from('sfd_stats')
+          .insert({
+            sfd_id: sfdId,
+            total_clients: 0,
+            total_loans: 0,
+            repayment_rate: 0
+          });
+        
+        // Create demo subsidy
+        await supabase
+          .from('sfd_subsidies')
+          .insert({
+            sfd_id: sfdId,
+            amount: 5000000,
+            remaining_amount: 5000000,
+            allocated_by: '00000000-0000-0000-0000-000000000000', // Placeholder admin ID
+            description: 'Subvention de démonstration'
+          });
+      } else {
+        sfdId = existingSfds[0].id;
+        console.log(`SFD ${sfdData.name} already exists with ID: ${sfdId}`);
+      }
+    }
+
+    // Fetch all SFDs for later use
+    const { data: allSfds, error: allSfdsError } = await supabase
+      .from('sfds')
+      .select('id, name, code')
+      .eq('status', 'active');
+      
+    if (allSfdsError) {
+      console.error("Error fetching SFDs:", allSfdsError);
+    }
+
+    // Create the user accounts
     for (const account of accounts) {
       // Check if user already exists
       const { data: existingUsers, error: userCheckError } = await supabase.auth.admin.listUsers();
       if (userCheckError) throw userCheckError;
       
       const existingUser = existingUsers.users.find(u => u.email === account.email);
+      let userId;
       
       if (existingUser) {
         console.log(`User ${account.email} already exists with ID ${existingUser.id}, updating role`);
+        userId = existingUser.id;
         
         // Check if the user already has the correct role in app_metadata
         const hasCorrectMetadataRole = existingUser.app_metadata?.role === account.role;
@@ -88,49 +185,124 @@ serve(async (req) => {
           role: account.role,
           hasCorrectRole: hasCorrectMetadataRole || (userRoles && userRoles.length > 0)
         });
-        continue;
-      }
+      } else {
+        // Create the user
+        const { data: userData, error: userError } = await supabase.auth.admin.createUser({
+          email: account.email,
+          password: account.password,
+          email_confirm: true,
+          user_metadata: {
+            full_name: account.full_name
+          },
+          app_metadata: { 
+            role: account.role  // Set role in app_metadata
+          }
+        });
 
-      // Create the user
-      const { data: userData, error: userError } = await supabase.auth.admin.createUser({
-        email: account.email,
-        password: account.password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: account.full_name
-        },
-        app_metadata: { 
-          role: account.role  // Set role in app_metadata
+        if (userError) {
+          results.push({
+            email: account.email,
+            status: 'error',
+            message: userError.message
+          });
+          continue;
         }
-      });
 
-      if (userError) {
+        userId = userData.user.id;
+        console.log(`Created user ${account.email} with ID ${userId} and role ${account.role}`);
+
+        // Assign role to the user in user_roles table
+        try {
+          await supabase.rpc('assign_role', {
+            user_id: userId,
+            role: account.role
+          });
+          console.log(`Assigned role ${account.role} to user ${account.email} in user_roles table`);
+        } catch (roleError) {
+          console.error(`Error assigning role to ${account.email}:`, roleError);
+        }
+
         results.push({
           email: account.email,
-          status: 'error',
-          message: userError.message
-        });
-        continue;
-      }
-
-      console.log(`Created user ${account.email} with ID ${userData.user.id} and role ${account.role}`);
-
-      // Assign role to the user in user_roles table
-      try {
-        await supabase.rpc('assign_role', {
-          user_id: userData.user.id,
+          status: 'created',
           role: account.role
         });
-        console.log(`Assigned role ${account.role} to user ${account.email} in user_roles table`);
-      } catch (roleError) {
-        console.error(`Error assigning role to ${account.email}:`, roleError);
       }
-
-      results.push({
-        email: account.email,
-        status: 'created',
-        role: account.role
-      });
+      
+      // Store the userId for later use
+      userIds[account.role] = userId;
+      
+      // Create entry in profiles table if it doesn't exist
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+        
+      if (!existingProfile) {
+        await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            full_name: account.full_name,
+            email: account.email
+          });
+      }
+      
+      // For client users, create test accounts with all SFDs
+      if (account.role === 'user' && allSfds && allSfds.length > 0) {
+        // First delete any existing user_sfds associations for this user
+        await supabase
+          .from('user_sfds')
+          .delete()
+          .eq('user_id', userId);
+          
+        // Then create new associations for all SFDs
+        for (let i = 0; i < allSfds.length; i++) {
+          await supabase
+            .from('user_sfds')
+            .insert({
+              user_id: userId,
+              sfd_id: allSfds[i].id,
+              is_default: i === 1  // Make the second SFD (Deuxième SFD) the default
+            });
+        }
+        
+        // Ensure client has an account with balance
+        const { data: existingAccount } = await supabase
+          .from('accounts')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+          
+        if (!existingAccount) {
+          await supabase
+            .from('accounts')
+            .insert({
+              user_id: userId,
+              balance: 50000,
+              currency: 'FCFA'
+            });
+        }
+      }
+      
+      // For sfd_admin users, associate them with the first SFD
+      if (account.role === 'sfd_admin' && allSfds && allSfds.length > 0) {
+        // First delete any existing user_sfds associations for this user
+        await supabase
+          .from('user_sfds')
+          .delete()
+          .eq('user_id', userId);
+          
+        // Associate with first SFD
+        await supabase
+          .from('user_sfds')
+          .insert({
+            user_id: userId,
+            sfd_id: allSfds[0].id,
+            is_default: true
+          });
+      }
     }
 
     // Log success for debugging

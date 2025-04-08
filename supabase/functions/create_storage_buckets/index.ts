@@ -14,70 +14,79 @@ serve(async (req) => {
   }
 
   try {
+    // Create a Supabase client with the service role key
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    console.log("Starting storage buckets creation...");
     
-    const requiredBuckets = ['logos', 'documents', 'profiles'];
+    // Define buckets to create
+    const buckets = [
+      { name: "logos", public: true, fileSize: 5242880 }, // 5MB
+      { name: "documents", public: false, fileSize: 10485760 }, // 10MB
+      { name: "profile-photos", public: true, fileSize: 5242880 }, // 5MB
+      { name: "loan-documents", public: false, fileSize: 20971520 } // 20MB
+    ];
+    
     const results = [];
     
-    for (const bucket of requiredBuckets) {
-      // Check if bucket exists
-      const { data: existingBucket, error: checkError } = await supabase
-        .storage
-        .getBucket(bucket);
+    // Create each bucket if it doesn't exist
+    for (const bucket of buckets) {
+      try {
+        // Check if bucket exists
+        const { data: existingBucket, error: checkError } = await supabase
+          .storage
+          .getBucket(bucket.name);
+          
+        if (checkError && checkError.message !== "The resource was not found") {
+          console.error(`Error checking bucket ${bucket.name}:`, checkError);
+          results.push({ bucket: bucket.name, status: 'error', message: checkError.message });
+          continue;
+        }
         
-      if (checkError && checkError.message !== 'The resource was not found') {
-        console.error(`Error checking bucket ${bucket}:`, checkError);
-        results.push({ bucket, status: 'error', message: checkError.message });
-        continue;
-      }
-      
-      // Create bucket if it doesn't exist
-      if (!existingBucket) {
+        // If bucket exists, skip
+        if (existingBucket) {
+          console.log(`Bucket ${bucket.name} already exists`);
+          results.push({ bucket: bucket.name, status: 'already_exists' });
+          continue;
+        }
+        
+        // Create the bucket
         const { data, error } = await supabase
           .storage
-          .createBucket(bucket, {
-            public: true,
-            fileSizeLimit: 10485760, // 10MB
-            allowedMimeTypes: ['image/*', 'application/pdf']
+          .createBucket(bucket.name, {
+            public: bucket.public,
+            fileSizeLimit: bucket.fileSize,
+            allowedMimeTypes: bucket.public 
+              ? ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml'] 
+              : undefined
           });
           
         if (error) {
-          console.error(`Error creating bucket ${bucket}:`, error);
-          results.push({ bucket, status: 'error', message: error.message });
+          console.error(`Error creating bucket ${bucket.name}:`, error);
+          results.push({ bucket: bucket.name, status: 'error', message: error.message });
         } else {
-          console.log(`Bucket ${bucket} created successfully`);
-          results.push({ bucket, status: 'created' });
-          
-          // Add public policy to the bucket
-          if (bucket === 'logos' || bucket === 'documents') {
-            const { error: policyError } = await supabase
-              .storage
-              .from(bucket)
-              .createSignedUrl('test-policy', 10); // Just to test policy creation
-              
-            if (policyError) {
-              console.warn(`Warning: Could not create public policy for ${bucket}`, policyError);
-            }
-          }
+          console.log(`Created bucket ${bucket.name}`);
+          results.push({ bucket: bucket.name, status: 'created' });
         }
-      } else {
-        console.log(`Bucket ${bucket} already exists`);
-        results.push({ bucket, status: 'exists' });
+      } catch (bucketError) {
+        console.error(`Exception creating bucket ${bucket.name}:`, bucketError);
+        results.push({ bucket: bucket.name, status: 'error', message: bucketError.message });
       }
     }
-    
+
     return new Response(
       JSON.stringify({ success: true, results }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
     
   } catch (error) {
-    console.error('Error:', error);
+    console.error("Edge function error:", error);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: `Error creating storage buckets: ${error.message}` }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });

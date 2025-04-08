@@ -11,6 +11,8 @@ export const storageApi = {
    */
   uploadFile: async (bucket: string, path: string, file: File) => {
     try {
+      console.log(`Uploading file to ${bucket}/${path}`);
+      
       // Upload file to storage
       const { data, error } = await supabase.storage
         .from(bucket)
@@ -24,11 +26,13 @@ export const storageApi = {
         throw error;
       }
 
+      console.log("File uploaded successfully:", data);
+
       // Get the public URL for the uploaded file
-      const url = storageApi.getFileUrl(bucket, path);
+      const url = storageApi.getFileUrl(bucket, data.path);
       
       return {
-        path: path,
+        path: data.path,
         url: url
       };
     } catch (error) {
@@ -46,5 +50,54 @@ export const storageApi = {
   getFileUrl: (bucket: string, path: string): string => {
     const { data } = supabase.storage.from(bucket).getPublicUrl(path);
     return data.publicUrl;
+  },
+
+  /**
+   * Check if storage bucket exists
+   * @param bucket - Storage bucket name
+   * @returns True if the bucket exists
+   */
+  checkBucketExists: async (bucket: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.storage.getBucket(bucket);
+      if (error) {
+        return false;
+      }
+      return !!data;
+    } catch {
+      return false;
+    }
+  },
+
+  /**
+   * Create storage bucket if it doesn't exist
+   * @param bucket - Storage bucket name
+   * @param isPublic - Whether the bucket should be public
+   * @returns True if the bucket was created or already exists
+   */
+  createBucketIfNotExists: async (bucket: string, isPublic: boolean = false): Promise<boolean> => {
+    try {
+      // First check if bucket exists
+      const exists = await storageApi.checkBucketExists(bucket);
+      if (exists) {
+        return true;
+      }
+
+      // Create the bucket
+      const { error } = await supabase.storage.createBucket(bucket, {
+        public: isPublic,
+        fileSizeLimit: isPublic ? 5242880 : 10485760, // 5MB for public, 10MB for private
+      });
+
+      if (error) {
+        console.error(`Error creating bucket ${bucket}:`, error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error(`Error in createBucketIfNotExists for ${bucket}:`, error);
+      return false;
+    }
   }
 };
