@@ -35,7 +35,7 @@ export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ additionalCo
             >
               {showMobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
-            <Link to="/super-admin" className="flex items-center">
+            <Link to="/super-admin-dashboard" className="flex items-center">
               <div className="h-8 w-8 rounded-md bg-green-600 flex items-center justify-center text-white font-medium">
                 M
               </div>
@@ -44,7 +44,7 @@ export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ additionalCo
           </div>
 
           <div className="hidden md:flex items-center space-x-6">
-            <Link to="/super-admin" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
+            <Link to="/super-admin-dashboard" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
               Dashboard
             </Link>
             <Link to="/credit-approval" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
@@ -53,7 +53,7 @@ export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ additionalCo
             <Link to="/sfd-management" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
               SFDs
             </Link>
-            <Link to="/reports" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
+            <Link to="/super-admin-dashboard?tab=reports" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
               Rapports
             </Link>
           </div>
@@ -126,7 +126,7 @@ export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ additionalCo
           <div className="md:hidden mt-3 py-3 border-t border-gray-100">
             <nav className="flex flex-col space-y-3">
               <Link
-                to="/super-admin"
+                to="/super-admin-dashboard"
                 className="px-2 py-1.5 text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-md text-sm"
                 onClick={() => setShowMobileMenu(false)}
               >
@@ -147,7 +147,7 @@ export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ additionalCo
                 SFDs
               </Link>
               <Link
-                to="/reports"
+                to="/super-admin-dashboard?tab=reports"
                 className="px-2 py-1.5 text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-md text-sm"
                 onClick={() => setShowMobileMenu(false)}
               >

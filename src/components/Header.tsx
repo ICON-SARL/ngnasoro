@@ -58,13 +58,13 @@ const Header = () => {
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex space-x-8">
-          <a href="#features" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
+          <a href="/#features" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
             Avantages
           </a>
-          <a href="#services" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
+          <a href="/#services" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
             Services
           </a>
-          <a href="#partners" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
+          <a href="/#partners" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
             Partenaires
           </a>
           <Link to="/sfd-selector" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
@@ -132,13 +132,13 @@ const Header = () => {
       {mobileMenuOpen && (
         <div className="md:hidden bg-white dark:bg-gray-900 p-4 shadow-md">
           <nav className="flex flex-col space-y-4">
-            <a href="#features" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+            <a href="/#features" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
               Avantages
             </a>
-            <a href="#services" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+            <a href="/#services" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
               Services
             </a>
-            <a href="#partners" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+            <a href="/#partners" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
               Partenaires
             </a>
             <Link to="/sfd-selector" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
