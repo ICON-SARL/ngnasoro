@@ -23,10 +23,11 @@ export const SfdHeader: React.FC = () => {
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Redirection explicite
+      // Redirection explicite avec rechargement de page
       window.location.href = '/auth';
+      
     } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
+      console.error("SfdHeader - Erreur lors de la déconnexion:", error);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la déconnexion",

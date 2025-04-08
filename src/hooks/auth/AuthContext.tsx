@@ -2,7 +2,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, AuthContextProps, Role } from './types';
-import { UserAppMetadata } from '@supabase/supabase-js';
 
 const AuthContext = createContext<AuthContextProps | null>(null);
 
@@ -124,11 +123,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    console.log("AuthContext - Attempting to sign out");
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      
+      if (error) {
+        console.error("AuthContext - Sign out error:", error);
+        throw error;
+      }
+      
+      console.log("AuthContext - Sign out successful");
+      // Clear any client-side state
+      setUser(null);
+      setSession(null);
+      setActiveSfdId(null);
+      setIsAdmin(false);
+      setIsSfdAdmin(false);
+      
       return { success: true };
     } catch (error: any) {
+      console.error("AuthContext - Sign out error caught:", error);
       return { success: false, error: error.message || 'Une erreur est survenue lors de la déconnexion.' };
     }
   };
@@ -139,10 +153,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signIn,
     signOut: async () => {
+      console.log("AuthContext - signOut wrapper called");
       const result = await signOut();
       if (!result.success) {
         console.error('Error signing out:', result.error);
       }
+      return;
     },
     activeSfdId,
     setActiveSfdId,

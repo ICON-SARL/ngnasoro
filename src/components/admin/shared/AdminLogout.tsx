@@ -22,6 +22,8 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
 
   const handleLogout = async () => {
     try {
+      console.log("AdminLogout - Déconnexion initiée");
+      
       // Clear any client-side states or cookies before calling sign out
       localStorage.removeItem('adminLastSeen');
       
@@ -29,8 +31,11 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
       const { error } = await supabase.auth.signOut();
       
       if (error) {
+        console.error("AdminLogout - Error during sign out:", error);
         throw error;
       }
+      
+      console.log("AdminLogout - Déconnexion réussie");
       
       // Show success toast
       toast({
@@ -41,7 +46,7 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
       // Redirect to login page - Force a full page reload to clear any remaining state
       window.location.href = '/auth';
     } catch (error: any) {
-      console.error('Logout error:', error);
+      console.error('AdminLogout - Logout error:', error);
       toast({
         title: "Erreur de déconnexion",
         description: error.message || "Une erreur s'est produite lors de la déconnexion",

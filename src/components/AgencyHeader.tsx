@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -21,20 +22,21 @@ export const AgencyHeader = () => {
   
   const handleSignOut = async () => {
     try {
-      console.log("Déconnexion initiée");
+      console.log("AgencyHeader - Déconnexion initiée");
       
       await signOut();
       
-      console.log("Déconnexion réussie");
+      console.log("AgencyHeader - Déconnexion réussie");
       
       toast({
         title: "Déconnecté",
         description: "Vous avez été déconnecté avec succès",
       });
       
+      // Forcer la redirection avec un rechargement de page
       window.location.href = '/auth';
     } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
+      console.error("AgencyHeader - Erreur lors de la déconnexion:", error);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la déconnexion",
