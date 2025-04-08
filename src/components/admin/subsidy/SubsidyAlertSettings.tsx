@@ -1,167 +1,271 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Plus, Trash, Edit, Save, X } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SubsidyAlertThreshold } from '@/types/subsidyRequests';
 
 interface SubsidyAlertSettingsProps {
-  thresholds: SubsidyAlertThreshold[];
+  thresholds: any[];
   isLoading: boolean;
 }
 
-export function SubsidyAlertSettings({ thresholds, isLoading }: SubsidyAlertSettingsProps) {
+export const SubsidyAlertSettings: React.FC<SubsidyAlertSettingsProps> = ({ 
+  thresholds, 
+  isLoading 
+}) => {
+  const { createAlertThreshold, updateAlertThreshold, deleteAlertThreshold } = useSubsidyRequests();
   const [newThreshold, setNewThreshold] = useState({
-    name: '',
-    amount: '',
-    email: '',
-    isActive: true
+    threshold_name: '',
+    threshold_amount: '',
+    is_active: true
+  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState({
+    threshold_name: '',
+    threshold_amount: '',
+    is_active: true
   });
   
-  const handleAddThreshold = (e: React.FormEvent) => {
+  const handleCreateThreshold = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real application, this would call an API to add the threshold
-    console.log('Adding threshold:', newThreshold);
     
-    // Reset form
+    if (!newThreshold.threshold_name || !newThreshold.threshold_amount) return;
+    
+    const amount = parseFloat(newThreshold.threshold_amount.replace(/\s/g, '').replace(',', '.'));
+    
+    await createAlertThreshold.mutateAsync({
+      threshold_name: newThreshold.threshold_name,
+      threshold_amount: amount,
+      is_active: newThreshold.is_active
+    });
+    
     setNewThreshold({
-      name: '',
-      amount: '',
-      email: '',
-      isActive: true
+      threshold_name: '',
+      threshold_amount: '',
+      is_active: true
     });
   };
   
-  const handleToggleActive = (thresholdId: string, isActive: boolean) => {
-    // In a real application, this would call an API to update the threshold
-    console.log(`Toggling threshold ${thresholdId} active status to ${isActive}`);
+  const startEditing = (threshold: any) => {
+    setEditingId(threshold.id);
+    setEditValues({
+      threshold_name: threshold.threshold_name,
+      threshold_amount: threshold.threshold_amount.toString(),
+      is_active: threshold.is_active
+    });
   };
   
-  const handleDeleteThreshold = (thresholdId: string) => {
-    // In a real application, this would call an API to delete the threshold
-    console.log(`Deleting threshold ${thresholdId}`);
+  const cancelEditing = () => {
+    setEditingId(null);
+  };
+  
+  const handleSaveEdit = async (id: string) => {
+    const amount = parseFloat(editValues.threshold_amount.replace(/\s/g, '').replace(',', '.'));
+    
+    await updateAlertThreshold.mutateAsync({
+      id,
+      updates: {
+        threshold_name: editValues.threshold_name,
+        threshold_amount: amount,
+        is_active: editValues.is_active
+      }
+    });
+    
+    setEditingId(null);
+  };
+  
+  const handleDelete = async (id: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce seuil d\'alerte ?')) {
+      await deleteAlertThreshold.mutateAsync(id);
+    }
+  };
+  
+  const formatAmountInput = (value: string) => {
+    value = value.replace(/\D/g, ''); // Enlever tous les caractères non numériques
+    
+    if (value) {
+      const numberValue = parseInt(value, 10);
+      return numberValue.toLocaleString('fr-FR');
+    }
+    
+    return value;
   };
   
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Paramètres d'alerte de subvention</CardTitle>
-          <CardDescription>
-            Configurez des seuils d'alerte pour les demandes de prêt dépassant certains montants
-          </CardDescription>
+          <CardTitle>Seuils d'alerte pour les demandes de subvention</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <form onSubmit={handleAddThreshold} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="threshold-name">Nom du seuil</Label>
-              <Input
-                id="threshold-name"
-                placeholder="ex: Seuil standard"
-                value={newThreshold.name}
-                onChange={(e) => setNewThreshold({...newThreshold, name: e.target.value})}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="threshold-amount">Montant (FCFA)</Label>
-              <Input
-                id="threshold-amount"
-                type="number"
-                placeholder="ex: 10000000"
-                value={newThreshold.amount}
-                onChange={(e) => setNewThreshold({...newThreshold, amount: e.target.value})}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="notification-email">Email de notification</Label>
-              <Input
-                id="notification-email"
-                type="email"
-                placeholder="email@example.com"
-                value={newThreshold.email}
-                onChange={(e) => setNewThreshold({...newThreshold, email: e.target.value})}
-                required
-              />
-            </div>
-            
-            <div className="flex items-end space-x-2">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="threshold-active"
-                  checked={newThreshold.isActive}
-                  onCheckedChange={(checked) => setNewThreshold({...newThreshold, isActive: checked})}
+        <CardContent>
+          <form onSubmit={handleCreateThreshold} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="threshold_name">Nom du seuil</Label>
+                <Input
+                  id="threshold_name"
+                  value={newThreshold.threshold_name}
+                  onChange={(e) => setNewThreshold({...newThreshold, threshold_name: e.target.value})}
+                  placeholder="Ex: Demande importante"
+                  required
                 />
-                <Label htmlFor="threshold-active">Actif</Label>
               </div>
-              <Button type="submit" className="ml-auto">Ajouter un seuil</Button>
+              <div>
+                <Label htmlFor="threshold_amount">Montant (FCFA)</Label>
+                <Input
+                  id="threshold_amount"
+                  value={newThreshold.threshold_amount}
+                  onChange={(e) => setNewThreshold({
+                    ...newThreshold, 
+                    threshold_amount: formatAmountInput(e.target.value)
+                  })}
+                  placeholder="Ex: 5 000 000"
+                  required
+                />
+              </div>
+              <div className="flex items-end">
+                <div className="flex items-center mr-4 space-x-2">
+                  <Switch
+                    checked={newThreshold.is_active}
+                    onCheckedChange={(checked) => setNewThreshold({...newThreshold, is_active: checked})}
+                    id="is_active"
+                  />
+                  <Label htmlFor="is_active">Actif</Label>
+                </div>
+                <Button type="submit" className="flex-grow">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Ajouter
+                </Button>
+              </div>
             </div>
           </form>
           
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium mb-4">Seuils configurés</h3>
-            
-            {isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            ) : thresholds.length > 0 ? (
-              <Table>
-                <TableHeader>
+          <Separator className="my-6" />
+          
+          {isLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Montant</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {thresholds.length === 0 ? (
                   <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>Montant</TableHead>
-                    <TableHead>Emails de notification</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
+                    <TableCell colSpan={4} className="text-center py-4">
+                      Aucun seuil d'alerte défini
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {thresholds.map((threshold) => (
+                ) : (
+                  thresholds.map((threshold) => (
                     <TableRow key={threshold.id}>
-                      <TableCell className="font-medium">{threshold.threshold_name}</TableCell>
-                      <TableCell>{threshold.threshold_amount.toLocaleString()} FCFA</TableCell>
-                      <TableCell>{threshold.notification_emails?.join(', ') || 'N/A'}</TableCell>
                       <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            checked={threshold.is_active}
-                            onCheckedChange={(checked) => handleToggleActive(threshold.id, checked)}
+                        {editingId === threshold.id ? (
+                          <Input
+                            value={editValues.threshold_name}
+                            onChange={(e) => setEditValues({...editValues, threshold_name: e.target.value})}
                           />
-                          <span>{threshold.is_active ? 'Actif' : 'Inactif'}</span>
-                        </div>
+                        ) : (
+                          threshold.threshold_name
+                        )}
                       </TableCell>
                       <TableCell>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDeleteThreshold(threshold.id)}
-                        >
-                          Supprimer
-                        </Button>
+                        {editingId === threshold.id ? (
+                          <Input
+                            value={editValues.threshold_amount}
+                            onChange={(e) => setEditValues({
+                              ...editValues, 
+                              threshold_amount: formatAmountInput(e.target.value)
+                            })}
+                          />
+                        ) : (
+                          `${threshold.threshold_amount.toLocaleString()} FCFA`
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingId === threshold.id ? (
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={editValues.is_active}
+                              onCheckedChange={(checked) => setEditValues({...editValues, is_active: checked})}
+                            />
+                            <span>{editValues.is_active ? 'Actif' : 'Inactif'}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <div className={`h-2 w-2 rounded-full ${threshold.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
+                            <span>{threshold.is_active ? 'Actif' : 'Inactif'}</span>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {editingId === threshold.id ? (
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => handleSaveEdit(threshold.id)}
+                            >
+                              <Save className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={cancelEditing}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => startEditing(threshold)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              className="text-red-500 hover:text-red-700"
+                              onClick={() => handleDelete(threshold.id)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                <p>Aucun seuil configuré</p>
-              </div>
-            )}
-          </div>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
   );
-}
+};

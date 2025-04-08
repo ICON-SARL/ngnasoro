@@ -27,7 +27,7 @@ export const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="text-2xl font-bold text-gray-800">
-              {isLoading ? "..." : stats.activeSfds}
+              {isLoading ? "..." : stats.activeSfds || 0}
             </div>
             <div className="p-2 bg-green-50 rounded-full">
               <Building className="h-4 w-4 text-green-600" />
@@ -47,7 +47,7 @@ export const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="text-2xl font-bold text-gray-800">
-              {isLoading ? "..." : stats.admins}
+              {isLoading ? "..." : stats.admins || 0}
             </div>
             <div className="p-2 bg-blue-50 rounded-full">
               <Users className="h-4 w-4 text-blue-600" />
@@ -67,7 +67,7 @@ export const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="text-2xl font-bold text-gray-800">
-              {isLoading ? "..." : stats.totalUsers.toLocaleString('fr-FR')}
+              {isLoading ? "..." : (stats.totalUsers ? stats.totalUsers.toLocaleString('fr-FR') : '0')}
             </div>
             <div className="p-2 bg-purple-50 rounded-full">
               <Users className="h-4 w-4 text-purple-600" />
@@ -75,7 +75,7 @@ export const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
           </div>
           <div className="text-xs text-gray-500 mt-1 flex items-center">
             <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
-            <span>+{stats.newUsersThisMonth.toLocaleString('fr-FR')} ce mois</span>
+            <span>+{stats.newUsersThisMonth ? stats.newUsersThisMonth.toLocaleString('fr-FR') : '0'} ce mois</span>
           </div>
         </CardContent>
       </Card>
@@ -97,7 +97,7 @@ export const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
           </div>
           <div className="text-xs text-gray-500 mt-1 flex items-center">
             <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
-            <span>+{stats.newSubsidiesThisMonth || '15.2M'} ce mois</span>
+            <span>+{stats.newSubsidiesThisMonth || '0'} ce mois</span>
           </div>
         </CardContent>
       </Card>

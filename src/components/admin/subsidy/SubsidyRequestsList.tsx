@@ -6,22 +6,18 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search, AlertTriangle, FileText, Filter } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
 
 interface SubsidyRequestsListProps {
+  subsidyRequests: any[];
   isLoading: boolean;
-  showFilters: boolean;
-  onRefresh: () => void;
   onSelectRequest: (id: string) => void;
 }
 
 export const SubsidyRequestsList = ({ 
+  subsidyRequests, 
   isLoading, 
-  showFilters,
-  onRefresh,
   onSelectRequest 
 }: SubsidyRequestsListProps) => {
-  const { subsidyRequests } = useSubsidyRequests();
   const [searchQuery, setSearchQuery] = React.useState('');
   
   const filteredRequests = subsidyRequests.filter(req => 
@@ -77,12 +73,10 @@ export const SubsidyRequestsList = ({
           />
         </div>
         
-        {showFilters && (
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <Filter className="h-4 w-4" />
-            Filtres
-          </Button>
-        )}
+        <Button variant="outline" size="sm" className="flex items-center gap-1">
+          <Filter className="h-4 w-4" />
+          Filtres
+        </Button>
       </div>
       
       {isLoading ? (

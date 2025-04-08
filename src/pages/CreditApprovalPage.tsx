@@ -3,7 +3,6 @@ import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { CreditApplicationList } from '@/components/admin/credit/CreditApplicationList';
-import { CreditApprovalComponent } from '@/components/admin/credit/CreditApprovalComponent';
 import { CreditScoringPanel } from '@/components/admin/credit/CreditScoringPanel';
 import { CreditNotificationSettings } from '@/components/admin/credit/CreditNotificationSettings';
 import { SfdManagement } from '@/components/admin/SfdManagement';
@@ -41,7 +40,6 @@ const CreditApprovalPage = () => {
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList>
             <TabsTrigger value="credit-applications">Dossiers de crédit</TabsTrigger>
-            <TabsTrigger value="credit-approval">Approbation de Crédit</TabsTrigger>
             <TabsTrigger value="scoring">Système de Scoring</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="sfd-management">Gestion des SFDs</TabsTrigger>
@@ -51,10 +49,6 @@ const CreditApprovalPage = () => {
           
           <TabsContent value="credit-applications">
             <CreditApplicationList />
-          </TabsContent>
-          
-          <TabsContent value="credit-approval">
-            <CreditApprovalComponent />
           </TabsContent>
           
           <TabsContent value="scoring">
