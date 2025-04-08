@@ -1,2 +1,2 @@
 
-export { AddSfdAdminDialog } from './AddSfdAdminDialog';
+export { AddSfdAdminDialog } from './index';

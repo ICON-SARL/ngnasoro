@@ -10,6 +10,7 @@ import { useSfdUserManagement } from './hooks/useSfdUserManagement';
 export function SfdUserManagement() {
   const {
     users,
+    filteredUsers,
     searchTerm,
     setSearchTerm,
     statusFilter,
@@ -23,12 +24,10 @@ export function SfdUserManagement() {
     isDeleteModalOpen,
     setIsDeleteModalOpen,
     selectedUser,
-    setSelectedUser,
     handleEditUser,
     handleDeleteUser,
     confirmDeactivation,
     exportUserData,
-    filteredUsers,
     isLoading
   } = useSfdUserManagement();
 
@@ -80,4 +79,3 @@ export function SfdUserManagement() {
     </div>
   );
 }
-

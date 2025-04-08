@@ -144,9 +144,151 @@ export function useSfdAdminManagement() {
     }
   });
 
+  // Update SFD admin role
+  const updateSfdAdminMutation = useMutation({
+    mutationFn: async (data: {
+      adminId: string;
+      role: string;
+      has2FA?: boolean;
+      is_active?: boolean;
+    }) => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        console.log("Updating admin role:", data);
+        
+        // Update the admin_users table
+        const { error: updateError } = await supabase
+          .from('admin_users')
+          .update({ role: data.role })
+          .eq('id', data.adminId);
+          
+        if (updateError) {
+          console.error("Error updating admin role:", updateError);
+          throw updateError;
+        }
+        
+        // Also update the user_roles table if needed
+        if (data.role !== 'sfd_admin') {
+          // Remove the old role
+          const { error: removeRoleError } = await supabase
+            .from('user_roles')
+            .delete()
+            .eq('user_id', data.adminId)
+            .eq('role', 'sfd_admin');
+            
+          if (removeRoleError) {
+            console.warn("Error removing old role:", removeRoleError);
+            // Continue despite error
+          }
+          
+          // Add the new role
+          const { error: addRoleError } = await supabase.rpc(
+            'assign_role',
+            {
+              user_id: data.adminId,
+              role: data.role
+            }
+          );
+          
+          if (addRoleError) {
+            console.error("Error assigning new role:", addRoleError);
+            throw addRoleError;
+          }
+        }
+        
+        // Update the auth.users metadata if possible
+        try {
+          await supabase.auth.admin.updateUserById(
+            data.adminId,
+            { app_metadata: { role: data.role } }
+          );
+        } catch (metaError) {
+          console.warn("Could not update user metadata:", metaError);
+          // Continue despite error
+        }
+        
+        return { success: true };
+      } catch (error: any) {
+        console.error("Error updating SFD admin:", error);
+        setError(error.message || "An error occurred while updating the administrator");
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
+      
+      toast({
+        title: "Success",
+        description: "Administrator role has been successfully updated",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Unable to update the administrator: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Delete an SFD admin
+  const deleteSfdAdminMutation = useMutation({
+    mutationFn: async (adminId: string) => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        console.log("Deleting SFD admin:", adminId);
+        
+        // Call the edge function to delete the admin
+        const { data, error } = await supabase.functions.invoke('delete_sfd_admin', {
+          body: { admin_id: adminId }
+        });
+        
+        if (error) {
+          console.error("Error calling delete_sfd_admin function:", error);
+          throw error;
+        }
+        
+        if (!data.success) {
+          throw new Error(data.message || "Failed to delete administrator");
+        }
+        
+        return data;
+      } catch (error: any) {
+        console.error("Error deleting SFD admin:", error);
+        setError(error.message || "An error occurred while deleting the administrator");
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
+      
+      toast({
+        title: "Success",
+        description: "Administrator has been successfully deleted",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Unable to delete the administrator: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
   return {
     isLoading,
     error,
-    addSfdAdmin: addSfdAdminMutation.mutate
+    addSfdAdmin: addSfdAdminMutation.mutate,
+    updateSfdAdmin: updateSfdAdminMutation.mutate,
+    deleteSfdAdmin: deleteSfdAdminMutation.mutate
   };
 }
