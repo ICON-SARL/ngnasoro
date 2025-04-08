@@ -12,7 +12,7 @@ export enum UserRole {
 export interface User {
   id: string;
   email: string;
-  full_name?: string;
+  full_name: string;
   avatar_url?: string;
   sfd_id?: string;
   phone?: string;
@@ -31,9 +31,9 @@ export interface User {
 export interface AuthContextProps {
   user: User | null;
   setUser: (user: User | null) => void;
-  signIn: (email: string, password: string) => Promise<{ success?: boolean; error?: any; data?: any }>;
-  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<{ success?: boolean; error?: any; data?: any }>;
-  signOut: () => Promise<{ success?: boolean; error?: any }>;
+  signIn: (email: string, password: string) => Promise<{ error?: any }>;
+  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
+  signOut: () => Promise<void>;
   loading: boolean;
   isLoggedIn: boolean;
   isAdmin: boolean;
@@ -45,5 +45,5 @@ export interface AuthContextProps {
   toggleBiometricAuth: () => Promise<void>;
   session: any | null;
   isLoading: boolean;
-  refreshSession: () => Promise<{ success?: boolean; error?: any }>;
+  refreshSession: () => Promise<void>;
 }

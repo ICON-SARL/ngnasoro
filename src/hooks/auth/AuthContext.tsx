@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User, AuthContextProps, Role, UserRole } from './types';
+import { User, AuthContextProps, Role } from './types';
 
 const AuthContext = createContext<AuthContextProps | null>(null);
 
@@ -12,9 +12,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSfdAdmin, setIsSfdAdmin] = useState(false);
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const [userRole, setUserRole] = useState<Role>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -28,19 +25,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (data?.session) {
           setSession(data.session);
-          const userData = {
+          setUser({
             id: data.session.user.id,
-            email: data.session.user.email || '',
-            full_name: data.session.user.user_metadata?.full_name || '',
-            avatar_url: data.session.user.user_metadata?.avatar_url,
-            user_metadata: data.session.user.user_metadata || {},
-            app_metadata: data.session.user.app_metadata || {}
-          };
-          setUser(userData);
+            email: data.session.user.email,
+            app_metadata: data.session.user.app_metadata
+          });
           
           // Check roles
-          const role = data.session.user.app_metadata?.role as Role;
-          setUserRole(role);
+          const role = data.session.user.app_metadata?.role;
           setIsAdmin(role === 'admin');
           setIsSfdAdmin(role === 'sfd_admin');
           
@@ -63,7 +55,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Error in auth context:', error);
       } finally {
         setLoading(false);
-        setIsLoading(false);
       }
     };
 
@@ -73,20 +64,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Auth state change:', event);
       
       if (session) {
-        const userData = {
+        setUser({
           id: session.user.id,
-          email: session.user.email || '',
-          full_name: session.user.user_metadata?.full_name || '',
-          avatar_url: session.user.user_metadata?.avatar_url,
-          user_metadata: session.user.user_metadata || {},
-          app_metadata: session.user.app_metadata || {}
-        };
-        setUser(userData);
+          email: session.user.email,
+          app_metadata: session.user.app_metadata
+        });
         setSession(session);
         
         // Check roles on auth state change
-        const role = session.user.app_metadata?.role as Role;
-        setUserRole(role);
+        const role = session.user.app_metadata?.role;
         setIsAdmin(role === 'admin');
         setIsSfdAdmin(role === 'sfd_admin');
       } else {
@@ -95,11 +81,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setActiveSfdId(null);
         setIsAdmin(false);
         setIsSfdAdmin(false);
-        setUserRole(null);
       }
       
       setLoading(false);
-      setIsLoading(false);
     });
 
     return () => {
@@ -119,68 +103,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, metadata?: Record<string, any>) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: metadata }
-      });
-      
-      if (error) throw error;
-      return { success: true, data };
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Une erreur est survenue lors de l\'inscription.' };
-    }
-  };
-
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      await supabase.auth.signOut();
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message || 'Une erreur est survenue lors de la déconnexion.' };
     }
   };
 
-  const toggleBiometricAuth = async () => {
-    setBiometricEnabled(!biometricEnabled);
-    return Promise.resolve();
-  };
-
-  const refreshSession = async () => {
-    try {
-      const { data, error } = await supabase.auth.refreshSession();
-      if (error) throw error;
-      setSession(data.session);
-      return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Une erreur est survenue lors du rafraîchissement de la session.' };
-    }
-  };
-
-  const isLoggedIn = !!user;
-
   return (
     <AuthContext.Provider value={{
       user,
       session,
       loading,
-      isLoading,
       signIn,
-      signUp,
       signOut,
       activeSfdId,
       setActiveSfdId,
       isAdmin,
-      isSfdAdmin,
-      userRole,
-      biometricEnabled,
-      toggleBiometricAuth,
-      refreshSession,
-      isLoggedIn,
-      setUser
+      isSfdAdmin
     }}>
       {children}
     </AuthContext.Provider>
