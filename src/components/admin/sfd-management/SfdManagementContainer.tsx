@@ -50,10 +50,20 @@ export function SfdManagementContainer() {
 
   const { isLoading: isLoadingAdmin, error: adminError, addSfdAdmin } = useSfdAdminManagement();
 
-  // Rafraîchir la liste des SFDs au chargement initial
+  // Rafraîchir la liste des SFDs au chargement initial et à intervalles réguliers
   useEffect(() => {
     console.log("Rafraîchissement initial de la liste des SFDs");
+    
+    // Refetch immédiat
     refetch();
+    
+    // Configurer un intervalle de rafraîchissement
+    const intervalId = setInterval(() => {
+      console.log("Rafraîchissement périodique des SFDs");
+      refetch();
+    }, 10000); // Toutes les 10 secondes
+    
+    return () => clearInterval(intervalId);
   }, [refetch]);
 
   const handleViewDetails = (sfd: Sfd) => {

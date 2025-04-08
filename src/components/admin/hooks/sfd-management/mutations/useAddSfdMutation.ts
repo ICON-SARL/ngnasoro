@@ -105,7 +105,7 @@ export function useAddSfdMutation() {
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
       
       // Force refetch the list immediately to ensure UI is updated
-      queryClient.refetchQueries({ queryKey: ['sfds'] });
+      queryClient.refetchQueries({ queryKey: ['sfds'], exact: true });
       
       toast({
         title: 'SFD ajoutée',
