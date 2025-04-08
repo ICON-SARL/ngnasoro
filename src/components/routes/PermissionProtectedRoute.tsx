@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth';
@@ -77,14 +76,15 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     // Permission check
     let permissionMatch = !requiredPermission;
     
-    // Fixed: Use type assertion to ensure TypeScript understands the comparison
-    // Admin has all permissions
-    if (isAdmin || userRole === UserRole.ADMIN || userRole === 'admin') {
+    // Admin has all permissions - use safe type checks
+    if (isAdmin || (typeof userRole === 'string' && (userRole === 'admin'))) {
       permissionMatch = true;
     }
     
     // SFD admin has SFD-related permissions
-    if (!permissionMatch && (isSfdAdmin || userRole === 'sfd_admin') && requiredPermission && 
+    if (!permissionMatch && 
+        (isSfdAdmin || (typeof userRole === 'string' && userRole === 'sfd_admin')) && 
+        requiredPermission && 
         (requiredPermission.includes('sfd') || 
          requiredPermission.includes('client') || 
          requiredPermission.includes('loan'))) {
