@@ -13,6 +13,7 @@ export function useSfdAdminManagement() {
   const queryClient = useQueryClient();
   const { sendNotification } = useAdminCommunication();
   const { user } = useAuth();
+  const { toast } = useToast(); // Correctly initialize toast
   
   const addSfdAdminMutation = useMutation({
     mutationFn: async (data: {
@@ -81,13 +82,13 @@ export function useSfdAdminManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
       
-      useToast().toast({
+      toast({
         title: "Succès",
         description: "L'administrateur SFD a été créé avec succès",
       });
     },
     onError: (error: any) => {
-      useToast().toast({
+      toast({
         title: "Erreur",
         description: `Impossible de créer l'administrateur: ${error.message}`,
         variant: "destructive",
