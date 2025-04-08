@@ -25,8 +25,16 @@ export function useAddSfdAdmin() {
       setError(null);
       
       try {
-        console.log("Starting SFD admin creation process", data);
+        console.log("Starting SFD admin creation process", {
+          ...data,
+          password: "***" // Mask password in logs
+        });
         
+        if (!user) {
+          throw new Error("Vous devez être connecté pour effectuer cette action");
+        }
+        
+        // Call edge function to create the admin user
         const { data: response, error: edgeFunctionError } = await supabase.functions.invoke(
           'create_admin_user',
           {
@@ -52,23 +60,12 @@ export function useAddSfdAdmin() {
         
         console.log("SFD admin created successfully:", response);
         
-        if (data.notify && response.user_id && user) {
-          try {
-            // This will be imported from useAdminCommunication in the main hook
-            await sendNotification({
-              title: "Compte administrateur SFD créé",
-              message: `Un compte administrateur a été créé pour vous. Veuillez vous connecter avec l'email ${data.email}.`,
-              type: "info",
-              recipient_id: response.user_id
-            });
-            console.log("Notification sent successfully");
-          } catch (notifError) {
-            console.warn("Unable to send notification:", notifError);
-          }
-        }
-        
-        return response;
-        
+        // Return the response, including the user_id for notification purposes
+        return {
+          ...response,
+          user_id: response.user_id,
+          email: data.email,
+        };
       } catch (error: any) {
         console.error("Error creating SFD admin:", error);
         setError(error.message || "Une erreur est survenue lors de la création de l'administrateur");

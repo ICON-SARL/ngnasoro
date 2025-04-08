@@ -21,8 +21,38 @@ export function useSfdAdminManagement() {
   // Combine errors (use the most recent/relevant one)
   const error = addError || updateError || deleteError || listError;
 
-  // Export the sendNotification function to be used in useAddSfdAdmin
-  global.sendNotification = sendNotification;
+  // Modified approach - pass the sendNotification function to addSfdAdmin through props
+  // instead of using global variables
+  const addSfdAdmin = (
+    data: any, 
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+  ) => {
+    // Call the addAdmin function with the data and options
+    return addAdmin(data, {
+      ...options,
+      // This is where we'd handle sending notifications after successful admin creation
+      onSuccess: () => {
+        // If notify flag is set, send a notification
+        if (data.notify && data.user_id) {
+          try {
+            sendNotification({
+              title: "Compte administrateur SFD créé",
+              message: `Un compte administrateur a été créé pour vous. Veuillez vous connecter avec l'email ${data.email}.`,
+              type: "info",
+              recipient_id: data.user_id
+            });
+          } catch (notifError) {
+            console.warn("Unable to send notification:", notifError);
+          }
+        }
+        
+        // Call the original onSuccess if provided
+        if (options?.onSuccess) {
+          options.onSuccess();
+        }
+      }
+    });
+  };
 
   return {
     // Admin list data
@@ -34,13 +64,8 @@ export function useSfdAdminManagement() {
     error,
     
     // Admin operations
-    addSfdAdmin: addAdmin,
+    addSfdAdmin,
     updateSfdAdmin: updateAdmin,
     deleteSfdAdmin: deleteAdmin
   };
-}
-
-// Make sendNotification globally available for the useAddSfdAdmin hook
-declare global {
-  var sendNotification: (notification: AdminNotificationRequest) => Promise<any>;
 }
