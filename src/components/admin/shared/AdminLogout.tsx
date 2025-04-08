@@ -67,7 +67,7 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
       className={`${className} ${variant !== 'link' ? 'text-white hover:text-white hover:bg-primary-foreground/10' : ''}`}
     >
       {children || <LogOut className="h-4 w-4" />}
-      {!children && variant !== 'icon' && <span className="ml-2">Déconnexion</span>}
+      {!children && size !== 'icon' && <span className="ml-2">Déconnexion</span>}
     </Button>
   );
 };
