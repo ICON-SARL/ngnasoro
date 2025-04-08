@@ -20,14 +20,6 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Ensure storage buckets exist before proceeding
-    try {
-      await supabase.functions.invoke('create_storage_buckets');
-    } catch (error) {
-      console.warn("Warning: Failed to ensure storage buckets exist:", error);
-      // Continue anyway as this is not critical
-    }
-
     // Parse request body
     const body = await req.json();
     const sfd_data = body.sfd_data;
@@ -66,17 +58,16 @@ serve(async (req) => {
       );
     }
     
-    // On n'utilise plus la fonction get_table_columns qui cause des erreurs
-    // Au lieu de cela, on définit manuellement les colonnes valides
-    const validColumns = [
-      'name', 'code', 'region', 'status', 'logo_url', 'phone',
-      'subsidy_balance', 'created_at', 'updated_at'
-    ];
-    
-    // Filter to valid columns only
-    const cleanedSfdData = Object.fromEntries(
-      Object.entries(sfd_data).filter(([key]) => validColumns.includes(key))
-    );
+    // Extraire uniquement les champs qui existent dans la table
+    const cleanedSfdData = {
+      name: sfd_data.name,
+      code: sfd_data.code,
+      region: sfd_data.region || null,
+      status: sfd_data.status || 'active',
+      logo_url: sfd_data.logo_url || null,
+      phone: sfd_data.phone || null,
+      legal_document_url: sfd_data.legal_document_url || null
+    };
     
     console.log("Creating new SFD with cleaned data:", cleanedSfdData);
     

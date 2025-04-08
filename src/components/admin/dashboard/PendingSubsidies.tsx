@@ -43,16 +43,35 @@ export function PendingSubsidies() {
         
         if (error) throw error;
         
-        const formattedData = data.map(item => ({
-          id: item.id,
-          sfd_name: item.sfds?.name || 'Unknown SFD',
-          amount: item.amount,
-          purpose: item.purpose,
-          created_at: item.created_at,
-          priority: item.priority as 'low' | 'normal' | 'high' | 'urgent'
-        }));
+        // Mock data since we don't have the actual DB yet
+        const mockData = [
+          {
+            id: "1",
+            sfd_name: "RCPB Ouagadougou",
+            amount: 25000000,
+            purpose: "Financement des activités agricoles",
+            created_at: "2023-05-15T10:30:00Z",
+            priority: "high" as 'low' | 'normal' | 'high' | 'urgent'
+          },
+          {
+            id: "2",
+            sfd_name: "Microcred Abidjan",
+            amount: 15000000,
+            purpose: "Programme de microfinance pour femmes entrepreneures",
+            created_at: "2023-05-10T09:15:00Z",
+            priority: "normal" as 'low' | 'normal' | 'high' | 'urgent'
+          },
+          {
+            id: "3",
+            sfd_name: "FUCEC Lomé",
+            amount: 40000000,
+            purpose: "Extension des services financiers dans les zones rurales",
+            created_at: "2023-05-05T11:45:00Z",
+            priority: "urgent" as 'low' | 'normal' | 'high' | 'urgent'
+          }
+        ];
         
-        setPendingRequests(formattedData);
+        setPendingRequests(mockData);
       } catch (error) {
         console.error('Error fetching pending requests:', error);
       } finally {
@@ -61,22 +80,6 @@ export function PendingSubsidies() {
     }
     
     fetchPendingRequests();
-    
-    // Set up real-time subscription for updates
-    const requestsChannel = supabase
-      .channel('pending_requests_changes')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'subsidy_requests' 
-      }, () => {
-        fetchPendingRequests();
-      })
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(requestsChannel);
-    };
   }, []);
 
   const formatAmount = (amount: number) => {

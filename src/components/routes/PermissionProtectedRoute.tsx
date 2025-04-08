@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth';
@@ -7,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { UserRole } from '@/utils/auth/roleTypes';
 
 interface PermissionProtectedRouteProps {
-  component: React.ComponentType<any>;
+  children: React.ReactNode;
   requiredPermission?: string;
   requiredRole?: UserRole | string;
   fallbackPath?: string;
@@ -15,7 +14,7 @@ interface PermissionProtectedRouteProps {
 }
 
 const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({ 
-  component: Component, 
+  children, 
   requiredPermission,
   requiredRole,
   fallbackPath = '/login',
@@ -24,11 +23,6 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
   const { user, isAdmin, isSfdAdmin } = useAuth();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const location = useLocation();
-  
-  // Ne pas rediriger depuis la page d'accueil
-  if (location.pathname === '/' || location.pathname === '/index') {
-    return <Component {...rest} />;
-  }
   
   useEffect(() => {
     // If no user, deny access immediately
@@ -132,9 +126,10 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     );
   }
 
+  // Redirect to appropriate auth page based on required role
   if (!user) {
     // Redirect to appropriate auth page based on required role
-    if (requiredRole === UserRole.SUPER_ADMIN) {
+    if (requiredRole === UserRole.SUPER_ADMIN || requiredRole === 'admin') {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
     } else if (requiredRole === UserRole.SFD_ADMIN || requiredRole === 'sfd_admin') {
       return <Navigate to="/sfd/auth" state={{ from: location }} replace />;
@@ -147,7 +142,7 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     return <Navigate to={fallbackPath || "/access-denied"} state={{ from: location, requiredPermission, requiredRole }} replace />;
   }
 
-  return <Component {...rest} />;
+  return <>{children}</>;
 };
 
 export default PermissionProtectedRoute;

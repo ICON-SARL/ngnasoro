@@ -19,11 +19,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, loading, isAdmin, isSfdAdmin } = useAuth();
   const location = useLocation();
   
-  // Ne pas rediriger depuis la page d'accueil
-  if (location.pathname === '/' || location.pathname === '/index') {
-    return <Component {...rest} />;
-  }
-  
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Chargement...</div>;
   }

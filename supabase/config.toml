@@ -1,20 +1,53 @@
 
 project_id = "xnqysvnychmsockivqhb"
 
-[functions.create-test-accounts]
-verify_jwt = true
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage"]
 
-[functions.mobile-dashboard]
-verify_jwt = true
+[db]
+port = 54322
 
-[functions.create_storage_buckets]
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+
+[realtime]
+enabled = true
+
+[analytics]
+enabled = false
+port = 54327
+
+# Configure Edge Functions
+[functions]
+enabled = true
+
+[functions.create_sfd_admin]
+verify_jwt = false
+
+[functions.delete_sfd_admin]
+verify_jwt = false
+
+[functions.create_sfd_admin_link]
 verify_jwt = false
 
 [functions.create_sfd]
-verify_jwt = true
+verify_jwt = false
 
-[functions.get_sfd_dashboard_data]
-verify_jwt = true
+[functions.client-notifications]
+verify_jwt = false
 
-[functions.initialize_dashboard_data]
-verify_jwt = true
+[functions.create_admin_user]
+verify_jwt = false

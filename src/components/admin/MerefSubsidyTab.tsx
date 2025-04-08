@@ -1,74 +1,20 @@
 
-import React, { useState } from 'react';
-import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SubsidyRequestDetail } from '@/components/admin/subsidy/SubsidyRequestDetail';
-import { SubsidyRequestsList } from '@/components/admin/subsidy/SubsidyRequestsList';
-import { SubsidyAlertSettings } from '@/components/admin/subsidy/SubsidyAlertSettings';
+import React from 'react';
+import { SubsidyRequestManagement } from './subsidy/SubsidyRequestManagement';
 
-export const MerefSubsidyTab = () => {
-  const [activeTab, setActiveTab] = useState('requests');
-  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
-
-  const {
-    subsidyRequests,
-    isLoading,
-    alertThresholds,
-    isLoadingThresholds
-  } = useSubsidyRequests();
-
+export function MerefSubsidyTab() {
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="mb-4">
-        <TabsTrigger value="requests">Demandes de prêts</TabsTrigger>
-        <TabsTrigger value="details" disabled={!selectedRequestId}>Détails</TabsTrigger>
-        <TabsTrigger value="settings">Paramètres d'alerte</TabsTrigger>
-      </TabsList>
+    <div className="p-4 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Demandes de Prêt SFD</h2>
+          <p className="text-muted-foreground">
+            Gérez les demandes de prêt des institutions de microfinance (SFD)
+          </p>
+        </div>
+      </div>
 
-      <TabsContent value="requests">
-        <Card>
-          <CardHeader>
-            <CardTitle>Demandes de prêts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SubsidyRequestsList 
-              subsidyRequests={subsidyRequests} 
-              isLoading={isLoading} 
-              onSelectRequest={(id) => {
-                setSelectedRequestId(id);
-                setActiveTab('details');
-              }}
-            />
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="details">
-        {selectedRequestId && (
-          <SubsidyRequestDetail 
-            requestId={selectedRequestId} 
-            onBack={() => {
-              setSelectedRequestId(null);
-              setActiveTab('requests');
-            }} 
-          />
-        )}
-      </TabsContent>
-
-      <TabsContent value="settings">
-        <Card>
-          <CardHeader>
-            <CardTitle>Paramètres d'alerte de prêts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SubsidyAlertSettings 
-              thresholds={alertThresholds} 
-              isLoading={isLoadingThresholds} 
-            />
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
+      <SubsidyRequestManagement />
+    </div>
   );
-};
+}
