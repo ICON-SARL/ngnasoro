@@ -29,15 +29,16 @@ const SfdAuthUI = () => {
   
   useEffect(() => {
     if (user && !loading) {
-      if (user.app_metadata?.role === 'sfd_admin') {
+      const userRole = user.app_metadata?.role;
+      
+      if (userRole === 'sfd_admin') {
         navigate('/agency-dashboard');
+      } else if (userRole === 'admin') {
+        // Rediriger les administrateurs principaux vers leur propre tableau de bord
+        navigate('/super-admin-dashboard');
       } else {
-        // Rediriger les utilisateurs non-SFD vers leur page appropriée
-        if (user.app_metadata?.role === 'admin') {
-          navigate('/admin/auth');
-        } else {
-          navigate('/auth');
-        }
+        // Pour tous les autres utilisateurs, afficher un message et les rediriger vers l'authentification appropriée
+        navigate('/auth', { state: { error: 'not_sfd_admin' } });
       }
     }
   }, [user, loading, navigate]);

@@ -21,6 +21,19 @@ const AuthUI = () => {
   const [authSuccess, setAuthSuccess] = useState(false);
   const { toast } = useToast();
   
+  // Check if there's an error in the location state (e.g. redirected from SFD auth)
+  useEffect(() => {
+    if (location.state?.error === 'not_sfd_admin') {
+      toast({
+        title: "Accès refusé",
+        description: "Vous n'avez pas les droits d'administrateur SFD. Veuillez utiliser l'interface client ou contacter l'administrateur.",
+        variant: "destructive",
+      });
+      // Clear the error from state
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.state, navigate, toast]);
+  
   // Handle hash in URL for OAuth flows
   useEffect(() => {
     const hash = location.hash;
@@ -54,8 +67,10 @@ const AuthUI = () => {
         }
         navigate('/super-admin-dashboard');
       } else if (userRole === UserRole.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {
+        // Rediriger les admins SFD vers leur interface dédiée
         navigate('/agency-dashboard');
       } else {
+        // Les utilisateurs normaux vont vers l'interface mobile
         navigate('/mobile-flow');
       }
     }
