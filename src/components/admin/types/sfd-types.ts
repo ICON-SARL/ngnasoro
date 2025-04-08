@@ -1,127 +1,24 @@
-// SFD Types
-export type SfdStatus = 'active' | 'suspended' | 'pending' | 'closed';
 
 export interface Sfd {
   id: string;
   name: string;
   code: string;
-  region?: string;
-  logo_url?: string;
-  legal_document_url?: string;
-  description?: string;
   email?: string;
-  contact_email?: string;
-  address?: string;
   phone?: string;
-  status: SfdStatus;
-  created_at: string;
-  updated_at: string;
+  address?: string;
+  description?: string;
+  logo_url?: string;
+  region?: string;
+  status?: 'pending' | 'active' | 'suspended';
+  created_at?: string;
+  updated_at?: string;
   suspended_at?: string;
   suspension_reason?: string;
-  subsidy_balance?: number;
-  sfd_stats?: SfdStats;
   
-  // Stats fields
+  // Stats and relations
   client_count?: number;
   loan_count?: number;
   total_loan_amount?: number;
   admin_count?: number;
   last_admin_login?: string;
-}
-
-export interface SfdStats {
-  id: string;
-  sfd_id: string;
-  total_clients: number;
-  total_loans: number;
-  repayment_rate: number;
-  last_updated: string;
-}
-
-// SFD Client Types
-export interface SfdClient {
-  id: string;
-  full_name: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  status: 'pending' | 'validated' | 'suspended';
-  kyc_level: number;
-  created_at: string;
-  sfd_id: string;
-  user_id?: string;
-}
-
-// Credit Application Types
-export type CreditApplicationStatus = 'pending' | 'under_review' | 'approved' | 'rejected';
-
-export interface CreditApplication {
-  id: string;
-  reference: string;
-  sfd_id: string;
-  sfd_name: string;
-  amount: number;
-  purpose: string;
-  created_at: string;
-  status: CreditApplicationStatus;
-  score: number;
-  rejection_reason?: string;
-  rejection_comments?: string;
-  approval_comments?: string;
-  approved_at?: string;
-  approved_by?: string;
-  rejected_at?: string;
-  rejected_by?: string;
-}
-
-// SFD Subsidy Types
-export interface SfdSubsidy {
-  id: string;
-  sfd_id: string;
-  amount: number;
-  used_amount: number;
-  remaining_amount: number;
-  allocated_at: string;
-  allocated_by: string;
-  status: 'active' | 'depleted' | 'expired' | 'cancelled';
-  end_date?: string;
-  description?: string;
-}
-
-// Audit Log Types
-export type SfdAuditAction = 'creation' | 'modification' | 'suspension' | 'reactivation' | 'validation';
-
-export interface SfdAuditLogEntry {
-  id: string;
-  sfd_id: string;
-  sfd_name: string;
-  action: SfdAuditAction;
-  performed_by: string;
-  performed_at: string;
-  details: string;
-  severity: 'info' | 'warning' | 'critical';
-}
-
-// Add the SfdAuditLog type that was missing
-export interface SfdAuditLog {
-  id: string;
-  created_at: string;
-  user_id?: string;
-  action: string;
-  category: string;
-  severity: string;
-  details?: any;
-  status: 'success' | 'failure';
-  error_message?: string;
-  target_resource?: string;
-}
-
-// SFD Admin Types
-export interface SfdAdmin {
-  user_id: string;
-  sfd_id: string;
-  role: 'admin_sfd' | 'support';
-  email?: string;
-  full_name?: string;
-  created_at: string;
 }
