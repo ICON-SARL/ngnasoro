@@ -17,7 +17,7 @@ export const edgeFunctionApi = {
       const cacheBypassParam = bypassCache ? `?cb=${Date.now()}` : '';
       
       // URL de la fonction Edge avec paramètre anti-cache si nécessaire
-      const functionUrl = `${window.location.origin}/api/functions/${functionName}${cacheBypassParam}`;
+      const functionUrl = `/api/functions/${functionName}${cacheBypassParam}`;
       
       // Préparer les headers avec des options anti-cache si nécessaire
       const headers = {

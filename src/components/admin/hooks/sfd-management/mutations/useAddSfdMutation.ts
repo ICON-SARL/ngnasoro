@@ -5,6 +5,7 @@ import { SfdFormValues } from '../../../sfd/schemas/sfdFormSchema';
 import { useAuth } from '@/hooks/useAuth';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useAddSfdMutation() {
   const { toast } = useToast();
@@ -37,10 +38,18 @@ export function useAddSfdMutation() {
         // Supprimer tout cache existant avant l'opération
         queryClient.removeQueries({ queryKey: ['sfds'] });
         
-        const sfdResponse = await edgeFunctionApi.callEdgeFunction('create_sfd', {
-          sfd_data: newSfd,
-          admin_id: user.id
-        }, { showToast: true, bypassCache: true });
+        // Utiliser directement l'API Supabase pour appeler la fonction Edge
+        const { data: sfdResponse, error } = await supabase.functions.invoke('create_sfd', {
+          body: {
+            sfd_data: newSfd,
+            admin_id: user.id
+          }
+        });
+
+        if (error) {
+          console.error("Erreur lors de l'appel à la fonction Edge create_sfd:", error);
+          throw new Error(`Erreur lors de l'ajout de la SFD: ${error.message}`);
+        }
 
         if (!sfdResponse) {
           console.error("Aucune réponse reçue lors de la création de la SFD");
@@ -68,12 +77,12 @@ export function useAddSfdMutation() {
             description: 'Subvention initiale lors de la création de la SFD'
           };
 
-          const subsidyResponse = await edgeFunctionApi.callEdgeFunction('create_sfd_subsidy', {
-            subsidy_data: subsidyData
-          }, { showToast: true, bypassCache: true });
+          const { data: subsidyResponse, error: subsidyError } = await supabase.functions.invoke('create_sfd_subsidy', {
+            body: { subsidy_data: subsidyData }
+          });
 
-          if (!subsidyResponse) {
-            console.warn("Erreur lors de la création de la subvention initiale");
+          if (subsidyError) {
+            console.warn("Erreur lors de la création de la subvention initiale:", subsidyError);
             // Nous continuons malgré l'erreur de subvention
           } else {
             console.log("Subvention créée avec succès:", subsidyResponse);

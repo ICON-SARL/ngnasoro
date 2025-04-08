@@ -1,20 +1,35 @@
 
-# This file configures Supabase Edge Functions
+project_id = "your-project-id"
 
-[functions.create_sfd_admin]
-verify_jwt = false
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage"]
 
-[functions.delete_sfd_admin]
-verify_jwt = false
+[db]
+port = 54322
 
-[functions.create_sfd_admin_link]
-verify_jwt = false
+[studio]
+enabled = true
+port = 54323
 
-[functions.create_sfd]
-verify_jwt = false
+[inbucket]
+enabled = true
+port = 54324
 
-[functions.client-notifications]
-verify_jwt = false
+[storage]
+enabled = true
 
-[functions.create_admin_user]
-verify_jwt = false
+[auth]
+enabled = true
+
+[realtime]
+enabled = true
+
+[analytics]
+enabled = false
+port = 54327
+
+# Configure Edge Functions
+[functions]
+enabled = true
