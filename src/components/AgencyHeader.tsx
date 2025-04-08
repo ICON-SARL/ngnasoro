@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Building, CreditCard, Users, FileText, LogOut } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth/index';
 import { useToast } from '@/hooks/use-toast';
 
 export const AgencyHeader = () => {
@@ -22,13 +21,20 @@ export const AgencyHeader = () => {
   
   const handleSignOut = async () => {
     try {
+      console.log("Déconnexion initiée");
+      
       await signOut();
+      
+      console.log("Déconnexion réussie");
+      
       toast({
         title: "Déconnecté",
         description: "Vous avez été déconnecté avec succès",
       });
-      navigate('/login');
+      
+      window.location.href = '/auth';
     } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la déconnexion",

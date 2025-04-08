@@ -2,11 +2,38 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth/index';
+import { useToast } from '@/hooks/use-toast';
 
 export const SfdHeader: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
+  
+  const handleSignOut = async () => {
+    try {
+      console.log("SfdHeader - Déconnexion initiée");
+      
+      await signOut();
+      
+      console.log("SfdHeader - Déconnexion réussie");
+      
+      toast({
+        title: "Déconnecté",
+        description: "Vous avez été déconnecté avec succès",
+      });
+      
+      // Redirection explicite
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la déconnexion",
+        variant: "destructive",
+      });
+    }
+  };
   
   return (
     <header className="bg-primary text-white shadow-md">
@@ -53,7 +80,7 @@ export const SfdHeader: React.FC = () => {
                 <Button 
                   variant="ghost" 
                   className="text-white hover:text-white hover:bg-primary-foreground"
-                  onClick={() => signOut()}
+                  onClick={handleSignOut}
                 >
                   Déconnexion
                 </Button>
