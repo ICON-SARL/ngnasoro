@@ -44,7 +44,7 @@ export function useSfdData() {
     refetchInterval,
     refetchOnWindowFocus: true,
     staleTime: 0, // Toujours considérer les données comme obsolètes pour forcer le refetch
-    cacheTime: 0, // Ne pas mettre en cache du tout
+    gcTime: 0, // Updated from cacheTime (renamed in React Query v5)
     retry: 2,
     meta: {
       errorMessage: "Impossible de charger la liste des SFDs"

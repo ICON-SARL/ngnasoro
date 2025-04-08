@@ -40,7 +40,7 @@ export function useAddSfdMutation() {
         const sfdResponse = await edgeFunctionApi.callEdgeFunction('create_sfd', {
           sfd_data: newSfd,
           admin_id: user.id
-        }, { bypassCache: true });
+        }, { showToast: true, bypassCache: true });
 
         if (!sfdResponse) {
           console.error("Aucune réponse reçue lors de la création de la SFD");
@@ -70,7 +70,7 @@ export function useAddSfdMutation() {
 
           const subsidyResponse = await edgeFunctionApi.callEdgeFunction('create_sfd_subsidy', {
             subsidy_data: subsidyData
-          });
+          }, { showToast: true, bypassCache: true });
 
           if (!subsidyResponse) {
             console.warn("Erreur lors de la création de la subvention initiale");

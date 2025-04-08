@@ -62,7 +62,11 @@ export function SfdManagementContainer() {
     
     // Refetch immédiat
     refetch();
-    startPolling();
+    
+    // Démarrer le polling si disponible
+    if (typeof startPolling === 'function') {
+      startPolling();
+    }
     
     // Configurer un intervalle de rafraîchissement plus agressif
     const intervalId = setInterval(() => {
@@ -113,7 +117,12 @@ export function SfdManagementContainer() {
           description: 'La nouvelle SFD a été ajoutée et apparaîtra dans quelques instants'
         });
         console.log("SFD added successfully, starting aggressive polling...");
-        startPolling(); // Start aggressive polling
+        
+        // Start aggressive polling if the function exists
+        if (typeof startPolling === 'function') {
+          startPolling();
+        }
+        
         queryClient.invalidateQueries({ queryKey: ['sfds'] });
         queryClient.refetchQueries({ queryKey: ['sfds'] });
         

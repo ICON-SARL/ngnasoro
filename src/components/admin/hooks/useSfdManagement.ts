@@ -95,6 +95,7 @@ export function useSfdManagement() {
     handleReactivateSfd,
     handleExportPdf,
     handleExportExcel,
-    refetch
+    refetch,
+    startPolling
   };
 }

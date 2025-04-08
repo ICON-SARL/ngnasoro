@@ -4,13 +4,21 @@ import { handleError } from "@/utils/errorHandler";
 import { useToast } from "@/hooks/use-toast";
 
 /**
+ * Options for edge function calls
+ */
+interface EdgeFunctionCallOptions {
+  showToast?: boolean;
+  bypassCache?: boolean;
+}
+
+/**
  * Edge function caller methods
  */
 export const edgeFunctionApi = {
   /**
    * Call a Supabase Edge Function with improved error handling
    */
-  async callEdgeFunction(functionName: string, payload: any, options = { showToast: true, bypassCache: true }) {
+  async callEdgeFunction(functionName: string, payload: any, options: EdgeFunctionCallOptions = { showToast: true, bypassCache: true }) {
     try {
       console.log(`Calling edge function: ${functionName}`, payload);
       
