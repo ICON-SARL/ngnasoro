@@ -133,37 +133,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const authValue: AuthContextProps = {
+    user,
+    session,
+    loading,
+    signIn,
+    signOut: async () => {
+      const result = await signOut();
+      if (!result.success) {
+        console.error('Error signing out:', result.error);
+      }
+    },
+    activeSfdId,
+    setActiveSfdId,
+    isAdmin,
+    isSfdAdmin,
+    setUser: (userData) => setUser(userData),
+    signUp: async () => { /* Implement if needed */ },
+    isLoggedIn: !!user,
+    userRole: user?.app_metadata?.role || null,
+    biometricEnabled: false,
+    toggleBiometricAuth: async () => { /* Implement if needed */ },
+    isLoading: loading,
+    refreshSession: async () => { /* Implement if needed */ }
+  };
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      session,
-      loading,
-      signIn,
-      signOut: async () => {
-        const result = await signOut();
-        if (!result.success) {
-          console.error('Error signing out:', result.error);
-        }
-      },
-      activeSfdId,
-      setActiveSfdId,
-      isAdmin,
-      isSfdAdmin,
-      setUser: (userData) => setUser(userData),
-      signUp: async () => { /* Implement if needed */ },
-      isLoggedIn: !!user,
-      userRole: user?.app_metadata?.role || null,
-      biometricEnabled: false,
-      toggleBiometricAuth: async () => { /* Implement if needed */ },
-      isLoading: loading,
-      refreshSession: async () => { /* Implement if needed */ }
-    }}>
+    <AuthContext.Provider value={authValue}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextProps => {
   const context = useContext(AuthContext);
   
   if (!context) {
