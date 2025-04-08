@@ -5,6 +5,7 @@ import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AdminLogoutProps {
   variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link';
@@ -21,21 +22,17 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signOut } = useAuth();
 
   const handleLogout = async () => {
     try {
       console.log("AdminLogout - Déconnexion initiée");
       
-      // Clear all local storage items that might persist session data
-      localStorage.clear();
-      sessionStorage.clear();
+      // Use the signOut function from Auth context to ensure consistent logout behavior
+      const result = await signOut();
       
-      // Call Supabase auth signOut method directly with global scope
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
-      
-      if (error) {
-        console.error("AdminLogout - Error during sign out:", error);
-        throw error;
+      if (result.success === false && result.error) {
+        throw new Error(result.error);
       }
       
       console.log("AdminLogout - Déconnexion réussie");
@@ -46,7 +43,7 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Force a complete page reload to reset all state
+      // Force a hard reload to ensure clean state
       window.location.replace('/auth');
       
     } catch (error: any) {

@@ -125,15 +125,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     console.log("AuthContext - Attempting to sign out");
     try {
-      // Clear any local storage items that might persist session data
-      localStorage.removeItem('adminLastSeen');
+      // Clear specific important local storage items first
       localStorage.removeItem('supabase.auth.token');
-      localStorage.clear();
+      localStorage.removeItem('adminLastSeen');
+      localStorage.removeItem('sb-xnqysvnychmsockivqhb-auth-token');
       
-      // Clear any session storage items
+      // Clear ALL local storage and session storage
+      localStorage.clear();
       sessionStorage.clear();
       
-      // Call Supabase auth signOut with global scope to ensure full logout
+      // Reset all auth state immediately
+      setUser(null);
+      setSession(null);
+      setActiveSfdId(null);
+      setIsAdmin(false);
+      setIsSfdAdmin(false);
+      
+      // Call Supabase auth signOut with global scope
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       
       if (error) {
@@ -142,13 +150,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       console.log("AuthContext - Sign out successful");
-      
-      // Clear all client-side state
-      setUser(null);
-      setSession(null);
-      setActiveSfdId(null);
-      setIsAdmin(false);
-      setIsSfdAdmin(false);
       
       return { success: true };
     } catch (error: any) {
@@ -168,9 +169,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!result.success) {
         console.error('Error signing out:', result.error);
       }
-      // Do a hard reload to ensure complete logout
+      // Hard redirect après la déconnexion pour s'assurer que l'application est complètement réinitialisée
       window.location.replace('/auth');
-      return;
+      return result;
     },
     activeSfdId,
     setActiveSfdId,
