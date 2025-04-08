@@ -46,7 +46,7 @@ export async function uploadSfdFiles(
         
         const docPath = `sfds/documents/${formData.code}-${Date.now()}`;
         const uploadResult = await storageApi.uploadFile("documents", docPath, documentFile);
-        updatedData.legal_document_url = uploadResult.url;
+        // Since legal_document_url is no longer in the schema, we'll log it but not add it to updatedData
         console.log("Document uploaded successfully:", uploadResult);
       } catch (error) {
         console.error("Document upload error:", error);
