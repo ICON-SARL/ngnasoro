@@ -53,18 +53,18 @@ export function SfdEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[650px] p-0 overflow-hidden rounded-xl border-none shadow-lg">
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
-          <DialogHeader className="mb-2">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-0 rounded-xl border-none shadow-lg">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5">
+          <DialogHeader className="mb-1">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-2xl font-semibold text-blue-700">
-                Modifier la SFD: {sfd.name}
+              <DialogTitle className="text-xl font-semibold text-blue-700">
+                Modifier: {sfd.name}
               </DialogTitle>
               <DialogClose asChild>
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-8 w-8 rounded-full" 
+                  className="h-7 w-7 rounded-full" 
                   disabled={isLoading}
                 >
                   <X className="h-4 w-4" />
@@ -73,12 +73,12 @@ export function SfdEditDialog({
               </DialogClose>
             </div>
           </DialogHeader>
-          <p className="text-sm text-slate-600 mb-4">
+          <p className="text-sm text-slate-600">
             Modifiez les informations de cette institution de microfinance
           </p>
         </div>
         
-        <div className="px-6 py-4">
+        <div className="px-5 py-4">
           <SfdForm 
             defaultValues={defaultValues}
             onSubmit={onSubmit}
@@ -89,13 +89,14 @@ export function SfdEditDialog({
           />
         </div>
         
-        <DialogFooter className="px-6 py-4 bg-gray-50 border-t">
-          <div className="flex justify-end gap-3 w-full">
+        <DialogFooter className="px-5 py-3 bg-gray-50 border-t">
+          <div className="flex justify-end gap-2 w-full">
             <Button 
               variant="outline" 
               onClick={handleCancel}
               disabled={isLoading}
-              className="border-gray-300"
+              className="border-gray-300 h-9"
+              size="sm"
             >
               Annuler
             </Button>
@@ -103,9 +104,10 @@ export function SfdEditDialog({
               type="submit"
               form="sfd-form"
               disabled={isLoading}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-blue-600 hover:bg-blue-700 text-white h-9"
+              size="sm"
             >
-              {isLoading ? 'Traitement en cours...' : 'Enregistrer les modifications'}
+              {isLoading ? 'Traitement...' : 'Enregistrer'}
             </Button>
           </div>
         </DialogFooter>

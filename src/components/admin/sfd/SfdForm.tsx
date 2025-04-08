@@ -55,23 +55,23 @@ export function SfdForm({
 
   return (
     <Form {...form}>
-      <form id="sfd-form" onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form id="sfd-form" onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Name Field */}
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-slate-700">Nom de la SFD*</FormLabel>
+                <FormLabel className="text-sm text-slate-700">Nom de la SFD*</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="Entrez le nom" 
                     {...field} 
-                    className="rounded-md border-slate-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                    className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -82,15 +82,15 @@ export function SfdForm({
             name="code"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-slate-700">Code SFD*</FormLabel>
+                <FormLabel className="text-sm text-slate-700">Code SFD*</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="Code unique" 
                     {...field} 
-                    className="rounded-md border-slate-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                    className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -101,15 +101,15 @@ export function SfdForm({
             name="region"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-slate-700">Région</FormLabel>
+                <FormLabel className="text-sm text-slate-700">Région</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="Région d'opération" 
                     {...field} 
-                    className="rounded-md border-slate-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                    className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -120,16 +120,16 @@ export function SfdForm({
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-slate-700">Email</FormLabel>
+                <FormLabel className="text-sm text-slate-700">Email</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="Email principal" 
                     type="email" 
                     {...field} 
-                    className="rounded-md border-slate-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                    className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -140,16 +140,16 @@ export function SfdForm({
             name="contact_email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-slate-700">Email de contact</FormLabel>
+                <FormLabel className="text-sm text-slate-700">Email de contact</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="Email de contact" 
                     type="email" 
                     {...field} 
-                    className="rounded-md border-slate-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                    className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -160,15 +160,15 @@ export function SfdForm({
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-slate-700">Téléphone</FormLabel>
+                <FormLabel className="text-sm text-slate-700">Téléphone</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="Numéro de téléphone" 
                     {...field} 
-                    className="rounded-md border-slate-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                    className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -179,15 +179,15 @@ export function SfdForm({
             name="address"
             render={({ field }) => (
               <FormItem className="col-span-2">
-                <FormLabel className="text-slate-700">Adresse</FormLabel>
+                <FormLabel className="text-sm text-slate-700">Adresse</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="Adresse physique" 
                     {...field} 
-                    className="rounded-md border-slate-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                    className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -198,16 +198,16 @@ export function SfdForm({
             name="description"
             render={({ field }) => (
               <FormItem className="col-span-2">
-                <FormLabel className="text-slate-700">Description</FormLabel>
+                <FormLabel className="text-sm text-slate-700">Description</FormLabel>
                 <FormControl>
                   <Textarea 
                     placeholder="Description de la SFD" 
-                    rows={4}
+                    rows={2}
                     {...field} 
-                    className="rounded-md border-slate-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50 resize-none"
+                    className="text-sm rounded-md border-slate-300 focus:border-blue-400 resize-none"
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
