@@ -1,35 +1,41 @@
+
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { logAuditEvent } from '@/utils/audit/auditLogger';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
-
-interface AuthContextProps {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signOut: () => Promise<{ error: any }>;
-  refreshSession: () => Promise<void>;
-  isAdmin: boolean;
-  isSfdAdmin: boolean;
-  isAuthenticated: boolean;
-  activeSfdId?: string;
-  setActiveSfdId: (sfdId: string) => void;
-}
+import { User, UserRole, AuthContextProps } from './types';
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
+
+// Convert Supabase user to our User type
+const mapSupabaseUser = (sbUser: SupabaseUser | null): User | null => {
+  if (!sbUser) return null;
+
+  return {
+    id: sbUser.id,
+    email: sbUser.email || '',
+    displayName: sbUser.user_metadata?.full_name,
+    full_name: sbUser.user_metadata?.full_name,
+    role: (sbUser.app_metadata?.role as UserRole) || UserRole.USER,
+    avatar_url: sbUser.user_metadata?.avatar_url,
+    sfd_id: sbUser.user_metadata?.sfd_id || sbUser.app_metadata?.sfd_id,
+    phone: sbUser.phone,
+    user_metadata: sbUser.user_metadata,
+    app_metadata: sbUser.app_metadata
+  };
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeSfdId, setActiveSfdId] = useState<string | undefined>(undefined);
+  const [biometricEnabled, setBiometricEnabled] = useState<boolean>(false);
 
   // Added computed properties for role-based checks
-  const isAdmin = user?.app_metadata?.role === 'super_admin';
-  const isSfdAdmin = user?.app_metadata?.role === 'sfd_admin';
-  const isAuthenticated = !!user;
+  const isAdmin = user?.role === UserRole.SUPER_ADMIN;
+  const isSfdAdmin = user?.role === UserRole.SFD_ADMIN;
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -42,7 +48,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         setSession(data.session);
-        setUser(data.session?.user || null);
+        if (data.session?.user) {
+          setUser(mapSupabaseUser(data.session.user));
+        } else {
+          setUser(null);
+        }
         
         // Debug log
         if (data.session?.user) {
@@ -65,7 +75,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        setUser(newSession?.user || null);
+        if (newSession?.user) {
+          setUser(mapSupabaseUser(newSession.user));
+        } else {
+          setUser(null);
+        }
         setSession(newSession);
         setLoading(false);
         
@@ -145,6 +159,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signUp = async (email: string, password: string, userData: Partial<User>) => {
+    try {
+      const result = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: userData.full_name,
+            avatar_url: userData.avatar_url,
+            sfd_id: userData.sfd_id,
+            role: userData.role || UserRole.USER
+          }
+        }
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Error signing up:', error);
+      return { error };
+    }
+  };
+
   const signOut = async () => {
     try {
       const result = await supabase.auth.signOut();
@@ -164,24 +200,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       setSession(data.session);
-      setUser(data.session?.user || null);
+      if (data.session?.user) {
+        setUser(mapSupabaseUser(data.session.user));
+      } else {
+        setUser(null);
+      }
     } catch (error) {
       console.error('Error refreshing session:', error);
     }
   };
 
-  const value = {
+  const toggleBiometricAuth = () => {
+    setBiometricEnabled(!biometricEnabled);
+  };
+
+  const value: AuthContextProps = {
     user,
-    session,
     loading,
-    signIn,
-    signOut,
-    refreshSession,
     isAdmin,
     isSfdAdmin,
-    isAuthenticated,
+    signIn,
+    signUp,
+    signOut,
     activeSfdId,
-    setActiveSfdId
+    setActiveSfdId,
+    biometricEnabled,
+    toggleBiometricAuth,
+    refreshSession
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

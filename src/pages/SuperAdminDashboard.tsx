@@ -1,174 +1,67 @@
-import React, { useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+
+import React, { useState } from 'react';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
-import { 
-  DashboardWidgets, 
-  SuperAdminDashboardHeader, 
-  DashboardTabs,
-  DashboardCharts
-} from '@/components/admin/dashboard';
-import { useSubsidies } from '@/hooks/useSubsidies';
-import { useDashboardStats } from '@/hooks/useDashboardStats';
-import { ReportGenerator } from '@/components/ReportGenerator';
-import { DataExport } from '@/components/DataExport';
-import { Button } from '@/components/ui/button';
-import { FileText, Building, Users, Shield, BarChart2 } from 'lucide-react';
-import { AdminManagement } from '@/components/admin/AdminManagement';
-import { SfdManagement } from '@/components/admin/sfd-management';
-import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommunication';
-import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
-import { IntegratedDashboard } from '@/components/admin/shared/IntegratedDashboard';
-import AuditLogsSummary from '@/components/audit/AuditLogsSummary';
-import { SubsidySummary } from '@/components/admin/dashboard/SubsidySummary';
-import { PendingSubsidies } from '@/components/admin/dashboard/PendingSubsidies';
-import { Footer } from '@/components';
-import { FinancialReports } from '@/components/reports/FinancialReports';
 import { SfdClientStatsDashboard } from '@/components/admin/meref/SfdClientStatsDashboard';
+import { useAuth } from '@/hooks/useAuth';
 
 const SuperAdminDashboard = () => {
-  const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'dashboard';
-  const { stats, isLoading: isLoadingStats } = useDashboardStats();
-  const navigate = useNavigate();
-  
-  useEffect(() => {
-    if (!searchParams.get('tab')) {
-      setSearchParams({ tab: 'dashboard' });
-    }
-  }, [searchParams, setSearchParams]);
+  const { user } = useAuth();
+  const [selectedRegion, setSelectedRegion] = useState('all');
+  const [selectedSFD, setSelectedSFD] = useState('all');
 
-  const handleTabChange = (value: string) => {
-    setSearchParams({ tab: value });
+  const mockData = {
+    total_clients: 8450,
+    active_clients: 7890,
+    clients_with_loans: 4532,
+    average_loan_amount: 125000,
+    repayment_rate: 94.7,
+    regions: ['Bamako', 'Sikasso', 'Segou', 'Mopti', 'Kayes'],
+    sfds: [
+      { id: 'sfd1', name: 'MicroFinance Plus' },
+      { id: 'sfd2', name: 'Credit Rural' },
+      { id: 'sfd3', name: 'Finance Populaire' },
+    ],
+    client_growth: [
+      { month: 'Jan', count: 7200 },
+      { month: 'Feb', count: 7350 },
+      { month: 'Mar', count: 7500 },
+      { month: 'Apr', count: 7650 },
+      { month: 'May', count: 7800 },
+      { month: 'Jun', count: 7950 },
+      { month: 'Jul', count: 8100 },
+      { month: 'Aug', count: 8250 },
+      { month: 'Sep', count: 8450 },
+    ],
+    regional_stats: [
+      { region: 'Bamako', clients: 3245, loans_volume: 456000000 },
+      { region: 'Sikasso', clients: 2130, loans_volume: 289000000 },
+      { region: 'Segou', clients: 1560, loans_volume: 198000000 },
+      { region: 'Mopti', clients: 980, loans_volume: 112000000 },
+      { region: 'Kayes', clients: 535, loans_volume: 87000000 },
+    ],
   };
 
+  const handleRegionChange = (region: string) => {
+    setSelectedRegion(region);
+  };
+
+  const handleSFDChange = (sfd: string) => {
+    setSelectedSFD(sfd);
+  };
+
+  // Pass the data prop to SfdClientStatsDashboard
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <SuperAdminHeader additionalComponents={<AdminNotifications />} />
-      
-      <main className="flex-1 container mx-auto p-4 md:p-6">
-        <SuperAdminDashboardHeader />
-        
-        <div className="mb-6 flex flex-wrap gap-2">
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm" 
-            onClick={() => navigate('/credit-approval')}
-          >
-            <FileText className="h-4 w-4 mr-2 text-gray-600" />
-            Approbation de Crédit
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-            onClick={() => navigate('/sfd-management')}
-          >
-            <Building className="h-4 w-4 mr-2 text-gray-600" />
-            Gestion des SFDs
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-            onClick={() => setSearchParams({ tab: 'reports' })}
-          >
-            <FileText className="h-4 w-4 mr-2 text-gray-600" />
-            Générer des Rapports
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-            onClick={() => setSearchParams({ tab: 'admins' })}
-          >
-            <Users className="h-4 w-4 mr-2 text-gray-600" />
-            Gestion Administrateurs
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-            onClick={() => navigate('/audit-logs')}
-          >
-            <Shield className="h-4 w-4 mr-2 text-gray-600" />
-            Journal d'Audit
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-            onClick={() => setSearchParams({ tab: 'client-stats' })}
-          >
-            <BarChart2 className="h-4 w-4 mr-2 text-gray-600" />
-            Statistiques Clients SFD
-          </Button>
-          
-          <MerefSfdCommunication />
-        </div>
-        
-        {activeTab === 'dashboard' && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div className="md:col-span-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <SubsidySummary />
-                  <PendingSubsidies />
-                </div>
-                <DashboardWidgets 
-                  stats={stats} 
-                  isLoading={isLoadingStats} 
-                  subsidies={subsidies} 
-                  isLoadingSubsidies={isLoadingSubsidies} 
-                />
-              </div>
-              <div>
-                <AuditLogsSummary />
-              </div>
-            </div>
-            <div className="mt-6">
-              <IntegratedDashboard />
-            </div>
-          </>
-        )}
-        
-        {activeTab === 'charts' && (
-          <DashboardCharts />
-        )}
-        
-        {activeTab === 'client-stats' && (
-          <SfdClientStatsDashboard />
-        )}
-        
-        {activeTab === 'financial_reports' && (
-          <FinancialReports />
-        )}
-        
-        {activeTab === 'reports' && (
-          <div className="space-y-6">
-            <ReportGenerator />
-          </div>
-        )}
-        
-        {activeTab === 'export' && (
-          <div className="space-y-6">
-            <DataExport />
-          </div>
-        )}
-        
-        {activeTab === 'admins' && (
-          <div className="space-y-6">
-            <AdminManagement />
-          </div>
-        )}
-        
-        <DashboardTabs 
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
+    <div className="min-h-screen bg-gray-50">
+      <SuperAdminHeader />
+      <div className="container mx-auto py-8 px-4">
+        <SfdClientStatsDashboard 
+          data={mockData}
+          selectedRegion={selectedRegion}
+          selectedSFD={selectedSFD}
+          onRegionChange={handleRegionChange}
+          onSfdChange={handleSFDChange}
         />
-      </main>
-      
-      <Footer />
+      </div>
     </div>
   );
 };

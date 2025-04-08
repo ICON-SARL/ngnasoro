@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -35,7 +34,7 @@ function AppContent() {
   useEffect(() => {
     // Show a toast when the user logs in
     if (user && location.pathname === '/') {
-      const displayName = user.displayName || user.email;
+      const displayName = user.full_name || user.email;
       toast({
         title: `Bienvenue, ${displayName}!`,
         description: "Vous êtes connecté avec succès."
@@ -54,7 +53,6 @@ function AppContent() {
     );
   }
   
-  // Redirect to appropriate dashboard based on role
   const determineRedirect = () => {
     if (!user) return '/client-login';
     
@@ -72,14 +70,11 @@ function AppContent() {
   
   return (
     <Routes>
-      {/* Redirect from root based on role */}
       <Route path="/" element={<Navigate to={determineRedirect()} replace />} />
       
-      {/* Auth routes */}
       <Route path="/client-login" element={<ClientLoginPage />} />
       <Route path="/sfd-login" element={<SfdLoginPage />} />
       
-      {/* Super Admin routes */}
       <Route 
         path="/super-admin-dashboard" 
         element={
@@ -121,7 +116,6 @@ function AppContent() {
         } 
       />
       
-      {/* SFD Admin routes */}
       <Route 
         path="/sfd-dashboard" 
         element={
@@ -171,7 +165,6 @@ function AppContent() {
         } 
       />
       
-      {/* Client routes */}
       <Route 
         path="/client-dashboard" 
         element={
@@ -197,13 +190,11 @@ function AppContent() {
         } 
       />
       
-      {/* Shared routes */}
       <Route 
         path="/profile" 
         element={user ? <ProfilePage /> : <Navigate to="/" replace />} 
       />
       
-      {/* Error pages */}
       <Route path="/access-denied" element={<AccessDeniedPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
