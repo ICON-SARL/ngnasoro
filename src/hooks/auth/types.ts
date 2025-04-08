@@ -6,6 +6,9 @@ export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN'
 }
 
+// Import the Session type from Supabase
+import { Session } from '@supabase/supabase-js';
+
 export interface User {
   id: string;
   email: string;
@@ -52,6 +55,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
 // AuthContext interface
 export interface AuthContextProps {
   user: User | null;
+  session: Session | null; // Added missing session property
   loading: boolean;
   isAdmin: boolean;
   isSfdAdmin: boolean;
@@ -61,6 +65,6 @@ export interface AuthContextProps {
   activeSfdId?: string;
   setActiveSfdId: (sfdId: string) => void;
   biometricEnabled?: boolean;
-  toggleBiometricAuth?: () => void;
+  toggleBiometricAuth?: (enabled: boolean) => void; // Updated to accept a boolean parameter
   refreshSession?: () => Promise<void>;
 }

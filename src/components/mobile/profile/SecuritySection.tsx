@@ -34,7 +34,7 @@ const SecuritySection = () => {
       
       // Disabling biometrics directly
       if (toggleBiometricAuth) {
-        await toggleBiometricAuth(false); // Pass the parameter
+        toggleBiometricAuth(false);
       }
       
       toast({
@@ -57,7 +57,7 @@ const SecuritySection = () => {
     
     try {
       if (toggleBiometricAuth) {
-        await toggleBiometricAuth(true); // Pass the parameter
+        toggleBiometricAuth(true);
       }
       
       toast({

@@ -16,7 +16,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireSfdAdmin = false,
   ...rest 
 }) => {
-  const { user, loading, session } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   
   if (loading) {

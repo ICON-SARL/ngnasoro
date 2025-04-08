@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
@@ -210,12 +209,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const toggleBiometricAuth = () => {
-    setBiometricEnabled(!biometricEnabled);
+  // Updated to accept a boolean parameter
+  const toggleBiometricAuth = (enabled: boolean) => {
+    setBiometricEnabled(enabled);
   };
 
   const value: AuthContextProps = {
     user,
+    session,
     loading,
     isAdmin,
     isSfdAdmin,
