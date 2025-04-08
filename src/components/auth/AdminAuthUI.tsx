@@ -29,16 +29,12 @@ const AdminAuthUI = () => {
   
   useEffect(() => {
     if (user && !loading) {
-      console.log("AdminAuthUI detected user:", user);
-      console.log("User role:", user.app_metadata?.role);
-      
       if (user.app_metadata?.role === 'admin') {
-        console.log("Redirecting admin to dashboard");
         navigate('/super-admin-dashboard');
       } else {
-        // Redirect non-admin users to their appropriate page
+        // Rediriger les utilisateurs non-admin vers leur page appropriée
         if (user.app_metadata?.role === 'sfd_admin') {
-          navigate('/agency-dashboard');
+          navigate('/sfd/auth');
         } else {
           navigate('/auth');
         }

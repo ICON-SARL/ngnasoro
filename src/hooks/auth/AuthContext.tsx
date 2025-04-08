@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext, useCallback, createContext } from 'react';
 import { User, AuthContextProps, Role } from './types';
 import { supabase } from '@/integrations/supabase/client';
@@ -222,14 +223,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       setLoading(true);
-      console.log('Attempting to sign out user');
-      
-      // Clear all local storage items
-      localStorage.removeItem('activeSfdId');
-      localStorage.removeItem('adminLastSeen');
-      localStorage.removeItem('lastRoute');
-      localStorage.removeItem('userPreferences');
-      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -237,16 +230,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       
-      // Reset state
       setUser(null);
       setSession(null);
-      
-      console.log('User signed out successfully, redirecting to /auth');
-      
-      // Force navigation to auth page
-      window.location.href = '/auth';
-      
-      return Promise.resolve();
+      navigate('/auth');
     } catch (error) {
       console.error('Unexpected sign out error:', error);
       throw error;

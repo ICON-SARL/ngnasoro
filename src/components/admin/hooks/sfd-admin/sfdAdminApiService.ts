@@ -81,30 +81,23 @@ export async function createSfdAdmin(userData: SfdAdminData) {
       throw new Error("Cet e-mail est déjà associé à un compte administrateur. Veuillez utiliser une autre adresse e-mail.");
     }
     
-    // Utiliser l'API au lieu de la fonction Edge pour créer l'administrateur SFD
-    console.log("Calling API to create SFD admin");
+    // Utiliser la fonction Edge pour créer l'administrateur SFD
+    console.log("Calling create_sfd_admin edge function");
     
-    // Appel à l'API que nous avons créée
-    const response = await fetch('/api/create-sfd-admin', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    const { data: result, error } = await supabase.functions.invoke('create_sfd_admin', {
+      body: {
         email: userData.email,
         password: userData.password,
         full_name: userData.full_name,
         role: 'sfd_admin',
         sfd_id: userData.sfd_id
-      })
+      }
     });
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Échec de la création de l'administrateur SFD");
+    if (error) {
+      console.error("Edge function error:", error);
+      throw new Error(`Erreur lors de la création de l'administrateur SFD: ${error.message}`);
     }
-    
-    const result = await response.json();
     
     if (!result || !result.success) {
       const errorMsg = result?.error || "Échec de la création de l'administrateur SFD";

@@ -1,6 +1,6 @@
 
 import { SfdFormValues } from "../schemas/sfdFormSchema";
-import { storageApi } from "@/utils/api/modules/storageApi";
+import { apiClient } from "@/utils/apiClient";
 
 /**
  * Upload SFD logo and legal document files and return the updated form data
@@ -24,32 +24,24 @@ export async function uploadSfdFiles(
 
     // Upload logo if present
     if (logoFile) {
-      // Ensure the logos bucket exists
-      try {
-        await storageApi.createBucketIfNotExists('logos', true);
-        
-        const logoPath = `sfds/logos/${formData.code}-${Date.now()}`;
-        const uploadResult = await storageApi.uploadFile("logos", logoPath, logoFile);
-        updatedData.logo_url = uploadResult.url;
-        console.log("Logo uploaded successfully:", uploadResult);
-      } catch (error) {
-        console.error("Logo upload error:", error);
+      const logoPath = `sfds/logos/${formData.code}-${Date.now()}`;
+      const logoUrl = await apiClient.uploadFile(logoFile, logoPath);
+      
+      if (logoUrl) {
+        updatedData.logo_url = logoUrl;
+      } else {
         throw new Error("Échec du téléchargement du logo");
       }
     }
     
     // Upload legal document if present
     if (documentFile) {
-      // Ensure the documents bucket exists
-      try {
-        await storageApi.createBucketIfNotExists('documents', false);
-        
-        const docPath = `sfds/documents/${formData.code}-${Date.now()}`;
-        const uploadResult = await storageApi.uploadFile("documents", docPath, documentFile);
-        // Since legal_document_url is no longer in the schema, we'll log it but not add it to updatedData
-        console.log("Document uploaded successfully:", uploadResult);
-      } catch (error) {
-        console.error("Document upload error:", error);
+      const docPath = `sfds/documents/${formData.code}-${Date.now()}`;
+      const docUrl = await apiClient.uploadFile(documentFile, docPath);
+      
+      if (docUrl) {
+        updatedData.legal_document_url = docUrl;
+      } else {
         throw new Error("Échec du téléchargement du document légal");
       }
     }
