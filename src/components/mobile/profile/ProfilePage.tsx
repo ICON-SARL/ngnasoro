@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -12,6 +13,7 @@ import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
 import KycVerificationSection from './KycVerificationSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
+import { SignOutResult } from '@/hooks/auth/types';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('accounts');
@@ -21,6 +23,15 @@ const ProfilePage = () => {
 
   const handleGoBack = () => {
     navigate('/mobile-flow/main');
+  };
+
+  // Create a wrapper function to adapt the signOut function to the expected void return type
+  const handleLogout = async () => {
+    const result = await signOut();
+    if (!result.success) {
+      console.error('Error during logout:', result.error);
+    }
+    return;
   };
 
   return (
@@ -60,7 +71,7 @@ const ProfilePage = () => {
         <TabsContent value="security" className="px-4">
           <SecuritySection />
           <NotificationsSection />
-          <AdvancedSettingsSection onLogout={signOut} />
+          <AdvancedSettingsSection onLogout={handleLogout} />
         </TabsContent>
         
         <TabsContent value="profile" className="px-4">

@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User, AuthContextProps, Role, SignOutResult } from './types';
+import { User, AuthContextProps, Role, SignOutResult, SignUpData } from './types';
 
 const AuthContext = createContext<AuthContextProps | null>(null);
 
@@ -26,7 +25,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (data?.session) {
           setSession(data.session);
           
-          // Create a properly typed User object with the metadata
           const userData: User = {
             id: data.session.user.id,
             email: data.session.user.email || '',
@@ -45,14 +43,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           setUser(userData);
           
-          // Check roles
           const role = data.session.user.app_metadata?.role;
           setIsAdmin(role === 'admin');
           setIsSfdAdmin(role === 'sfd_admin');
           
-          // Special case - for sfd@example.com, set activeSfdId to the first SFD
           if (data.session.user.email === 'sfd@example.com' || data.session.user.email === 'sfd@test.com') {
-            // Get the first SFD for this user
             const { data: sfdsData } = await supabase
               .from('user_sfds')
               .select('sfd_id')
@@ -78,7 +73,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Auth state change:', event);
       
       if (session) {
-        // Create a properly typed User object with the metadata
         const userData: User = {
           id: session.user.id,
           email: session.user.email || '',
@@ -98,7 +92,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(userData);
         setSession(session);
         
-        // Check roles on auth state change
         const role = session.user.app_metadata?.role;
         setIsAdmin(role === 'admin');
         setIsSfdAdmin(role === 'sfd_admin');
@@ -133,23 +126,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async (): Promise<SignOutResult> => {
     console.log("AuthContext - Attempting to sign out");
     try {
-      // Clear specific important local storage items first
       localStorage.removeItem('supabase.auth.token');
       localStorage.removeItem('adminLastSeen');
       localStorage.removeItem('sb-xnqysvnychmsockivqhb-auth-token');
       
-      // Clear ALL local storage and session storage
       localStorage.clear();
       sessionStorage.clear();
       
-      // Reset all auth state immediately
       setUser(null);
       setSession(null);
       setActiveSfdId(null);
       setIsAdmin(false);
       setIsSfdAdmin(false);
       
-      // Call Supabase auth signOut with global scope
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       
       if (error) {
@@ -166,6 +155,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signUp = async (data: SignUpData): Promise<void> => {
+    try {
+      const { email, password, metadata } = data;
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata
+        }
+      });
+      
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error signing up:', error);
+      throw error;
+    }
+  };
+
   const authValue: AuthContextProps = {
     user,
     session,
@@ -177,7 +184,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!result.success) {
         console.error('Error signing out:', result.error);
       }
-      // Hard redirect après la déconnexion pour s'assurer que l'application est complètement réinitialisée
       window.location.replace('/auth');
       return result;
     },
@@ -186,7 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAdmin,
     isSfdAdmin,
     setUser: (userData) => setUser(userData),
-    signUp: async () => { /* Implement if needed */ },
+    signUp,
     isLoggedIn: !!user,
     userRole: user?.app_metadata?.role || null,
     biometricEnabled: false,

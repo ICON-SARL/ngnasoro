@@ -34,13 +34,21 @@ export interface SignOutResult {
   error?: string;
 }
 
+export interface SignUpData {
+  email: string;
+  password: string;
+  metadata?: {
+    [key: string]: any;
+  };
+}
+
 export interface AuthContextProps {
   user: User | null;
   session: any | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; data?: any; error?: string }>;
   signOut: () => Promise<SignOutResult>;
-  signUp: (data: any) => Promise<void>;
+  signUp: (data: SignUpData) => Promise<void>;
   activeSfdId: string | null;
   setActiveSfdId: (id: string | null) => void;
   isAdmin: boolean;
