@@ -44,14 +44,14 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     });
     
     // Check for admin access (admin has access to everything)
-    if (userRole === 'admin' || isAdmin) {
+    if (isAdmin || (userRole === 'admin')) {
       console.log('Admin detected, granting access');
       setHasAccess(true);
       return;
     }
     
     // SFD admin access check - direct string comparison for clarity
-    if ((userRole === 'sfd_admin' || isSfdAdmin) && (
+    if ((isSfdAdmin || userRole === 'sfd_admin') && (
       requiredRole === UserRole.SFD_ADMIN || 
       requiredRole === 'sfd_admin' ||
       requiredPermission === 'manage_subsidies'
@@ -67,17 +67,18 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     if (!requiredRole) {
       roleMatch = true;
     } else if (typeof requiredRole === 'string') {
+      // Safe comparison with type assertion
       roleMatch = userRole === requiredRole;
     } else {
       // Fixed: Convert enum value to string for comparison
       const requiredRoleString = String(requiredRole);
-      roleMatch = userRole === requiredRoleString;
+      roleMatch = Boolean(userRole && userRole === requiredRoleString);
     }
     
     // Permission check
     let permissionMatch = !requiredPermission;
     
-    // Admin has all permissions - use safe type checks with proper type guards
+    // Admin has all permissions
     if (isAdmin || (userRole === 'admin')) {
       permissionMatch = true;
     }
