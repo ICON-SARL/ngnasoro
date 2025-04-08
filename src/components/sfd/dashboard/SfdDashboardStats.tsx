@@ -2,9 +2,21 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { CreditCard, FilePlus, Users, ArrowRight } from 'lucide-react';
+import { CreditCard, FilePlus, Users, ArrowRight, Loader2 } from 'lucide-react';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 export const SfdDashboardStats = () => {
+  const { stats, isLoading } = useDashboardStats();
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Chargement des données...</span>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">Tableau de bord</h2>
@@ -16,8 +28,8 @@ export const SfdDashboardStats = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">127</div>
-            <p className="text-xs text-muted-foreground">+5 ce mois</p>
+            <div className="text-2xl font-bold">{stats.clients.total}</div>
+            <p className="text-xs text-muted-foreground">+{stats.clients.newThisMonth} ce mois</p>
             <div className="mt-4">
               <Link 
                 to="/sfd-clients" 
@@ -36,8 +48,8 @@ export const SfdDashboardStats = () => {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">42</div>
-            <p className="text-xs text-muted-foreground">3 en attente d'approbation</p>
+            <div className="text-2xl font-bold">{stats.loans.active}</div>
+            <p className="text-xs text-muted-foreground">{stats.loans.pending} en attente d'approbation</p>
             <div className="mt-4">
               <Link 
                 to="/sfd-loans" 
@@ -56,8 +68,8 @@ export const SfdDashboardStats = () => {
             <FilePlus className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
-            <p className="text-xs text-muted-foreground">2 en attente d'approbation</p>
+            <div className="text-2xl font-bold">{stats.subsidyRequests.total}</div>
+            <p className="text-xs text-muted-foreground">{stats.subsidyRequests.pending} en attente d'approbation</p>
             <div className="mt-4">
               <Link 
                 to="/sfd-subsidy-requests" 

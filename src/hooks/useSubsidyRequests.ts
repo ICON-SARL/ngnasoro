@@ -1,226 +1,97 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { subsidyRequestsApi } from '@/utils/subsidyRequestsApi';
-import { SubsidyRequestFilter } from '@/types/subsidyRequests';
-import { useToast } from '@/hooks/use-toast';
-import { useSubsidyNotifications } from '@/hooks/useSubsidyNotifications';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
-export function useSubsidyRequests(filters?: SubsidyRequestFilter) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { createRequestNotification, createDecisionNotification } = useSubsidyNotifications();
-  
-  // Fetch all subsidy requests
-  const subsidyRequestsQuery = useQuery({
-    queryKey: ['subsidyRequests', filters],
-    queryFn: () => subsidyRequestsApi.getAllSubsidyRequests(filters)
-  });
-  
-  // Get a single subsidy request
-  const getSubsidyRequestById = async (id: string) => {
-    return subsidyRequestsApi.getSubsidyRequestById(id);
+export interface SubsidyRequest {
+  id: string;
+  sfd_id: string;
+  amount: number;
+  purpose: string;
+  justification?: string;
+  expected_impact?: string;
+  region?: string;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  requested_by: string;
+  supporting_documents?: string[];
+  alert_triggered: boolean;
+  sfds?: {
+    name: string;
+    code: string;
+    region: string;
+    id: string;
   };
+}
+
+export interface SubsidyThreshold {
+  id: string;
+  threshold_name: string;
+  threshold_amount: number;
+  notification_emails?: string[];
+  is_active: boolean;
+  created_at: string;
+}
+
+interface UseSubsidyRequestsOptions {
+  status?: 'pending' | 'approved' | 'rejected';
+  sfdId?: string;
+}
+
+export function useSubsidyRequests(options: UseSubsidyRequestsOptions = {}) {
+  const { activeSfdId } = useAuth();
+  const sfdId = options.sfdId || activeSfdId;
   
-  // Fetch subsidy request activities
-  const getSubsidyRequestActivities = async (requestId: string) => {
-    return subsidyRequestsApi.getSubsidyRequestActivities(requestId);
-  };
-  
-  // Create a new subsidy request with notification
-  const createSubsidyRequest = useMutation({
-    mutationFn: subsidyRequestsApi.createSubsidyRequest,
-    onSuccess: (newRequest) => {
-      toast({
-        title: "Demande créée",
-        description: "La demande de subvention a été créée avec succès",
-      });
-      queryClient.invalidateQueries({ queryKey: ['subsidyRequests'] });
+  // Fetch subsidy requests
+  const { data: subsidyRequests, isLoading, error, refetch } = useQuery({
+    queryKey: ['subsidy-requests', sfdId, options.status],
+    queryFn: async () => {
+      let query = supabase
+        .from('subsidy_requests')
+        .select(`
+          *,
+          sfds:sfd_id(id, name, region, code)
+        `)
+        .order('created_at', { ascending: false });
+        
+      // Apply filters if provided
+      if (sfdId) {
+        query = query.eq('sfd_id', sfdId);
+      }
       
-      // Send notification to super admins
-      createRequestNotification.mutate(newRequest);
+      if (options.status) {
+        query = query.eq('status', options.status);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data as SubsidyRequest[];
     },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de la création de la demande",
-        variant: "destructive",
-      });
-    }
+    enabled: !!sfdId
   });
 
-  // Update subsidy request status with notification
-  const updateSubsidyRequestStatus = useMutation({
-    mutationFn: ({ 
-      requestId, 
-      status, 
-      comments 
-    }: { 
-      requestId: string; 
-      status: 'pending' | 'under_review' | 'approved' | 'rejected'; 
-      comments?: string;
-    }) => {
-      return subsidyRequestsApi.updateSubsidyRequestStatus(requestId, status, comments);
-    },
-    onSuccess: (updatedRequest, variables) => {
-      const statusMessages = {
-        pending: "en attente",
-        under_review: "en cours d'examen",
-        approved: "approuvée",
-        rejected: "rejetée"
-      };
-      
-      toast({
-        title: "Statut mis à jour",
-        description: `La demande est maintenant ${statusMessages[variables.status]}`,
-      });
-      queryClient.invalidateQueries({ queryKey: ['subsidyRequests'] });
-      
-      // If approved or rejected, send notification to SFD admin
-      if ((variables.status === 'approved' || variables.status === 'rejected') && 
-          updatedRequest.requested_by) {
-        createDecisionNotification.mutate({
-          requestId: updatedRequest.id,
-          sfdAdminId: updatedRequest.requested_by,
-          status: variables.status as 'approved' | 'rejected',
-          amount: updatedRequest.amount
-        });
-      }
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de la mise à jour du statut",
-        variant: "destructive",
-      });
-    }
-  });
-  
-  // Update subsidy request priority
-  const updateSubsidyRequestPriority = useMutation({
-    mutationFn: ({ 
-      requestId, 
-      priority 
-    }: { 
-      requestId: string; 
-      priority: 'low' | 'normal' | 'high' | 'urgent';
-    }) => {
-      return subsidyRequestsApi.updateSubsidyRequestPriority(requestId, priority);
-    },
-    onSuccess: (_data, variables) => {
-      const priorityMessages = {
-        low: "basse",
-        normal: "normale",
-        high: "haute",
-        urgent: "urgente"
-      };
-      
-      toast({
-        title: "Priorité mise à jour",
-        description: `La priorité est maintenant ${priorityMessages[variables.priority]}`,
-      });
-      queryClient.invalidateQueries({ queryKey: ['subsidyRequests'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de la mise à jour de la priorité",
-        variant: "destructive",
-      });
-    }
-  });
-  
-  // Get alert thresholds
-  const alertThresholdsQuery = useQuery({
-    queryKey: ['subsidyAlertThresholds'],
-    queryFn: subsidyRequestsApi.getAlertThresholds
-  });
-  
-  // Create alert threshold
-  const createAlertThreshold = useMutation({
-    mutationFn: subsidyRequestsApi.createAlertThreshold,
-    onSuccess: () => {
-      toast({
-        title: "Seuil d'alerte créé",
-        description: "Le seuil d'alerte a été créé avec succès",
-      });
-      queryClient.invalidateQueries({ queryKey: ['subsidyAlertThresholds'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de la création du seuil d'alerte",
-        variant: "destructive",
-      });
-    }
-  });
-  
-  // Update alert threshold
-  const updateAlertThreshold = useMutation({
-    mutationFn: ({ 
-      id, 
-      updates 
-    }: { 
-      id: string; 
-      updates: {
-        threshold_name?: string;
-        threshold_amount?: number;
-        notification_emails?: string[];
-        is_active?: boolean;
-      }
-    }) => {
-      return subsidyRequestsApi.updateAlertThreshold(id, updates);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Seuil d'alerte mis à jour",
-        description: "Le seuil d'alerte a été mis à jour avec succès",
-      });
-      queryClient.invalidateQueries({ queryKey: ['subsidyAlertThresholds'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de la mise à jour du seuil d'alerte",
-        variant: "destructive",
-      });
-    }
-  });
-  
-  // Delete alert threshold
-  const deleteAlertThreshold = useMutation({
-    mutationFn: (id: string) => {
-      return subsidyRequestsApi.deleteAlertThreshold(id);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Seuil d'alerte supprimé",
-        description: "Le seuil d'alerte a été supprimé avec succès",
-      });
-      queryClient.invalidateQueries({ queryKey: ['subsidyAlertThresholds'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de la suppression du seuil d'alerte",
-        variant: "destructive",
-      });
+  // Fetch subsidy thresholds
+  const { data: alertThresholds, isLoading: isLoadingThresholds } = useQuery({
+    queryKey: ['subsidy-thresholds'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('subsidy_alert_thresholds')
+        .select('*')
+        .order('threshold_amount', { ascending: false });
+
+      if (error) throw error;
+      return data as SubsidyThreshold[];
     }
   });
 
   return {
-    subsidyRequests: subsidyRequestsQuery.data || [],
-    isLoading: subsidyRequestsQuery.isLoading,
-    isError: subsidyRequestsQuery.isError,
-    getSubsidyRequestById,
-    getSubsidyRequestActivities,
-    createSubsidyRequest,
-    updateSubsidyRequestStatus,
-    updateSubsidyRequestPriority,
-    alertThresholds: alertThresholdsQuery.data || [],
-    isLoadingThresholds: alertThresholdsQuery.isLoading,
-    createAlertThreshold,
-    updateAlertThreshold,
-    deleteAlertThreshold,
-    refetch: subsidyRequestsQuery.refetch
+    subsidyRequests: subsidyRequests || [],
+    isLoading,
+    error,
+    refetch,
+    alertThresholds: alertThresholds || [],
+    isLoadingThresholds
   };
 }
