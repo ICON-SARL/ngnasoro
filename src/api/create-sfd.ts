@@ -1,6 +1,19 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Define the SFD data type to match the Supabase table structure
+interface SFDData {
+  name: string;
+  code: string;
+  region?: string;
+  status?: string;
+  logo_url?: string;
+  phone?: string;
+  subsidy_balance?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export default async function handler(req: Request) {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -88,10 +101,17 @@ export default async function handler(req: Request) {
       'subsidy_balance', 'created_at', 'updated_at'
     ];
     
-    // Filter to valid columns only
-    const cleanedSfdData = Object.fromEntries(
-      Object.entries(sfd_data).filter(([key]) => validColumns.includes(key))
-    );
+    // Filter to valid columns only and ensure required fields are present
+    const cleanedSfdData: SFDData = {
+      name: sfd_data.name,
+      code: sfd_data.code,
+      // Add optional fields if they exist
+      ...(sfd_data.region && { region: sfd_data.region }),
+      ...(sfd_data.status && { status: sfd_data.status }),
+      ...(sfd_data.logo_url && { logo_url: sfd_data.logo_url }),
+      ...(sfd_data.phone && { phone: sfd_data.phone }),
+      ...(sfd_data.subsidy_balance && { subsidy_balance: sfd_data.subsidy_balance }),
+    };
     
     console.log("Creating new SFD with cleaned data:", cleanedSfdData);
     
