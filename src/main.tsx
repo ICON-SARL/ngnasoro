@@ -12,7 +12,7 @@ import api from './api';
 if (typeof window !== 'undefined') {
   try {
     // Dynamic import for MSW to avoid server-side rendering issues
-    import('msw').then(async (msw) => {
+    import('msw').then(async (mswModule) => {
       // Convert our API to MSW handlers
       const handlers = Object.entries(api).map(([path, handlerFn]) => {
         return {
@@ -25,9 +25,9 @@ if (typeof window !== 'undefined') {
         };
       });
       
-      // Create and start the worker
-      const { setupWorker } = msw;
-      const worker = setupWorker(...handlers);
+      // Create and start the worker - properly accessing the setupWorker function
+      // In MSW v2, it's not directly destructurable but accessed through the default export
+      const worker = mswModule.worker(handlers);
       
       // Start the worker
       worker.start({ 
