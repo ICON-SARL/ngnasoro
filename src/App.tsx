@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Footer } from '@/components';
@@ -135,6 +134,18 @@ const AppRoutes = () => {
         element={
           <PermissionProtectedRoute 
             component={SfdSubsidyRequestPage} 
+            requiredRole={UserRole.SFD_ADMIN}
+            fallbackPath="/access-denied"
+          />
+        } 
+      />
+      
+      {/* Add Subsidy Request Detail route */}
+      <Route 
+        path="/sfd-subsidy-requests/:requestId" 
+        element={
+          <PermissionProtectedRoute 
+            component={SubsidyRequestDetailPage} 
             requiredRole={UserRole.SFD_ADMIN}
             fallbackPath="/access-denied"
           />
