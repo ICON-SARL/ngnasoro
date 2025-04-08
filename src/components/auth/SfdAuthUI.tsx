@@ -29,15 +29,6 @@ const SfdAuthUI = () => {
   }, [location, navigate]);
   
   useEffect(() => {
-    // Montrer un message d'information sur la page SFD auth
-    if (!user && !loading) {
-      toast({
-        title: "Information importante",
-        description: "Seuls les administrateurs SFD déjà créés peuvent se connecter ici. L'inscription SFD doit être effectuée par un super administrateur.",
-        duration: 6000,
-      });
-    }
-    
     if (user && !loading) {
       console.log("SfdAuthUI - User authenticated:", user.email, "Role:", user.app_metadata?.role);
       const userRole = user.app_metadata?.role;
@@ -50,12 +41,12 @@ const SfdAuthUI = () => {
         console.log("SfdAuthUI - Redirecting admin to super-admin-dashboard");
         navigate('/super-admin-dashboard');
       } else {
-        // For all other users, show a message and redirect to appropriate auth
-        console.log("SfdAuthUI - Redirecting regular user to auth");
-        navigate('/auth', { state: { error: 'not_sfd_admin' } });
+        // For all other users, redirect to the client interface
+        console.log("SfdAuthUI - Redirecting regular user to mobile flow");
+        navigate('/mobile-flow');
       }
     }
-  }, [user, loading, navigate, toast]);
+  }, [user, loading, navigate]);
 
   if (authSuccess) {
     return (
@@ -85,12 +76,6 @@ const SfdAuthUI = () => {
             <h2 className="text-blue-800 font-medium text-center">
               Connexion Administration SFD
             </h2>
-          </div>
-          
-          <div className="p-4 bg-amber-50 border-b border-amber-100">
-            <p className="text-sm text-amber-700 text-center">
-              L'inscription en tant qu'administrateur SFD est uniquement possible via un super administrateur.
-            </p>
           </div>
           
           <LoginForm adminMode={false} isSfdAdmin={true} />

@@ -8,7 +8,6 @@ import { AuthProvider } from '@/hooks/auth/AuthContext';
 import LoginPage from '@/pages/LoginPage';
 
 // Import pages
-import LandingPage from '@/pages/LandingPage';
 import AuthPage from '@/pages/AuthPage';
 import MobileFlow from '@/pages/MobileFlow';
 import SfdDashboardPage from '@/pages/SfdDashboardPage';
@@ -24,6 +23,9 @@ import CreditApprovalPage from '@/pages/CreditApprovalPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import MerefSubsidyRequestPage from '@/pages/MerefSubsidyRequestPage';
 import MerefLoanManagementPage from '@/pages/MerefLoanManagementPage';
+import AdminLoginPage from '@/pages/AdminLoginPage';
+import ClientLoginPage from '@/pages/ClientLoginPage';
+import AccessDeniedPage from '@/pages/AccessDeniedPage';
 
 // Route protection components
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
@@ -45,13 +47,16 @@ function AppWithFooter() {
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Landing page route */}
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/index" element={<Navigate to="/" replace />} />
+      {/* Redirect the landing page to auth */}
+      <Route path="/" element={<Navigate to="/auth" replace />} />
+      <Route path="/index" element={<Navigate to="/auth" replace />} />
       
       {/* Public Authentication routes */}
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/login" element={<Navigate to="/auth" replace />} />
+      <Route path="/admin/auth" element={<AdminLoginPage />} />
+      <Route path="/sfd/auth" element={<ClientLoginPage />} />
+      <Route path="/access-denied" element={<AccessDeniedPage />} />
       
       {/* Protected routes with permissions */}
       <Route 

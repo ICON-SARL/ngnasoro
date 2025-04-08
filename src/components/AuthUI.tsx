@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
   const [authMode, setAuthMode] = useState<'default' | 'admin'>('default');
-  const { user, userRole, loading } = useAuth();
+  const { user, session, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
@@ -53,20 +53,12 @@ const AuthUI = () => {
     // Only redirect if not loading and user is authenticated
     if (user && !loading) {
       console.log('Authenticated user:', user);
-      console.log('User role:', userRole);
+      const userRole = user.app_metadata?.role;
       
       // Redirection based on user's role
-      if (userRole === UserRole.SUPER_ADMIN || user.app_metadata?.role === 'admin') {
-        if (location.pathname !== '/admin/auth' && !location.pathname.includes('admin')) {
-          // If regular auth page is accessed by admin, show a message
-          toast({
-            title: "Redirection",
-            description: "Les administrateurs doivent utiliser l'interface d'administration.",
-            variant: "default",
-          });
-        }
+      if (userRole === 'admin' || userRole === 'super_admin') {
         navigate('/super-admin-dashboard');
-      } else if (userRole === UserRole.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {
+      } else if (userRole === 'sfd_admin') {
         // Rediriger les admins SFD vers leur interface dédiée
         navigate('/agency-dashboard');
       } else {
@@ -74,7 +66,7 @@ const AuthUI = () => {
         navigate('/mobile-flow');
       }
     }
-  }, [user, userRole, loading, navigate, location.pathname, toast]);
+  }, [user, loading, navigate]);
 
   // Update tab based on current route
   useEffect(() => {
@@ -171,9 +163,12 @@ const AuthUI = () => {
                 >
                   Accès Administrateur MEREF
                 </a>
-                <div className="text-gray-500 text-sm italic mt-1">
-                  L'inscription en tant qu'administrateur SFD est effectuée uniquement par un administrateur
-                </div>
+                <a 
+                  href="/sfd/auth"
+                  className="text-blue-600 hover:underline font-medium"
+                >
+                  Accès Administrateur SFD
+                </a>
               </>
             )}
             
@@ -184,6 +179,12 @@ const AuthUI = () => {
                   className="text-[#0D6A51] hover:underline font-medium"
                 >
                   Connexion Utilisateur Standard
+                </a>
+                <a 
+                  href="/sfd/auth"
+                  className="text-blue-600 hover:underline font-medium"
+                >
+                  Accès Administrateur SFD
                 </a>
               </>
             )}
