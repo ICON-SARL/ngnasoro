@@ -69,8 +69,9 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     } else if (typeof requiredRole === 'string') {
       roleMatch = userRole === requiredRole;
     } else {
-      // String comparison for enum values
-      roleMatch = userRole === requiredRole.toString() || userRole === UserRole[requiredRole];
+      // Fixed: Convert enum value to string for comparison
+      const requiredRoleString = String(requiredRole);
+      roleMatch = userRole === requiredRoleString;
     }
     
     // Permission check
@@ -106,7 +107,10 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
         logPermissionFailure(user.id, requiredPermission, location.pathname);
       }
       if (requiredRole && !roleMatch) {
-        logPermissionFailure(user.id, `role:${typeof requiredRole === 'string' ? requiredRole : UserRole[requiredRole]}`, location.pathname);
+        const roleValue = typeof requiredRole === 'string' 
+          ? requiredRole
+          : String(requiredRole);
+        logPermissionFailure(user.id, `role:${roleValue}`, location.pathname);
       }
     }
   }, [user, requiredPermission, requiredRole, location.pathname, isAdmin, isSfdAdmin]);
