@@ -1,10 +1,10 @@
 
-// Ce fichier existe déjà, je vais seulement ajouter une section pour
-// améliorer la gestion des appels de fonctions Edge
+// Ce fichier existe déjà, je vais seulement améliorer la gestion des appels
+// de fonctions Edge pour résoudre les problèmes 404
 
 import { toast as toastFunction } from "@/hooks/use-toast";
 
-// Dans ce fichier, je vais ajouter une fonction callEdgeFunction améliorée
+// Dans ce fichier, je vais améliorer la fonction callEdgeFunction
 // qui gère mieux les erreurs et contourne le cache
 
 export const edgeFunctionApi = {
