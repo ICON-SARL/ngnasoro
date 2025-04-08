@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,8 +26,11 @@ export function useSfdForm({ initialData, onSubmit }: UseSfdFormProps) {
       name: initialData?.name || '',
       code: initialData?.code || '',
       region: initialData?.region || '',
+      description: initialData?.description || '',
+      email: initialData?.email || '',
       contact_email: initialData?.contact_email || '',
       phone: initialData?.phone || '',
+      address: initialData?.address || '',
       status: (initialData?.status as 'active' | 'pending' | 'suspended') || 'active',
       logo_url: initialData?.logo_url || '',
       legal_document_url: initialData?.legal_document_url || '',

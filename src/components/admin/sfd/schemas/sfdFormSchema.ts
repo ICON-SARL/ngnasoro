@@ -12,6 +12,11 @@ export const sfdFormSchema = z.object({
   address: z.string().optional(),
   logo_file: z.any().optional(),
   legal_document_file: z.any().optional(),
+  // Add the missing properties
+  status: z.enum(['active', 'pending', 'suspended']).optional().default('active'),
+  logo_url: z.string().optional(),
+  legal_document_url: z.string().optional(),
+  subsidy_balance: z.number().optional(),
 });
 
 export type SfdFormValues = z.infer<typeof sfdFormSchema>;
