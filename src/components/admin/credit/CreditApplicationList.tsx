@@ -51,6 +51,21 @@ export const CreditApplicationList = () => {
     }
   };
 
+  const isValidUUID = (id: string): boolean => {
+    const uuidPattern = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    return uuidPattern.test(id);
+  };
+
+  const generateValidUUID = (str: string): string => {
+    const namespace = '00000000-0000-0000-0000-000000000000';
+    const hash = str.split('').reduce((acc, char) => {
+      const code = char.charCodeAt(0);
+      return (acc * 31 + code) & 0xffffffff;
+    }, 0);
+    
+    return `${namespace.substring(0, 24)}${hash.toString(16).padStart(8, '0')}`;
+  };
+
   const handleApprove = async () => {
     if (!selectedApplication) return;
     
@@ -60,24 +75,45 @@ export const CreditApplicationList = () => {
         comments: additionalComments
       });
       
-      await sendNotification({
-        title: "Demande de crédit approuvée",
-        message: `Votre demande de crédit (Réf: ${selectedApplication.reference}) a été approuvée pour un montant de ${selectedApplication.amount.toLocaleString()} FCFA.`,
-        type: 'info',
-        recipient_id: selectedApplication.sfd_id,
-        action_link: '/sfd/credit-applications'
-      });
+      let recipientId = selectedApplication.sfd_id;
       
-      toast({
-        title: "Demande approuvée",
-        description: `La demande de crédit de ${selectedApplication.sfd_name} a été approuvée`,
-      });
+      if (!isValidUUID(recipientId)) {
+        console.log(`Converting invalid UUID format: ${recipientId} to valid format for notification`);
+        recipientId = generateValidUUID(recipientId);
+      }
+
+      try {
+        await sendNotification({
+          title: "Demande de crédit approuvée",
+          message: `Votre demande de crédit (Réf: ${selectedApplication.reference}) a été approuvée pour un montant de ${selectedApplication.amount.toLocaleString()} FCFA.`,
+          type: 'info',
+          recipient_id: recipientId,
+          action_link: '/sfd/credit-applications'
+        });
+        
+        toast({
+          title: "Demande approuvée",
+          description: `La demande de crédit de ${selectedApplication.sfd_name} a été approuvée`,
+        });
+      } catch (notificationError) {
+        console.error('Error sending notification:', notificationError);
+        toast({
+          title: "Demande approuvée",
+          description: `La demande de crédit a été approuvée mais la notification n'a pas pu être envoyée`,
+          variant: "warning",
+        });
+      }
       
       setIsApprovalDialogOpen(false);
       setSelectedApplication(null);
       setAdditionalComments('');
     } catch (error) {
       console.error('Error approving application:', error);
+      toast({
+        title: "Erreur lors de l'approbation",
+        description: "Une erreur est survenue lors de l'approbation de la demande",
+        variant: "destructive",
+      });
     }
   };
 
@@ -91,18 +127,34 @@ export const CreditApplicationList = () => {
         comments: additionalComments
       });
       
-      await sendNotification({
-        title: "Demande de crédit rejetée",
-        message: `Votre demande de crédit (Réf: ${selectedApplication.reference}) a été rejetée pour la raison suivante: ${getRejectionReasonLabel(rejectionReason)}.`,
-        type: 'warning',
-        recipient_id: selectedApplication.sfd_id,
-        action_link: '/sfd/credit-applications'
-      });
+      let recipientId = selectedApplication.sfd_id;
       
-      toast({
-        title: "Demande rejetée",
-        description: `La demande de crédit de ${selectedApplication.sfd_name} a été rejetée`,
-      });
+      if (!isValidUUID(recipientId)) {
+        console.log(`Converting invalid UUID format: ${recipientId} to valid format for notification`);
+        recipientId = generateValidUUID(recipientId);
+      }
+
+      try {
+        await sendNotification({
+          title: "Demande de crédit rejetée",
+          message: `Votre demande de crédit (Réf: ${selectedApplication.reference}) a été rejetée pour la raison suivante: ${getRejectionReasonLabel(rejectionReason)}.`,
+          type: 'warning',
+          recipient_id: recipientId,
+          action_link: '/sfd/credit-applications'
+        });
+        
+        toast({
+          title: "Demande rejetée",
+          description: `La demande de crédit de ${selectedApplication.sfd_name} a été rejetée`,
+        });
+      } catch (notificationError) {
+        console.error('Error sending notification:', notificationError);
+        toast({
+          title: "Demande rejetée",
+          description: `La demande de crédit a été rejetée mais la notification n'a pas pu être envoyée`,
+          variant: "warning",
+        });
+      }
       
       setIsRejectionDialogOpen(false);
       setSelectedApplication(null);
@@ -110,6 +162,11 @@ export const CreditApplicationList = () => {
       setAdditionalComments('');
     } catch (error) {
       console.error('Error rejecting application:', error);
+      toast({
+        title: "Erreur lors du rejet",
+        description: "Une erreur est survenue lors du rejet de la demande",
+        variant: "destructive",
+      });
     }
   };
 

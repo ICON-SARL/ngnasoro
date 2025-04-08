@@ -39,6 +39,13 @@ export function useAdminCommunication() {
   const [hasError, setHasError] = useState(false);
   const { toast } = useToast();
 
+  // Helper function to validate UUID format
+  const isValidUUID = (id: string): boolean => {
+    if (!id) return false;
+    const uuidPattern = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    return uuidPattern.test(id);
+  };
+
   // Function to send notification to a specific admin
   const sendNotification = useCallback(async (notification: AdminNotificationRequest): Promise<SendNotificationResult> => {
     try {
@@ -49,23 +56,36 @@ export function useAdminCommunication() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        throw new Error('You must be logged in to send notifications');
+        throw new Error('Vous devez être connecté pour envoyer des notifications');
       }
+      
+      // Validate recipient_id if provided
+      if (notification.recipient_id && !isValidUUID(notification.recipient_id)) {
+        throw new Error(`Format d'identifiant invalide: ${notification.recipient_id}`);
+      }
+      
+      // Make sure we have either a recipient_id or a recipient_role
+      if (!notification.recipient_id && !notification.recipient_role) {
+        throw new Error('Aucun destinataire spécifié pour la notification');
+      }
+      
+      // Prepare notification data
+      const notificationData = {
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        recipient_id: notification.recipient_id,
+        recipient_role: notification.recipient_role,
+        action_link: notification.action_link,
+        sender_id: user.id,
+        read: false
+      };
+      
+      console.log("Sending notification:", notificationData);
       
       const { data, error } = await supabase
         .from('admin_notifications')
-        .insert([
-          {
-            title: notification.title,
-            message: notification.message,
-            type: notification.type,
-            recipient_id: notification.recipient_id,
-            recipient_role: notification.recipient_role,
-            action_link: notification.action_link,
-            sender_id: user.id,
-            read: false
-          }
-        ])
+        .insert([notificationData])
         .select();
       
       if (error) {
@@ -73,12 +93,13 @@ export function useAdminCommunication() {
         throw error;
       }
       
+      console.log("Notification sent successfully:", data);
       return { success: true, data: data[0] };
     } catch (err: any) {
       setError(err.message);
       console.error('Error in sendNotification:', err);
       toast({
-        title: "Erreur",
+        title: "Erreur de notification",
         description: `Impossible d'envoyer la notification: ${err.message}`,
         variant: "destructive",
       });
@@ -217,37 +238,16 @@ export function useAdminCommunication() {
       return false;
     }
   }, []);
-
-  // Function to retry fetch with exponential backoff
-  const retryFetch = useCallback(async (
-    fn: () => Promise<any>, 
-    maxRetries = 3, 
-    delay = 1000
-  ) => {
-    let retries = 0;
-    while (retries < maxRetries) {
-      try {
-        return await fn();
-      } catch (err) {
-        retries++;
-        if (retries >= maxRetries) {
-          throw err;
-        }
-        await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, retries - 1)));
-      }
-    }
-  }, []);
-
+  
   return {
+    isLoading,
+    error,
+    hasError,
+    notifications,
+    unreadCount,
     sendNotification,
     fetchNotifications,
     markAsRead,
-    markAllAsRead,
-    retryFetch,
-    notifications,
-    unreadCount,
-    hasError,
-    isLoading,
-    error
+    markAllAsRead
   };
 }
