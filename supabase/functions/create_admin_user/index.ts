@@ -22,128 +22,119 @@ serve(async (req) => {
     // Parse request body
     const { email, password, full_name, role, sfd_id } = await req.json();
     
-    console.log("Creating admin user with role:", role, "for SFD:", sfd_id);
-
     if (!email || !password || !full_name || !role) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Tous les champs requis doivent être fournis (email, password, full_name, role)" 
-        }),
+        JSON.stringify({ error: "Missing required fields" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // 1. Create a new user with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    console.log(`Creating admin user with email: ${email} and role: ${role}`);
+    
+    // 1. Create user in auth system
+    const { data: userData, error: userError } = await supabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
       user_metadata: {
         full_name,
         role,
-        sfd_id
+        sfd_id: sfd_id || null
       }
     });
 
-    if (authError) {
-      console.error("Error creating user:", authError);
+    if (userError) {
+      console.error("Error creating user:", userError);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: `Erreur lors de la création de l'utilisateur: ${authError.message}` 
-        }),
+        JSON.stringify({ error: `Error creating user: ${userError.message}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!authData.user) {
+    if (!userData.user) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Aucun utilisateur créé" 
-        }),
+        JSON.stringify({ error: "Failed to create user" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    console.log(`User created successfully with ID: ${userData.user.id}`);
 
-    console.log("User created:", authData.user.id);
-
-    // 2. Insert the user into the admin_users table
-    const { error: adminError } = await supabase
+    // 2. Create admin_users entry
+    const { data: adminData, error: adminError } = await supabase
       .from('admin_users')
       .insert({
-        id: authData.user.id,
+        id: userData.user.id,
         email,
         full_name,
-        role: 'sfd_admin'
-      });
+        role,
+        has_2fa: false
+      })
+      .select()
+      .single();
 
     if (adminError) {
-      console.error("Error creating admin user record:", adminError);
-      
-      // Try to delete the auth user if admin_users record fails
-      try {
-        await supabase.auth.admin.deleteUser(authData.user.id);
-      } catch (cleanupError) {
-        console.error("Error cleaning up auth user:", cleanupError);
-      }
+      console.error("Error creating admin user:", adminError);
+      // Try to clean up the auth user since the admin_users entry failed
+      await supabase.auth.admin.deleteUser(userData.user.id);
       
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: `Erreur lors de la création de l'enregistrement administrateur: ${adminError.message}` 
-        }),
+        JSON.stringify({ error: `Error creating admin user: ${adminError.message}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    console.log("Admin user created successfully");
 
-    // 3. Assign the role to the user
+    // 3. Assign role
     const { error: roleError } = await supabase.rpc(
       'assign_role',
       {
-        user_id: authData.user.id,
-        role: 'sfd_admin'
+        user_id: userData.user.id,
+        role
       }
     );
 
     if (roleError) {
-      console.error("Error assigning role:", roleError);
-      // Non-fatal, continue
+      console.warn("Error assigning role:", roleError);
+      // Non-critical, continue
+    } else {
+      console.log(`Role ${role} assigned successfully`);
     }
 
-    // 4. Associate the user with the SFD
-    const { error: sfdError } = await supabase
-      .from('user_sfds')
-      .insert({
-        user_id: authData.user.id,
-        sfd_id,
-        is_default: true
-      });
+    // 4. If SFD ID is provided, create user-SFD association for SFD admins
+    if (role === 'sfd_admin' && sfd_id) {
+      const { error: sfdAssociationError } = await supabase
+        .from('user_sfds')
+        .insert({
+          user_id: userData.user.id,
+          sfd_id,
+          is_default: true
+        });
 
-    if (sfdError) {
-      console.warn("Error associating user with SFD:", sfdError);
-      // Non-fatal, continue
+      if (sfdAssociationError) {
+        console.warn("Error creating user-SFD association:", sfdAssociationError);
+        // Non-critical, continue
+      } else {
+        console.log(`Associated user with SFD ID: ${sfd_id}`);
+      }
     }
 
+    // Success response
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
-        user_id: authData.user.id,
-        email,
-        full_name,
-        sfd_id
+        user_id: userData.user.id,
+        message: "Admin user created successfully"
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+    
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("Edge function error:", error);
     
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: `Une erreur inattendue s'est produite: ${error.message}` 
-      }),
+      JSON.stringify({ error: `Error creating admin user: ${error.message}` }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

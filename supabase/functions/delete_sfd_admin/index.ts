@@ -19,53 +19,68 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Parse request body
     const { admin_id } = await req.json();
     
     if (!admin_id) {
       return new Response(
-        JSON.stringify({ error: "Missing admin_id" }),
+        JSON.stringify({ error: "Admin ID is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     console.log(`Deleting admin user with ID: ${admin_id}`);
 
-    // 1. Delete from admin_users table
-    const { error: adminError } = await supabase
+    // 1. Remove user-SFD associations first
+    const { error: userSfdsError } = await supabase
+      .from('user_sfds')
+      .delete()
+      .eq('user_id', admin_id);
+
+    if (userSfdsError) {
+      console.warn("Error removing user-SFD associations:", userSfdsError);
+      // Non-critical, continue
+    }
+
+    // 2. Remove user roles
+    const { error: userRolesError } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('user_id', admin_id);
+
+    if (userRolesError) {
+      console.warn("Error removing user roles:", userRolesError);
+      // Non-critical, continue
+    }
+
+    // 3. Remove admin user record
+    const { error: adminUserError } = await supabase
       .from('admin_users')
       .delete()
       .eq('id', admin_id);
-    
-    if (adminError) {
-      console.error("Error deleting admin user:", adminError);
-      throw adminError;
+
+    if (adminUserError) {
+      console.error("Error removing admin user:", adminUserError);
+      return new Response(
+        JSON.stringify({ error: `Error removing admin user: ${adminUserError.message}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
-    
-    // 2. Delete role assignment
-    const { error: roleError } = await supabase
-      .from('user_roles')
-      .delete()
-      .eq('user_id', admin_id)
-      .eq('role', 'sfd_admin');
-      
-    if (roleError) {
-      console.warn("Error deleting role:", roleError);
-      // Continue despite error
+
+    // 4. Delete the actual auth user (this must be done last)
+    const { error: authUserError } = await supabase.auth.admin.deleteUser(admin_id);
+
+    if (authUserError) {
+      console.error("Error deleting auth user:", authUserError);
+      return new Response(
+        JSON.stringify({ error: `Error deleting auth user: ${authUserError.message}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
-    
-    // 3. Delete auth user if possible
-    const { error: authError } = await supabase.auth.admin.deleteUser(admin_id);
-    
-    if (authError) {
-      console.warn("Error deleting auth user:", authError);
-      // Continue despite error
-    }
-    
+
+    // Success response
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        message: "SFD admin deleted successfully" 
-      }),
+      JSON.stringify({ success: true, message: "SFD admin deleted successfully" }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
     
@@ -73,9 +88,7 @@ serve(async (req) => {
     console.error("Edge function error:", error);
     
     return new Response(
-      JSON.stringify({ 
-        error: `Error deleting SFD admin: ${error.message}` 
-      }),
+      JSON.stringify({ error: `Error deleting SFD admin: ${error.message}` }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
