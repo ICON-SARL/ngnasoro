@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,13 +16,13 @@ export interface DashboardStats {
     total: number;
     pending: number;
   };
-  activeSfds?: number;
-  newSfdsThisMonth?: number;
-  admins?: number;
-  newAdminsThisMonth?: number;
-  totalUsers?: number;
-  newUsersThisMonth?: number;
-  newSubsidiesThisMonth?: string | number;
+  activeSfds: number;
+  newSfdsThisMonth: number;
+  admins: number;
+  newAdminsThisMonth: number;
+  totalUsers: number;
+  newUsersThisMonth: number;
+  newSubsidiesThisMonth: string | number;
 }
 
 export const useDashboardStats = () => {
@@ -29,7 +30,14 @@ export const useDashboardStats = () => {
   const [stats, setStats] = useState<DashboardStats>({
     clients: { total: 0, newThisMonth: 0 },
     loans: { active: 0, pending: 0 },
-    subsidyRequests: { total: 0, pending: 0 }
+    subsidyRequests: { total: 0, pending: 0 },
+    activeSfds: 0,
+    newSfdsThisMonth: 0,
+    admins: 0,
+    newAdminsThisMonth: 0,
+    totalUsers: 0,
+    newUsersThisMonth: 0,
+    newSubsidiesThisMonth: 0
   });
   
   const [isLoading, setIsLoading] = useState(true);
