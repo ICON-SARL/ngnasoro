@@ -10,7 +10,7 @@ import { toast as toastFunction } from "@/hooks/use-toast";
 export const edgeFunctionApi = {
   // Fonction améliorée pour appeler les fonctions Edge avec gestion du cache
   callEdgeFunction: async (functionName: string, payload: any, options?: { showToast?: boolean, bypassCache?: boolean }) => {
-    const { showToast = false, bypassCache = false } = options || {};
+    const { showToast = false, bypassCache = true } = options || {};
     
     try {
       // Ajouter un timestamp pour éviter le cache

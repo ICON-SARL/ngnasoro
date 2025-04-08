@@ -1,8 +1,8 @@
 
 import React from 'react';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 
 interface TextInputsProps {
   purpose: string;
@@ -15,25 +15,25 @@ export function TextInputs({ purpose, justification, expectedImpact, onChange }:
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="purpose">Objet de la demande *</Label>
+        <Label htmlFor="purpose">Objet du prêt</Label>
         <Input
           id="purpose"
           name="purpose"
-          placeholder="Objectif de ce financement"
           value={purpose}
           onChange={onChange}
+          placeholder="ex: Financement de microcrédits agricoles"
           required
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="justification">Justification *</Label>
+        <Label htmlFor="justification">Justification</Label>
         <Textarea
           id="justification"
           name="justification"
-          placeholder="Expliquez pourquoi ce financement est nécessaire"
           value={justification}
           onChange={onChange}
+          placeholder="Décrivez pourquoi ce prêt est nécessaire..."
           rows={3}
           required
         />
@@ -44,10 +44,11 @@ export function TextInputs({ purpose, justification, expectedImpact, onChange }:
         <Textarea
           id="expected_impact"
           name="expected_impact"
-          placeholder="Décrivez l'impact attendu de ce financement"
           value={expectedImpact}
           onChange={onChange}
+          placeholder="Décrivez l'impact socio-économique attendu de ce prêt..."
           rows={3}
+          required
         />
       </div>
     </div>

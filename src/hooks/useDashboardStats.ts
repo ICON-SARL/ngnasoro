@@ -1,32 +1,52 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface DashboardStats {
+  clients: {
+    total: number;
+    newThisMonth: number;
+  };
+  loans: {
+    active: number;
+    pending: number;
+  };
+  subsidyRequests: {
+    total: number;
+    pending: number;
+  };
   activeSfds: number;
   newSfdsThisMonth: number;
   admins: number;
   newAdminsThisMonth: number;
   totalUsers: number;
   newUsersThisMonth: number;
-  newSubsidiesThisMonth: string;
+  newSubsidiesThisMonth: string | number;
 }
 
 export const useDashboardStats = () => {
+  const { user, activeSfdId } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
+    clients: { total: 0, newThisMonth: 0 },
+    loans: { active: 0, pending: 0 },
+    subsidyRequests: { total: 0, pending: 0 },
     activeSfds: 0,
     newSfdsThisMonth: 0,
     admins: 0,
     newAdminsThisMonth: 0,
     totalUsers: 0,
     newUsersThisMonth: 0,
-    newSubsidiesThisMonth: '0',
+    newSubsidiesThisMonth: 0
   });
+  
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const fetchDashboardStats = async () => {
+    const fetchSfdDashboardStats = async () => {
+      if (!activeSfdId) return;
+      
       try {
         setIsLoading(true);
         
@@ -34,91 +54,132 @@ export const useDashboardStats = () => {
         const now = new Date();
         const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         
-        // Fetch active SFDs
-        const { data: activeSfds, error: sfdsError } = await supabase
-          .from('sfds')
-          .select('id, created_at')
-          .eq('status', 'active');
-          
-        if (sfdsError) throw sfdsError;
-        
-        // Count SFDs created this month
-        const newSfdsThisMonth = activeSfds.filter(
-          sfd => new Date(sfd.created_at) >= firstDayOfMonth
-        ).length;
-        
-        // Fetch admin users - placeholders until we have actual admin roles
-        // This would normally query a roles table or similar
-        const { count: adminCount, error: adminsError } = await supabase
-          .from('profiles')
+        // Fetch client stats
+        const { count: totalClients, error: clientsError } = await supabase
+          .from('sfd_clients')
           .select('id', { count: 'exact' })
-          .limit(1);  // This is just a placeholder query for now
+          .eq('sfd_id', activeSfdId);
           
-        if (adminsError) throw adminsError;
+        if (clientsError) throw clientsError;
         
-        // Fetch total users - this could be refined based on your user model
-        const { count: userCount, error: usersError } = await supabase
-          .from('profiles')
-          .select('id', { count: 'exact' });
+        // Count clients created this month
+        const { count: newClientsThisMonth, error: newClientsError } = await supabase
+          .from('sfd_clients')
+          .select('id', { count: 'exact' })
+          .eq('sfd_id', activeSfdId)
+          .gte('created_at', firstDayOfMonth.toISOString());
           
-        if (usersError) throw usersError;
+        if (newClientsError) throw newClientsError;
         
-        // Fake new users this month for demo purposes
-        const newUsersThisMonth = Math.floor(userCount * 0.05); // 5% growth this month
-        
-        // Fetch subsidies for this month - placeholder
-        const { data: monthlySubsidies, error: subsidiesError } = await supabase
-          .from('sfd_subsidies')
-          .select('amount')
-          .gte('allocated_at', firstDayOfMonth.toISOString());
+        // Fetch loan stats
+        const { count: activeLoans, error: loansError } = await supabase
+          .from('sfd_loans')
+          .select('id', { count: 'exact' })
+          .eq('sfd_id', activeSfdId)
+          .in('status', ['active', 'approved']);
           
-        if (subsidiesError) throw subsidiesError;
+        if (loansError) throw loansError;
         
-        const newSubsidiesAmount = monthlySubsidies.reduce(
-          (sum, subsidy) => sum + subsidy.amount, 
-          0
-        );
+        // Fetch pending loans
+        const { count: pendingLoans, error: pendingLoansError } = await supabase
+          .from('sfd_loans')
+          .select('id', { count: 'exact' })
+          .eq('sfd_id', activeSfdId)
+          .eq('status', 'pending');
+          
+        if (pendingLoansError) throw pendingLoansError;
+        
+        // Fetch subsidy requests stats
+        const { count: totalSubsidyRequests, error: subsidyRequestsError } = await supabase
+          .from('subsidy_requests')
+          .select('id', { count: 'exact' })
+          .eq('sfd_id', activeSfdId);
+          
+        if (subsidyRequestsError) throw subsidyRequestsError;
+        
+        // Fetch pending subsidy requests
+        const { count: pendingSubsidyRequests, error: pendingSubsidyRequestsError } = await supabase
+          .from('subsidy_requests')
+          .select('id', { count: 'exact' })
+          .eq('sfd_id', activeSfdId)
+          .eq('status', 'pending');
+          
+        if (pendingSubsidyRequestsError) throw pendingSubsidyRequestsError;
         
         // Update the stats state
         setStats({
-          activeSfds: activeSfds.length,
-          newSfdsThisMonth,
-          admins: 8, // Placeholder for now
-          newAdminsThisMonth: 1, // Placeholder for now
-          totalUsers: userCount || 24581, // Fallback to sample data
-          newUsersThisMonth: newUsersThisMonth || 1245, // Fallback to sample data
-          newSubsidiesThisMonth: `${(newSubsidiesAmount / 1000000).toFixed(1)}M`,
+          clients: {
+            total: totalClients || 0,
+            newThisMonth: newClientsThisMonth || 0
+          },
+          loans: {
+            active: activeLoans || 0,
+            pending: pendingLoans || 0
+          },
+          subsidyRequests: {
+            total: totalSubsidyRequests || 0,
+            pending: pendingSubsidyRequests || 0
+          },
+          activeSfds: 0,
+          newSfdsThisMonth: 0,
+          admins: 0,
+          newAdminsThisMonth: 0,
+          totalUsers: 0,
+          newUsersThisMonth: 0,
+          newSubsidiesThisMonth: 0
         });
         
         setIsLoading(false);
       } catch (err) {
-        console.error('Error fetching dashboard stats:', err);
+        console.error('Error fetching SFD dashboard stats:', err);
         setError(err as Error);
         setIsLoading(false);
       }
     };
 
-    fetchDashboardStats();
+    fetchSfdDashboardStats();
     
     // Set up a real-time subscription for active updates
-    const subscription = supabase
-      .channel('dashboard-stats')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'sfds'
-      }, fetchDashboardStats)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'sfd_subsidies'
-      }, fetchDashboardStats)
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, []);
+    if (activeSfdId) {
+      const subscription = supabase
+        .channel('sfd-dashboard-stats')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'sfd_clients',
+          filter: `sfd_id=eq.${activeSfdId}`
+        }, fetchSfdDashboardStats)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'sfd_loans',
+          filter: `sfd_id=eq.${activeSfdId}`
+        }, fetchSfdDashboardStats)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'subsidy_requests',
+          filter: `sfd_id=eq.${activeSfdId}`
+        }, fetchSfdDashboardStats)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'sfd_loans',
+          filter: `sfd_id=eq.${activeSfdId}`
+        }, fetchSfdDashboardStats)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'subsidy_requests',
+          filter: `sfd_id=eq.${activeSfdId}`
+        }, fetchSfdDashboardStats)
+        .subscribe();
+        
+      return () => {
+        supabase.removeChannel(subscription);
+      };
+    }
+  }, [activeSfdId]);
 
   return { stats, isLoading, error };
 };

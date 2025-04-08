@@ -1,49 +1,53 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { supabase } from '@/integrations/supabase/client';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Cache-Control': 'no-cache, no-store, must-revalidate', // Prevent caching
-};
-
-serve(async (req) => {
+export default async function handler(req: Request) {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders, status: 204 });
+    return new Response(null, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      },
+      status: 204,
+    });
+  }
+
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      {
+        status: 405,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      }
+    );
   }
 
   try {
-    // Create a Supabase client with the service role key
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Ensure storage buckets exist before proceeding
-    try {
-      await supabase.functions.invoke('create_storage_buckets');
-    } catch (error) {
-      console.warn("Warning: Failed to ensure storage buckets exist:", error);
-      // Continue anyway as this is not critical
-    }
-
-    // Parse request body
     const body = await req.json();
-    const sfd_data = body.sfd_data;
-    const admin_id = body.admin_id;
+    const { sfd_data, admin_id } = body;
     
-    console.log("Request received for SFD creation:", { sfd_data, admin_id });
-    
-    if (!sfd_data || !sfd_data.name || !sfd_data.code) {
-      console.error("Missing required SFD data (name, code)");
+    if (!sfd_data || !admin_id) {
       return new Response(
-        JSON.stringify({ error: "Missing required SFD data (name, code)" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: 'Missing required data' }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
       );
     }
 
-    // Vérifier l'existence d'une SFD avec le même code
+    console.log("Processing SFD creation:", { sfd_data, admin_id });
+    
+    // Check if SFD with same code already exists
     const { data: existingSfd, error: checkError } = await supabase
       .from('sfds')
       .select('id, code')
@@ -54,7 +58,13 @@ serve(async (req) => {
       console.error("Error checking existing SFD:", checkError);
       return new Response(
         JSON.stringify({ error: `Error checking existing SFD: ${checkError.message}` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
       );
     }
     
@@ -62,12 +72,17 @@ serve(async (req) => {
       console.error(`SFD with code ${sfd_data.code} already exists`);
       return new Response(
         JSON.stringify({ error: `Une SFD avec le code ${sfd_data.code} existe déjà` }),
-        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 409,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
       );
     }
     
-    // On n'utilise plus la fonction get_table_columns qui cause des erreurs
-    // Au lieu de cela, on définit manuellement les colonnes valides
+    // Define valid columns manually
     const validColumns = [
       'name', 'code', 'region', 'status', 'logo_url', 'phone',
       'subsidy_balance', 'created_at', 'updated_at'
@@ -91,7 +106,13 @@ serve(async (req) => {
       console.error("Error creating SFD:", sfdError);
       return new Response(
         JSON.stringify({ error: `Error creating SFD: ${sfdError.message}` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
       );
     }
     
@@ -109,7 +130,6 @@ serve(async (req) => {
     
     if (statsError) {
       console.warn("Error creating initial SFD stats:", statsError);
-      // Not critical, continue
     } else {
       console.log("Initial SFD stats created");
     }
@@ -126,35 +146,42 @@ serve(async (req) => {
         
       if (userSfdError) {
         console.warn("Error associating admin with SFD:", userSfdError);
-        // Not critical, continue
       } else {
         console.log(`Admin ${admin_id} associated with SFD ${sfdData.id}`);
       }
     }
     
-    // Success response with proper headers to prevent caching issues
     return new Response(
       JSON.stringify({
         success: true,
         data: sfdData
       }),
-      { 
-        status: 200, 
-        headers: { 
-          ...corsHeaders, 
-          "Content-Type": "application/json"
-        } 
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       }
     );
     
-  } catch (error) {
-    console.error("Edge function error:", error);
+  } catch (error: any) {
+    console.error("API error:", error);
     
     return new Response(
       JSON.stringify({ 
         error: `Error creating SFD: ${error.message}` 
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        }
+      }
     );
   }
-});
+}

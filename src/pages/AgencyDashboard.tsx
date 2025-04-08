@@ -1,18 +1,63 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AgencyHeader } from '@/components/AgencyHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { SfdUserManagement } from '@/components/sfd/user-management'; // Updated import path
-import { SfdRoleManager } from '@/components/sfd/roles'; // Updated import path
+import { SfdUserManagement } from '@/components/sfd/user-management';
+import { SfdRoleManager } from '@/components/sfd/roles';
 import { ClientManagement } from '@/components/sfd/ClientManagement';
 import { LoanManagement } from '@/components/sfd/LoanManagement';
 import { ReportGenerator } from '@/components/ReportGenerator';
 import { DataExport } from '@/components/DataExport';
 import { FinancialReporting } from '@/components/FinancialReporting';
+import { SfdDashboardStats } from '@/components/sfd/dashboard';
+import { Statistics } from '@/components/sfd/Statistics';
+import { Button } from '@/components/ui/button';
+import { Loader2, RefreshCw } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const AgencyDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isInitializing, setIsInitializing] = useState(false);
+  const { activeSfdId } = useAuth();
+  const { toast } = useToast();
+
+  const initializeDashboardData = async () => {
+    if (!activeSfdId) return;
+    
+    setIsInitializing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('initialize_dashboard_data');
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data.success) {
+        toast({
+          title: 'Données initialisées',
+          description: 'Les données de test ont été générées avec succès.',
+        });
+      } else {
+        toast({
+          title: 'Erreur',
+          description: data.message || 'Une erreur est survenue lors de l\'initialisation des données.',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Error initializing dashboard data:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Une erreur est survenue lors de l\'initialisation des données.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsInitializing(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -24,6 +69,20 @@ const AgencyDashboard = () => {
             <h1 className="text-2xl font-bold">Tableau de bord SFD</h1>
             <p className="text-muted-foreground">Gestion de votre SFD et de ses services</p>
           </div>
+          
+          <Button 
+            onClick={initializeDashboardData}
+            disabled={isInitializing}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            {isInitializing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            {isInitializing ? 'Initialisation...' : 'Initialiser les données'}
+          </Button>
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
@@ -40,40 +99,8 @@ const AgencyDashboard = () => {
           
           <div className="mt-4">
             <TabsContent value="dashboard">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle>Clients</CardTitle>
-                    <CardDescription>Résumé de vos clients</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">245</div>
-                    <p className="text-xs text-muted-foreground">+12% depuis le mois dernier</p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle>Prêts actifs</CardTitle>
-                    <CardDescription>Prêts en cours</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">86</div>
-                    <p className="text-xs text-muted-foreground">Total: 12,450,000 FCFA</p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle>Remboursements</CardTitle>
-                    <CardDescription>Ce mois-ci</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">1,245,000 FCFA</div>
-                    <p className="text-xs text-muted-foreground">98% taux de remboursement</p>
-                  </CardContent>
-                </Card>
-              </div>
+              <SfdDashboardStats />
+              <Statistics />
             </TabsContent>
             
             <TabsContent value="clients">
