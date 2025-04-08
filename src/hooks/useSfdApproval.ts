@@ -3,166 +3,187 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAdminCommunication } from './useAdminCommunication';
-import { Sfd } from '@/components/admin/types/sfd-types';
+import { useAdminCommunication } from '@/hooks/useAdminCommunication';
 
-export function useSfdApproval() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+export const useSfdApproval = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { sendNotification } = useAdminCommunication();
-  
-  // Approve an SFD application
-  const approveSfdMutation = useMutation({
-    mutationFn: async ({ 
-      sfdId, 
-      comments 
-    }: { 
-      sfdId: string; 
-      comments?: string;
-    }) => {
+
+  const approveSfd = useMutation({
+    mutationFn: async ({ sfdId, sfdName }: { sfdId: string; sfdName: string }) => {
       setIsLoading(true);
+      setError(null);
+      
       try {
-        // Update SFD status to active in database
-        const { data, error } = await supabase
+        console.log("Approving SFD:", { sfdId, sfdName });
+        
+        // 1. Update SFD status
+        const { error: updateError } = await supabase
           .from('sfds')
-          .update({
-            status: 'active',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', sfdId)
-          .select()
-          .single();
+          .update({ status: 'active' })
+          .eq('id', sfdId);
           
-        if (error) throw error;
+        if (updateError) {
+          console.error("Error updating SFD status:", updateError);
+          throw updateError;
+        }
         
-        // Create audit log entry
-        await supabase
-          .from('audit_logs')
-          .insert({
-            category: 'sfd_management',
-            action: 'sfd_approved',
-            status: 'success',
-            target_resource: `sfds/${sfdId}`,
-            details: {
-              comments,
-            },
-            severity: 'info',
-          });
+        // 2. Update client statuses
+        const { error: clientsError } = await supabase
+          .from('sfd_clients')
+          .update({ status: 'validated' })
+          .eq('sfd_id', sfdId)
+          .eq('status', 'pending');
+          
+        if (clientsError) {
+          console.warn("Error updating client statuses:", clientsError);
+          // Non-critical, continue
+        }
         
-        // Send notification to SFD admin
-        await sendNotification({
-          title: "Demande d'adhésion approuvée",
-          message: `Votre SFD a été approuvée sur la plateforme NGNA SÔRÔ! Vous pouvez maintenant accéder à toutes les fonctionnalités.`,
-          type: 'info',
-          recipient_role: 'sfd_admin',
-          action_link: '/sfd-dashboard'
-        });
+        // 3. Send notification to SFD admins
+        try {
+          // Get SFD admins
+          const { data: sfdAdmins } = await supabase
+            .from('user_sfds')
+            .select('user_id')
+            .eq('sfd_id', sfdId);
+            
+          if (sfdAdmins && sfdAdmins.length > 0) {
+            // Send notification to each admin
+            for (const admin of sfdAdmins) {
+              await sendNotification({
+                title: "SFD approuvée",
+                message: `Votre SFD "${sfdName}" a été approuvée et est maintenant active.`,
+                type: "success",
+                recipient_id: admin.user_id
+              });
+            }
+          } else {
+            // Send to admin role
+            await sendNotification({
+              title: "SFD approuvée",
+              message: `La SFD "${sfdName}" a été approuvée et est maintenant active.`,
+              type: "success",
+              recipient_role: "admin"
+            });
+          }
+        } catch (notifError) {
+          console.warn("Error sending notifications:", notifError);
+          // Non-critical, continue
+        }
         
-        return data as Sfd;
-      } catch (error) {
-        console.error('Error approving SFD:', error);
+        return { success: true, sfdId, sfdName };
+      } catch (error: any) {
+        console.error("Error approving SFD:", error);
+        setError(error.message || "Une erreur est survenue lors de l'approbation de la SFD");
         throw error;
       } finally {
         setIsLoading(false);
       }
     },
-    onSuccess: () => {
-      // Invalidate and refetch related queries
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      queryClient.invalidateQueries({ queryKey: ['sfd-requests'] });
       
       toast({
-        title: "SFD approuvé",
-        description: "Le SFD a été approuvé avec succès",
+        title: "SFD approuvée",
+        description: `La SFD ${data.sfdName} a été approuvée avec succès.`,
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Erreur d'approbation",
-        description: error.message || "Une erreur est survenue lors de l'approbation du SFD",
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de l'approbation de la SFD",
         variant: "destructive",
       });
     }
   });
-  
-  // Reject an SFD application
-  const rejectSfdMutation = useMutation({
-    mutationFn: async ({ 
-      sfdId, 
-      reason, 
-      comments 
-    }: { 
-      sfdId: string; 
-      reason: string;
-      comments?: string;
-    }) => {
+
+  const rejectSfd = useMutation({
+    mutationFn: async ({ sfdId, sfdName, reason }: { sfdId: string; sfdName: string; reason: string }) => {
       setIsLoading(true);
+      setError(null);
+      
       try {
-        // Update SFD status to rejected in database
-        const { data, error } = await supabase
+        console.log("Rejecting SFD:", { sfdId, sfdName, reason });
+        
+        // 1. Update SFD status
+        const { error: updateError } = await supabase
           .from('sfds')
-          .update({
-            status: 'suspended',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', sfdId)
-          .select()
-          .single();
+          .update({ status: 'rejected' })
+          .eq('id', sfdId);
           
-        if (error) throw error;
+        if (updateError) {
+          console.error("Error updating SFD status:", updateError);
+          throw updateError;
+        }
         
-        // Create audit log entry
-        await supabase
-          .from('audit_logs')
-          .insert({
-            category: 'sfd_management',
-            action: 'sfd_rejected',
-            status: 'success',
-            target_resource: `sfds/${sfdId}`,
-            details: {
-              reason,
-              comments,
-            },
-            severity: 'warning',
-          });
+        // 2. Send notification to SFD admins
+        try {
+          // Get SFD admins
+          const { data: sfdAdmins } = await supabase
+            .from('user_sfds')
+            .select('user_id')
+            .eq('sfd_id', sfdId);
+            
+          if (sfdAdmins && sfdAdmins.length > 0) {
+            // Send notification to each admin
+            for (const admin of sfdAdmins) {
+              await sendNotification({
+                title: "SFD rejetée",
+                message: `Votre SFD "${sfdName}" a été rejetée. Raison: ${reason}`,
+                type: "error",
+                recipient_id: admin.user_id
+              });
+            }
+          } else {
+            // Send to admin role
+            await sendNotification({
+              title: "SFD rejetée",
+              message: `La SFD "${sfdName}" a été rejetée. Raison: ${reason}`,
+              type: "error",
+              recipient_role: "admin"
+            });
+          }
+        } catch (notifError) {
+          console.warn("Error sending notifications:", notifError);
+          // Non-critical, continue
+        }
         
-        // Send notification to SFD admin
-        await sendNotification({
-          title: "Demande d'adhésion rejetée",
-          message: `Votre demande d'adhésion à NGNA SÔRÔ! a été rejetée pour la raison suivante: ${reason}${comments ? `. ${comments}` : ''}`,
-          type: 'warning',
-          recipient_role: 'sfd_admin',
-        });
-        
-        return data as Sfd;
-      } catch (error) {
-        console.error('Error rejecting SFD:', error);
+        return { success: true, sfdId, sfdName };
+      } catch (error: any) {
+        console.error("Error rejecting SFD:", error);
+        setError(error.message || "Une erreur est survenue lors du rejet de la SFD");
         throw error;
       } finally {
         setIsLoading(false);
       }
     },
-    onSuccess: () => {
-      // Invalidate and refetch related queries
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      queryClient.invalidateQueries({ queryKey: ['sfd-requests'] });
       
       toast({
-        title: "SFD rejeté",
-        description: "Le SFD a été rejeté avec succès",
+        title: "SFD rejetée",
+        description: `La SFD ${data.sfdName} a été rejetée.`,
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Erreur de rejet",
-        description: error.message || "Une erreur est survenue lors du rejet du SFD",
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors du rejet de la SFD",
         variant: "destructive",
       });
     }
   });
 
   return {
-    approveSfdMutation,
-    rejectSfdMutation,
-    isLoading
+    approveSfd: approveSfd.mutate,
+    rejectSfd: rejectSfd.mutate,
+    isLoading: approveSfd.isPending || rejectSfd.isPending,
+    error
   };
-}
+};

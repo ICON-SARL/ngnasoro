@@ -24,9 +24,9 @@ serve(async (req) => {
     
     console.log("Edge function received data:", requestData);
     
-    const { admin_id, email, full_name, role, sfd_id, is_primary } = requestData;
+    const { email, password, full_name, role, sfd_id, is_primary } = requestData;
     
-    if (!admin_id || !email || !full_name || !sfd_id) {
+    if (!email || !password || !full_name || !sfd_id) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -52,13 +52,42 @@ serve(async (req) => {
     
     console.log(`Verified SFD exists: ${sfdData.name}`);
 
-    // 2. Insert into admin_users table
+    // 2. Create user in auth system
+    const { data: userData, error: userError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        full_name,
+        role: 'sfd_admin',
+        sfd_id
+      }
+    });
+
+    if (userError) {
+      console.error("Error creating user:", userError);
+      return new Response(
+        JSON.stringify({ error: `Error creating user: ${userError.message}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!userData.user) {
+      return new Response(
+        JSON.stringify({ error: "Failed to create user" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    console.log(`User created successfully with ID: ${userData.user.id}`);
+
+    // 3. Insert into admin_users table
     const { data: adminData, error: adminError } = await supabase
       .from('admin_users')
       .insert({
-        id: admin_id,
-        email: email,
-        full_name: full_name,
+        id: userData.user.id,
+        email,
+        full_name,
         role: 'sfd_admin',
         has_2fa: false
       })
@@ -67,44 +96,44 @@ serve(async (req) => {
     
     if (adminError) {
       console.error("Error inserting admin user:", adminError);
+      // Try to clean up the auth user since the admin_users entry failed
+      await supabase.auth.admin.deleteUser(userData.user.id);
+      
       return new Response(
         JSON.stringify({ error: `Error creating admin user: ${adminError.message}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    console.log("Admin user created:", adminData);
+    console.log("Admin user created successfully");
     
-    // 3. Assign SFD_ADMIN role
+    // 4. Assign SFD_ADMIN role
     const { error: roleError } = await supabase.rpc(
       'assign_role',
       {
-        user_id: admin_id,
+        user_id: userData.user.id,
         role: 'sfd_admin'
       }
     );
 
     if (roleError) {
       console.error("Error assigning role:", roleError);
-      return new Response(
-        JSON.stringify({ error: `Error assigning role: ${roleError.message}` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // Non-critical, continue
+    } else {
+      console.log("SFD admin role assigned successfully");
     }
-    
-    console.log("SFD admin role assigned successfully");
 
-    // 4. Create an entry in user_sfds table to associate the admin with the SFD
+    // 5. Create an entry in user_sfds table to associate the admin with the SFD
     const { error: userSfdError } = await supabase
       .from('user_sfds')
       .insert({
-        user_id: admin_id,
+        user_id: userData.user.id,
         sfd_id: sfd_id,
         is_default: true
       });
       
     if (userSfdError) {
-      console.warn("Error creating user_sfds association:", userSfdError);
+      console.warn("Error creating user-SFD association:", userSfdError);
       // Continue despite error - not critical
     } else {
       console.log("User-SFD association created successfully");
@@ -114,7 +143,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        admin_id: admin_id,
+        user_id: userData.user.id,
         message: "SFD admin created successfully" 
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
