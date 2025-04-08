@@ -13,16 +13,14 @@ if (typeof window !== 'undefined') {
   try {
     // Dynamic import for MSW to avoid server-side rendering issues
     import('msw').then(async (mswModule) => {
-      // Convert our API to MSW handlers
+      const { http } = mswModule;
+      
+      // Convert our API to MSW handlers using the correct http method functions
       const handlers = Object.entries(api).map(([path, handlerFn]) => {
-        return {
-          url: path,
-          method: 'POST',
-          async resolver(req, res, ctx) {
-            const result = await handlerFn(req);
-            return res(ctx.json(result));
-          }
-        };
+        return http.post(path, async ({ request }) => {
+          const result = await handlerFn(request);
+          return Response.json(result);
+        });
       });
       
       // Import the setupWorker function from msw/browser
