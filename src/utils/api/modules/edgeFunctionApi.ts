@@ -1,5 +1,8 @@
+
 // Ce fichier existe déjà, je vais seulement ajouter une section pour
 // améliorer la gestion des appels de fonctions Edge
+
+import { toast as toastFunction } from "@/hooks/use-toast";
 
 // Dans ce fichier, je vais ajouter une fonction callEdgeFunction améliorée
 // qui gère mieux les erreurs et contourne le cache
@@ -8,7 +11,6 @@ export const edgeFunctionApi = {
   // Fonction améliorée pour appeler les fonctions Edge avec gestion du cache
   callEdgeFunction: async (functionName: string, payload: any, options?: { showToast?: boolean, bypassCache?: boolean }) => {
     const { showToast = false, bypassCache = false } = options || {};
-    const toastFunction = showToast ? window.toast : undefined;
     
     try {
       // Ajouter un timestamp pour éviter le cache
@@ -47,7 +49,7 @@ export const edgeFunctionApi = {
           errorMessage = errorText || errorMessage;
         }
         
-        if (toastFunction) {
+        if (showToast) {
           toastFunction({
             title: "Erreur",
             description: errorMessage,
@@ -66,7 +68,7 @@ export const edgeFunctionApi = {
     } catch (error: any) {
       console.error(`Error in edge function ${functionName}:`, error);
       
-      if (toastFunction) {
+      if (showToast) {
         toastFunction({
           title: "Erreur",
           description: error.message || `Erreur lors de l'appel à ${functionName}`,
