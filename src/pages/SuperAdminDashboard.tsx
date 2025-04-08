@@ -13,9 +13,9 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { ReportGenerator } from '@/components/ReportGenerator';
 import { DataExport } from '@/components/DataExport';
 import { Button } from '@/components/ui/button';
-import { FileText, Building, Users, Shield } from 'lucide-react';
+import { FileText, Building, Users, Shield, BarChart2 } from 'lucide-react';
 import { AdminManagement } from '@/components/admin/AdminManagement';
-import { SfdManagement } from '@/components/admin/SfdManagement';
+import { SfdManagement } from '@/components/admin/sfd-management';
 import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommunication';
 import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
 import { IntegratedDashboard } from '@/components/admin/shared/IntegratedDashboard';
@@ -24,6 +24,7 @@ import { SubsidySummary } from '@/components/admin/dashboard/SubsidySummary';
 import { PendingSubsidies } from '@/components/admin/dashboard/PendingSubsidies';
 import { Footer } from '@/components';
 import { FinancialReports } from '@/components/reports/FinancialReports';
+import SfdClientStatsDashboard from '@/components/admin/meref/SfdClientStatsDashboard';
 
 const SuperAdminDashboard = () => {
   const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
@@ -97,6 +98,15 @@ const SuperAdminDashboard = () => {
             Journal d'Audit
           </Button>
           
+          <Button 
+            variant="outline" 
+            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
+            onClick={() => setSearchParams({ tab: 'client-stats' })}
+          >
+            <BarChart2 className="h-4 w-4 mr-2 text-gray-600" />
+            Statistiques Clients SFD
+          </Button>
+          
           <MerefSfdCommunication />
         </div>
         
@@ -129,6 +139,11 @@ const SuperAdminDashboard = () => {
         {/* Charts */}
         {activeTab === 'charts' && (
           <DashboardCharts />
+        )}
+        
+        {/* Client Statistics */}
+        {activeTab === 'client-stats' && (
+          <SfdClientStatsDashboard />
         )}
         
         {/* Financial Reports */}

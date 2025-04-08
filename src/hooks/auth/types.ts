@@ -1,49 +1,58 @@
 
-export type Role = 'admin' | 'sfd_admin' | 'user' | 'client' | null;
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
 export enum UserRole {
-  SUPER_ADMIN = 'admin',
-  ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin',
   SFD_ADMIN = 'sfd_admin',
-  CLIENT = 'client',
   USER = 'user'
 }
 
-export interface User {
-  id: string;
-  email: string;
-  full_name: string;
+export interface User extends SupabaseUser {
+  role?: UserRole;
+  full_name?: string;
   avatar_url?: string;
   sfd_id?: string;
-  phone?: string;
-  user_metadata: {
-    [key: string]: any;
-    sfd_id?: string;
-  };
-  app_metadata: {
-    role?: Role;
-    role_assigned?: boolean;
-    roles?: string[];
-    sfd_id?: string;
-  };
+  email?: string;
 }
 
 export interface AuthContextProps {
   user: User | null;
-  setUser: (user: User | null) => void;
-  signIn: (email: string, password: string) => Promise<{ error?: any }>;
-  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
-  signOut: () => Promise<void>;
+  session: Session | null;
   loading: boolean;
-  isLoggedIn: boolean;
   isAdmin: boolean;
   isSfdAdmin: boolean;
-  activeSfdId: string | null;
-  setActiveSfdId: (sfdId: string | null) => void;
-  userRole: Role;
-  biometricEnabled: boolean;
-  toggleBiometricAuth: () => Promise<void>;
-  session: any | null;
-  isLoading: boolean;
+  isAuthenticated: boolean;
+  activeSfdId?: string;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp?: (email: string, password: string, metadata?: any) => Promise<{ error: any }>;
+  signOut: () => Promise<{ error: any }>;
   refreshSession: () => Promise<void>;
+  biometricEnabled?: boolean;
+  toggleBiometricAuth?: (enable: boolean) => Promise<void>;
 }
+
+export const ROLE_PERMISSIONS = {
+  [UserRole.SUPER_ADMIN]: [
+    'view_dashboard',
+    'manage_sfds',
+    'approve_subsidies',
+    'manage_admins',
+    'view_reports',
+    'view_audit_logs',
+    'export_data'
+  ],
+  [UserRole.SFD_ADMIN]: [
+    'view_sfd_dashboard', 
+    'manage_clients',
+    'manage_loans',
+    'request_subsidies',
+    'view_sfd_reports'
+  ],
+  [UserRole.USER]: [
+    'view_account',
+    'view_loans',
+    'make_payments'
+  ]
+};
+
+export const DEFAULT_ROLE_PERMISSIONS = ROLE_PERMISSIONS;

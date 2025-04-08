@@ -1,14 +1,14 @@
 
 import React from 'react';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  BarChart4, 
+  LayoutDashboard, 
+  BarChart, 
   FileText, 
-  Download, 
-  LayoutDashboard,
-  Users,
-  PieChart,
+  FileDown, 
+  Users, 
+  Receipt, 
+  BriefcaseBusiness 
 } from 'lucide-react';
 
 interface DashboardTabsProps {
@@ -17,64 +17,46 @@ interface DashboardTabsProps {
 }
 
 export function DashboardTabs({ activeTab, onTabChange }: DashboardTabsProps) {
-  const tabs = [
-    {
-      id: 'dashboard',
-      label: 'Tableau de bord',
-      icon: <LayoutDashboard className="h-4 w-4 mr-2" />
-    },
-    {
-      id: 'charts',
-      label: 'Graphiques',
-      icon: <BarChart4 className="h-4 w-4 mr-2" />
-    },
-    {
-      id: 'financial_reports',
-      label: 'Rapports financiers',
-      icon: <PieChart className="h-4 w-4 mr-2" />
-    },
-    {
-      id: 'reports',
-      label: 'Rapports',
-      icon: <FileText className="h-4 w-4 mr-2" />
-    },
-    {
-      id: 'export',
-      label: 'Exportation',
-      icon: <Download className="h-4 w-4 mr-2" />
-    },
-    {
-      id: 'admins',
-      label: 'Administrateurs',
-      icon: <Users className="h-4 w-4 mr-2" />
-    }
-  ];
-  
   return (
-    <div className="fixed bottom-8 left-0 right-0 flex justify-center z-50 px-4">
-      <div className="bg-white rounded-full shadow-md border-gray-100 border px-2 py-1.5">
-        <ScrollArea className="w-full whitespace-nowrap">
-          <div className="flex space-x-1 p-1">
-            {tabs.map((tab) => (
-              <Button
-                key={tab.id}
-                variant={activeTab === tab.id ? "default" : "ghost"}
-                size="sm"
-                className={`rounded-full text-xs ${
-                  activeTab === tab.id 
-                    ? "bg-green-600 hover:bg-green-700" 
-                    : "hover:bg-gray-100 hover:text-gray-900"
-                }`}
-                onClick={() => onTabChange(tab.id)}
-              >
-                {tab.icon}
-                {tab.label}
-              </Button>
-            ))}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      </div>
+    <div className="mt-8">
+      <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 w-full">
+          <TabsTrigger value="dashboard" className="flex gap-1 items-center">
+            <LayoutDashboard className="h-4 w-4" />
+            <span className="hidden sm:inline-block">Tableau de Bord</span>
+          </TabsTrigger>
+          
+          <TabsTrigger value="charts" className="flex gap-1 items-center">
+            <BarChart className="h-4 w-4" />
+            <span className="hidden sm:inline-block">Graphiques</span>
+          </TabsTrigger>
+          
+          <TabsTrigger value="client-stats" className="flex gap-1 items-center">
+            <BriefcaseBusiness className="h-4 w-4" />
+            <span className="hidden sm:inline-block">Stats Clients</span>
+          </TabsTrigger>
+          
+          <TabsTrigger value="reports" className="flex gap-1 items-center">
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline-block">Rapports</span>
+          </TabsTrigger>
+          
+          <TabsTrigger value="financial_reports" className="flex gap-1 items-center">
+            <Receipt className="h-4 w-4" />
+            <span className="hidden sm:inline-block">Finance</span>
+          </TabsTrigger>
+          
+          <TabsTrigger value="export" className="flex gap-1 items-center">
+            <FileDown className="h-4 w-4" />
+            <span className="hidden sm:inline-block">Export</span>
+          </TabsTrigger>
+          
+          <TabsTrigger value="admins" className="flex gap-1 items-center">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline-block">Admins</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
     </div>
   );
 }
