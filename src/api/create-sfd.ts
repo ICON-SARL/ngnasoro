@@ -107,7 +107,8 @@ export default async function handler(req: Request) {
     // Add optional properties if they exist
     for (const key of validColumns) {
       if (key !== 'name' && key !== 'code' && key in sfd_data) {
-        cleanedSfdData[key as keyof typeof cleanedSfdData] = sfd_data[key];
+        // Fix the type issue by adding type assertion
+        cleanedSfdData[key as keyof typeof cleanedSfdData] = sfd_data[key] as any;
       }
     }
     
