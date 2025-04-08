@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { SfdHeader } from '@/components/sfd/SfdHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileText } from 'lucide-react';
 import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
 import { SubsidyRequestDetailView } from '@/components/sfd/subsidy/SubsidyRequestDetailView';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,6 +34,11 @@ const SubsidyRequestDetailPage: React.FC = () => {
     fetchRequestDetails();
   }, [requestId, getSubsidyRequestById]);
   
+  const handleExportPDF = () => {
+    // Implementation for PDF export would go here
+    alert("Fonctionnalité d'exportation PDF à implémenter");
+  };
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <SfdHeader />
@@ -41,7 +46,7 @@ const SubsidyRequestDetailPage: React.FC = () => {
       <main className="container mx-auto p-4 md:p-6">
         <Button 
           variant="ghost" 
-          onClick={() => navigate(-1)} 
+          onClick={() => navigate('/sfd-subsidy-requests')} 
           className="mb-4 flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -60,7 +65,19 @@ const SubsidyRequestDetailPage: React.FC = () => {
                 </div>
               </div>
             ) : request ? (
-              <SubsidyRequestDetailView request={request} />
+              <>
+                <SubsidyRequestDetailView request={request} />
+                <div className="flex justify-end mt-6 pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-1"
+                    onClick={handleExportPDF}
+                  >
+                    <FileText className="h-4 w-4" />
+                    Exporter en PDF
+                  </Button>
+                </div>
+              </>
             ) : (
               <div className="text-center py-10">
                 <p className="text-muted-foreground">Demande non trouvée</p>

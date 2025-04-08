@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Calendar,
   MapPin,
@@ -9,8 +8,11 @@ import {
   FileText,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  User,
+  BuildingBank
 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface SubsidyRequestDetailViewProps {
   request: any; // Ideally, this should be properly typed based on the SubsidyRequest type
@@ -81,7 +83,7 @@ export const SubsidyRequestDetailView: React.FC<SubsidyRequestDetailViewProps> =
 
   return (
     <div className="space-y-6">
-      {/* En-tête avec informations principales */}
+      {/* Header with main information */}
       <div className="flex justify-between items-start">
         <div>
           <h2 className="text-xl font-bold">{request.purpose}</h2>
@@ -93,6 +95,12 @@ export const SubsidyRequestDetailView: React.FC<SubsidyRequestDetailViewProps> =
             <div className="flex items-center gap-2 mt-1 text-muted-foreground">
               <MapPin className="h-4 w-4" />
               <span>Région: {request.region}</span>
+            </div>
+          )}
+          {request.sfd_name && (
+            <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+              <BuildingBank className="h-4 w-4" />
+              <span>SFD: {request.sfd_name}</span>
             </div>
           )}
         </div>
@@ -112,7 +120,7 @@ export const SubsidyRequestDetailView: React.FC<SubsidyRequestDetailViewProps> =
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Détails de la demande */}
+        {/* Request details */}
         <div className="space-y-4">
           <div>
             <h3 className="font-medium mb-2">Justification</h3>
@@ -131,18 +139,18 @@ export const SubsidyRequestDetailView: React.FC<SubsidyRequestDetailViewProps> =
           )}
         </div>
 
-        {/* Informations additionnelles et documents */}
+        {/* Additional information and documents */}
         <div className="space-y-4">
-          {/* Documents attachés */}
+          {/* Supporting documents */}
           <div>
             <h3 className="font-medium mb-2">Documents justificatifs</h3>
             {request.supporting_documents && request.supporting_documents.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {request.supporting_documents.map((doc: string, index: number) => (
-                  <Button key={index} variant="outline" size="sm" className="flex items-center">
+                  <Badge key={index} variant="outline" className="flex items-center p-2 bg-white">
                     <FileText className="h-4 w-4 mr-1" />
                     Document {index + 1}
-                  </Button>
+                  </Badge>
                 ))}
               </div>
             ) : (
@@ -150,13 +158,10 @@ export const SubsidyRequestDetailView: React.FC<SubsidyRequestDetailViewProps> =
             )}
           </div>
 
-          {/* Décision et commentaires */}
+          {/* Decision and comments */}
           {request.status === 'approved' || request.status === 'rejected' ? (
-            <div>
-              <h3 className="font-medium mb-2">
-                {request.status === 'approved' ? 'Approbation' : 'Motif de rejet'}
-              </h3>
-              <div className={`p-4 rounded-md border ${request.status === 'approved' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+            <Card>
+              <CardContent className={`p-4 ${request.status === 'approved' ? 'bg-green-50' : 'bg-red-50'}`}>
                 {request.status === 'approved' ? (
                   <div className="flex items-start gap-2">
                     <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
@@ -188,8 +193,8 @@ export const SubsidyRequestDetailView: React.FC<SubsidyRequestDetailViewProps> =
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           ) : (
             <div>
               <h3 className="font-medium mb-2">Statut</h3>
@@ -208,19 +213,16 @@ export const SubsidyRequestDetailView: React.FC<SubsidyRequestDetailViewProps> =
               </p>
             </div>
           )}
+          
+          {/* Requestor information */}
+          <div>
+            <h3 className="font-medium mb-2">Demandeur</h3>
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-gray-500" />
+              <span>{request.requester_name || "Non spécifié"}</span>
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Boutons d'action en bas */}
-      <div className="flex justify-end gap-2 pt-4 border-t">
-        {request.status === 'pending' && (
-          <Button variant="outline">
-            Modifier la demande
-          </Button>
-        )}
-        <Button variant="outline">
-          Exporter en PDF
-        </Button>
       </div>
     </div>
   );

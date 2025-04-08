@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ import { SubsidyRequestDetailView } from './SubsidyRequestDetailView';
 
 export const SubsidyRequestsList: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { subsidyRequests, isLoading, refetch } = useSubsidyRequests({
     sfdId: user?.app_metadata?.sfd_id
   });
@@ -75,6 +77,10 @@ export const SubsidyRequestsList: React.FC = () => {
     // Refetch data when component mounts
     refetch();
   }, [refetch]);
+
+  const handleViewDetails = (requestId: string) => {
+    navigate(`/sfd-subsidy-requests/${requestId}`);
+  };
 
   return (
     <>
@@ -146,9 +152,9 @@ export const SubsidyRequestsList: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button 
-                        variant="ghost" 
+                        variant="outline" 
                         size="sm"
-                        onClick={() => setSelectedRequest(request)}
+                        onClick={() => handleViewDetails(request.id)}
                       >
                         <FileText className="h-4 w-4 mr-1" />
                         Détails
@@ -159,32 +165,34 @@ export const SubsidyRequestsList: React.FC = () => {
               </TableBody>
             </Table>
           ) : (
-            <div className="space-y-4">
-              <h2 className="text-lg font-medium">Demandes de Subvention</h2>
-              <p className="text-muted-foreground">Demandes en attente de décision</p>
+            <>
+              <div className="mb-4">
+                <h2 className="text-2xl font-bold">Demandes de Subvention</h2>
+                <p className="text-muted-foreground">Demandes en attente de décision</p>
+              </div>
               
-              {filteredRequests.map((request) => (
-                <Card key={request.id} className="overflow-hidden">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col">
-                      <div className="mb-2">
-                        <h3 className="text-lg font-medium">{request.purpose}</h3>
-                        <p className="text-xl font-semibold">{formatAmount(request.amount)} FCFA</p>
-                      </div>
-                      
-                      <div className="flex justify-end mt-2">
+              <div className="space-y-4">
+                {filteredRequests.map((request) => (
+                  <Card key={request.id} className="overflow-hidden">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="text-lg font-medium">{request.purpose}</h3>
+                          <p className="text-xl font-semibold">{formatAmount(request.amount)} FCFA</p>
+                        </div>
+                        
                         <Button 
-                          className="bg-white text-black border border-gray-200 hover:bg-gray-50"
-                          onClick={() => setSelectedRequest(request)}
+                          variant="outline"
+                          onClick={() => handleViewDetails(request.id)}
                         >
                           Détails
                         </Button>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
           )
         ) : (
           <div className="text-center py-10 border rounded-md bg-gray-50">
