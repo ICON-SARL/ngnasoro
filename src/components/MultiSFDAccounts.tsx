@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -200,4 +201,26 @@ export const MultiSFDAccounts = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">Reste à payer</span>
-                          <span className="font-medium">{loan.remainingAmount.toLocaleString()} {activeSfdAccount.currency}</
+                          <span className="font-medium">{loan.remainingAmount.toLocaleString()} {activeSfdAccount.currency}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="transactions">
+                <div className="p-6 text-center text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-2" />
+                  <p>Aucune transaction récente</p>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+export default MultiSFDAccounts;
