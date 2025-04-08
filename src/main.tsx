@@ -7,6 +7,7 @@ import App from './App';
 import './index.css';
 import { Toaster } from "@/components/ui/toaster";
 import api from './api';
+import { AuthProvider } from './hooks/auth/AuthContext';
 
 // Create a worker with API handlers
 if (typeof window !== 'undefined') {
@@ -66,10 +67,12 @@ const root = createRoot(container!);
 root.render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <App />
-        <Toaster />
-      </Router>
+      <AuthProvider>
+        <Router>
+          <App />
+          <Toaster />
+        </Router>
+      </AuthProvider>
     </QueryClientProvider>
   </StrictMode>
 );

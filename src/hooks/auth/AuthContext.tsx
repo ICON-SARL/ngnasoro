@@ -12,6 +12,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSfdAdmin, setIsSfdAdmin] = useState(false);
+  const [userRole, setUserRole] = useState<Role | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -25,14 +29,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (data?.session) {
           setSession(data.session);
-          setUser({
+          
+          const userData: User = {
             id: data.session.user.id,
-            email: data.session.user.email,
-            app_metadata: data.session.user.app_metadata
-          });
+            email: data.session.user.email || '',
+            full_name: data.session.user.user_metadata?.full_name || '',
+            avatar_url: data.session.user.user_metadata?.avatar_url,
+            user_metadata: data.session.user.user_metadata || {},
+            app_metadata: {
+              role: data.session.user.app_metadata?.role as Role,
+              role_assigned: data.session.user.app_metadata?.role_assigned,
+              roles: data.session.user.app_metadata?.roles,
+              sfd_id: data.session.user.app_metadata?.sfd_id
+            }
+          };
+          
+          setUser(userData);
+          setIsLoggedIn(true);
           
           // Check roles
-          const role = data.session.user.app_metadata?.role;
+          const role = data.session.user.app_metadata?.role as Role;
+          setUserRole(role);
           setIsAdmin(role === 'admin');
           setIsSfdAdmin(role === 'sfd_admin');
           
@@ -55,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Error in auth context:', error);
       } finally {
         setLoading(false);
+        setIsLoading(false);
       }
     };
 
@@ -64,15 +82,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Auth state change:', event);
       
       if (session) {
-        setUser({
+        const userData: User = {
           id: session.user.id,
-          email: session.user.email,
-          app_metadata: session.user.app_metadata
-        });
+          email: session.user.email || '',
+          full_name: session.user.user_metadata?.full_name || '',
+          avatar_url: session.user.user_metadata?.avatar_url,
+          user_metadata: session.user.user_metadata || {},
+          app_metadata: {
+            role: session.user.app_metadata?.role as Role,
+            role_assigned: session.user.app_metadata?.role_assigned,
+            roles: session.user.app_metadata?.roles,
+            sfd_id: session.user.app_metadata?.sfd_id
+          }
+        };
+        
+        setUser(userData);
         setSession(session);
+        setIsLoggedIn(true);
         
         // Check roles on auth state change
-        const role = session.user.app_metadata?.role;
+        const role = session.user.app_metadata?.role as Role;
+        setUserRole(role);
         setIsAdmin(role === 'admin');
         setIsSfdAdmin(role === 'sfd_admin');
       } else {
@@ -81,9 +111,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setActiveSfdId(null);
         setIsAdmin(false);
         setIsSfdAdmin(false);
+        setUserRole(null);
+        setIsLoggedIn(false);
       }
       
       setLoading(false);
+      setIsLoading(false);
     });
 
     return () => {
@@ -111,18 +144,79 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: false, error: error.message || 'Une erreur est survenue lors de la déconnexion.' };
     }
   };
+  
+  const signUp = async (email: string, password: string, metadata?: Record<string, any>) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata || {}
+        }
+      });
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error during signup:', error);
+      throw error;
+    }
+  };
+  
+  const refreshSession = async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error('Error refreshing session:', error);
+        return;
+      }
+      
+      setSession(data.session);
+      if (data.session?.user) {
+        setUser({
+          id: data.session.user.id,
+          email: data.session.user.email || '',
+          full_name: data.session.user.user_metadata?.full_name || '',
+          avatar_url: data.session.user.user_metadata?.avatar_url,
+          user_metadata: data.session.user.user_metadata || {},
+          app_metadata: {
+            role: data.session.user.app_metadata?.role as Role,
+            role_assigned: data.session.user.app_metadata?.role_assigned,
+            roles: data.session.user.app_metadata?.roles,
+            sfd_id: data.session.user.app_metadata?.sfd_id
+          }
+        });
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error refreshing session:', error);
+    }
+  };
+  
+  const toggleBiometricAuth = async () => {
+    setBiometricEnabled(!biometricEnabled);
+    // In a real app, we would save this preference and implement biometric authentication
+  };
 
   return (
     <AuthContext.Provider value={{
       user,
+      setUser,
       session,
       loading,
+      isLoading,
+      isLoggedIn,
       signIn,
+      signUp,
       signOut,
       activeSfdId,
       setActiveSfdId,
       isAdmin,
-      isSfdAdmin
+      isSfdAdmin,
+      userRole,
+      biometricEnabled,
+      toggleBiometricAuth,
+      refreshSession
     }}>
       {children}
     </AuthContext.Provider>

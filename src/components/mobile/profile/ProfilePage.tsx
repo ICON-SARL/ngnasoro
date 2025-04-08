@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -21,6 +22,13 @@ const ProfilePage = () => {
 
   const handleGoBack = () => {
     navigate('/mobile-flow/main');
+  };
+
+  const handleLogout = async () => {
+    const result = await signOut();
+    if (result.success) {
+      navigate('/auth');
+    }
   };
 
   return (
@@ -60,7 +68,7 @@ const ProfilePage = () => {
         <TabsContent value="security" className="px-4">
           <SecuritySection />
           <NotificationsSection />
-          <AdvancedSettingsSection onLogout={signOut} />
+          <AdvancedSettingsSection onLogout={handleLogout} />
         </TabsContent>
         
         <TabsContent value="profile" className="px-4">
