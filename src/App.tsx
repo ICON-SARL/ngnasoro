@@ -1,39 +1,21 @@
 
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter as Router } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import App from './App';
-import './index.css';
-import { Toaster } from "@/components/ui/toaster";
-import api from './api';
+import React from 'react';
+import { Route, Routes } from 'react-router-dom';
+import MobileFlow from './pages/MobileFlow';
+import AgencyDashboard from './pages/AgencyDashboard';
+import ClientsPage from './pages/ClientsPage';
+import LoansPage from './pages/LoansPage';
 
-// Initialize the API handlers
-import { createServer } from '@mswjs/simulate-fetch';
-if (typeof window !== 'undefined') {
-  createServer(api);
-}
+const App: React.FC = () => {
+  return (
+    <Routes>
+      <Route path="/mobile-flow/*" element={<MobileFlow />} />
+      <Route path="/agency-dashboard" element={<AgencyDashboard />} />
+      <Route path="/clients" element={<ClientsPage />} />
+      <Route path="/loans" element={<LoansPage />} />
+      <Route path="*" element={<AgencyDashboard />} />
+    </Routes>
+  );
+};
 
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 0,
-    },
-  },
-});
-
-const container = document.getElementById('root');
-const root = createRoot(container!);
-
-root.render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <App />
-        <Toaster />
-      </Router>
-    </QueryClientProvider>
-  </StrictMode>
-);
+export default App;
