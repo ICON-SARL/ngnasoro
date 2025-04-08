@@ -128,59 +128,42 @@ export default async function handler(req: Request) {
       );
     }
     
-    // Create admin user entry
-    const { data: adminData, error: adminError } = await supabase
-      .from('admin_users')
-      .insert({
-        id: userData.user.id,
+    // Utiliser directement la service role key à travers l'API
+    // au lieu d'une requête RLS pour contourner les politiques de sécurité
+    
+    // 1. Créer l'utilisateur admin sans RLS
+    const userId = userData.user.id;
+    const adminData = {
+      id: userId,
+      email,
+      full_name,
+      role: 'sfd_admin',
+      has_2fa: false
+    };
+    
+    // Appel à la fonction Edge pour créer l'admin
+    console.log("Calling edge function to create admin with bypass RLS");
+    const { data: edgeData, error: edgeError } = await supabase.functions.invoke('create_sfd_admin', {
+      body: {
         email,
+        user_id: userId,
         full_name,
         role: 'sfd_admin',
-        has_2fa: false
-      })
-      .select()
-      .single();
+        sfd_id
+      }
+    });
     
-    if (adminError) {
-      console.error("Error creating admin user:", adminError);
-      return new Response(
-        JSON.stringify({ error: `Error creating admin user: ${adminError.message}` }),
-        {
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-          },
-        }
-      );
-    }
-    
-    // Assign SFD_ADMIN role
-    const { error: roleError } = await supabase
-      .from('user_roles')
-      .insert({
-        user_id: userData.user.id,
-        role: 'sfd_admin'
-      });
-
-    if (roleError) {
-      console.warn("Error assigning role:", roleError);
-      // Non-critical, continue
-    }
-    
-    // Create user-SFD association
-    const { error: userSfdError } = await supabase
-      .from('user_sfds')
-      .insert({
-        user_id: userData.user.id,
-        sfd_id: sfd_id,
-        is_default: true
-      });
+    if (edgeError || !edgeData?.success) {
+      console.error("Edge function error:", edgeError || edgeData?.error);
+      // Tenter de nettoyer l'utilisateur auth créé
+      try {
+        await supabase.auth.admin.deleteUser(userId);
+      } catch (cleanupError) {
+        console.warn("Failed to clean up auth user after error:", cleanupError);
+      }
       
-    if (userSfdError) {
-      console.error("Error creating user-SFD association:", userSfdError);
       return new Response(
-        JSON.stringify({ error: `Error associating admin with SFD: ${userSfdError.message}` }),
+        JSON.stringify({ error: `Error creating admin: ${edgeError?.message || edgeData?.error || 'Unknown error'}` }),
         {
           status: 500,
           headers: {
@@ -194,7 +177,7 @@ export default async function handler(req: Request) {
     return new Response(
       JSON.stringify({
         success: true,
-        user_id: userData.user.id,
+        user_id: userId,
         message: "SFD admin created successfully"
       }),
       {

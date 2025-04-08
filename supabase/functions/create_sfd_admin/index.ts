@@ -25,19 +25,19 @@ serve(async (req) => {
     
     console.log("Edge function received data:", {
       ...requestData,
-      password: "***" // Hide password in logs
+      password: requestData.password ? "***" : undefined
     });
     
-    const { email, password, full_name, role, sfd_id, is_primary } = requestData;
+    const { user_id, email, full_name, role, sfd_id } = requestData;
     
-    if (!email || !password || !full_name || !sfd_id) {
+    if (!user_id || !email || !full_name || !sfd_id) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Creating admin user: ${email} for SFD ${sfd_id}`);
+    console.log(`Creating admin user: ${email} with ID ${user_id} for SFD ${sfd_id}`);
 
     // 1. Verify the SFD exists
     const { data: sfdData, error: sfdError } = await supabase
@@ -56,67 +56,17 @@ serve(async (req) => {
     
     console.log(`Verified SFD exists: ${sfdData.name}`);
 
-    // 2. Check if email already exists
-    const { data: existingUser, error: existingUserError } = await supabase
-      .from('admin_users')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle();
-      
-    if (!existingUserError && existingUser) {
-      return new Response(
-        JSON.stringify({ error: "Email déjà utilisé par un autre compte" }),
-        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // 3. Create user in auth system
-    const { data: userData, error: userError } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        full_name,
-        role: 'sfd_admin',
-        sfd_id
-      }
-    });
-
-    if (userError) {
-      console.error("Error creating user:", userError);
-      return new Response(
-        JSON.stringify({ error: `Error creating user: ${userError.message}` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!userData.user) {
-      return new Response(
-        JSON.stringify({ error: "Failed to create user" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    console.log(`User created successfully with ID: ${userData.user.id}`);
-
-    // 4. Insert into admin_users table
+    // 2. Insert directly into admin_users (bypassing RLS)
     const { data: adminData, error: adminError } = await supabase
-      .from('admin_users')
-      .insert({
-        id: userData.user.id,
-        email,
-        full_name,
-        role: 'sfd_admin',
-        has_2fa: false
-      })
-      .select()
-      .single();
+      .rpc('create_admin_user', {
+        admin_id: user_id,
+        admin_email: email,
+        admin_full_name: full_name,
+        admin_role: role || 'sfd_admin'
+      });
     
     if (adminError) {
       console.error("Error inserting admin user:", adminError);
-      // Try to clean up the auth user since the admin_users entry failed
-      await supabase.auth.admin.deleteUser(userData.user.id);
-      
       return new Response(
         JSON.stringify({ error: `Error creating admin user: ${adminError.message}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -125,11 +75,11 @@ serve(async (req) => {
     
     console.log("Admin user created successfully");
     
-    // 5. Assign SFD_ADMIN role
+    // 3. Assign SFD_ADMIN role
     const { error: roleError } = await supabase
       .from('user_roles')
       .insert({
-        user_id: userData.user.id,
+        user_id: user_id,
         role: 'sfd_admin'
       });
 
@@ -140,11 +90,11 @@ serve(async (req) => {
       console.log("SFD admin role assigned successfully");
     }
 
-    // 6. Create an entry in user_sfds table to associate the admin with the SFD
+    // 4. Create an entry in user_sfds table to associate the admin with the SFD
     const { error: userSfdError } = await supabase
       .from('user_sfds')
       .insert({
-        user_id: userData.user.id,
+        user_id: user_id,
         sfd_id: sfd_id,
         is_default: true
       });
@@ -160,7 +110,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        user_id: userData.user.id,
+        user_id: user_id,
         message: "SFD admin created successfully" 
       }),
       { 
