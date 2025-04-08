@@ -12,11 +12,11 @@ export enum UserRole {
 export interface User {
   id: string;
   email: string;
-  full_name: string;
+  full_name?: string;
   avatar_url?: string;
   sfd_id?: string;
   phone?: string;
-  user_metadata: {
+  user_metadata?: {
     [key: string]: any;
     sfd_id?: string;
   };

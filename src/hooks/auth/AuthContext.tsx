@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, AuthContextProps, Role } from './types';
+import { UserAppMetadata } from '@supabase/supabase-js';
 
 const AuthContext = createContext<AuthContextProps | null>(null);
 
@@ -25,11 +26,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (data?.session) {
           setSession(data.session);
-          setUser({
+          
+          // Create a properly typed User object with the metadata
+          const userData: User = {
             id: data.session.user.id,
-            email: data.session.user.email,
-            app_metadata: data.session.user.app_metadata
-          });
+            email: data.session.user.email || '',
+            full_name: data.session.user.user_metadata?.full_name || '',
+            app_metadata: {
+              role: data.session.user.app_metadata?.role as Role || null,
+              role_assigned: data.session.user.app_metadata?.role_assigned || false,
+              roles: data.session.user.app_metadata?.roles || [],
+              sfd_id: data.session.user.app_metadata?.sfd_id || undefined
+            }
+          };
+          
+          setUser(userData);
           
           // Check roles
           const role = data.session.user.app_metadata?.role;
@@ -64,11 +75,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Auth state change:', event);
       
       if (session) {
-        setUser({
+        // Create a properly typed User object with the metadata
+        const userData: User = {
           id: session.user.id,
-          email: session.user.email,
-          app_metadata: session.user.app_metadata
-        });
+          email: session.user.email || '',
+          full_name: session.user.user_metadata?.full_name || '',
+          app_metadata: {
+            role: session.user.app_metadata?.role as Role || null,
+            role_assigned: session.user.app_metadata?.role_assigned || false,
+            roles: session.user.app_metadata?.roles || [],
+            sfd_id: session.user.app_metadata?.sfd_id || undefined
+          }
+        };
+        
+        setUser(userData);
         setSession(session);
         
         // Check roles on auth state change
@@ -105,7 +125,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message || 'Une erreur est survenue lors de la déconnexion.' };
@@ -118,11 +139,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       loading,
       signIn,
-      signOut,
+      signOut: async () => {
+        const result = await signOut();
+        if (!result.success) {
+          console.error('Error signing out:', result.error);
+        }
+      },
       activeSfdId,
       setActiveSfdId,
       isAdmin,
-      isSfdAdmin
+      isSfdAdmin,
+      setUser: (userData) => setUser(userData),
+      signUp: async () => { /* Implement if needed */ },
+      isLoggedIn: !!user,
+      userRole: user?.app_metadata?.role || null,
+      biometricEnabled: false,
+      toggleBiometricAuth: async () => { /* Implement if needed */ },
+      isLoading: loading,
+      refreshSession: async () => { /* Implement if needed */ }
     }}>
       {children}
     </AuthContext.Provider>
