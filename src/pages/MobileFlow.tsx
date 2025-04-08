@@ -12,7 +12,9 @@ import { useTransactions } from '@/hooks/useTransactions';
 // Import refactored components
 import MobileMenu from '@/components/mobile/menu/MobileMenu';
 import MobileFlowRoutes from '@/components/mobile/routes/MobileFlowRoutes';
+import SplashScreen from '@/components/mobile/SplashScreen';
 import { useActionHandler } from '@/utils/actionHandler';
+import { AnimatePresence } from 'framer-motion';
 
 const MobileFlow = () => {
   const isMobile = useIsMobile();
@@ -20,6 +22,7 @@ const MobileFlow = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
   
   const { user, userRole, loading, signOut } = useAuth();
   const { account, isLoading: accountLoading, updateBalance } = useAccount();
@@ -74,6 +77,15 @@ const MobileFlow = () => {
       localStorage.setItem('hasVisitedApp', 'true');
     }
   }, [showWelcome]);
+
+  // Handle splash screen timeout
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setShowSplash(false);
+    }, 3000);
+    
+    return () => clearTimeout(timeout);
+  }, []);
 
   // Custom action handler that uses the toast notification
   const onAction = (action: string, data?: any) => {
@@ -144,24 +156,34 @@ const MobileFlow = () => {
 
   return (
     <div className="min-h-screen bg-white relative">
+      <AnimatePresence>
+        {showSplash && (
+          <SplashScreen onFinished={() => setShowSplash(false)} />
+        )}
+      </AnimatePresence>
+      
       <MobileMenu 
         isOpen={menuOpen} 
         onClose={toggleMenu} 
         onLogout={handleLogout} 
       />
 
-      <MobileFlowRoutes 
-        onAction={onAction}
-        account={account}
-        transactions={transactions}
-        transactionsLoading={transactionsLoading}
-        toggleMenu={toggleMenu}
-        showWelcome={showWelcome}
-        setShowWelcome={setShowWelcome}
-        handlePaymentSubmit={handlePaymentSubmit}
-      />
-      
-      {!isWelcomePage && <div className="sm:hidden"><MobileNavigation onAction={onAction} /></div>}
+      {!showSplash && (
+        <>
+          <MobileFlowRoutes 
+            onAction={onAction}
+            account={account}
+            transactions={transactions}
+            transactionsLoading={transactionsLoading}
+            toggleMenu={toggleMenu}
+            showWelcome={showWelcome}
+            setShowWelcome={setShowWelcome}
+            handlePaymentSubmit={handlePaymentSubmit}
+          />
+          
+          {!isWelcomePage && <div className="sm:hidden"><MobileNavigation onAction={onAction} /></div>}
+        </>
+      )}
     </div>
   );
 };
