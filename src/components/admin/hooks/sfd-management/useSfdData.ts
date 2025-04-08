@@ -2,7 +2,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export function useSfdData() {
   const { toast } = useToast();
@@ -43,8 +43,8 @@ export function useSfdData() {
     queryFn: fetchSfds,
     refetchInterval,
     refetchOnWindowFocus: true,
-    staleTime: 0, // Toujours considérer les données comme obsolètes pour forcer le refetch
-    gcTime: 0, // Updated from cacheTime (renamed in React Query v5)
+    staleTime: 30000, // Considérer les données comme obsolètes après 30 secondes
+    gcTime: 60000, // Garder en cache pendant 1 minute
     retry: 2,
     meta: {
       errorMessage: "Impossible de charger la liste des SFDs"
@@ -63,26 +63,21 @@ export function useSfdData() {
     }
   }, [isError, error, toast]);
 
-  // Effet pour désactiver l'intervalle de refetch après un certain temps
-  useEffect(() => {
-    if (refetchInterval) {
-      const timer = setTimeout(() => {
-        setRefetchInterval(false);
-      }, 30000); // Continuer le polling pendant 30 secondes
-      
-      return () => clearTimeout(timer);
-    }
-  }, [refetchInterval]);
-
-  // Fonction pour forcer un refetch périodique temporaire (utile après des opérations de création)
-  const startPolling = () => {
+  // Définir la fonction startPolling en dehors des effets pour pouvoir l'exporter
+  const startPolling = useCallback(() => {
     console.log("Starting polling for SFDs...");
-    setRefetchInterval(1000); // Refetch toutes les 1 seconde (plus fréquent)
+    setRefetchInterval(2000); // Refetch toutes les 2 secondes
     
     // Force an immediate refetch
     queryClient.removeQueries({ queryKey: ['sfds'] });
     refetch();
-  };
+    
+    // Désactiver le polling après un certain temps
+    setTimeout(() => {
+      console.log("Stopping polling for SFDs");
+      setRefetchInterval(false);
+    }, 10000); // Arrêter le polling après 10 secondes
+  }, [queryClient, refetch]);
 
   return {
     sfds: sfds || [],

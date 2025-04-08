@@ -9,14 +9,16 @@ import { SfdDetailView } from '../sfd/SfdDetailView';
 import { Sfd, SfdStatus } from '../types/sfd-types';
 import { useSfdAdminManagement } from '@/hooks/useSfdAdminManagement';
 import { AddSfdAdminDialog } from '../sfd/add-admin-dialog';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { Loader } from '@/components/ui/loader';
 
 export function SfdManagementContainer() {
   const [showDetailsView, setShowDetailsView] = useState(false);
   const [showAddAdminDialog, setShowAddAdminDialog] = useState(false);
   const [selectedSfdForAdmin, setSelectedSfdForAdmin] = useState<Sfd | null>(null);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   const {
     filteredSfds,
@@ -53,7 +55,7 @@ export function SfdManagementContainer() {
 
   const { isLoading: isLoadingAdmin, error: adminError, addSfdAdmin } = useSfdAdminManagement();
 
-  // Rafraîchir la liste des SFDs au chargement initial et à intervalles réguliers
+  // Rafraîchir la liste des SFDs au chargement initial, mais avec une logique de rafraîchissement modérée
   useEffect(() => {
     console.log("Initializing SFD management: forcing initial data refresh");
     
@@ -63,22 +65,14 @@ export function SfdManagementContainer() {
     // Refetch immédiat
     refetch();
     
-    // Démarrer le polling si disponible
-    if (typeof startPolling === 'function') {
-      startPolling();
-    }
-    
-    // Configurer un intervalle de rafraîchissement plus agressif
+    // Interval de rafraîchissement plus modéré (toutes les 30 secondes)
     const intervalId = setInterval(() => {
       console.log("Periodic SFD refresh triggered");
-      
-      // Supprimer d'abord les données en cache
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
-      refetch();
-    }, 5000); // Toutes les 5 secondes
+    }, 30000); 
     
     return () => clearInterval(intervalId);
-  }, [refetch, queryClient, startPolling]);
+  }, [refetch, queryClient]);
 
   const handleViewDetails = (sfd: Sfd) => {
     setSelectedSfd(sfd);
@@ -118,20 +112,26 @@ export function SfdManagementContainer() {
         });
         console.log("SFD added successfully, starting aggressive polling...");
         
-        // Start aggressive polling if the function exists
+        // Invalidate and refetch queries
+        queryClient.invalidateQueries({ queryKey: ['sfds'] });
+        
+        // Start polling if available
         if (typeof startPolling === 'function') {
           startPolling();
         }
         
-        queryClient.invalidateQueries({ queryKey: ['sfds'] });
-        queryClient.refetchQueries({ queryKey: ['sfds'] });
-        
         // Double-check after a short delay
         setTimeout(() => {
           console.log("Performing backup refetch after SFD creation");
-          queryClient.invalidateQueries({ queryKey: ['sfds'] });
           refetch();
         }, 2000);
+      },
+      onError: (error) => {
+        toast({
+          title: 'Erreur',
+          description: `L'ajout de la SFD a échoué: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+          variant: 'destructive'
+        });
       }
     });
   };
@@ -162,16 +162,23 @@ export function SfdManagementContainer() {
         onExportExcel={handleExportExcel}
       />
       
-      <SfdTable 
-        sfds={filteredSfds}
-        isLoading={isLoading}
-        isError={isError}
-        onSuspend={handleSuspendSfd}
-        onReactivate={handleReactivateSfd}
-        onEdit={handleShowEditDialog}
-        onViewDetails={handleViewDetails}
-        onAddAdmin={handleAddAdmin}
-      />
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center p-12 bg-white rounded-md border border-gray-200">
+          <Loader size="lg" variant="primary" className="mb-4" />
+          <p className="text-muted-foreground">Chargement des SFDs...</p>
+        </div>
+      ) : (
+        <SfdTable 
+          sfds={filteredSfds}
+          isLoading={isLoading}
+          isError={isError}
+          onSuspend={handleSuspendSfd}
+          onReactivate={handleReactivateSfd}
+          onEdit={handleShowEditDialog}
+          onViewDetails={handleViewDetails}
+          onAddAdmin={handleAddAdmin}
+        />
+      )}
 
       <SfdDialogs 
         showSuspendDialog={showSuspendDialog}

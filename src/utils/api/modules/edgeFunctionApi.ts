@@ -33,7 +33,8 @@ export const edgeFunctionApi = {
         headers: { 
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
-          'Expires': '0'
+          'Expires': '0',
+          'X-Timestamp': Date.now().toString()
         }
       } : {};
       
@@ -46,12 +47,15 @@ export const edgeFunctionApi = {
         console.error(`Error calling ${functionName}:`, error);
         
         if (options.showToast) {
-          const { toast } = useToast();
-          toast({
-            title: "Erreur de connexion",
-            description: "Impossible de contacter le serveur. Veuillez réessayer.",
-            variant: "destructive"
-          });
+          // Utiliser une approche différente pour éviter le problème de hooks
+          const toast = useToast();
+          if (toast && toast.toast) {
+            toast.toast({
+              title: "Erreur de connexion",
+              description: "Impossible de contacter le serveur. Veuillez réessayer.",
+              variant: "destructive"
+            });
+          }
         }
         
         throw error;
@@ -70,12 +74,14 @@ export const edgeFunctionApi = {
            error.message.includes('network connection'))) {
         
         if (options.showToast) {
-          const { toast } = useToast();
-          toast({
-            title: "Erreur de connexion",
-            description: "Impossible de contacter le serveur. Veuillez vérifier votre connexion réseau.",
-            variant: "destructive"
-          });
+          const toast = useToast();
+          if (toast && toast.toast) {
+            toast.toast({
+              title: "Erreur de connexion",
+              description: "Impossible de contacter le serveur. Veuillez vérifier votre connexion réseau.",
+              variant: "destructive"
+            });
+          }
         }
         
         // Return mock data for development purposes

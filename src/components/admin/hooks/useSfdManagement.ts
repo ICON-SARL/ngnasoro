@@ -32,7 +32,9 @@ export function useSfdManagement() {
       onSuccess: () => {
         // Ferme le dialogue et lance un polling temporaire pour s'assurer que les nouvelles données sont affichées
         setShowAddDialog(false);
-        startPolling();
+        if (startPolling) {
+          startPolling();
+        }
         refetch(); // Force un refetch immédiat
       }
     });
