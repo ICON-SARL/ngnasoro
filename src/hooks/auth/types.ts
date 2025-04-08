@@ -1,6 +1,13 @@
 
 export type Role = 'admin' | 'sfd_admin' | 'user' | null;
 
+// Add UserRole enum that was missing
+export enum UserRole {
+  ADMIN = 'admin',
+  SFD_ADMIN = 'sfd_admin',
+  USER = 'user'
+}
+
 export interface AppMetadata {
   role: Role;
   role_assigned?: boolean;
