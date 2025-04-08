@@ -21,7 +21,7 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
   fallbackPath = '/login',
   ...rest 
 }) => {
-  const { user } = useAuth();
+  const { user, isAdmin, isSfdAdmin } = useAuth();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const location = useLocation();
   
@@ -44,24 +44,24 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     });
     
     // Check for admin access (admin has access to everything)
-    if (userRole === 'admin') {
+    if (userRole === 'admin' || isAdmin) {
       console.log('Admin detected, granting access');
       setHasAccess(true);
       return;
     }
     
-    // Fix for SFD_ADMIN role and manage_subsidies permission
-    if (userRole === 'sfd_admin' && (
+    // SFD admin access check - direct string comparison for clarity
+    if ((userRole === 'sfd_admin' || isSfdAdmin) && (
       requiredRole === UserRole.SFD_ADMIN || 
       requiredRole === 'sfd_admin' ||
       requiredPermission === 'manage_subsidies'
     )) {
-      console.log('SFD admin accessing subsidies, granting access');
+      console.log('SFD admin accessing appropriate resource, granting access');
       setHasAccess(true);
       return;
     }
     
-    // Fix for role comparison - compare string values instead of enum to string
+    // Role comparison - reliable string comparison
     let roleMatch = false;
     
     if (!requiredRole) {
@@ -69,35 +69,32 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     } else if (typeof requiredRole === 'string') {
       roleMatch = userRole === requiredRole;
     } else {
-      // Using string comparison instead of toString()
-      roleMatch = userRole === UserRole[requiredRole] || 
-               (requiredRole === UserRole.SFD_ADMIN && userRole === 'sfd_admin');
+      // String comparison for enum values
+      roleMatch = userRole === requiredRole.toString() || userRole === UserRole[requiredRole];
     }
     
-    // Check permissions - comparing string values with string literal enum values
-    // We need to properly type-check when comparing userRole with 'admin'
+    // Permission check
     let permissionMatch = !requiredPermission;
     
-    // Admin has all permissions - using type guard to ensure proper comparison
-    if (userRole && (userRole as string) === 'admin') {
+    // Admin has all permissions
+    if (isAdmin || userRole === 'admin') {
       permissionMatch = true;
     }
     
     // SFD admin has SFD-related permissions
-    if (!permissionMatch && userRole === 'sfd_admin' && requiredPermission && 
+    if (!permissionMatch && (isSfdAdmin || userRole === 'sfd_admin') && requiredPermission && 
         (requiredPermission.includes('sfd') || 
          requiredPermission.includes('client') || 
          requiredPermission.includes('loan'))) {
       permissionMatch = true;
     }
     
-    console.log('Permission protected route check result:', { 
+    console.log('Permission check result:', { 
       userRole, 
       requiredRole, 
       requiredPermission,
       roleMatch,
-      permissionMatch,
-      path: location.pathname
+      permissionMatch
     });
     
     const permitted = roleMatch && permissionMatch;
@@ -112,7 +109,7 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
         logPermissionFailure(user.id, `role:${typeof requiredRole === 'string' ? requiredRole : UserRole[requiredRole]}`, location.pathname);
       }
     }
-  }, [user, requiredPermission, requiredRole, location.pathname]);
+  }, [user, requiredPermission, requiredRole, location.pathname, isAdmin, isSfdAdmin]);
   
   if (hasAccess === null) {
     return (
@@ -135,7 +132,7 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
   }
   
   if (!hasAccess) {
-    return <Navigate to="/access-denied" state={{ from: location, requiredPermission, requiredRole }} replace />;
+    return <Navigate to={fallbackPath || "/access-denied"} state={{ from: location, requiredPermission, requiredRole }} replace />;
   }
 
   return <Component {...rest} />;

@@ -24,7 +24,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!user) {
-    // Rediriger vers la page d'authentification appropriée basée sur les exigences
+    // Redirect to the appropriate authentication page based on requirements
     if (requireAdmin) {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
     } else if (requireSfdAdmin) {
@@ -36,13 +36,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   
   const userRole = user.app_metadata?.role;
   
-  // Vérifier les permissions basées sur le rôle
+  // Check role-based permissions
   if (requireAdmin && userRole !== 'admin') {
     return <Navigate to="/admin/auth" state={{ from: location, error: 'access_denied' }} replace />;
   }
   
   if (requireSfdAdmin && userRole !== 'sfd_admin') {
     return <Navigate to="/sfd/auth" state={{ from: location, error: 'access_denied' }} replace />;
+  }
+
+  // If the user is an SFD admin and trying to access client routes, redirect to SFD dashboard
+  if (!requireSfdAdmin && !requireAdmin && userRole === 'sfd_admin' && location.pathname.includes('/mobile-flow')) {
+    return <Navigate to="/agency-dashboard" replace />;
+  }
+
+  // If the user is an admin and trying to access client routes, redirect to admin dashboard
+  if (!requireAdmin && !requireSfdAdmin && userRole === 'admin' && location.pathname.includes('/mobile-flow')) {
+    return <Navigate to="/super-admin-dashboard" replace />;
   }
 
   return <Component {...rest} />;

@@ -31,16 +31,19 @@ const MobileFlow = () => {
     return !hasVisited;
   });
 
-  // Check if user is authenticated and not an admin
+  // Check for special roles that should be redirected elsewhere
   useEffect(() => {
     if (!loading) {
+      // If user is not logged in, redirect to login
       if (!user) {
         navigate('/auth');
         return;
       }
       
-      // If user is admin or sfd_admin, redirect to appropriate dashboard
+      // Get role directly from user metadata
       const userRole = user.app_metadata?.role;
+      
+      // Admin users should be redirected to admin dashboard
       if (userRole === 'admin') {
         toast({
           title: "Accès refusé",
@@ -51,8 +54,9 @@ const MobileFlow = () => {
         return;
       }
       
-      // Redirect SFD admins to their dashboard
+      // SFD admin users should be redirected to SFD dashboard
       if (userRole === 'sfd_admin') {
+        console.log('SFD admin detected, redirecting to agency dashboard');
         toast({
           title: "Redirection",
           description: "Les administrateurs SFD doivent utiliser l'interface d'administration SFD.",
