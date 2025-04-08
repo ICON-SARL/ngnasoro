@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +13,6 @@ export function useSfdAdminManagement() {
   const { sendNotification } = useAdminCommunication();
   const { user } = useAuth();
   
-  // Mutation to add an SFD admin
   const addSfdAdminMutation = useMutation({
     mutationFn: async (data: {
       email: string;
@@ -30,7 +28,6 @@ export function useSfdAdminManagement() {
       try {
         console.log("Starting SFD admin creation process", data);
         
-        // Check if user already exists
         const { data: existingUser } = await supabase
           .from('admin_users')
           .select('email')
@@ -41,7 +38,6 @@ export function useSfdAdminManagement() {
           throw new Error("This email is already registered. Please use a different email.");
         }
         
-        // 1. Create a user using Supabase's public API
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
@@ -65,7 +61,6 @@ export function useSfdAdminManagement() {
 
         console.log("User created successfully:", signUpData.user.id);
 
-        // 2. Create entry in admin_users
         const { error: adminError } = await supabase
           .from('admin_users')
           .insert({
@@ -83,7 +78,6 @@ export function useSfdAdminManagement() {
 
         console.log("Admin user record created successfully");
 
-        // 3. Assign SFD_ADMIN role
         const { error: roleError } = await supabase.rpc(
           'assign_role',
           {
@@ -99,7 +93,6 @@ export function useSfdAdminManagement() {
 
         console.log("SFD admin role assigned successfully");
         
-        // 4. Send notification to admin if requested
         if (data.notify && user) {
           try {
             await sendNotification({
@@ -111,11 +104,9 @@ export function useSfdAdminManagement() {
             console.log("Notification sent successfully");
           } catch (notifError) {
             console.warn("Unable to send notification:", notifError);
-            // Continue even if notification fails
           }
         }
         
-        // 5. Return the created user data
         return signUpData.user;
         
       } catch (error: any) {
@@ -127,7 +118,6 @@ export function useSfdAdminManagement() {
       }
     },
     onSuccess: () => {
-      // Invalidate queries to force data refresh
       queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
       
       toast({
@@ -144,7 +134,6 @@ export function useSfdAdminManagement() {
     }
   });
 
-  // Update SFD admin role
   const updateSfdAdminMutation = useMutation({
     mutationFn: async (data: {
       adminId: string;
@@ -158,7 +147,6 @@ export function useSfdAdminManagement() {
       try {
         console.log("Updating admin role:", data);
         
-        // Update the admin_users table
         const { error: updateError } = await supabase
           .from('admin_users')
           .update({ role: data.role })
@@ -169,9 +157,7 @@ export function useSfdAdminManagement() {
           throw updateError;
         }
         
-        // Also update the user_roles table if needed
         if (data.role !== 'sfd_admin') {
-          // Remove the old role
           const { error: removeRoleError } = await supabase
             .from('user_roles')
             .delete()
@@ -180,15 +166,13 @@ export function useSfdAdminManagement() {
             
           if (removeRoleError) {
             console.warn("Error removing old role:", removeRoleError);
-            // Continue despite error
           }
           
-          // Add the new role
           const { error: addRoleError } = await supabase.rpc(
             'assign_role',
             {
               user_id: data.adminId,
-              role: data.role
+              role: data.role as "admin" | "sfd_admin" | "user"
             }
           );
           
@@ -198,7 +182,6 @@ export function useSfdAdminManagement() {
           }
         }
         
-        // Update the auth.users metadata if possible
         try {
           await supabase.auth.admin.updateUserById(
             data.adminId,
@@ -206,7 +189,6 @@ export function useSfdAdminManagement() {
           );
         } catch (metaError) {
           console.warn("Could not update user metadata:", metaError);
-          // Continue despite error
         }
         
         return { success: true };
@@ -235,7 +217,6 @@ export function useSfdAdminManagement() {
     }
   });
 
-  // Delete an SFD admin
   const deleteSfdAdminMutation = useMutation({
     mutationFn: async (adminId: string) => {
       setIsLoading(true);
@@ -244,7 +225,6 @@ export function useSfdAdminManagement() {
       try {
         console.log("Deleting SFD admin:", adminId);
         
-        // Call the edge function to delete the admin
         const { data, error } = await supabase.functions.invoke('delete_sfd_admin', {
           body: { admin_id: adminId }
         });

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -152,7 +151,7 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={admin.is_active !== false ? 'success' : 'destructive'}>
+                    <Badge variant={admin.is_active !== false ? 'default' : 'destructive'}>
                       {admin.is_active !== false ? 'Actif' : 'Inactif'}
                     </Badge>
                   </TableCell>
