@@ -25,19 +25,19 @@ if (typeof window !== 'undefined') {
         };
       });
       
-      // In MSW v2, we need to access setupWorker from the default export
-      const { worker } = await import('msw/browser');
+      // Import the setupWorker function from msw/browser
+      const { setupWorker } = await import('msw/browser');
       
-      if (!worker) {
-        console.error('MSW worker function not found');
+      if (!setupWorker) {
+        console.error('MSW setupWorker function not found');
         return;
       }
       
       // Create the worker with our handlers
-      const msw = worker(handlers);
+      const worker = setupWorker(...handlers);
       
       // Start the worker
-      msw.start({ 
+      worker.start({ 
         onUnhandledRequest: 'bypass'
       }).catch(error => {
         console.error('MSW worker initialization failed:', error);
