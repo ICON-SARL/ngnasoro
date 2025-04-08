@@ -9,6 +9,7 @@ import { useAuth } from './hooks/useAuth';
 import AuthUI from './components/AuthUI';
 import AdminAuthUI from './components/auth/AdminAuthUI';
 import SfdAuthUI from './components/auth/SfdAuthUI';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 
 const App: React.FC = () => {
   const { user, loading } = useAuth();
@@ -65,6 +66,7 @@ const App: React.FC = () => {
       <Route path="/agency-dashboard" element={<AgencyDashboard />} />
       <Route path="/clients" element={<ClientsPage />} />
       <Route path="/loans" element={<LoansPage />} />
+      <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
       <Route path="*" element={<AuthUI />} />
     </Routes>
   );
