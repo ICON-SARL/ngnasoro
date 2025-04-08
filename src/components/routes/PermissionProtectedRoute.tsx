@@ -44,14 +44,14 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     });
     
     // Check for admin access (admin has access to everything)
-    if (isAdmin || (userRole === 'admin')) {
+    if (isAdmin || (userRole && userRole === 'admin')) {
       console.log('Admin detected, granting access');
       setHasAccess(true);
       return;
     }
     
     // SFD admin access check - direct string comparison for clarity
-    if ((isSfdAdmin || userRole === 'sfd_admin') && (
+    if ((isSfdAdmin || (userRole && userRole === 'sfd_admin')) && (
       requiredRole === UserRole.SFD_ADMIN || 
       requiredRole === 'sfd_admin' ||
       requiredPermission === 'manage_subsidies'
@@ -79,13 +79,13 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     let permissionMatch = !requiredPermission;
     
     // Admin has all permissions
-    if (isAdmin || (userRole === 'admin')) {
+    if (isAdmin || (userRole && typeof userRole === 'string' && userRole === 'admin')) {
       permissionMatch = true;
     }
     
     // SFD admin has SFD-related permissions
     if (!permissionMatch && 
-        (isSfdAdmin || userRole === 'sfd_admin') && 
+        (isSfdAdmin || (userRole && userRole === 'sfd_admin')) && 
         requiredPermission && 
         (requiredPermission.includes('sfd') || 
          requiredPermission.includes('client') || 
