@@ -20,6 +20,14 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Ensure storage buckets exist before proceeding
+    try {
+      await supabase.functions.invoke('create_storage_buckets');
+    } catch (error) {
+      console.warn("Warning: Failed to ensure storage buckets exist:", error);
+      // Continue anyway as this is not critical
+    }
+
     // Parse request body
     const body = await req.json();
     const sfd_data = body.sfd_data;
@@ -58,16 +66,29 @@ serve(async (req) => {
       );
     }
     
+    // Get the table structure to make sure we only include valid columns
+    const { data: columnsData, error: columnsError } = await supabase
+      .rpc('get_table_columns', { table_name: 'sfds' });
+      
+    if (columnsError) {
+      console.warn("Could not get table structure, using hardcoded fields:", columnsError);
+    }
+    
     // Extraire uniquement les champs qui existent dans la table
-    const cleanedSfdData = {
-      name: sfd_data.name,
-      code: sfd_data.code,
-      region: sfd_data.region || null,
-      status: sfd_data.status || 'active',
-      logo_url: sfd_data.logo_url || null,
-      phone: sfd_data.phone || null,
-      legal_document_url: sfd_data.legal_document_url || null
-    };
+    let validColumns = ['name', 'code', 'region', 'status', 'logo_url', 'phone', 'subsidy_balance'];
+    if (columnsData && Array.isArray(columnsData)) {
+      validColumns = columnsData.map(col => col.column_name);
+    }
+    
+    // Add legal_document_url if not in the list but we need it
+    if (!validColumns.includes('legal_document_url')) {
+      validColumns.push('legal_document_url');
+    }
+    
+    // Filter to valid columns only
+    const cleanedSfdData = Object.fromEntries(
+      Object.entries(sfd_data).filter(([key]) => validColumns.includes(key))
+    );
     
     console.log("Creating new SFD with cleaned data:", cleanedSfdData);
     

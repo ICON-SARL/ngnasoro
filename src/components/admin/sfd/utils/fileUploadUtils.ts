@@ -1,6 +1,6 @@
 
 import { SfdFormValues } from "../schemas/sfdFormSchema";
-import { apiClient } from "@/utils/apiClient";
+import { storageApi } from "@/utils/api/modules/storageApi";
 
 /**
  * Upload SFD logo and legal document files and return the updated form data
@@ -26,8 +26,8 @@ export async function uploadSfdFiles(
     if (logoFile) {
       const logoPath = `sfds/logos/${formData.code}-${Date.now()}`;
       try {
-        await apiClient.uploadFile("logos", logoPath, logoFile);
-        updatedData.logo_url = apiClient.getFileUrl("logos", logoPath);
+        const uploadResult = await storageApi.uploadFile("logos", logoPath, logoFile);
+        updatedData.logo_url = uploadResult.url;
       } catch (error) {
         throw new Error("Échec du téléchargement du logo");
       }
@@ -37,8 +37,8 @@ export async function uploadSfdFiles(
     if (documentFile) {
       const docPath = `sfds/documents/${formData.code}-${Date.now()}`;
       try {
-        await apiClient.uploadFile("documents", docPath, documentFile);
-        updatedData.legal_document_url = apiClient.getFileUrl("documents", docPath);
+        const uploadResult = await storageApi.uploadFile("documents", docPath, documentFile);
+        updatedData.legal_document_url = uploadResult.url;
       } catch (error) {
         throw new Error("Échec du téléchargement du document légal");
       }

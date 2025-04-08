@@ -7,7 +7,7 @@ export const storageApi = {
    * @param bucket - Storage bucket name
    * @param path - File path within the bucket
    * @param file - File to upload
-   * @returns The uploaded file data
+   * @returns The uploaded file data including URL
    */
   uploadFile: async (bucket: string, path: string, file: File) => {
     try {
@@ -24,7 +24,13 @@ export const storageApi = {
         throw error;
       }
 
-      return data;
+      // Get the public URL for the uploaded file
+      const url = storageApi.getFileUrl(bucket, path);
+      
+      return {
+        path: path,
+        url: url
+      };
     } catch (error) {
       console.error("Error in uploadFile:", error);
       throw error;

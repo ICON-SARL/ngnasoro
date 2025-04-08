@@ -54,3 +54,6 @@ verify_jwt = false
 
 [functions.create_storage_buckets]
 verify_jwt = false
+
+[functions.get_table_columns]
+verify_jwt = false

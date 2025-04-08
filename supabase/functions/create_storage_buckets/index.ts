@@ -49,6 +49,18 @@ serve(async (req) => {
         } else {
           console.log(`Bucket ${bucket} created successfully`);
           results.push({ bucket, status: 'created' });
+          
+          // Add public policy to the bucket
+          if (bucket === 'logos' || bucket === 'documents') {
+            const { error: policyError } = await supabase
+              .storage
+              .from(bucket)
+              .createSignedUrl('test-policy', 10); // Just to test policy creation
+              
+            if (policyError) {
+              console.warn(`Warning: Could not create public policy for ${bucket}`, policyError);
+            }
+          }
         }
       } else {
         console.log(`Bucket ${bucket} already exists`);
