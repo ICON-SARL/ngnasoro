@@ -29,12 +29,15 @@ export function SfdManagementContainer() {
     setShowSuspendDialog,
     showReactivateDialog,
     setShowReactivateDialog,
+    showActivateDialog,
+    setShowActivateDialog,
     showAddDialog,
     setShowAddDialog,
     showEditDialog,
     setShowEditDialog,
     suspendSfdMutation,
     reactivateSfdMutation,
+    activateSfdMutation,
     addSfdMutation,
     editSfdMutation,
     handleAddSfd,
@@ -42,6 +45,7 @@ export function SfdManagementContainer() {
     handleShowEditDialog,
     handleSuspendSfd,
     handleReactivateSfd,
+    handleActivateSfd,
     handleExportPdf,
     handleExportExcel
   } = useSfdManagement();
@@ -90,6 +94,7 @@ export function SfdManagementContainer() {
         isError={isError}
         onSuspend={handleSuspendSfd}
         onReactivate={handleReactivateSfd}
+        onActivate={handleActivateSfd}
         onEdit={handleShowEditDialog}
         onViewDetails={handleViewDetails}
         onAddAdmin={handleAddAdmin}
@@ -100,6 +105,8 @@ export function SfdManagementContainer() {
         setShowSuspendDialog={setShowSuspendDialog}
         showReactivateDialog={showReactivateDialog}
         setShowReactivateDialog={setShowReactivateDialog}
+        showActivateDialog={showActivateDialog}
+        setShowActivateDialog={setShowActivateDialog}
         showAddDialog={showAddDialog}
         setShowAddDialog={setShowAddDialog}
         showEditDialog={showEditDialog}
@@ -107,6 +114,7 @@ export function SfdManagementContainer() {
         selectedSfd={selectedSfd}
         suspendSfdMutation={suspendSfdMutation}
         reactivateSfdMutation={reactivateSfdMutation}
+        activateSfdMutation={activateSfdMutation}
         addSfdMutation={addSfdMutation}
         editSfdMutation={editSfdMutation}
         handleAddSfd={handleAddSfd}

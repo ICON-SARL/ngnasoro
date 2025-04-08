@@ -3,7 +3,8 @@ import {
   useAddSfdMutation, 
   useEditSfdMutation, 
   useSuspendSfdMutation, 
-  useReactivateSfdMutation 
+  useReactivateSfdMutation,
+  useActivateSfdMutation
 } from './mutations';
 
 export function useSfdMutations() {
@@ -11,11 +12,13 @@ export function useSfdMutations() {
   const editSfdMutation = useEditSfdMutation();
   const suspendSfdMutation = useSuspendSfdMutation();
   const reactivateSfdMutation = useReactivateSfdMutation();
+  const activateSfdMutation = useActivateSfdMutation();
 
   return {
     addSfdMutation,
     editSfdMutation,
     suspendSfdMutation,
-    reactivateSfdMutation
+    reactivateSfdMutation,
+    activateSfdMutation
   };
 }

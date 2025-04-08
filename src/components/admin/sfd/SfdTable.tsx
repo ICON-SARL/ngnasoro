@@ -3,11 +3,12 @@ import React from 'react';
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, UserPlus, Ban, CheckCircle } from 'lucide-react';
+import { Eye, UserPlus, Ban, CheckCircle, Power } from 'lucide-react';
 import { Sfd } from '../types/sfd-types';
 import { formatDate } from '@/utils/formatDate';
+import { SfdStatusBadge } from './SfdStatusBadge';
+import { SfdActionsMenu } from './SfdActionsMenu';
 
 interface SfdTableProps {
   sfds: Sfd[];
@@ -15,6 +16,7 @@ interface SfdTableProps {
   isError: boolean;
   onSuspend: (sfd: Sfd) => void;
   onReactivate: (sfd: Sfd) => void;
+  onActivate: (sfd: Sfd) => void;
   onEdit: (sfd: Sfd) => void;
   onViewDetails: (sfd: Sfd) => void;
   onAddAdmin?: (sfd: Sfd) => void;
@@ -25,7 +27,8 @@ export function SfdTable({
   isLoading, 
   isError, 
   onSuspend, 
-  onReactivate, 
+  onReactivate,
+  onActivate,
   onEdit, 
   onViewDetails,
   onAddAdmin
@@ -74,62 +77,37 @@ export function SfdTable({
               <TableCell>{sfd.email || '-'}</TableCell>
               <TableCell>{sfd.phone || '-'}</TableCell>
               <TableCell>
-                <Badge 
-                  className={
-                    sfd.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : sfd.status === 'suspended' 
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }
-                >
-                  {sfd.status === 'active' 
-                    ? 'Active' 
-                    : sfd.status === 'suspended'
-                    ? 'Suspendue'
-                    : 'En attente'
-                  }
-                </Badge>
+                <SfdStatusBadge status={sfd.status || 'pending'} />
               </TableCell>
               <TableCell>
                 {sfd.created_at ? formatDate(sfd.created_at) : '-'}
               </TableCell>
-              <TableCell className="text-right space-x-1">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => onViewDetails(sfd)}
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-                {onAddAdmin && (
+              <TableCell className="text-right">
+                <div className="flex justify-end items-center gap-1">
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={() => onAddAdmin(sfd)}
+                    onClick={() => onViewDetails(sfd)}
                   >
-                    <UserPlus className="h-4 w-4" />
+                    <Eye className="h-4 w-4" />
                   </Button>
-                )}
-                {sfd.status === 'active' ? (
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => onSuspend(sfd)}
-                    className="text-red-600"
-                  >
-                    <Ban className="h-4 w-4" />
-                  </Button>
-                ) : sfd.status === 'suspended' ? (
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => onReactivate(sfd)}
-                    className="text-green-600"
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                  </Button>
-                ) : null}
+                  {onAddAdmin && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => onAddAdmin(sfd)}
+                    >
+                      <UserPlus className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <SfdActionsMenu
+                    sfd={sfd}
+                    onSuspend={onSuspend}
+                    onReactivate={onReactivate}
+                    onActivate={onActivate}
+                    onEdit={onEdit}
+                  />
+                </div>
               </TableCell>
             </TableRow>
           ))}

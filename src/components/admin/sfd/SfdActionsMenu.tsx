@@ -9,13 +9,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Eye, MoreHorizontal, Pencil, XCircle, Check } from 'lucide-react';
+import { Eye, MoreHorizontal, Pencil, XCircle, Check, Power } from 'lucide-react';
 import { Sfd } from '../types/sfd-types';
 
 interface SfdActionsMenuProps {
   sfd: Sfd;
   onSuspend: (sfd: Sfd) => void;
   onReactivate: (sfd: Sfd) => void;
+  onActivate: (sfd: Sfd) => void;
   onEdit: (sfd: Sfd) => void;
   onViewDetails?: (sfd: Sfd) => void;
 }
@@ -24,6 +25,7 @@ export function SfdActionsMenu({
   sfd, 
   onSuspend, 
   onReactivate, 
+  onActivate,
   onEdit,
   onViewDetails 
 }: SfdActionsMenuProps) {
@@ -66,6 +68,14 @@ export function SfdActionsMenu({
           >
             <Check className="mr-2 h-4 w-4" />
             <span>Réactiver</span>
+          </DropdownMenuItem>
+        ) : sfd.status === 'pending' ? (
+          <DropdownMenuItem 
+            onClick={() => onActivate(sfd)}
+            className="text-green-600 hover:text-green-700"
+          >
+            <Power className="mr-2 h-4 w-4" />
+            <span>Activer</span>
           </DropdownMenuItem>
         ) : null}
       </DropdownMenuContent>

@@ -1,42 +1,36 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Sfd } from '../types/sfd-types';
-import { cn } from '@/lib/utils';
+import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 interface SfdStatusBadgeProps {
-  status?: Sfd['status'];
-  className?: string; // Added className prop
-  variant?: 'default' | 'destructive' | 'outline'; // Added variant prop
+  status: string;
 }
 
-export function SfdStatusBadge({ status, className, variant }: SfdStatusBadgeProps) {
-  if (!status || status === 'active') {
-    return (
-      <Badge 
-        variant={variant} 
-        className={cn("bg-green-100 text-green-700 hover:bg-green-200", className)}
-      >
-        Actif
-      </Badge>
-    );
-  } else if (status === 'suspended') {
-    return (
-      <Badge 
-        variant={variant}
-        className={cn("bg-red-100 text-red-700 hover:bg-red-200", className)}
-      >
-        Suspendu
-      </Badge>
-    );
-  } else {
-    return (
-      <Badge 
-        variant={variant}
-        className={cn("bg-yellow-100 text-yellow-700 hover:bg-yellow-200", className)}
-      >
-        En attente
-      </Badge>
-    );
+export function SfdStatusBadge({ status }: SfdStatusBadgeProps) {
+  switch (status) {
+    case 'active':
+      return (
+        <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
+          <CheckCircle className="h-3.5 w-3.5" />
+          Active
+        </Badge>
+      );
+    case 'suspended':
+      return (
+        <Badge className="bg-red-100 text-red-800 flex items-center gap-1">
+          <AlertCircle className="h-3.5 w-3.5" />
+          Suspendue
+        </Badge>
+      );
+    case 'pending':
+      return (
+        <Badge className="bg-yellow-100 text-yellow-800 flex items-center gap-1">
+          <Clock className="h-3.5 w-3.5" />
+          En attente
+        </Badge>
+      );
+    default:
+      return <Badge>{status}</Badge>;
   }
 }
