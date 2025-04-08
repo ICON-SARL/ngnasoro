@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { MobileHeader } from '@/components/mobile/MobileHeader';
+import React from 'react';
+import MobileHeader from '@/components/mobile/MobileHeader';
 import { MobileFlowRoutes, MobileFlowRoutesProps } from '@/components/mobile/MobileFlowRoutes';
 import MobileLayout from '@/components/mobile/layout/MobileLayout';
 import { useTransactions } from '@/hooks/useTransactions';
