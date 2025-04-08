@@ -62,7 +62,7 @@ const AppWithFooter = () => {
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Landing page route */}
+      {/* Landing page route - Publicly accessible without authentication */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/index" element={<LandingPage />} />
       

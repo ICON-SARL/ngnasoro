@@ -48,23 +48,15 @@ const AuthUI = () => {
     }
   }, [location, navigate]);
   
-  // Redirect based on authentication state
+  // Redirect based on authentication state - only if user is already on auth pages
   useEffect(() => {
-    // Only redirect if not loading and user is authenticated
-    if (user && !loading) {
+    // Only redirect if not loading and user is authenticated AND user is on an auth page
+    if (user && !loading && location.pathname.includes('/auth')) {
       console.log('Authenticated user:', user);
       console.log('User role:', userRole);
       
       // Redirection based on user's role
       if (userRole === UserRole.SUPER_ADMIN || user.app_metadata?.role === 'admin') {
-        if (location.pathname !== '/admin/auth' && !location.pathname.includes('admin')) {
-          // If regular auth page is accessed by admin, show a message
-          toast({
-            title: "Redirection",
-            description: "Les administrateurs doivent utiliser l'interface d'administration.",
-            variant: "default",
-          });
-        }
         navigate('/super-admin-dashboard');
       } else if (userRole === UserRole.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {
         // Rediriger les admins SFD vers leur interface dédiée

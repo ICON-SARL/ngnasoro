@@ -9,8 +9,11 @@ import PartnersSection from '@/components/landing/PartnersSection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import CtaSection from '@/components/landing/CtaSection';
 import { Footer } from '@/components';
+import { useAuth } from '@/hooks/useAuth';
 
 const LandingPage = () => {
+  const { user } = useAuth();
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f8fafc] to-white dark:from-gray-950 dark:to-gray-900">
       <Header />

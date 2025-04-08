@@ -25,6 +25,11 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const location = useLocation();
   
+  // Ne pas rediriger depuis la page d'accueil
+  if (location.pathname === '/' || location.pathname === '/index') {
+    return <Component {...rest} />;
+  }
+  
   useEffect(() => {
     // If no user, deny access immediately
     if (!user) {
