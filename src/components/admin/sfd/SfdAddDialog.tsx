@@ -35,6 +35,7 @@ export function SfdAddDialog({
           onSubmit={onSubmit}
           isLoading={isLoading}
           onCancel={() => onOpenChange(false)}
+          formMode="create"
         />
         
         <DialogFooter className="mt-4">

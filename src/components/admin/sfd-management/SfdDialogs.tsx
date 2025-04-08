@@ -2,8 +2,8 @@
 import React from 'react';
 import { Sfd } from '../types/sfd-types';
 import { SfdFormValues } from '../sfd/schemas/sfdFormSchema';
-import { SfdSuspendDialog } from '../sfd/SfdSuspendDialog';
-import { SfdReactivateDialog } from '../sfd/SfdReactivateDialog';
+import { SuspendSfdDialog } from '../sfd/SuspendSfdDialog';
+import { ReactivateSfdDialog } from '../sfd/ReactivateSfdDialog';
 import { ActivateSfdDialog } from '../sfd/ActivateSfdDialog';
 import { SfdAddDialog } from '../sfd/SfdAddDialog';
 import { SfdEditDialog } from '../sfd/SfdEditDialog';
@@ -76,21 +76,27 @@ export function SfdDialogs({
   return (
     <>
       {/* Suspend Dialog */}
-      <SfdSuspendDialog
+      <SuspendSfdDialog
         open={showSuspendDialog}
         onOpenChange={setShowSuspendDialog}
-        sfd={selectedSfd}
-        onConfirm={handleConfirmSuspend}
-        isLoading={suspendSfdMutation.isPending}
+        selectedSfd={selectedSfd}
+        onConfirm={(id) => {
+          suspendSfdMutation.mutate(id);
+          setShowSuspendDialog(false);
+        }}
+        isPending={suspendSfdMutation.isPending}
       />
 
       {/* Reactivate Dialog */}
-      <SfdReactivateDialog
+      <ReactivateSfdDialog
         open={showReactivateDialog}
         onOpenChange={setShowReactivateDialog}
-        sfd={selectedSfd}
-        onConfirm={handleConfirmReactivate}
-        isLoading={reactivateSfdMutation.isPending}
+        selectedSfd={selectedSfd}
+        onConfirm={(id) => {
+          reactivateSfdMutation.mutate(id);
+          setShowReactivateDialog(false);
+        }}
+        isPending={reactivateSfdMutation.isPending}
       />
 
       {/* Activate Dialog */}

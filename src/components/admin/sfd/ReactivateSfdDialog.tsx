@@ -44,6 +44,7 @@ export function ReactivateSfdDialog({
             variant="default" 
             onClick={() => selectedSfd && onConfirm(selectedSfd.id)}
             disabled={isPending}
+            className="bg-green-600 hover:bg-green-700"
           >
             {isPending ? 'En cours...' : 'Réactiver'}
           </Button>

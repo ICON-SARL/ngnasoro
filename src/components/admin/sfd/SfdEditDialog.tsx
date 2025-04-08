@@ -28,7 +28,7 @@ export function SfdEditDialog({
   isLoading 
 }: SfdEditDialogProps) {
   // Convert the Sfd type to SfdFormValues
-  const initialValues: SfdFormValues = {
+  const defaultValues: SfdFormValues = {
     name: sfd.name,
     code: sfd.code,
     region: sfd.region || '',
@@ -48,11 +48,11 @@ export function SfdEditDialog({
         </DialogHeader>
         
         <SfdForm 
-          initialValues={initialValues}
+          defaultValues={defaultValues}
           onSubmit={onSubmit}
           isLoading={isLoading}
           onCancel={() => onOpenChange(false)}
-          isEditing
+          formMode="edit"
           sfdId={sfd.id}
         />
         

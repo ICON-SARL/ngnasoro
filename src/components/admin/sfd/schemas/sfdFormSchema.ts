@@ -1,24 +1,17 @@
 
-import * as z from 'zod';
+import { z } from 'zod';
 
 export const sfdFormSchema = z.object({
-  name: z.string().min(3, {
-    message: 'Le nom doit contenir au moins 3 caractères',
-  }),
-  code: z.string().min(2, {
-    message: 'Le code doit contenir au moins 2 caractères',
-  }),
-  region: z.string().min(2, {
-    message: 'La région doit être spécifiée',
-  }),
-  contact_email: z.string().email({
-    message: 'Format d\'email invalide',
-  }).optional().or(z.literal('')),
+  name: z.string().min(1, { message: 'Le nom est requis' }),
+  code: z.string().min(1, { message: 'Le code est requis' }),
+  region: z.string().optional(),
+  description: z.string().optional(),
+  email: z.string().email({ message: 'Email invalide' }).optional().or(z.literal('')),
+  contact_email: z.string().email({ message: 'Email invalide' }).optional().or(z.literal('')),
   phone: z.string().optional(),
-  status: z.enum(['active', 'pending', 'suspended']),
-  logo_url: z.string().optional(),
-  legal_document_url: z.string().optional(),
-  subsidy_balance: z.number().optional(),
+  address: z.string().optional(),
+  logo_file: z.any().optional(),
+  legal_document_file: z.any().optional(),
 });
 
 export type SfdFormValues = z.infer<typeof sfdFormSchema>;
