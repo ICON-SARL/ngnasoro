@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useSfdManagement } from '../hooks/useSfdManagement';
 import { SfdTable } from '../sfd/SfdTable';
@@ -124,7 +125,7 @@ export function SfdManagementContainer() {
           sfdName={selectedSfdForAdmin.name}
           onAddAdmin={addSfdAdmin}
           isLoading={isLoadingAdmin}
-          error={adminError}
+          error={adminError ? adminError.toString() : null}
         />
       )}
     </div>
