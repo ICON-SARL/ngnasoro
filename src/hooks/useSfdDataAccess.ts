@@ -9,7 +9,7 @@ type SfdData = {
   region?: string;
   code: string;
   logo_url?: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | string; // Changed to accept string as well
 };
 
 export function useSfdDataAccess() {
@@ -65,7 +65,7 @@ export function useSfdDataAccess() {
         
         // Use real data if available, otherwise use mock data
         const finalData = data && data.length > 0 ? data : mockSfds;
-        setSfdData(finalData);
+        setSfdData(finalData as SfdData[]); // Force type casting to avoid issues
         
         // If no active SFD is set, use the first one
         if (!activeSfdId && finalData.length > 0) {
@@ -84,10 +84,24 @@ export function useSfdDataAccess() {
     }
   }, [user]);
 
+  // Add the missing switchActiveSfd function
+  const switchActiveSfd = (sfdId: string) => {
+    setActiveSfdId(sfdId);
+    return Promise.resolve(true);
+  };
+
+  // Add the missing getActiveSfdData function
+  const getActiveSfdData = async (): Promise<SfdData | null> => {
+    if (!activeSfdId || !sfdData.length) return null;
+    return sfdData.find(sfd => sfd.id === activeSfdId) || null;
+  };
+
   return {
     activeSfdId,
     setActiveSfdId,
     sfdData,
-    isLoading
+    isLoading,
+    switchActiveSfd,
+    getActiveSfdData
   };
 }

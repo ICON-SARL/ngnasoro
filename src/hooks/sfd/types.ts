@@ -55,6 +55,10 @@ export interface SfdData {
   name: string;
   token: string | null;
   lastFetched: Date | null;
+  region?: string;
+  code?: string;
+  logo_url?: string;
+  status?: 'active' | 'inactive' | string; // Updated to allow string to fix the type error
 }
 
 export interface QRCodeRequest {

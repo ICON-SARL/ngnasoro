@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -17,7 +18,7 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('accounts');
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { sfdData, activeSfdId, switchActiveSfd } = useSfdDataAccess();
+  const { sfdData, activeSfdId, setActiveSfdId, switchActiveSfd } = useSfdDataAccess();
 
   const handleGoBack = () => {
     navigate('/mobile-flow/main');
