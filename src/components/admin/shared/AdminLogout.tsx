@@ -1,38 +1,36 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Loader2 } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 
 interface AdminLogoutProps {
   variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
-  children?: React.ReactNode;
 }
 
 const AdminLogout: React.FC<AdminLogoutProps> = ({ 
   variant = 'ghost', 
   size = 'sm',
-  className = '',
-  children
+  className = ''
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signOut } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogout = async () => {
     try {
-      setIsLoading(true);
-      console.log("AdminLogout - Déconnexion initiée");
+      // Clear any client-side states or cookies before calling sign out
+      localStorage.removeItem('adminLastSeen');
       
-      // Use the signOut function from Auth context 
-      await signOut();
+      // Call Supabase auth signOut method
+      const { error } = await supabase.auth.signOut();
       
-      console.log("AdminLogout - Déconnexion réussie");
+      if (error) {
+        throw error;
+      }
       
       // Show success toast
       toast({
@@ -40,12 +38,10 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Force a hard reload to ensure clean state
-      window.location.replace('/auth');
-      
+      // Redirect to login page - Force a full page reload to clear any remaining state
+      window.location.href = '/auth';
     } catch (error: any) {
-      setIsLoading(false);
-      console.error('AdminLogout - Logout error:', error);
+      console.error('Logout error:', error);
       toast({
         title: "Erreur de déconnexion",
         description: error.message || "Une erreur s'est produite lors de la déconnexion",
@@ -59,14 +55,9 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
       variant={variant} 
       size={size}
       onClick={handleLogout}
-      disabled={isLoading}
-      className={`${className} ${variant !== 'link' ? 'text-white hover:text-white hover:bg-primary-foreground/10' : ''}`}
+      className={`${className} text-white hover:text-white hover:bg-primary-foreground/10`}
     >
-      {isLoading ? (
-        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-      ) : children || <LogOut className="h-4 w-4" />}
-      {!children && size !== 'icon' && !isLoading && <span className="ml-2">Déconnexion</span>}
-      {!children && size !== 'icon' && isLoading && <span className="ml-2">Déconnexion en cours...</span>}
+      <LogOut className="h-4 w-4" />
     </Button>
   );
 };

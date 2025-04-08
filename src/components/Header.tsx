@@ -12,12 +12,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import MobileNavigation from './MobileNavigation';
-import AdminLogout from './admin/shared/AdminLogout';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -32,6 +31,11 @@ const Header = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <header 
@@ -91,11 +95,9 @@ const Header = () => {
                     Admin
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem asChild>
-                  <AdminLogout variant="link" size="sm" className="w-full text-left justify-start p-0 h-auto hover:bg-transparent text-red-600">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Déconnexion
-                  </AdminLogout>
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Déconnexion
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -149,11 +151,6 @@ const Header = () => {
               <Link to="/auth" className="text-sm font-medium bg-[#FFAB2E] text-white px-4 py-2 rounded-md hover:bg-[#FFAB2E]/90 transition-colors">
                 Connexion
               </Link>
-            )}
-            {user && (
-              <AdminLogout variant="link" size="default" className="text-sm font-medium text-red-600 hover:text-red-700 px-2 py-1">
-                Déconnexion
-              </AdminLogout>
             )}
           </nav>
         </div>

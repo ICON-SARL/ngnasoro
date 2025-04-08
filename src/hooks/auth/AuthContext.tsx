@@ -1,6 +1,7 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User, AuthContextProps, Role, SignOutResult, SignUpData } from './types';
+import { User, AuthContextProps, Role } from './types';
 
 const AuthContext = createContext<AuthContextProps | null>(null);
 
@@ -24,30 +25,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (data?.session) {
           setSession(data.session);
-          
-          const userData: User = {
+          setUser({
             id: data.session.user.id,
-            email: data.session.user.email || '',
-            full_name: data.session.user.user_metadata?.full_name || '',
-            avatar_url: data.session.user.user_metadata?.avatar_url,
-            phone: data.session.user.user_metadata?.phone,
-            sfd_id: data.session.user.user_metadata?.sfd_id,
-            user_metadata: data.session.user.user_metadata || {},
-            app_metadata: {
-              role: data.session.user.app_metadata?.role as Role || null,
-              role_assigned: data.session.user.app_metadata?.role_assigned || false,
-              roles: data.session.user.app_metadata?.roles || [],
-              sfd_id: data.session.user.app_metadata?.sfd_id || undefined
-            }
-          };
+            email: data.session.user.email,
+            app_metadata: data.session.user.app_metadata
+          });
           
-          setUser(userData);
-          
+          // Check roles
           const role = data.session.user.app_metadata?.role;
           setIsAdmin(role === 'admin');
           setIsSfdAdmin(role === 'sfd_admin');
           
+          // Special case - for sfd@example.com, set activeSfdId to the first SFD
           if (data.session.user.email === 'sfd@example.com' || data.session.user.email === 'sfd@test.com') {
+            // Get the first SFD for this user
             const { data: sfdsData } = await supabase
               .from('user_sfds')
               .select('sfd_id')
@@ -73,25 +64,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Auth state change:', event);
       
       if (session) {
-        const userData: User = {
+        setUser({
           id: session.user.id,
-          email: session.user.email || '',
-          full_name: session.user.user_metadata?.full_name || '',
-          avatar_url: session.user.user_metadata?.avatar_url,
-          phone: session.user.user_metadata?.phone,
-          sfd_id: session.user.user_metadata?.sfd_id,
-          user_metadata: session.user.user_metadata || {},
-          app_metadata: {
-            role: session.user.app_metadata?.role as Role || null,
-            role_assigned: session.user.app_metadata?.role_assigned || false,
-            roles: session.user.app_metadata?.roles || [],
-            sfd_id: session.user.app_metadata?.sfd_id || undefined
-          }
-        };
-        
-        setUser(userData);
+          email: session.user.email,
+          app_metadata: session.user.app_metadata
+        });
         setSession(session);
         
+        // Check roles on auth state change
         const role = session.user.app_metadata?.role;
         setIsAdmin(role === 'admin');
         setIsSfdAdmin(role === 'sfd_admin');
@@ -123,92 +103,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signOut = async (): Promise<SignOutResult> => {
-    console.log("AuthContext - Attempting to sign out");
+  const signOut = async () => {
     try {
-      localStorage.removeItem('supabase.auth.token');
-      localStorage.removeItem('adminLastSeen');
-      localStorage.removeItem('sb-xnqysvnychmsockivqhb-auth-token');
-      
-      localStorage.clear();
-      sessionStorage.clear();
-      
-      setUser(null);
-      setSession(null);
-      setActiveSfdId(null);
-      setIsAdmin(false);
-      setIsSfdAdmin(false);
-      
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
-      
-      if (error) {
-        console.error("AuthContext - Sign out error:", error);
-        throw error;
-      }
-      
-      console.log("AuthContext - Sign out successful");
-      
+      await supabase.auth.signOut();
       return { success: true };
     } catch (error: any) {
-      console.error("AuthContext - Sign out error caught:", error);
       return { success: false, error: error.message || 'Une erreur est survenue lors de la déconnexion.' };
     }
   };
 
-  const signUp = async (data: SignUpData): Promise<void> => {
-    try {
-      const { email, password, metadata } = data;
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: metadata
-        }
-      });
-      
-      if (error) throw error;
-    } catch (error: any) {
-      console.error('Error signing up:', error);
-      throw error;
-    }
-  };
-
-  const authValue: AuthContextProps = {
-    user,
-    session,
-    loading,
-    signIn,
-    signOut: async () => {
-      console.log("AuthContext - signOut wrapper called");
-      const result = await signOut();
-      if (!result.success) {
-        console.error('Error signing out:', result.error);
-      }
-      window.location.replace('/auth');
-      return result;
-    },
-    activeSfdId,
-    setActiveSfdId,
-    isAdmin,
-    isSfdAdmin,
-    setUser: (userData) => setUser(userData),
-    signUp,
-    isLoggedIn: !!user,
-    userRole: user?.app_metadata?.role || null,
-    biometricEnabled: false,
-    toggleBiometricAuth: async () => { /* Implement if needed */ },
-    isLoading: loading,
-    refreshSession: async () => { /* Implement if needed */ }
-  };
-
   return (
-    <AuthContext.Provider value={authValue}>
+    <AuthContext.Provider value={{
+      user,
+      session,
+      loading,
+      signIn,
+      signOut,
+      activeSfdId,
+      setActiveSfdId,
+      isAdmin,
+      isSfdAdmin
+    }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = (): AuthContextProps => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   
   if (!context) {

@@ -2,12 +2,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/auth/index';
-import AdminLogout from '@/components/admin/shared/AdminLogout';
+import { useAuth } from '@/hooks/useAuth';
 
 export const SfdHeader: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   
   return (
     <header className="bg-primary text-white shadow-md">
@@ -51,13 +50,13 @@ export const SfdHeader: React.FC = () => {
                 </Button>
               </li>
               <li>
-                <AdminLogout 
+                <Button 
                   variant="ghost" 
-                  size="default"
                   className="text-white hover:text-white hover:bg-primary-foreground"
+                  onClick={() => signOut()}
                 >
                   Déconnexion
-                </AdminLogout>
+                </Button>
               </li>
             </ul>
           </nav>

@@ -11,13 +11,31 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Building, CreditCard, Users, FileText } from 'lucide-react';
-import { useAuth } from '@/hooks/auth/index';
-import AdminLogout from '@/components/admin/shared/AdminLogout';
+import { Building, CreditCard, Users, FileText, LogOut } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 export const AgencyHeader = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
+  
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Déconnecté",
+        description: "Vous avez été déconnecté avec succès",
+      });
+      navigate('/login');
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la déconnexion",
+        variant: "destructive",
+      });
+    }
+  };
   
   return (
     <header className="bg-white border-b border-gray-200">
@@ -114,8 +132,9 @@ export const AgencyHeader = () => {
                   <span>Demandes de subvention</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <AdminLogout variant="link" size="sm" className="w-full text-left justify-start p-0 h-auto hover:bg-transparent text-red-600" />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Se déconnecter</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

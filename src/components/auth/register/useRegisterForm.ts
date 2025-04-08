@@ -106,12 +106,8 @@ export const useRegisterForm = () => {
         phone: data.phoneNumber || undefined
       };
       
-      // Register the user with the correct object format
-      await signUp({
-        email: data.email,
-        password: data.password,
-        metadata
-      });
+      // Register the user
+      await signUp(data.email, data.password, metadata);
       
       // Get the session to access the user ID
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();

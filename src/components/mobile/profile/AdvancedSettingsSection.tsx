@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Sun, Moon, Database, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Sun, Moon, Database, Trash2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -25,7 +25,6 @@ interface AdvancedSettingsSectionProps {
 const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => {
   const { toast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   const handleThemeChange = (value: string) => {
     toast({
@@ -41,22 +40,6 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
         ? "Les données seront mises en cache pour un accès hors-ligne" 
         : "Les données ne seront pas mises en cache",
     });
-  };
-  
-  const handleLogout = async () => {
-    try {
-      setIsLoggingOut(true);
-      await onLogout();
-    } catch (error) {
-      console.error('Error during logout:', error);
-      toast({
-        title: "Erreur de déconnexion",
-        description: "Une erreur est survenue lors de la déconnexion",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoggingOut(false);
-    }
   };
   
   const handleDeleteAccount = () => {
@@ -109,17 +92,9 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
             <Button 
               variant="outline" 
               className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
+              onClick={() => onLogout()}
             >
-              {isLoggingOut ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Déconnexion en cours...
-                </>
-              ) : (
-                'Se déconnecter'
-              )}
+              Se déconnecter
             </Button>
             
             <AlertDialog>

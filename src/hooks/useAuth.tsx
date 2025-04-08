@@ -1,7 +1,10 @@
 
-// Simple re-export from the auth module
-import { useAuth, AuthProvider, UserRole } from './auth/index';
-import type { User, AuthContextProps, Role } from './auth/types';
+import { AuthProvider, useAuth as useAuthOriginal } from './auth/AuthContext';
 
-export { useAuth, AuthProvider, UserRole };
-export type { User, AuthContextProps, Role };
+// Re-export the hook and the provider from AuthContext
+export const useAuth = useAuthOriginal;
+export { AuthProvider };
+
+// Re-export the types to maintain compatibility
+export type { User, AuthContextProps, Role } from './auth/types';
+export { UserRole } from './auth/types';

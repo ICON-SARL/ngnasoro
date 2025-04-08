@@ -1,8 +1,9 @@
 
 // Re-export from the new location to maintain backward compatibility
-import { AuthProvider, useAuth, UserRole } from './auth/index';
-import type { User, AuthContextProps, Role } from './auth/types';
+import { useAuth as useAuthOriginal } from './auth/AuthContext';
 
-// Re-export everything
-export { useAuth, AuthProvider, UserRole };
-export type { User, AuthContextProps, Role };
+// Re-export the hook with the same name
+export const useAuth = useAuthOriginal;
+
+// Re-export types to maintain backward compatibility
+export type { User, AuthContextProps, Role } from './auth/types';

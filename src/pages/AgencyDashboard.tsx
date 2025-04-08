@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AgencyHeader } from '@/components/AgencyHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,22 +17,12 @@ import { Loader2, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import AdminLogout from '@/components/admin/shared/AdminLogout';
 
 const AgencyDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isInitializing, setIsInitializing] = useState(false);
   const { activeSfdId } = useAuth();
   const { toast } = useToast();
-  const { user } = useAuth();
 
   const initializeDashboardData = async () => {
     if (!activeSfdId) return;
@@ -79,55 +70,19 @@ const AgencyDashboard = () => {
             <p className="text-muted-foreground">Gestion de votre SFD et de ses services</p>
           </div>
           
-          <div className="flex items-center gap-4">
-            <Button 
-              onClick={initializeDashboardData}
-              disabled={isInitializing}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              {isInitializing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              {isInitializing ? 'Initialisation...' : 'Initialiser les données'}
-            </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white">
-                    {user?.full_name?.charAt(0) || "U"}
-                  </div>
-                  <span className="hidden md:inline">{user?.full_name || "SFD User"}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>
-                  <div className="text-sm font-medium">{user?.full_name || "SFD User"}</div>
-                  <div className="text-xs text-muted-foreground">{user?.email || "sfd@example.com"}</div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <span className="flex items-center justify-between w-full">
-                    Tableau de bord
-                  </span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <span className="flex items-center justify-between w-full">
-                    Demandes de subvention
-                  </span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-500">
-                  <AdminLogout variant="link" size="sm" className="p-0 h-auto hover:bg-transparent text-red-500">
-                    Déconnexion
-                  </AdminLogout>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <Button 
+            onClick={initializeDashboardData}
+            disabled={isInitializing}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            {isInitializing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            {isInitializing ? 'Initialisation...' : 'Initialiser les données'}
+          </Button>
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">

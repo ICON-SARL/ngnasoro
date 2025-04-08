@@ -12,44 +12,15 @@ import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
 import KycVerificationSection from './KycVerificationSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
-import { useToast } from '@/hooks/use-toast';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('accounts');
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { sfdData, activeSfdId, switchActiveSfd } = useSfdDataAccess();
-  const { toast } = useToast();
 
   const handleGoBack = () => {
     navigate('/mobile-flow/main');
-  };
-
-  const handleLogout = async () => {
-    try {
-      const result = await signOut();
-      if (!result.success) {
-        console.error('Error during logout:', result.error);
-        toast({
-          title: "Erreur de déconnexion",
-          description: result.error || "Une erreur est survenue lors de la déconnexion",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Déconnexion réussie",
-          description: "Vous avez été déconnecté avec succès",
-        });
-        window.location.replace('/auth');
-      }
-    } catch (error) {
-      console.error('Unexpected error during logout:', error);
-      toast({
-        title: "Erreur de déconnexion",
-        description: "Une erreur inattendue est survenue",
-        variant: "destructive",
-      });
-    }
   };
 
   return (
@@ -89,7 +60,7 @@ const ProfilePage = () => {
         <TabsContent value="security" className="px-4">
           <SecuritySection />
           <NotificationsSection />
-          <AdvancedSettingsSection onLogout={handleLogout} />
+          <AdvancedSettingsSection onLogout={signOut} />
         </TabsContent>
         
         <TabsContent value="profile" className="px-4">
