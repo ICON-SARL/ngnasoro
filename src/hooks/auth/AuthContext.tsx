@@ -115,6 +115,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (newSession?.user) {
         const mappedUser = createUserFromSupabaseUser(newSession.user);
         setUser(mappedUser);
+        
+        // Log additional user data to troubleshoot role issues
+        console.log("User authenticated with metadata:", {
+          email: newSession.user.email,
+          role: newSession.user.app_metadata?.role,
+          metadata: newSession.user.app_metadata,
+          user_metadata: newSession.user.user_metadata
+        });
       } else {
         setUser(null);
       }

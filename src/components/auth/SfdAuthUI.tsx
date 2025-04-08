@@ -29,10 +29,26 @@ const SfdAuthUI = () => {
   
   useEffect(() => {
     if (user && !loading) {
+      console.log("SfdAuthUI: Checking user role for redirection:", user.app_metadata?.role);
+      
+      // First check for role in app_metadata
       if (user.app_metadata?.role === 'sfd_admin') {
+        console.log("SfdAuthUI: Redirecting sfd_admin to /agency-dashboard");
         navigate('/agency-dashboard');
-      } else {
-        // Rediriger les utilisateurs non-SFD vers leur page appropriée
+      } 
+      // Fallback to checking user_metadata if role is not in app_metadata
+      else if (user.user_metadata?.role === 'sfd_admin') {
+        console.log("SfdAuthUI: Redirecting based on user_metadata.role to /agency-dashboard");
+        navigate('/agency-dashboard');
+      }
+      // Check for sfd_id presence as another signal of SFD admin status
+      else if (user.user_metadata?.sfd_id || user.app_metadata?.sfd_id) {
+        console.log("SfdAuthUI: Redirecting based on sfd_id presence to /agency-dashboard");
+        navigate('/agency-dashboard');
+      }
+      // Redirect other users to their appropriate pages
+      else {
+        console.log("SfdAuthUI: User is not an SFD admin, redirecting elsewhere");
         if (user.app_metadata?.role === 'admin') {
           navigate('/admin/auth');
         } else {

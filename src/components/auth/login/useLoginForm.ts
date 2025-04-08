@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -103,10 +102,14 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
       
       toast({
         title: "Connexion réussie",
-        description: "Vous êtes maintenant connecté.",
+        description: isSfdAdmin ? "Vous êtes maintenant connecté en tant qu'administrateur SFD." : "Vous êtes maintenant connecté.",
       });
       
-      // No need to navigate here, the AuthProvider will handle that based on user role
+      // For SFD admin mode, explicitly redirect to agency dashboard to avoid redirection issues
+      if (isSfdAdmin) {
+        navigate('/agency-dashboard');
+      }
+      // For other users, let the AuthProvider handle redirection
       
     } catch (error: any) {
       console.error("Login error:", error);
