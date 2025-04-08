@@ -39,6 +39,18 @@ interface UseSubsidyRequestsOptions {
   sfdId?: string;
 }
 
+// Interface pour les données de création d'une demande de subvention
+export interface CreateSubsidyRequestData {
+  sfd_id: string;
+  amount: number;
+  purpose: string;
+  justification?: string;
+  supporting_documents?: string[];
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  region?: string;
+  expected_impact?: string;
+}
+
 export function useSubsidyRequests(options: UseSubsidyRequestsOptions = {}) {
   const { activeSfdId } = useAuth();
   const sfdId = options.sfdId || activeSfdId;
@@ -113,12 +125,20 @@ export function useSubsidyRequests(options: UseSubsidyRequestsOptions = {}) {
     return data;
   };
 
-  // Create subsidy request mutation
+  // Create subsidy request mutation - using the new interface
   const createSubsidyRequest = useMutation({
-    mutationFn: async (request: Omit<SubsidyRequest, 'id' | 'created_at' | 'alert_triggered'>) => {
+    mutationFn: async (requestData: CreateSubsidyRequestData) => {
+      // Get current user id for requested_by field
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
         .from('subsidy_requests')
-        .insert(request)
+        .insert({
+          ...requestData,
+          requested_by: user.id,
+          status: 'pending' // Set default status
+        })
         .select()
         .single();
       

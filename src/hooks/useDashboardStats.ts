@@ -111,7 +111,14 @@ export const useDashboardStats = () => {
           subsidyRequests: {
             total: totalSubsidyRequests || 0,
             pending: pendingSubsidyRequests || 0
-          }
+          },
+          activeSfds: 0,
+          newSfdsThisMonth: 0,
+          admins: 0,
+          newAdminsThisMonth: 0,
+          totalUsers: 0,
+          newUsersThisMonth: 0,
+          newSubsidiesThisMonth: 0
         });
         
         setIsLoading(false);
