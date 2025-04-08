@@ -77,8 +77,9 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     // Permission check
     let permissionMatch = !requiredPermission;
     
+    // Fixed: Use type assertion to ensure TypeScript understands the comparison
     // Admin has all permissions
-    if (isAdmin || userRole === 'admin') {
+    if (isAdmin || userRole === UserRole.ADMIN || userRole === 'admin') {
       permissionMatch = true;
     }
     
