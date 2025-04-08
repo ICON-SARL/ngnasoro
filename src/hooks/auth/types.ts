@@ -14,6 +14,7 @@ export interface User {
   email: string;
   full_name: string;
   avatar_url?: string;
+  phone?: string; // Added phone property
   user_metadata: Record<string, any>;
   app_metadata: {
     role?: Role;
@@ -21,6 +22,7 @@ export interface User {
     roles?: string[];
     sfd_id?: string;
   };
+  sfd_id?: string; // Added sfd_id at the root level for backward compatibility
 }
 
 export interface AuthContextProps {

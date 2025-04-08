@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, AuthContextProps, Role } from './types';
 
+// Create the context with a default value that matches the AuthContextProps interface
 const AuthContext = createContext<AuthContextProps | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -35,13 +36,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: data.session.user.email || '',
             full_name: data.session.user.user_metadata?.full_name || '',
             avatar_url: data.session.user.user_metadata?.avatar_url,
+            phone: data.session.user.user_metadata?.phone || '',
             user_metadata: data.session.user.user_metadata || {},
             app_metadata: {
               role: data.session.user.app_metadata?.role as Role,
               role_assigned: data.session.user.app_metadata?.role_assigned,
               roles: data.session.user.app_metadata?.roles,
               sfd_id: data.session.user.app_metadata?.sfd_id
-            }
+            },
+            sfd_id: data.session.user.app_metadata?.sfd_id
           };
           
           setUser(userData);
@@ -87,13 +90,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: session.user.email || '',
           full_name: session.user.user_metadata?.full_name || '',
           avatar_url: session.user.user_metadata?.avatar_url,
+          phone: session.user.user_metadata?.phone || '',
           user_metadata: session.user.user_metadata || {},
           app_metadata: {
             role: session.user.app_metadata?.role as Role,
             role_assigned: session.user.app_metadata?.role_assigned,
             roles: session.user.app_metadata?.roles,
             sfd_id: session.user.app_metadata?.sfd_id
-          }
+          },
+          sfd_id: session.user.app_metadata?.sfd_id
         };
         
         setUser(userData);
@@ -177,13 +182,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: data.session.user.email || '',
           full_name: data.session.user.user_metadata?.full_name || '',
           avatar_url: data.session.user.user_metadata?.avatar_url,
+          phone: data.session.user.user_metadata?.phone || '',
           user_metadata: data.session.user.user_metadata || {},
           app_metadata: {
             role: data.session.user.app_metadata?.role as Role,
             role_assigned: data.session.user.app_metadata?.role_assigned,
             roles: data.session.user.app_metadata?.roles,
             sfd_id: data.session.user.app_metadata?.sfd_id
-          }
+          },
+          sfd_id: data.session.user.app_metadata?.sfd_id
         });
       } else {
         setUser(null);
@@ -198,26 +205,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // In a real app, we would save this preference and implement biometric authentication
   };
 
+  // Create the context value object with all the required properties
+  const authContextValue: AuthContextProps = {
+    user,
+    setUser,
+    session,
+    loading,
+    isLoading,
+    isLoggedIn,
+    signIn,
+    signUp,
+    signOut,
+    activeSfdId,
+    setActiveSfdId,
+    isAdmin,
+    isSfdAdmin,
+    userRole,
+    biometricEnabled,
+    toggleBiometricAuth,
+    refreshSession
+  };
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      setUser,
-      session,
-      loading,
-      isLoading,
-      isLoggedIn,
-      signIn,
-      signUp,
-      signOut,
-      activeSfdId,
-      setActiveSfdId,
-      isAdmin,
-      isSfdAdmin,
-      userRole,
-      biometricEnabled,
-      toggleBiometricAuth,
-      refreshSession
-    }}>
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   );
