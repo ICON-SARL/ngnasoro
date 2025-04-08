@@ -225,8 +225,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       console.log('Attempting to sign out user');
       
-      // Clear any local storage items first
+      // Clear all local storage items
       localStorage.removeItem('activeSfdId');
+      localStorage.removeItem('adminLastSeen');
+      localStorage.removeItem('lastRoute');
+      localStorage.removeItem('userPreferences');
       
       const { error } = await supabase.auth.signOut();
       

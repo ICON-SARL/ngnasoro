@@ -3,7 +3,7 @@ import React from 'react';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/auth/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AdminLogoutProps {
   variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link';
@@ -39,7 +39,7 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Redirect is handled in the signOut method
+      // Note: Redirection is handled in the signOut method in AuthContext
     } catch (error: any) {
       console.error('Logout error:', error);
       toast({
