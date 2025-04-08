@@ -106,11 +106,10 @@ export const useRegisterForm = () => {
         phone: data.phoneNumber || undefined
       };
       
-      // Register the user - fixing the argument count issue
-      // We're passing only the data object as expected by the API
+      // Register the user with the correct object format
       await signUp({
-        email: data.email, 
-        password: data.password, 
+        email: data.email,
+        password: data.password,
         metadata
       });
       

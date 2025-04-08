@@ -13,13 +13,14 @@ import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
 import KycVerificationSection from './KycVerificationSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
-import { SignOutResult } from '@/hooks/auth/types';
+import { useToast } from '@/hooks/use-toast';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('accounts');
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { sfdData, activeSfdId, switchActiveSfd } = useSfdDataAccess();
+  const { toast } = useToast();
 
   const handleGoBack = () => {
     navigate('/mobile-flow/main');
@@ -27,11 +28,32 @@ const ProfilePage = () => {
 
   // Create a wrapper function to adapt the signOut function to the expected void return type
   const handleLogout = async () => {
-    const result = await signOut();
-    if (!result.success) {
-      console.error('Error during logout:', result.error);
+    try {
+      const result = await signOut();
+      if (!result.success) {
+        console.error('Error during logout:', result.error);
+        toast({
+          title: "Erreur de déconnexion",
+          description: result.error || "Une erreur est survenue lors de la déconnexion",
+          variant: "destructive",
+        });
+      } else {
+        // Successful logout
+        toast({
+          title: "Déconnexion réussie",
+          description: "Vous avez été déconnecté avec succès",
+        });
+        // Navigate to auth page
+        window.location.replace('/auth');
+      }
+    } catch (error) {
+      console.error('Unexpected error during logout:', error);
+      toast({
+        title: "Erreur de déconnexion",
+        description: "Une erreur inattendue est survenue",
+        variant: "destructive",
+      });
     }
-    return;
   };
 
   return (
