@@ -17,7 +17,7 @@ interface AddSfdAdminDialogProps {
     notify: boolean;
   }) => void;
   isLoading?: boolean;
-  error?: string | null;
+  error: string | null;
 }
 
 export function AddSfdAdminDialog({

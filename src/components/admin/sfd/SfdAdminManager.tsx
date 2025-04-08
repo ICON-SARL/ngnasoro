@@ -1,11 +1,12 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useSfdAdminManagement } from '@/hooks/useSfdAdminManagement';
+import { useSfdAdminsList } from '@/hooks/sfd-admin/useSfdAdminsList';
 import { AddSfdAdminDialog } from '@/components/admin/sfd/add-admin-dialog';
 import { EditSfdAdminDialog } from '@/components/admin/sfd/EditSfdAdminDialog';
-import { SfdAdmin } from '@/components/admin/hooks/sfd-admin/types';
-import { useSfdAdminsList } from '@/components/admin/hooks/sfd-admin';
+import { SfdAdmin } from '@/hooks/sfd-admin/types';
 import { Plus, Loader2, Pencil, Trash2, User } from 'lucide-react';
 import { 
   Table, 
@@ -194,7 +195,7 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
           sfdName={sfdName}
           onAddAdmin={handleAddAdmin}
           isLoading={isLoading}
-          error={error}
+          error={error ? (typeof error === 'string' ? error : error.message) : null}
         />
         
         <EditSfdAdminDialog

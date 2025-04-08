@@ -141,7 +141,7 @@ export function SfdManagementContainer() {
           sfdName={selectedSfdForAdmin.name}
           onAddAdmin={handleSubmitAddAdmin}
           isLoading={isLoadingAdmin}
-          error={adminError}
+          error={adminError ? (typeof adminError === 'string' ? adminError : adminError.message) : null}
         />
       )}
     </div>
