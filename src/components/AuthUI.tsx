@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -15,13 +14,12 @@ import { useToast } from '@/hooks/use-toast';
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
   const [authMode, setAuthMode] = useState<'default' | 'admin' | 'sfd_admin'>('default');
-  const { user, userRole, loading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
   const { toast } = useToast();
   
-  // Handle hash in URL for OAuth flows
   useEffect(() => {
     const hash = location.hash;
     if (hash && hash.includes('access_token')) {
@@ -35,17 +33,13 @@ const AuthUI = () => {
     }
   }, [location, navigate]);
   
-  // Redirect based on authentication state
   useEffect(() => {
-    // Only redirect if not loading and user is authenticated
     if (user && !loading) {
       console.log('Authenticated user:', user);
-      console.log('User role:', userRole);
+      console.log('User role:', user.role);
       
-      // Redirection based on user's role
-      if (userRole === UserRole.SUPER_ADMIN || user.app_metadata?.role === 'admin') {
+      if (user.role === UserRole.SUPER_ADMIN || user?.app_metadata?.role === 'admin') {
         if (location.pathname !== '/admin/auth' && !location.pathname.includes('admin')) {
-          // If regular auth page is accessed by admin, show a message
           toast({
             title: "Redirection",
             description: "Les administrateurs doivent utiliser l'interface d'administration.",
@@ -53,15 +47,14 @@ const AuthUI = () => {
           });
         }
         navigate('/super-admin-dashboard');
-      } else if (userRole === UserRole.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {
+      } else if (user.role === UserRole.SFD_ADMIN || user?.app_metadata?.role === 'sfd_admin') {
         navigate('/agency-dashboard');
       } else {
         navigate('/mobile-flow');
       }
     }
-  }, [user, userRole, loading, navigate, location.pathname, toast]);
+  }, [user, loading, navigate, location.pathname, toast]);
 
-  // Update tab based on current route
   useEffect(() => {
     if (location.pathname.includes('register')) {
       setActiveTab('register');
@@ -69,7 +62,6 @@ const AuthUI = () => {
       setActiveTab('login');
     }
     
-    // Detect admin mode from URL
     if (location.pathname.includes('admin/auth') || location.search.includes('admin=true')) {
       setAuthMode('admin');
     } else if (location.pathname.includes('sfd/auth') || location.search.includes('sfd_admin=true')) {
@@ -79,7 +71,6 @@ const AuthUI = () => {
     }
   }, [location.pathname, location.search]);
 
-  // Show success screen after successful OAuth login
   if (authSuccess) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
@@ -94,7 +85,6 @@ const AuthUI = () => {
     );
   }
 
-  // Show loading screen while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
@@ -109,7 +99,6 @@ const AuthUI = () => {
     );
   }
 
-  // Show auth UI when not authenticated and not loading
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex flex-col items-center justify-center p-4 relative">
       <div className="absolute top-4 right-4">

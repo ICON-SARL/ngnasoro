@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,7 @@ import { formatCurrencyAmount } from '@/utils/transactionUtils';
 
 const FundsManagementPage = () => {
   const navigate = useNavigate();
-  const { user, activeSfdId, setActiveSfdId } = useAuth();
+  const { user, activeSfdId, setActiveSfdId } = useAuth(); // Now this property exists
   const { toast } = useToast();
   const [activeView, setActiveView] = useState<'main' | 'withdraw' | 'deposit'>('main');
   const [totalBalance, setTotalBalance] = useState<number>(0);

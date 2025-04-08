@@ -13,7 +13,11 @@ export interface User extends SupabaseUser {
   avatar_url?: string;
   sfd_id?: string;
   email?: string;
+  aud?: string;
+  created_at?: string;
 }
+
+export type Role = UserRole;
 
 export interface AuthContextProps {
   user: User | null;
@@ -22,10 +26,12 @@ export interface AuthContextProps {
   isAdmin: boolean;
   isSfdAdmin: boolean;
   isAuthenticated: boolean;
+  userRole?: UserRole; // Added missing property
   activeSfdId?: string;
+  setActiveSfdId: (sfdId: string) => void; // Added missing property
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp?: (email: string, password: string, metadata?: any) => Promise<{ error: any }>;
-  signOut: () => Promise<{ error: any }>;
+  signOut: () => Promise<void>; // Changed return type to match usage
   refreshSession: () => Promise<void>;
   biometricEnabled?: boolean;
   toggleBiometricAuth?: (enable: boolean) => Promise<void>;

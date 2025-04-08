@@ -3,6 +3,7 @@ import { User } from './types';
 
 export const createUserFromSupabaseUser = (supabaseUser: any): User => {
   return {
+    ...supabaseUser, // Include all original properties
     id: supabaseUser.id,
     email: supabaseUser.email || '',
     full_name: supabaseUser.user_metadata?.full_name || '',
@@ -11,6 +12,8 @@ export const createUserFromSupabaseUser = (supabaseUser: any): User => {
     sfd_id: supabaseUser.user_metadata?.sfd_id,
     user_metadata: supabaseUser.user_metadata || {},
     app_metadata: supabaseUser.app_metadata || {},
+    aud: supabaseUser.aud || '',
+    created_at: supabaseUser.created_at || ''
   };
 };
 

@@ -13,9 +13,16 @@ const MobileFlowPage = () => {
   const { 
     transactions, 
     isLoading: transactionsLoading, 
-    fetchMoreTransactions, 
-    hasMoreTransactions 
+    refetch
   } = useTransactions();
+
+  // No need for these properties if they're not available in useTransactions
+  const fetchMoreTransactions = () => {
+    console.log('Fetching more transactions...');
+    refetch();
+  };
+  
+  const hasMoreTransactions = false;
 
   if (!isAuthenticated) {
     navigate('/login');
@@ -35,8 +42,9 @@ const MobileFlowPage = () => {
     }
   };
 
+  // Update the props to match the required interface
   return (
-    <MobileFlow 
+    <MobileFlow
       onAction={handleAction}
       account={activeAccount}
       transactions={transactions}

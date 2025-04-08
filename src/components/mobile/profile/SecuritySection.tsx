@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +33,9 @@ const SecuritySection = () => {
       }
       
       // Disabling biometrics directly
-      await toggleBiometricAuth();
+      if (toggleBiometricAuth) {
+        await toggleBiometricAuth(false); // Pass the parameter
+      }
       
       toast({
         title: "Biométrie désactivée",
@@ -53,7 +56,9 @@ const SecuritySection = () => {
     setShowBiometricDialog(false);
     
     try {
-      await toggleBiometricAuth();
+      if (toggleBiometricAuth) {
+        await toggleBiometricAuth(true); // Pass the parameter
+      }
       
       toast({
         title: "Biométrie activée",

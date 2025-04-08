@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export const MultiSFDAccounts = () => {
   const { sfdAccounts, activeSfdAccount, isLoading, makeLoanPayment } = useSfdAccounts();
-  const { activeSfdId, setActiveSfdId } = useAuth();
+  const { activeSfdId, setActiveSfdId } = useAuth(); // Now this property exists
   const { toast } = useToast();
   const [switchDialogOpen, setSwitchDialogOpen] = useState(false);
   const [switchToSFD, setSwitchToSFD] = useState<string | null>(null);
@@ -201,98 +200,4 @@ export const MultiSFDAccounts = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">Reste à payer</span>
-                          <span className="font-medium">{loan.remainingAmount.toLocaleString()} {activeSfdAccount.currency}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Prochaine échéance</span>
-                          <span className={loan.isLate ? "text-red-600 font-medium" : ""}>{loan.nextDueDate}</span>
-                        </div>
-                      </div>
-                      <div className="mt-4">
-                        <Button 
-                          className="w-full"
-                          onClick={() => makeLoanPayment.mutate({ 
-                            loanId: loan.id, 
-                            amount: loan.remainingAmount / 4 // Make a quarter payment
-                          })}
-                        >
-                          Effectuer un paiement
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {(!activeSfdAccount.loans || activeSfdAccount.loans.length === 0) && (
-                    <div className="text-center p-6 border rounded-lg">
-                      <Database className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                      <p className="text-gray-500">Aucun prêt actif pour ce compte</p>
-                      <Button variant="outline" className="mt-4">
-                        Demander un prêt
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="transactions">
-                <div className="space-y-2">
-                  {[
-                    {
-                      id: 'tx1',
-                      description: 'Dépôt espèces',
-                      date: '2023-04-28',
-                      amount: 50000,
-                      type: 'credit'
-                    },
-                    {
-                      id: 'tx2',
-                      description: 'Paiement mensuel prêt',
-                      date: '2023-04-25',
-                      amount: 25000,
-                      type: 'debit'
-                    }
-                  ].map(tx => (
-                    <div key={tx.id} className="flex justify-between items-center p-3 border-b">
-                      <div>
-                        <p className="font-medium">{tx.description}</p>
-                        <p className="text-sm text-muted-foreground">{tx.date}</p>
-                      </div>
-                      <span className={tx.type === 'credit' ? 'text-green-600' : 'text-red-600'}>
-                        {tx.type === 'credit' ? '+' : '-'}{tx.amount.toLocaleString()} {activeSfdAccount.currency}
-                      </span>
-                    </div>
-                  ))}
-                  
-                  <div className="pt-4 text-center">
-                    <Button variant="outline">Voir l'historique complet</Button>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      )}
-      
-      <Card className="bg-amber-50 border-amber-200">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-amber-800 flex items-center text-base">
-            <Bell className="h-4 w-4 mr-2" />
-            Notifications en temps réel
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-amber-700">
-            Les notifications push sont activées pour tous vos comptes SFD. Vous serez alerté instantanément pour tout mouvement de fonds.
-          </p>
-          <div className="flex justify-end mt-2">
-            <Button variant="outline" className="text-amber-800 border-amber-300 bg-amber-100 hover:bg-amber-200">
-              Gérer les notifications
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
-export default MultiSFDAccounts;
+                          <span className="font-medium">{loan.remainingAmount.toLocaleString()} {activeSfdAccount.currency}</
