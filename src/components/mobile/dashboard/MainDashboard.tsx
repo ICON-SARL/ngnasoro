@@ -25,6 +25,16 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 }) => {
   const { dashboardData, isLoading: dashboardLoading, refreshDashboardData } = useMobileDashboard();
   
+  // Safe access to transactions data with fallback to empty array
+  const displayTransactions = (dashboardData?.transactions || transactions || []).map(tx => ({
+    id: tx.id,
+    name: tx.name,
+    type: tx.type,
+    amount: tx.amount.toString(),
+    date: new Date(tx.date).toLocaleDateString(),
+    avatar: tx.avatar_url
+  }));
+  
   return (
     <div className="space-y-4 pb-20">
       <div className="bg-gradient-to-b from-[#0D6A51] to-[#0D6A51]/90 text-white p-4 rounded-b-3xl shadow-md relative">
@@ -41,14 +51,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
       </div>
       
       <TransactionList 
-        transactions={(dashboardData?.transactions || transactions).map(tx => ({
-          id: tx.id,
-          name: tx.name,
-          type: tx.type,
-          amount: tx.amount.toString(),
-          date: new Date(tx.date).toLocaleDateString(),
-          avatar: tx.avatar_url
-        }))}
+        transactions={displayTransactions}
         isLoading={transactionsLoading || dashboardLoading}
         onViewAll={() => onAction('Loans')}
         title="Transactions Récentes"
