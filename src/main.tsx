@@ -7,7 +7,7 @@ import App from './App';
 import './index.css';
 import { Toaster } from "@/components/ui/toaster";
 import api from './api';
-import { AuthProvider } from '@/hooks/auth/AuthContext'; // Import AuthProvider from the correct path
+import { AuthProvider } from '@/hooks/auth/index'; // Import from the correct path
 
 // Create a worker with API handlers
 if (typeof window !== 'undefined') {

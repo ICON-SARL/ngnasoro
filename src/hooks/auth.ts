@@ -1,5 +1,9 @@
 
 // Re-export from the new location to maintain backward compatibility
-export { useAuth, AuthProvider } from './auth';
-export type { User, AuthContextProps, Role } from './auth';
-export { UserRole } from './auth';
+import { AuthProvider, useAuth } from './auth/index';
+import { User, AuthContextProps, Role } from './auth/types';
+import { UserRole } from './auth/types';
+
+// Re-export everything
+export { useAuth, AuthProvider, UserRole };
+export type { User, AuthContextProps, Role };
