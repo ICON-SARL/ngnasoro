@@ -1,61 +1,33 @@
 
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/auth';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/auth/AuthContext';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 interface ProtectedRouteProps {
-  component: React.ComponentType<any>;
-  requireAdmin?: boolean;
-  requireSfdAdmin?: boolean;
-  [x: string]: any;
+  component: React.ComponentType;
+  redirectPath?: string;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   component: Component, 
-  requireAdmin = false,
-  requireSfdAdmin = false,
-  ...rest 
+  redirectPath = '/auth' 
 }) => {
-  const { user, loading, isAdmin, isSfdAdmin } = useAuth();
-  const location = useLocation();
-  
+  const { user, loading } = useAuth();
+
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Chargement...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   if (!user) {
-    // Redirect to the appropriate authentication page based on requirements
-    if (requireAdmin) {
-      return <Navigate to="/admin/auth" state={{ from: location }} replace />;
-    } else if (requireSfdAdmin) {
-      return <Navigate to="/sfd/auth" state={{ from: location }} replace />;
-    } else {
-      return <Navigate to="/auth" state={{ from: location }} replace />;
-    }
-  }
-  
-  const userRole = user.app_metadata?.role;
-  
-  // Check role-based permissions
-  if (requireAdmin && userRole !== 'admin') {
-    return <Navigate to="/admin/auth" state={{ from: location, error: 'access_denied' }} replace />;
-  }
-  
-  if (requireSfdAdmin && userRole !== 'sfd_admin') {
-    return <Navigate to="/sfd/auth" state={{ from: location, error: 'access_denied' }} replace />;
+    return <Navigate to={redirectPath} replace />;
   }
 
-  // If the user is an SFD admin and trying to access client routes, redirect to SFD dashboard
-  if (!requireSfdAdmin && !requireAdmin && userRole === 'sfd_admin' && location.pathname.includes('/mobile-flow')) {
-    return <Navigate to="/agency-dashboard" replace />;
-  }
-
-  // If the user is an admin and trying to access client routes, redirect to admin dashboard
-  if (!requireAdmin && !requireSfdAdmin && userRole === 'admin' && location.pathname.includes('/mobile-flow')) {
-    return <Navigate to="/super-admin-dashboard" replace />;
-  }
-
-  return <Component {...rest} />;
+  return <Component />;
 };
 
 export default ProtectedRoute;

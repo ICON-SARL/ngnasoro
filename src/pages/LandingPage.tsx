@@ -11,6 +11,10 @@ import CtaSection from '@/components/landing/CtaSection';
 import { Footer } from '@/components';
 
 const LandingPage = () => {
+  const navigate = useNavigate();
+  
+  // Remove any unnecessary state or effects that might cause loops
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f8fafc] to-white dark:from-gray-950 dark:to-gray-900">
       <Header />
@@ -20,7 +24,7 @@ const LandingPage = () => {
       <PartnersSection />
       <TestimonialsSection />
       <CtaSection />
-      <Footer />
+      {/* Remove Footer from here as it's already included in AppWithFooter */}
     </div>
   );
 };

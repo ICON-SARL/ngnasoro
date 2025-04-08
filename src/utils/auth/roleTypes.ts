@@ -1,37 +1,51 @@
 
 export enum UserRole {
-  SUPER_ADMIN = 'admin',
-  ADMIN = 'admin',
+  USER = 'user',
   SFD_ADMIN = 'sfd_admin',
-  CLIENT = 'client', // Added CLIENT role
-  USER = 'user'
+  SUPER_ADMIN = 'super_admin'
 }
 
-// Define available permissions in the system
 export const PERMISSIONS = {
-  MANAGE_USERS: 'manage_users',
-  MANAGE_SFDS: 'manage_sfds',
-  MANAGE_CLIENTS: 'manage_clients',
-  MANAGE_LOANS: 'manage_loans',
-  MANAGE_SUBSIDIES: 'manage_subsidies',
-  VIEW_REPORTS: 'view_reports',
-  EXPORT_DATA: 'export_data',
-  APPROVE_CREDIT: 'approve_credit',
-  ACCESS_ADMIN_DASHBOARD: 'access_admin_dashboard',
+  // General permissions
   ACCESS_SFD_DASHBOARD: 'access_sfd_dashboard',
+  
+  // Client management
+  MANAGE_CLIENTS: 'manage_clients',
+  VIEW_CLIENT_DETAILS: 'view_client_details',
+  
+  // Loan management
+  MANAGE_LOANS: 'manage_loans',
+  APPROVE_CREDIT: 'approve_credit',
+  
+  // Admin management
+  MANAGE_ADMINS: 'manage_admins',
+  
+  // Data management
+  EXPORT_DATA: 'export_data',
+  IMPORT_DATA: 'import_data',
+  
+  // Settings
+  MANAGE_SETTINGS: 'manage_settings'
 };
 
-// Define default permissions for each role
-export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
-  // Since SUPER_ADMIN and ADMIN have the same enum value ('admin'),
-  // we only need to define it once
-  [UserRole.ADMIN]: Object.values(PERMISSIONS),
-  [UserRole.SFD_ADMIN]: [
-    PERMISSIONS.MANAGE_CLIENTS,
-    PERMISSIONS.MANAGE_LOANS,
-    PERMISSIONS.ACCESS_SFD_DASHBOARD,
-    PERMISSIONS.MANAGE_SUBSIDIES,
+export const ROLE_PERMISSIONS = {
+  [UserRole.USER]: [
+    // Basic user permissions
   ],
-  [UserRole.CLIENT]: [],
-  [UserRole.USER]: [],
+  [UserRole.SFD_ADMIN]: [
+    PERMISSIONS.ACCESS_SFD_DASHBOARD,
+    PERMISSIONS.MANAGE_CLIENTS,
+    PERMISSIONS.VIEW_CLIENT_DETAILS,
+    PERMISSIONS.MANAGE_LOANS,
+    PERMISSIONS.EXPORT_DATA
+  ],
+  [UserRole.SUPER_ADMIN]: [
+    // Super admins have all permissions
+    ...Object.values(PERMISSIONS)
+  ]
+};
+
+export const hasPermission = (userRole: UserRole, permission: string): boolean => {
+  const permissions = ROLE_PERMISSIONS[userRole] || [];
+  return permissions.includes(permission);
 };

@@ -326,6 +326,233 @@ export type Database = {
           },
         ]
       }
+      meref_loan_requests: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          client_id: string
+          created_at: string
+          created_by: string
+          documents: Json | null
+          duration_months: number
+          guarantees: string | null
+          id: string
+          loan_id: string | null
+          meref_decided_at: string | null
+          meref_feedback: string | null
+          meref_reference: string | null
+          meref_status: string | null
+          meref_submitted_at: string | null
+          monthly_income: number | null
+          purpose: string
+          rejection_reason: string | null
+          risk_score: number | null
+          sfd_id: string
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          client_id: string
+          created_at?: string
+          created_by: string
+          documents?: Json | null
+          duration_months: number
+          guarantees?: string | null
+          id?: string
+          loan_id?: string | null
+          meref_decided_at?: string | null
+          meref_feedback?: string | null
+          meref_reference?: string | null
+          meref_status?: string | null
+          meref_submitted_at?: string | null
+          monthly_income?: number | null
+          purpose: string
+          rejection_reason?: string | null
+          risk_score?: number | null
+          sfd_id: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          documents?: Json | null
+          duration_months?: number
+          guarantees?: string | null
+          id?: string
+          loan_id?: string | null
+          meref_decided_at?: string | null
+          meref_feedback?: string | null
+          meref_reference?: string | null
+          meref_status?: string | null
+          meref_submitted_at?: string | null
+          monthly_income?: number | null
+          purpose?: string
+          rejection_reason?: string | null
+          risk_score?: number | null
+          sfd_id?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meref_loan_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meref_loan_requests_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_loans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meref_loan_requests_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meref_request_activities: {
+        Row: {
+          activity_type: string
+          description: string
+          details: Json | null
+          id: string
+          performed_at: string
+          performed_by: string | null
+          request_id: string
+        }
+        Insert: {
+          activity_type: string
+          description: string
+          details?: Json | null
+          id?: string
+          performed_at?: string
+          performed_by?: string | null
+          request_id: string
+        }
+        Update: {
+          activity_type?: string
+          description?: string
+          details?: Json | null
+          id?: string
+          performed_at?: string
+          performed_by?: string | null
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meref_request_activities_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meref_request_documents: {
+        Row: {
+          document_type: string
+          document_url: string
+          filename: string
+          id: string
+          request_id: string
+          uploaded_at: string
+          uploaded_by: string
+          verified: boolean | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          document_type: string
+          document_url: string
+          filename: string
+          id?: string
+          request_id: string
+          uploaded_at?: string
+          uploaded_by: string
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          document_type?: string
+          document_url?: string
+          filename?: string
+          id?: string
+          request_id?: string
+          uploaded_at?: string
+          uploaded_by?: string
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meref_request_documents_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meref_settings: {
+        Row: {
+          api_endpoint: string | null
+          api_key: string | null
+          debt_income_ratio_max: number | null
+          id: string
+          max_loan_amount: number | null
+          max_loan_duration: number | null
+          min_credit_score: number | null
+          updated_at: string
+          updated_by: string | null
+          webhook_secret: string | null
+        }
+        Insert: {
+          api_endpoint?: string | null
+          api_key?: string | null
+          debt_income_ratio_max?: number | null
+          id?: string
+          max_loan_amount?: number | null
+          max_loan_duration?: number | null
+          min_credit_score?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          webhook_secret?: string | null
+        }
+        Update: {
+          api_endpoint?: string | null
+          api_key?: string | null
+          debt_income_ratio_max?: number | null
+          id?: string
+          max_loan_amount?: number | null
+          max_loan_duration?: number | null
+          min_credit_score?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          webhook_secret?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
