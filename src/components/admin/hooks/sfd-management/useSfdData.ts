@@ -31,7 +31,7 @@ export function useSfdData() {
     }
   };
   
-  // Utilisation de React Query pour gérer les données
+  // Utilisation de React Query pour gérer les données avec des paramètres plus agressifs
   const {
     data: sfds,
     isLoading,
@@ -43,7 +43,8 @@ export function useSfdData() {
     queryFn: fetchSfds,
     refetchInterval,
     refetchOnWindowFocus: true,
-    staleTime: 0, // Ne jamais considérer les données comme fraîches
+    staleTime: 0, // Toujours considérer les données comme obsolètes pour forcer le refetch
+    cacheTime: 0, // Ne pas mettre en cache du tout
     retry: 2,
     meta: {
       errorMessage: "Impossible de charger la liste des SFDs"
@@ -67,7 +68,7 @@ export function useSfdData() {
     if (refetchInterval) {
       const timer = setTimeout(() => {
         setRefetchInterval(false);
-      }, 10000); // Arrêter après 10 secondes
+      }, 30000); // Continuer le polling pendant 30 secondes
       
       return () => clearTimeout(timer);
     }
@@ -75,9 +76,11 @@ export function useSfdData() {
 
   // Fonction pour forcer un refetch périodique temporaire (utile après des opérations de création)
   const startPolling = () => {
+    console.log("Starting polling for SFDs...");
     setRefetchInterval(1000); // Refetch toutes les 1 seconde (plus fréquent)
     
     // Force an immediate refetch
+    queryClient.removeQueries({ queryKey: ['sfds'] });
     refetch();
   };
 

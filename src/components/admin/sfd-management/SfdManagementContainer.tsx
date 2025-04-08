@@ -10,11 +10,13 @@ import { Sfd, SfdStatus } from '../types/sfd-types';
 import { useSfdAdminManagement } from '@/hooks/useSfdAdminManagement';
 import { AddSfdAdminDialog } from '../sfd/add-admin-dialog';
 import { toast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function SfdManagementContainer() {
   const [showDetailsView, setShowDetailsView] = useState(false);
   const [showAddAdminDialog, setShowAddAdminDialog] = useState(false);
   const [selectedSfdForAdmin, setSelectedSfdForAdmin] = useState<Sfd | null>(null);
+  const queryClient = useQueryClient();
   
   const {
     filteredSfds,
@@ -45,26 +47,34 @@ export function SfdManagementContainer() {
     handleReactivateSfd,
     handleExportPdf,
     handleExportExcel,
-    refetch
+    refetch,
+    startPolling
   } = useSfdManagement();
 
   const { isLoading: isLoadingAdmin, error: adminError, addSfdAdmin } = useSfdAdminManagement();
 
   // Rafraîchir la liste des SFDs au chargement initial et à intervalles réguliers
   useEffect(() => {
-    console.log("Rafraîchissement initial de la liste des SFDs");
+    console.log("Initializing SFD management: forcing initial data refresh");
+    
+    // Supprimer les données en cache pour forcer un refetch frais
+    queryClient.removeQueries({ queryKey: ['sfds'] });
     
     // Refetch immédiat
     refetch();
+    startPolling();
     
-    // Configurer un intervalle de rafraîchissement
+    // Configurer un intervalle de rafraîchissement plus agressif
     const intervalId = setInterval(() => {
-      console.log("Rafraîchissement périodique des SFDs");
+      console.log("Periodic SFD refresh triggered");
+      
+      // Supprimer d'abord les données en cache
+      queryClient.invalidateQueries({ queryKey: ['sfds'] });
       refetch();
-    }, 10000); // Toutes les 10 secondes
+    }, 5000); // Toutes les 5 secondes
     
     return () => clearInterval(intervalId);
-  }, [refetch]);
+  }, [refetch, queryClient, startPolling]);
 
   const handleViewDetails = (sfd: Sfd) => {
     setSelectedSfd(sfd);
@@ -92,6 +102,29 @@ export function SfdManagementContainer() {
 
   const handleStatusFilterChange = (value: string) => {
     setStatusFilter(value as SfdStatus | null);
+  };
+
+  const handleSuccessfulSfdAdd = (formData: any) => {
+    addSfdMutation.mutate(formData, {
+      onSuccess: () => {
+        setShowAddDialog(false);
+        toast({
+          title: 'SFD ajoutée avec succès',
+          description: 'La nouvelle SFD a été ajoutée et apparaîtra dans quelques instants'
+        });
+        console.log("SFD added successfully, starting aggressive polling...");
+        startPolling(); // Start aggressive polling
+        queryClient.invalidateQueries({ queryKey: ['sfds'] });
+        queryClient.refetchQueries({ queryKey: ['sfds'] });
+        
+        // Double-check after a short delay
+        setTimeout(() => {
+          console.log("Performing backup refetch after SFD creation");
+          queryClient.invalidateQueries({ queryKey: ['sfds'] });
+          refetch();
+        }, 2000);
+      }
+    });
   };
 
   if (showDetailsView && selectedSfd) {
@@ -145,7 +178,7 @@ export function SfdManagementContainer() {
         reactivateSfdMutation={reactivateSfdMutation}
         addSfdMutation={addSfdMutation}
         editSfdMutation={editSfdMutation}
-        handleAddSfd={handleAddSfd}
+        handleAddSfd={handleSuccessfulSfdAdd}
         handleEditSfd={handleEditSfd}
       />
 

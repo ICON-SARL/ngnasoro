@@ -34,10 +34,13 @@ export function useAddSfdMutation() {
         console.log("Tentative de création de SFD avec les données:", newSfd);
         console.log("Admin ID utilisé:", user.id);
         
+        // Supprimer tout cache existant avant l'opération
+        queryClient.removeQueries({ queryKey: ['sfds'] });
+        
         const sfdResponse = await edgeFunctionApi.callEdgeFunction('create_sfd', {
           sfd_data: newSfd,
           admin_id: user.id
-        });
+        }, { bypassCache: true });
 
         if (!sfdResponse) {
           console.error("Aucune réponse reçue lors de la création de la SFD");
@@ -77,6 +80,11 @@ export function useAddSfdMutation() {
           }
         }
 
+        // Force un rafraîchissement immédiat des données de SFD
+        console.log("Force immediate cache invalidation after SFD creation");
+        queryClient.invalidateQueries({ queryKey: ['sfds'] });
+        queryClient.refetchQueries({ queryKey: ['sfds'] });
+
         return {
           sfd: sfdResponse,
           hasSubsidy: sfdData.subsidy_balance && sfdData.subsidy_balance > 0
@@ -101,11 +109,15 @@ export function useAddSfdMutation() {
       }
     },
     onSuccess: (data) => {
-      // Invalidate both 'sfds' query and specific SFD query if needed
+      // Clear cache and invalidate queries
+      queryClient.removeQueries({ queryKey: ['sfds'] });
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
       
-      // Force refetch the list immediately to ensure UI is updated
-      queryClient.refetchQueries({ queryKey: ['sfds'], exact: true });
+      // Force refetch immediately
+      setTimeout(() => {
+        console.log("Delayed refetch to ensure server consistency");
+        queryClient.refetchQueries({ queryKey: ['sfds'] });
+      }, 500);
       
       toast({
         title: 'SFD ajoutée',

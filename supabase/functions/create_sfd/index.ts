@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Cache-Control': 'no-cache, no-store, must-revalidate', // Prevent caching
 };
 
 serve(async (req) => {
@@ -88,15 +89,14 @@ serve(async (req) => {
       }
     }
     
-    // Success response with proper headers
+    // Success response with proper headers to prevent caching issues
     return new Response(
       JSON.stringify(sfdData),
       { 
         status: 200, 
         headers: { 
           ...corsHeaders, 
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache, no-store, must-revalidate"
+          "Content-Type": "application/json"
         } 
       }
     );

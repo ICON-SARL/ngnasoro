@@ -10,7 +10,7 @@ export const edgeFunctionApi = {
   /**
    * Call a Supabase Edge Function with improved error handling
    */
-  async callEdgeFunction(functionName: string, payload: any, options = { showToast: true }) {
+  async callEdgeFunction(functionName: string, payload: any, options = { showToast: true, bypassCache: true }) {
     try {
       console.log(`Calling edge function: ${functionName}`, payload);
       
@@ -19,9 +19,19 @@ export const edgeFunctionApi = {
         console.log(`Using mock data for ${functionName} in development mode`);
         return getMockDataForFunction(functionName, payload);
       }
+
+      // Add a random query parameter to bypass cache if needed
+      const bypassCacheParam = options.bypassCache ? { 
+        headers: { 
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      } : {};
       
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: payload,
+        ...bypassCacheParam
       });
       
       if (error) {
