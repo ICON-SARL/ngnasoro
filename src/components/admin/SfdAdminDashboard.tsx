@@ -1,132 +1,293 @@
 
-import React from 'react';
-import { AgencyHeader } from '@/components/AgencyHeader';
-import { SfdDashboardStats } from '@/components/sfd/dashboard';
-import { CreditTrendChart } from '@/components/sfd/analytics';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  BarChart2,
+  CreditCard,
+  Home,
+  LogOut,
+  Menu,
+  Users,
+  Settings,
+  BanknoteIcon,
+  FileCog,
+  Book,
+  BadgeDollarSign,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, FileText, CreditCard } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
+import { Separator } from '@/components/ui/separator';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
-export function SfdAdminDashboard() {
-  const navigate = useNavigate();
-  const { subsidyRequests, isLoading } = useSubsidyRequests({ 
-    status: 'pending',
-    sfdId: undefined // It will use the active SFD ID from auth context
-  });
-  
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <AgencyHeader />
-      
-      <div className="container mx-auto p-4 md:p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Tableau de Bord SFD</h1>
-            <p className="text-muted-foreground">
-              Gérez vos clients, crédits et demandes de subvention
-            </p>
-          </div>
-          
-          <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-1"
-              onClick={() => navigate('/sfd-clients')}
-            >
-              <Users className="h-4 w-4" />
-              Gérer les Clients
-            </Button>
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-1"
-              onClick={() => navigate('/sfd-subsidy-requests')}
-            >
-              <FileText className="h-4 w-4" />
-              Demandes de Subvention
-            </Button>
-            <Button 
-              className="flex items-center gap-1 bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-              onClick={() => navigate('/sfd-loans')}
-            >
-              <CreditCard className="h-4 w-4" />
-              Gérer les Crédits
-            </Button>
-          </div>
-        </div>
-        
-        <SfdDashboardStats />
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          <CreditTrendChart />
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Demandes de Subvention</CardTitle>
-              <CardDescription>
-                Demandes en attente de décision
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <p>Chargement des demandes...</p>
-              ) : subsidyRequests.length === 0 ? (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground mb-4">Aucune demande en attente</p>
-                  <Button 
-                    onClick={() => navigate('/sfd-subsidy-requests?tab=create')}
-                    className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Nouvelle Demande
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {subsidyRequests.slice(0, 5).map(request => (
-                    <div key={request.id} className="border rounded p-3 flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">{request.purpose}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(request.amount)}
-                        </p>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => navigate(`/sfd-subsidy-requests/${request.id}`)}
-                      >
-                        Détails
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  {subsidyRequests.length > 5 && (
-                    <Button 
-                      variant="link" 
-                      className="w-full" 
-                      onClick={() => navigate('/sfd-subsidy-requests')}
-                    >
-                      Voir toutes les demandes ({subsidyRequests.length})
-                    </Button>
-                  )}
-                  
-                  <Button 
-                    className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-                    onClick={() => navigate('/sfd-subsidy-requests?tab=create')}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Nouvelle Demande
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
+interface NavigationLink {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+  section?: string;
 }
 
-export default SfdAdminDashboard;
+export function SfdAdminDashboard() {
+  const { signOut, user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { activeSfdId, availableSfds, switchSfd } = useSfdDataAccess();
+
+  // Fetching SFD details
+  const { data: sfdDetails } = useQuery({
+    queryKey: ['sfd-details', activeSfdId],
+    queryFn: async () => {
+      if (!activeSfdId) return null;
+      
+      const { data, error } = await supabase
+        .from('sfds')
+        .select('name, code, logo_url, status')
+        .eq('id', activeSfdId)
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!activeSfdId
+  });
+
+  // Fetching user profile
+  const { data: userProfile } = useQuery({
+    queryKey: ['user-profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', user.id)
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id
+  });
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  const links: NavigationLink[] = [
+    { 
+      href: '/agency-dashboard', 
+      label: 'Tableau de bord', 
+      icon: <Home className="h-5 w-5" /> 
+    },
+    { 
+      href: '/agency-clients', 
+      label: 'Clients', 
+      icon: <Users className="h-5 w-5" /> 
+    },
+    { 
+      href: '/agency-transactions', 
+      label: 'Transactions', 
+      icon: <CreditCard className="h-5 w-5" /> 
+    },
+    { 
+      href: '/agency-stats', 
+      label: 'Statistiques', 
+      icon: <BarChart2 className="h-5 w-5" /> 
+    },
+    { 
+      href: '/agency-loans', 
+      label: 'Prêts', 
+      icon: <BanknoteIcon className="h-5 w-5" /> 
+    },
+    { 
+      href: '/agency-settings', 
+      label: 'Paramètres', 
+      icon: <Settings className="h-5 w-5" /> 
+    },
+    {
+      section: 'MEREF',
+      href: '/meref-subsidy',
+      label: 'Demandes de Subvention',
+      icon: <BadgeDollarSign className="h-5 w-5" />
+    },
+    {
+      href: '/meref-loan-management',
+      label: 'Prêts MEREF',
+      icon: <FileCog className="h-5 w-5" />
+    },
+  ];
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
+  return (
+    <header className="bg-white border-b sticky top-0 z-40">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        {/* Logo and SFD selector */}
+        <div className="flex items-center space-x-4">
+          <Link to="/agency-dashboard" className="flex items-center space-x-2">
+            <div className="bg-[#0D6A51] p-2 rounded-full">
+              <Book className="h-5 w-5 text-white" />
+            </div>
+            <span className="font-bold text-lg hidden md:inline">
+              {sfdDetails?.name || "SFD Dashboard"}
+            </span>
+          </Link>
+          
+          {availableSfds && availableSfds.length > 1 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="hidden md:flex">
+                  {sfdDetails?.code || "Changer SFD"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {availableSfds.map((sfd) => (
+                  <DropdownMenuItem 
+                    key={sfd.id}
+                    onClick={() => switchSfd(sfd.id)}
+                    className={cn(
+                      "cursor-pointer",
+                      sfd.id === activeSfdId && "bg-primary/10"
+                    )}
+                  >
+                    {sfd.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+        
+        {/* Desktop Navigation */}
+        <nav className="hidden lg:flex items-center space-x-1">
+          {links.map((link) => (
+            <React.Fragment key={link.href}>
+              {link.section && (
+                <span className="text-xs font-semibold text-gray-500 px-3">
+                  {link.section}
+                </span>
+              )}
+              <Link
+                to={link.href}
+                className={cn(
+                  "px-3 py-2 text-sm font-medium rounded-md flex items-center gap-x-2 transition-colors",
+                  isActive(link.href)
+                    ? "bg-[#0D6A51] text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                )}
+              >
+                {link.icon}
+                {link.label}
+              </Link>
+            </React.Fragment>
+          ))}
+        </nav>
+        
+        {/* User menu and mobile toggle */}
+        <div className="flex items-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={userProfile?.avatar_url || ""} />
+                  <AvatarFallback>{userProfile?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Déconnexion</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* Mobile menu button */}
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="lg:hidden ml-2">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[280px] sm:w-[350px]">
+              <SheetHeader>
+                <SheetTitle>Menu</SheetTitle>
+              </SheetHeader>
+              <div className="py-4">
+                {availableSfds && availableSfds.length > 1 && (
+                  <div className="mb-4">
+                    <p className="text-sm font-medium mb-2">Sélectionner SFD:</p>
+                    <div className="space-y-1">
+                      {availableSfds.map((sfd) => (
+                        <Button 
+                          key={sfd.id}
+                          variant={sfd.id === activeSfdId ? "secondary" : "ghost"}
+                          className="w-full justify-start"
+                          onClick={() => {
+                            switchSfd(sfd.id);
+                            setMobileMenuOpen(false);
+                          }}
+                        >
+                          {sfd.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <nav className="space-y-1">
+                  <Separator className="my-4" />
+                  
+                  {links.map((link, index) => (
+                    <React.Fragment key={link.href}>
+                      {link.section && (
+                        <div className="pt-4 pb-1">
+                          <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            {link.section}
+                          </p>
+                        </div>
+                      )}
+                      <Link
+                        to={link.href}
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
+                          isActive(link.href)
+                            ? "bg-[#0D6A51] text-white"
+                            : "text-gray-700 hover:bg-gray-100"
+                        )}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {link.icon}
+                        {link.label}
+                      </Link>
+                    </React.Fragment>
+                  ))}
+                </nav>
+                
+                <Separator className="my-4" />
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center gap-2"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Déconnexion
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    </header>
+  );
+}
