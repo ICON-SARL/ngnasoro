@@ -125,6 +125,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     console.log("AuthContext - Attempting to sign out");
     try {
+      // Clear any local storage items that might persist session data
+      localStorage.removeItem('adminLastSeen');
+      localStorage.removeItem('supabase.auth.token');
+      
+      // Clear any session storage items
+      sessionStorage.clear();
+      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -133,7 +140,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       console.log("AuthContext - Sign out successful");
-      // Clear any client-side state
+      
+      // Clear all client-side state
       setUser(null);
       setSession(null);
       setActiveSfdId(null);

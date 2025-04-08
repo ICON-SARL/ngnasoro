@@ -14,17 +14,22 @@ export const SfdHeader: React.FC = () => {
     try {
       console.log("SfdHeader - Déconnexion initiée");
       
+      // First perform the signOut action
       await signOut();
       
       console.log("SfdHeader - Déconnexion réussie");
       
+      // Show success message
       toast({
         title: "Déconnecté",
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Redirection explicite avec rechargement de page
-      window.location.href = '/auth';
+      // Force a full page reload to clear any remaining state
+      // and guarantee a complete reset of the application
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 100);
       
     } catch (error) {
       console.error("SfdHeader - Erreur lors de la déconnexion:", error);

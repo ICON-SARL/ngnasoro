@@ -24,17 +24,23 @@ export const AgencyHeader = () => {
     try {
       console.log("AgencyHeader - Déconnexion initiée");
       
+      // First perform the signOut action
       await signOut();
       
       console.log("AgencyHeader - Déconnexion réussie");
       
+      // Show success message
       toast({
         title: "Déconnecté",
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Forcer la redirection avec un rechargement de page
-      window.location.href = '/auth';
+      // Force a full page reload to clear any remaining state
+      // and guarantee a complete reset of the application
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 100);
+      
     } catch (error) {
       console.error("AgencyHeader - Erreur lors de la déconnexion:", error);
       toast({
