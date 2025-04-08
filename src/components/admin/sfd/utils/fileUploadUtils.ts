@@ -25,12 +25,10 @@ export async function uploadSfdFiles(
     // Upload logo if present
     if (logoFile) {
       const logoPath = `sfds/logos/${formData.code}-${Date.now()}`;
-      const logoData = await apiClient.uploadFile("logos", logoPath, logoFile);
-      
-      if (logoData) {
-        // Get public URL for the uploaded file
+      try {
+        await apiClient.uploadFile("logos", logoPath, logoFile);
         updatedData.logo_url = apiClient.getFileUrl("logos", logoPath);
-      } else {
+      } catch (error) {
         throw new Error("Échec du téléchargement du logo");
       }
     }
@@ -38,12 +36,10 @@ export async function uploadSfdFiles(
     // Upload legal document if present
     if (documentFile) {
       const docPath = `sfds/documents/${formData.code}-${Date.now()}`;
-      const docData = await apiClient.uploadFile("documents", docPath, documentFile);
-      
-      if (docData) {
-        // Get public URL for the uploaded file
+      try {
+        await apiClient.uploadFile("documents", docPath, documentFile);
         updatedData.legal_document_url = apiClient.getFileUrl("documents", docPath);
-      } else {
+      } catch (error) {
         throw new Error("Échec du téléchargement du document légal");
       }
     }

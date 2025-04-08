@@ -25,11 +25,11 @@ export function useAddSfdMutation() {
         status: sfdData.status || 'active',
         logo_url: sfdData.logo_url || null,
         phone: sfdData.phone || null,
-        legal_document_url: sfdData.legal_document_url || null
+        legal_document_url: sfdData.legal_document_url || null,
+        subsidy_balance: sfdData.subsidy_balance || 0
       };
 
       try {
-        // 1. Création de la SFD avec appel à la fonction edge
         console.log("Tentative de création de SFD avec les données:", newSfd);
         console.log("Admin ID utilisé:", user.id);
         
@@ -37,25 +37,25 @@ export function useAddSfdMutation() {
         queryClient.removeQueries({ queryKey: ['sfds'] });
         
         // Utiliser directement l'API Supabase pour appeler la fonction Edge
-        const { data: sfdResponse, error } = await supabase.functions.invoke('create_sfd', {
+        const { data: responseData, error: fnError } = await supabase.functions.invoke('create_sfd', {
           body: {
             sfd_data: newSfd,
             admin_id: user.id
           }
         });
 
-        if (error) {
-          console.error("Erreur lors de l'appel à la fonction Edge create_sfd:", error);
-          throw new Error(`Erreur lors de l'ajout de la SFD: ${error.message}`);
+        if (fnError) {
+          console.error("Erreur lors de l'appel à la fonction Edge create_sfd:", fnError);
+          throw new Error(`Erreur lors de l'ajout de la SFD: ${fnError.message}`);
         }
 
-        if (!sfdResponse || !sfdResponse.success) {
-          const errorMsg = sfdResponse?.error || "Échec de la création de la SFD";
+        if (!responseData || !responseData.success) {
+          const errorMsg = responseData?.error || "Échec de la création de la SFD";
           console.error("Échec de la création de la SFD:", errorMsg);
           throw new Error(errorMsg);
         }
         
-        const sfdData = sfdResponse.data;
+        const sfdData = responseData.data;
         
         // Make sure we have a proper SFD object with an id
         if (!sfdData || typeof sfdData !== 'object' || !sfdData.id) {
@@ -64,45 +64,13 @@ export function useAddSfdMutation() {
         }
         
         console.log("SFD créée avec succès:", sfdData);
-        
-        // 3. Si nous avons une subvention initiale, créons-la
-        if (sfdData.subsidy_balance && sfdData.subsidy_balance > 0) {
-          console.log("Création de la subvention initiale...");
-          
-          const subsidyData = {
-            sfd_id: sfdData.id,
-            amount: parseFloat(String(sfdData.subsidy_balance)),
-            remaining_amount: parseFloat(String(sfdData.subsidy_balance)),
-            allocated_by: user.id,
-            status: 'active',
-            description: 'Subvention initiale lors de la création de la SFD'
-          };
-
-          try {
-            const { data: subsidyResponse, error: subsidyError } = await supabase.functions.invoke('create_sfd_subsidy', {
-              body: { subsidy_data: subsidyData }
-            });
-
-            if (subsidyError) {
-              console.warn("Erreur lors de la création de la subvention initiale:", subsidyError);
-              // Nous continuons malgré l'erreur de subvention
-            } else {
-              console.log("Subvention créée avec succès:", subsidyResponse);
-            }
-          } catch (subsidyError) {
-            console.warn("Erreur lors de la création de la subvention initiale:", subsidyError);
-            // Nous continuons malgré l'erreur de subvention
-          }
-        }
 
         // Force un rafraîchissement immédiat des données de SFD
-        console.log("Force immediate cache invalidation after SFD creation");
         queryClient.invalidateQueries({ queryKey: ['sfds'] });
-        queryClient.refetchQueries({ queryKey: ['sfds'] });
 
         return {
           sfd: sfdData,
-          hasSubsidy: sfdData.subsidy_balance && sfdData.subsidy_balance > 0
+          hasSubsidy: newSfd.subsidy_balance > 0
         };
       } catch (error: any) {
         console.error("Erreur critique lors de l'ajout de la SFD:", error);

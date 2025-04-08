@@ -51,3 +51,6 @@ verify_jwt = false
 
 [functions.create_admin_user]
 verify_jwt = false
+
+[functions.create_storage_buckets]
+verify_jwt = false
