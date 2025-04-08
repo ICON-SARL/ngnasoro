@@ -1,9 +1,9 @@
 
 import React from 'react';
-import SfdAuthUI from '@/components/auth/SfdAuthUI';
+import ClientAuthUI from '@/components/auth/ClientAuthUI';
 
 const ClientLoginPage = () => {
-  return <SfdAuthUI />;
+  return <ClientAuthUI />;
 };
 
 export default ClientLoginPage;

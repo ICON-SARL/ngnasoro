@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { Sfd, SfdStatus } from '../../types/sfd-types';
+import { Sfd } from '../../types/sfd-types';
 import { SfdFormValues } from '../../sfd/schemas/sfdFormSchema';
 import { useSfdData } from './useSfdData';
 import { useSfdMutations } from './useSfdMutations';
@@ -16,7 +15,7 @@ export function useSfdManagement() {
   const [showEditDialog, setShowEditDialog] = useState(false);
 
   // Use the sub-hooks
-  const { sfds, isLoading, isError, refetch, startPolling } = useSfdData();
+  const { sfds, isLoading, isError } = useSfdData();
   const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, filteredSfds } = useSfdFilters(sfds);
   const { 
     addSfdMutation, 
@@ -28,24 +27,14 @@ export function useSfdManagement() {
 
   // Event handlers
   const handleAddSfd = (formData: SfdFormValues) => {
-    addSfdMutation.mutate(formData, {
-      onSuccess: () => {
-        // Ferme le dialogue et lance un polling temporaire pour s'assurer que les nouvelles données sont affichées
-        setShowAddDialog(false);
-        startPolling();
-        refetch(); // Force un refetch immédiat
-      }
-    });
+    addSfdMutation.mutate(formData);
+    setShowAddDialog(false);
   };
 
   const handleEditSfd = (formData: SfdFormValues) => {
     if (selectedSfd) {
-      editSfdMutation.mutate({ id: selectedSfd.id, data: formData }, {
-        onSuccess: () => {
-          setShowEditDialog(false);
-          refetch(); // Force un refetch pour mettre à jour la liste
-        }
-      });
+      editSfdMutation.mutate({ id: selectedSfd.id, data: formData });
+      setShowEditDialog(false);
     }
   };
 
@@ -94,7 +83,6 @@ export function useSfdManagement() {
     handleSuspendSfd,
     handleReactivateSfd,
     handleExportPdf,
-    handleExportExcel,
-    refetch
+    handleExportExcel
   };
 }

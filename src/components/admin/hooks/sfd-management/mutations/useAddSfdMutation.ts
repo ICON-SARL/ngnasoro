@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SfdFormValues } from '../../../sfd/schemas/sfdFormSchema';
 import { useAuth } from '@/hooks/useAuth';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
-import { supabase } from '@/integrations/supabase/client';
+import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 
 export function useAddSfdMutation() {
   const { toast } = useToast();
@@ -24,60 +24,60 @@ export function useAddSfdMutation() {
         region: sfdData.region || null,
         status: sfdData.status || 'active',
         logo_url: sfdData.logo_url || null,
+        contact_email: sfdData.contact_email || null,
         phone: sfdData.phone || null,
-        subsidy_balance: sfdData.subsidy_balance || 0
+        legal_document_url: sfdData.legal_document_url || null,
       };
 
       try {
-        console.log("Tentative de création de SFD avec les données:", newSfd);
-        console.log("Admin ID utilisé:", user.id);
-        
-        // Supprimer tout cache existant avant l'opération
-        queryClient.removeQueries({ queryKey: ['sfds'] });
-        
-        // Ajouter un paramètre anti-cache
-        const timestamp = new Date().getTime();
-        
-        // Utiliser directement l'API Supabase pour appeler la fonction Edge
-        const { data: responseData, error: fnError } = await supabase.functions.invoke('create_sfd', {
-          body: {
-            sfd_data: newSfd,
-            admin_id: user.id,
-            timestamp // Ajouter un horodatage pour éviter le cache
-          },
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          }
+        // 1. Création de la SFD avec appel à la fonction edge
+        console.log("Tentative de création de SFD...");
+        const sfdResponse = await edgeFunctionApi.callEdgeFunction('create_sfd', {
+          sfd_data: newSfd,
+          admin_id: user.id
         });
 
-        if (fnError) {
-          console.error("Erreur lors de l'appel à la fonction Edge create_sfd:", fnError);
-          throw new Error(`Erreur lors de l'ajout de la SFD: ${fnError.message}`);
+        if (!sfdResponse) {
+          console.error("Aucune réponse reçue lors de la création de la SFD");
+          throw new Error("Erreur lors de l'ajout de la SFD");
         }
-
-        if (!responseData || !responseData.success) {
-          const errorMsg = responseData?.error || "Échec de la création de la SFD";
-          console.error("Échec de la création de la SFD:", errorMsg);
-          throw new Error(errorMsg);
-        }
-        
-        const sfdData = responseData.data;
         
         // Make sure we have a proper SFD object with an id
-        if (!sfdData || typeof sfdData !== 'object' || !sfdData.id) {
-          console.error("Réponse invalide reçue:", sfdData);
+        if (typeof sfdResponse !== 'object' || !sfdResponse.id) {
+          console.error("Réponse invalide reçue:", sfdResponse);
           throw new Error("Réponse invalide du serveur lors de la création de la SFD");
         }
         
-        console.log("SFD créée avec succès:", sfdData);
+        console.log("SFD créée avec succès:", sfdResponse);
+        
+        // 3. Si nous avons une subvention initiale, créons-la
+        if (sfdData.subsidy_balance && sfdData.subsidy_balance > 0) {
+          console.log("Création de la subvention initiale...");
+          
+          const subsidyData = {
+            sfd_id: sfdResponse.id,
+            amount: parseFloat(String(sfdData.subsidy_balance)),
+            remaining_amount: parseFloat(String(sfdData.subsidy_balance)),
+            allocated_by: user.id,
+            status: 'active',
+            description: 'Subvention initiale lors de la création de la SFD'
+          };
 
-        // Force un rafraîchissement immédiat des données de SFD
-        queryClient.invalidateQueries({ queryKey: ['sfds'] });
+          const subsidyResponse = await edgeFunctionApi.callEdgeFunction('create_sfd_subsidy', {
+            subsidy_data: subsidyData
+          });
+
+          if (!subsidyResponse) {
+            console.warn("Erreur lors de la création de la subvention initiale");
+            // Nous continuons malgré l'erreur de subvention
+          } else {
+            console.log("Subvention créée avec succès:", subsidyResponse);
+          }
+        }
 
         return {
-          sfd: sfdData,
-          hasSubsidy: newSfd.subsidy_balance > 0
+          sfd: sfdResponse,
+          hasSubsidy: sfdData.subsidy_balance && sfdData.subsidy_balance > 0
         };
       } catch (error: any) {
         console.error("Erreur critique lors de l'ajout de la SFD:", error);
@@ -99,16 +99,7 @@ export function useAddSfdMutation() {
       }
     },
     onSuccess: (data) => {
-      // Clear cache and invalidate queries
-      queryClient.removeQueries({ queryKey: ['sfds'] });
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
-      
-      // Force refetch immediately
-      setTimeout(() => {
-        console.log("Delayed refetch to ensure server consistency");
-        queryClient.refetchQueries({ queryKey: ['sfds'] });
-      }, 500);
-      
       toast({
         title: 'SFD ajoutée',
         description: 'La nouvelle SFD a été ajoutée avec succès.',

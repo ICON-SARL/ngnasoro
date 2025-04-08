@@ -11,8 +11,21 @@ interface SfdContactFieldsProps {
 
 export function SfdContactFields({ form }: SfdContactFieldsProps) {
   return (
-    <div className="grid grid-cols-1 gap-4">
-      {/* Téléphone */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <FormField
+        control={form.control}
+        name="contact_email"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Email de contact</FormLabel>
+            <FormControl>
+              <Input type="email" placeholder="email@sfd.com" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
       <FormField
         control={form.control}
         name="phone"
@@ -20,7 +33,7 @@ export function SfdContactFields({ form }: SfdContactFieldsProps) {
           <FormItem>
             <FormLabel>Téléphone</FormLabel>
             <FormControl>
-              <Input placeholder="+223 XX XXX XXXX" {...field} value={field.value || ''} />
+              <Input placeholder="+223 XX XXX XX XX" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>

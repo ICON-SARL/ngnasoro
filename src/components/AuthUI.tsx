@@ -14,25 +14,12 @@ import { useToast } from '@/hooks/use-toast';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
-  const [authMode, setAuthMode] = useState<'default' | 'admin'>('default');
-  const { user, session, loading } = useAuth();
+  const [authMode, setAuthMode] = useState<'default' | 'admin' | 'sfd_admin'>('default');
+  const { user, userRole, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
   const { toast } = useToast();
-  
-  // Check if there's an error in the location state (e.g. redirected from SFD auth)
-  useEffect(() => {
-    if (location.state?.error === 'not_sfd_admin') {
-      toast({
-        title: "Accès refusé",
-        description: "Vous n'avez pas les droits d'administrateur SFD. Veuillez utiliser l'interface client ou contacter l'administrateur.",
-        variant: "destructive",
-      });
-      // Clear the error from state
-      navigate(location.pathname, { replace: true });
-    }
-  }, [location.state, navigate, toast]);
   
   // Handle hash in URL for OAuth flows
   useEffect(() => {
@@ -53,20 +40,26 @@ const AuthUI = () => {
     // Only redirect if not loading and user is authenticated
     if (user && !loading) {
       console.log('Authenticated user:', user);
-      const userRole = user.app_metadata?.role;
+      console.log('User role:', userRole);
       
       // Redirection based on user's role
-      if (userRole === 'admin' || userRole === 'super_admin') {
+      if (userRole === UserRole.SUPER_ADMIN || user.app_metadata?.role === 'admin') {
+        if (location.pathname !== '/admin/auth' && !location.pathname.includes('admin')) {
+          // If regular auth page is accessed by admin, show a message
+          toast({
+            title: "Redirection",
+            description: "Les administrateurs doivent utiliser l'interface d'administration.",
+            variant: "default",
+          });
+        }
         navigate('/super-admin-dashboard');
-      } else if (userRole === 'sfd_admin') {
-        // Rediriger les admins SFD vers leur interface dédiée
+      } else if (userRole === UserRole.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {
         navigate('/agency-dashboard');
       } else {
-        // Les utilisateurs normaux vont vers l'interface mobile
         navigate('/mobile-flow');
       }
     }
-  }, [user, loading, navigate]);
+  }, [user, userRole, loading, navigate, location.pathname, toast]);
 
   // Update tab based on current route
   useEffect(() => {
@@ -79,6 +72,8 @@ const AuthUI = () => {
     // Detect admin mode from URL
     if (location.pathname.includes('admin/auth') || location.search.includes('admin=true')) {
       setAuthMode('admin');
+    } else if (location.pathname.includes('sfd/auth') || location.search.includes('sfd_admin=true')) {
+      setAuthMode('sfd_admin');
     } else {
       setAuthMode('default');
     }
@@ -133,6 +128,14 @@ const AuthUI = () => {
             </div>
           )}
           
+          {authMode === 'sfd_admin' && (
+            <div className="p-4 bg-blue-50 border-b border-blue-100">
+              <h2 className="text-blue-800 font-medium text-center">
+                Connexion Administration SFD
+              </h2>
+            </div>
+          )}
+          
           {authMode === 'default' && (
             <div className="p-4 bg-[#0D6A51]/10 border-b border-[#0D6A51]/20">
               <h2 className="text-[#0D6A51] font-medium text-center">
@@ -147,7 +150,7 @@ const AuthUI = () => {
               <TabsTrigger value="register">Inscription</TabsTrigger>
             </TabsList>
             <TabsContent value="login">
-              <LoginForm adminMode={authMode === 'admin'} isSfdAdmin={false} />
+              <LoginForm adminMode={authMode === 'admin'} isSfdAdmin={authMode === 'sfd_admin'} />
             </TabsContent>
             <TabsContent value="register">
               <RegisterForm />
@@ -185,6 +188,23 @@ const AuthUI = () => {
                   className="text-blue-600 hover:underline font-medium"
                 >
                   Accès Administrateur SFD
+                </a>
+              </>
+            )}
+            
+            {authMode === 'sfd_admin' && (
+              <>
+                <a 
+                  href="/auth"
+                  className="text-[#0D6A51] hover:underline font-medium"
+                >
+                  Connexion Utilisateur Standard
+                </a>
+                <a 
+                  href="/admin/auth"
+                  className="text-amber-600 hover:underline font-medium"
+                >
+                  Accès Administrateur MEREF
                 </a>
               </>
             )}

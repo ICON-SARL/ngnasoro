@@ -1,61 +1,75 @@
 
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Footer } from '@/components';
 
 // Auth components
 import { AuthProvider } from '@/hooks/auth/AuthContext';
-import LoginPage from '@/pages/LoginPage';
 
-// Import pages
-import AuthPage from '@/pages/AuthPage';
-import MobileFlow from '@/pages/MobileFlow';
-import SfdDashboardPage from '@/pages/SfdDashboardPage';
-import SfdClientsPage from '@/pages/SfdClientsPage';
-import SfdTransactionsPage from '@/pages/SfdTransactionsPage';
-import SfdStatsPage from '@/pages/SfdStatsPage';
-import SfdSettingsPage from '@/pages/SfdSettingsPage';
-import SfdLoansPage from '@/pages/SfdLoansPage';
-import SfdAdminListPage from '@/pages/SfdAdminListPage';
-import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
-import SuperAdminSfdList from '@/pages/SuperAdminSfdList';
-import CreditApprovalPage from '@/pages/CreditApprovalPage';
-import NotFoundPage from '@/pages/NotFoundPage';
-import MerefSubsidyRequestPage from '@/pages/MerefSubsidyRequestPage';
-import MerefLoanManagementPage from '@/pages/MerefLoanManagementPage';
-import AdminLoginPage from '@/pages/AdminLoginPage';
+// Auth pages
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
 import ClientLoginPage from '@/pages/ClientLoginPage';
-import AccessDeniedPage from '@/pages/AccessDeniedPage';
+import SfdLoginPage from '@/pages/SfdLoginPage';
+import AdminLoginPage from '@/pages/AdminLoginPage';
 
 // Route protection components
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
 import PermissionProtectedRoute from '@/components/routes/PermissionProtectedRoute';
 
+// Pages
+import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
+import SfdSubsidyRequestPage from '@/pages/SfdSubsidyRequestPage';
+import SfdTransactionsPage from '@/pages/SfdTransactionsPage';
+import SfdClientsPage from '@/pages/SfdClientsPage';
+import SfdLoansPage from '@/pages/SfdLoansPage';
+import SfdAdminDashboard from '@/components/admin/SfdAdminDashboard';
+import AccessDeniedPage from '@/pages/AccessDeniedPage';
+import AuditLogsPage from '@/pages/AuditLogsPage';
+import SubsidyRequestDetailPage from '@/pages/SubsidyRequestDetailPage';
+import MobileFlow from '@/pages/MobileFlow';
+import LoanApplicationPage from '@/pages/LoanApplicationPage';
+import SfdManagementPage from '@/pages/SfdManagementPage';
+import CreditApprovalPage from '@/pages/CreditApprovalPage';
+import MerefSubsidyRequestPage from '@/pages/MerefSubsidyRequestPage';
+
 // Role types and permissions
 import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
+import { initializeSupabase } from '@/utils/initSupabase';
+import { Toaster } from "@/components/ui/toaster";
 
-function AppWithFooter() {
+// Initialize Supabase data structures
+initializeSupabase();
+
+// Wrapper component that conditionally renders the Footer
+const AppWithFooter = () => {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/' || location.pathname === '/index';
+  
   return (
     <>
       <AppRoutes />
-      <Footer />
+      {isHomePage && <Footer />}
+      <Toaster />
     </>
   );
-}
+};
 
 // Main routes component
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Redirect the landing page to auth */}
-      <Route path="/" element={<Navigate to="/auth" replace />} />
-      <Route path="/index" element={<Navigate to="/auth" replace />} />
-      
       {/* Public Authentication routes */}
-      <Route path="/auth" element={<AuthPage />} />
+      <Route path="/auth" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route path="/login" element={<Navigate to="/auth" replace />} />
+      
+      {/* Specialized Auth routes */}
+      <Route path="/auth/client" element={<ClientLoginPage />} />
+      <Route path="/sfd/auth" element={<SfdLoginPage />} />
       <Route path="/admin/auth" element={<AdminLoginPage />} />
-      <Route path="/sfd/auth" element={<ClientLoginPage />} />
+      
+      {/* Access denied page */}
       <Route path="/access-denied" element={<AccessDeniedPage />} />
       
       {/* Protected routes with permissions */}
@@ -82,43 +96,52 @@ const AppRoutes = () => {
         } 
       />
       
+      {/* Add Loan Application route */}
+      <Route
+        path="/loan-application"
+        element={
+          <ProtectedRoute component={LoanApplicationPage} />
+        }
+      />
+
+      {/* Add MEREF Subsidy Request route - Modifier pour permettre l'accès avec le rôle SFD_ADMIN */}
+      <Route
+        path="/meref-subsidy-request"
+        element={
+          <PermissionProtectedRoute 
+            component={MerefSubsidyRequestPage} 
+            requiredRole={UserRole.SFD_ADMIN}
+            fallbackPath="/access-denied"
+          />
+        }
+      />
+      
       {/* SFD Admin routes */}
       <Route 
         path="/sfd-admin-dashboard" 
         element={
           <PermissionProtectedRoute 
-            component={SfdDashboardPage} 
+            component={SfdAdminDashboard} 
             requiredRole={UserRole.SFD_ADMIN}
             fallbackPath="/access-denied"
           />
         } 
       />
       
-      {/* SFD dashboard routes */}
+      {/* SFD functionality routes - Modifier pour utiliser le rôle plutôt que la permission */}
       <Route 
-        path="/agency-dashboard" 
+        path="/sfd-subsidy-requests" 
         element={
           <PermissionProtectedRoute 
-            component={SfdDashboardPage} 
+            component={SfdSubsidyRequestPage} 
             requiredRole={UserRole.SFD_ADMIN}
             fallbackPath="/access-denied"
           />
-        }
-      />
-
-      <Route 
-        path="/agency-clients" 
-        element={
-          <PermissionProtectedRoute 
-            component={SfdClientsPage} 
-            requiredPermission={PERMISSIONS.MANAGE_CLIENTS}
-            fallbackPath="/access-denied"
-          />
-        }
+        } 
       />
       
       <Route 
-        path="/agency-transactions" 
+        path="/sfd-transactions" 
         element={
           <PermissionProtectedRoute 
             component={SfdTransactionsPage} 
@@ -129,29 +152,18 @@ const AppRoutes = () => {
       />
       
       <Route 
-        path="/agency-stats" 
+        path="/sfd-clients" 
         element={
           <PermissionProtectedRoute 
-            component={SfdStatsPage} 
-            requiredPermission={PERMISSIONS.ACCESS_SFD_DASHBOARD}
+            component={SfdClientsPage} 
+            requiredPermission={PERMISSIONS.MANAGE_CLIENTS}
             fallbackPath="/access-denied"
           />
         } 
       />
       
       <Route 
-        path="/agency-settings" 
-        element={
-          <PermissionProtectedRoute 
-            component={SfdSettingsPage} 
-            requiredPermission={PERMISSIONS.ACCESS_SFD_DASHBOARD}
-            fallbackPath="/access-denied"
-          />
-        } 
-      />
-      
-      <Route 
-        path="/agency-loans" 
+        path="/sfd-loans" 
         element={
           <PermissionProtectedRoute 
             component={SfdLoansPage} 
@@ -160,52 +172,20 @@ const AppRoutes = () => {
           />
         } 
       />
-      
-      <Route 
-        path="/agency-admins" 
-        element={
-          <PermissionProtectedRoute 
-            component={SfdAdminListPage} 
-            requiredPermission={PERMISSIONS.MANAGE_ADMINS}
-            fallbackPath="/access-denied"
-          />
-        } 
-      />
-      
+
+      {/* Audit Logs page */}
       <Route
-        path="/meref-subsidy"
+        path="/audit-logs"
         element={
-          <PermissionProtectedRoute 
-            component={MerefSubsidyRequestPage} 
-            requiredRole={UserRole.SFD_ADMIN}
+          <PermissionProtectedRoute
+            component={AuditLogsPage}
+            requiredPermission={PERMISSIONS.EXPORT_DATA}
             fallbackPath="/access-denied"
           />
         }
       />
       
-      <Route
-        path="/meref-loan-management"
-        element={
-          <PermissionProtectedRoute 
-            component={MerefLoanManagementPage} 
-            requiredRole={UserRole.SFD_ADMIN}
-            fallbackPath="/access-denied"
-          />
-        }
-      />
-      
-      <Route
-        path="/super-admin-sfds"
-        element={
-          <PermissionProtectedRoute 
-            component={SuperAdminSfdList} 
-            requiredRole={UserRole.SUPER_ADMIN}
-            fallbackPath="/access-denied"
-          />
-        }
-      />
-      
-      {/* Mobile flow route */}
+      {/* Client routes */}
       <Route
         path="/mobile-flow/*"
         element={
@@ -213,8 +193,24 @@ const AppRoutes = () => {
         }
       />
       
-      {/* Fallback route */}
-      <Route path="*" element={<NotFoundPage />} />
+      {/* Legacy protected routes for backward compatibility */}
+      <Route
+        path="/agency-dashboard"
+        element={
+          <PermissionProtectedRoute 
+            component={SfdAdminDashboard} 
+            requiredRole={UserRole.SFD_ADMIN}
+            fallbackPath="/access-denied"
+          />
+        }
+      />
+      
+      {/* Fallback routes */}
+      <Route path="/" element={<Navigate to="/auth" replace />} />
+      <Route path="*" element={<Navigate to="/auth" replace />} />
+      
+      {/* SFD Management route */}
+      <Route path="/sfd-management" element={<SfdManagementPage />} />
     </Routes>
   );
 };

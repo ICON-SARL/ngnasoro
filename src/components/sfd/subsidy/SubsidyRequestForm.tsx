@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -8,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload } from 'lucide-react';
-import { useSubsidyRequests, CreateSubsidyRequestData } from '@/hooks/useSubsidyRequests';
+import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Select,
@@ -67,8 +68,7 @@ export const SubsidyRequestForm: React.FC<SubsidyRequestFormProps> = ({ onSucces
     try {
       setIsSubmitting(true);
       
-      // Utiliser l'interface CreateSubsidyRequestData pour la création
-      const requestData: CreateSubsidyRequestData = {
+      await createSubsidyRequest.mutateAsync({
         sfd_id: sfdId,
         amount: data.amount,
         purpose: data.purpose,
@@ -76,9 +76,7 @@ export const SubsidyRequestForm: React.FC<SubsidyRequestFormProps> = ({ onSucces
         priority: data.priority,
         region: data.region || undefined,
         expected_impact: data.expected_impact || undefined,
-      };
-      
-      await createSubsidyRequest.mutateAsync(requestData);
+      });
       
       toast({
         title: "Demande envoyée",

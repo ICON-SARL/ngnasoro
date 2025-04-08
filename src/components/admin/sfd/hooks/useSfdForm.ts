@@ -25,9 +25,11 @@ export function useSfdForm({ initialData, onSubmit }: UseSfdFormProps) {
       name: initialData?.name || '',
       code: initialData?.code || '',
       region: initialData?.region || '',
+      contact_email: initialData?.contact_email || '',
       phone: initialData?.phone || '',
       status: (initialData?.status as 'active' | 'pending' | 'suspended') || 'active',
       logo_url: initialData?.logo_url || '',
+      legal_document_url: initialData?.legal_document_url || '',
       subsidy_balance: initialData?.subsidy_balance || 0,
     },
   });

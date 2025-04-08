@@ -15,16 +15,6 @@ export const DemoAccountsCreator = () => {
     setResults(null);
     
     try {
-      // First, create the storage buckets which are needed for SFD operations
-      const { data: bucketsData, error: bucketsError } = await supabase.functions.invoke('create_storage_buckets');
-      if (bucketsError) {
-        console.warn("Error creating storage buckets:", bucketsError);
-        // Continue despite error - buckets might already exist
-      } else {
-        console.log("Storage buckets created:", bucketsData);
-      }
-      
-      // Next, create the test accounts and SFDs
       const { data, error } = await supabase.functions.invoke('create-test-accounts');
       
       if (error) {
@@ -38,11 +28,6 @@ export const DemoAccountsCreator = () => {
         title: 'Comptes de test créés',
         description: 'Les comptes de démonstration ont été configurés avec succès.',
       });
-
-      // Refresh the page after 2 seconds to reflect changes
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
     } catch (error) {
       console.error('Failed to create test accounts:', error);
       toast({

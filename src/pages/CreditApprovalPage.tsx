@@ -1,59 +1,77 @@
 
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import { CreditApplicationList } from '@/components/admin/credit/CreditApplicationList';
 import { CreditScoringPanel } from '@/components/admin/credit/CreditScoringPanel';
+import { CreditNotificationSettings } from '@/components/admin/credit/CreditNotificationSettings';
+import { SfdManagement } from '@/components/admin/SfdManagement';
+import { SfdAuditLog } from '@/components/admin/SfdAuditLog';
+import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
+import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommunication';
+import { MerefSubsidyTab } from '@/components/admin/MerefSubsidyTab';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const CreditApprovalPage: React.FC = () => {
+const CreditApprovalPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'credit-applications';
+
+  const handleTabChange = (tab: string) => {
+    setSearchParams({ tab });
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <SuperAdminHeader />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <SuperAdminHeader additionalComponents={
+        <div className="flex items-center gap-2">
+          <MerefSfdCommunication />
+          <AdminNotifications />
+        </div>
+      } />
       
-      <div className="container mx-auto py-6 px-4">
-        <h1 className="text-2xl font-bold mb-2">Credit Application Approval</h1>
-        <p className="text-gray-500 mb-6">Review and approve credit applications from SFD agencies</p>
+      <main className="flex-1 container mx-auto p-4 md:p-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold">Approbation de Crédit et Gestion des SFDs</h2>
+          <p className="text-muted-foreground">
+            Évaluez les dossiers de crédit, paramétrez le système de scoring et administrez les partenaires SFDs
+          </p>
+        </div>
         
-        <Card className="p-6">
-          <Tabs defaultValue="pending">
-            <TabsList className="mb-6">
-              <TabsTrigger value="pending" className="flex items-center">
-                <Clock className="mr-2 h-4 w-4" />
-                Pending Approval
-              </TabsTrigger>
-              <TabsTrigger value="approved" className="flex items-center">
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Approved
-              </TabsTrigger>
-              <TabsTrigger value="rejected" className="flex items-center">
-                <AlertCircle className="mr-2 h-4 w-4" />
-                Rejected
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="pending">
-              <div className="flex flex-col lg:flex-row gap-6">
-                <div className="lg:w-2/3">
-                  <CreditApplicationList status="pending" />
-                </div>
-                <div className="lg:w-1/3">
-                  <CreditScoringPanel />
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="approved">
-              <CreditApplicationList status="approved" />
-            </TabsContent>
-            
-            <TabsContent value="rejected">
-              <CreditApplicationList status="rejected" />
-            </TabsContent>
-          </Tabs>
-        </Card>
-      </div>
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="credit-applications">Dossiers de crédit</TabsTrigger>
+            <TabsTrigger value="scoring">Système de Scoring</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="sfd-management">Gestion des SFDs</TabsTrigger>
+            <TabsTrigger value="sfd-audit">Historique SFDs</TabsTrigger>
+            <TabsTrigger value="subsidy-requests">Demandes de prêts</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="credit-applications">
+            <CreditApplicationList />
+          </TabsContent>
+          
+          <TabsContent value="scoring">
+            <CreditScoringPanel />
+          </TabsContent>
+          
+          <TabsContent value="notifications">
+            <CreditNotificationSettings />
+          </TabsContent>
+          
+          <TabsContent value="sfd-management">
+            <SfdManagement />
+          </TabsContent>
+          
+          <TabsContent value="sfd-audit">
+            <SfdAuditLog />
+          </TabsContent>
+          
+          <TabsContent value="subsidy-requests">
+            <MerefSubsidyTab />
+          </TabsContent>
+        </Tabs>
+      </main>
     </div>
   );
 };

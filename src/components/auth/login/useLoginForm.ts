@@ -106,7 +106,7 @@ export const useLoginForm = (adminMode: boolean = false, isSfdAdmin: boolean = f
         description: "Vous êtes maintenant connecté.",
       });
       
-      // Redirection est maintenant gérée par les composants d'interface d'authentification
+      // No need to navigate here, the AuthProvider will handle that based on user role
       
     } catch (error: any) {
       console.error("Login error:", error);

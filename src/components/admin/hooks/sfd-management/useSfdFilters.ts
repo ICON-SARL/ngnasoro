@@ -1,24 +1,25 @@
 
 import { useState, useMemo } from 'react';
-import { Sfd, SfdStatus } from '../../types/sfd-types';
+import { Sfd } from '../../types/sfd-types';
 
-export function useSfdFilters(sfds: any[]) {
+export function useSfdFilters(sfds: Sfd[] | undefined) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<SfdStatus | null>(null);
+  const [statusFilter, setStatusFilter] = useState('all');
 
+  // Filter SFDs based on search term and status filter
   const filteredSfds = useMemo(() => {
+    if (!sfds) return [];
+    
     return sfds.filter((sfd) => {
-      // Make sure the SFD is properly typed
-      const typedSfd = sfd as Sfd;
+      const matchesSearch = 
+        sfd.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sfd.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (sfd.region && sfd.region.toLowerCase().includes(searchTerm.toLowerCase()));
       
-      const matchesSearch =
-        !searchTerm ||
-        typedSfd.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        typedSfd.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (typedSfd.region && typedSfd.region.toLowerCase().includes(searchTerm.toLowerCase()));
-
-      const matchesStatus = !statusFilter || typedSfd.status === statusFilter;
-
+      const matchesStatus =
+        statusFilter === 'all' ||
+        sfd.status === statusFilter;
+      
       return matchesSearch && matchesStatus;
     });
   }, [sfds, searchTerm, statusFilter]);

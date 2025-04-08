@@ -5,9 +5,8 @@ import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { SfdHeader } from '@/components/sfd/SfdHeader';
 import { ClientManagementSystem } from '@/components/sfd/ClientManagementSystem';
 
-const SfdClientsPage: React.FC = () => {
-  const { user } = useAuth();
-  const isAdmin = user?.app_metadata?.role === 'admin';
+const SfdClientsPage = () => {
+  const { isAdmin } = useAuth();
   
   return (
     <div className="min-h-screen bg-gray-50">

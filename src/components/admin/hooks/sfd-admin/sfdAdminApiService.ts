@@ -1,158 +1,171 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
+import { logAuditEvent } from '@/utils/audit/auditLoggerCore';
+import { UserRole } from '@/hooks/auth/types';
 
-interface SfdAdminData {
+interface AdminUserData {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  sfd_id: string;
+}
+
+/**
+ * Creates a new SFD admin user
+ */
+export async function createSfdAdmin(adminData: {
   email: string;
   password: string;
   full_name: string;
-  role: string;
-  sfd_id: string; 
-  notify?: boolean;
-}
-
-// Récupérer la liste des administrateurs SFD
-export async function fetchSfdAdmins() {
+  sfd_id: string;
+  notify: boolean;
+}) {
   try {
-    console.log("Fetching SFD admins...");
+    console.log("Starting SFD admin creation process");
     
-    // Obtenir la liste des utilisateurs ayant le rôle sfd_admin
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('role', 'sfd_admin');
-      
-    if (roleError) {
-      console.error("Error fetching SFD admin roles:", roleError);
-      throw roleError;
-    }
-    
-    if (!roleData || roleData.length === 0) {
-      console.log("No SFD admin roles found");
-      return [];
-    }
-    
-    const userIds = roleData.map(item => item.user_id);
-    
-    // Récupérer les détails des utilisateurs administrateurs
-    const { data: adminData, error: adminError } = await supabase
+    // Check if email already exists
+    const { data: existingUsers, error: checkError } = await supabase
       .from('admin_users')
-      .select('*')
-      .in('id', userIds);
-      
-    if (adminError) {
-      console.error("Error fetching SFD admin details:", adminError);
-      throw adminError;
+      .select('email')
+      .eq('email', adminData.email);
+    
+    if (checkError) {
+      console.error('Error checking existing user:', checkError);
+      throw new Error("Erreur lors de la vérification de l'email");
     }
     
-    console.log(`Found ${adminData?.length || 0} SFD admins`);
-    return adminData || [];
-  } catch (error: any) {
-    console.error("Error in fetchSfdAdmins:", error);
-    throw new Error(`Erreur lors de la récupération des administrateurs SFD: ${error.message}`);
-  }
-}
-
-// Créer un nouvel administrateur SFD
-export async function createSfdAdmin(userData: SfdAdminData) {
-  try {
-    console.log("Creating SFD admin:", { ...userData, password: "***" });
-    
-    // Vérifier que la SFD existe
-    const { data: sfdCheck, error: sfdError } = await supabase
-      .from('sfds')
-      .select('id, name')
-      .eq('id', userData.sfd_id)
-      .single();
-      
-    if (sfdError || !sfdCheck) {
-      throw new Error(`La SFD avec l'ID ${userData.sfd_id} n'existe pas ou n'est pas accessible`);
+    if (existingUsers && existingUsers.length > 0) {
+      throw new Error("Cet email est déjà utilisé par un autre administrateur");
     }
     
-    console.log("SFD vérifiée:", sfdCheck.name);
+    console.log("No existing user found with this email, proceeding with creation");
     
-    // Vérifier si l'e-mail est déjà utilisé
-    const { data: existingUser, error: checkError } = await supabase
-      .from('admin_users')
-      .select('id')
-      .eq('email', userData.email)
-      .maybeSingle();
-      
-    if (existingUser) {
-      throw new Error("Cet e-mail est déjà associé à un compte administrateur. Veuillez utiliser une autre adresse e-mail.");
-    }
-    
-    // Utiliser la fonction Edge pour créer l'administrateur SFD
-    console.log("Calling create_sfd_admin edge function");
-    
-    const { data: result, error } = await supabase.functions.invoke('create_sfd_admin', {
-      body: {
-        email: userData.email,
-        password: userData.password,
-        full_name: userData.full_name,
-        role: 'sfd_admin',
-        sfd_id: userData.sfd_id
+    // 1. Create the auth user
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: adminData.email,
+      password: adminData.password,
+      email_confirm: true,
+      user_metadata: {
+        full_name: adminData.full_name,
+        sfd_id: adminData.sfd_id
+      },
+      app_metadata: {
+        role: 'sfd_admin' as UserRole,
       }
     });
     
-    if (error) {
-      console.error("Edge function error:", error);
-      throw new Error(`Erreur lors de la création de l'administrateur SFD: ${error.message}`);
+    if (authError) {
+      console.error("Error creating auth user:", authError);
+      throw new Error(`Erreur de création du compte: ${authError.message}`);
     }
     
-    if (!result || !result.success) {
-      const errorMsg = result?.error || "Échec de la création de l'administrateur SFD";
-      console.error("Failed to create SFD admin:", errorMsg);
-      throw new Error(errorMsg);
+    if (!authData.user) {
+      throw new Error("Échec de création du compte utilisateur");
     }
     
-    console.log("SFD admin created successfully:", result);
+    console.log('Auth user created:', authData.user.id);
     
-    return {
-      success: true,
-      user_id: result.user_id,
-      email: userData.email,
-      full_name: userData.full_name,
-      sfd_id: userData.sfd_id
-    };
+    // 2. Assign role in the database using RPC
+    const { error: roleError } = await supabase.rpc('assign_role', {
+      user_id: authData.user.id,
+      role: 'sfd_admin'
+    });
+    
+    if (roleError) {
+      console.error('Error assigning role:', roleError);
+      // Continue despite role assignment error, we'll handle it separately
+    }
+    
+    // 3. Add user to admin_users table using a direct insert
+    // Use the RLS policies we've created instead of the RPC function
+    const { error: adminError } = await supabase
+      .from('admin_users')
+      .insert({
+        id: authData.user.id,
+        email: adminData.email,
+        full_name: adminData.full_name,
+        role: 'sfd_admin',
+        sfd_id: adminData.sfd_id,
+        has_2fa: false
+      });
+    
+    if (adminError) {
+      console.error('Error creating admin user record:', adminError);
+      throw new Error(`Erreur lors de l'ajout de l'administrateur: ${adminError.message}`);
+    }
+    
+    // 4. Log audit event
+    await logAuditEvent({
+      category: AuditLogCategory.ADMIN_ACTION,
+      action: 'sfd_admin_created',
+      details: {
+        email: adminData.email,
+        sfd_id: adminData.sfd_id
+      },
+      user_id: authData.user.id,
+      severity: AuditLogSeverity.INFO,
+      status: 'success' // Adding the required status property
+    });
+    
+    console.log('SFD admin creation completed successfully');
+    return authData.user;
   } catch (error: any) {
-    console.error("Error creating SFD admin:", error);
-    throw new Error(`Erreur lors de la création de l'administrateur SFD: ${error.message}`);
+    console.error('SFD admin creation failed:', error);
+    throw error;
   }
 }
 
-// Supprimer un administrateur SFD
+/**
+ * Deletes an SFD admin user
+ */
 export async function deleteSfdAdmin(adminId: string) {
-  try {
-    console.log("Deleting SFD admin:", adminId);
+  // 1. Delete the auth user
+  const { error: authError } = await supabase.auth.admin.deleteUser(
+    adminId
+  );
+  
+  if (authError) throw authError;
+  
+  // 2. Delete from admin_users table
+  const { error: adminError } = await supabase
+    .from('admin_users')
+    .delete()
+    .eq('id', adminId);
     
-    // Vérifier que l'utilisateur existe et est bien un admin SFD
-    const { data: userData, error: userError } = await supabase
+  if (adminError) throw adminError;
+  
+  // 3. Log audit event
+  await logAuditEvent({
+    category: AuditLogCategory.ADMIN_ACTION,
+    action: 'sfd_admin_deleted',
+    details: {
+      admin_id: adminId
+    },
+    user_id: undefined,
+    severity: AuditLogSeverity.WARNING,
+    status: 'success' // Adding the required status property
+  });
+  
+  return true;
+}
+
+/**
+ * Fetches all SFD admins
+ */
+export async function fetchSfdAdmins() {
+  try {
+    const { data, error } = await supabase
       .from('admin_users')
       .select('*')
-      .eq('id', adminId)
-      .single();
+      .eq('role', 'sfd_admin');
       
-    if (userError) {
-      throw new Error(`Administrateur non trouvé: ${userError.message}`);
-    }
+    if (error) throw error;
     
-    if (!userData || userData.role !== 'sfd_admin') {
-      throw new Error("L'utilisateur n'est pas un administrateur SFD");
-    }
-    
-    // Utiliser la fonction Edge pour supprimer l'administrateur
-    const { data: result, error } = await supabase.functions.invoke('delete_sfd_admin', {
-      body: { admin_id: adminId }
-    });
-    
-    if (error) {
-      console.error("Error deleting admin user:", error);
-      throw error;
-    }
-    
-    return { success: true };
-  } catch (error: any) {
-    console.error("Error deleting SFD admin:", error);
-    throw new Error(`Erreur lors de la suppression de l'administrateur SFD: ${error.message}`);
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching SFD admins:', error);
+    throw error;
   }
 }

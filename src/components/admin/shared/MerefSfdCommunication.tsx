@@ -1,114 +1,143 @@
-
 import React, { useState } from 'react';
+import { MessageSquare, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { toast } from 'sonner';
 import { useAdminCommunication } from '@/hooks/useAdminCommunication';
-import { useAuth } from '@/hooks/useAuth';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { useSfdAdminManagement } from '../hooks/sfd-admin/useSfdAdminManagement';
 
-export function MerefSfdCommunication() {
-  const [message, setMessage] = useState('');
-  const [subject, setSubject] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+const formSchema = z.object({
+  title: z.string().min(5, 'Le titre doit contenir au moins 5 caractères'),
+  message: z.string().min(10, 'Le message doit contenir au moins 10 caractères'),
+});
+
+export const MerefSfdCommunication = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const { sfdAdmins } = useSfdAdminManagement();
   const { sendNotification } = useAdminCommunication();
-  const { user } = useAuth();
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!message.trim() || !subject.trim()) {
-      toast({
-        title: "Champs requis",
-        description: "Veuillez remplir le sujet et le message",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsLoading(true);
-    
+  const [notification, setNotification] = useState({
+    title: '',
+    message: '',
+    type: 'info',
+    recipient_id: '',
+    recipient_role: 'sfd_admin'
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: '',
+      message: '',
+    },
+  });
+
+  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const result = await sendNotification({
-        title: subject,
-        message: message,
-        recipient_role: 'admin',
-        type: 'info',
-        recipient_id: user?.id || ''
-      });
+      const notificationToSend = {
+        ...notification,
+        title: values.title,
+        message: values.message,
+        recipient_role: 'sfd_admin'
+      };
+
+      const result = await sendNotification(notificationToSend);
       
-      toast({
-        title: "Message envoyé",
-        description: "Votre message a été envoyé au MEREF avec succès",
-      });
-      
-      // Reset form
-      setMessage('');
-      setSubject('');
-    } catch (error: any) {
-      console.error('Error sending notification:', error);
-      toast({
-        title: "Erreur",
-        description: `Impossible d'envoyer le message: ${error.message}`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      if (result.success) {
+        toast.success('Message envoyé aux administrateurs SFD');
+        setIsOpen(false);
+        form.reset();
+      } else {
+        toast.error(`Erreur lors de l'envoi du message: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi du message:', error);
+      toast.error('Erreur lors de l\'envoi du message');
     }
   };
-  
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Communication avec le MEREF</CardTitle>
-        <CardDescription>
-          Envoyez vos questions ou demandes directement au gestionnaire de la plateforme
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="subject" className="text-sm font-medium">
-              Sujet
-            </label>
-            <Input
-              id="subject"
-              placeholder="Sujet de votre message"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              disabled={isLoading}
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
+        >
+          <MessageSquare className="h-4 w-4 mr-2 text-gray-600" />
+          Communiquer avec SFDs
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Communiquer avec les SFDs</DialogTitle>
+        </DialogHeader>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Titre du message</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Entrez le titre" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="message" className="text-sm font-medium">
-              Message
-            </label>
-            <Textarea
-              id="message"
-              placeholder="Votre message au MEREF..."
-              rows={4}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              disabled={isLoading}
+            
+            <FormField
+              control={form.control}
+              name="message"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Message</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Composez votre message pour les administrateurs SFD" 
+                      className="resize-y min-h-[120px]" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button type="submit" disabled={isLoading} className="w-full">
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Envoi en cours...
-              </>
-            ) : (
-              'Envoyer le message'
-            )}
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setIsOpen(false);
+                  form.reset();
+                  setNotification({
+                    title: '',
+                    message: '',
+                    type: 'info',
+                    recipient_id: '',
+                    recipient_role: 'sfd_admin',
+                  });
+                }}
+              >
+                Annuler
+              </Button>
+              <Button type="submit">
+                <Send className="h-4 w-4 mr-2" />
+                Envoyer
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
-}
+};

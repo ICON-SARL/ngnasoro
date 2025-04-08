@@ -1,24 +1,30 @@
 
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
+import { useSfdManagement } from '../hooks/useSfdManagement';
+import { SfdTable } from '../sfd/SfdTable';
+import { SfdFilter } from '../sfd/SfdFilter';
 import { SfdToolbar } from './SfdToolbar';
+import { SfdDialogs } from './SfdDialogs';
 import { SfdDetailView } from '../sfd/SfdDetailView';
-import { SfdListView } from './components/SfdListView';
-import { SfdDialogManager } from './components/SfdDialogManager';
-import { useSfdContainerState } from './hooks/useSfdContainerState';
+import { Sfd } from '../types/sfd-types';
+import { useSfdAdminManagement } from '../hooks/useSfdAdminManagement';
+import { AddSfdAdminDialog } from '../sfd/AddSfdAdminDialog';
 
 export function SfdManagementContainer() {
+  const [showDetailsView, setShowDetailsView] = useState(false);
+  const [showAddAdminDialog, setShowAddAdminDialog] = useState(false);
+  const [selectedSfdForAdmin, setSelectedSfdForAdmin] = useState<Sfd | null>(null);
+  
   const {
-    showDetailsView,
-    setShowDetailsView,
-    showAddAdminDialog,
-    setShowAddAdminDialog,
-    selectedSfdForAdmin,
     filteredSfds,
     isLoading,
     isError,
     selectedSfd,
+    setSelectedSfd,
     searchTerm,
+    setSearchTerm,
     statusFilter,
+    setStatusFilter,
     showSuspendDialog,
     setShowSuspendDialog,
     showReactivateDialog,
@@ -36,37 +42,21 @@ export function SfdManagementContainer() {
     handleShowEditDialog,
     handleSuspendSfd,
     handleReactivateSfd,
-    handleViewDetails,
-    handleAddAdmin,
-    handleSubmitAddAdmin,
-    handleStatusFilterChange,
-    setSearchTerm,
     handleExportPdf,
-    handleExportExcel,
-    refetch,
-    queryClient,
-    isLoadingAdmin,
-    adminError
-  } = useSfdContainerState();
+    handleExportExcel
+  } = useSfdManagement();
 
-  // Rafraîchir la liste des SFDs au chargement initial
-  useEffect(() => {
-    console.log("Initializing SFD management: forcing initial data refresh");
-    
-    // Supprimer les données en cache pour forcer un refetch frais
-    queryClient.removeQueries({ queryKey: ['sfds'] });
-    
-    // Refetch immédiat
-    refetch();
-    
-    // Interval de rafraîchissement plus modéré (toutes les 30 secondes)
-    const intervalId = setInterval(() => {
-      console.log("Periodic SFD refresh triggered");
-      queryClient.invalidateQueries({ queryKey: ['sfds'] });
-    }, 30000); 
-    
-    return () => clearInterval(intervalId);
-  }, [refetch, queryClient]);
+  const { isLoading: isLoadingAdmin, error: adminError, addSfdAdmin } = useSfdAdminManagement();
+
+  const handleViewDetails = (sfd: Sfd) => {
+    setSelectedSfd(sfd);
+    setShowDetailsView(true);
+  };
+
+  const handleAddAdmin = (sfd: Sfd) => {
+    setSelectedSfdForAdmin(sfd);
+    setShowAddAdminDialog(true);
+  };
 
   if (showDetailsView && selectedSfd) {
     return (
@@ -85,24 +75,27 @@ export function SfdManagementContainer() {
         onAddSfd={() => setShowAddDialog(true)}
       />
       
-      <SfdListView
-        filteredSfds={filteredSfds}
+      <SfdFilter
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        onExportPdf={handleExportPdf}
+        onExportExcel={handleExportExcel}
+      />
+      
+      <SfdTable 
+        sfds={filteredSfds}
         isLoading={isLoading}
         isError={isError}
-        searchTerm={searchTerm}
-        statusFilter={statusFilter}
-        handleSearchChange={setSearchTerm}
-        handleStatusFilterChange={handleStatusFilterChange}
-        handleSuspendSfd={handleSuspendSfd}
-        handleReactivateSfd={handleReactivateSfd}
-        handleShowEditDialog={handleShowEditDialog}
-        handleViewDetails={handleViewDetails}
-        handleAddAdmin={handleAddAdmin}
-        handleExportPdf={handleExportPdf}
-        handleExportExcel={handleExportExcel}
+        onSuspend={handleSuspendSfd}
+        onReactivate={handleReactivateSfd}
+        onEdit={handleShowEditDialog}
+        onViewDetails={handleViewDetails}
+        onAddAdmin={handleAddAdmin}
       />
 
-      <SfdDialogManager
+      <SfdDialogs 
         showSuspendDialog={showSuspendDialog}
         setShowSuspendDialog={setShowSuspendDialog}
         showReactivateDialog={showReactivateDialog}
@@ -111,20 +104,26 @@ export function SfdManagementContainer() {
         setShowAddDialog={setShowAddDialog}
         showEditDialog={showEditDialog}
         setShowEditDialog={setShowEditDialog}
-        showAddAdminDialog={showAddAdminDialog}
-        setShowAddAdminDialog={setShowAddAdminDialog}
         selectedSfd={selectedSfd}
-        selectedSfdForAdmin={selectedSfdForAdmin}
         suspendSfdMutation={suspendSfdMutation}
         reactivateSfdMutation={reactivateSfdMutation}
         addSfdMutation={addSfdMutation}
         editSfdMutation={editSfdMutation}
         handleAddSfd={handleAddSfd}
         handleEditSfd={handleEditSfd}
-        handleSubmitAddAdmin={handleSubmitAddAdmin}
-        isLoadingAdmin={isLoadingAdmin}
-        adminError={adminError}
       />
+
+      {selectedSfdForAdmin && (
+        <AddSfdAdminDialog
+          open={showAddAdminDialog}
+          onOpenChange={setShowAddAdminDialog}
+          sfdId={selectedSfdForAdmin.id}
+          sfdName={selectedSfdForAdmin.name}
+          onAddAdmin={addSfdAdmin}
+          isLoading={isLoadingAdmin}
+          error={adminError}
+        />
+      )}
     </div>
   );
 }

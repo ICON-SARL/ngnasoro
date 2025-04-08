@@ -1,4 +1,4 @@
 
-export * from './SfdManagement';
-export * from './SfdManagementContainer';
-export * from './SfdToolbar';
+export { SfdManagementContainer as SfdManagement } from './SfdManagementContainer';
+export { SfdToolbar } from './SfdToolbar';
+export { SfdDialogs } from './SfdDialogs';

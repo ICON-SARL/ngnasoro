@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, Building, Users, Shield } from 'lucide-react';
 import { AdminManagement } from '@/components/admin/AdminManagement';
 import { SfdManagement } from '@/components/admin/SfdManagement';
+import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommunication';
 import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
 import { IntegratedDashboard } from '@/components/admin/shared/IntegratedDashboard';
 import AuditLogsSummary from '@/components/audit/AuditLogsSummary';
@@ -95,6 +96,8 @@ const SuperAdminDashboard = () => {
             <Shield className="h-4 w-4 mr-2 text-gray-600" />
             Journal d'Audit
           </Button>
+          
+          <MerefSfdCommunication />
         </div>
         
         {/* Dashboard Widgets */}

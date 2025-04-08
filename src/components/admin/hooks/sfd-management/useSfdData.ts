@@ -1,107 +1,87 @@
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect, useCallback } from 'react';
+import { Sfd } from '../../types/sfd-types';
+import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 
 export function useSfdData() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [refetchInterval, setRefetchInterval] = useState<number | false>(false);
-  const [forceRefresh, setForceRefresh] = useState(0);
-
-  // Fonction pour récupérer les SFDs avec options de cache optimisées
-  const fetchSfds = async () => {
-    try {
-      console.log("Fetching SFDs from database...");
-      
-      // Ajouter des paramètres pour contourner le cache
-      const timestamp = new Date().getTime();
+  // Fetch SFDs from Supabase
+  const { data: sfds, isLoading, isError, refetch } = useQuery({
+    queryKey: ['sfds'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('sfds')
         .select('*')
-        .order('created_at', { ascending: false })
-        .throwOnError();
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
       
-      if (error) {
-        console.error("Error fetching SFDs:", error);
-        throw error;
-      }
-      
-      console.log(`Successfully fetched ${data?.length || 0} SFDs:`, data);
-      return data || [];
-    } catch (err: any) {
-      console.error("Error in fetchSfds:", err);
-      throw new Error(`Une erreur est survenue lors de la récupération des SFDs: ${err.message}`);
-    }
-  };
-  
-  // Utilisation de React Query avec des paramètres optimisés pour les problèmes de mise à jour
-  const {
-    data: sfds,
-    isLoading,
-    isError,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['sfds', forceRefresh], // Inclure forceRefresh pour forcer un refetch
-    queryFn: fetchSfds,
-    refetchInterval,
-    refetchOnWindowFocus: true,
-    staleTime: 5000, // 5 secondes jusqu'à ce que les données soient considérées comme obsolètes
-    gcTime: 10000, // 10 secondes en cache
-    retry: 3,
-    retryDelay: 1000,
-    meta: {
-      errorMessage: "Impossible de charger la liste des SFDs"
-    }
+      // Calculate subsidy balance for each SFD separately from the sfd_subsidies table
+      const sfdsWithSubsidyBalance = await Promise.all(
+        data.map(async (sfd) => {
+          const { data: subsidies, error: subsidiesError } = await supabase
+            .from('sfd_subsidies')
+            .select('remaining_amount')
+            .eq('sfd_id', sfd.id)
+            .eq('status', 'active')
+            .order('allocated_at', { ascending: false });
+
+          let subsidy_balance = 0;
+          if (!subsidiesError && subsidies) {
+            subsidy_balance = subsidies.reduce((sum, subsidy) => sum + (subsidy.remaining_amount || 0), 0);
+          }
+
+          // Use edge function to fetch stats instead of RPC
+          let sfdStats = null;
+          try {
+            const stats = await edgeFunctionApi.callEdgeFunction('fetch-sfd-stats', { 
+              sfd_id: sfd.id 
+            });
+            
+            if (stats) {
+              sfdStats = stats;
+            } else {
+              // Provide default stats structure if no stats exist
+              sfdStats = {
+                id: null,
+                sfd_id: sfd.id,
+                total_clients: 0,
+                total_loans: 0,
+                repayment_rate: 0,
+                last_updated: new Date().toISOString()
+              };
+            }
+          } catch (error) {
+            console.error("Error fetching SFD stats:", error);
+            // Provide default stats on error
+            sfdStats = {
+              id: null,
+              sfd_id: sfd.id,
+              total_clients: 0,
+              total_loans: 0,
+              repayment_rate: 0,
+              last_updated: new Date().toISOString()
+            };
+          }
+
+          // Combine the data - subsidy_balance is calculated, not directly fetched
+          return {
+            ...sfd,
+            subsidy_balance,
+            sfd_stats: sfdStats
+          } as Sfd;
+        })
+      );
+
+      return sfdsWithSubsidyBalance;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Traiter les erreurs en dehors des options useQuery
-  useEffect(() => {
-    if (isError && error) {
-      console.error("Query error:", error);
-      toast({
-        title: "Erreur de chargement",
-        description: error instanceof Error ? error.message : "Impossible de charger la liste des SFDs",
-        variant: "destructive",
-      });
-    }
-  }, [isError, error, toast]);
-
-  // Définir la fonction startPolling de manière optimisée
-  const startPolling = useCallback(() => {
-    console.log("Starting polling for SFDs...");
-    
-    // Forcer un refetch immédiat
-    queryClient.removeQueries({ queryKey: ['sfds'] });
-    setForceRefresh(prev => prev + 1);
-    
-    // Configurer un polling agressif
-    setRefetchInterval(2000); // Refetch toutes les 2 secondes
-    
-    // Désactiver le polling après un certain temps
-    setTimeout(() => {
-      console.log("Stopping polling for SFDs");
-      setRefetchInterval(false);
-    }, 10000); // Arrêter le polling après 10 secondes
-  }, [queryClient]);
-
-  // Fonction pour forcer manuellement un refetch complet
-  const forceRefetchAll = useCallback(() => {
-    console.log("Forcing complete refresh of SFD data...");
-    queryClient.removeQueries({ queryKey: ['sfds'] });
-    setForceRefresh(prev => prev + 1);
-    refetch();
-  }, [queryClient, refetch]);
-
   return {
-    sfds: sfds || [],
+    sfds,
     isLoading,
     isError,
-    error,
-    refetch,
-    startPolling,
-    forceRefetchAll
+    refetch
   };
 }

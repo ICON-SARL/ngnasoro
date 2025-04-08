@@ -6,14 +6,13 @@ import Logo from './Logo';
 import LoginForm from './login/LoginForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
-import { useToast } from '@/hooks/use-toast';
+import DemoAccountsCreator from './DemoAccountsCreator';
 
 const SfdAuthUI = () => {
   const { user, loading, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
-  const { toast } = useToast();
   
   useEffect(() => {
     const hash = location.hash;
@@ -30,23 +29,18 @@ const SfdAuthUI = () => {
   
   useEffect(() => {
     if (user && !loading) {
-      console.log("SfdAuthUI - User authenticated:", user.email, "Role:", user.app_metadata?.role);
-      const userRole = user.app_metadata?.role;
-      
-      if (userRole === 'sfd_admin') {
-        console.log("SfdAuthUI - Redirecting to agency dashboard");
+      if (user.app_metadata?.role === 'sfd_admin') {
         navigate('/agency-dashboard');
       } else {
-        // If not an SFD admin, redirect to access denied page
-        toast({
-          title: "Accès refusé",
-          description: "Ce portail est réservé aux administrateurs SFD.",
-          variant: "destructive",
-        });
-        navigate('/auth', { state: { error: 'not_sfd_admin' } });
+        // Rediriger les utilisateurs non-SFD vers leur page appropriée
+        if (user.app_metadata?.role === 'admin') {
+          navigate('/admin/auth');
+        } else {
+          navigate('/auth');
+        }
       }
     }
-  }, [user, loading, navigate, toast]);
+  }, [user, loading, navigate]);
 
   if (authSuccess) {
     return (
@@ -94,6 +88,8 @@ const SfdAuthUI = () => {
               Accès Administrateur MEREF
             </a>
           </div>
+          
+          <DemoAccountsCreator />
         </div>
       </div>
     </div>
