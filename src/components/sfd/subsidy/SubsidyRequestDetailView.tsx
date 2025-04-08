@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -12,9 +13,10 @@ import {
   Building
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { SubsidyRequest } from '@/types/subsidyRequests';
 
 interface SubsidyRequestDetailViewProps {
-  request: any; // Ideally, this should be properly typed based on the SubsidyRequest type
+  request: SubsidyRequest;
 }
 
 export const SubsidyRequestDetailView: React.FC<SubsidyRequestDetailViewProps> = ({ request }) => {
@@ -80,10 +82,14 @@ export const SubsidyRequestDetailView: React.FC<SubsidyRequestDetailViewProps> =
     }
   };
 
+  if (!request) {
+    return null;
+  }
+
   return (
     <div className="space-y-6">
       {/* Header with main information */}
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-xl font-bold">{request.purpose}</h2>
           <div className="flex items-center gap-2 mt-1 text-muted-foreground">
@@ -105,7 +111,7 @@ export const SubsidyRequestDetailView: React.FC<SubsidyRequestDetailViewProps> =
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold">{formatAmount(request.amount)} FCFA</div>
-          <div className="flex gap-2 justify-end mt-2">
+          <div className="flex flex-wrap gap-2 justify-end mt-2">
             {getStatusBadge(request.status)}
             {getPriorityBadge(request.priority)}
             {request.alert_triggered && (
