@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Sfd } from '../types/sfd-types';
 import { SfdFormValues } from '../sfd/schemas/sfdFormSchema';
@@ -11,6 +12,7 @@ export function useSfdManagement() {
   const [selectedSfd, setSelectedSfd] = useState<Sfd | null>(null);
   const [showSuspendDialog, setShowSuspendDialog] = useState(false);
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
+  const [showActivateDialog, setShowActivateDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
 
@@ -21,7 +23,8 @@ export function useSfdManagement() {
     addSfdMutation, 
     editSfdMutation, 
     suspendSfdMutation, 
-    reactivateSfdMutation 
+    reactivateSfdMutation,
+    activateSfdMutation
   } = useSfdMutations();
   const { handleExportPdf, handleExportExcel, isExporting } = useSfdExport(filteredSfds, statusFilter);
 
@@ -53,6 +56,11 @@ export function useSfdManagement() {
     setShowReactivateDialog(true);
   };
 
+  const handleActivateSfd = (sfd: Sfd) => {
+    setSelectedSfd(sfd);
+    setShowActivateDialog(true);
+  };
+
   return {
     sfds,
     filteredSfds,
@@ -69,12 +77,15 @@ export function useSfdManagement() {
     setShowSuspendDialog,
     showReactivateDialog,
     setShowReactivateDialog,
+    showActivateDialog,
+    setShowActivateDialog,
     showAddDialog,
     setShowAddDialog,
     showEditDialog,
     setShowEditDialog,
     suspendSfdMutation,
     reactivateSfdMutation,
+    activateSfdMutation,
     addSfdMutation,
     editSfdMutation,
     handleAddSfd,
@@ -82,6 +93,7 @@ export function useSfdManagement() {
     handleShowEditDialog,
     handleSuspendSfd,
     handleReactivateSfd,
+    handleActivateSfd,
     handleExportPdf,
     handleExportExcel
   };
