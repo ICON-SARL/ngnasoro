@@ -25,12 +25,19 @@ if (typeof window !== 'undefined') {
         };
       });
       
-      // Create and start the worker - properly accessing the setupWorker function
-      // In MSW v2, it's not directly destructurable but accessed through the default export
-      const { worker } = mswModule;
+      // In MSW v2, setupWorker is the correct function to use
+      const { setupWorker } = mswModule;
+      
+      if (!setupWorker) {
+        console.error('MSW setupWorker function not found');
+        return;
+      }
+      
+      // Create the worker with our handlers
+      const worker = setupWorker(...handlers);
       
       // Start the worker
-      worker(handlers).start({ 
+      worker.start({ 
         onUnhandledRequest: 'bypass'
       }).catch(error => {
         console.error('MSW worker initialization failed:', error);
