@@ -4,7 +4,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth';
 import { logPermissionFailure } from '@/utils/audit';
 import { Loader2 } from 'lucide-react';
-import { UserRole } from '@/utils/auth/roleTypes';
+import { UserRole } from '@/hooks/auth/types';
 
 interface PermissionProtectedRouteProps {
   component: React.ComponentType<any>;
@@ -129,7 +129,7 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
 
   if (!user) {
     // Redirect to appropriate auth page based on required role
-    if (requiredRole === UserRole.SUPER_ADMIN) {
+    if (requiredRole === UserRole.ADMIN) {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
     } else if (requiredRole === UserRole.SFD_ADMIN || requiredRole === 'sfd_admin') {
       return <Navigate to="/sfd/auth" state={{ from: location }} replace />;
