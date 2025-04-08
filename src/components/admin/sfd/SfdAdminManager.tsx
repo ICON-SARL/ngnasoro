@@ -188,7 +188,7 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
         )}
         
         <AddSfdAdminDialog
-          open={showAddDialog}
+          isOpen={showAddDialog}
           onOpenChange={setShowAddDialog}
           sfdId={sfdId}
           sfdName={sfdName}

@@ -8,7 +8,7 @@ import { PlusCircle } from 'lucide-react';
 interface AddSfdAdminDialogProps {
   sfdId: string;
   sfdName: string;
-  open: boolean;
+  isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onAddAdmin: (data: {
     email: string;
@@ -25,7 +25,7 @@ interface AddSfdAdminDialogProps {
 export function AddSfdAdminDialog({
   sfdId,
   sfdName,
-  open,
+  isOpen,
   onOpenChange,
   onAddAdmin,
   isLoading,
@@ -34,7 +34,7 @@ export function AddSfdAdminDialog({
   return (
     <>
       {/* Button trigger is handled by parent */}
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Ajouter un nouvel administrateur SFD</DialogTitle>

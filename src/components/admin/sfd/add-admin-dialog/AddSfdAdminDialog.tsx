@@ -5,7 +5,7 @@ import { AdminForm } from './AdminForm';
 import { AdminFormValues } from './schema';
 
 interface AddSfdAdminDialogProps {
-  open: boolean;
+  isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   sfdId: string;
   sfdName: string;
@@ -15,7 +15,7 @@ interface AddSfdAdminDialogProps {
 }
 
 export function AddSfdAdminDialog({
-  open,
+  isOpen,
   onOpenChange,
   sfdId,
   sfdName,
@@ -45,7 +45,7 @@ export function AddSfdAdminDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Ajouter un administrateur SFD</DialogTitle>

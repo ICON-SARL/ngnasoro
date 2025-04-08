@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSfdManagement } from '../hooks/useSfdManagement';
 import { SfdTable } from '../sfd/SfdTable';
@@ -119,7 +118,7 @@ export function SfdManagementContainer() {
 
       {selectedSfdForAdmin && (
         <AddSfdAdminDialog
-          open={showAddAdminDialog}
+          isOpen={showAddAdminDialog}
           onOpenChange={setShowAddAdminDialog}
           sfdId={selectedSfdForAdmin.id}
           sfdName={selectedSfdForAdmin.name}
