@@ -36,7 +36,6 @@ serve(async (req) => {
     }
 
     // Ne garder que les colonnes qui existent réellement dans la table sfds
-    // En se basant sur l'erreur des logs, contact_email n'existe pas
     const cleanedSfdData = {
       name: sfd_data.name,
       code: sfd_data.code,

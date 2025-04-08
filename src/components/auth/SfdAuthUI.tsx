@@ -6,13 +6,14 @@ import Logo from './Logo';
 import LoginForm from './login/LoginForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
-import DemoAccountsCreator from './DemoAccountsCreator';
+import { useToast } from '@/hooks/use-toast';
 
 const SfdAuthUI = () => {
   const { user, loading, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
+  const { toast } = useToast();
   
   useEffect(() => {
     const hash = location.hash;
@@ -28,6 +29,15 @@ const SfdAuthUI = () => {
   }, [location, navigate]);
   
   useEffect(() => {
+    // Montrer un message d'information sur la page SFD auth
+    if (!user && !loading) {
+      toast({
+        title: "Information importante",
+        description: "Seuls les administrateurs SFD déjà créés peuvent se connecter ici. L'inscription SFD doit être effectuée par un super administrateur.",
+        duration: 6000,
+      });
+    }
+    
     if (user && !loading) {
       console.log("SfdAuthUI - User authenticated:", user.email, "Role:", user.app_metadata?.role);
       const userRole = user.app_metadata?.role;
@@ -45,7 +55,7 @@ const SfdAuthUI = () => {
         navigate('/auth', { state: { error: 'not_sfd_admin' } });
       }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, toast]);
 
   if (authSuccess) {
     return (
@@ -77,6 +87,12 @@ const SfdAuthUI = () => {
             </h2>
           </div>
           
+          <div className="p-4 bg-amber-50 border-b border-amber-100">
+            <p className="text-sm text-amber-700 text-center">
+              L'inscription en tant qu'administrateur SFD est uniquement possible via un super administrateur.
+            </p>
+          </div>
+          
           <LoginForm adminMode={false} isSfdAdmin={true} />
           
           <div className="mt-4 text-center pb-6 flex flex-col gap-2">
@@ -93,8 +109,6 @@ const SfdAuthUI = () => {
               Accès Administrateur MEREF
             </a>
           </div>
-          
-          <DemoAccountsCreator />
         </div>
       </div>
     </div>

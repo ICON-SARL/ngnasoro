@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
-  const [authMode, setAuthMode] = useState<'default' | 'admin' | 'sfd_admin'>('default');
+  const [authMode, setAuthMode] = useState<'default' | 'admin'>('default');
   const { user, userRole, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -87,8 +87,6 @@ const AuthUI = () => {
     // Detect admin mode from URL
     if (location.pathname.includes('admin/auth') || location.search.includes('admin=true')) {
       setAuthMode('admin');
-    } else if (location.pathname.includes('sfd/auth') || location.search.includes('sfd_admin=true')) {
-      setAuthMode('sfd_admin');
     } else {
       setAuthMode('default');
     }
@@ -143,14 +141,6 @@ const AuthUI = () => {
             </div>
           )}
           
-          {authMode === 'sfd_admin' && (
-            <div className="p-4 bg-blue-50 border-b border-blue-100">
-              <h2 className="text-blue-800 font-medium text-center">
-                Connexion Administration SFD
-              </h2>
-            </div>
-          )}
-          
           {authMode === 'default' && (
             <div className="p-4 bg-[#0D6A51]/10 border-b border-[#0D6A51]/20">
               <h2 className="text-[#0D6A51] font-medium text-center">
@@ -165,7 +155,7 @@ const AuthUI = () => {
               <TabsTrigger value="register">Inscription</TabsTrigger>
             </TabsList>
             <TabsContent value="login">
-              <LoginForm adminMode={authMode === 'admin'} isSfdAdmin={authMode === 'sfd_admin'} />
+              <LoginForm adminMode={authMode === 'admin'} isSfdAdmin={false} />
             </TabsContent>
             <TabsContent value="register">
               <RegisterForm />
@@ -181,12 +171,9 @@ const AuthUI = () => {
                 >
                   Accès Administrateur MEREF
                 </a>
-                <a 
-                  href="/sfd/auth"
-                  className="text-blue-600 hover:underline font-medium"
-                >
-                  Accès Administrateur SFD
-                </a>
+                <div className="text-gray-500 text-sm italic mt-1">
+                  L'inscription en tant qu'administrateur SFD est effectuée uniquement par un administrateur
+                </div>
               </>
             )}
             
@@ -197,29 +184,6 @@ const AuthUI = () => {
                   className="text-[#0D6A51] hover:underline font-medium"
                 >
                   Connexion Utilisateur Standard
-                </a>
-                <a 
-                  href="/sfd/auth"
-                  className="text-blue-600 hover:underline font-medium"
-                >
-                  Accès Administrateur SFD
-                </a>
-              </>
-            )}
-            
-            {authMode === 'sfd_admin' && (
-              <>
-                <a 
-                  href="/auth"
-                  className="text-[#0D6A51] hover:underline font-medium"
-                >
-                  Connexion Utilisateur Standard
-                </a>
-                <a 
-                  href="/admin/auth"
-                  className="text-amber-600 hover:underline font-medium"
-                >
-                  Accès Administrateur MEREF
                 </a>
               </>
             )}
