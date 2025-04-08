@@ -4,7 +4,6 @@ import { useToast } from '@/hooks/use-toast';
 import { SfdFormValues } from '../../../sfd/schemas/sfdFormSchema';
 import { useAuth } from '@/hooks/useAuth';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
-import { supabase } from '@/integrations/supabase/client';
 
 export function useAddSfdMutation() {
   const { toast } = useToast();
@@ -35,26 +34,33 @@ export function useAddSfdMutation() {
         // Supprimer tout cache existant avant l'opération
         queryClient.removeQueries({ queryKey: ['sfds'] });
         
-        // Ajouter un paramètre anti-cache
-        const timestamp = new Date().getTime();
-        
-        // Utiliser directement l'API Supabase pour appeler la fonction Edge
-        const { data: responseData, error: fnError } = await supabase.functions.invoke('create_sfd', {
-          body: {
+        // Utiliser la nouvelle méthode améliorée avec anti-cache
+        const { data: responseData } = await fetch('/api/create-sfd', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          },
+          body: JSON.stringify({
             sfd_data: newSfd,
             admin_id: user.id,
-            timestamp // Ajouter un horodatage pour éviter le cache
-          },
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
+            timestamp: new Date().getTime() // Pour éviter le caching
+          })
+        }).then(res => {
+          if (!res.ok) {
+            return res.text().then(text => {
+              try {
+                // Tenter de parser le JSON d'erreur
+                const errorData = JSON.parse(text);
+                throw new Error(errorData.error || "Erreur lors de l'ajout de la SFD");
+              } catch (e) {
+                // Si ce n'est pas du JSON, utiliser le texte brut
+                throw new Error(`Erreur lors de l'ajout de la SFD: ${text}`);
+              }
+            });
           }
+          return res.json();
         });
-
-        if (fnError) {
-          console.error("Erreur lors de l'appel à la fonction Edge create_sfd:", fnError);
-          throw new Error(`Erreur lors de l'ajout de la SFD: ${fnError.message}`);
-        }
 
         if (!responseData || !responseData.success) {
           const errorMsg = responseData?.error || "Échec de la création de la SFD";
