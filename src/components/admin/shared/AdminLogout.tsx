@@ -29,12 +29,8 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
       setIsLoading(true);
       console.log("AdminLogout - Déconnexion initiée");
       
-      // Use the signOut function from Auth context to ensure consistent logout behavior
-      const result = await signOut();
-      
-      if (!result.success && result.error) {
-        throw new Error(result.error);
-      }
+      // Use the signOut function from Auth context 
+      await signOut();
       
       console.log("AdminLogout - Déconnexion réussie");
       

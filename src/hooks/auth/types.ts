@@ -1,11 +1,12 @@
 
-export enum UserRole {
-  SUPER_ADMIN = 'admin',
-  SFD_ADMIN = 'sfd_admin',
-  USER = 'user'
-}
-
 export type Role = 'admin' | 'sfd_admin' | 'user' | null;
+
+export interface AppMetadata {
+  role: Role;
+  role_assigned?: boolean;
+  roles?: string[];
+  sfd_id?: string;
+}
 
 export interface User {
   id: string;
@@ -14,19 +15,8 @@ export interface User {
   avatar_url?: string;
   phone?: string;
   sfd_id?: string;
-  user_metadata?: {
-    [key: string]: any;
-    full_name?: string;
-    avatar_url?: string;
-    phone?: string;
-    sfd_id?: string;
-  };
-  app_metadata?: {
-    role: Role;
-    role_assigned?: boolean;
-    roles?: string[];
-    sfd_id?: string;
-  };
+  user_metadata?: Record<string, any>;
+  app_metadata?: AppMetadata;
 }
 
 export interface SignOutResult {
@@ -37,9 +27,7 @@ export interface SignOutResult {
 export interface SignUpData {
   email: string;
   password: string;
-  metadata?: {
-    [key: string]: any;
-  };
+  metadata?: Record<string, any>;
 }
 
 export interface AuthContextProps {
@@ -48,12 +36,12 @@ export interface AuthContextProps {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; data?: any; error?: string }>;
   signOut: () => Promise<SignOutResult>;
-  signUp: (data: SignUpData) => Promise<void>;
   activeSfdId: string | null;
   setActiveSfdId: (id: string | null) => void;
   isAdmin: boolean;
   isSfdAdmin: boolean;
   setUser: (user: User | null) => void;
+  signUp: (data: SignUpData) => Promise<void>;
   isLoggedIn: boolean;
   userRole: Role;
   biometricEnabled: boolean;

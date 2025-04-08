@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -26,7 +25,6 @@ const ProfilePage = () => {
     navigate('/mobile-flow/main');
   };
 
-  // Create a wrapper function to adapt the signOut function to the expected void return type
   const handleLogout = async () => {
     try {
       const result = await signOut();
@@ -38,12 +36,10 @@ const ProfilePage = () => {
           variant: "destructive",
         });
       } else {
-        // Successful logout
         toast({
           title: "Déconnexion réussie",
           description: "Vous avez été déconnecté avec succès",
         });
-        // Navigate to auth page
         window.location.replace('/auth');
       }
     } catch (error) {
