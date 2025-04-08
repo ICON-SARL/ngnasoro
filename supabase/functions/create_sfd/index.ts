@@ -66,24 +66,12 @@ serve(async (req) => {
       );
     }
     
-    // Get the table structure to make sure we only include valid columns
-    const { data: columnsData, error: columnsError } = await supabase
-      .rpc('get_table_columns', { table_name: 'sfds' });
-      
-    if (columnsError) {
-      console.warn("Could not get table structure, using hardcoded fields:", columnsError);
-    }
-    
-    // Extraire uniquement les champs qui existent dans la table
-    let validColumns = ['name', 'code', 'region', 'status', 'logo_url', 'phone', 'subsidy_balance'];
-    if (columnsData && Array.isArray(columnsData)) {
-      validColumns = columnsData.map(col => col.column_name);
-    }
-    
-    // Add legal_document_url if not in the list but we need it
-    if (!validColumns.includes('legal_document_url')) {
-      validColumns.push('legal_document_url');
-    }
+    // On n'utilise plus la fonction get_table_columns qui cause des erreurs
+    // Au lieu de cela, on définit manuellement les colonnes valides
+    const validColumns = [
+      'name', 'code', 'region', 'status', 'logo_url', 'phone',
+      'subsidy_balance', 'created_at', 'updated_at'
+    ];
     
     // Filter to valid columns only
     const cleanedSfdData = Object.fromEntries(

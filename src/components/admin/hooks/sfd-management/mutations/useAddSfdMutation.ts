@@ -25,7 +25,6 @@ export function useAddSfdMutation() {
         status: sfdData.status || 'active',
         logo_url: sfdData.logo_url || null,
         phone: sfdData.phone || null,
-        legal_document_url: sfdData.legal_document_url || null,
         subsidy_balance: sfdData.subsidy_balance || 0
       };
 
@@ -36,11 +35,19 @@ export function useAddSfdMutation() {
         // Supprimer tout cache existant avant l'opération
         queryClient.removeQueries({ queryKey: ['sfds'] });
         
+        // Ajouter un paramètre anti-cache
+        const timestamp = new Date().getTime();
+        
         // Utiliser directement l'API Supabase pour appeler la fonction Edge
         const { data: responseData, error: fnError } = await supabase.functions.invoke('create_sfd', {
           body: {
             sfd_data: newSfd,
-            admin_id: user.id
+            admin_id: user.id,
+            timestamp // Ajouter un horodatage pour éviter le cache
+          },
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
           }
         });
 
