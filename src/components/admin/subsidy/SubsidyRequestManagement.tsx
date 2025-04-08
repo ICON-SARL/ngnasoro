@@ -80,18 +80,16 @@ export function SubsidyRequestManagement() {
 
           <TabsContent value={activeTab} className="mt-0">
             <SubsidyRequestsList 
-              requests={filteredRequests} 
               isLoading={isLoading} 
-              showFilters={showFilters} 
+              showFilters={showFilters}
               onRefresh={refetch}
+              onSelectRequest={() => {}} // Adding required prop
             />
           </TabsContent>
         </Tabs>
       </Card>
 
       <SubsidyRequestCreate 
-        open={createDialogOpen} 
-        onOpenChange={setCreateDialogOpen}
         onSuccess={handleCreateSuccess}
       />
     </div>
