@@ -3,7 +3,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -31,7 +30,7 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
       // Use the signOut function from Auth context to ensure consistent logout behavior
       const result = await signOut();
       
-      if (result.success === false && result.error) {
+      if (!result.success && result.error) {
         throw new Error(result.error);
       }
       

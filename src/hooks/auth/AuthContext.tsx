@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User, AuthContextProps, Role } from './types';
+import { User, AuthContextProps, Role, SignOutResult } from './types';
 
 const AuthContext = createContext<AuthContextProps | null>(null);
 
@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signOut = async () => {
+  const signOut = async (): Promise<SignOutResult> => {
     console.log("AuthContext - Attempting to sign out");
     try {
       // Clear specific important local storage items first
