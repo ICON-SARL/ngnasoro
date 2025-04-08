@@ -128,11 +128,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear any local storage items that might persist session data
       localStorage.removeItem('adminLastSeen');
       localStorage.removeItem('supabase.auth.token');
+      localStorage.clear();
       
       // Clear any session storage items
       sessionStorage.clear();
       
-      const { error } = await supabase.auth.signOut();
+      // Call Supabase auth signOut with global scope to ensure full logout
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
       
       if (error) {
         console.error("AuthContext - Sign out error:", error);
@@ -166,6 +168,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!result.success) {
         console.error('Error signing out:', result.error);
       }
+      // Do a hard reload to ensure complete logout
+      window.location.replace('/auth');
       return;
     },
     activeSfdId,

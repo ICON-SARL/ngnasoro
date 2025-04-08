@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,52 +11,13 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Building, CreditCard, Users, FileText, LogOut } from 'lucide-react';
+import { Building, CreditCard, Users, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/auth/index';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import AdminLogout from '@/components/admin/shared/AdminLogout';
 
 export const AgencyHeader = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
-  
-  const handleSignOut = async () => {
-    try {
-      console.log("AgencyHeader - Déconnexion initiée");
-      
-      // Clear all storage to remove any session data
-      localStorage.clear();
-      sessionStorage.clear();
-      
-      // Call Supabase auth signOut method directly
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
-      
-      if (error) {
-        console.error("AgencyHeader - Error during sign out:", error);
-        throw error;
-      }
-      
-      console.log("AgencyHeader - Déconnexion réussie");
-      
-      // Show success toast
-      toast({
-        title: "Déconnecté",
-        description: "Vous avez été déconnecté avec succès",
-      });
-      
-      // Force a complete page reload to reset all state
-      window.location.replace('/auth');
-      
-    } catch (error) {
-      console.error("AgencyHeader - Erreur lors de la déconnexion:", error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la déconnexion",
-        variant: "destructive",
-      });
-    }
-  };
   
   return (
     <header className="bg-white border-b border-gray-200">
@@ -152,9 +114,8 @@ export const AgencyHeader = () => {
                   <span>Demandes de subvention</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Se déconnecter</span>
+                <DropdownMenuItem>
+                  <AdminLogout variant="link" size="sm" className="w-full text-left justify-start p-0 h-auto hover:bg-transparent text-red-600" />
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

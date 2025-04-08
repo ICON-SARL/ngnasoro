@@ -10,12 +10,14 @@ interface AdminLogoutProps {
   variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
+  children?: React.ReactNode;
 }
 
 const AdminLogout: React.FC<AdminLogoutProps> = ({ 
   variant = 'ghost', 
   size = 'sm',
-  className = ''
+  className = '',
+  children
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -28,7 +30,7 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
       localStorage.clear();
       sessionStorage.clear();
       
-      // Call Supabase auth signOut method directly
+      // Call Supabase auth signOut method directly with global scope
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       
       if (error) {
@@ -62,9 +64,10 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
       variant={variant} 
       size={size}
       onClick={handleLogout}
-      className={`${className} text-white hover:text-white hover:bg-primary-foreground/10`}
+      className={`${className} ${variant !== 'link' ? 'text-white hover:text-white hover:bg-primary-foreground/10' : ''}`}
     >
-      <LogOut className="h-4 w-4" />
+      {children || <LogOut className="h-4 w-4" />}
+      {!children && variant !== 'icon' && <span className="ml-2">Déconnexion</span>}
     </Button>
   );
 };

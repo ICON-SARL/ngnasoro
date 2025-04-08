@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, Bell, Search, Settings, User, X } from 'lucide-react';
+import { Menu, Bell, Search, Settings, User, X, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -111,10 +112,9 @@ export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ additionalCo
                   <span>Paramètres</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/auth/logout" className="text-red-600 cursor-pointer flex items-center">
-                    <AdminLogout variant="link" size="sm" className="w-full justify-start" />
-                  </Link>
+                <DropdownMenuItem>
+                  <LogOut className="mr-2 h-4 w-4 text-red-600" />
+                  <AdminLogout variant="link" size="sm" className="w-full justify-start p-0 h-auto hover:bg-transparent text-red-600" />
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
