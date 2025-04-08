@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { AgencyHeader } from '@/components/AgencyHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { SfdUserManagement } from '@/components/sfd/SfdUserManagement';
+import { SfdUserManagement } from '@/components/sfd/user-management'; // Updated import path
 import { SfdRoleManager } from '@/components/sfd/roles'; // Updated import path
 import { ClientManagement } from '@/components/sfd/ClientManagement';
 import { LoanManagement } from '@/components/sfd/LoanManagement';
