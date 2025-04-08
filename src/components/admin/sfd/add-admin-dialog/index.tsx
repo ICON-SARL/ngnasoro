@@ -2,8 +2,6 @@
 import React from 'react';
 import { AddSfdAdminForm } from './AddSfdAdminForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
 
 interface AddSfdAdminDialogProps {
   sfdId: string;
@@ -31,28 +29,25 @@ export function AddSfdAdminDialog({
   isLoading,
   error
 }: AddSfdAdminDialogProps) {
+  console.log("AddSfdAdminDialog rendering with props:", { sfdId, sfdName, isOpen, isLoading, error });
+  
   return (
-    <>
-      {/* Button trigger is handled by parent */}
-      <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Ajouter un nouvel administrateur SFD</DialogTitle>
-            <DialogDescription>
-              Créez un compte administrateur pour {sfdName}
-            </DialogDescription>
-          </DialogHeader>
-          <AddSfdAdminForm
-            sfdId={sfdId}
-            onSubmit={onAddAdmin}
-            isLoading={isLoading}
-            serverError={error}
-            onCancel={() => onOpenChange(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog trigger button is now provided by the parent component */}
-    </>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Ajouter un nouvel administrateur SFD</DialogTitle>
+          <DialogDescription>
+            Créez un compte administrateur pour {sfdName}
+          </DialogDescription>
+        </DialogHeader>
+        <AddSfdAdminForm
+          sfdId={sfdId}
+          onSubmit={onAddAdmin}
+          isLoading={isLoading}
+          serverError={error}
+          onCancel={() => onOpenChange(false)}
+        />
+      </DialogContent>
+    </Dialog>
   );
 }

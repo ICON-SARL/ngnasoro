@@ -31,7 +31,9 @@ export function useAddSfdMutation() {
 
       try {
         // 1. Création de la SFD avec appel à la fonction edge
-        console.log("Tentative de création de SFD...");
+        console.log("Tentative de création de SFD avec les données:", newSfd);
+        console.log("Admin ID utilisé:", user.id);
+        
         const sfdResponse = await edgeFunctionApi.callEdgeFunction('create_sfd', {
           sfd_data: newSfd,
           admin_id: user.id
@@ -39,7 +41,7 @@ export function useAddSfdMutation() {
 
         if (!sfdResponse) {
           console.error("Aucune réponse reçue lors de la création de la SFD");
-          throw new Error("Erreur lors de l'ajout de la SFD");
+          throw new Error("Erreur lors de l'ajout de la SFD: Aucune réponse du serveur");
         }
         
         // Make sure we have a proper SFD object with an id

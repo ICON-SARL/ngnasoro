@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useSfdManagement } from '../hooks/useSfdManagement';
 import { SfdTable } from '../sfd/SfdTable';
@@ -6,8 +7,9 @@ import { SfdToolbar } from './SfdToolbar';
 import { SfdDialogs } from './SfdDialogs';
 import { SfdDetailView } from '../sfd/SfdDetailView';
 import { Sfd, SfdStatus } from '../types/sfd-types';
-import { useSfdAdminManagement } from '../hooks/useSfdAdminManagement';
+import { useSfdAdminManagement } from '@/hooks/useSfdAdminManagement';
 import { AddSfdAdminDialog } from '../sfd/add-admin-dialog';
+import { toast } from '@/hooks/use-toast';
 
 export function SfdManagementContainer() {
   const [showDetailsView, setShowDetailsView] = useState(false);
@@ -42,7 +44,8 @@ export function SfdManagementContainer() {
     handleSuspendSfd,
     handleReactivateSfd,
     handleExportPdf,
-    handleExportExcel
+    handleExportExcel,
+    refetch
   } = useSfdManagement();
 
   const { isLoading: isLoadingAdmin, error: adminError, addSfdAdmin } = useSfdAdminManagement();
@@ -53,8 +56,22 @@ export function SfdManagementContainer() {
   };
 
   const handleAddAdmin = (sfd: Sfd) => {
+    console.log("Opening add admin dialog for SFD:", sfd);
     setSelectedSfdForAdmin(sfd);
     setShowAddAdminDialog(true);
+  };
+
+  const handleSubmitAddAdmin = (data: any) => {
+    console.log("Submitting admin data with:", data);
+    addSfdAdmin(data, {
+      onSuccess: () => {
+        setShowAddAdminDialog(false);
+        toast({
+          title: "Succès",
+          description: "L'administrateur SFD a été créé avec succès"
+        });
+      }
+    });
   };
 
   const handleStatusFilterChange = (value: string) => {
@@ -122,9 +139,9 @@ export function SfdManagementContainer() {
           onOpenChange={setShowAddAdminDialog}
           sfdId={selectedSfdForAdmin.id}
           sfdName={selectedSfdForAdmin.name}
-          onAddAdmin={addSfdAdmin}
+          onAddAdmin={handleSubmitAddAdmin}
           isLoading={isLoadingAdmin}
-          error={adminError ? adminError.toString() : null}
+          error={adminError}
         />
       )}
     </div>

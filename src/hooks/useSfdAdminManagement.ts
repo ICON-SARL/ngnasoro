@@ -1,7 +1,8 @@
+
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useAdminCommunication } from './useAdminCommunication';
 import { useAuth } from './auth';
 import { AdminRole } from '@/components/admin/management/types';
@@ -43,11 +44,12 @@ export function useSfdAdminManagement() {
         
         if (edgeFunctionError) {
           console.error("Edge function error:", edgeFunctionError);
-          throw new Error(`Edge function error: ${edgeFunctionError.message}`);
+          throw new Error(`Erreur de fonction: ${edgeFunctionError.message}`);
         }
         
-        if (!response.success) {
-          throw new Error(response.error || "Failed to create SFD admin");
+        if (!response || !response.success) {
+          console.error("Invalid response:", response);
+          throw new Error(response?.error || "Échec de la création de l'administrateur SFD");
         }
         
         console.log("SFD admin created successfully:", response);
@@ -55,8 +57,8 @@ export function useSfdAdminManagement() {
         if (data.notify && response.user_id && user) {
           try {
             await sendNotification({
-              title: "SFD admin account created",
-              message: `An admin account has been created for you. Please log in with the email ${data.email}.`,
+              title: "Compte administrateur SFD créé",
+              message: `Un compte administrateur a été créé pour vous. Veuillez vous connecter avec l'email ${data.email}.`,
               type: "info",
               recipient_id: response.user_id
             });
@@ -70,7 +72,7 @@ export function useSfdAdminManagement() {
         
       } catch (error: any) {
         console.error("Error creating SFD admin:", error);
-        setError(error.message || "An error occurred while creating the administrator");
+        setError(error.message || "Une erreur est survenue lors de la création de l'administrateur");
         throw error;
       } finally {
         setIsLoading(false);
@@ -79,13 +81,13 @@ export function useSfdAdminManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
       
-      toast({
+      useToast().toast({
         title: "Succès",
         description: "L'administrateur SFD a été créé avec succès",
       });
     },
     onError: (error: any) => {
-      toast({
+      useToast().toast({
         title: "Erreur",
         description: `Impossible de créer l'administrateur: ${error.message}`,
         variant: "destructive",
