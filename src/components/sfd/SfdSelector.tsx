@@ -12,6 +12,7 @@ interface SfdSelectorProps {
   onSfdSelected?: () => void;
   isOpen: boolean;
   onClose: () => void;
+  disableReselection?: boolean; // Nouvelle prop pour désactiver la resélection pour les admins SFD
 }
 
 interface SfdItem {
@@ -22,7 +23,12 @@ interface SfdItem {
   logo_url?: string;
 }
 
-export const SfdSelector: React.FC<SfdSelectorProps> = ({ onSfdSelected, isOpen, onClose }) => {
+export const SfdSelector: React.FC<SfdSelectorProps> = ({ 
+  onSfdSelected, 
+  isOpen, 
+  onClose, 
+  disableReselection = false 
+}) => {
   const [sfds, setSfds] = useState<SfdItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,48 +43,94 @@ export const SfdSelector: React.FC<SfdSelectorProps> = ({ onSfdSelected, isOpen,
       setError(null);
       
       try {
-        // Check if the user already has SFD associations
-        const { data: userSfds, error: userSfdsError } = await supabase
-          .from('user_sfds')
-          .select(`
-            id,
-            sfd_id,
-            is_default,
-            sfds:sfd_id (id, name, code, region, logo_url)
-          `)
-          .eq('user_id', user.id);
+        // Vérifier le rôle de l'utilisateur
+        const role = user.app_metadata?.role;
         
-        if (userSfdsError) throw userSfdsError;
-        
-        if (userSfds && userSfds.length > 0) {
-          // User already has SFD associations
-          const formattedSfds = userSfds.map(item => ({
-            id: item.sfds.id,
-            name: item.sfds.name,
-            code: item.sfds.code,
-            region: item.sfds.region,
-            logo_url: item.sfds.logo_url
-          }));
+        // Pour un admin SFD, récupérer uniquement les SFDs associées à cet admin
+        if (role === 'sfd_admin') {
+          const { data: userSfds, error: userSfdsError } = await supabase
+            .from('user_sfds')
+            .select(`
+              id,
+              sfd_id,
+              is_default,
+              sfds:sfd_id (id, name, code, region, logo_url)
+            `)
+            .eq('user_id', user.id);
           
-          setSfds(formattedSfds);
+          if (userSfdsError) throw userSfdsError;
           
-          // If no activeSfdId is set, use the default one
-          if (!activeSfdId) {
-            const defaultSfd = userSfds.find(item => item.is_default);
-            if (defaultSfd) {
-              setActiveSfdId(defaultSfd.sfd_id);
+          if (userSfds && userSfds.length > 0) {
+            const formattedSfds = userSfds.map(item => ({
+              id: item.sfds.id,
+              name: item.sfds.name,
+              code: item.sfds.code,
+              region: item.sfds.region,
+              logo_url: item.sfds.logo_url
+            }));
+            
+            setSfds(formattedSfds);
+            
+            // Si pas de SFD actif, utiliser celui par défaut
+            if (!activeSfdId) {
+              const defaultSfd = userSfds.find(item => item.is_default);
+              if (defaultSfd) {
+                setActiveSfdId(defaultSfd.sfd_id);
+                // Fermer automatiquement si un SFD par défaut est sélectionné
+                if (disableReselection) {
+                  onClose();
+                }
+              }
             }
+          } else {
+            setError("Aucune SFD n'est associée à votre compte d'administrateur.");
           }
-        } else {
-          // Fetch all available SFDs if user doesn't have associations yet
-          const { data: allSfds, error: sfdsError } = await supabase
-            .from('sfds')
-            .select('id, name, code, region, logo_url')
-            .eq('status', 'active');
+        } 
+        // Pour les clients, récupérer toutes les SFDs ou celles auxquelles ils sont associés
+        else {
+          // Récupérer les associations existantes
+          const { data: userSfds, error: userSfdsError } = await supabase
+            .from('user_sfds')
+            .select(`
+              id,
+              sfd_id,
+              is_default,
+              sfds:sfd_id (id, name, code, region, logo_url)
+            `)
+            .eq('user_id', user.id);
           
-          if (sfdsError) throw sfdsError;
+          if (userSfdsError) throw userSfdsError;
           
-          setSfds(allSfds || []);
+          if (userSfds && userSfds.length > 0) {
+            // L'utilisateur a déjà des associations SFD
+            const formattedSfds = userSfds.map(item => ({
+              id: item.sfds.id,
+              name: item.sfds.name,
+              code: item.sfds.code,
+              region: item.sfds.region,
+              logo_url: item.sfds.logo_url
+            }));
+            
+            setSfds(formattedSfds);
+            
+            // Si pas de SFD actif, utiliser celui par défaut
+            if (!activeSfdId) {
+              const defaultSfd = userSfds.find(item => item.is_default);
+              if (defaultSfd) {
+                setActiveSfdId(defaultSfd.sfd_id);
+              }
+            }
+          } else {
+            // Pour les nouveaux clients sans associations, montrer toutes les SFDs actives
+            const { data: allSfds, error: sfdsError } = await supabase
+              .from('sfds')
+              .select('id, name, code, region, logo_url')
+              .eq('status', 'active');
+            
+            if (sfdsError) throw sfdsError;
+            
+            setSfds(allSfds || []);
+          }
         }
       } catch (err: any) {
         console.error('Error fetching SFDs:', err);
@@ -89,16 +141,16 @@ export const SfdSelector: React.FC<SfdSelectorProps> = ({ onSfdSelected, isOpen,
     };
     
     fetchSfds();
-  }, [user, activeSfdId, setActiveSfdId]);
+  }, [user, activeSfdId, setActiveSfdId, disableReselection, onClose]);
   
   const handleSelectSfd = async (sfdId: string) => {
     if (!user) return;
     
     try {
-      // Update active SFD in user's state
+      // Mettre à jour la SFD active dans l'état de l'utilisateur
       setActiveSfdId(sfdId);
       
-      // Check if association exists, otherwise create it
+      // Vérifier si l'association existe, sinon la créer
       const { data: existing } = await supabase
         .from('user_sfds')
         .select('id')
@@ -107,7 +159,7 @@ export const SfdSelector: React.FC<SfdSelectorProps> = ({ onSfdSelected, isOpen,
         .maybeSingle();
       
       if (!existing) {
-        // Create association
+        // Créer l'association
         await supabase
           .from('user_sfds')
           .insert({
@@ -116,7 +168,7 @@ export const SfdSelector: React.FC<SfdSelectorProps> = ({ onSfdSelected, isOpen,
             is_default: true
           });
         
-        // Update app_metadata in auth.users
+        // Mettre à jour app_metadata dans auth.users
         await supabase.auth.updateUser({
           data: { sfd_id: sfdId }
         });
@@ -141,6 +193,13 @@ export const SfdSelector: React.FC<SfdSelectorProps> = ({ onSfdSelected, isOpen,
       });
     }
   };
+
+  // Si la resélection est désactivée et qu'un SFD est déjà actif, fermer automatiquement
+  useEffect(() => {
+    if (disableReselection && activeSfdId && isOpen) {
+      onClose();
+    }
+  }, [disableReselection, activeSfdId, isOpen, onClose]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -168,9 +227,9 @@ export const SfdSelector: React.FC<SfdSelectorProps> = ({ onSfdSelected, isOpen,
             {sfds.map((sfd) => (
               <div
                 key={sfd.id}
-                className={`flex items-center justify-between p-3 rounded-lg cursor-pointer border
-                  ${activeSfdId === sfd.id ? 'border-primary bg-primary/5' : 'border-gray-200 hover:bg-gray-50'}`}
-                onClick={() => handleSelectSfd(sfd.id)}
+                className={`flex items-center justify-between p-3 rounded-lg ${disableReselection && activeSfdId !== sfd.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                  ${activeSfdId === sfd.id ? 'border-primary bg-primary/5 border' : 'border border-gray-200 hover:bg-gray-50'}`}
+                onClick={() => !disableReselection || activeSfdId !== sfd.id ? handleSelectSfd(sfd.id) : null}
               >
                 <div className="flex items-center">
                   {sfd.logo_url ? (
@@ -192,7 +251,7 @@ export const SfdSelector: React.FC<SfdSelectorProps> = ({ onSfdSelected, isOpen,
                   <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
                     Actif
                   </span>
-                ) : (
+                ) : !disableReselection && (
                   <Button variant="outline" size="sm">
                     Sélectionner
                   </Button>

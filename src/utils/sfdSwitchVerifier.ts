@@ -22,6 +22,19 @@ interface VerificationResponse {
  */
 export async function verifySfdSwitch(userId: string, sfdId: string): Promise<VerificationResponse> {
   try {
+    // Vérifier le rôle de l'utilisateur
+    const { data: authUser } = await supabase.auth.getUser();
+    const userRole = authUser.user?.app_metadata?.role;
+    
+    // Si c'est un admin SFD avec une SFD déjà associée, il ne peut pas changer
+    if (userRole === 'sfd_admin' && authUser.user?.app_metadata?.sfd_id) {
+      return {
+        success: false,
+        requiresVerification: false,
+        message: "En tant qu'administrateur SFD, vous ne pouvez pas changer de SFD"
+      };
+    }
+
     // Check if user has access to this SFD
     const { data: userSfd, error: userSfdError } = await supabase
       .from('user_sfds')
@@ -57,31 +70,33 @@ export async function verifySfdSwitch(userId: string, sfdId: string): Promise<Ve
       };
     }
     
-    // Determine if this SFD requires verification for switching
-    // For demonstration, let's require verification if it's not the default SFD
-    const requiresVerification = !userSfd.is_default;
-    
-    if (requiresVerification) {
-      // For enhanced security, use an edge function to handle verification
-      const { data, error } = await supabase.functions.invoke('verify-sfd-switch', {
-        body: {
-          userId,
-          sfdId,
-          action: 'initiate'
+    // Pour les clients: Déterminer si la SFD nécessite une vérification pour le changement
+    // Pour les démonstrations, exiger une vérification si ce n'est pas la SFD par défaut
+    if (userRole !== 'sfd_admin') {
+      const requiresVerification = !userSfd.is_default;
+      
+      if (requiresVerification) {
+        // Pour une sécurité renforcée, utiliser une fonction edge pour gérer la vérification
+        const { data, error } = await supabase.functions.invoke('verify-sfd-switch', {
+          body: {
+            userId,
+            sfdId,
+            action: 'initiate'
+          }
+        });
+        
+        if (error) {
+          throw new Error(error.message);
         }
-      });
-      
-      if (error) {
-        throw new Error(error.message);
+        
+        return {
+          success: true,
+          requiresVerification: true,
+          verificationId: data.verificationId,
+          message: "Vérification requise pour changer de SFD",
+          verificationCode: data.verificationCode // Dans une vraie application, cela serait envoyé par SMS
+        };
       }
-      
-      return {
-        success: true,
-        requiresVerification: true,
-        verificationId: data.verificationId,
-        message: "Vérification requise pour changer de SFD",
-        verificationCode: data.verificationCode // In a real app, this would be sent via SMS
-      };
     }
     
     return {
@@ -106,6 +121,18 @@ export async function completeSfdSwitch(
   request: VerificationRequest
 ): Promise<{ success: boolean; message: string }> {
   try {
+    // Vérifier le rôle de l'utilisateur
+    const { data: authUser } = await supabase.auth.getUser();
+    const userRole = authUser.user?.app_metadata?.role;
+    
+    // Si c'est un admin SFD avec une SFD déjà associée, il ne peut pas changer
+    if (userRole === 'sfd_admin' && authUser.user?.app_metadata?.sfd_id) {
+      return {
+        success: false,
+        message: "En tant qu'administrateur SFD, vous ne pouvez pas changer de SFD"
+      };
+    }
+  
     if (request.verificationCode) {
       // Verify the code through the edge function
       const { data, error } = await supabase.functions.invoke('verify-sfd-switch', {

@@ -26,7 +26,7 @@ import { InitializeDemoData } from '@/components/sfd/InitializeDemoData';
 export function SfdDashboard() {
   const { user, activeSfdId } = useAuth();
   const navigate = useNavigate();
-  const [selectorOpen, setSelectorOpen] = useState(!activeSfdId);
+  const [selectorOpen, setSelectorOpen] = useState(false);
   const { clientStats } = useSfdClientStats(activeSfdId);
   const { loanStats } = useSfdLoanStats(activeSfdId);
   const { subsidyRequests } = useSfdSubsidyRequests({ 
@@ -34,7 +34,8 @@ export function SfdDashboard() {
     sfdId: activeSfdId
   });
 
-  // Open the SFD selector if no SFD is selected
+  // Si l'utilisateur est un admin SFD mais n'a pas de SFD activé,
+  // ouvrir le sélecteur uniquement pour la première sélection
   useEffect(() => {
     if (!activeSfdId) {
       setSelectorOpen(true);
@@ -71,11 +72,12 @@ export function SfdDashboard() {
     <div className="min-h-screen bg-gray-50">
       <AgencyHeader />
       
-      {/* SFD Selector Dialog */}
+      {/* SFD Selector Dialog - uniquement pour la première sélection */}
       <SfdSelector 
         isOpen={selectorOpen}
         onClose={() => setSelectorOpen(false)}
         onSfdSelected={() => setSelectorOpen(false)}
+        disableReselection={true}  // Empêche les admins SFD de changer de SFD après sélection
       />
       
       <div className="container mx-auto p-4 md:p-6">
@@ -89,14 +91,7 @@ export function SfdDashboard() {
           
           <div className="flex space-x-2">
             <InitializeDemoData />
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-1"
-              onClick={() => setSelectorOpen(true)}
-            >
-              <TrendingUp className="h-4 w-4" />
-              Changer de SFD
-            </Button>
+            {/* Le bouton de changement de SFD a été retiré pour les admins SFD */}
             <Button 
               variant="outline" 
               className="flex items-center gap-1"
