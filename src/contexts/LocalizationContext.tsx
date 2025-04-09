@@ -59,6 +59,7 @@ export const LocalizationProvider: React.FC<{ children: ReactNode }> = ({ childr
     if (settings) {
       try {
         await updateSetting('app_language', newLanguage);
+        console.log('Language preference saved successfully:', newLanguage);
       } catch (error) {
         console.error('Failed to save language preference:', error);
         // State is already updated, so no need to revert
@@ -67,8 +68,10 @@ export const LocalizationProvider: React.FC<{ children: ReactNode }> = ({ childr
   };
 
   const toggleVoiceOver = async () => {
-    setVoiceOverEnabled(prev => !prev);
+    const newValue = !voiceOverEnabled;
+    setVoiceOverEnabled(newValue);
     // Here you could save this preference to user settings if needed
+    return Promise.resolve();
   };
 
   const t = (key: string): string => {

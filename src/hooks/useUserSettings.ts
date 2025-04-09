@@ -31,7 +31,7 @@ export function useUserSettings() {
       try {
         setLoading(true);
         
-        // Utiliser une assertion de type pour contourner la vérification TypeScript
+        // Utiliser la version typée mais avec any
         const { data, error } = await supabase
           .from('user_settings' as any)
           .select('*')
@@ -42,30 +42,56 @@ export function useUserSettings() {
           console.error('Error fetching user settings:', error);
           // If settings don't exist for the user yet, create them
           if (error.code === 'PGRST116') {
+            const defaultSettings = {
+              user_id: user.id,
+              push_notifications_enabled: true,
+              email_notifications_enabled: false,
+              sms_notifications_enabled: true,
+              app_language: 'french',
+              theme: 'light',
+              offline_mode_enabled: false
+            };
+            
             const { data: newSettings, error: insertError } = await supabase
               .from('user_settings' as any)
-              .insert({ user_id: user.id })
+              .insert(defaultSettings)
               .select('*')
               .single();
               
             if (insertError) {
               console.error('Error creating user settings:', insertError);
+              toast({ 
+                title: "Erreur de paramètres",
+                description: "Impossible de créer vos préférences. Veuillez réessayer plus tard.",
+                variant: "destructive"
+              });
             } else {
               setSettings(newSettings as unknown as UserSettings);
             }
+          } else {
+            toast({ 
+              title: "Erreur de paramètres",
+              description: "Impossible de récupérer vos préférences. Veuillez vous reconnecter.",
+              variant: "destructive"
+            });
           }
         } else {
           setSettings(data as unknown as UserSettings);
         }
       } catch (error) {
         console.error('Unexpected error fetching settings:', error);
+        toast({ 
+          title: "Erreur de paramètres",
+          description: "Une erreur est survenue lors de la récupération de vos préférences",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
     }
 
     fetchUserSettings();
-  }, [user]);
+  }, [user, toast]);
 
   const updateSetting = async <K extends keyof UserSettings>(
     key: K, 
@@ -100,6 +126,11 @@ export function useUserSettings() {
 
       // Update local state
       setSettings(prev => prev ? { ...prev, [key]: value } : null);
+      
+      toast({ 
+        title: "Paramètre mis à jour",
+        description: "Vos préférences ont été enregistrées",
+      });
       
       return true;
     } catch (error) {
