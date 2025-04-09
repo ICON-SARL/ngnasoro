@@ -4,7 +4,8 @@ import { RoleCard } from './RoleCard';
 import { NewRoleDialog } from './NewRoleDialog';
 import { useRoleManager } from './useRoleManager';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Info } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function SfdRoleManager() {
   const {
@@ -25,19 +26,26 @@ export function SfdRoleManager() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold">Gestion des Rôles SFD</h2>
+          <h2 className="text-xl font-semibold">Gestion des Rôles Personnel SFD</h2>
           <p className="text-sm text-muted-foreground">
             Définissez les différents rôles et leurs permissions pour votre personnel SFD
           </p>
         </div>
         
-        <div className="flex gap-2">
-          <Button onClick={() => setShowNewRoleDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nouveau Rôle
-          </Button>
-        </div>
+        <Button onClick={() => setShowNewRoleDialog(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nouveau Rôle
+        </Button>
       </div>
+      
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertTitle>Structure hiérarchique</AlertTitle>
+        <AlertDescription>
+          En tant qu'Admin SFD, vous pouvez créer et gérer des rôles pour votre personnel comme les caissiers et agents de crédit.
+          Chaque rôle définit précisément les actions autorisées pour les membres du personnel.
+        </AlertDescription>
+      </Alert>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {roles.map(role => (

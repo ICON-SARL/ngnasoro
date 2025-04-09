@@ -1,8 +1,38 @@
 
 import React from 'react';
 import { SfdHeader } from '@/components/sfd/SfdHeader';
+import { useAuth } from '@/hooks/useAuth';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { ClientManagementSystem } from '@/components/sfd/ClientManagementSystem';
 
-const SfdClientsPage = () => {
+export const SfdClientsPage = () => {
+  const { user, activeSfdId } = useAuth();
+  const { canManageClients } = useRolePermissions();
+  
+  // Get the staff role from user_metadata (if any)
+  const staffRole = user?.user_metadata?.staff_role;
+  
+  // Check if the user can access this page
+  const hasAccess = canManageClients();
+  
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <SfdHeader />
+        <div className="container mx-auto py-6 px-4">
+          <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-red-600">Accès Refusé</h1>
+              <p className="mt-2 text-gray-600">
+                Vous n'avez pas les permissions nécessaires pour accéder à la gestion des clients.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <SfdHeader />
@@ -16,9 +46,7 @@ const SfdClientsPage = () => {
         </div>
         
         <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
-          <p className="text-center text-muted-foreground py-8">
-            Fonctionnalité de gestion des clients en cours de développement
-          </p>
+          <ClientManagementSystem staffRole={staffRole} />
         </div>
       </div>
     </div>
