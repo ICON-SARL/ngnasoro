@@ -4,6 +4,7 @@ export interface SfdAccountDisplay {
   id: string;
   name: string;
   logoUrl?: string;
+  logo_url?: string; // Keep both property names for compatibility
   region?: string;
   code?: string;
   isDefault?: boolean;

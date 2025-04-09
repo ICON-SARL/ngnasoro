@@ -3,6 +3,10 @@
 export interface SfdBalanceData {
   balance: number;
   currency: string;
+  sfdName?: string;    // Added to match usage in useSfdAccount.ts
+  logoUrl?: string;    // Added to match usage in useSfdAccount.ts
+  code?: string;       // Added to match usage in useSfdAccount.ts
+  region?: string;     // Added to match usage in useSfdAccount.ts
 }
 
 export interface SyncResult {
@@ -28,11 +32,12 @@ export interface UserSfd {
   };
 }
 
-// Add missing types that were being imported elsewhere
+// Update SfdAccount to be more consistent with property naming
 export interface SfdAccount {
   id: string;
   name: string;
-  logo_url?: string | null;
+  logo_url?: string | null;  // Use logo_url consistently
+  logoUrl?: string;          // Keep logoUrl for backward compatibility
   region?: string;
   code?: string;
   isDefault?: boolean;
@@ -42,6 +47,7 @@ export interface SfdAccount {
   loans?: SfdLoan[];
 }
 
+// Update SfdLoan to include all needed properties
 export interface SfdLoan {
   id: string;
   amount: number;
@@ -52,6 +58,10 @@ export interface SfdLoan {
   last_payment_date: string;
   status: string;
   created_at: string;
+  // Add missing properties that are used in components
+  remainingAmount?: number;
+  isLate?: boolean;
+  nextDueDate?: string;
 }
 
 export interface SfdData {

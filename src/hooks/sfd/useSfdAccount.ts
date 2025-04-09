@@ -52,15 +52,20 @@ export function useSfdAccount(user: User | null, sfdId: string | null) {
       next_payment_date: loan.next_payment_date,
       last_payment_date: loan.last_payment_date,
       status: loan.status,
-      created_at: loan.created_at
+      created_at: loan.created_at,
+      // Add computed properties used in components
+      remainingAmount: loan.remaining_amount || loan.amount, // Add remainingAmount
+      isLate: loan.is_late || false, // Add isLate
+      nextDueDate: loan.next_due_date || loan.next_payment_date // Add nextDueDate
     }));
   };
 
   // Build the active SFD account object by combining balance and loan data
   const activeSfdAccount = enabled && balanceData ? {
     id: sfdId || 'unknown',
-    name: balanceData.sfdName || 'SFD Account',
-    logo_url: balanceData.logoUrl,
+    name: balanceData.sfdName || balanceData.name || 'SFD Account',
+    logo_url: balanceData.logoUrl || balanceData.logo_url,
+    logoUrl: balanceData.logoUrl || balanceData.logo_url, // Support both property names
     balance: balanceData.balance,
     currency: balanceData.currency,
     isDefault: true, // This is the active account

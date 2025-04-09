@@ -7,12 +7,19 @@ import { PlusCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import DiscoverSfdDialog from './sfd-accounts/DiscoverSfdDialog';
+import { SfdData } from '@/hooks/sfd/types'; // Import SfdData type
 
 interface SfdAccountsSectionProps {
+  sfdData?: SfdData[]; // Add this prop to match usage in ProfilePage
+  activeSfdId?: string | null;
   onSwitchSfd?: (sfdId: string) => Promise<boolean>;
 }
 
-const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({ onSwitchSfd }) => {
+const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({ 
+  sfdData,
+  activeSfdId, 
+  onSwitchSfd 
+}) => {
   const [discoverOpen, setDiscoverOpen] = useState(false);
   const { user } = useAuth();
   const { sfdAccounts, activeSfdAccount, isLoading, refetch } = useSfdAccounts();
@@ -81,9 +88,9 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({ onSwitchSfd }) 
           >
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-3">
-                {account.logo_url && (
+                {(account.logoUrl || account.logo_url) && (
                   <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                    <img src={account.logo_url} alt={account.name} className="h-full w-full object-cover" />
+                    <img src={account.logoUrl || account.logo_url} alt={account.name} className="h-full w-full object-cover" />
                   </div>
                 )}
                 <div>

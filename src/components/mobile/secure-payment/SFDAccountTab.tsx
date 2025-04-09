@@ -100,7 +100,7 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
             <SelectContent>
               {activeSfdAccount?.loans.map(loan => (
                 <SelectItem key={loan.id} value={loan.id}>
-                  {activeSfdAccount.name} ({Math.floor(loan.remainingAmount / 4).toLocaleString()} FCFA)
+                  {activeSfdAccount.name} ({Math.floor((loan.remainingAmount || loan.amount) / 4).toLocaleString()} FCFA)
                 </SelectItem>
               ))}
             </SelectContent>
