@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/auth';
 import MobileMenu from '@/components/mobile/menu/MobileMenu';
 import MobileNavigation from '@/components/MobileNavigation';
 import MobileFlowRoutes from '@/components/mobile/routes/MobileFlowRoutes';
+import MobileHeader from '@/components/mobile/MobileHeader';
 import { Account } from '@/types/transactions';
 
 const MobileFlowPage = () => {
@@ -74,6 +75,7 @@ const MobileFlowPage = () => {
   
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col">
+      <MobileHeader />
       <main className="flex-1 w-full h-full pb-16">
         <MobileFlowRoutes 
           onAction={handleAction}
