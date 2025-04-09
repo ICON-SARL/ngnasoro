@@ -46,7 +46,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) 
       // Special case for sfd_admin role with different casing
       (requiredRole === 'sfd_admin' && userRole === 'sfd_admin') ||
       (requiredRole === 'SFD_ADMIN' && userRole === 'sfd_admin') ||
-      // Special case for admin role
+      // Special case for admin role - ensure string comparison
       (requiredRole === 'admin' && userRole === 'admin');
     
     setHasAccess(permitted);
