@@ -74,7 +74,7 @@ export function useRolePermissions() {
   const canClientAccess = (functionName: string) => {
     if (userRole !== UserRole.CLIENT) return false;
     
-    const clientPermissions = {
+    const clientPermissions: Record<string, boolean> = {
       'view_balance': true,
       'request_loan': true,
       'view_loan_status': true,

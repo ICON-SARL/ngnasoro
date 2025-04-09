@@ -46,7 +46,7 @@ export const SfdClientsPage = () => {
         </div>
         
         <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
-          <ClientManagementSystem staffRole={staffRole} />
+          <ClientManagementSystem />
         </div>
       </div>
     </div>

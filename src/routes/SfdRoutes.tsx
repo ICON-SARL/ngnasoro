@@ -1,13 +1,13 @@
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { UserRole } from '@/utils/auth/roleTypes';
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
-import { UserRole } from '@/utils/auth/roleTypes';
 import { SfdDashboardPage } from '@/pages/SfdDashboardPage';
 import { SfdClientsPage } from '@/pages/SfdClientsPage';
-import { SfdRoleManagementPage } from '@/pages/SfdRoleManagementPage';
 import { SfdLoansPage } from '@/pages/SfdLoansPage';
+import SfdRoleManagementPage from '@/pages/SfdRoleManagementPage';
 
 const SfdRoutes = () => {
   return (

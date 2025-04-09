@@ -9,7 +9,7 @@ export const ROLE_HIERARCHY = {
     description: 'Administrateur MEREF'
   },
   [UserRole.ADMIN]: { 
-    level: 100,
+    level: 90,
     canManage: [UserRole.SFD_ADMIN, UserRole.USER],
     description: 'Administrateur MEREF'
   },
