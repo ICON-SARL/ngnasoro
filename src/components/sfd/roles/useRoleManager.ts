@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Role, Permission, NewRoleData } from './types';
@@ -124,7 +123,6 @@ export function useRoleManager() {
     });
   };
 
-  // Fix function to avoid type instantiation issues
   const handleSaveNewRole = async () => {
     if (!activeSfdId) {
       toast({
@@ -137,14 +135,17 @@ export function useRoleManager() {
 
     try {
       if (isEditMode) {
-        // Use type assertion to 'any' to bypass TypeScript's deep type checking
+        // Create a simple object literal with correct typing to avoid deep inference
+        const updateData = {
+          name: newRole.name,
+          description: newRole.description,
+          permissions: newRole.permissions
+        };
+        
+        // Execute the update without type inference
         await supabase
           .from('admin_roles')
-          .update({
-            name: newRole.name,
-            description: newRole.description,
-            permissions: newRole.permissions
-          } as any)
+          .update(updateData)
           .eq('name', newRole.name)
           .eq('sfd_id', activeSfdId);
 
@@ -153,15 +154,18 @@ export function useRoleManager() {
           description: `Le rôle ${newRole.name} a été mis à jour avec succès`
         });
       } else {
-        // Use type assertion to 'any' to bypass TypeScript's deep type checking
+        // Create a simple object literal with correct typing to avoid deep inference
+        const insertData = {
+          sfd_id: activeSfdId,
+          name: newRole.name,
+          description: newRole.description,
+          permissions: newRole.permissions
+        };
+        
+        // Execute the insert without type inference
         await supabase
           .from('admin_roles')
-          .insert({
-            sfd_id: activeSfdId,
-            name: newRole.name,
-            description: newRole.description,
-            permissions: newRole.permissions
-          } as any);
+          .insert(insertData);
 
         toast({
           title: 'Rôle créé',
@@ -178,20 +182,24 @@ export function useRoleManager() {
         permissions: []
       });
 
-      // Fetch updated roles with type assertion to avoid deep inference
+      // Fetch updated roles with simplified approach
       const { data } = await supabase
         .from('admin_roles')
         .select('*')
         .eq('sfd_id', activeSfdId);
 
       if (data) {
-        // Simple transformation with explicit typing
-        const updatedRoles = (data as any[]).map(role => ({
-          id: role.id,
-          name: role.name || '',
-          description: role.description || '',
-          permissions: Array.isArray(role.permissions) ? role.permissions : []
-        }));
+        // Convert to known structure to avoid deep type inference
+        const updatedRoles: Role[] = [];
+        
+        for (const role of data) {
+          updatedRoles.push({
+            id: role.id,
+            name: role.name || '',
+            description: role.description || '',
+            permissions: Array.isArray(role.permissions) ? role.permissions : []
+          });
+        }
         
         setRoles(updatedRoles);
       }
