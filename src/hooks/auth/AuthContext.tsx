@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
   // Handle role assignment without causing infinite recursion
-  const assignUserRole = useCallback(async (userId: string, role: string) => {
+  const assignUserRole = useCallback(async (userId: string, role: Role) => {
     if (!userId || !role) return;
     
     try {
