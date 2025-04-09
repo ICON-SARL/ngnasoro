@@ -1,37 +1,42 @@
 
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import MobileFlowPage from '@/pages/MobileFlowPage';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
-import NotFound from '@/pages/NotFound';
-import { useAuth } from '@/hooks/auth/AuthContext';
+import ClientLoginPage from '@/pages/ClientLoginPage';
+import MobileFlow from '@/components/mobile/MobileFlow';
+import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
+import SecurePaymentPage from '@/components/mobile/secure-payment/SecurePaymentPage';
+import AdminRoutes from './AdminRoutes';
+import SfdRoutes from './SfdRoutes';
 
 const AppRoutes = () => {
-  const { loading } = useAuth();
-  
-  // Show loading state while authentication is being checked
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0D6A51]"></div>
-      </div>
-    );
-  }
-
   return (
-    <Routes>
-      {/* Public routes accessible to all users */}
-      <Route path="/auth" element={<LoginPage />} />
-      
-      {/* Mobile application flow */}
-      <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
-      
-      {/* Redirect root to mobile flow */}
-      <Route path="/" element={<Navigate to="/mobile-flow" replace />} />
-      
-      {/* Catch all for 404s */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <BrowserRouter>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/auth" element={<LoginPage />} />
+        <Route path="/client/auth" element={<ClientLoginPage />} />
+        
+        {/* Mobile app flow */}
+        <Route path="/mobile-flow/*" element={<MobileFlow />} />
+        <Route path="/mobile-flow/funds" element={<FundsManagementPage />} />
+        <Route path="/mobile-flow/secure-payment" element={<SecurePaymentPage />} />
+        
+        {/* Admin routes */}
+        <Route path="/admin/*" element={<AdminRoutes />} />
+        <Route path="/super-admin-dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/sfd-management" element={<Navigate to="/admin/sfd-management" replace />} />
+        
+        {/* SFD Admin routes */}
+        <Route path="/sfd/*" element={<SfdRoutes />} />
+        <Route path="/agency-dashboard" element={<Navigate to="/sfd/dashboard" replace />} />
+        
+        {/* Fallback route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 
