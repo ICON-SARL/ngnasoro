@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setActiveSfdId
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return AuthContext.Provider({ value, children });
 };
 
 export const useAuth = () => useContext(AuthContext);
