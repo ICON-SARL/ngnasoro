@@ -4,6 +4,7 @@ import { AuthProvider } from './hooks/auth/AuthContext';
 import { ToasterProvider } from './components/ToasterProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
+import { LocalizationProvider } from './contexts/LocalizationContext';
 import AppRoutes from './routes';
 import './App.css';
 
@@ -22,10 +23,12 @@ const App = () => {
     <ThemeProvider attribute="class" defaultTheme="light" storageKey="meref-theme">
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <ToasterProvider />
-          <div className="w-full min-h-screen">
-            <AppRoutes />
-          </div>
+          <LocalizationProvider>
+            <ToasterProvider />
+            <div className="w-full min-h-screen">
+              <AppRoutes />
+            </div>
+          </LocalizationProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
