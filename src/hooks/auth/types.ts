@@ -2,7 +2,7 @@
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { UserRole } from '@/utils/auth/roleTypes';
 
-export type { UserRole } from '@/utils/auth/roleTypes';
+export { UserRole } from '@/utils/auth/roleTypes';
 
 export interface User extends Omit<SupabaseUser, 'app_metadata' | 'user_metadata'> {
   app_metadata: {

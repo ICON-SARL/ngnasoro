@@ -3,7 +3,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, AuthError } from '@supabase/supabase-js';
 import { secureStorage, getBiometricSettings, toggleBiometricAuthentication } from './secureStorageService';
-import { User, UserRole, AuthContextProps } from './types';
+import { User, AuthContextProps } from './types';
+import { UserRole } from '@/utils/auth/roleTypes';
 import { createUserFromSupabaseUser, assignUserRole } from './authUtils';
 
 const AuthContext = createContext<AuthContextProps | null>(null);
@@ -19,7 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Computed properties
   const isLoggedIn = !!user;
-  const isAdmin = userRole === UserRole.ADMIN;
+  const isAdmin = userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN;
   const isSfdAdmin = userRole === UserRole.SFD_ADMIN;
 
   useEffect(() => {
@@ -121,13 +122,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Fallback to app_metadata
       if (session?.user?.app_metadata?.role) {
-        setUserRole(session.user.app_metadata.role as UserRole);
+        const metadataRole = session.user.app_metadata.role as UserRole;
+        setUserRole(metadataRole);
         return;
       }
       
       // Fallback to user_metadata
       if (session?.user?.user_metadata?.role) {
-        setUserRole(session.user.user_metadata.role as UserRole);
+        const metadataRole = session.user.user_metadata.role as UserRole;
+        setUserRole(metadataRole);
         return;
       }
       
@@ -137,7 +140,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error in handleUserRoleAssignment:', error);
       // Final fallback
       if (session?.user?.app_metadata?.role) {
-        setUserRole(session.user.app_metadata.role as UserRole);
+        const metadataRole = session.user.app_metadata.role as UserRole;
+        setUserRole(metadataRole);
       } else {
         setUserRole(UserRole.USER);
       }

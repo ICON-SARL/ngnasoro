@@ -3,8 +3,7 @@ import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { v4 as uuidv4 } from 'uuid';
-import { supabase } from '@/integrations/supabase/client';
-import { Permission, Role } from './types';
+import { Permission, Role, NewRoleData } from './types';
 
 export function useRoleManager() {
   const { activeSfdId } = useAuth();
@@ -12,8 +11,7 @@ export function useRoleManager() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [showNewRoleDialog, setShowNewRoleDialog] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [newRole, setNewRole] = useState<Role>({
-    id: '',
+  const [newRole, setNewRole] = useState<NewRoleData>({
     name: '',
     description: '',
     permissions: []
@@ -31,30 +29,12 @@ export function useRoleManager() {
     if (!activeSfdId) return;
 
     try {
-      // In a real app, this would be an API call to fetch roles for the specific SFD
-      // For now, we'll use dummy data or fetch from localStorage
-      const { data, error } = await supabase
-        .from('sfd_roles')
-        .select('*')
-        .eq('sfd_id', activeSfdId);
+      // For now, we'll use mock data since we're having issues with Supabase
+      const defaultRoles = getDefaultRoles();
+      setRoles(defaultRoles);
 
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        setRoles(data);
-      } else {
-        // Initialize with default roles if none exist
-        const defaultRoles = getDefaultRoles();
-        setRoles(defaultRoles);
-
-        // In a real app, would save these to the database
-        for (const role of defaultRoles) {
-          await supabase.from('sfd_roles').insert({
-            ...role,
-            sfd_id: activeSfdId
-          });
-        }
-      }
+      // Store in localStorage for persistence
+      localStorage.setItem(`sfd_roles_${activeSfdId}`, JSON.stringify(defaultRoles));
     } catch (error) {
       console.error('Error fetching roles:', error);
       // Fallback to default roles

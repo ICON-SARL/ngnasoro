@@ -12,3 +12,10 @@ export interface Role {
   permissions: string[];
   sfd_id?: string;
 }
+
+export interface NewRoleData {
+  id?: string;
+  name: string;
+  description: string;
+  permissions: string[];
+}
