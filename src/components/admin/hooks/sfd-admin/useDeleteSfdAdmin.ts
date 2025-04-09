@@ -27,9 +27,10 @@ export function useDeleteSfdAdmin() {
         }
 
         // Then disable the admin user
+        // Use the appropriate field to mark user as inactive
         const { error: updateError } = await supabase
           .from('admin_users')
-          .update({ status: 'inactive' })
+          .update({ role: 'inactive_sfd_admin' })
           .eq('id', adminId);
           
         if (updateError) {
