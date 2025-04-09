@@ -1,13 +1,12 @@
 
-import { SfdAccountDisplay } from '../types/SfdAccountTypes';
+import { SfdAccountDisplay } from "../types/SfdAccountTypes";
 
-/**
- * Determines the status of an SFD account
- */
-export function getAccountStatus(sfd: SfdAccountDisplay): 'verified' | 'pending' {
-  if (sfd.isVerified !== undefined) {
-    return sfd.isVerified ? 'verified' : 'pending';
+export function getAccountStatus(account: SfdAccountDisplay): 'verified' | 'pending' {
+  // Si la propriété isVerified est explicitement définie, l'utiliser
+  if (typeof account.isVerified === 'boolean') {
+    return account.isVerified ? 'verified' : 'pending';
   }
-  // Fallback to legacy logic if isVerified is not defined
-  return sfd.id.startsWith('1') ? 'pending' : 'verified';
+  
+  // Sinon, on suppose que le compte est vérifié par défaut (comportement existant)
+  return 'verified';
 }

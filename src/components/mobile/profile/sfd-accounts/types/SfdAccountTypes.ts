@@ -14,3 +14,16 @@ export interface SfdRequest {
   status: string;
   created_at: string;
 }
+
+export interface SfdAccountDisplay {
+  id: string;
+  name: string;
+  code?: string;
+  balance?: number;
+  currency?: string;
+  logoUrl?: string;
+  logo_url?: string;
+  region?: string;
+  isDefault?: boolean;
+  isVerified?: boolean;
+}

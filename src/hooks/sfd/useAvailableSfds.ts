@@ -90,14 +90,26 @@ export function useAvailableSfds(userId: string | undefined) {
     }
 
     try {
-      // Create a new SFD client request
+      // Récupérer les informations de l'utilisateur pour obtenir full_name
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userId)
+        .single();
+
+      if (userError) throw userError;
+
+      const fullName = userData?.full_name || "Unknown User";
+
+      // Create a new SFD client request with full_name
       const { data, error } = await supabase
         .from('sfd_clients')
         .insert({
           user_id: userId,
           sfd_id: sfdId,
           status: 'pending',
-          phone: phone || null
+          phone: phone || null,
+          full_name: fullName
         })
         .select()
         .single();
