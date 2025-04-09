@@ -19,7 +19,14 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
 }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [provider, setProvider] = useState('orange');
-  const { mobileMoneyProviders, isProcessing } = useMobileMoneyOperations();
+  const { 
+    mobileMoneyProviders, 
+    isProcessingPayment, 
+    isProcessingWithdrawal 
+  } = useMobileMoneyOperations();
+  
+  // Use the appropriate processing state based on operation type
+  const isProcessing = isWithdrawal ? isProcessingWithdrawal : isProcessingPayment;
   
   const handleClick = () => {
     if (phoneNumber.trim().length < 8) {
