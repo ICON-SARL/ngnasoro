@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import MobileNavigation from '@/components/MobileNavigation';
 import ContextualHeader from '@/components/mobile/ContextualHeader';
@@ -16,6 +16,7 @@ import LoanActivityPage from '@/components/mobile/LoanActivityPage';
 const MobileFlow: React.FC = () => {
   // Get authentication context to check if user is logged in
   const { user } = useAuth();
+  const location = useLocation();
   
   // If user is not authenticated, we would handle that in a parent component
 
@@ -28,11 +29,16 @@ const MobileFlow: React.FC = () => {
     updated_at: new Date().toISOString()
   };
 
+  // Check if current path is the main page
+  const isMainPage = location.pathname === '/mobile-flow/main';
+
   return (
     <div className="flex flex-col h-full min-h-screen w-full">
-      <div className="p-2 bg-[#0D6A51] rounded-b-3xl shadow-md">
-        <ContextualHeader />
-      </div>
+      {isMainPage && (
+        <div className="p-2 bg-[#0D6A51] rounded-b-3xl shadow-md">
+          <ContextualHeader />
+        </div>
+      )}
       <div className="flex-grow overflow-auto pb-16 w-full">
         <Routes>
           {/* Redirect root to main dashboard */}
