@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from './hooks/auth/AuthContext';
 import { ToasterProvider } from './components/ToasterProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -22,12 +21,10 @@ const App = () => {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" storageKey="meref-theme">
       <QueryClientProvider client={queryClient}>
-        <Router>
-          <AuthProvider>
-            <ToasterProvider />
-            <AppRoutes />
-          </AuthProvider>
-        </Router>
+        <AuthProvider>
+          <ToasterProvider />
+          <AppRoutes />
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );
