@@ -9,6 +9,7 @@ import ClientAccountState from './ClientAccountState';
 import SavingsHeader from './SavingsHeader';
 import BalanceDisplay from './BalanceDisplay';
 import AccountStats from './AccountStats';
+import { SfdClient } from '@/types/sfdClients';
 
 interface SavingsPageProps {
   refreshSavings?: () => void;
@@ -96,15 +97,17 @@ const SavingsPage: React.FC<SavingsPageProps> = ({ refreshSavings, onManageAccou
     return <NoAccountState />;
   }
   
-  // Mock client data
-  const client = {
+  // Mock client data - making sure it conforms to SfdClient type
+  const client: SfdClient = {
     id: 'client-1',
-    full_name: user?.name || 'Client SFD',
+    full_name: user?.full_name || 'Client SFD', // Fixed: using full_name instead of name
     email: user?.email || 'client@example.com',
     phone: '+2250000000000',
     address: 'Abidjan, Côte d\'Ivoire',
     status: 'active',
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    sfd_id: 'default-sfd-id', // Added missing property
+    kyc_level: 1 // Added missing property
   };
   
   return (
