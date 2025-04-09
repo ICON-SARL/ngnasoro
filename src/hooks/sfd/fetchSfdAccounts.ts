@@ -57,7 +57,15 @@ export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
     // Normal path for non-test users
     const { apiClient } = await import('@/utils/apiClient');
     const sfdsList = await apiClient.getUserSfds(userId);
-    return sfdsList;
+    
+    // Make sure each item in sfdsList has the required properties
+    return sfdsList.map(sfd => ({
+      user_id: sfd.user_id || userId,
+      sfd_id: sfd.sfd_id,
+      id: sfd.id,
+      is_default: sfd.is_default,
+      sfds: sfd.sfds
+    }));
   } catch (error) {
     console.error('Error fetching SFDs:', error);
     return [];

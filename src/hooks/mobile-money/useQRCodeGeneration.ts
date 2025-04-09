@@ -35,7 +35,16 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       
       if (error) throw error;
       
-      return data as QRCodeResponse;
+      // Convert API response to our QRCodeResponse format
+      const response = data as QRCodeResponse;
+      if (!response.qrCodeData && response.qrCode?.code) {
+        response.qrCodeData = response.qrCode.code;
+      }
+      if (!response.expiration && response.qrCode?.expiresAt) {
+        response.expiration = response.qrCode.expiresAt;
+      }
+      
+      return response;
     } catch (error: any) {
       console.error('Erreur lors de la génération du QR code de paiement:', error);
       return {
@@ -72,7 +81,16 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       
       if (error) throw error;
       
-      return data as QRCodeResponse;
+      // Convert API response to our QRCodeResponse format
+      const response = data as QRCodeResponse;
+      if (!response.qrCodeData && response.qrCode?.code) {
+        response.qrCodeData = response.qrCode.code;
+      }
+      if (!response.expiration && response.qrCode?.expiresAt) {
+        response.expiration = response.qrCode.expiresAt;
+      }
+      
+      return response;
     } catch (error: any) {
       console.error('Erreur lors de la génération du QR code de retrait:', error);
       return {

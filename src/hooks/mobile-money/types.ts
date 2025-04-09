@@ -1,5 +1,5 @@
 
-import { QRCodeResponse } from '@/hooks/sfd/types';
+import { QRCodeResponse as SfdQRCodeResponse } from '@/hooks/sfd/types';
 
 export interface MobileMoneyPaymentHook {
   isProcessingPayment: boolean;
@@ -31,5 +31,17 @@ export interface MobileMoneyOperationsHook {
   processWithdrawal: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
 }
 
-// Re-export QRCodeResponse
-export type { QRCodeResponse };
+export interface QRCodeResponse {
+  success: boolean;
+  qrCodeData?: string;  // Added these properties to match what's used in components
+  expiration?: string;
+  transactionId?: string;
+  error?: string;
+  qrCode?: {
+    code: string;
+    expiresAt: string;
+  };
+}
+
+// Re-export the original QRCodeResponse for compatibility
+export type { SfdQRCodeResponse };

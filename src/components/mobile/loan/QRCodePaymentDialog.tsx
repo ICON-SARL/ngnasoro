@@ -34,10 +34,17 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({
           ? await generateWithdrawalQRCode(amount)
           : await generatePaymentQRCode(amount, loanId);
         
-        if (response.success && response.qrCodeData) {
-          setQrCodeData(response.qrCodeData);
+        if (response.success) {
+          if (response.qrCodeData) {
+            setQrCodeData(response.qrCodeData);
+          } else if (response.qrCode?.code) {
+            setQrCodeData(response.qrCode.code);
+          }
+          
           if (response.expiration) {
             setExpirationTime(new Date(response.expiration).toLocaleTimeString('fr-FR'));
+          } else if (response.qrCode?.expiresAt) {
+            setExpirationTime(new Date(response.qrCode.expiresAt).toLocaleTimeString('fr-FR'));
           }
         } else {
           setError(response.error || 'Erreur lors de la génération du code QR');

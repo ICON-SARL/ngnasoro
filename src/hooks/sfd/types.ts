@@ -1,4 +1,3 @@
-
 export interface SfdBalanceData {
   id: string;
   balance: number;
@@ -58,7 +57,7 @@ export interface UserSfd {
     name: string;
     code: string;
     region?: string;
-    logo_url?: string;
+    logo_url?: string | null;
   };
 }
 
@@ -91,5 +90,8 @@ export interface QRCodeResponse {
     expiresAt: string;
     // Other QR code properties
   };
+  qrCodeData?: string; // Add this property to match what's being used
+  expiration?: string;  // Add this property to match what's being used
+  transactionId?: string;
   error?: string;
 }
