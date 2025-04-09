@@ -72,3 +72,41 @@ export async function makeLoanPayment(
     };
   }
 }
+
+// Add the missing processMobileMoneyPayment function
+export async function processMobileMoneyPayment(
+  userId: string | null,
+  phoneNumber: string,
+  amount: number,
+  provider: string,
+  isRepayment: boolean = false,
+  loanId?: string
+): Promise<SyncResult> {
+  if (!userId) {
+    return {
+      success: false,
+      message: 'User ID is required'
+    };
+  }
+  
+  try {
+    console.log(`Processing mobile money ${isRepayment ? 'repayment' : 'payment'} of ${amount} via ${provider}`);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    return {
+      success: true,
+      message: isRepayment 
+        ? 'Loan repayment processed successfully' 
+        : 'Mobile money payment processed successfully',
+      transactionId: `mm-${Date.now()}`
+    };
+  } catch (error) {
+    console.error('Error processing mobile money payment:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
+}
