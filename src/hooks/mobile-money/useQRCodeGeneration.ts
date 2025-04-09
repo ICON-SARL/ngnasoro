@@ -1,36 +1,38 @@
 
 import { useState } from 'react';
-import { QRCodeGenerationHook, QRCodeRequest, QRCodeResponse } from './types';
+import { useAuth } from '../useAuth';
+import { generateQRCode } from '@/utils/api/qrCodeGenerator';
+import { QRCodeGenerationHook } from './types';
+import { QRCodeResponse } from '@/utils/mobileMoneyApi';
 
 export function useQRCodeGeneration(): QRCodeGenerationHook {
   const [isProcessingQRCode, setIsProcessingQRCode] = useState(false);
-
+  const { user } = useAuth();
+  
   const generatePaymentQRCode = async (amount: number, loanId?: string): Promise<QRCodeResponse> => {
+    if (!user?.id) {
+      return {
+        success: false,
+        error: "User not authenticated",
+      };
+    }
+    
     setIsProcessingQRCode(true);
+    
     try {
-      // In a real implementation, this would call your QR code generation API
-      console.log(`Generating payment QR code for amount ${amount}${loanId ? ' and loan ' + loanId : ''}`);
-      
-      // Mock API call
-      const response = await new Promise<QRCodeResponse>((resolve) => {
-        setTimeout(() => {
-          resolve({
-            success: true,
-            qrCode: {
-              code: 'QR_' + Math.random().toString(36).substring(2, 10).toUpperCase(),
-              expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-            },
-            transactionId: 'TX_' + Math.random().toString(36).substring(2, 10).toUpperCase()
-          });
-        }, 1000);
+      const result = await generateQRCode({
+        userId: user.id,
+        amount,
+        purpose: loanId ? 'loan_repayment' : 'payment',
+        loanId,
+        isWithdrawal: false
       });
       
-      return response;
-    } catch (error) {
-      console.error('Error generating payment QR code:', error);
-      return { 
-        success: false, 
-        error: 'Failed to generate QR code'
+      return result;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || "Failed to generate payment QR code",
       };
     } finally {
       setIsProcessingQRCode(false);
@@ -38,30 +40,28 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
   };
   
   const generateWithdrawalQRCode = async (amount: number): Promise<QRCodeResponse> => {
+    if (!user?.id) {
+      return {
+        success: false,
+        error: "User not authenticated",
+      };
+    }
+    
     setIsProcessingQRCode(true);
+    
     try {
-      console.log(`Generating withdrawal QR code for amount ${amount}`);
-      
-      // Mock API call
-      const response = await new Promise<QRCodeResponse>((resolve) => {
-        setTimeout(() => {
-          resolve({
-            success: true,
-            qrCode: {
-              code: 'WDR_' + Math.random().toString(36).substring(2, 10).toUpperCase(),
-              expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-            },
-            transactionId: 'TX_' + Math.random().toString(36).substring(2, 10).toUpperCase()
-          });
-        }, 1000);
+      const result = await generateQRCode({
+        userId: user.id,
+        amount,
+        purpose: 'withdrawal',
+        isWithdrawal: true
       });
       
-      return response;
-    } catch (error) {
-      console.error('Error generating withdrawal QR code:', error);
-      return { 
-        success: false, 
-        error: 'Failed to generate QR code'
+      return result;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || "Failed to generate withdrawal QR code",
       };
     } finally {
       setIsProcessingQRCode(false);

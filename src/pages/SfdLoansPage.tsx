@@ -1,47 +1,56 @@
 
-import React from 'react';
-import { SfdHeader } from '@/components/sfd/SfdHeader';
-import { useAuth } from '@/hooks/useAuth';
-import { useRolePermissions } from '@/hooks/useRolePermissions';
+import React, { useState } from 'react';
+import { SfdAdminDashboard } from '@/components/admin/SfdAdminDashboard';
+import { LoanWorkflow, LoanPlansManager } from '@/components/sfd/loans';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CreditCard, BookOpen } from 'lucide-react';
+import { useAuth } from '@/hooks/auth';
 
-export const SfdLoansPage = () => {
-  const { user, activeSfdId } = useAuth();
-  const { canApproveLoan } = useRolePermissions();
+const SfdLoansPage = () => {
+  const [activeTab, setActiveTab] = useState('loans');
+  const { isAdmin, isSfdAdmin } = useAuth();
   
-  // Get the staff role from user_metadata (if any)
-  const staffRole = user?.user_metadata?.staff_role;
-  
-  // Check if user can approve loans
-  const canApproveLoans = canApproveLoan(staffRole);
+  // Redirect if not admin or sfd_admin
+  if (!isAdmin && !isSfdAdmin) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Accès non autorisé</h1>
+          <p className="mt-2">Vous n'avez pas les permissions nécessaires pour accéder à cette page.</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-gray-50">
-      <SfdHeader />
+      <SfdAdminDashboard />
       
-      <div className="container mx-auto py-6 px-4">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Gestion des Prêts</h1>
-          <p className="text-muted-foreground">
-            {canApproveLoans 
-              ? "Gérez et approuvez les demandes de prêts"
-              : "Consultez les demandes de prêts"
-            }
-          </p>
-        </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
-          <p className="text-center text-muted-foreground py-8">
-            Fonctionnalité de gestion des prêts en cours de développement
-          </p>
-          
-          {canApproveLoans && (
-            <div className="bg-blue-50 border border-blue-200 p-4 rounded-md mt-4">
-              <p className="text-blue-700 font-medium">Vous avez les droits d'approbation des prêts</p>
-              <p className="text-sm text-blue-600 mt-1">
-                Cette interface vous permettra de valider les demandes de prêts soumises par les clients.
-              </p>
+      <div className="container mx-auto p-4 md:p-6 mt-4">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-bold">Gestion des Prêts</h1>
+              <TabsList>
+                <TabsTrigger value="loans" className="flex items-center">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Prêts
+                </TabsTrigger>
+                <TabsTrigger value="plans" className="flex items-center">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Plans de Prêts
+                </TabsTrigger>
+              </TabsList>
             </div>
-          )}
+            
+            <TabsContent value="loans">
+              <LoanWorkflow />
+            </TabsContent>
+            
+            <TabsContent value="plans">
+              <LoanPlansManager />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

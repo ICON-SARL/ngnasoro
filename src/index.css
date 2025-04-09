@@ -99,23 +99,25 @@
     background-clip: text;
     display: inline-block;
   }
+  
+  /* ... keep existing code */
 }
 
+/* ... keep existing code */
+
+/* Smooth transition between light and dark mode */
 body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Modern authentication styles */
 .auth-card {
   @apply bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100;
 }
 
 .auth-input {
   @apply h-14 text-base rounded-lg border border-gray-200 bg-gray-50/50 px-4 py-3 
-  focus:border-primary focus:ring-primary focus:outline-none w-full font-montserrat transition-all text-center;
-}
-
-.admin-input {
-  @apply border-gray-300 bg-gray-50 focus:border-[#1A1F2C] focus:ring-[#1A1F2C];
+  focus:border-primary focus:ring-primary focus:outline-none w-full font-montserrat transition-all;
 }
 
 .auth-btn {
@@ -126,10 +128,8 @@ body {
   @apply bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white auth-btn;
 }
 
-.admin-login-btn {
-  @apply w-full h-12 font-medium rounded-lg transition-all shadow hover:shadow-lg
-  bg-gradient-to-r from-[#1A1F2C] to-[#2A3042] hover:from-[#2A3042] hover:to-[#3A4052] 
-  text-white transform hover:-translate-y-0.5;
+.auth-btn-admin {
+  @apply bg-amber-600 hover:bg-amber-700 text-white auth-btn;
 }
 
 .auth-btn-sfd {
@@ -144,5 +144,3 @@ body {
 .auth-logo-container {
   @apply bg-white p-5 rounded-xl inline-block mb-6 shadow-md;
 }
-
-/* Additional new styles for admin UI */

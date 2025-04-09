@@ -1,64 +1,67 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { UserButton } from '@/components/UserButton';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, 
-  CreditCard, 
-  Users, 
-  Shield, 
-  FileText, 
-  Settings 
-} from 'lucide-react';
 
-export function SfdHeader() {
-  const location = useLocation();
-  const { activeSfdId } = useAuth();
-
-  const navigation = [
-    { href: '/sfd/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4 mr-2" /> },
-    { href: '/sfd/credits', label: 'Crédits', icon: <CreditCard className="h-4 w-4 mr-2" /> },
-    { href: '/sfd/clients', label: 'Clients', icon: <Users className="h-4 w-4 mr-2" /> },
-    { href: '/sfd/role-management', label: 'Rôles', icon: <Shield className="h-4 w-4 mr-2" /> },
-    { href: '/sfd/rapports', label: 'Rapports', icon: <FileText className="h-4 w-4 mr-2" /> },
-    { href: '/sfd/fonctions-avancees', label: 'Fonctions Avancées', icon: <Settings className="h-4 w-4 mr-2" /> }
-  ];
-
+export const SfdHeader: React.FC = () => {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  
   return (
-    <header className="bg-white border-b">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center">
-            <Link to="/sfd/dashboard" className="flex items-center">
-              <span className="text-xl font-bold text-primary">SFD Portal</span>
-            </Link>
-          </div>
+    <header className="bg-primary text-white shadow-md">
+      <div className="container mx-auto p-4 flex justify-between items-center">
+        <div className="flex items-center">
+          <h1 className="text-xl font-bold">SFD Dashboard</h1>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <span className="hidden md:inline">
+            {user?.full_name || user?.email}
+          </span>
           
-          <nav className="ml-10 flex items-center space-x-4">
-            {navigation.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "flex items-center text-sm font-medium transition-colors hover:text-primary",
-                  location.pathname === item.href
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                )}
-              >
-                {item.icon}
-                {item.label}
-              </Link>
-            ))}
+          <nav>
+            <ul className="flex gap-4">
+              <li>
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:text-white hover:bg-primary-foreground"
+                  onClick={() => navigate('/sfd')}
+                >
+                  Dashboard
+                </Button>
+              </li>
+              <li>
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:text-white hover:bg-primary-foreground"
+                  onClick={() => navigate('/sfd/subsidy-requests')}
+                >
+                  Demandes de Prêt
+                </Button>
+              </li>
+              <li>
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:text-white hover:bg-primary-foreground"
+                  onClick={() => navigate('/sfd-loans')}
+                >
+                  Gestion des Prêts
+                </Button>
+              </li>
+              <li>
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:text-white hover:bg-primary-foreground"
+                  onClick={() => signOut()}
+                >
+                  Déconnexion
+                </Button>
+              </li>
+            </ul>
           </nav>
-          
-          <div className="flex items-center gap-4">
-            <UserButton />
-          </div>
         </div>
       </div>
     </header>
   );
-}
+};

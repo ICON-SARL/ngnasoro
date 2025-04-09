@@ -1,9 +1,10 @@
+
 import { useQuery } from '@tanstack/react-query';
-import { ExtendedUser } from '@/hooks/useAuth';
+import { User } from '@/hooks/useAuth';
 import { fetchUserSfds, fetchSfdBalance } from './sfdAccountsApi';
 import { SfdAccount } from './types';
 
-export function useSfdList(user: ExtendedUser | null) {
+export function useSfdList(user: User | null) {
   const sfdsQuery = useQuery({
     queryKey: ['user-sfds', user?.id],
     queryFn: async () => {

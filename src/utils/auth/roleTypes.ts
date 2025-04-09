@@ -1,10 +1,9 @@
 
 export enum UserRole {
-  SUPER_ADMIN = 'super_admin',
+  SUPER_ADMIN = 'admin',
   ADMIN = 'admin',
   SFD_ADMIN = 'sfd_admin',
-  SFD_STAFF = 'sfd_staff',
-  CLIENT = 'client',
+  CLIENT = 'client', // Added CLIENT role
   USER = 'user'
 }
 
@@ -24,17 +23,14 @@ export const PERMISSIONS = {
 
 // Define default permissions for each role
 export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
-  [UserRole.SUPER_ADMIN]: Object.values(PERMISSIONS),
+  // Since SUPER_ADMIN and ADMIN have the same enum value ('admin'),
+  // we only need to define it once
   [UserRole.ADMIN]: Object.values(PERMISSIONS),
   [UserRole.SFD_ADMIN]: [
     PERMISSIONS.MANAGE_CLIENTS,
     PERMISSIONS.MANAGE_LOANS,
     PERMISSIONS.ACCESS_SFD_DASHBOARD,
     PERMISSIONS.MANAGE_SUBSIDIES,
-  ],
-  [UserRole.SFD_STAFF]: [
-    PERMISSIONS.MANAGE_CLIENTS,
-    PERMISSIONS.MANAGE_LOANS,
   ],
   [UserRole.CLIENT]: [],
   [UserRole.USER]: [],

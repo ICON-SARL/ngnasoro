@@ -1,145 +1,166 @@
 
 import { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { AvailableSfd, SfdClientRequest } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 
-export interface AvailableSfd {
-  id: string;
-  name: string;
-  code: string;
-  region?: string;
-  logo_url?: string | null;
-}
-
-export interface SfdRequest {
-  id: string;
-  user_id: string;
-  sfd_id: string;
-  status: string;
-  created_at: string;
-}
-
-export function useAvailableSfds(userId: string | undefined) {
+/**
+ * Hook to fetch and manage available SFDs that can be added to a user account
+ */
+export function useAvailableSfds(userId?: string) {
   const [availableSfds, setAvailableSfds] = useState<AvailableSfd[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<SfdRequest[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [pendingRequests, setPendingRequests] = useState<SfdClientRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
+  // Fetch all available SFDs that the user doesn't already have
+  const fetchAvailableSfds = async () => {
     if (!userId) return;
     
-    const fetchData = async () => {
+    try {
       setIsLoading(true);
-      try {
-        // Fetch all SFDs
-        const { data: allSfds, error: sfdsError } = await supabase
-          .from('sfds')
-          .select('*')
-          .eq('status', 'active');
-
-        if (sfdsError) throw sfdsError;
-
-        // Fetch user's existing SFD associations
-        const { data: userSfds, error: userSfdsError } = await supabase
-          .from('user_sfds')
-          .select('sfd_id')
-          .eq('user_id', userId);
-
-        if (userSfdsError) throw userSfdsError;
-
-        // Fetch user's pending SFD requests
-        const { data: requests, error: requestsError } = await supabase
-          .from('sfd_clients')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('status', 'pending');
-
-        if (requestsError) throw requestsError;
-
-        // Filter out SFDs that the user is already associated with
-        const userSfdIds = new Set(userSfds?.map(relation => relation.sfd_id) || []);
-        const requestSfdIds = new Set(requests?.map(request => request.sfd_id) || []);
+      setError(null);
+      
+      // First get user's existing SFDs
+      const { data: userSfds, error: userSfdsError } = await supabase
+        .from('user_sfds')
+        .select('sfd_id')
+        .eq('user_id', userId);
+      
+      if (userSfdsError) throw userSfdsError;
+      
+      const userSfdIds = userSfds?.map(item => item.sfd_id) || [];
+      
+      // Get pending client requests to avoid duplicate requests
+      const { data: pendingSfdRequests, error: pendingRequestsError } = await supabase
+        .from('sfd_clients')
+        .select('id, sfd_id, status, created_at')
+        .eq('user_id', userId);
         
-        const available = allSfds?.filter(sfd => !userSfdIds.has(sfd.id)) || [];
-        
-        setAvailableSfds(available);
-        setPendingRequests(requests || []);
-      } catch (error) {
-        console.error('Error fetching SFDs:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les SFDs disponibles",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      if (pendingRequestsError) throw pendingRequestsError;
+      
+      // Cast the response to the correct type
+      setPendingRequests(pendingSfdRequests as SfdClientRequest[] || []);
+      
+      // Get IDs of SFDs that user has pending requests for
+      const pendingSfdIds = pendingSfdRequests?.map(request => request.sfd_id) || [];
+      
+      // Combine existing SFDs and pending SFDs to exclude from available list
+      const excludeSfdIds = [...userSfdIds, ...pendingSfdIds];
+      
+      // Then get all active SFDs that user doesn't already have or has pending requests for
+      const { data: sfds, error: sfdsError } = await supabase
+        .from('sfds')
+        .select('id, name, code, region, logo_url, status')
+        .eq('status', 'active')
+        .not('id', 'in', `(${excludeSfdIds.length > 0 ? excludeSfdIds.join(',') : 'null'})`);
+      
+      if (sfdsError) throw sfdsError;
+      
+      setAvailableSfds(sfds || []);
+    } catch (err: any) {
+      console.error('Error fetching available SFDs:', err);
+      setError(err.message);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de récupérer la liste des SFDs disponibles',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchData();
-  }, [userId, toast]);
-
-  const requestSfdAccess = async (sfdId: string, phone?: string): Promise<boolean> => {
+  // Request access to a SFD
+  const requestSfdAccess = async (sfdId: string, phoneNumber?: string) => {
     if (!userId) {
       toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour effectuer cette action",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Vous devez être connecté pour effectuer cette action',
+        variant: 'destructive',
       });
       return false;
     }
 
     try {
-      // Récupérer les informations de l'utilisateur pour obtenir full_name
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', userId)
-        .single();
-
-      if (userError) throw userError;
-
-      const fullName = userData?.full_name || "Unknown User";
-
-      // Create a new SFD client request with full_name
+      setIsLoading(true);
+      
+      // Check if user already has a pending request for this SFD
+      const existingRequest = pendingRequests.find(req => req.sfd_id === sfdId);
+      if (existingRequest) {
+        toast({
+          title: 'Demande déjà envoyée',
+          description: 'Vous avez déjà une demande en cours pour cette SFD',
+        });
+        return false;
+      }
+      
+      // Create a client request entry
       const { data, error } = await supabase
         .from('sfd_clients')
         .insert({
           user_id: userId,
           sfd_id: sfdId,
+          full_name: '', // Will be updated from user profile
+          phone: phoneNumber || null,
           status: 'pending',
-          phone: phone || null,
-          full_name: fullName
+          kyc_level: 0
         })
-        .select()
-        .single();
-
+        .select();
+        
       if (error) throw error;
-
-      // Update local state to show the new pending request
-      setPendingRequests(prev => [...prev, data as SfdRequest]);
+      
+      // Update the client with user profile data
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', userId)
+        .single();
+        
+      if (profile) {
+        await supabase
+          .from('sfd_clients')
+          .update({ 
+            full_name: profile.full_name || 'Client' 
+          })
+          .eq('id', data[0].id);
+      }
+      
+      // Refresh the pending requests list
+      fetchAvailableSfds();
       
       toast({
-        title: "Demande envoyée",
-        description: "Votre demande a été envoyée avec succès",
+        title: 'Demande envoyée',
+        description: 'Votre demande a été envoyée avec succès. Vous serez notifié lorsqu\'elle sera traitée.',
       });
       
       return true;
-    } catch (error: any) {
-      console.error('Error requesting SFD access:', error);
+    } catch (err: any) {
+      console.error('Error sending SFD request:', err);
       toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de l'envoi de la demande",
-        variant: "destructive",
+        title: 'Erreur',
+        description: `Impossible d'envoyer votre demande : ${err.message}`,
+        variant: 'destructive',
       });
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (userId) {
+      fetchAvailableSfds();
+    }
+  }, [userId]);
 
   return {
     availableSfds,
     pendingRequests,
     isLoading,
+    error,
+    fetchAvailableSfds,
     requestSfdAccess
   };
 }

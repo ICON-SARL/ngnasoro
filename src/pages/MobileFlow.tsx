@@ -1,78 +1,150 @@
-
-import React from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import React, { useState, useEffect, lazy } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
-import ContextualHeader from '@/components/mobile/ContextualHeader';
-import ProfilePage from '@/components/mobile/profile/ProfilePage';
-import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
-import PaymentOptionsPage from '@/components/mobile/payment-options/PaymentOptionsPage';
-import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
-import SecurePaymentTab from '@/components/mobile/secure-payment/SecurePaymentTab';
-import { MainDashboard } from '@/components/mobile/dashboard';
-import LoanApplicationPage from '@/components/mobile/loan-application/LoanApplicationPage';
-import LoanActivityPage from '@/components/mobile/LoanActivityPage';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/hooks/use-toast';
 
-const MobileFlow: React.FC = () => {
-  // Get authentication context to check if user is logged in
-  const { user } = useAuth();
+import { useAuth } from '@/hooks/useAuth';
+import { useAccount } from '@/hooks/useAccount';
+import { useTransactions } from '@/hooks/useTransactions';
+
+// Import refactored components
+import MobileMenu from '@/components/mobile/menu/MobileMenu';
+import MobileFlowRoutes from '@/components/mobile/routes/MobileFlowRoutes';
+import { useActionHandler } from '@/utils/actionHandler';
+
+const MobileFlow = () => {
+  const isMobile = useIsMobile();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
   
-  // If user is not authenticated, we would handle that in a parent component
+  const { user, loading, signOut } = useAuth();
+  const { account, isLoading: accountLoading, updateBalance } = useAccount();
+  const { transactions, isLoading: transactionsLoading, createTransaction } = useTransactions(user?.id || '', user?.id ? 'default-sfd' : '');
+  const { handleAction } = useActionHandler();
 
-  // Default account for the MainDashboard component
-  const defaultAccount = {
-    id: 'default-account',
-    user_id: user?.id || 'default-user',
-    balance: 0,
-    currency: 'FCFA',
-    updated_at: new Date().toISOString()
+  const [showWelcome, setShowWelcome] = useState(() => {
+    const hasVisited = localStorage.getItem('hasVisitedApp');
+    return !hasVisited;
+  });
+
+  // Check if user is authenticated and not an admin
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+      
+      // If user is admin or super_admin, redirect to admin dashboard
+      const userRole = user.app_metadata?.role;
+      if (userRole === 'admin') {
+        toast({
+          title: "Accès refusé",
+          description: "Les administrateurs ne peuvent pas accéder à l'interface mobile.",
+          variant: "destructive",
+        });
+        navigate('/super-admin-dashboard');
+      }
+    }
+  }, [user, loading, navigate, toast]);
+
+  // Save welcome screen status
+  useEffect(() => {
+    if (!showWelcome) {
+      localStorage.setItem('hasVisitedApp', 'true');
+    }
+  }, [showWelcome]);
+
+  // Custom action handler that uses the toast notification
+  const onAction = (action: string, data?: any) => {
+    handleAction(action, data);
+    
+    if (action === 'Start') {
+      setShowWelcome(false);
+    }
   };
 
-  // Check if current path is the main page
-  const isMainPage = location.pathname === '/mobile-flow/main';
+  // Handler for payment submission
+  const handlePaymentSubmit = async (data: { recipient: string, amount: number, note: string }) => {
+    try {
+      await updateBalance.mutateAsync({ amount: -data.amount });
+      
+      if (createTransaction) {
+        await createTransaction.mutateAsync({
+          userId: user?.id || '',
+          sfdId: 'default-sfd', 
+          name: data.recipient,
+          type: 'payment',
+          amount: -data.amount,
+          paymentMethod: 'sfd_account',
+          description: data.note || 'Payment transaction'
+        });
+      }
+      
+      navigate('/mobile-flow/main');
+      
+      toast({
+        title: 'Paiement réussi',
+        description: `Vous avez envoyé ${data.amount} FCFA à ${data.recipient}`,
+      });
+    } catch (error) {
+      console.error('Payment error:', error);
+    }
+  };
+
+  // Menu handlers
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  // Handle welcome screen navigation
+  useEffect(() => {
+    if (showWelcome && location.pathname === '/mobile-flow') {
+      navigate('/mobile-flow/welcome');
+    }
+    else if (location.pathname !== '/mobile-flow/welcome' && location.pathname !== '/mobile-flow') {
+      setShowWelcome(false);
+    }
+  }, [showWelcome, location.pathname, navigate]);
+
+  const isWelcomePage = location.pathname === '/mobile-flow/welcome';
+
+  if (loading || accountLoading) {
+    return <div className="p-8 text-center">Chargement...</div>;
+  }
 
   return (
-    <div className="flex flex-col h-full min-h-screen w-full">
-      {isMainPage && (
-        <div className="p-2 bg-[#0D6A51] rounded-b-3xl shadow-md">
-          <ContextualHeader />
-        </div>
-      )}
-      <div className="flex-grow overflow-auto pb-16 w-full">
-        <Routes>
-          {/* Redirect root to main dashboard */}
-          <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
-          
-          {/* Main dashboard */}
-          <Route path="/main" element={
-            <MainDashboard 
-              onAction={() => {}} 
-              account={defaultAccount} 
-              transactions={[]} 
-              transactionsLoading={false} 
-              toggleMenu={() => {}} 
-            />
-          } />
-          
-          {/* User profile page */}
-          <Route path="/profile" element={<ProfilePage />} />
-          
-          {/* Loan-related pages */}
-          <Route path="/loan/:id" element={<LoanDetailsPage />} />
-          <Route path="/loan-activity" element={<LoanActivityPage />} />
-          <Route path="/loan-application" element={<LoanApplicationPage />} />
-          
-          {/* Payment and funds pages */}
-          <Route path="/payment-options" element={<PaymentOptionsPage />} />
-          <Route path="/funds-management" element={<FundsManagementPage />} />
-          <Route path="/secure-payment" element={<SecurePaymentTab />} />
-          
-          {/* Fallback route */}
-          <Route path="*" element={<Navigate to="/mobile-flow/main" replace />} />
-        </Routes>
-      </div>
-      <MobileNavigation onAction={() => {}} />
+    <div className="min-h-screen bg-white relative">
+      <MobileMenu 
+        isOpen={menuOpen} 
+        onClose={toggleMenu} 
+        onLogout={handleLogout} 
+      />
+
+      <MobileFlowRoutes 
+        onAction={onAction}
+        account={account}
+        transactions={transactions}
+        transactionsLoading={transactionsLoading}
+        toggleMenu={toggleMenu}
+        showWelcome={showWelcome}
+        setShowWelcome={setShowWelcome}
+        handlePaymentSubmit={handlePaymentSubmit}
+      />
+      
+      {!isWelcomePage && <div className="sm:hidden"><MobileNavigation onAction={onAction} /></div>}
     </div>
   );
 };

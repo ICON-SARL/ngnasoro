@@ -1,6 +1,10 @@
 
-export { MobileMoneyTab } from './MobileMoneyTab';
-export { default as SecurePaymentTab } from './SecurePaymentTab';
+import SecurePaymentTab from './SecurePaymentTab';
 
-// Export the QR code section component that already exists
-export { default as QRCodeSection } from './QRCodeSection';
+export default SecurePaymentTab;
+export * from './PaymentMethodTabs';
+export * from './SecurityFeatures';
+export * from './ReconciliationSection';
+export * from './TabHeader';
+export * from './PaymentDetails';
+export * from './SuccessView';

@@ -1,72 +1,56 @@
 
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, Edit, Trash2 } from 'lucide-react';
+import { CheckCircle, Shield, User } from 'lucide-react';
 import { Role, Permission } from './types';
 
 interface RoleCardProps {
   role: Role;
   permissions: Permission[];
-  onEdit?: () => void;
-  onDelete?: () => void;
 }
 
-export function RoleCard({ role, permissions, onEdit, onDelete }: RoleCardProps) {
-  // Get permission names by ID
-  const getPermissionName = (id: string) => {
-    const permission = permissions.find(p => p.id === id);
-    return permission ? permission.name : id;
-  };
-  
+export function RoleCard({ role, permissions }: RoleCardProps) {
   return (
-    <Card>
+    <Card key={role.id}>
       <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <div className="flex items-center">
-            <Shield className="h-5 w-5 mr-2 text-primary" />
-            <CardTitle>{role.name}</CardTitle>
+        <div className="flex items-center mb-1">
+          <div className={`h-8 w-8 rounded-full flex items-center justify-center mr-2 ${
+            role.name === 'Gérant' 
+              ? 'bg-blue-100 text-blue-700' 
+              : role.name === 'Agent de Crédit'
+              ? 'bg-green-100 text-green-700'
+              : 'bg-amber-100 text-amber-700'
+          }`}>
+            {role.name === 'Gérant' 
+              ? <Shield className="h-4 w-4" />
+              : <User className="h-4 w-4" />
+            }
           </div>
-          <Badge variant="outline">
-            {role.permissions.length} permission{role.permissions.length !== 1 ? 's' : ''}
-          </Badge>
+          <CardTitle>{role.name}</CardTitle>
         </div>
         <CardDescription>{role.description}</CardDescription>
       </CardHeader>
-      
       <CardContent>
         <div className="space-y-1">
-          <p className="text-sm font-medium">Permissions:</p>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {role.permissions.slice(0, 5).map(permId => (
-              <Badge key={permId} variant="secondary" className="text-xs">
-                {getPermissionName(permId)}
-              </Badge>
-            ))}
-            {role.permissions.length > 5 && (
-              <Badge variant="outline" className="text-xs">
-                +{role.permissions.length - 5} autres
-              </Badge>
-            )}
+          <div className="text-sm font-medium">Permissions</div>
+          <div className="grid grid-cols-2 gap-2">
+            {role.permissions.map(permId => {
+              const permission = permissions.find(p => p.id === permId);
+              return permission ? (
+                <div key={permId} className="flex items-center text-sm text-muted-foreground">
+                  <CheckCircle className="h-3 w-3 mr-1 text-green-600" />
+                  {permission.name}
+                </div>
+              ) : null;
+            })}
           </div>
         </div>
+        
+        <div className="flex justify-end mt-4">
+          <Button variant="outline" size="sm">Modifier</Button>
+        </div>
       </CardContent>
-      
-      <CardFooter className="flex justify-end gap-2">
-        {onEdit && (
-          <Button variant="ghost" size="sm" onClick={onEdit}>
-            <Edit className="h-4 w-4 mr-1" />
-            Modifier
-          </Button>
-        )}
-        {onDelete && (
-          <Button variant="ghost" size="sm" className="text-destructive" onClick={onDelete}>
-            <Trash2 className="h-4 w-4 mr-1" />
-            Supprimer
-          </Button>
-        )}
-      </CardFooter>
     </Card>
   );
 }

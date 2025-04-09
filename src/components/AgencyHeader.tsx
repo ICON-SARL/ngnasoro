@@ -1,76 +1,146 @@
 
 import React from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  MenuIcon, 
-  User,
-  LogOut
-} from 'lucide-react';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Avatar } from '@/components/ui/avatar';
-import { CurrentSfdBadge } from '@/components/sfd/CurrentSfdBadge';
+import { Building, CreditCard, Users, FileText, LogOut } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
-export function AgencyHeader() {
+export const AgencyHeader = () => {
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   
   const handleSignOut = async () => {
-    await signOut();
-    window.location.href = '/';
+    try {
+      await signOut();
+      toast({
+        title: "Déconnecté",
+        description: "Vous avez été déconnecté avec succès",
+      });
+      navigate('/login');
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la déconnexion",
+        variant: "destructive",
+      });
+    }
   };
   
   return (
-    <header className="bg-white border-b">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-x-4">
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <MenuIcon className="h-5 w-5" />
-          </Button>
-          
-          <div className="flex items-center">
-            <div className="h-8 w-8 bg-[#0D6A51] rounded-md flex items-center justify-center text-white font-semibold mr-2">
-              M
+    <header className="bg-white border-b border-gray-200">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-8">
+            <div className="flex items-center">
+              <Building className="h-6 w-6 text-[#0D6A51] mr-2" />
+              <span className="font-bold text-xl">SFD Portal</span>
             </div>
-            <span className="font-semibold text-lg">MEREF SFD</span>
             
-            {/* Badge montrant la SFD actuelle pour les admin SFD */}
-            <CurrentSfdBadge />
+            <nav className="hidden md:flex space-x-6">
+              <NavLink 
+                to="/agency-dashboard" 
+                className={({ isActive }) => 
+                  `text-sm font-medium transition-colors hover:text-[#0D6A51] ${
+                    isActive ? 'text-[#0D6A51]' : 'text-muted-foreground'
+                  }`
+                }
+              >
+                Tableau de Bord
+              </NavLink>
+              <NavLink 
+                to="/sfd-loans" 
+                className={({ isActive }) => 
+                  `text-sm font-medium transition-colors hover:text-[#0D6A51] ${
+                    isActive ? 'text-[#0D6A51]' : 'text-muted-foreground'
+                  }`
+                }
+              >
+                Prêts
+              </NavLink>
+              <NavLink 
+                to="/sfd-clients" 
+                className={({ isActive }) => 
+                  `text-sm font-medium transition-colors hover:text-[#0D6A51] ${
+                    isActive ? 'text-[#0D6A51]' : 'text-muted-foreground'
+                  }`
+                }
+              >
+                Clients
+              </NavLink>
+              <NavLink 
+                to="/sfd-transactions" 
+                className={({ isActive }) => 
+                  `text-sm font-medium transition-colors hover:text-[#0D6A51] ${
+                    isActive ? 'text-[#0D6A51]' : 'text-muted-foreground'
+                  }`
+                }
+              >
+                Transactions
+              </NavLink>
+              <NavLink 
+                to="/sfd-subsidy-requests" 
+                className={({ isActive }) => 
+                  `text-sm font-medium transition-colors hover:text-[#0D6A51] ${
+                    isActive ? 'text-[#0D6A51]' : 'text-muted-foreground'
+                  }`
+                }
+              >
+                Demandes de Subvention
+              </NavLink>
+            </nav>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-x-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Avatar className="h-8 w-8">
-                  {user?.user_metadata?.avatar_url ? (
-                    <img 
-                      src={user.user_metadata.avatar_url} 
-                      alt={user.user_metadata?.full_name || "Profil"} 
-                    />
-                  ) : (
-                    <User className="h-4 w-4" />
-                  )}
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem className="font-medium">
-                {user?.user_metadata?.full_name || user?.email || "Utilisateur"}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Déconnexion</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          
+          <div className="flex items-center space-x-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="/placeholder-avatar.jpg" alt={user?.full_name || 'User'} />
+                    <AvatarFallback className="bg-[#0D6A51] text-white">
+                      {user?.full_name?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user?.full_name || 'SFD User'}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.email || 'sfd@example.com'}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/agency-dashboard')}>
+                  <Building className="mr-2 h-4 w-4" />
+                  <span>Tableau de bord</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/sfd-subsidy-requests')}>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  <span>Demandes de subvention</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Se déconnecter</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </header>
   );
-}
+};

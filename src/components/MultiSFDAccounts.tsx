@@ -41,11 +41,6 @@ export const MultiSFDAccounts = () => {
     }
   };
 
-  // Helper function to get logo URL regardless of property name
-  const getLogoUrl = (account: any): string => {
-    return account.logoUrl || account.logo_url || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png';
-  };
-
   if (isLoading) {
     return <div className="p-4 text-center">Chargement des données SFD...</div>;
   }
@@ -88,7 +83,7 @@ export const MultiSFDAccounts = () => {
                       onClick={() => setSwitchToSFD(acc.id)}
                     >
                       <Avatar className="h-10 w-10 mr-3">
-                        <img src={getLogoUrl(acc)} alt={acc.name} />
+                        <img src={acc.logoUrl || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={acc.name} />
                       </Avatar>
                       <div>
                         <p className="font-medium">{acc.name}</p>
@@ -120,7 +115,7 @@ export const MultiSFDAccounts = () => {
             <CardHeader className="pb-2">
               <div className="flex items-center">
                 <Avatar className="h-8 w-8 mr-2">
-                  <img src={getLogoUrl(account)} alt={account.name} />
+                  <img src={account.logoUrl || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={account.name} />
                 </Avatar>
                 <CardTitle className="text-base">{account.name}</CardTitle>
               </div>
@@ -152,7 +147,7 @@ export const MultiSFDAccounts = () => {
             <div className="flex justify-between items-center">
               <div className="flex items-center">
                 <Avatar className="h-8 w-8 mr-2">
-                  <img src={getLogoUrl(activeSfdAccount)} alt={activeSfdAccount.name} />
+                  <img src={activeSfdAccount.logoUrl || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={activeSfdAccount.name} />
                 </Avatar>
                 <CardTitle>{activeSfdAccount.name}</CardTitle>
               </div>
@@ -206,11 +201,11 @@ export const MultiSFDAccounts = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">Reste à payer</span>
-                          <span className="font-medium">{(loan.remainingAmount || loan.amount).toLocaleString()} {activeSfdAccount.currency}</span>
+                          <span className="font-medium">{loan.remainingAmount.toLocaleString()} {activeSfdAccount.currency}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">Prochaine échéance</span>
-                          <span className={loan.isLate ? "text-red-600 font-medium" : ""}>{loan.nextDueDate || loan.next_payment_date}</span>
+                          <span className={loan.isLate ? "text-red-600 font-medium" : ""}>{loan.nextDueDate}</span>
                         </div>
                       </div>
                       <div className="mt-4">
@@ -218,7 +213,7 @@ export const MultiSFDAccounts = () => {
                           className="w-full"
                           onClick={() => makeLoanPayment.mutate({ 
                             loanId: loan.id, 
-                            amount: (loan.remainingAmount || loan.amount) / 4 // Make a quarter payment
+                            amount: loan.remainingAmount / 4 // Make a quarter payment
                           })}
                         >
                           Effectuer un paiement

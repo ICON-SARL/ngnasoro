@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -8,12 +7,14 @@ import RegisterForm from './auth/RegisterForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import DemoAccountsCreator from './auth/DemoAccountsCreator';
+import { UserRole } from '@/hooks/auth/types';
 import { useToast } from '@/hooks/use-toast';
 
-const AuthUI: React.FC = () => {
+const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
   const [authMode, setAuthMode] = useState<'default' | 'admin' | 'sfd_admin'>('default');
-  const { user, loading } = useAuth();
+  const { user, userRole, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
@@ -35,9 +36,9 @@ const AuthUI: React.FC = () => {
   useEffect(() => {
     if (user && !loading) {
       console.log('Authenticated user:', user);
+      console.log('User role:', userRole);
       
-      // Redirect based on user role
-      if (user.app_metadata?.role === 'admin') {
+      if (userRole === UserRole.SUPER_ADMIN || user.app_metadata?.role === 'admin') {
         if (location.pathname !== '/admin/auth' && !location.pathname.includes('admin')) {
           toast({
             title: "Redirection",
@@ -46,13 +47,13 @@ const AuthUI: React.FC = () => {
           });
         }
         navigate('/super-admin-dashboard');
-      } else if (user.app_metadata?.role === 'sfd_admin') {
+      } else if (userRole === UserRole.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {
         navigate('/agency-dashboard');
       } else {
         navigate('/mobile-flow');
       }
     }
-  }, [user, loading, navigate, location.pathname, toast]);
+  }, [user, userRole, loading, navigate, location.pathname, toast]);
   
   useEffect(() => {
     if (location.pathname.includes('register')) {
@@ -144,6 +145,61 @@ const AuthUI: React.FC = () => {
               <RegisterForm />
             </TabsContent>
           </Tabs>
+          
+          <div className="mt-4 text-center pb-6 flex flex-col gap-2">
+            {authMode === 'default' && (
+              <>
+                <a 
+                  href="/admin/auth"
+                  className="text-amber-600 hover:underline font-medium"
+                >
+                  Accès Administrateur MEREF
+                </a>
+                <a 
+                  href="/sfd/auth"
+                  className="text-blue-600 hover:underline font-medium"
+                >
+                  Accès Administrateur SFD
+                </a>
+              </>
+            )}
+            
+            {authMode === 'admin' && (
+              <>
+                <a 
+                  href="/auth"
+                  className="text-[#0D6A51] hover:underline font-medium"
+                >
+                  Connexion Utilisateur Standard
+                </a>
+                <a 
+                  href="/sfd/auth"
+                  className="text-blue-600 hover:underline font-medium"
+                >
+                  Accès Administrateur SFD
+                </a>
+              </>
+            )}
+            
+            {authMode === 'sfd_admin' && (
+              <>
+                <a 
+                  href="/auth"
+                  className="text-[#0D6A51] hover:underline font-medium"
+                >
+                  Connexion Utilisateur Standard
+                </a>
+                <a 
+                  href="/admin/auth"
+                  className="text-amber-600 hover:underline font-medium"
+                >
+                  Accès Administrateur MEREF
+                </a>
+              </>
+            )}
+          </div>
+          
+          <DemoAccountsCreator />
         </div>
       </div>
     </div>

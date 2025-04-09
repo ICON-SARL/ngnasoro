@@ -1,9 +1,9 @@
 
 import React from 'react';
-import AuthUI from '@/components/AuthUI';
+import ClientAuthUI from '@/components/auth/ClientAuthUI';
 
-const ClientLoginPage: React.FC = () => {
-  return <AuthUI />;
+const ClientLoginPage = () => {
+  return <ClientAuthUI />;
 };
 
 export default ClientLoginPage;

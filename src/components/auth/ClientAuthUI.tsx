@@ -8,6 +8,7 @@ import RegisterForm from './RegisterForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import DemoAccountsCreator from './DemoAccountsCreator';
 
 const ClientAuthUI = () => {
   const { user, loading, session } = useAuth();
@@ -86,6 +87,23 @@ const ClientAuthUI = () => {
               <RegisterForm />
             </TabsContent>
           </Tabs>
+          
+          <div className="mt-4 text-center pb-6 flex flex-col gap-2">
+            <a 
+              href="/admin/auth"
+              className="text-amber-600 hover:underline font-medium"
+            >
+              Accès Administrateur MEREF
+            </a>
+            <a 
+              href="/sfd/auth"
+              className="text-blue-600 hover:underline font-medium"
+            >
+              Accès Administrateur SFD
+            </a>
+          </div>
+          
+          <DemoAccountsCreator />
         </div>
       </div>
     </div>

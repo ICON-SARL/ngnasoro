@@ -81,7 +81,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
                 id="email"
                 type="email"
                 placeholder={isSfdAdmin ? "admin@sfd.ml" : adminMode ? "admin@meref.ml" : "jean.dulac@anatec.io"}
-                className="pl-10 h-12 text-base border border-gray-300 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-md text-center"
+                className="pl-10 h-12 text-base border border-gray-300 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-md"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -99,7 +99,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••••••••"
-                className="pl-10 pr-10 h-12 text-base border border-gray-300 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-md text-center"
+                className="pl-10 pr-10 h-12 text-base border border-gray-300 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-md"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required

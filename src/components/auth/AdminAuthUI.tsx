@@ -4,8 +4,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from './Logo';
 import LoginForm from './login/LoginForm';
-import { Check } from 'lucide-react';
+import { Check, Shield } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
+import DemoAccountsCreator from './DemoAccountsCreator';
 
 const AdminAuthUI = () => {
   const { user, loading, session } = useAuth();
@@ -43,12 +44,12 @@ const AdminAuthUI = () => {
 
   if (authSuccess) {
     return (
-      <div className="auth-container bg-gradient-to-b from-[#fcf9f2] to-[#f8f4e5]">
+      <div className="auth-container bg-gradient-to-b from-amber-50 to-amber-100">
         <div className="max-w-md w-full auth-card p-8 text-center">
-          <div className="h-20 w-20 bg-[#f0e9d2] text-[#b88746] rounded-full mx-auto flex items-center justify-center mb-6">
+          <div className="h-20 w-20 bg-amber-100 text-amber-600 rounded-full mx-auto flex items-center justify-center mb-6">
             <Check className="h-10 w-10" />
           </div>
-          <h1 className="text-3xl font-bold text-[#8B5A2B] mb-3">Connexion réussie!</h1>
+          <h1 className="text-3xl font-bold text-amber-700 mb-3">Connexion réussie!</h1>
           <p className="mt-2 text-gray-600 text-lg">Vous allez être redirigé vers le tableau de bord administrateur...</p>
         </div>
       </div>
@@ -56,7 +57,7 @@ const AdminAuthUI = () => {
   }
 
   return (
-    <div className="auth-container bg-gradient-to-b from-[#f8f7ff] to-[#e9e7f8]">
+    <div className="auth-container bg-gradient-to-b from-amber-50 to-amber-100">
       <div className="absolute top-4 right-4">
         <LanguageSelector />
       </div>
@@ -64,14 +65,44 @@ const AdminAuthUI = () => {
       <div className="w-full max-w-md">
         <Logo />
         
-        <div className="auth-card shadow-lg border-0">
-          <div className="p-4 bg-gradient-to-r from-[#1A1F2C] to-[#2A3042] border-b border-gray-800">
-            <h2 className="text-white font-medium text-center">
+        <div className="auth-card">
+          <div className="p-4 bg-amber-50 border-b border-amber-100">
+            <h2 className="text-amber-800 font-medium text-center">
               Connexion Administration MEREF
             </h2>
           </div>
           
+          <div className="p-4 bg-amber-50 text-amber-800 flex items-start gap-2">
+            <Shield className="h-5 w-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium">
+                Accès réservé aux administrateurs MEREF
+              </p>
+              <p className="text-xs mt-1">
+                Cette interface est uniquement destinée aux administrateurs système. 
+                Les administrateurs n'ont pas accès à l'interface mobile.
+              </p>
+            </div>
+          </div>
+          
           <LoginForm adminMode={true} isSfdAdmin={false} />
+          
+          <div className="mt-4 text-center pb-6 flex flex-col gap-2">
+            <a 
+              href="/auth"
+              className="text-[#0D6A51] hover:underline font-medium"
+            >
+              Connexion Utilisateur Standard
+            </a>
+            <a 
+              href="/sfd/auth"
+              className="text-blue-600 hover:underline font-medium"
+            >
+              Accès Administrateur SFD
+            </a>
+          </div>
+          
+          <DemoAccountsCreator />
         </div>
       </div>
     </div>

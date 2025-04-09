@@ -1,2 +1,4 @@
 
-export { MainDashboard } from './MainDashboard';
+import MainDashboard from './MainDashboard';
+
+export { MainDashboard };

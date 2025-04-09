@@ -1,32 +1,99 @@
 
 import { useState } from 'react';
-import { useMobileMoneyPayment } from './useMobileMoneyPayment';
-import { useMobileMoneyWithdrawal } from './useMobileMoneyWithdrawal';
-import { useQRCodeGeneration } from './useQRCodeGeneration';
-import { MobileMoneyOperationsHook, MobileMoneyProvider } from './types';
+import { useAuth } from '../useAuth';
+import { processMobileMoneyPayment } from '../sfd/sfdAccountsApi';
+import { MobileMoneyOperationsHook } from './types';
 
 export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
-  // Get the hooks for each separate operation
-  const { isProcessingPayment, makePayment, processMobileMoneyPayment } = useMobileMoneyPayment();
-  const { isProcessingWithdrawal, makeWithdrawal } = useMobileMoneyWithdrawal();
-  const { isProcessingQRCode, generatePaymentQRCode, generateWithdrawalQRCode } = useQRCodeGeneration();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { user } = useAuth();
   
-  // Define available mobile money providers
-  const mobileMoneyProviders: MobileMoneyProvider[] = [
-    { id: 'orange', name: 'Orange Money', logo: '/assets/logos/orange-money.png' },
-    { id: 'mtn', name: 'MTN Mobile Money', logo: '/assets/logos/mtn-money.png' },
-    { id: 'wave', name: 'Wave', logo: '/assets/logos/wave.png' }
+  // Define mobile money providers
+  const mobileMoneyProviders = [
+    {
+      id: 'orange',
+      name: 'Orange Money',
+      code: 'orange',
+      icon: 'OM'
+    },
+    {
+      id: 'mtn',
+      name: 'MTN Mobile Money',
+      code: 'mtn',
+      icon: 'MTN'
+    },
+    {
+      id: 'wave',
+      name: 'Wave',
+      code: 'wave',
+      icon: 'WV'
+    }
   ];
   
-  // Combine all the hooks into a single interface
+  const processPayment = async (
+    phoneNumber: string, 
+    amount: number, 
+    provider: string
+  ): Promise<boolean> => {
+    if (!user?.id) {
+      return false;
+    }
+    
+    setIsProcessing(true);
+    
+    try {
+      const result = await processMobileMoneyPayment(
+        user.id,
+        phoneNumber,
+        amount,
+        provider,
+        false // Not a repayment by default
+      );
+      
+      return result.success;
+    } catch (error: any) {
+      console.error('Failed to process mobile money payment:', error);
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
+  const processWithdrawal = async (
+    phoneNumber: string, 
+    amount: number, 
+    provider: string
+  ): Promise<boolean> => {
+    if (!user?.id) {
+      return false;
+    }
+    
+    setIsProcessing(true);
+    
+    try {
+      // Use the same function but with different parameters
+      const result = await processMobileMoneyPayment(
+        user.id,
+        phoneNumber,
+        amount,
+        provider,
+        false // Not a repayment for withdrawals
+      );
+      
+      return result.success;
+    } catch (error: any) {
+      console.error('Failed to process mobile money withdrawal:', error);
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
   return {
-    isProcessingPayment,
-    isProcessingWithdrawal,
-    isProcessingQRCode,
-    makePayment,
-    makeWithdrawal,
-    generatePaymentQRCode,
-    generateWithdrawalQRCode,
-    mobileMoneyProviders
+    mobileMoneyProviders,
+    defaultProvider: 'orange',
+    isProcessing,
+    processPayment,
+    processWithdrawal
   };
 }

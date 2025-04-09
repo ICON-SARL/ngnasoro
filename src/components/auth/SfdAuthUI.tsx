@@ -6,6 +6,7 @@ import Logo from './Logo';
 import LoginForm from './login/LoginForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
+import DemoAccountsCreator from './DemoAccountsCreator';
 
 const SfdAuthUI = () => {
   const { user, loading, session } = useAuth();
@@ -88,6 +89,23 @@ const SfdAuthUI = () => {
           </div>
           
           <LoginForm adminMode={false} isSfdAdmin={true} />
+          
+          <div className="mt-4 text-center pb-6 flex flex-col gap-2">
+            <a 
+              href="/auth"
+              className="text-[#0D6A51] hover:underline font-medium"
+            >
+              Connexion Utilisateur Standard
+            </a>
+            <a 
+              href="/admin/auth"
+              className="text-amber-600 hover:underline font-medium"
+            >
+              Accès Administrateur MEREF
+            </a>
+          </div>
+          
+          <DemoAccountsCreator />
         </div>
       </div>
     </div>

@@ -1,17 +1,17 @@
 
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth';
+import { Role } from '@/utils/audit/auditPermissions';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
-import { UserRole } from '@/utils/auth/roleTypes';
 
 interface RoleGuardProps {
-  requiredRole: UserRole | string; // Allow both enum and string for flexibility
+  requiredRole: Role;
   children: React.ReactNode;
 }
 
-export const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
-  const { user, userRole } = useAuth();
+const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
+  const { user } = useAuth();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const location = useLocation();
 
@@ -22,27 +22,22 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) 
       return;
     }
 
+    // Get role from user metadata
+    const userRole = user.app_metadata?.role;
+    
+    // Debug log
     console.log('RoleGuard checking:', { 
       userRole, 
-      requiredRole,
+      requiredRole, 
       userMetadata: user.app_metadata 
     });
     
-    // Super admin et admin ont accès à tout
-    if (userRole === UserRole.SUPER_ADMIN || userRole === UserRole.ADMIN) {
-      console.log('Access granted: User is admin or super_admin');
-      setHasAccess(true);
-      return;
-    }
+    // Handle special case where SFD_ADMIN should match sfd_admin role
+    const permitted = userRole === requiredRole || 
+      (requiredRole === 'sfd_admin' && userRole === 'sfd_admin') ||
+      (requiredRole === Role.SFD_ADMIN && userRole === 'sfd_admin') ||
+      (requiredRole === 'admin' && userRole === 'admin');
     
-    // Handle case where userRole matches requiredRole
-    // Convert to strings for comparison to avoid type issues
-    const userRoleStr = String(userRole);
-    const requiredRoleStr = String(requiredRole);
-    
-    const permitted = userRoleStr === requiredRoleStr;
-    
-    console.log('Access check result:', { userRoleStr, requiredRoleStr, permitted });
     setHasAccess(permitted);
     
     // Log access denied attempts
@@ -55,14 +50,14 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) 
         status: 'failure',
         target_resource: location.pathname,
         details: {
-          required_role: requiredRoleStr,
-          user_role: userRoleStr,
+          required_role: requiredRole,
+          user_role: userRole,
           timestamp: new Date().toISOString()
         },
-        error_message: `Access denied: Missing role (${requiredRoleStr})`
+        error_message: `Access denied: Missing role (${requiredRole})`
       }).catch(err => console.error('Error logging audit event:', err));
     }
-  }, [user, userRole, requiredRole, location.pathname]);
+  }, [user, requiredRole, location.pathname]);
 
   if (hasAccess === null) {
     // Still checking permissions

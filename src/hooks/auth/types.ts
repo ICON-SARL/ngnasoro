@@ -1,47 +1,52 @@
+export type Role = 'admin' | 'sfd_admin' | 'user' | 'client' | null;
 
-import { User as SupabaseUser, Session } from '@supabase/supabase-js';
-import { UserRole } from '@/utils/auth/roleTypes';
+export enum UserRole {
+  SUPER_ADMIN = 'admin',
+  ADMIN = 'admin',
+  SFD_ADMIN = 'sfd_admin',
+  CLIENT = 'client',
+  USER = 'user'
+}
 
-export { UserRole } from '@/utils/auth/roleTypes';
-
-export interface User extends Omit<SupabaseUser, 'app_metadata' | 'user_metadata'> {
-  app_metadata: {
-    provider?: string;
-    providers?: string[];
-    role?: UserRole;
-    [key: string]: any;
-  };
+export interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  avatar_url?: string;
+  sfd_id?: string;
+  phone?: string;
   user_metadata: {
     [key: string]: any;
+    sfd_id?: string;
   };
-  full_name?: string;
-  avatar_url?: string;
-  phone?: string;
-  sfd_id?: string;
+  app_metadata: {
+    role?: Role;
+    role_assigned?: boolean;
+    roles?: string[];
+    sfd_id?: string;
+  };
 }
 
 export interface AuthContextProps {
   user: User | null;
-  session: Session | null;
+  setUser: (user: User | null) => void;
+  signIn: (email: string, password: string) => Promise<{ error?: any }>;
+  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
+  signOut: () => Promise<void>;
   loading: boolean;
-  error?: string | null;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp?: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
-  signOut: () => Promise<{ error: any }>;
-  userRole?: UserRole | null;
-  biometricEnabled?: boolean;
-  toggleBiometricAuth?: () => Promise<void>;
-  isLoggedIn?: boolean;
-  isAdmin?: boolean;
-  isSfdAdmin?: boolean;
-  activeSfdId?: string | null;
-  setActiveSfdId?: (sfdId: string | null) => void;
+  isLoggedIn: boolean;
+  isAdmin: boolean;
+  isSfdAdmin: boolean;
+  activeSfdId: string | null;
+  setActiveSfdId: (sfdId: string | null) => void;
+  userRole: Role;
+  biometricEnabled: boolean;
+  toggleBiometricAuth: () => Promise<void>;
+  session: any | null;
+  isLoading: boolean;
   refreshSession: () => Promise<void>;
 }
 
-export type Role = UserRole;
-
-// Adding these types to fix the missing exports
 export interface AssociateSfdParams {
   userId: string;
   sfdId: string;

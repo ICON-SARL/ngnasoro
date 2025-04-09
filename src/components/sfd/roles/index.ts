@@ -1,6 +1,3 @@
 
-export * from './SfdRoleManager';
-export * from './RoleCard';
-export * from './PermissionList';
-export * from './NewRoleDialog';
-export * from './types';
+export { SfdRoleManager } from './SfdRoleManager';
+export type { Role, Permission } from './types';

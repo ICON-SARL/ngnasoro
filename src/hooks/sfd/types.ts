@@ -1,90 +1,82 @@
 
-export interface SfdData {
-  id: string;
-  name: string;
-  region?: string;
-  code: string;
-  logo_url?: string;
-  token?: string | null;
-  lastFetched?: Date | null;
-  status: 'active' | 'inactive' | string;
-}
-
-export interface SfdAccount {
-  id: string;
-  name: string;
-  region?: string;
-  code?: string;
-  logoUrl?: string;
-  logo_url?: string;
-  status?: string;
-  balance?: number;
-  currency?: string;
-  loans?: SfdLoan[];
-  isDefault?: boolean;
-  isVerified?: boolean;
-}
-
+// Define interfaces to avoid circular imports
 export interface SfdBalanceData {
-  id?: string;
   balance: number;
   currency: string;
-  last_updated?: string;
-  account_id?: string;
-  sfdName?: string;
-  name?: string;
-  logo_url?: string;
-  logoUrl?: string;
-  code?: string;
-  region?: string;
-}
-
-export interface SfdLoan {
-  id: string;
-  amount: number;
-  duration_months: number;
-  interest_rate: number;
-  monthly_payment: number;
-  next_payment_date?: string;
-  last_payment_date?: string;
-  status: string;
-  created_at: string;
-  remainingAmount?: number;
-  isLate?: boolean;
-  nextDueDate?: string;
-}
-
-export interface UserSfd {
-  user_id: string;
-  sfd_id: string;
-  id: string;
-  is_default: boolean;
-  sfds: {
-    id: string;
-    name: string;
-    code: string;
-    region?: string;
-    logo_url?: string | null;
-  };
 }
 
 export interface SyncResult {
   success: boolean;
-  message: string;
-  updatedAccounts?: number;
-  transactionId?: string; // Ajout de la propriété transactionId
+  message?: string;
 }
 
 export interface LoanPaymentParams {
   loanId: string;
   amount: number;
-  paymentMethod?: string;
-  description?: string;
+  method?: string;
+}
+
+export interface UserSfd {
+  id: string;
+  is_default: boolean;
+  sfds: {
+    id: string;
+    name: string;
+    code?: string;
+    region?: string;
+    logo_url?: string;
+  };
+}
+
+// Add missing types that were being imported elsewhere
+export interface SfdAccount {
+  id: string;
+  name: string;
+  logoUrl?: string | null;
+  region?: string;
+  code?: string;
+  isDefault?: boolean;
+  balance: number;
+  currency: string;
+  isVerified?: boolean;
+  loans?: SfdLoan[];
+}
+
+export interface SfdLoan {
+  id: string;
+  amount: number;
+  remainingAmount: number;
+  nextDueDate: string;
+  isLate?: boolean;
+}
+
+export interface SfdData {
+  id: string;
+  name: string;
+  token: string | null;
+  lastFetched: Date | null;
+  region?: string;
+  code?: string;
+  logo_url?: string;
+  status?: 'active' | 'inactive' | string; // Updated to allow string to fix the type error
 }
 
 export interface QRCodeRequest {
+  userId: string;
   amount: number;
-  reference: string;
-  merchant_id: string;
-  description?: string;
+  purpose: string;
+  loanId?: string;
+  isWithdrawal?: boolean;
+}
+
+// Make sure we're importing the Loan type from the main types file
+import { Loan } from '@/types/sfdClients';
+
+// Loan pagination data type to match what's used in useLoansPage.ts
+export interface LoanPaginationData {
+  loans: Loan[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }

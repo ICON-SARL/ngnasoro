@@ -1,59 +1,61 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { SfdData } from './types';
+import { User } from '@/hooks/useAuth';
 
-// This hook is for fetching SFD data from an external source
-export function useSfdDataFetcher(userId: string | undefined) {
-  const [data, setData] = useState<SfdData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateAction<SfdData[]>>) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchSfdData = async () => {
-      if (!userId) {
-        setData([]);
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
+  // Fetch available SFDs for the current user
+  const fetchUserSfds = useCallback(async (user: User | null) => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
       setError(null);
-
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Mock data
-        const mockData: SfdData[] = [
-          {
-            id: 'sfd1',
-            name: 'SFD One',
-            code: 'SFD1',
-            status: 'active',
-            token: 'token1',
-            lastFetched: new Date()
-          },
-          {
-            id: 'sfd2',
-            name: 'SFD Two',
-            code: 'SFD2',
-            status: 'active',
-            token: 'token2',
-            lastFetched: new Date()
-          }
-        ];
-
-        setData(mockData);
-      } catch (err) {
-        console.error('Error fetching SFD data:', err);
-        setError(err instanceof Error ? err : new Error('Failed to fetch SFD data'));
-      } finally {
-        setIsLoading(false);
+      
+      // Fetch SFDs from the database using the user_sfds join table
+      const { data, error } = await supabase
+        .from('user_sfds')
+        .select(`
+          id,
+          is_default,
+          sfds:sfd_id(id, name, code, region)
+        `)
+        .eq('user_id', user.id);
+        
+      if (error) throw error;
+      
+      if (data) {
+        const sfdList: SfdData[] = data.map(item => ({
+          id: item.sfds.id,
+          name: item.sfds.name,
+          token: null,
+          lastFetched: null
+        }));
+        
+        setSfdData(sfdList);
       }
-    };
+    } catch (err: any) {
+      console.error('Error fetching SFDs:', err);
+      setError(err.message);
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer vos SFDs",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [setSfdData, toast]);
 
-    fetchSfdData();
-  }, [userId]);
-
-  return { data, isLoading, error };
+  return {
+    loading,
+    error,
+    fetchUserSfds
+  };
 }

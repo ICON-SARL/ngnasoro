@@ -1,26 +1,31 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { MainDashboard } from '../dashboard';
-import ProfilePage from '../profile/ProfilePage';
-import LoanDetailsPage from '../LoanDetailsPage';
-import LoanActivityPage from '../LoanActivityPage';
-import LoanApplicationPage from '../loan-application/LoanApplicationPage';
-import PaymentOptionsPage from '../payment-options/PaymentOptionsPage';
-import FundsManagementPage from '../funds-management/FundsManagementPage';
-import { SecurePaymentTab } from '../secure-payment'; // Import named export
+import { MainDashboard } from '@/components/mobile/dashboard';
+import ProfilePage from '@/components/mobile/profile/ProfilePage';
+import SecurePaymentTab from '@/components/mobile/secure-payment';
+import SfdSetupPage from '@/pages/SfdSetupPage';
+import SfdClientsPage from '@/pages/SfdClientsPage';
+import ScheduleTransferTab from '@/components/mobile/ScheduleTransferTab';
+import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
+import PaymentOptionsPage from '@/components/mobile/payment-options/PaymentOptionsPage';
+import LoanApplicationPage from '@/components/mobile/loan-application/LoanApplicationPage';
+import LoanActivityPage from '@/components/mobile/LoanActivityPage';
+import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
+import LoanProcessPage from '@/components/mobile/LoanProcessPage';
 
 interface MobileFlowRoutesProps {
   onAction: (action: string, data?: any) => void;
-  account: any; // Replace 'any' with the actual type of 'account'
-  transactions: any[]; // Replace 'any[]' with the actual type of 'transactions'
+  account: any;
+  transactions: any[];
   transactionsLoading: boolean;
   toggleMenu: () => void;
   showWelcome: boolean;
   setShowWelcome: (show: boolean) => void;
-  handlePaymentSubmit: (data: { recipient: string; amount: number; note: string }) => Promise<void>;
+  handlePaymentSubmit: (data: { recipient: string, amount: number, note: string }) => Promise<void>;
 }
 
-const MobileFlowRoutes = ({ 
+const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
   onAction,
   account,
   transactions,
@@ -29,40 +34,73 @@ const MobileFlowRoutes = ({
   showWelcome,
   setShowWelcome,
   handlePaymentSubmit
-}: MobileFlowRoutesProps) => {
+}) => {
   return (
     <Routes>
-      {/* Redirect root to main dashboard */}
-      <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
-      
-      {/* Main dashboard */}
-      <Route path="/main" element={
-        <MainDashboard 
-          onAction={onAction} 
-          account={account} 
-          transactions={transactions} 
-          transactionsLoading={transactionsLoading} 
-          toggleMenu={toggleMenu} 
-        />
-      } />
-      
-      {/* User profile page */}
-      <Route path="/profile" element={<ProfilePage />} />
-      
-      {/* Loan-related pages */}
-      <Route path="/loan/:id" element={<LoanDetailsPage />} />
-      <Route path="/loan-activity" element={<LoanActivityPage />} />
-      <Route path="/loan-application" element={<LoanApplicationPage />} />
-      
-      {/* Payment and funds pages */}
-      <Route path="/payment-options" element={<PaymentOptionsPage />} />
-      <Route path="/funds-management" element={<FundsManagementPage />} />
-      
-      {/* Make sure secure payment route is updated to use the named export */}
-      <Route path="/secure-payment" element={<SecurePaymentTab />} />
-      
-      {/* Fallback route */}
-      <Route path="*" element={<Navigate to="/mobile-flow/main" replace />} />
+      <Route 
+        path="/" 
+        element={<Navigate to="/mobile-flow/main" replace />} 
+      />
+      <Route 
+        path="/main" 
+        element={
+          <MainDashboard 
+            onAction={onAction}
+            account={account}
+            transactions={transactions}
+            transactionsLoading={transactionsLoading}
+            toggleMenu={toggleMenu}
+          />
+        } 
+      />
+      <Route 
+        path="/profile" 
+        element={<ProfilePage />} 
+      />
+      <Route 
+        path="/create-sfd" 
+        element={<SfdSetupPage />} 
+      />
+      <Route 
+        path="/secure-payment" 
+        element={<SecurePaymentTab />} 
+      />
+      <Route 
+        path="/sfd-clients" 
+        element={<SfdClientsPage />} 
+      />
+      <Route 
+        path="/schedule-transfer" 
+        element={<ScheduleTransferTab />} 
+      />
+      <Route 
+        path="/funds-management" 
+        element={<FundsManagementPage />} 
+      />
+      <Route 
+        path="/payment-options" 
+        element={<PaymentOptionsPage />} 
+      />
+      <Route 
+        path="/loan-application" 
+        element={<LoanApplicationPage />} 
+      />
+      <Route 
+        path="/loan-activity" 
+        element={<LoanActivityPage />} 
+      />
+      <Route 
+        path="/loan-details" 
+        element={<LoanDetailsPage />} 
+      />
+      <Route 
+        path="/loan-process" 
+        element={<LoanProcessPage />} 
+      />
+      <Route 
+        path="*" 
+        element={<Navigate to="/mobile-flow/main" replace />} 
+      />
     </Routes>
   );
 };

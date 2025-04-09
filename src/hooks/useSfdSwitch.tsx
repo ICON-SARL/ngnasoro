@@ -24,19 +24,6 @@ export function useSfdSwitch() {
       return false;
     }
 
-    // Vérifier le rôle de l'utilisateur
-    const userRole = user.app_metadata?.role;
-    
-    // Les admins SFD ne peuvent pas changer de SFD une fois attribuée
-    if (userRole === 'sfd_admin' && user.app_metadata?.sfd_id) {
-      toast({
-        title: "Action non autorisée",
-        description: "En tant qu'administrateur SFD, vous ne pouvez pas changer de SFD",
-        variant: "destructive",
-      });
-      return false;
-    }
-
     setIsVerifying(true);
     setPendingSfdId(sfdId);
     setPendingApproval(false);

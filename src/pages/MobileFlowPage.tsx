@@ -5,9 +5,7 @@ import { useAuth } from '@/hooks/auth';
 import MobileMenu from '@/components/mobile/menu/MobileMenu';
 import MobileNavigation from '@/components/MobileNavigation';
 import MobileFlowRoutes from '@/components/mobile/routes/MobileFlowRoutes';
-import ContextualHeader from '@/components/mobile/ContextualHeader';
 import { Account } from '@/types/transactions';
-import { useQueryClient } from '@tanstack/react-query'; // Import useQueryClient hook
 
 const MobileFlowPage = () => {
   const location = useLocation();
@@ -15,7 +13,6 @@ const MobileFlowPage = () => {
   const { user, loading: isLoading, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
-  const queryClient = useQueryClient(); // Get query client from context
   
   // Vérifier si l'utilisateur est authentifié
   useEffect(() => {
@@ -75,16 +72,8 @@ const MobileFlowPage = () => {
     );
   }
   
-  // Check if current path is the main page
-  const isMainPage = location.pathname === '/mobile-flow/main';
-  
   return (
-    <div className="min-h-screen w-full bg-gray-50 flex flex-col">
-      {isMainPage && (
-        <div className="p-2 bg-[#0D6A51] rounded-b-3xl shadow-md">
-          <ContextualHeader />
-        </div>
-      )}
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <main className="flex-1 w-full h-full pb-16">
         <MobileFlowRoutes 
           onAction={handleAction}

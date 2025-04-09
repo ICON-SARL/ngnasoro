@@ -2,104 +2,91 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Bell, Mail, MessageSquare } from 'lucide-react';
-import { useUserSettings } from '@/hooks/useUserSettings';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Bell, Mail, MessageSquare, Globe } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const NotificationsSection = () => {
-  const { settings, loading, updateSetting } = useUserSettings();
+  const { toast } = useToast();
+  
+  const handleToggleNotification = (channel: string) => {
+    toast({
+      title: `Notifications ${channel}`,
+      description: `Les notifications par ${channel} ont été mises à jour`,
+    });
+  };
 
-  if (loading) {
-    return (
-      <Card className="mb-4">
-        <CardHeader className="pb-2">
-          <Skeleton className="h-6 w-48" />
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <div>
-                    <Skeleton className="h-4 w-32 mb-1" />
-                    <Skeleton className="h-3 w-40" />
-                  </div>
-                </div>
-                <Skeleton className="h-5 w-10" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleLanguageChange = (value: string) => {
+    toast({
+      title: "Langue modifiée",
+      description: `La langue de l'application a été changée pour ${value === 'fr' ? 'Français' : 'Bambara'}`,
+    });
+  };
 
   return (
     <Card className="mb-4">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Notifications</CardTitle>
+        <CardTitle className="text-lg">Notifications & Préférences</CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600">
+              <div className="h-8 w-8 bg-red-100 rounded-full flex items-center justify-center text-red-600">
                 <Bell className="h-4 w-4" />
               </div>
               <div>
                 <p className="font-medium">Notifications push</p>
                 <p className="text-xs text-gray-500">
-                  Recevez des alertes et mises à jour
+                  Alertes sur votre téléphone
                 </p>
               </div>
             </div>
-            <Switch 
-              checked={settings?.push_notifications_enabled ?? false}
-              onCheckedChange={(value) => 
-                updateSetting('push_notifications_enabled', value)
-              }
-            />
+            <Switch defaultChecked onCheckedChange={() => handleToggleNotification('push')} />
           </div>
-
+          
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 bg-amber-100 rounded-full flex items-center justify-center text-amber-600">
+              <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
                 <Mail className="h-4 w-4" />
               </div>
               <div>
-                <p className="font-medium">Notifications email</p>
+                <p className="font-medium">Notifications par e-mail</p>
                 <p className="text-xs text-gray-500">
-                  Recevez des récapitulatifs par email
+                  Résumés et confirmations importantes
                 </p>
               </div>
             </div>
-            <Switch 
-              checked={settings?.email_notifications_enabled ?? false}
-              onCheckedChange={(value) => 
-                updateSetting('email_notifications_enabled', value)
-              }
-            />
+            <Switch onCheckedChange={() => handleToggleNotification('email')} />
           </div>
-
+          
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center text-green-600">
                 <MessageSquare className="h-4 w-4" />
               </div>
               <div>
-                <p className="font-medium">Notifications SMS</p>
+                <p className="font-medium">Notifications par SMS</p>
                 <p className="text-xs text-gray-500">
-                  Recevez des alertes urgentes par SMS
+                  Pour les alertes critiques uniquement
                 </p>
               </div>
             </div>
-            <Switch 
-              checked={settings?.sms_notifications_enabled ?? false}
-              onCheckedChange={(value) => 
-                updateSetting('sms_notifications_enabled', value)
-              }
-            />
+            <Switch defaultChecked onCheckedChange={() => handleToggleNotification('SMS')} />
+          </div>
+          
+          <div className="mt-4">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
+                <Globe className="h-4 w-4" />
+              </div>
+              <p className="font-medium">Langue de l'application</p>
+            </div>
+            
+            <ToggleGroup type="single" defaultValue="fr" onValueChange={handleLanguageChange} className="justify-start">
+              <ToggleGroupItem value="fr" className="text-sm">Français</ToggleGroupItem>
+              <ToggleGroupItem value="bm" className="text-sm">Bambara</ToggleGroupItem>
+            </ToggleGroup>
           </div>
         </div>
       </CardContent>

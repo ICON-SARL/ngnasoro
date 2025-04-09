@@ -13,8 +13,6 @@ export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
       // Return predefined SFDs for test accounts
       return [
         {
-          user_id: userId,
-          sfd_id: 'premier-sfd-id',
           id: 'test-sfd1',
           is_default: false,
           sfds: {
@@ -26,8 +24,6 @@ export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
           }
         },
         {
-          user_id: userId,
-          sfd_id: 'deuxieme-sfd-id',
           id: 'test-sfd2',
           is_default: true,
           sfds: {
@@ -39,8 +35,6 @@ export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
           }
         },
         {
-          user_id: userId,
-          sfd_id: 'troisieme-sfd-id',
           id: 'test-sfd3',
           is_default: false,
           sfds: {
@@ -57,15 +51,7 @@ export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
     // Normal path for non-test users
     const { apiClient } = await import('@/utils/apiClient');
     const sfdsList = await apiClient.getUserSfds(userId);
-    
-    // Map response to match the UserSfd type structure
-    return sfdsList.map(sfd => ({
-      user_id: userId,             // Use the userId parameter as user_id
-      sfd_id: sfd.sfds.id,         // Set sfd_id from the nested sfds.id
-      id: sfd.id,                  // Keep the original id
-      is_default: sfd.is_default,  // Keep is_default
-      sfds: sfd.sfds               // Keep the nested sfds object
-    }));
+    return sfdsList;
   } catch (error) {
     console.error('Error fetching SFDs:', error);
     return [];
