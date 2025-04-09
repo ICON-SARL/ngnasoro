@@ -5,6 +5,7 @@ import AdminLoginPage from '@/pages/AdminLoginPage';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import SfdManagementPage from '@/pages/SfdManagementPage';
 import UsersManagementPage from '@/pages/UsersManagementPage';
+import AdminRoleManagementPage from '@/pages/AdminRoleManagementPage';
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 
@@ -35,6 +36,15 @@ const AdminRoutes = () => {
         element={
           <ProtectedRoute 
             component={UsersManagementPage} 
+            requireAdmin={true} 
+          />
+        } 
+      />
+      <Route 
+        path="role-management" 
+        element={
+          <ProtectedRoute 
+            component={AdminRoleManagementPage} 
             requireAdmin={true} 
           />
         } 

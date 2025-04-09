@@ -1,12 +1,19 @@
 
-export interface Permission {
+export interface AdminRolePermission {
   id: string;
   name: string;
   description: string;
+  enabled: boolean;
 }
 
-export interface Role {
+export interface AdminRole {
   id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+}
+
+export interface NewRoleData {
   name: string;
   description: string;
   permissions: string[];

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
@@ -10,6 +11,8 @@ import { SecurePaymentTab } from '@/components/mobile/secure-payment';
 import AdminRoutes from './AdminRoutes';
 import SfdRoutes from './SfdRoutes';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
+import AdminRoleManagementPage from '@/pages/AdminRoleManagementPage';
+import UsersManagementPage from '@/pages/UsersManagementPage';
 
 const HomePage = () => {
   return (
@@ -61,6 +64,8 @@ const AppRoutes = () => {
       
       <Route path="/admin/*" element={<AdminRoutes />} />
       <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
+      <Route path="/admin-role-management" element={<AdminRoleManagementPage />} />
+      <Route path="/users-management" element={<UsersManagementPage />} />
       <Route path="/sfd-management" element={<Navigate to="/admin/sfd-management" replace />} />
       
       <Route path="/sfd/*" element={<SfdRoutes />} />

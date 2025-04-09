@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, Bell, Search, Settings, User, X } from 'lucide-react';
+import { Menu, Bell, Search, Settings, User, X, Shield } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +53,9 @@ export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ additionalCo
             <Link to="/sfd-management" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
               SFDs
             </Link>
+            <Link to="/admin/role-management" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
+              Rôles
+            </Link>
             <Link to="/reports" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
               Rapports
             </Link>
@@ -86,6 +89,12 @@ export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ additionalCo
                 <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Préférences</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Shield className="mr-2 h-4 w-4" />
+                  <span>
+                    <Link to="/admin/role-management">Gestion des rôles</Link>
+                  </span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -147,6 +156,13 @@ export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ additionalCo
                 SFDs
               </Link>
               <Link
+                to="/admin/role-management"
+                className="px-2 py-1.5 text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-md text-sm"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                Rôles
+              </Link>
+              <Link
                 to="/reports"
                 className="px-2 py-1.5 text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-md text-sm"
                 onClick={() => setShowMobileMenu(false)}
@@ -159,4 +175,4 @@ export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ additionalCo
       </div>
     </header>
   );
-};
+}
