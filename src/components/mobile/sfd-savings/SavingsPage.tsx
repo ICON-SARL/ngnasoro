@@ -104,7 +104,7 @@ const SavingsPage: React.FC<SavingsPageProps> = ({ refreshSavings, onManageAccou
     email: user?.email || 'client@example.com',
     phone: '+2250000000000',
     address: 'Abidjan, Côte d\'Ivoire',
-    status: 'active',
+    status: 'pending', // Fixed: using a valid status value from the SfdClient type
     created_at: new Date().toISOString(),
     sfd_id: 'default-sfd-id', // Added missing property
     kyc_level: 1 // Added missing property

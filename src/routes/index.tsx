@@ -5,11 +5,14 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
 import ClientLoginPage from '@/pages/ClientLoginPage';
 import MobileFlow from '@/components/mobile/MobileFlow';
+import AdminLoginPage from '@/pages/AdminLoginPage';
+import SfdLoginPage from '@/pages/SfdLoginPage';
 import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
 // Fixing the SecurePaymentPage import - using the existing SecurePaymentTab component
 import SecurePaymentTab from '@/components/mobile/secure-payment';
 import AdminRoutes from './AdminRoutes';
 import SfdRoutes from './SfdRoutes';
+import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 
 // Create a simple HomePage component
 const HomePage = () => {
@@ -54,6 +57,8 @@ const AppRoutes = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/auth" element={<LoginPage />} />
       <Route path="/client/auth" element={<ClientLoginPage />} />
+      <Route path="/admin/auth" element={<AdminLoginPage />} />
+      <Route path="/sfd/auth" element={<SfdLoginPage />} />
       
       {/* Mobile app flow */}
       <Route path="/mobile-flow/*" element={<MobileFlow />} />
@@ -62,7 +67,7 @@ const AppRoutes = () => {
       
       {/* Admin routes */}
       <Route path="/admin/*" element={<AdminRoutes />} />
-      <Route path="/super-admin-dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+      <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
       <Route path="/sfd-management" element={<Navigate to="/admin/sfd-management" replace />} />
       
       {/* SFD Admin routes */}

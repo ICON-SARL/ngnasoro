@@ -1,7 +1,5 @@
 
-import { Session, AuthError } from '@supabase/supabase-js';
-
-export type Role = 'admin' | 'sfd_admin' | 'user' | 'client' | null;
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 export enum UserRole {
   SUPER_ADMIN = 'admin',
@@ -11,53 +9,39 @@ export enum UserRole {
   USER = 'user'
 }
 
-export interface User {
-  id: string;
-  email: string;
-  full_name: string;
-  avatar_url?: string;
-  sfd_id?: string;
-  phone?: string;
+export interface User extends Omit<SupabaseUser, 'app_metadata' | 'user_metadata'> {
+  app_metadata: {
+    provider?: string;
+    providers?: string[];
+    role?: UserRole;
+    [key: string]: any;
+  };
   user_metadata: {
     [key: string]: any;
-    sfd_id?: string;
   };
-  app_metadata: {
-    role?: Role;
-    role_assigned?: boolean;
-    roles?: string[];
-    sfd_id?: string;
-  };
+  full_name?: string;
+  avatar_url?: string;
+  phone?: string;
+  sfd_id?: string;
 }
 
 export interface AuthContextProps {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  error: string | null;
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
-  signOut: () => Promise<void>;
-  userRole: Role | null;
-  biometricEnabled: boolean;
-  toggleBiometricAuth: () => Promise<void>;
-  isLoggedIn: boolean;
-  isAdmin: boolean;
-  isSfdAdmin: boolean;
-  activeSfdId: string | null;
-  setActiveSfdId: (sfdId: string | null) => void;
+  error?: string | null;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp?: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
+  signOut: () => Promise<{ error: any }>;
+  userRole?: UserRole | null;
+  biometricEnabled?: boolean;
+  toggleBiometricAuth?: () => Promise<void>;
+  isLoggedIn?: boolean;
+  isAdmin?: boolean;
+  isSfdAdmin?: boolean;
+  activeSfdId?: string | null;
+  setActiveSfdId?: (sfdId: string | null) => void;
   refreshSession: () => Promise<void>;
 }
 
-// Add interfaces for SFD Association
-export interface AssociateSfdParams {
-  userId: string;
-  sfdId: string;
-  makeDefault?: boolean;
-}
-
-export interface AssociateSfdResult {
-  success: boolean;
-  userSfd?: any;
-  error?: string;
-}
+export type Role = UserRole;

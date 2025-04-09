@@ -8,13 +8,12 @@ import RegisterForm from './auth/RegisterForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserRole } from '@/hooks/auth/types';
 import { useToast } from '@/hooks/use-toast';
 
-const AuthUI = () => {
+const AuthUI: React.FC = () => {
   const [activeTab, setActiveTab] = useState('login');
   const [authMode, setAuthMode] = useState<'default' | 'admin' | 'sfd_admin'>('default');
-  const { user, userRole, loading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
@@ -36,9 +35,9 @@ const AuthUI = () => {
   useEffect(() => {
     if (user && !loading) {
       console.log('Authenticated user:', user);
-      console.log('User role:', userRole);
       
-      if (userRole === UserRole.SUPER_ADMIN || user.app_metadata?.role === 'admin') {
+      // Redirect based on user role
+      if (user.app_metadata?.role === 'admin') {
         if (location.pathname !== '/admin/auth' && !location.pathname.includes('admin')) {
           toast({
             title: "Redirection",
@@ -47,13 +46,13 @@ const AuthUI = () => {
           });
         }
         navigate('/super-admin-dashboard');
-      } else if (userRole === UserRole.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {
+      } else if (user.app_metadata?.role === 'sfd_admin') {
         navigate('/agency-dashboard');
       } else {
         navigate('/mobile-flow');
       }
     }
-  }, [user, userRole, loading, navigate, location.pathname, toast]);
+  }, [user, loading, navigate, location.pathname, toast]);
   
   useEffect(() => {
     if (location.pathname.includes('register')) {
