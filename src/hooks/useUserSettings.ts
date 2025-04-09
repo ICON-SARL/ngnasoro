@@ -31,9 +31,9 @@ export function useUserSettings() {
       try {
         setLoading(true);
         
-        // Use type assertion to bypass TypeScript's table name checking
+        // Use supabase to fetch user settings without type assertion
         const { data, error } = await supabase
-          .from('user_settings' as any)
+          .from('user_settings')
           .select('*')
           .eq('user_id', user.id)
           .single();
@@ -43,7 +43,7 @@ export function useUserSettings() {
           // If settings don't exist for the user yet, create them
           if (error.code === 'PGRST116') {
             const { data: newSettings, error: insertError } = await supabase
-              .from('user_settings' as any)
+              .from('user_settings')
               .insert({ user_id: user.id })
               .select('*')
               .single();
@@ -51,11 +51,11 @@ export function useUserSettings() {
             if (insertError) {
               console.error('Error creating user settings:', insertError);
             } else {
-              setSettings(newSettings as unknown as UserSettings);
+              setSettings(newSettings as UserSettings);
             }
           }
         } else {
-          setSettings(data as unknown as UserSettings);
+          setSettings(data as UserSettings);
         }
       } catch (error) {
         console.error('Unexpected error fetching settings:', error);
@@ -81,11 +81,10 @@ export function useUserSettings() {
     }
 
     try {
-      // Use type assertions to bypass TypeScript checking
       const updateData = { [key]: value, updated_at: new Date().toISOString() };
       
       const { error } = await supabase
-        .from('user_settings' as any)
+        .from('user_settings')
         .update(updateData)
         .eq('user_id', user.id);
         
