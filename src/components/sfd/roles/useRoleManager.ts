@@ -63,11 +63,12 @@ export function useRoleManager() {
         }
 
         if (sfdRoles) {
+          // Explicitly define the type to avoid deep type instantiations
           const roleObjects: Role[] = sfdRoles.map(role => ({
             id: role.id,
             name: role.name || '',
             description: role.description || '',
-            permissions: role.permissions || []
+            permissions: Array.isArray(role.permissions) ? role.permissions : []
           }));
           
           setRoles(roleObjects);
@@ -176,12 +177,15 @@ export function useRoleManager() {
         .eq('sfd_id', activeSfdId);
 
       if (updatedRoles) {
-        setRoles(updatedRoles.map(role => ({
+        // Explicitly define the type for role objects to prevent deep recursion
+        const roleObjects: Role[] = updatedRoles.map(role => ({
           id: role.id,
           name: role.name || '',
           description: role.description || '',
-          permissions: role.permissions || []
-        })));
+          permissions: Array.isArray(role.permissions) ? role.permissions : []
+        }));
+        
+        setRoles(roleObjects);
       }
     } catch (error) {
       console.error('Error saving role:', error);
