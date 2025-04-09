@@ -124,7 +124,7 @@ export function useRoleManager() {
     });
   };
 
-  // Fixed function to avoid type instantiation issues
+  // Fix function to avoid type instantiation issues
   const handleSaveNewRole = async () => {
     if (!activeSfdId) {
       toast({
@@ -137,16 +137,14 @@ export function useRoleManager() {
 
     try {
       if (isEditMode) {
-        // Define the update data structure explicitly
-        const updateData = {
-          name: newRole.name,
-          description: newRole.description,
-          permissions: newRole.permissions
-        };
-        
+        // Use type assertion to 'any' to bypass TypeScript's deep type checking
         await supabase
           .from('admin_roles')
-          .update(updateData)
+          .update({
+            name: newRole.name,
+            description: newRole.description,
+            permissions: newRole.permissions
+          } as any)
           .eq('name', newRole.name)
           .eq('sfd_id', activeSfdId);
 
@@ -155,17 +153,15 @@ export function useRoleManager() {
           description: `Le rôle ${newRole.name} a été mis à jour avec succès`
         });
       } else {
-        // Define the insert data structure explicitly
-        const insertData = {
-          sfd_id: activeSfdId,
-          name: newRole.name,
-          description: newRole.description,
-          permissions: newRole.permissions
-        };
-        
+        // Use type assertion to 'any' to bypass TypeScript's deep type checking
         await supabase
           .from('admin_roles')
-          .insert(insertData);
+          .insert({
+            sfd_id: activeSfdId,
+            name: newRole.name,
+            description: newRole.description,
+            permissions: newRole.permissions
+          } as any);
 
         toast({
           title: 'Rôle créé',
@@ -182,15 +178,15 @@ export function useRoleManager() {
         permissions: []
       });
 
-      // Fetch updated roles
+      // Fetch updated roles with type assertion to avoid deep inference
       const { data } = await supabase
         .from('admin_roles')
         .select('*')
         .eq('sfd_id', activeSfdId);
 
       if (data) {
-        // Process the role data with explicit typing
-        const updatedRoles: Role[] = data.map(role => ({
+        // Simple transformation with explicit typing
+        const updatedRoles = (data as any[]).map(role => ({
           id: role.id,
           name: role.name || '',
           description: role.description || '',
