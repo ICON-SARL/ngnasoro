@@ -2,11 +2,11 @@
 import React from 'react';
 import { Switch } from '@/components/ui/switch';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Permission } from './types';
+import { Permission, AdminRolePermission } from './types';
 import { GripVertical } from 'lucide-react';
 
 interface PermissionListProps {
-  permissions: Permission[];
+  permissions: AdminRolePermission[];
   selectedPermissions: string[];
   onTogglePermission: (permissionId: string) => void;
   draggable?: boolean;

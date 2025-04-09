@@ -128,7 +128,11 @@ export function useRoleManager() {
     
     try {
       if (isEditMode) {
-        // Update existing role
+        // Update existing role - ensure we have an ID for edit mode
+        if (!newRole.id) {
+          throw new Error('ID de rôle manquant pour la mise à jour');
+        }
+        
         const { data, error } = await supabase
           .from('admin_roles')
           .update({
@@ -223,8 +227,10 @@ export function useRoleManager() {
   
   const handleEditRole = (role: AdminRole) => {
     setNewRole({
-      ...role,
-      id: role.id
+      id: role.id,
+      name: role.name,
+      description: role.description,
+      permissions: [...role.permissions]
     });
     setIsEditMode(true);
     setShowNewRoleDialog(true);
