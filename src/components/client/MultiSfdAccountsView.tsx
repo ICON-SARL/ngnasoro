@@ -34,6 +34,22 @@ interface SfdAccountType {
   loans?: SfdLoan[];
 }
 
+const adaptSfdAccount = (account: any): SfdAccountType => {
+  return {
+    id: account.id,
+    name: account.name,
+    logoUrl: account.logoUrl,
+    logo_url: account.logo_url,
+    region: account.region || 'Non spécifié',
+    code: account.code || '',
+    isDefault: account.isDefault || false,
+    balance: account.balance || 0,
+    currency: account.currency || 'FCFA',
+    isVerified: account.isVerified || false,
+    loans: account.loans || []
+  };
+};
+
 export function MultiSfdAccountsView() {
   const { user } = useAuth();
   const { sfdAccounts, activeSfdAccount, isLoading, makeLoanPayment } = useSfdAccounts();
@@ -89,6 +105,9 @@ export function MultiSfdAccountsView() {
     );
   }
 
+  const adaptedSfdAccounts = sfdAccounts.map(adaptSfdAccount);
+  const adaptedActiveSfdAccount = activeSfdAccount ? adaptSfdAccount(activeSfdAccount) : null;
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -116,7 +135,7 @@ export function MultiSfdAccountsView() {
       </div>
 
       <div className="flex overflow-x-auto pb-4 space-x-4">
-        {sfdAccounts.map((account: SfdAccountType) => (
+        {adaptedSfdAccounts.map((account: SfdAccountType) => (
           <Card 
             key={account.id} 
             className="min-w-[260px]"
@@ -156,21 +175,21 @@ export function MultiSfdAccountsView() {
         ))}
       </div>
       
-      {activeSfdAccount && (
+      {adaptedActiveSfdAccount && (
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
               <div className="flex items-center">
                 <Avatar className="h-8 w-8 mr-2">
-                  {getLogoUrl(activeSfdAccount) ? (
-                    <img src={getLogoUrl(activeSfdAccount)} alt={activeSfdAccount.name} />
+                  {getLogoUrl(adaptedActiveSfdAccount) ? (
+                    <img src={getLogoUrl(adaptedActiveSfdAccount)} alt={adaptedActiveSfdAccount.name} />
                   ) : (
                     <div className="bg-primary/10 h-full w-full flex items-center justify-center text-primary">
-                      {activeSfdAccount.name?.charAt(0).toUpperCase()}
+                      {adaptedActiveSfdAccount.name?.charAt(0).toUpperCase()}
                     </div>
                   )}
                 </Avatar>
-                <CardTitle>{activeSfdAccount.name}</CardTitle>
+                <CardTitle>{adaptedActiveSfdAccount.name}</CardTitle>
               </div>
               <Badge className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">Détails</Badge>
             </div>
@@ -195,7 +214,7 @@ export function MultiSfdAccountsView() {
               <TabsContent value="balance">
                 <div className="p-6 text-center">
                   <h3 className="text-sm text-muted-foreground">Solde total</h3>
-                  <p className="text-3xl font-bold my-2">{activeSfdAccount.balance.toLocaleString()} {activeSfdAccount.currency}</p>
+                  <p className="text-3xl font-bold my-2">{adaptedActiveSfdAccount.balance.toLocaleString()} {adaptedActiveSfdAccount.currency}</p>
                   <div className="flex justify-center gap-2 mt-4">
                     <Button>Dépôt</Button>
                     <Button variant="outline">Retrait</Button>
@@ -205,8 +224,8 @@ export function MultiSfdAccountsView() {
               
               <TabsContent value="loans">
                 <div className="space-y-4">
-                  {activeSfdAccount.loans && activeSfdAccount.loans.length > 0 ? (
-                    activeSfdAccount.loans.map(loan => (
+                  {adaptedActiveSfdAccount.loans && adaptedActiveSfdAccount.loans.length > 0 ? (
+                    adaptedActiveSfdAccount.loans.map(loan => (
                       <div key={loan.id} className="border rounded-lg p-4">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="font-medium">Prêt #{loan.id.substring(0, 8)}</h3>
@@ -219,11 +238,11 @@ export function MultiSfdAccountsView() {
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-sm text-muted-foreground">Montant initial</span>
-                            <span>{loan.amount.toLocaleString()} {activeSfdAccount.currency}</span>
+                            <span>{loan.amount.toLocaleString()} {adaptedActiveSfdAccount.currency}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-muted-foreground">Reste à payer</span>
-                            <span className="font-medium">{(loan.remainingAmount || loan.amount).toLocaleString()} {activeSfdAccount.currency}</span>
+                            <span className="font-medium">{(loan.remainingAmount || loan.amount).toLocaleString()} {adaptedActiveSfdAccount.currency}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-muted-foreground">Prochaine échéance</span>
@@ -237,7 +256,7 @@ export function MultiSfdAccountsView() {
                               if (makeLoanPayment) {
                                 makeLoanPayment.mutate({ 
                                   loanId: loan.id, 
-                                  amount: (loan.remainingAmount || loan.amount) / 4 // Paiement d'un quart
+                                  amount: (loan.remainingAmount || loan.amount) / 4
                                 });
                               } else {
                                 toast({
@@ -289,7 +308,7 @@ export function MultiSfdAccountsView() {
                         <p className="text-sm text-muted-foreground">{tx.date}</p>
                       </div>
                       <span className={tx.type === 'credit' ? 'text-green-600' : 'text-red-600'}>
-                        {tx.type === 'credit' ? '+' : '-'}{tx.amount.toLocaleString()} {activeSfdAccount.currency}
+                        {tx.type === 'credit' ? '+' : '-'}{tx.amount.toLocaleString()} {adaptedActiveSfdAccount.currency}
                       </span>
                     </div>
                   ))}

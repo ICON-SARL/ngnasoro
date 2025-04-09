@@ -31,7 +31,7 @@ export interface SfdAccount {
   loans?: any[]; // Adding loans property to fix MultiSFDAccounts errors
   logoUrl?: string;
   logo_url?: string;
-  region?: string;
+  region?: string; // Make sure region is optional here
   isDefault?: boolean;
   isVerified?: boolean;
 }
