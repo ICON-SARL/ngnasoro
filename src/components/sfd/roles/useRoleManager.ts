@@ -137,20 +137,14 @@ export function useRoleManager() {
 
     try {
       if (isEditMode) {
-        // Define update data with explicit typing to avoid deep instantiation
-        const updateData: {
-          name: string;
-          description: string;
-          permissions: string[];
-        } = {
-          name: newRole.name,
-          description: newRole.description,
-          permissions: newRole.permissions
-        };
-
+        // Use an explicit type and create a simple object to avoid deep instantiation
+        const name = newRole.name;
+        const description = newRole.description;
+        const permissions = [...newRole.permissions]; // Create a new array to avoid references
+        
         const { error } = await supabase
           .from('admin_roles')
-          .update(updateData)
+          .update({ name, description, permissions })
           .eq('name', newRole.name)
           .eq('sfd_id', activeSfdId);
 
@@ -161,22 +155,15 @@ export function useRoleManager() {
           description: `Le rôle ${newRole.name} a été mis à jour avec succès`
         });
       } else {
-        // Define insert data with explicit typing to avoid deep instantiation
-        const insertData: {
-          sfd_id: string;
-          name: string;
-          description: string;
-          permissions: string[];
-        } = {
-          sfd_id: activeSfdId,
-          name: newRole.name,
-          description: newRole.description,
-          permissions: newRole.permissions
-        };
-
+        // Use an explicit type and create a simple object to avoid deep instantiation
+        const sfd_id = activeSfdId;
+        const name = newRole.name;
+        const description = newRole.description;
+        const permissions = [...newRole.permissions]; // Create a new array to avoid references
+        
         const { error } = await supabase
           .from('admin_roles')
-          .insert(insertData);
+          .insert({ sfd_id, name, description, permissions });
 
         if (error) throw error;
 
