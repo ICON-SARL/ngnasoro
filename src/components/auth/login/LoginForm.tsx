@@ -5,7 +5,7 @@ import {
   CooldownAlert,
   useLoginForm
 } from '../login/index';
-import SuccessState from '../login/SuccessState';
+import SuccessState from './login/SuccessState';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mail, Eye, EyeOff, Lock, ShieldAlert } from 'lucide-react';
@@ -81,7 +81,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
                 id="email"
                 type="email"
                 placeholder={isSfdAdmin ? "admin@sfd.ml" : adminMode ? "admin@meref.ml" : "jean.dulac@anatec.io"}
-                className="auth-input pl-10"
+                className="auth-input pl-10 text-center"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -99,7 +99,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••••••••"
-                className="auth-input pl-10 pr-10"
+                className="auth-input pl-10 pr-10 text-center"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
