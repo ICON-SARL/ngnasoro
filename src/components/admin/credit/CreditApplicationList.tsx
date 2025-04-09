@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -101,7 +100,7 @@ export const CreditApplicationList = () => {
         toast({
           title: "Demande approuvée",
           description: `La demande de crédit a été approuvée mais la notification n'a pas pu être envoyée`,
-          variant: "destructive", // Changed from "warning" to "destructive"
+          variant: "warning",
         });
       }
       
@@ -153,7 +152,7 @@ export const CreditApplicationList = () => {
         toast({
           title: "Demande rejetée",
           description: `La demande de crédit a été rejetée mais la notification n'a pas pu être envoyée`,
-          variant: "destructive", // Changed from "warning" to "destructive"
+          variant: "warning",
         });
       }
       

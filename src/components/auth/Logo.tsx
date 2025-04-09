@@ -4,7 +4,7 @@ import React from 'react';
 const Logo = () => {
   return (
     <div className="flex flex-col items-center justify-center py-4">
-      <div className="auth-logo-container">
+      <div className="bg-white p-4 rounded-lg inline-block mb-4 shadow-md">
         <img 
           src="/lovable-uploads/1fd2272c-2539-4f58-9841-15710204f204.png" 
           alt="N'GNA SÔRÔ Logo" 

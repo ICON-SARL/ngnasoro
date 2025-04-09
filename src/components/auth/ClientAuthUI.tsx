@@ -47,8 +47,8 @@ const ClientAuthUI = () => {
 
   if (authSuccess) {
     return (
-      <div className="auth-container">
-        <div className="max-w-md w-full auth-card p-8 text-center">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="h-20 w-20 bg-green-100 text-green-600 rounded-full mx-auto flex items-center justify-center mb-6">
             <Check className="h-10 w-10" />
           </div>
@@ -60,7 +60,7 @@ const ClientAuthUI = () => {
   }
 
   return (
-    <div className="auth-container">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex flex-col items-center justify-center p-4 relative">
       <div className="absolute top-4 right-4">
         <LanguageSelector />
       </div>
@@ -68,7 +68,7 @@ const ClientAuthUI = () => {
       <div className="w-full max-w-md">
         <Logo />
         
-        <div className="auth-card">
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
           <div className="p-4 bg-[#0D6A51]/10 border-b border-[#0D6A51]/20">
             <h2 className="text-[#0D6A51] font-medium text-center">
               Espace Client

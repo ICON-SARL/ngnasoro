@@ -67,7 +67,6 @@ export function SfdTable({
             <TableHead>Téléphone</TableHead>
             <TableHead>Statut</TableHead>
             <TableHead>Date de création</TableHead>
-            <TableHead>Admins</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -83,32 +82,24 @@ export function SfdTable({
               <TableCell>
                 {sfd.created_at ? formatDate(sfd.created_at) : '-'}
               </TableCell>
-              <TableCell>
-                <div className="flex items-center">
-                  <span className="text-sm">{sfd.admin_count || 0}</span>
-                  {onAddAdmin && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => onAddAdmin(sfd)}
-                      className="ml-2"
-                      title="Ajouter un administrateur"
-                    >
-                      <UserPlus className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end items-center gap-1">
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     onClick={() => onViewDetails(sfd)}
-                    title="Voir les détails"
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
+                  {onAddAdmin && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => onAddAdmin(sfd)}
+                    >
+                      <UserPlus className="h-4 w-4" />
+                    </Button>
+                  )}
                   <SfdActionsMenu
                     sfd={sfd}
                     onSuspend={onSuspend}

@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { User } from '@/hooks/auth';  // Importing from the index file
+import { User } from '@/hooks/useAuth';
 import { fetchUserSfds, fetchSfdBalance } from './sfdAccountsApi';
 import { SfdAccount } from './types';
 

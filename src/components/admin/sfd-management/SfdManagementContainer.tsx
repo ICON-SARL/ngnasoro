@@ -62,31 +62,12 @@ export function SfdManagementContainer() {
     setShowAddAdminDialog(true);
   };
 
-  const handleBackFromDetails = () => {
-    setShowDetailsView(false);
-    setSelectedSfd(null);
-  };
-
-  const handleAddAdminSubmit = async (data: any) => {
-    if (!selectedSfdForAdmin) return;
-    
-    try {
-      await addSfdAdmin({
-        ...data,
-        sfd_id: selectedSfdForAdmin.id,
-      });
-      
-      setShowAddAdminDialog(false);
-    } catch (error) {
-      console.error('Error adding SFD admin:', error);
-    }
-  };
-
   if (showDetailsView && selectedSfd) {
     return (
       <SfdDetailView 
         sfd={selectedSfd} 
-        onBack={handleBackFromDetails}
+        onBack={() => setShowDetailsView(false)}
+        onAddAdmin={() => handleAddAdmin(selectedSfd)}
       />
     );
   }
@@ -146,7 +127,7 @@ export function SfdManagementContainer() {
           onOpenChange={setShowAddAdminDialog}
           sfdId={selectedSfdForAdmin.id}
           sfdName={selectedSfdForAdmin.name}
-          onAddAdmin={handleAddAdminSubmit}
+          onAddAdmin={addSfdAdmin}
           isLoading={isLoadingAdmin}
           error={adminError}
         />

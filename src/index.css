@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -73,13 +72,13 @@
   }
 
   body {
-    @apply bg-background text-foreground font-montserrat antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-medium tracking-tight font-montserrat;
+    @apply font-medium tracking-tight;
   }
 }
 
@@ -100,47 +99,64 @@
     display: inline-block;
   }
   
-  /* ... keep existing code */
+  .animate-delay-100 {
+    animation-delay: 100ms;
+  }
+  
+  .animate-delay-200 {
+    animation-delay: 200ms;
+  }
+  
+  .animate-delay-300 {
+    animation-delay: 300ms;
+  }
+  
+  .animate-delay-400 {
+    animation-delay: 400ms;
+  }
+  
+  .animate-delay-500 {
+    animation-delay: 500ms;
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
 }
 
-/* ... keep existing code */
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
 
 /* Smooth transition between light and dark mode */
 body {
   transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* Modern authentication styles */
-.auth-card {
-  @apply bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100;
-}
-
-.auth-input {
-  @apply h-14 text-base rounded-lg border border-gray-200 bg-gray-50/50 px-4 py-3 
-  focus:border-primary focus:ring-primary focus:outline-none w-full font-montserrat transition-all;
-}
-
-.auth-btn {
-  @apply w-full h-12 font-medium rounded-lg transition-all shadow hover:shadow-md;
-}
-
-.auth-btn-primary {
-  @apply bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white auth-btn;
-}
-
-.auth-btn-admin {
-  @apply bg-amber-600 hover:bg-amber-700 text-white auth-btn;
-}
-
-.auth-btn-sfd {
-  @apply bg-blue-600 hover:bg-blue-700 text-white auth-btn;
-}
-
-.auth-container {
-  @apply min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 
-  flex flex-col items-center justify-center p-4 relative;
-}
-
-.auth-logo-container {
-  @apply bg-white p-5 rounded-xl inline-block mb-6 shadow-md;
 }

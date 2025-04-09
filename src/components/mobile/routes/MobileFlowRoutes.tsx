@@ -63,7 +63,7 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       />
       <Route 
         path="/secure-payment" 
-        element={<SecurePaymentTab onSubmit={handlePaymentSubmit} />} 
+        element={<SecurePaymentTab />} 
       />
       <Route 
         path="/sfd-clients" 

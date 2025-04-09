@@ -3,73 +3,71 @@ import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { toast } from '@/hooks/use-toast';
+import { AdminRole } from '@/components/admin/management/types';
+import { Loader2, AlertCircle } from 'lucide-react';
 
-const addAdminSchema = z.object({
-  full_name: z.string().min(1, { message: 'Nom complet requis' }),
-  email: z.string().email({ message: 'Email invalide' }),
-  password: z.string().min(8, { message: 'Le mot de passe doit contenir au moins 8 caractères' }),
-  role: z.string().default('sfd_admin'),
-  notify: z.boolean().default(true),
+// Schema for form validation
+const formSchema = z.object({
+  fullName: z.string().min(3, "Le nom complet doit contenir au moins 3 caractères"),
+  email: z.string().email("Email invalide"),
+  password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
+  sendNotification: z.boolean().default(true)
 });
 
-type AddAdminFormValues = z.infer<typeof addAdminSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
 interface AddSfdAdminDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sfdId: string;
   sfdName: string;
-  onAddAdmin: (data: any) => void;
+  onAddAdmin: (data: { email: string; password: string; full_name: string; role: string; sfd_id: string; notify: boolean; }) => void;
   isLoading: boolean;
-  error: any;
+  error?: string | null;
 }
 
-export function AddSfdAdminDialog({
-  open,
-  onOpenChange,
-  sfdId,
-  sfdName,
-  onAddAdmin,
+export function AddSfdAdminDialog({ 
+  open, 
+  onOpenChange, 
+  sfdId, 
+  sfdName, 
+  onAddAdmin, 
   isLoading,
-  error
+  error 
 }: AddSfdAdminDialogProps) {
-  const form = useForm<AddAdminFormValues>({
-    resolver: zodResolver(addAdminSchema),
+  // Initialize form with react-hook-form and zod validation
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      full_name: '',
+      fullName: '',
       email: '',
       password: '',
-      role: 'sfd_admin',
-      notify: true
-    },
+      sendNotification: true
+    }
   });
 
-  const handleSubmit = (values: AddAdminFormValues) => {
-    onAddAdmin({
-      ...values,
-      sfd_id: sfdId,
-    });
+  const handleSubmit = async (values: FormValues) => {
+    try {
+      console.log("Form submitted with values:", values);
+      onAddAdmin({
+        email: values.email,
+        password: values.password,
+        full_name: values.fullName,
+        role: AdminRole.SFD_ADMIN,
+        sfd_id: sfdId,
+        notify: values.sendNotification
+      });
+      
+      // Form will be reset after successful submission by the parent component
+    } catch (error) {
+      console.error("Error in form submission:", error);
+    }
   };
 
   return (
@@ -78,27 +76,20 @@ export function AddSfdAdminDialog({
         <DialogHeader>
           <DialogTitle>Ajouter un administrateur SFD</DialogTitle>
           <DialogDescription>
-            Créez un compte d'administrateur pour {sfdName}
+            Créer un compte administrateur pour la SFD {sfdName}
           </DialogDescription>
         </DialogHeader>
-        
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="full_name"
+              name="fullName"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nom complet</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Nom complet" autoComplete="name" />
+                    <Input placeholder="Prénom Nom" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -110,9 +101,9 @@ export function AddSfdAdminDialog({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Adresse email</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="email@example.com" type="email" autoComplete="email" />
+                    <Input type="email" placeholder="admin@exemple.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -126,7 +117,7 @@ export function AddSfdAdminDialog({
                 <FormItem>
                   <FormLabel>Mot de passe</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="••••••••" type="password" autoComplete="new-password" />
+                    <Input type="password" placeholder="••••••••" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -135,13 +126,13 @@ export function AddSfdAdminDialog({
             
             <FormField
               control={form.control}
-              name="notify"
+              name="sendNotification"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">
-                    <FormLabel>Notifier par email</FormLabel>
+                    <FormLabel className="text-base">Envoyer une notification</FormLabel>
                     <p className="text-sm text-muted-foreground">
-                      Envoyez un email de notification à l'administrateur
+                      Envoyer un email d'invitation à l'administrateur
                     </p>
                   </div>
                   <FormControl>
@@ -154,13 +145,15 @@ export function AddSfdAdminDialog({
               )}
             />
             
+            {error && (
+              <div className="bg-red-100 p-2 rounded-md flex items-center text-red-800">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                <p className="text-sm">{error}</p>
+              </div>
+            )}
+            
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => onOpenChange(false)}
-                disabled={isLoading}
-              >
+              <Button variant="outline" onClick={() => onOpenChange(false)} type="button">
                 Annuler
               </Button>
               <Button type="submit" disabled={isLoading}>
@@ -169,9 +162,7 @@ export function AddSfdAdminDialog({
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Création...
                   </>
-                ) : (
-                  'Créer l\'administrateur'
-                )}
+                ) : 'Créer le compte'}
               </Button>
             </DialogFooter>
           </form>

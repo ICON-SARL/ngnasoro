@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { SfdManagementContainer } from './sfd-management/SfdManagementContainer';
+import { SfdManagement as SfdManagementComponent } from './sfd-management';
 
 export function SfdManagement() {
-  return <SfdManagementContainer />;
+  return <SfdManagementComponent />;
 }

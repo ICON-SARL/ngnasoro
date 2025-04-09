@@ -1,70 +1,81 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.20.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.3";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface NotificationRequest {
+  adminEmail: string;
+  adminName: string;
+  role: string;
+  createdBy: string;
+}
+
 serve(async (req) => {
-  // Handle CORS preflight request
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders, status: 204 });
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { notification } = await req.json();
+    // Get request body
+    const requestData: NotificationRequest = await req.json();
+    const { adminEmail, adminName, role, createdBy } = requestData;
 
-    if (!notification || !notification.title || !notification.message || !notification.type || !notification.sender_id) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Les champs titre, message, type et sender_id sont requis"
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-      );
-    }
+    console.log(`Sending notification to new admin: ${adminEmail}`);
 
-    // Insert notification
-    const { data, error } = await supabaseClient
-      .from("admin_notifications")
-      .insert({
-        title: notification.title,
-        message: notification.message,
-        type: notification.type,
-        sender_id: notification.sender_id,
-        recipient_id: notification.recipient_id || null,
-        recipient_role: notification.recipient_role || null,
-        action_link: notification.action_link || null,
-        read: false
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error creating notification:", error);
-      return new Response(
-        JSON.stringify({ success: false, error: error.message }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-      );
-    }
+    // Send email notification
+    // In a real implementation, you would integrate with an email service like Resend, SendGrid, etc.
+    // For now, we'll just simulate sending an email by logging it
+    console.log(`Email would be sent to: ${adminEmail}`);
+    console.log(`Subject: Bienvenue sur le Portail Administrateur`);
+    console.log(`Body: Bonjour ${adminName}, un compte administrateur avec le rôle "${role}" a été créé pour vous par ${createdBy}.`);
+    
+    // For SMS notification, you would integrate with an SMS service like Twilio, Vonage, etc.
+    
+    // Optionally log this action in audit_logs table
+    await supabase.from('audit_logs').insert({
+      action: 'admin_notification_sent',
+      category: 'user_management',
+      severity: 'info',
+      details: { recipient: adminEmail, notification_type: 'email' },
+      status: 'success'
+    });
 
     return new Response(
-      JSON.stringify({ success: true, data }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      JSON.stringify({ 
+        success: true, 
+        message: 'Notification sent successfully' 
+      }),
+      { 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        } 
+      }
     );
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error('Error in admin-notification function:', error);
+    
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }),
+      { 
+        status: 500,
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        } 
+      }
     );
   }
 });

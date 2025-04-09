@@ -22,7 +22,7 @@ const ErrorDisplay = ({ message }: ErrorDisplayProps) => {
   }
 
   return (
-    <div className="bg-red-50 p-4 rounded-xl flex items-start shadow-sm">
+    <div className="bg-red-50 p-4 rounded-lg flex items-start">
       <AlertCircle className="h-5 w-5 text-red-600 mr-3 mt-0.5 flex-shrink-0" />
       <div className="flex-1">
         <p className="font-medium text-red-800">{simplifiedMessage}</p>
