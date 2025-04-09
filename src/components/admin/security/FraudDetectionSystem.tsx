@@ -45,8 +45,8 @@ export const FraudDetectionSystem = () => {
                 </AlertDescription>
               </Alert>
               
-              <Alert variant="warning" className="mb-4">
-                <AlertTriangleIcon className="h-4 w-4" />
+              <Alert variant="default" className="mb-4 bg-amber-50 border-amber-200">
+                <AlertTriangleIcon className="h-4 w-4 text-amber-600" />
                 <AlertTitle>Documents Potentiellement Falsifiés</AlertTitle>
                 <AlertDescription>
                   Incohérences détectées dans les documents KYC soumis par un nouveau client - 

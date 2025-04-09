@@ -112,8 +112,8 @@ export const SubventionManagement = () => {
                 </AlertDescription>
               </Alert>
               
-              <Alert variant="warning" className="mb-4">
-                <AlertTriangleIcon className="h-4 w-4" />
+              <Alert variant="default" className="mb-4 bg-amber-50 border-amber-200">
+                <AlertTriangleIcon className="h-4 w-4 text-amber-600" />
                 <AlertTitle>Alerte de suivi</AlertTitle>
                 <AlertDescription>
                   SFD "MicroFinance Nord" - Retard dans l'allocation de 45,000,000 FCFA 
