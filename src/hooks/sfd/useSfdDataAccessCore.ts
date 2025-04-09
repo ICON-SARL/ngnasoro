@@ -28,13 +28,14 @@ export function useSfdDataAccessCore() {
       setIsLoading(true);
       try {
         // In a real app, we'd fetch the list of SFDs based on the user
-        // For now, we'll use mock data to ensure it works
         const mockSfds: SfdData[] = [
           {
             id: 'primary-sfd',
             name: 'SFD Primaire',
             code: 'primary-sfd',
             region: 'Bamako',
+            token: null,
+            lastFetched: null,
             status: 'active'
           },
           {
@@ -42,6 +43,8 @@ export function useSfdDataAccessCore() {
             name: 'SFD Secondaire',
             code: 'secondary-sfd',
             region: 'Sikasso',
+            token: null,
+            lastFetched: null,
             status: 'active'
           }
         ];
@@ -56,8 +59,15 @@ export function useSfdDataAccessCore() {
         }
         
         // Use real data if available, otherwise use mock data
-        const finalData = data && data.length > 0 ? data : mockSfds;
-        setSfdData(finalData as SfdData[]); // Force type casting to avoid issues
+        const finalData = data && data.length > 0 
+          ? data.map(sfd => ({
+              ...sfd,
+              token: null, 
+              lastFetched: null
+            }))
+          : mockSfds;
+          
+        setSfdData(finalData);
         
         // If no active SFD is set, use the first one
         if (!activeSfdId && finalData.length > 0) {
@@ -74,15 +84,15 @@ export function useSfdDataAccessCore() {
     if (user) {
       fetchSfds();
     }
-  }, [user]);
+  }, [user, activeSfdId]);
 
-  // Add the missing switchActiveSfd function
-  const switchActiveSfd = (sfdId: string) => {
+  // Function to switch active SFD
+  const switchActiveSfd = async (sfdId: string) => {
     setActiveSfdId(sfdId);
     return Promise.resolve(true);
   };
 
-  // Add the missing getActiveSfdData function
+  // Function to get active SFD data
   const getActiveSfdData = async (): Promise<SfdData | null> => {
     if (!activeSfdId || !sfdData.length) return null;
     return sfdData.find(sfd => sfd.id === activeSfdId) || null;
