@@ -1,87 +1,65 @@
-import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+
+import React from 'react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { formatCurrencyAmount } from '@/utils/transactionUtils';
 import { Loader } from '@/components/ui/loader';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { SfdAccount } from '@/hooks/useSfdAccounts';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 
 interface FundsBalanceSectionProps {
   balance: number;
-  isRefreshing?: boolean;
-  sfdAccounts?: SfdAccount[];
-  onSelectSfd?: (sfdId: string) => void;
-  selectedSfd?: string;
+  currency?: string;
+  isLoading?: boolean;
+  onDeposit: () => void;
+  onWithdraw: () => void;
 }
 
-const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({ 
-  balance, 
-  isRefreshing = false,
-  sfdAccounts = [],
-  onSelectSfd,
-  selectedSfd
+const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({
+  balance,
+  currency = 'FCFA',
+  isLoading = false,
+  onDeposit,
+  onWithdraw
 }) => {
-  const [showDropdown, setShowDropdown] = useState(false);
-
-  const handleSfdChange = (value: string) => {
-    if (onSelectSfd) {
-      onSelectSfd(value);
-    }
-  };
-
-  const selectedSfdName = selectedSfd === 'all' 
-    ? 'Tous les comptes' 
-    : sfdAccounts.find(acc => acc.id === selectedSfd)?.name || 'Sélectionner un SFD';
-
   return (
-    <div className="bg-gradient-to-r from-[#0D6A51] to-[#0D6A51]/90 text-white p-6 rounded-b-3xl shadow-md">
+    <Card className="p-4">
       <div className="flex flex-col items-center">
-        <p className="text-sm font-medium opacity-80 mb-1">Solde disponible</p>
+        <h3 className="text-sm font-medium text-gray-500 mb-1">Solde actuel</h3>
         
-        {/* SFD Selector */}
-        {sfdAccounts.length > 0 && (
-          <div className="w-full max-w-xs mb-3">
-            <Select onValueChange={handleSfdChange} value={selectedSfd} defaultValue="all">
-              <SelectTrigger className="bg-white/10 border-white/20 text-white rounded-xl">
-                <SelectValue placeholder="Sélectionner un compte SFD" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les comptes</SelectItem>
-                {sfdAccounts.map((sfd) => (
-                  <SelectItem key={sfd.id} value={sfd.id}>
-                    {sfd.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        
-        {/* Balance Display */}
-        {isRefreshing ? (
-          <div className="flex items-center justify-center h-16 w-full">
-            <Loader size="default" className="text-white" />
+        {isLoading ? (
+          <div className="flex items-center justify-center h-12">
+            <Loader size="md" />
           </div>
         ) : (
-          <div className="text-center">
-            <h1 className="text-5xl font-bold tracking-tight mt-2">
-              {formatCurrencyAmount(balance, "")}
-            </h1>
-            <p className="text-lg mt-1">FCFA</p>
-          </div>
+          <p className="text-3xl font-bold text-[#0D6A51]">
+            {balance.toLocaleString('fr-FR')} {currency}
+          </p>
         )}
         
-        {selectedSfd === 'all' ? (
-          <p className="text-sm mt-3 opacity-70 text-center">
-            Solde consolidé de vos comptes SFD
-          </p>
-        ) : (
-          <p className="text-sm mt-3 opacity-70 text-center">
-            Solde de votre compte {selectedSfdName}
-          </p>
-        )}
+        <p className="text-xs text-gray-500 mb-4">
+          Dernière mise à jour: {new Date().toLocaleDateString('fr-FR')}
+        </p>
+        
+        <div className="grid grid-cols-2 gap-3 w-full mt-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center justify-center"
+            onClick={onDeposit}
+          >
+            <ArrowDown className="h-4 w-4 mr-2 text-green-600" />
+            Dépôt
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="flex items-center justify-center"
+            onClick={onWithdraw}
+          >
+            <ArrowUp className="h-4 w-4 mr-2 text-red-600" />
+            Retrait
+          </Button>
+        </div>
       </div>
-    </div>
+    </Card>
   );
 };
 

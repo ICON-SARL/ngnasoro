@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '../useAuth';
 import { useSfdDataAccess } from '../useSfdDataAccess';
 import { MobileMoneyOperationsHook } from './types';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
   const [isProcessing, setIsProcessing] = useState(false);

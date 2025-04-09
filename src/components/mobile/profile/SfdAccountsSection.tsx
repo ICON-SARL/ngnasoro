@@ -7,10 +7,10 @@ import { PlusCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import DiscoverSfdDialog from './sfd-accounts/DiscoverSfdDialog';
-import { SfdData } from '@/hooks/sfd/types'; // Import SfdData type
+import { SfdAccount } from '@/hooks/sfd/types'; // Updated import
 
 interface SfdAccountsSectionProps {
-  sfdData?: SfdData[]; // Add this prop to match usage in ProfilePage
+  sfdData?: SfdAccount[]; // Updated type
   activeSfdId?: string | null;
   onSwitchSfd?: (sfdId: string) => Promise<boolean>;
 }
