@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Footer } from '@/components';
 
 // Auth components
 import { AuthProvider } from '@/hooks/auth/AuthContext';
+import { LocalizationProvider } from '@/contexts/LocalizationContext';
 
 // Auth pages
 import LoginPage from '@/pages/LoginPage';
@@ -239,7 +241,9 @@ const AppRoutes = () => {
 function App() {
   return (
     <AuthProvider>
-      <AppWithFooter />
+      <LocalizationProvider>
+        <AppWithFooter />
+      </LocalizationProvider>
     </AuthProvider>
   );
 }

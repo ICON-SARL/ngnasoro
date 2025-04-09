@@ -53,10 +53,15 @@ export const LocalizationProvider: React.FC<{ children: ReactNode }> = ({ childr
   }, [settings]);
 
   const setLanguage = async (newLanguage: Language) => {
+    setLanguageState(newLanguage); // Update state immediately for better UX
+
+    // Only try to update settings if the user is authenticated
     if (settings) {
-      const success = await updateSetting('app_language', newLanguage);
-      if (success) {
-        setLanguageState(newLanguage);
+      try {
+        await updateSetting('app_language', newLanguage);
+      } catch (error) {
+        console.error('Failed to save language preference:', error);
+        // State is already updated, so no need to revert
       }
     }
   };

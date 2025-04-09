@@ -23,7 +23,10 @@ export function useUserSettings() {
 
   useEffect(() => {
     async function fetchUserSettings() {
-      if (!user?.id) return;
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
