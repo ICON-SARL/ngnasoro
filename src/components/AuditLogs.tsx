@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { AuditLogCategory, AuditLogSeverity, AuditLogFilterOptions, AuditLogEvent } from '@/utils/audit/auditLoggerTypes';
 import { getAuditLogs } from '@/utils/audit/auditLoggerCore';
-import { User } from '@/hooks/useAuth';
-import { useAuth } from '@/hooks/useAuth';
+import { User } from '@/hooks/auth';
+import { useAuth } from '@/hooks/auth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';

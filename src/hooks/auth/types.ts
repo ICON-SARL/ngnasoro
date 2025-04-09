@@ -1,3 +1,4 @@
+
 export type Role = 'admin' | 'sfd_admin' | 'user' | 'client' | null;
 
 export enum UserRole {

@@ -1,8 +1,8 @@
 
-import { User } from '@supabase/supabase-js';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import { User as AuthUser } from './types';
 
-export function createUserFromSupabaseUser(supabaseUser: User): AuthUser {
+export function createUserFromSupabaseUser(supabaseUser: SupabaseUser): AuthUser {
   return {
     id: supabaseUser.id,
     email: supabaseUser.email || '',
@@ -11,6 +11,11 @@ export function createUserFromSupabaseUser(supabaseUser: User): AuthUser {
     phone: supabaseUser.user_metadata?.phone,
     sfd_id: supabaseUser.user_metadata?.sfd_id || supabaseUser.app_metadata?.sfd_id,
     user_metadata: supabaseUser.user_metadata || {},
-    app_metadata: supabaseUser.app_metadata || {}
+    app_metadata: {
+      role: supabaseUser.app_metadata?.role,
+      role_assigned: supabaseUser.app_metadata?.role_assigned,
+      roles: supabaseUser.app_metadata?.roles,
+      sfd_id: supabaseUser.app_metadata?.sfd_id
+    }
   };
 }

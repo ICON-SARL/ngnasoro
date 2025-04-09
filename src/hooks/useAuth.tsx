@@ -1,15 +1,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { createClient } from '@supabase/supabase-js';
 import { User, Session } from '@supabase/supabase-js';
-
-export interface AuthUser extends User {
-  full_name?: string;
-  avatar_url?: string;
-  sfd_id?: string;
-  phone?: string;
-}
+import { User as AuthUser } from './auth/types';
+import { createUserFromSupabaseUser } from './auth/authUtils';
 
 export interface AuthState {
   user: AuthUser | null;
@@ -45,15 +39,7 @@ export function useAuth(): AuthState {
     const { data: { session } } = await supabase.auth.getSession();
     setSession(session);
     if (session?.user) {
-      const authUser = session.user as AuthUser;
-      
-      // Extract metadata
-      if (session.user.user_metadata) {
-        authUser.full_name = session.user.user_metadata.full_name;
-        authUser.phone = session.user.user_metadata.phone;
-      }
-      
-      // Set the user
+      const authUser = createUserFromSupabaseUser(session.user);
       setUser(authUser);
     } else {
       setUser(null);
@@ -67,14 +53,7 @@ export function useAuth(): AuthState {
 
     supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        const authUser = session.user as AuthUser;
-        
-        // Extract metadata
-        if (session.user.user_metadata) {
-          authUser.full_name = session.user.user_metadata.full_name;
-          authUser.phone = session.user.user_metadata.phone;
-        }
-        
+        const authUser = createUserFromSupabaseUser(session.user);
         setUser(authUser);
       } else {
         setUser(null);
@@ -100,11 +79,12 @@ export function useAuth(): AuthState {
             return;
           }
           
-          // Check if this user is an SFD admin
+          // Check if this user is an SFD admin using proper table name
           const { data: sfdAdminData, error: sfdAdminError } = await supabase
-            .from('sfd_admins')
+            .from('user_roles')  // Using the correct table name instead of 'sfd_admins'
             .select('*')
             .eq('user_id', user.id)
+            .eq('role', 'sfd_admin')
             .single();
             
           if (sfdAdminData && !sfdAdminError) {
