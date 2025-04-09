@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
+import { UserRole } from '@/utils/auth/roleTypes';
 
 interface RoleGuardProps {
   requiredRole: string;
