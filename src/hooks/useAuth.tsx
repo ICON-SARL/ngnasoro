@@ -13,6 +13,7 @@ interface AuthContextType {
   isSuperAdmin: boolean;
   activeSfdId: string | null;
   setActiveSfdId: (id: string | null) => void;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   isSuperAdmin: false,
   activeSfdId: null,
   setActiveSfdId: () => {},
+  signOut: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -63,6 +65,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   const isSfdAdmin = userRole === UserRole.SFD_ADMIN;
   const isAdmin = userRole === UserRole.ADMIN;
   const isSuperAdmin = userRole === UserRole.SUPER_ADMIN;
@@ -74,7 +84,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     isAdmin,
     isSuperAdmin,
     activeSfdId,
-    setActiveSfdId
+    setActiveSfdId,
+    signOut
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

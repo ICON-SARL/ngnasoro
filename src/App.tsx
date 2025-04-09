@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AuthProvider } from './hooks/auth/AuthContext';
+import { AuthProvider } from './hooks/useAuth';
 import { ToasterProvider } from './components/ToasterProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
