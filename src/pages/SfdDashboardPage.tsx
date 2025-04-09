@@ -8,8 +8,12 @@ import { Navigate } from 'react-router-dom';
 export const SfdDashboardPage = () => {
   const { user, activeSfdId } = useAuth();
   
-  // If no active SFD is selected, redirect to selection page (to be implemented)
-  if (!activeSfdId) {
+  // Récupérer le rôle de l'utilisateur depuis les métadonnées
+  const userRole = user?.app_metadata?.role;
+  
+  // Si c'est un admin SFD standard, vérifier qu'une SFD est sélectionnée
+  // Les super_admin et admin ne sont pas soumis à cette vérification
+  if (userRole === 'sfd_admin' && !activeSfdId) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md p-6 bg-white rounded-lg shadow">

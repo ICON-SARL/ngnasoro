@@ -46,7 +46,7 @@ export const SfdRoutes = () => {
       <Route
         path="meref-features"
         element={
-          <RoleGuard requiredRole="super_admin">
+          <RoleGuard requiredRole="admin">
             <MerefAdvancedFeaturesPage />
           </RoleGuard>
         }

@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 
 interface RoleGuardProps {
@@ -30,6 +30,12 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) 
       requiredRole, 
       userMetadata: user.app_metadata 
     });
+    
+    // Super admin et admin ont accès à tout
+    if (userRole === 'admin' || userRole === 'super_admin') {
+      setHasAccess(true);
+      return;
+    }
     
     // Handle special case where SFD_ADMIN should match sfd_admin role
     const permitted = userRole === requiredRole || 
