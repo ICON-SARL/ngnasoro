@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +10,29 @@ import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+
+interface SfdLoan {
+  id: string;
+  amount: number;
+  remainingAmount?: number;
+  nextDueDate?: string;
+  next_payment_date?: string;
+  isLate?: boolean;
+}
+
+interface SfdAccountType {
+  id: string;
+  name: string;
+  logoUrl?: string;
+  logo_url?: string;
+  region: string;
+  code: string;
+  isDefault: boolean;
+  balance: number;
+  currency: string;
+  isVerified: boolean;
+  loans?: SfdLoan[];
+}
 
 export function MultiSfdAccountsView() {
   const { user } = useAuth();
@@ -27,9 +49,8 @@ export function MultiSfdAccountsView() {
     );
   }
 
-  // Helper function to get logo URL regardless of property name
-  const getLogoUrl = (account: any): string => {
-    return account.logoUrl || account.logo_url || null;
+  const getLogoUrl = (account: SfdAccountType): string => {
+    return account.logoUrl || account.logo_url || '';
   };
 
   if (!sfdAccounts || sfdAccounts.length === 0) {
@@ -95,7 +116,7 @@ export function MultiSfdAccountsView() {
       </div>
 
       <div className="flex overflow-x-auto pb-4 space-x-4">
-        {sfdAccounts.map(account => (
+        {sfdAccounts.map((account: SfdAccountType) => (
           <Card 
             key={account.id} 
             className="min-w-[260px]"
@@ -123,9 +144,9 @@ export function MultiSfdAccountsView() {
                 <div className="flex items-center text-sm">
                   <CreditCard className="h-4 w-4 mr-1 text-muted-foreground" />
                   <span className="text-muted-foreground">
-                    {(account.loans?.length || 0) > 0 ? `${account.loans?.length} prêt(s)` : 'Aucun prêt'}
+                    {account.loans && account.loans.length > 0 ? `${account.loans.length} prêt(s)` : 'Aucun prêt'}
                   </span>
-                  {account.loans?.some(loan => loan.isLate) && (
+                  {account.loans && account.loans.some(loan => loan.isLate) && (
                     <Badge variant="destructive" className="ml-2">Échéance proche</Badge>
                   )}
                 </div>
