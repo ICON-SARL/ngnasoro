@@ -6,7 +6,7 @@ import { Role } from '@/utils/audit/auditPermissions';
 
 export const FinancialReporting = () => {
   return (
-    <RoleGuard requiredRole={Role.SFD_ADMIN}>
+    <RoleGuard requiredRole="sfd_admin">
       <FinancialReports />
     </RoleGuard>
   );
