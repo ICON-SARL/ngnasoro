@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Use a direct rpc call instead of a nested query that could cause recursion
       const { data: roleData, error: roleError } = await supabase.rpc('assign_role', {
         user_id: userId,
-        role: role.toString() // Convert Role enum to string for the RPC call
+        role // Pass the role directly, it's already the correct string type
       });
       
       if (roleError) {
