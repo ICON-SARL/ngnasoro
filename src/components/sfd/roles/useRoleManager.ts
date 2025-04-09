@@ -124,7 +124,7 @@ export function useRoleManager() {
     });
   };
 
-  // Fix the deep instantiation issue by using explicit type definitions
+  // Fix for deep instantiation issue by avoiding nested object creation entirely
   const handleSaveNewRole = async () => {
     if (!activeSfdId) {
       toast({
@@ -137,14 +137,18 @@ export function useRoleManager() {
 
     try {
       if (isEditMode) {
-        // Use an explicit type and create a simple object to avoid deep instantiation
+        // Create primitive variables first, then use them directly
         const name = newRole.name;
         const description = newRole.description;
-        const permissions = [...newRole.permissions]; // Create a new array to avoid references
+        const permissionsCopy = [...newRole.permissions]; // Create independent copy
         
         const { error } = await supabase
           .from('admin_roles')
-          .update({ name, description, permissions })
+          .update({ 
+            name: name, 
+            description: description, 
+            permissions: permissionsCopy 
+          })
           .eq('name', newRole.name)
           .eq('sfd_id', activeSfdId);
 
@@ -155,15 +159,19 @@ export function useRoleManager() {
           description: `Le rôle ${newRole.name} a été mis à jour avec succès`
         });
       } else {
-        // Use an explicit type and create a simple object to avoid deep instantiation
-        const sfd_id = activeSfdId;
+        // Create primitive variables first, then use them directly
         const name = newRole.name;
         const description = newRole.description;
-        const permissions = [...newRole.permissions]; // Create a new array to avoid references
+        const permissionsCopy = [...newRole.permissions]; // Create independent copy
         
         const { error } = await supabase
           .from('admin_roles')
-          .insert({ sfd_id, name, description, permissions });
+          .insert({ 
+            sfd_id: activeSfdId, 
+            name: name, 
+            description: description, 
+            permissions: permissionsCopy 
+          });
 
         if (error) throw error;
 
