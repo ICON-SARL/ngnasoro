@@ -2,12 +2,12 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import SfdAuthUI from '@/components/auth/SfdAuthUI';
-import PermissionProtectedRoute from '@/components/routes/PermissionProtectedRoute';
-import { UserRole } from '@/utils/auth/roleTypes';
+import RoleGuard from '@/components/RoleGuard';
+import { UserRole } from '@/hooks/auth/types';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
-
-// This is a placeholder - you should replace it with your actual SFD Dashboard component
-const SfdDashboardPlaceholder = () => <div className="p-8">SFD Dashboard</div>;
+import { SfdDashboard } from '@/components/sfd/SfdDashboard';
+import SfdClientsPage from '@/pages/SfdClientsPage';
+import SfdLoansPage from '@/pages/SfdLoansPage';
 
 const SfdRoutes = () => {
   return (
@@ -16,14 +16,35 @@ const SfdRoutes = () => {
       <Route 
         path="dashboard" 
         element={
-          <PermissionProtectedRoute 
-            component={SfdDashboardPlaceholder}
+          <RoleGuard 
             requiredRole={UserRole.SFD_ADMIN}
-          />
+          >
+            <SfdDashboard />
+          </RoleGuard>
+        } 
+      />
+      <Route 
+        path="clients" 
+        element={
+          <RoleGuard 
+            requiredRole={UserRole.SFD_ADMIN}
+          >
+            <SfdClientsPage />
+          </RoleGuard>
+        } 
+      />
+      <Route 
+        path="loans" 
+        element={
+          <RoleGuard 
+            requiredRole={UserRole.SFD_ADMIN}
+          >
+            <SfdLoansPage />
+          </RoleGuard>
         } 
       />
       <Route path="access-denied" element={<AccessDeniedPage />} />
-      <Route path="*" element={<Navigate to="/sfd/auth" replace />} />
+      <Route path="*" element={<Navigate to="/sfd/dashboard" replace />} />
     </Routes>
   );
 };
