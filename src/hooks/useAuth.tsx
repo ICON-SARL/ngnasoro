@@ -1,26 +1,63 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 
-interface AuthState {
-  user: User | null;
-  session: any | null;
+export interface AuthUser extends User {
+  full_name?: string;
+  avatar_url?: string;
+  sfd_id?: string;
+  phone?: string;
+}
+
+export interface AuthState {
+  user: AuthUser | null;
+  session: Session | null;
   isAdmin: boolean;
+  isSfdAdmin: boolean;
   activeSfdId: string | null;
   isLoading: boolean;
+  loading: boolean;
+  userRole: string | null;
+  signOut: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ error?: any }>;
+  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
+  setActiveSfdId: (sfdId: string | null) => void;
+  biometricEnabled: boolean;
+  toggleBiometricAuth: () => Promise<void>;
+  refreshSession: () => Promise<void>;
+  isLoggedIn: boolean;
+  setUser: (user: AuthUser | null) => void;
 }
 
 export function useAuth(): AuthState {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<any | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSfdAdmin, setIsSfdAdmin] = useState(false);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const fetchSession = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
     setSession(session);
-    setUser(session?.user || null);
+    if (session?.user) {
+      const authUser = session.user as AuthUser;
+      
+      // Extract metadata
+      if (session.user.user_metadata) {
+        authUser.full_name = session.user.user_metadata.full_name;
+        authUser.phone = session.user.user_metadata.phone;
+      }
+      
+      // Set the user
+      setUser(authUser);
+    } else {
+      setUser(null);
+    }
     setIsLoading(false);
     return session;
   }, []);
@@ -29,7 +66,19 @@ export function useAuth(): AuthState {
     fetchSession();
 
     supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
+      if (session?.user) {
+        const authUser = session.user as AuthUser;
+        
+        // Extract metadata
+        if (session.user.user_metadata) {
+          authUser.full_name = session.user.user_metadata.full_name;
+          authUser.phone = session.user.user_metadata.phone;
+        }
+        
+        setUser(authUser);
+      } else {
+        setUser(null);
+      }
       setSession(session);
     });
   }, [fetchSession]);
@@ -38,34 +87,59 @@ export function useAuth(): AuthState {
     const checkAdminStatus = async () => {
       if (user) {
         try {
-          const { data, error } = await supabase
-            .from('admins')
+          // Check if this user is an admin using admin_users table
+          const { data: adminData, error: adminError } = await supabase
+            .from('admin_users')
             .select('*')
             .eq('user_id', user.id)
             .single();
 
-          setIsAdmin(!!data);
-          if (error) {
-            console.error('Error checking admin status:', error);
+          if (adminData && !adminError) {
+            setIsAdmin(true);
+            setUserRole('admin');
+            return;
           }
+          
+          // Check if this user is an SFD admin
+          const { data: sfdAdminData, error: sfdAdminError } = await supabase
+            .from('sfd_admins')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+            
+          if (sfdAdminData && !sfdAdminError) {
+            setIsSfdAdmin(true);
+            setUserRole('sfd_admin');
+            return;
+          }
+          
+          // Default user role
+          setUserRole('user');
+          setIsAdmin(false);
+          setIsSfdAdmin(false);
+          
         } catch (error) {
           console.error('Error checking admin status:', error);
           setIsAdmin(false);
+          setIsSfdAdmin(false);
+          setUserRole('user');
         }
       } else {
         setIsAdmin(false);
+        setIsSfdAdmin(false);
+        setUserRole(null);
       }
     };
 
     checkAdminStatus();
   }, [user]);
 
-  // Assurez-vous que activeSfdId est toujours un UUID valide
+  // Get a valid SFD ID 
   const getValidSfdId = async () => {
     if (!user) return null;
     
     try {
-      // Récupérer la première SFD disponible pour l'utilisateur
+      // Retrieve the first SFD available for the user
       const { data, error } = await supabase
         .from('user_sfds')
         .select('sfd_id')
@@ -85,14 +159,67 @@ export function useAuth(): AuthState {
     }
   };
 
-  // Utilisez cette fonction dans useEffect approprié
+  // Use this function in an appropriate useEffect
   useEffect(() => {
     if (user && !activeSfdId) {
       getValidSfdId().then(id => {
         if (id) setActiveSfdId(id);
       });
     }
-  }, [user]);
+  }, [user, activeSfdId]);
 
-  return { user, session, isAdmin, activeSfdId, isLoading };
+  // Required auth methods for compatibility
+  const signIn = async (email: string, password: string): Promise<{ error?: any }> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return { error };
+      return {};
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  const signUp = async (email: string, password: string, metadata?: Record<string, any>) => {
+    await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        data: metadata
+      }
+    });
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+  };
+
+  const refreshSession = async () => {
+    await fetchSession();
+  };
+
+  const toggleBiometricAuth = async () => {
+    setBiometricEnabled(!biometricEnabled);
+  };
+
+  return { 
+    user, 
+    session, 
+    isAdmin,
+    isSfdAdmin,
+    activeSfdId, 
+    isLoading,
+    loading: isLoading,
+    userRole,
+    signOut,
+    signIn,
+    signUp,
+    setActiveSfdId,
+    biometricEnabled,
+    toggleBiometricAuth,
+    refreshSession,
+    isLoggedIn: !!user,
+    setUser
+  };
 }
