@@ -7,7 +7,7 @@ import { UserRole, Role, User } from './types';
 
 // Clé pour le stockage biométrique local
 const BIOMETRIC_STORAGE_KEY = 'meref_biometric_enabled';
-const ENCRYPTION_KEY = process.env.VITE_ENCRYPTION_KEY || 'secure_meref_key';
+const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || 'secure_meref_key';
 
 const secureStorage = new SecureStorage(BIOMETRIC_STORAGE_KEY, ENCRYPTION_KEY);
 
