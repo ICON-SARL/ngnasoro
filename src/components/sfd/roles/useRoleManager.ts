@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from 'react';
-import { Role, Permission, NewRoleData } from './types';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { v4 as uuidv4 } from 'uuid';
+import { supabase } from '@/integrations/supabase/client';
+import { Permission, Role } from './types';
 
 export function useRoleManager() {
   const { activeSfdId } = useAuth();
@@ -11,13 +12,14 @@ export function useRoleManager() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [showNewRoleDialog, setShowNewRoleDialog] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [newRole, setNewRole] = useState<NewRoleData>({
+  const [newRole, setNewRole] = useState<Role>({
+    id: '',
     name: '',
     description: '',
     permissions: []
   });
 
-  // Fetch roles and permissions when component mounts
+  // Fetch roles and permissions
   useEffect(() => {
     if (activeSfdId) {
       fetchRoles();
@@ -27,14 +29,32 @@ export function useRoleManager() {
 
   const fetchRoles = async () => {
     if (!activeSfdId) return;
-    
+
     try {
-      // Since we're having issues with the Supabase tables, let's use mock data
       // In a real app, this would be an API call to fetch roles for the specific SFD
-      setRoles(getDefaultRoles());
-      
-      // Store in localStorage for persistence
-      localStorage.setItem(`sfd_roles_${activeSfdId}`, JSON.stringify(getDefaultRoles()));
+      // For now, we'll use dummy data or fetch from localStorage
+      const { data, error } = await supabase
+        .from('sfd_roles')
+        .select('*')
+        .eq('sfd_id', activeSfdId);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setRoles(data);
+      } else {
+        // Initialize with default roles if none exist
+        const defaultRoles = getDefaultRoles();
+        setRoles(defaultRoles);
+
+        // In a real app, would save these to the database
+        for (const role of defaultRoles) {
+          await supabase.from('sfd_roles').insert({
+            ...role,
+            sfd_id: activeSfdId
+          });
+        }
+      }
     } catch (error) {
       console.error('Error fetching roles:', error);
       // Fallback to default roles

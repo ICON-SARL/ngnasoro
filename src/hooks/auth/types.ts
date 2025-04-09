@@ -1,13 +1,8 @@
 
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { UserRole } from '@/utils/auth/roleTypes';
 
-export enum UserRole {
-  SUPER_ADMIN = 'admin',
-  ADMIN = 'admin',
-  SFD_ADMIN = 'sfd_admin',
-  CLIENT = 'client',
-  USER = 'user'
-}
+export type { UserRole } from '@/utils/auth/roleTypes';
 
 export interface User extends Omit<SupabaseUser, 'app_metadata' | 'user_metadata'> {
   app_metadata: {
