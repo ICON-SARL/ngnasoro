@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Sun, Moon, Database, Trash2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUserSettings } from '@/hooks/useUserSettings';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,22 +25,33 @@ interface AdvancedSettingsSectionProps {
 
 const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => {
   const { toast } = useToast();
+  const { settings, loading, updateSetting } = useUserSettings();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
-  const handleThemeChange = (value: string) => {
-    toast({
-      title: "Thème modifié",
-      description: `Le thème a été changé pour ${value === 'light' ? 'Clair' : value === 'dark' ? 'Sombre' : 'Auto'}`,
-    });
+  const handleThemeChange = async (value: string) => {
+    if (value !== 'light' && value !== 'dark' && value !== 'auto') return;
+    
+    const success = await updateSetting('theme', value as 'light' | 'dark' | 'auto');
+    
+    if (success) {
+      toast({
+        title: "Thème modifié",
+        description: `Le thème a été changé pour ${value === 'light' ? 'Clair' : value === 'dark' ? 'Sombre' : 'Auto'}`,
+      });
+    }
   };
   
-  const handleToggleOfflineMode = (enabled: boolean) => {
-    toast({
-      title: enabled ? "Mode hors-ligne activé" : "Mode hors-ligne désactivé",
-      description: enabled 
-        ? "Les données seront mises en cache pour un accès hors-ligne" 
-        : "Les données ne seront pas mises en cache",
-    });
+  const handleToggleOfflineMode = async (enabled: boolean) => {
+    const success = await updateSetting('offline_mode_enabled', enabled);
+    
+    if (success) {
+      toast({
+        title: enabled ? "Mode hors-ligne activé" : "Mode hors-ligne désactivé",
+        description: enabled 
+          ? "Les données seront mises en cache pour un accès hors-ligne" 
+          : "Les données ne seront pas mises en cache",
+      });
+    }
   };
   
   const handleDeleteAccount = () => {
@@ -51,6 +63,21 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
     });
     onLogout();
   };
+
+  if (loading) {
+    return (
+      <Card className="mb-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Paramètres Avancés</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex items-center justify-center h-32">
+            <p className="text-muted-foreground">Chargement des paramètres...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="mb-4">
@@ -66,7 +93,12 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
                 Thème de l'application
               </p>
             </div>
-            <ToggleGroup type="single" defaultValue="light" onValueChange={handleThemeChange} className="justify-start">
+            <ToggleGroup 
+              type="single" 
+              value={settings?.theme || 'light'} 
+              onValueChange={handleThemeChange} 
+              className="justify-start"
+            >
               <ToggleGroupItem value="light" className="text-sm">Clair</ToggleGroupItem>
               <ToggleGroupItem value="dark" className="text-sm">Sombre</ToggleGroupItem>
               <ToggleGroupItem value="auto" className="text-sm">Auto</ToggleGroupItem>
@@ -85,7 +117,10 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
                 </p>
               </div>
             </div>
-            <Switch onCheckedChange={handleToggleOfflineMode} />
+            <Switch 
+              checked={settings?.offline_mode_enabled || false} 
+              onCheckedChange={handleToggleOfflineMode} 
+            />
           </div>
           
           <div className="pt-4 border-t border-gray-200 mt-4">
