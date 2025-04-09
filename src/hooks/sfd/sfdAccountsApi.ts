@@ -73,7 +73,7 @@ export async function makeLoanPayment(
   }
 }
 
-// Add the missing processMobileMoneyPayment function
+// Fonction pour traiter les paiements mobile money
 export async function processMobileMoneyPayment(
   userId: string | null,
   phoneNumber: string,

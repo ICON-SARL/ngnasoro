@@ -72,7 +72,7 @@ export interface SyncResult {
   success: boolean;
   message: string;
   updatedAccounts?: number;
-  transactionId?: string; // Added the transactionId property here
+  transactionId?: string; // Ajout de la propriété transactionId
 }
 
 export interface LoanPaymentParams {
