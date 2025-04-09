@@ -1,35 +1,59 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AdminRole, AdminRolePermission, NewRoleData } from './types';
-import { toast } from '@/hooks/use-toast';
+import { Role, Permission, NewRoleData } from './types';
+import { useToast } from '@/hooks/use-toast';
+import { PERMISSIONS } from '@/utils/auth/roleTypes';
 
 export function useRoleManager() {
-  const [roles, setRoles] = useState<AdminRole[]>([]);
-  const [permissions, setPermissions] = useState<AdminRolePermission[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showNewRoleDialog, setShowNewRoleDialog] = useState(false);
-  const [newRole, setNewRole] = useState<NewRoleData>({ 
-    name: '', 
-    description: '', 
-    permissions: [] 
-  });
   const [isEditMode, setIsEditMode] = useState(false);
-  
+  const { toast } = useToast();
+
+  const [newRole, setNewRole] = useState<NewRoleData>({
+    name: '',
+    description: '',
+    permissions: []
+  });
+
+  // Generate permissions list from the PERMISSIONS object
+  useEffect(() => {
+    const permList: Permission[] = Object.entries(PERMISSIONS).map(([key, value]) => ({
+      id: value,
+      name: key,
+      description: `Permission to ${key.toLowerCase().replace(/_/g, ' ')}`,
+      category: key.split('_')[0]
+    }));
+    
+    setPermissions(permList);
+  }, []);
+
   // Load roles from the database
   useEffect(() => {
     const fetchRoles = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        const { data: adminRoles, error } = await supabase
           .from('admin_roles')
           .select('*');
         
-        if (error) throw error;
-        
-        setRoles(data || []);
-      } catch (err) {
-        console.error('Error fetching roles:', err);
+        if (error) {
+          throw error;
+        }
+
+        if (adminRoles) {
+          setRoles(adminRoles.map(role => ({
+            id: role.id,
+            name: role.name,
+            description: role.description || '',
+            permissions: role.permissions || []
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching roles:', error);
         toast({
           title: 'Erreur',
           description: 'Impossible de charger les rôles',
@@ -39,203 +63,124 @@ export function useRoleManager() {
         setIsLoading(false);
       }
     };
-    
+
     fetchRoles();
-  }, []);
-  
-  // Define available permissions
-  useEffect(() => {
-    setPermissions([
-      {
-        id: 'manage_sfds',
-        name: 'Gestion des SFDs',
-        description: 'Permet de créer, modifier et suspendre des SFDs',
-        enabled: false,
-      },
-      {
-        id: 'manage_admins',
-        name: 'Gestion des Administrateurs',
-        description: 'Permet de créer et gérer des comptes administrateurs',
-        enabled: false,
-      },
-      {
-        id: 'approve_credit',
-        name: 'Approbation de Crédit',
-        description: 'Peut approuver ou rejeter des demandes de crédit',
-        enabled: false,
-      },
-      {
-        id: 'view_reports',
-        name: 'Visualisation des Rapports',
-        description: 'Accès aux tableaux de bord et rapports statistiques',
-        enabled: false,
-      },
-      {
-        id: 'manage_subsidies',
-        name: 'Gestion des Subventions',
-        description: 'Permet d\'attribuer et suivre les subventions aux SFDs',
-        enabled: false,
-      },
-      {
-        id: 'audit_logs',
-        name: 'Journaux d\'Audit',
-        description: 'Accès aux journaux d\'audit du système',
-        enabled: false,
-      },
-      {
-        id: 'export_data',
-        name: 'Export des Données',
-        description: 'Peut exporter les données du système',
-        enabled: false,
-      },
-      {
-        id: 'manage_sfd_users',
-        name: 'Gestion des Utilisateurs SFD',
-        description: 'Permet de gérer les utilisateurs associés à une SFD',
-        enabled: false,
-      },
-    ]);
-  }, []);
-  
-  const handleTogglePermission = (permId: string) => {
-    setNewRole(prev => {
-      const permissions = [...prev.permissions];
-      if (permissions.includes(permId)) {
-        return {
-          ...prev,
-          permissions: permissions.filter(id => id !== permId)
-        };
-      } else {
-        return {
-          ...prev,
-          permissions: [...permissions, permId]
-        };
-      }
+  }, [toast]);
+
+  const handleTogglePermission = (permissionId: string) => {
+    setNewRole(prevRole => {
+      const permissions = prevRole.permissions.includes(permissionId)
+        ? prevRole.permissions.filter(p => p !== permissionId)
+        : [...prevRole.permissions, permissionId];
+      return { ...prevRole, permissions };
     });
   };
-  
+
   const handleSaveNewRole = async () => {
-    if (!newRole.name) {
-      toast({
-        title: 'Erreur',
-        description: 'Le nom du rôle est obligatoire',
-        variant: 'destructive'
-      });
-      return;
-    }
-    
-    setIsLoading(true);
-    
     try {
       if (isEditMode) {
-        // Update existing role - ensure we have an ID for edit mode
-        if (!newRole.id) {
-          throw new Error('ID de rôle manquant pour la mise à jour');
-        }
-        
-        const { data, error } = await supabase
+        // Update existing role
+        const { error } = await supabase
           .from('admin_roles')
           .update({
             name: newRole.name,
             description: newRole.description,
             permissions: newRole.permissions
           })
-          .eq('id', newRole.id);
-        
+          .eq('name', newRole.name);
+
         if (error) throw error;
-        
+
         toast({
-          title: 'Succès',
-          description: `Le rôle ${newRole.name} a été mis à jour`
+          title: 'Rôle mis à jour',
+          description: `Le rôle ${newRole.name} a été mis à jour avec succès`
         });
-        
-        // Update local state
-        setRoles(prev => prev.map(role => 
-          role.id === newRole.id ? {...role, ...newRole} : role
-        ));
       } else {
         // Create new role
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('admin_roles')
           .insert({
             name: newRole.name,
             description: newRole.description,
             permissions: newRole.permissions
-          })
-          .select();
-        
+          });
+
         if (error) throw error;
-        
+
         toast({
-          title: 'Succès',
-          description: `Le rôle ${newRole.name} a été créé`
+          title: 'Rôle créé',
+          description: `Le rôle ${newRole.name} a été créé avec succès`
         });
-        
-        // Add to local state
-        if (data && data[0]) {
-          setRoles(prev => [...prev, data[0]]);
-        }
       }
-      
-      // Reset form and close dialog
-      setNewRole({ name: '', description: '', permissions: [] });
+
+      // Reset form and fetch updated roles
       setShowNewRoleDialog(false);
       setIsEditMode(false);
-    } catch (err) {
-      console.error('Error saving role:', err);
+      setNewRole({
+        name: '',
+        description: '',
+        permissions: []
+      });
+
+      // Refresh roles
+      const { data: updatedRoles } = await supabase
+        .from('admin_roles')
+        .select('*');
+
+      if (updatedRoles) {
+        setRoles(updatedRoles.map(role => ({
+          id: role.id,
+          name: role.name,
+          description: role.description || '',
+          permissions: role.permissions || []
+        })));
+      }
+    } catch (error) {
+      console.error('Error saving role:', error);
       toast({
         title: 'Erreur',
         description: 'Impossible de sauvegarder le rôle',
         variant: 'destructive'
       });
-    } finally {
-      setIsLoading(false);
     }
   };
-  
+
   const handleDeleteRole = async (roleId: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce rôle ?')) {
-      setIsLoading(true);
-      
-      try {
-        const { error } = await supabase
-          .from('admin_roles')
-          .delete()
-          .eq('id', roleId);
-        
-        if (error) throw error;
-        
-        // Update local state
-        setRoles(prev => prev.filter(role => role.id !== roleId));
-        
-        toast({
-          title: 'Succès',
-          description: 'Le rôle a été supprimé'
-        });
-      } catch (err) {
-        console.error('Error deleting role:', err);
-        toast({
-          title: 'Erreur',
-          description: 'Impossible de supprimer le rôle',
-          variant: 'destructive'
-        });
-      } finally {
-        setIsLoading(false);
-      }
+    try {
+      const { error } = await supabase
+        .from('admin_roles')
+        .delete()
+        .eq('id', roleId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Rôle supprimé',
+        description: 'Le rôle a été supprimé avec succès'
+      });
+
+      // Update local state
+      setRoles(roles.filter(role => role.id !== roleId));
+    } catch (error) {
+      console.error('Error deleting role:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de supprimer le rôle',
+        variant: 'destructive'
+      });
     }
   };
-  
-  const handleEditRole = (role: AdminRole) => {
+
+  const handleEditRole = (role: Role) => {
     setNewRole({
-      id: role.id,
       name: role.name,
       description: role.description,
-      permissions: [...role.permissions]
+      permissions: role.permissions
     });
     setIsEditMode(true);
     setShowNewRoleDialog(true);
   };
-  
+
   return {
     roles,
     permissions,
