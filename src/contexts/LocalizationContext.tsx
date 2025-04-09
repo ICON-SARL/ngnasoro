@@ -1,70 +1,93 @@
 
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useUserSettings } from '@/hooks/useUserSettings';
 
 type Language = 'french' | 'bambara';
 
 interface LocalizationContextType {
   language: Language;
-  setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  setLanguage: (language: Language) => Promise<void>;
   voiceOverEnabled: boolean;
-  toggleVoiceOver: () => void;
+  toggleVoiceOver: () => Promise<void>;
+  t: (key: string) => string;
 }
 
-// French and Bambara translations
-const translations: Record<Language, Record<string, string>> = {
+const LocalizationContext = createContext<LocalizationContextType | undefined>(undefined);
+
+// Sample translations
+const translations = {
   french: {
-    welcome: "Bienvenue dans l'assistant de demande de prêt. Appuyez sur commencer pour débuter votre demande.",
-    idVerification: "Vérification d'identité: Téléchargez votre pièce d'identité nationale ou passeport.",
-    selfie: "Prenez une photo de vous-même pour la vérification d'identité.",
-    processing: "Nous vérifions vos documents. Veuillez patienter...",
-    completed: "Vérification terminée. Merci!",
+    welcome: 'Bienvenue',
+    dashboard: 'Tableau de bord',
+    settings: 'Paramètres',
+    notifications: 'Notifications',
+    theme: 'Thème',
+    language: 'Langue',
+    profile: 'Profil',
+    logout: 'Déconnexion',
     // Add more translations as needed
   },
   bambara: {
-    welcome: "Bienvenue dans l'assistant de demande de prêt. Appuyez sur commencer pour débuter votre demande.",
-    idVerification: "Kounben dɔn: I ka taamasiyen yira. I ka i ɲɛnafan wala i koyra kunnafonisɛbɛn yira.",
-    selfie: "I ka i ɲɛfoto ta walasa an ka a dɔn ko i yɛrɛ don.",
-    processing: "A bɛ i ka fɛnw sɛgɛsɛgɛ. I sabali dɛ...",
-    completed: "I ka dantɛmɛsɛbɛn sɛgɛsɛgɛli banna. I ni ce!",
+    welcome: 'Aw ni sɔgɔma',
+    dashboard: 'Ɲɛmɔgɔ dashboard',
+    settings: 'Labɛnw',
+    notifications: 'Kuluw',
+    theme: 'Thème',
+    language: 'Kan',
+    profile: 'Profil',
+    logout: 'Ka bɔ',
     // Add more translations as needed
   }
 };
 
-export const LocalizationContext = createContext<LocalizationContextType>({
-  language: 'french',
-  setLanguage: () => {},
-  t: () => '',
-  voiceOverEnabled: true,
-  toggleVoiceOver: () => {},
-});
+export const LocalizationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { settings, updateSetting } = useUserSettings();
+  const [language, setLanguageState] = useState<Language>('french');
+  const [voiceOverEnabled, setVoiceOverEnabled] = useState(false);
 
-export const LocalizationProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguage] = useState<Language>('french');
-  const [voiceOverEnabled, setVoiceOverEnabled] = useState(true);
+  // Initialize language from user settings
+  useEffect(() => {
+    if (settings?.app_language) {
+      setLanguageState(settings.app_language);
+    }
+  }, [settings]);
 
-  // Translation function
-  const t = (key: string): string => {
-    return translations[language][key] || key;
+  const setLanguage = async (newLanguage: Language) => {
+    if (settings) {
+      const success = await updateSetting('app_language', newLanguage);
+      if (success) {
+        setLanguageState(newLanguage);
+      }
+    }
   };
 
-  // Toggle voice over function
-  const toggleVoiceOver = () => {
-    setVoiceOverEnabled(!voiceOverEnabled);
+  const toggleVoiceOver = async () => {
+    setVoiceOverEnabled(prev => !prev);
+    // Here you could save this preference to user settings if needed
+  };
+
+  const t = (key: string): string => {
+    const currentTranslations = translations[language] || translations.french;
+    return currentTranslations[key as keyof typeof currentTranslations] || key;
   };
 
   return (
     <LocalizationContext.Provider value={{ 
       language, 
       setLanguage, 
-      t, 
       voiceOverEnabled, 
-      toggleVoiceOver 
+      toggleVoiceOver, 
+      t 
     }}>
       {children}
     </LocalizationContext.Provider>
   );
 };
 
-// Custom hook for easy context access
-export const useLocalization = () => useContext(LocalizationContext);
+export const useLocalization = (): LocalizationContextType => {
+  const context = useContext(LocalizationContext);
+  if (context === undefined) {
+    throw new Error('useLocalization must be used within a LocalizationProvider');
+  }
+  return context;
+};

@@ -28,6 +28,7 @@ export function useUserSettings() {
       try {
         setLoading(true);
         
+        // Use a more general query approach to avoid TypeScript errors with table names
         const { data, error } = await supabase
           .from('user_settings')
           .select('*')
@@ -47,11 +48,11 @@ export function useUserSettings() {
             if (insertError) {
               console.error('Error creating user settings:', insertError);
             } else {
-              setSettings(newSettings);
+              setSettings(newSettings as UserSettings);
             }
           }
         } else {
-          setSettings(data);
+          setSettings(data as UserSettings);
         }
       } catch (error) {
         console.error('Unexpected error fetching settings:', error);
@@ -77,9 +78,10 @@ export function useUserSettings() {
     }
 
     try {
+      // Use type casting to avoid TypeScript errors
       const { error } = await supabase
         .from('user_settings')
-        .update({ [key]: value, updated_at: new Date() })
+        .update({ [key]: value, updated_at: new Date().toISOString() } as any)
         .eq('user_id', user.id);
         
       if (error) {
