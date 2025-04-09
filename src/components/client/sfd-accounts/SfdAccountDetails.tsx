@@ -10,6 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { SfdAccountType } from '../MultiSfdAccountsView';
 import { LoanItemCard } from './';
 import { TransactionItem } from './';
+import EmptyLoansState from './EmptyLoansState';
+import EmptyTransactionsState from './EmptyTransactionsState';
 
 interface SfdAccountDetailsProps {
   account: SfdAccountType;
@@ -33,6 +35,20 @@ const SfdAccountDetails = ({ account, makeLoanPayment }: SfdAccountDetailsProps)
         variant: "destructive",
       });
     }
+  };
+
+  const handleRequestLoan = () => {
+    toast({
+      title: "Demande de prêt",
+      description: "La fonctionnalité de demande de prêt sera disponible prochainement",
+    });
+  };
+
+  const handleMakeTransaction = () => {
+    toast({
+      title: "Transaction",
+      description: "La fonctionnalité de transaction sera disponible prochainement",
+    });
   };
 
   return (
@@ -97,19 +113,14 @@ const SfdAccountDetails = ({ account, makeLoanPayment }: SfdAccountDetailsProps)
                   />
                 ))
               ) : (
-                <div className="text-center p-6 border rounded-lg">
-                  <CreditCard className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                  <p className="text-gray-500">Aucun prêt actif pour ce compte</p>
-                  <Button variant="outline" className="mt-4">
-                    Demander un prêt
-                  </Button>
-                </div>
+                <EmptyLoansState onRequestLoan={handleRequestLoan} />
               )}
             </div>
           </TabsContent>
           
           <TabsContent value="transactions">
             <div className="space-y-2">
+              {/* Sample transactions for demonstration */}
               {[
                 {
                   id: 'tx1',
@@ -125,21 +136,42 @@ const SfdAccountDetails = ({ account, makeLoanPayment }: SfdAccountDetailsProps)
                   amount: 25000,
                   type: 'debit' as const
                 }
-              ].map(tx => (
-                <TransactionItem 
-                  key={tx.id}
-                  id={tx.id}
-                  description={tx.description}
-                  date={tx.date}
-                  amount={tx.amount}
-                  type={tx.type}
-                  currency={account.currency}
-                />
-              ))}
-              
-              <div className="pt-4 text-center">
-                <Button variant="outline">Voir l'historique complet</Button>
-              </div>
+              ].length > 0 ? (
+                <>
+                  {[
+                    {
+                      id: 'tx1',
+                      description: 'Dépôt espèces',
+                      date: '2023-04-28',
+                      amount: 50000,
+                      type: 'credit' as const
+                    },
+                    {
+                      id: 'tx2',
+                      description: 'Paiement mensuel prêt',
+                      date: '2023-04-25',
+                      amount: 25000,
+                      type: 'debit' as const
+                    }
+                  ].map(tx => (
+                    <TransactionItem 
+                      key={tx.id}
+                      id={tx.id}
+                      description={tx.description}
+                      date={tx.date}
+                      amount={tx.amount}
+                      type={tx.type}
+                      currency={account.currency}
+                    />
+                  ))}
+                  
+                  <div className="pt-4 text-center">
+                    <Button variant="outline">Voir l'historique complet</Button>
+                  </div>
+                </>
+              ) : (
+                <EmptyTransactionsState onViewHistory={handleMakeTransaction} />
+              )}
             </div>
           </TabsContent>
         </Tabs>
