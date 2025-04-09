@@ -20,3 +20,12 @@ export interface NewRoleData {
   description: string;
   permissions: string[];
 }
+
+// Add these missing types
+export interface AdminRole extends Role {
+  // Add any admin-specific properties here if needed
+}
+
+export interface AdminRolePermission extends Permission {
+  // Add any admin-specific permission properties here if needed
+}

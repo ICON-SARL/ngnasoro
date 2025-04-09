@@ -14,17 +14,24 @@ import { Button } from '@/components/ui/button';
 import { User, LogOut, Settings } from 'lucide-react';
 
 export function UserButton() {
-  const { user, userRole } = useAuth();
+  const { user, userRole, signOut } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    // In a real app, this would sign out the user
-    navigate('/auth');
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
+  // Get user initials from email or full_name
   const userInitials = user?.email 
     ? user.email.substring(0, 2).toUpperCase() 
-    : 'US';
+    : user?.user_metadata?.full_name 
+      ? user.user_metadata.full_name.substring(0, 2).toUpperCase()
+      : 'US';
 
   return (
     <DropdownMenu>
@@ -42,6 +49,9 @@ export function UserButton() {
           <div className="flex flex-col space-y-1 leading-none">
             {user?.email && (
               <p className="font-medium">{user.email}</p>
+            )}
+            {user?.user_metadata?.full_name && (
+              <p className="text-sm">{user.user_metadata.full_name}</p>
             )}
             {userRole && (
               <p className="text-sm text-muted-foreground">{userRole}</p>
