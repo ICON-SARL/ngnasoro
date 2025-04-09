@@ -1,10 +1,9 @@
-
 import { useQuery } from '@tanstack/react-query';
-import { User } from '@/hooks/useAuth';
+import { ExtendedUser } from '@/hooks/useAuth';
 import { fetchSfdBalance, fetchSfdLoans, fetchUserSfds } from './sfdAccountsApi';
 import { useToast } from '@/hooks/use-toast';
 
-export function useActiveSfd(user: User | null, activeSfdId: string | null) {
+export function useActiveSfd(user: ExtendedUser | null, activeSfdId: string | null) {
   const { toast } = useToast();
   
   const activeSfdQuery = useQuery({

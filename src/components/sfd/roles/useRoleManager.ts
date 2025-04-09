@@ -52,10 +52,9 @@ export function useRoleManager() {
       
       setIsLoading(true);
       try {
-        // Instead of using sfd_roles table directly, use a more generic approach
-        // that doesn't rely on the specific table name
+        // Use admin_roles table with a filter for SFD-specific roles
         const { data: sfdRoles, error } = await supabase
-          .from('admin_roles') // Use admin_roles instead, which should be in the allowed relations
+          .from('admin_roles')
           .select('*')
           .eq('sfd_id', activeSfdId);
         
@@ -127,7 +126,7 @@ export function useRoleManager() {
       if (isEditMode) {
         // Update existing role
         const { error } = await supabase
-          .from('admin_roles') // Use admin_roles table
+          .from('admin_roles') 
           .update({
             name: newRole.name,
             description: newRole.description,
@@ -145,7 +144,7 @@ export function useRoleManager() {
       } else {
         // Create new role
         const { error } = await supabase
-          .from('admin_roles') // Use admin_roles table
+          .from('admin_roles')
           .insert({
             sfd_id: activeSfdId,
             name: newRole.name,
@@ -172,7 +171,7 @@ export function useRoleManager() {
 
       // Refresh roles
       const { data: updatedRoles } = await supabase
-        .from('admin_roles') // Use admin_roles table
+        .from('admin_roles')
         .select('*')
         .eq('sfd_id', activeSfdId);
 
@@ -197,7 +196,7 @@ export function useRoleManager() {
   const handleDeleteRole = async (roleId: string) => {
     try {
       const { error } = await supabase
-        .from('admin_roles') // Use admin_roles table
+        .from('admin_roles')
         .delete()
         .eq('id', roleId);
 

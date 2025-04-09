@@ -10,7 +10,7 @@ export { AuthProvider };
 // Re-export types to maintain backward compatibility
 export type { User } from '@supabase/supabase-js';
 export { UserRole } from '@/utils/auth/roleTypes';
-export type { ExtendedUser as User };
+export type { ExtendedUser };
 
 export interface AuthContextProps {
   user: ExtendedUser | null;

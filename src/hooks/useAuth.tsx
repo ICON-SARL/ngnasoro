@@ -1,12 +1,12 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Session } from '@supabase/supabase-js';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { UserRole } from '@/utils/auth/roleTypes';
 import { useSfdDataAccessCore } from './sfd/useSfdDataAccessCore';
 
 // Extend the base User type to include custom fields
-export interface ExtendedUser extends User {
+export interface ExtendedUser extends SupabaseUser {
   full_name?: string;
   avatar_url?: string;
   phone?: string;
