@@ -32,7 +32,7 @@ export interface UserSfd {
 export interface SfdAccount {
   id: string;
   name: string;
-  logoUrl?: string | null;
+  logo_url?: string | null;
   region?: string;
   code?: string;
   isDefault?: boolean;
@@ -45,9 +45,13 @@ export interface SfdAccount {
 export interface SfdLoan {
   id: string;
   amount: number;
-  remainingAmount: number;
-  nextDueDate: string;
-  isLate?: boolean;
+  duration_months: number;
+  interest_rate: number;
+  monthly_payment: number;
+  next_payment_date: string;
+  last_payment_date: string;
+  status: string;
+  created_at: string;
 }
 
 export interface SfdData {
@@ -58,7 +62,7 @@ export interface SfdData {
   region?: string;
   code?: string;
   logo_url?: string;
-  status?: 'active' | 'inactive' | string; // Updated to allow string to fix the type error
+  status?: 'active' | 'inactive' | string;
 }
 
 export interface QRCodeRequest {

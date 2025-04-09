@@ -30,3 +30,10 @@ export interface SfdClientRequest {
   status: 'pending' | 'validated' | 'rejected' | string; // Allow any string to accommodate database values
   created_at: string;
 }
+
+// Create a dialog component to discover and connect to SFDs
+export interface DiscoverSfdDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onRequestSent?: () => void;
+}
