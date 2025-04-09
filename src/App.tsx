@@ -8,16 +8,6 @@ import { LocalizationProvider } from './contexts/LocalizationContext';
 import AppRoutes from './routes';
 import './App.css';
 
-// Créer un client de requête pour React Query
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
 const App = () => {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" storageKey="meref-theme">
