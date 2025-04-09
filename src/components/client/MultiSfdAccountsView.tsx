@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,8 +26,8 @@ interface SfdAccountType {
   name: string;
   logoUrl?: string;
   logo_url?: string;
-  region: string;
-  code: string;
+  region?: string; // Make region optional to match SfdAccount
+  code?: string;   // Make code optional to match actual usage
   isDefault: boolean;
   balance: number;
   currency: string;

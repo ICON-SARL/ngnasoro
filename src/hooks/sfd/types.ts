@@ -1,3 +1,4 @@
+
 export interface SfdBalanceData {
   id: string;
   balance: number;
@@ -28,7 +29,7 @@ export interface SfdAccount {
   code?: string;
   balance?: number;
   currency?: string;
-  loans?: any[]; // Adding loans property to fix MultiSFDAccounts errors
+  loans?: SfdLoan[]; // Using SfdLoan type for better type safety
   logoUrl?: string;
   logo_url?: string;
   region?: string; // Make sure region is optional here
@@ -64,7 +65,6 @@ export interface UserSfd {
 export interface SfdLoan {
   id: string;
   amount: number;
-  // Add other properties as needed
   duration_months?: number;
   interest_rate?: number;
   monthly_payment?: number;
