@@ -5,6 +5,7 @@ import RoleGuard from '@/components/RoleGuard';
 import SfdDashboardPage from '@/pages/SfdDashboardPage';
 import SfdRoleManagementPage from '@/pages/SfdRoleManagementPage';
 import SystemPermissionsPage from '@/pages/SystemPermissionsPage';
+import MerefAdvancedFeaturesPage from '@/pages/MerefAdvancedFeaturesPage';
 
 export const SfdRoutes = () => {
   return (
@@ -30,6 +31,14 @@ export const SfdRoutes = () => {
         element={
           <RoleGuard requiredRole="sfd_admin">
             <SystemPermissionsPage />
+          </RoleGuard>
+        }
+      />
+      <Route
+        path="meref-features"
+        element={
+          <RoleGuard requiredRole="super_admin">
+            <MerefAdvancedFeaturesPage />
           </RoleGuard>
         }
       />
