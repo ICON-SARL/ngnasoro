@@ -28,8 +28,8 @@ const MobileFlow: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      <div className="flex-grow overflow-auto pb-16">
+    <div className="flex flex-col h-full min-h-screen w-full">
+      <div className="flex-grow overflow-auto pb-16 w-full">
         <Routes>
           {/* Redirect root to main dashboard */}
           <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />

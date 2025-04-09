@@ -23,7 +23,9 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <ToasterProvider />
-          <AppRoutes />
+          <div className="w-full min-h-screen">
+            <AppRoutes />
+          </div>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
