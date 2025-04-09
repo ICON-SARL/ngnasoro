@@ -30,4 +30,8 @@ export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
   };
 }
 
+// Export individual hooks explicitly so they can be imported directly
+export { useMobileMoneyPayment } from './useMobileMoneyPayment';
+export { useMobileMoneyWithdrawal } from './useMobileMoneyWithdrawal';
+export { useQRCodeGeneration } from './useQRCodeGeneration';
 export type { MobileMoneyOperationsHook } from './types';
