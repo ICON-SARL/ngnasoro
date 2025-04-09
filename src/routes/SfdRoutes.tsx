@@ -6,6 +6,7 @@ import SfdDashboardPage from '@/pages/SfdDashboardPage';
 import SfdRoleManagementPage from '@/pages/SfdRoleManagementPage';
 import SystemPermissionsPage from '@/pages/SystemPermissionsPage';
 import MerefAdvancedFeaturesPage from '@/pages/MerefAdvancedFeaturesPage';
+import SfdAdvancedFeaturesPage from '@/pages/SfdAdvancedFeaturesPage';
 
 export const SfdRoutes = () => {
   return (
@@ -31,6 +32,14 @@ export const SfdRoutes = () => {
         element={
           <RoleGuard requiredRole="sfd_admin">
             <SystemPermissionsPage />
+          </RoleGuard>
+        }
+      />
+      <Route
+        path="advanced-features"
+        element={
+          <RoleGuard requiredRole="sfd_admin">
+            <SfdAdvancedFeaturesPage />
           </RoleGuard>
         }
       />
