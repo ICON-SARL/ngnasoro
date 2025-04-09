@@ -52,7 +52,6 @@ const ProfilePage = () => {
         
         <TabsContent value="accounts" className="px-4">
           <SfdAccountsSection 
-            sfdData={sfdData} 
             activeSfdId={activeSfdId} 
             onSwitchSfd={switchActiveSfd} 
           />

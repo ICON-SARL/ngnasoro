@@ -4,7 +4,9 @@ export interface SfdBalanceData {
   balance: number;
   currency: string;
   sfdName?: string;    // Added to match usage in useSfdAccount.ts
+  name?: string;       // Added for compatibility
   logoUrl?: string;    // Added to match usage in useSfdAccount.ts
+  logo_url?: string;   // Added for compatibility
   code?: string;       // Added to match usage in useSfdAccount.ts
   region?: string;     // Added to match usage in useSfdAccount.ts
 }

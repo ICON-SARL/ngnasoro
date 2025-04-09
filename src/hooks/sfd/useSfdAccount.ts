@@ -64,7 +64,7 @@ export function useSfdAccount(user: User | null, sfdId: string | null) {
   const activeSfdAccount = enabled && balanceData ? {
     id: sfdId || 'unknown',
     name: balanceData.sfdName || balanceData.name || 'SFD Account',
-    logo_url: balanceData.logoUrl || balanceData.logo_url,
+    logo_url: balanceData.logo_url || balanceData.logoUrl,
     logoUrl: balanceData.logoUrl || balanceData.logo_url, // Support both property names
     balance: balanceData.balance,
     currency: balanceData.currency,
