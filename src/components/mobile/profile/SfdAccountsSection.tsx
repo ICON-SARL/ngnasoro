@@ -25,6 +25,11 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
   const { sfdAccounts, activeSfdAccount, isLoading, refetch } = useSfdAccounts();
   const { toast } = useToast();
 
+  // Helper function to get the logo URL regardless of property name
+  const getLogoUrl = (account: any): string => {
+    return account.logoUrl || account.logo_url || null;
+  };
+
   const handleRequestSent = () => {
     toast({
       title: "Demande envoyée",
@@ -88,9 +93,9 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
           >
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-3">
-                {(account.logoUrl || account.logo_url) && (
+                {getLogoUrl(account) && (
                   <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                    <img src={account.logoUrl || account.logo_url} alt={account.name} className="h-full w-full object-cover" />
+                    <img src={getLogoUrl(account)} alt={account.name} className="h-full w-full object-cover" />
                   </div>
                 )}
                 <div>

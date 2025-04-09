@@ -21,6 +21,7 @@ export interface AvailableSfd {
   code: string;
   region?: string;
   logo_url?: string;
+  logoUrl?: string; // Add camelCase version for consistency
   status: string;
 }
 

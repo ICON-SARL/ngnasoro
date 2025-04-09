@@ -31,6 +31,7 @@ export interface UserSfd {
     code?: string;
     region?: string;
     logo_url?: string;
+    logoUrl?: string; // Added for consistency
   };
 }
 
@@ -74,6 +75,7 @@ export interface SfdData {
   region?: string;
   code?: string;
   logo_url?: string;
+  logoUrl?: string; // Added for consistency
   status?: 'active' | 'inactive' | string;
 }
 
