@@ -58,7 +58,7 @@ export interface AuditLogEntry extends AuditLogEvent {
   // This alias ensures backward compatibility
 }
 
-// Interface for CSV export response
+// Interface for CSV export result
 export interface AuditLogExportResult {
   success: boolean;
   csvString?: string;
