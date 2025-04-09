@@ -32,8 +32,11 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) 
       userMetadata: user.app_metadata 
     });
     
+    // Convert the userRole to string to ensure string-to-string comparison
+    const userRoleString = String(userRole);
+    
     // Super admin et admin ont accès à tout
-    if (userRole === 'admin' || userRole === 'super_admin') {
+    if (userRoleString === 'admin' || userRoleString === 'super_admin') {
       setHasAccess(true);
       return;
     }
@@ -42,12 +45,12 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) 
     // We need to compare strings to strings to avoid type mismatch
     const permitted = 
       // Direct string comparison
-      userRole === requiredRole || 
+      userRoleString === requiredRole || 
       // Special case for sfd_admin role with different casing
-      (requiredRole === 'sfd_admin' && userRole === 'sfd_admin') ||
-      (requiredRole === 'SFD_ADMIN' && userRole === 'sfd_admin') ||
+      (requiredRole === 'sfd_admin' && userRoleString === 'sfd_admin') ||
+      (requiredRole === 'SFD_ADMIN' && userRoleString === 'sfd_admin') ||
       // Special case for admin role - ensure string comparison
-      (requiredRole === 'admin' && userRole === 'admin');
+      (requiredRole === 'admin' && userRoleString === 'admin');
     
     setHasAccess(permitted);
     
@@ -62,7 +65,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) 
         target_resource: location.pathname,
         details: {
           required_role: requiredRole,
-          user_role: userRole,
+          user_role: userRoleString,
           timestamp: new Date().toISOString()
         },
         error_message: `Access denied: Missing role (${requiredRole})`
