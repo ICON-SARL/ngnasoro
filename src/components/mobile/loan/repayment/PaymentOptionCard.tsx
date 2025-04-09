@@ -7,32 +7,30 @@ interface PaymentOptionCardProps {
   title: string;
   description: string;
   icon: LucideIcon;
-  iconBgClass: string;
-  iconColorClass: string;
-  onClick: () => void;
+  iconBgClass?: string;
+  iconColorClass?: string;
+  onClick?: () => void;
 }
 
-const PaymentOptionCard: React.FC<PaymentOptionCardProps> = ({
+const PaymentOptionCard = ({
   title,
   description,
   icon: Icon,
-  iconBgClass,
-  iconColorClass,
+  iconBgClass = "bg-green-100",
+  iconColorClass = "text-green-600",
   onClick
-}) => {
+}: PaymentOptionCardProps) => {
   return (
-    <Card 
-      className="p-4 cursor-pointer hover:shadow-md transition-all duration-200" 
+    <Card
+      className="flex items-center p-4 hover:shadow-md transition-shadow cursor-pointer"
       onClick={onClick}
     >
-      <div className="flex items-start">
-        <div className={`h-10 w-10 rounded-full ${iconBgClass} flex items-center justify-center mr-3`}>
-          <Icon className={`h-5 w-5 ${iconColorClass}`} />
-        </div>
-        <div>
-          <h4 className="font-medium">{title}</h4>
-          <p className="text-xs text-gray-500">{description}</p>
-        </div>
+      <div className={`rounded-full p-3 mr-4 ${iconBgClass}`}>
+        <Icon className={`h-6 w-6 ${iconColorClass}`} />
+      </div>
+      <div className="flex-1">
+        <h4 className="text-lg font-medium">{title}</h4>
+        <p className="text-sm text-gray-500">{description}</p>
       </div>
     </Card>
   );

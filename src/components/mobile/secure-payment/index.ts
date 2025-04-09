@@ -1,10 +1,4 @@
 
-import SecurePaymentTab from './SecurePaymentTab';
-
-export default SecurePaymentTab;
-export * from './PaymentMethodTabs';
-export * from './SecurityFeatures';
-export * from './ReconciliationSection';
-export * from './TabHeader';
-export * from './PaymentDetails';
-export * from './SuccessView';
+export { MobileMoneyTab } from './MobileMoneyTab';
+export { default as QRCodeTab } from './QRCodeTab';
+export { default as SecurePaymentTabs } from './SecurePaymentTabs';

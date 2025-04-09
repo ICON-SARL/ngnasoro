@@ -1,101 +1,67 @@
 
 import { useState } from 'react';
-import { useAuth } from '../useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { QRCodeGenerationHook, QRCodeResponse } from './types';
+import { QRCodeGenerationHook, QRCodeRequest, QRCodeResponse } from './types';
 
 export function useQRCodeGeneration(): QRCodeGenerationHook {
   const [isProcessingQRCode, setIsProcessingQRCode] = useState(false);
-  const { user } = useAuth();
-  
-  // Générer un QR code pour un paiement
-  const generatePaymentQRCode = async (
-    amount: number,
-    loanId?: string
-  ): Promise<QRCodeResponse> => {
-    if (!user?.id) {
-      return { 
-        success: false,
-        error: "Utilisateur non authentifié"
-      };
-    }
-    
+
+  const generatePaymentQRCode = async (amount: number, loanId?: string): Promise<QRCodeResponse> => {
     setIsProcessingQRCode(true);
-    
     try {
-      const { data, error } = await supabase.functions.invoke('mobile-money-verification', {
-        body: {
-          action: 'qrCode',
-          userId: user.id,
-          amount,
-          isWithdrawal: false,
-          loanId
-        }
+      // In a real implementation, this would call your QR code generation API
+      console.log(`Generating payment QR code for amount ${amount}${loanId ? ' and loan ' + loanId : ''}`);
+      
+      // Mock API call
+      const response = await new Promise<QRCodeResponse>((resolve) => {
+        setTimeout(() => {
+          resolve({
+            success: true,
+            qrCode: {
+              code: 'QR_' + Math.random().toString(36).substring(2, 10).toUpperCase(),
+              expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+            },
+            transactionId: 'TX_' + Math.random().toString(36).substring(2, 10).toUpperCase()
+          });
+        }, 1000);
       });
       
-      if (error) throw error;
-      
-      // Convert API response to our QRCodeResponse format
-      const response = data as QRCodeResponse;
-      if (!response.qrCodeData && response.qrCode?.code) {
-        response.qrCodeData = response.qrCode.code;
-      }
-      if (!response.expiration && response.qrCode?.expiresAt) {
-        response.expiration = response.qrCode.expiresAt;
-      }
-      
       return response;
-    } catch (error: any) {
-      console.error('Erreur lors de la génération du QR code de paiement:', error);
-      return {
-        success: false,
-        error: error.message || "Erreur lors de la génération du QR code"
+    } catch (error) {
+      console.error('Error generating payment QR code:', error);
+      return { 
+        success: false, 
+        error: 'Failed to generate QR code'
       };
     } finally {
       setIsProcessingQRCode(false);
     }
   };
   
-  // Générer un QR code pour un retrait
-  const generateWithdrawalQRCode = async (
-    amount: number
-  ): Promise<QRCodeResponse> => {
-    if (!user?.id) {
-      return {
-        success: false,
-        error: "Utilisateur non authentifié"
-      };
-    }
-    
+  const generateWithdrawalQRCode = async (amount: number): Promise<QRCodeResponse> => {
     setIsProcessingQRCode(true);
-    
     try {
-      const { data, error } = await supabase.functions.invoke('mobile-money-verification', {
-        body: {
-          action: 'qrCode',
-          userId: user.id,
-          amount,
-          isWithdrawal: true
-        }
+      console.log(`Generating withdrawal QR code for amount ${amount}`);
+      
+      // Mock API call
+      const response = await new Promise<QRCodeResponse>((resolve) => {
+        setTimeout(() => {
+          resolve({
+            success: true,
+            qrCode: {
+              code: 'WDR_' + Math.random().toString(36).substring(2, 10).toUpperCase(),
+              expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+            },
+            transactionId: 'TX_' + Math.random().toString(36).substring(2, 10).toUpperCase()
+          });
+        }, 1000);
       });
       
-      if (error) throw error;
-      
-      // Convert API response to our QRCodeResponse format
-      const response = data as QRCodeResponse;
-      if (!response.qrCodeData && response.qrCode?.code) {
-        response.qrCodeData = response.qrCode.code;
-      }
-      if (!response.expiration && response.qrCode?.expiresAt) {
-        response.expiration = response.qrCode.expiresAt;
-      }
-      
       return response;
-    } catch (error: any) {
-      console.error('Erreur lors de la génération du QR code de retrait:', error);
-      return {
-        success: false,
-        error: error.message || "Erreur lors de la génération du QR code"
+    } catch (error) {
+      console.error('Error generating withdrawal QR code:', error);
+      return { 
+        success: false, 
+        error: 'Failed to generate QR code'
       };
     } finally {
       setIsProcessingQRCode(false);

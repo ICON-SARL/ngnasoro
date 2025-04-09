@@ -1,269 +1,137 @@
 
-import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import { crypto } from "https://deno.land/std@0.140.0/crypto/mod.ts";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-
-// Transaction verification functions
-async function verifyWithdrawalLimit(userId: string, amount: number, provider: string): Promise<{ allowed: boolean; reason?: string; dailyTotal: number; userLimit: number }> {
-  console.log(`Verifying withdrawal limit for user ${userId}, amount ${amount}, provider ${provider}`);
-  
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
-  
-  // Get last 24h transactions
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  
-  const { data: transactions, error: transactionsError } = await supabase
-    .from("transactions")
-    .select("amount")
-    .eq("user_id", userId)
-    .eq("type", `Paiement ${provider}`)
-    .gte("created_at", yesterday.toISOString());
-    
-  if (transactionsError) {
-    console.error("Error fetching transactions:", transactionsError);
-    return { allowed: false, reason: "Erreur de vérification de limite", dailyTotal: 0, userLimit: 0 };
-  }
-  
-  // Calculate daily total
-  const dailyTotal = transactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
-  
-  // Get user limit
-  const { data: userSettings, error: settingsError } = await supabase
-    .from("user_settings")
-    .select("daily_limit")
-    .eq("user_id", userId)
-    .single();
-    
-  // Default limit if not set
-  const userLimit = userSettings?.daily_limit || 500000; // 500,000 FCFA default
-  
-  if (dailyTotal + amount > userLimit) {
-    return { 
-      allowed: false, 
-      reason: "Plafond journalier dépassé", 
-      dailyTotal, 
-      userLimit 
-    };
-  }
-  
-  return { allowed: true, dailyTotal, userLimit };
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Security functions
-async function verifySignature(payload: any, signature: string, provider: string): Promise<boolean> {
-  if (provider === 'mtn') {
-    // MTN uses OAuth2 + standard signature verification
-    // This is a simplified example - real implementation would vary
-    const apiKey = Deno.env.get("MTN_API_KEY") ?? "";
-    const message = JSON.stringify(payload);
-    const encoder = new TextEncoder();
-    const data = encoder.encode(message + apiKey);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    return hashHex === signature;
-  } else if (provider === 'orange') {
-    // Orange uses certificate-based verification
-    // In a real implementation, this would validate using a certificate
-    return true; // Simplified for example
-  } else if (provider === 'wave') {
-    // Wave uses HMAC-SHA256
-    // This is a simplified example - real implementation would be more complex
-    const secretKey = Deno.env.get("WAVE_SECRET_KEY") ?? "";
-    const message = JSON.stringify(payload);
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      "raw",
-      encoder.encode(secretKey),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
-    
-    const signatureBuffer = await crypto.subtle.sign(
-      "HMAC",
-      key,
-      encoder.encode(message)
-    );
-    
-    const signatureArray = Array.from(new Uint8Array(signatureBuffer));
-    const calculatedSignature = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    return calculatedSignature === signature;
-  }
-  
-  return false;
+interface MobileMoneyCallback {
+  provider: string;
+  transactionId: string;
+  phoneNumber: string;
+  amount: number;
+  status: 'success' | 'failed' | 'pending';
+  reference?: string;
+  loanId?: string;
+  isRepayment?: boolean;
 }
+
+// Create a Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  // Only allow POST requests
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+  // Handle CORS preflight request
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: corsHeaders
     });
   }
-
+  
   try {
-    // Parse the webhook payload
-    const payload = await req.json();
-    console.log("Received Mobile Money webhook:", payload);
-
-    // Extract security headers
-    const signature = req.headers.get("x-signature") || "";
-    const provider = payload.provider || "mtn"; // Default to MTN if not specified
+    const callback: MobileMoneyCallback = await req.json();
+    console.log('Received Mobile Money callback:', callback);
     
-    // Verify signature based on provider
-    const isValidSignature = await verifySignature(payload, signature, provider);
-    
-    if (!isValidSignature) {
-      console.error("Invalid signature for provider:", provider);
+    if (callback.status !== 'success') {
+      console.log('Transaction not successful, status:', callback.status);
       return new Response(
-        JSON.stringify({ error: "Invalid signature" }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        }
+        JSON.stringify({ success: false, message: 'Transaction not successful' }),
+        { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
 
-    // Create a Supabase client with the service role key (for admin access)
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Extract data from the webhook payload
-    const { 
-      paymentId, 
-      transactionId, 
-      status, 
-      amount, 
-      currency, 
-      loanId, 
-      userId,
-      phoneNumber,
-      secondAuthFactor
-    } = payload;
-
-    if (!paymentId || !status || !loanId || !userId) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        }
-      );
-    }
-    
-    // Verify second authentication factor (if provided)
-    if (secondAuthFactor) {
-      // In a real implementation, you would validate the second factor against
-      // a previously stored value or one-time code. This is simplified.
-      console.log("Second auth factor provided:", secondAuthFactor);
-    }
-    
-    // Check withdrawal limit
-    const limitCheck = await verifyWithdrawalLimit(userId, amount, provider);
-    if (!limitCheck.allowed) {
-      console.warn(`Payment rejected: ${limitCheck.reason}`);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: limitCheck.reason,
-          dailyUsage: {
-            used: limitCheck.dailyTotal,
-            limit: limitCheck.userLimit,
-            remaining: limitCheck.userLimit - limitCheck.dailyTotal
-          }
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Record the payment if status is successful
-    if (status === "SUCCESSFUL") {
-      // Update loan status in the database
-      const { data, error } = await supabase
-        .from("transactions")
+    // Handle loan repayment if applicable
+    if (callback.isRepayment && callback.loanId) {
+      // Record the loan payment
+      const { data: payment, error: paymentError } = await supabase
+        .from('loan_payments')
         .insert({
-          user_id: userId,
-          amount: amount,
-          name: "Remboursement prêt",
-          type: `Paiement ${provider}`,
-          reference: transactionId || paymentId
-        });
-
-      if (error) {
-        console.error("Error recording payment:", error);
-        throw error;
+          loan_id: callback.loanId,
+          amount: callback.amount,
+          payment_method: callback.provider + '_mobile_money',
+          transaction_id: callback.transactionId,
+          status: 'completed'
+        })
+        .select()
+        .single();
+        
+      if (paymentError) {
+        throw new Error(`Error recording loan payment: ${paymentError.message}`);
       }
-
-      // Broadcast the loan status update using Supabase Realtime
-      const broadcastResult = await supabase
-        .channel('loan-status-changes')
-        .send({
-          type: 'broadcast',
-          event: 'loan_status_update',
-          payload: {
-            paidAmount: 13.90, // Simulated, in a real app we'd calculate this
-            remainingAmount: 11.50,
-            progress: 55,
-            securityData: {
-              transactionId: transactionId || paymentId,
-              provider,
-              securityMethod: provider === 'mtn' ? 'OAuth2' : 
-                             provider === 'orange' ? 'Certificate' : 'HMAC',
-              timestamp: new Date().toISOString()
-            },
-            paymentHistory: [
-              { id: 4, date: new Date().toLocaleDateString('fr-FR'), amount: 3.50, status: 'paid' },
-              { id: 1, date: '05 August 2023', amount: 3.50, status: 'paid' },
-              { id: 2, date: '05 July 2023', amount: 3.50, status: 'paid' },
-              { id: 3, date: '05 June 2023', amount: 3.50, status: 'paid' }
-            ]
-          }
+      
+      // Add loan payment activity
+      await supabase
+        .from('loan_activities')
+        .insert({
+          loan_id: callback.loanId,
+          activity_type: 'payment_recorded',
+          description: `Paiement de ${callback.amount} FCFA effectué via ${callback.provider}`
         });
-
-      console.log("Broadcast result:", broadcastResult);
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "Payment recorded successfully",
-          transactionId: transactionId || paymentId
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    } else {
-      console.warn(`Payment not successful, status: ${status}`);
-      return new Response(
-        JSON.stringify({ success: false, message: `Payment not successful, status: ${status}` }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+        
+      // Update loan information
+      const { data: loan, error: loanError } = await supabase
+        .from('sfd_loans')
+        .select('*')
+        .eq('id', callback.loanId)
+        .single();
+        
+      if (loanError) {
+        throw new Error(`Error fetching loan details: ${loanError.message}`);
+      }
+      
+      const today = new Date();
+      const nextPaymentDate = new Date();
+      nextPaymentDate.setDate(today.getDate() + 30); // Set next payment 30 days from now
+      
+      await supabase
+        .from('sfd_loans')
+        .update({
+          last_payment_date: today.toISOString(),
+          next_payment_date: nextPaymentDate.toISOString()
+        })
+        .eq('id', callback.loanId);
     }
+    
+    // Log the successful transaction to audit logs
+    await supabase
+      .from('audit_logs')
+      .insert({
+        category: 'financial',
+        action: callback.isRepayment ? 'loan_repayment' : 'mobile_money_transaction',
+        status: 'success',
+        severity: 'info',
+        details: callback
+      });
+      
+    return new Response(
+      JSON.stringify({ success: true }),
+      { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    );
+    
   } catch (error) {
-    console.error("Error processing webhook:", error);
+    console.error('Error processing mobile money webhook:', error);
+    
+    // Log the error
+    await supabase
+      .from('audit_logs')
+      .insert({
+        category: 'financial',
+        action: 'mobile_money_webhook_error',
+        status: 'failure',
+        severity: 'error',
+        error_message: error.message,
+        details: { error: error.message }
+      });
     
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: error.message }),
+      JSON.stringify({ success: false, message: error.message }),
       { 
-        status: 500, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders } 
       }
     );
   }
-});
+})
