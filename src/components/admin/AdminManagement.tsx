@@ -6,7 +6,7 @@ import { Role } from '@/utils/audit/auditPermissions';
 
 export function AdminManagement() {
   return (
-    <RoleGuard requiredRole={Role.ADMIN}>
+    <RoleGuard requiredRole="admin">
       <AdminManagementPage />
     </RoleGuard>
   );
