@@ -12,32 +12,58 @@ export function useSfdClients() {
   
   // Fetch all clients for the current SFD
   const fetchClients = async (): Promise<SfdClient[]> => {
-    if (!activeSfdId) return [];
+    if (!activeSfdId) {
+      console.info('No active SFD ID, returning empty clients array');
+      return [];
+    }
     
-    const { data, error } = await supabase
-      .from('sfd_clients')
-      .select('*')
-      .eq('sfd_id', activeSfdId)
-      .order('created_at', { ascending: false });
-      
-    if (error) {
-      console.error('Error fetching clients:', error);
+    // Validate UUID format to prevent database errors
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(activeSfdId)) {
+      console.error(`Invalid SFD ID format: ${activeSfdId}`);
       toast({
-        title: "Erreur",
-        description: "Impossible de récupérer les clients",
+        title: "Erreur de configuration",
+        description: "ID de SFD invalide. Veuillez contacter l'administrateur.",
         variant: "destructive",
       });
       return [];
     }
     
-    // Type assertion to ensure the status field is properly typed
-    return (data || []) as SfdClient[];
+    try {
+      const { data, error } = await supabase
+        .from('sfd_clients')
+        .select('*')
+        .eq('sfd_id', activeSfdId)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error('Error fetching clients:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de récupérer les clients",
+          variant: "destructive",
+        });
+        return [];
+      }
+      
+      // Type assertion to ensure the status field is properly typed
+      return (data || []) as SfdClient[];
+    } catch (e) {
+      console.error('Exception when fetching clients:', e);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la récupération des clients",
+        variant: "destructive",
+      });
+      return [];
+    }
   };
   
   const clientsQuery = useQuery({
     queryKey: ['sfd-clients', activeSfdId],
     queryFn: fetchClients,
     enabled: !!activeSfdId,
+    retry: 1, // Limit retries on failure
   });
   
   // Create a new client
@@ -159,6 +185,7 @@ export function useSfdClients() {
     clients: clientsQuery.data || [],
     isLoading: clientsQuery.isLoading,
     isError: clientsQuery.isError,
+    error: clientsQuery.error,
     createClient,
     validateClient,
     rejectClient,
