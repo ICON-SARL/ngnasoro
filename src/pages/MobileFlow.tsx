@@ -3,7 +3,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import MobileNavigation from '@/components/MobileNavigation';
-import MobileHeader from '@/components/mobile/MobileHeader';
+import ContextualHeader from '@/components/mobile/ContextualHeader';
 import ProfilePage from '@/components/mobile/profile/ProfilePage';
 import LoanDetailsPage from '@/components/mobile/LoanDetailsPage';
 import PaymentOptionsPage from '@/components/mobile/payment-options/PaymentOptionsPage';
@@ -30,7 +30,9 @@ const MobileFlow: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full min-h-screen w-full">
-      <MobileHeader />
+      <div className="p-2">
+        <ContextualHeader />
+      </div>
       <div className="flex-grow overflow-auto pb-16 w-full">
         <Routes>
           {/* Redirect root to main dashboard */}
