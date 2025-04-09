@@ -6,7 +6,7 @@ import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit
 import { UserRole } from '@/utils/auth/roleTypes';
 
 interface RoleGuardProps {
-  requiredRole: string;
+  requiredRole: string; // Keep as string for consistency
   children: React.ReactNode;
 }
 
