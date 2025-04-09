@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -21,7 +20,6 @@ const AuthUI = () => {
   const [authSuccess, setAuthSuccess] = useState(false);
   const { toast } = useToast();
   
-  // Handle hash in URL for OAuth flows
   useEffect(() => {
     const hash = location.hash;
     if (hash && hash.includes('access_token')) {
@@ -35,17 +33,13 @@ const AuthUI = () => {
     }
   }, [location, navigate]);
   
-  // Redirect based on authentication state
   useEffect(() => {
-    // Only redirect if not loading and user is authenticated
     if (user && !loading) {
       console.log('Authenticated user:', user);
       console.log('User role:', userRole);
       
-      // Redirection based on user's role
       if (userRole === UserRole.SUPER_ADMIN || user.app_metadata?.role === 'admin') {
         if (location.pathname !== '/admin/auth' && !location.pathname.includes('admin')) {
-          // If regular auth page is accessed by admin, show a message
           toast({
             title: "Redirection",
             description: "Les administrateurs doivent utiliser l'interface d'administration.",
@@ -60,8 +54,7 @@ const AuthUI = () => {
       }
     }
   }, [user, userRole, loading, navigate, location.pathname, toast]);
-
-  // Update tab based on current route
+  
   useEffect(() => {
     if (location.pathname.includes('register')) {
       setActiveTab('register');
@@ -69,7 +62,6 @@ const AuthUI = () => {
       setActiveTab('login');
     }
     
-    // Detect admin mode from URL
     if (location.pathname.includes('admin/auth') || location.search.includes('admin=true')) {
       setAuthMode('admin');
     } else if (location.pathname.includes('sfd/auth') || location.search.includes('sfd_admin=true')) {
@@ -78,12 +70,11 @@ const AuthUI = () => {
       setAuthMode('default');
     }
   }, [location.pathname, location.search]);
-
-  // Show success screen after successful OAuth login
+  
   if (authSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+      <div className="auth-container">
+        <div className="max-w-md w-full auth-card p-8 text-center">
           <div className="h-20 w-20 bg-green-100 text-green-600 rounded-full mx-auto flex items-center justify-center mb-6">
             <Check className="h-10 w-10" />
           </div>
@@ -94,11 +85,10 @@ const AuthUI = () => {
     );
   }
 
-  // Show loading screen while checking authentication
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+      <div className="auth-container">
+        <div className="max-w-md w-full auth-card p-8 text-center">
           <div className="h-20 w-20 bg-blue-100 text-blue-600 rounded-full mx-auto flex items-center justify-center mb-6">
             <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
           </div>
@@ -109,9 +99,8 @@ const AuthUI = () => {
     );
   }
 
-  // Show auth UI when not authenticated and not loading
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex flex-col items-center justify-center p-4 relative">
+    <div className="auth-container">
       <div className="absolute top-4 right-4">
         <LanguageSelector />
       </div>
@@ -119,7 +108,7 @@ const AuthUI = () => {
       <div className="w-full max-w-md">
         <Logo />
         
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div className="auth-card">
           {authMode === 'admin' && (
             <div className="p-4 bg-amber-50 border-b border-amber-100">
               <h2 className="text-amber-800 font-medium text-center">

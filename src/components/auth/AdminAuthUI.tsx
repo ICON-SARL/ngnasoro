@@ -44,8 +44,8 @@ const AdminAuthUI = () => {
 
   if (authSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+      <div className="auth-container bg-gradient-to-b from-amber-50 to-amber-100">
+        <div className="max-w-md w-full auth-card p-8 text-center">
           <div className="h-20 w-20 bg-amber-100 text-amber-600 rounded-full mx-auto flex items-center justify-center mb-6">
             <Check className="h-10 w-10" />
           </div>
@@ -57,7 +57,7 @@ const AdminAuthUI = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100 flex flex-col items-center justify-center p-4 relative">
+    <div className="auth-container bg-gradient-to-b from-amber-50 to-amber-100">
       <div className="absolute top-4 right-4">
         <LanguageSelector />
       </div>
@@ -65,7 +65,7 @@ const AdminAuthUI = () => {
       <div className="w-full max-w-md">
         <Logo />
         
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div className="auth-card">
           <div className="p-4 bg-amber-50 border-b border-amber-100">
             <h2 className="text-amber-800 font-medium text-center">
               Connexion Administration MEREF
