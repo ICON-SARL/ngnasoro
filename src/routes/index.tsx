@@ -34,3 +34,6 @@ export function AppRoutes() {
     </BrowserRouter>
   );
 }
+
+// Add default export for the AppRoutes component
+export default AppRoutes;
