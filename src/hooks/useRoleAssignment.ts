@@ -8,6 +8,9 @@ import { UserRole } from '@/hooks/auth/types';
 import { logAuditEvent } from '@/utils/audit/auditLoggerCore';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 
+// Define the allowed role types to match what Supabase expects
+type DbRole = "admin" | "sfd_admin" | "user";
+
 export function useRoleAssignment() {
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
@@ -44,7 +47,7 @@ export function useRoleAssignment() {
       
       // Convert role if needed for database storage
       // Map the UserRole values to strings that the database function expects
-      let dbRole: string;
+      let dbRole: DbRole; // Use the specific type here
       
       // Make sure we send a valid role string to the database
       switch (role) {
@@ -55,8 +58,6 @@ export function useRoleAssignment() {
           dbRole = "sfd_admin";
           break;
         case UserRole.USER:
-          dbRole = "user";
-          break;
         case UserRole.CLIENT:
           dbRole = "user"; // Map CLIENT to user for database purposes
           break;
