@@ -1,45 +1,56 @@
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Building, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/hooks/useAuth';
 
-interface SfdSelectorProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSfdSelected: () => void;
-  disableReselection?: boolean;
+export interface SfdSelectorProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+  onSfdSelected?: () => void;
 }
 
 export function SfdSelector({ 
   isOpen, 
   onClose, 
-  onSfdSelected, 
-  disableReselection 
-}: SfdSelectorProps) {
+  onSfdSelected 
+}: SfdSelectorProps = {}) {
+  const { activeSfdId } = useAuth();
+  const [sfdName, setSfdName] = useState("SFD Démo");
+  
+  const handleSfdSelect = (name: string) => {
+    setSfdName(name);
+    if (onSfdSelected) {
+      onSfdSelected();
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Sélectionner un SFD</DialogTitle>
-        </DialogHeader>
-        <div className="py-4">
-          <p className="text-center text-sm text-muted-foreground">
-            Cette fonctionnalité sera disponible prochainement.
-            <br />
-            Pour l'instant, nous utilisons un SFD de démonstration.
-          </p>
-          <div className="mt-4 flex justify-center">
-            <button 
-              className="px-4 py-2 bg-green-600 text-white rounded-md"
-              onClick={() => {
-                onSfdSelected();
-                onClose();
-              }}
-            >
-              Utiliser SFD de démonstration
-            </button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="ml-4 flex items-center">
+          <Building className="mr-2 h-4 w-4" />
+          <span className="mr-1">{sfdName}</span>
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuItem onClick={() => handleSfdSelect("SFD Démo")}>
+          SFD Démo
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleSfdSelect("MicroFinance Plus")}>
+          MicroFinance Plus
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleSfdSelect("Crédit Rural")}>
+          Crédit Rural
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

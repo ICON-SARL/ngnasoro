@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
-import { RoleGuard } from '@/components/RoleGuard';
+import RoleGuard from '@/components/RoleGuard';
 import SfdDashboardPage from '@/pages/SfdDashboardPage';
 import SfdRoleManagementPage from '@/pages/SfdRoleManagementPage';
 import SystemPermissionsPage from '@/pages/SystemPermissionsPage';
@@ -35,3 +36,5 @@ export const SfdRoutes = () => {
     </Routes>
   );
 };
+
+export default SfdRoutes;

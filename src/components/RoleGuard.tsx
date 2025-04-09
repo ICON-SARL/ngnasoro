@@ -2,15 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth';
-import { UserRole } from '@/utils/auth/roleTypes';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 
 interface RoleGuardProps {
-  requiredRole: UserRole | string;
+  requiredRole: string;
   children: React.ReactNode;
 }
 
-const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
+export const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
   const { user } = useAuth();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const location = useLocation();
