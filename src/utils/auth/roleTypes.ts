@@ -3,6 +3,7 @@ export enum UserRole {
   SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
   SFD_ADMIN = 'sfd_admin',
+  SFD_STAFF = 'sfd_staff',
   CLIENT = 'client',
   USER = 'user'
 }
@@ -30,6 +31,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     PERMISSIONS.MANAGE_LOANS,
     PERMISSIONS.ACCESS_SFD_DASHBOARD,
     PERMISSIONS.MANAGE_SUBSIDIES,
+  ],
+  [UserRole.SFD_STAFF]: [
+    PERMISSIONS.MANAGE_CLIENTS,
+    PERMISSIONS.MANAGE_LOANS,
   ],
   [UserRole.CLIENT]: [],
   [UserRole.USER]: [],
