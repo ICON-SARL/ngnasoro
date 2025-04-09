@@ -1,35 +1,40 @@
 
 import { useState } from 'react';
 import { useAuth } from '../useAuth';
-import { processMobileMoneyPayment } from '../sfd/sfdAccountsApi';
+import { useSfdDataAccess } from '../useSfdDataAccess';
 import { MobileMoneyOperationsHook } from './types';
 
 export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
   const [isProcessing, setIsProcessing] = useState(false);
   const { user } = useAuth();
+  const { getActiveSfdData } = useSfdDataAccess();
   
-  // Define mobile money providers
+  // Liste des opérateurs Mobile Money disponibles
   const mobileMoneyProviders = [
-    {
-      id: 'orange',
-      name: 'Orange Money',
-      code: 'orange',
-      icon: 'OM'
+    { 
+      id: 'orange', 
+      name: 'Orange Money', 
+      code: 'OM',
+      icon: '/icons/orange-money.svg' 
     },
-    {
-      id: 'mtn',
-      name: 'MTN Mobile Money',
-      code: 'mtn',
-      icon: 'MTN'
+    { 
+      id: 'mtn', 
+      name: 'MTN Mobile Money', 
+      code: 'MTN',
+      icon: '/icons/mtn-money.svg' 
     },
-    {
-      id: 'wave',
-      name: 'Wave',
-      code: 'wave',
-      icon: 'WV'
+    { 
+      id: 'wave', 
+      name: 'Wave', 
+      code: 'WAVE',
+      icon: '/icons/wave.svg' 
     }
   ];
   
+  // Fournisseur par défaut
+  const defaultProvider = 'orange';
+  
+  // Fonction pour traiter un paiement
   const processPayment = async (
     phoneNumber: string, 
     amount: number, 
@@ -42,23 +47,37 @@ export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
     setIsProcessing(true);
     
     try {
-      const result = await processMobileMoneyPayment(
-        user.id,
-        phoneNumber,
-        amount,
-        provider,
-        false // Not a repayment by default
-      );
+      // Obtenir les données SFD actives
+      const sfdData = await getActiveSfdData();
       
-      return result.success;
+      if (!sfdData) {
+        throw new Error('Impossible de récupérer les données SFD');
+      }
+      
+      // Appeler la fonction Supabase Edge pour traiter le paiement
+      const { data, error } = await supabase.functions.invoke('mobile-money-verification', {
+        body: {
+          action: 'mobileMoney',
+          userId: user.id,
+          phoneNumber,
+          amount,
+          provider,
+          isWithdrawal: false
+        }
+      });
+      
+      if (error) throw error;
+      
+      return data?.success === true;
     } catch (error: any) {
-      console.error('Failed to process mobile money payment:', error);
+      console.error('Erreur lors du traitement du paiement Mobile Money:', error);
       return false;
     } finally {
       setIsProcessing(false);
     }
   };
   
+  // Fonction pour traiter un retrait
   const processWithdrawal = async (
     phoneNumber: string, 
     amount: number, 
@@ -71,18 +90,30 @@ export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
     setIsProcessing(true);
     
     try {
-      // Use the same function but with different parameters
-      const result = await processMobileMoneyPayment(
-        user.id,
-        phoneNumber,
-        amount,
-        provider,
-        false // Not a repayment for withdrawals
-      );
+      // Obtenir les données SFD actives
+      const sfdData = await getActiveSfdData();
       
-      return result.success;
+      if (!sfdData) {
+        throw new Error('Impossible de récupérer les données SFD');
+      }
+      
+      // Appeler la fonction Supabase Edge pour traiter le retrait
+      const { data, error } = await supabase.functions.invoke('mobile-money-verification', {
+        body: {
+          action: 'mobileMoney',
+          userId: user.id,
+          phoneNumber,
+          amount,
+          provider,
+          isWithdrawal: true
+        }
+      });
+      
+      if (error) throw error;
+      
+      return data?.success === true;
     } catch (error: any) {
-      console.error('Failed to process mobile money withdrawal:', error);
+      console.error('Erreur lors du traitement du retrait Mobile Money:', error);
       return false;
     } finally {
       setIsProcessing(false);
@@ -91,7 +122,7 @@ export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
   
   return {
     mobileMoneyProviders,
-    defaultProvider: 'orange',
+    defaultProvider,
     isProcessing,
     processPayment,
     processWithdrawal

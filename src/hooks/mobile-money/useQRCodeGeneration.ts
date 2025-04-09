@@ -1,67 +1,83 @@
 
 import { useState } from 'react';
 import { useAuth } from '../useAuth';
-import { generateQRCode } from '@/utils/api/qrCodeGenerator';
-import { QRCodeGenerationHook } from './types';
-import { QRCodeResponse } from '@/utils/mobileMoneyApi';
+import { supabase } from '@/integrations/supabase/client';
+import { QRCodeGenerationHook, QRCodeResponse } from './types';
 
 export function useQRCodeGeneration(): QRCodeGenerationHook {
   const [isProcessingQRCode, setIsProcessingQRCode] = useState(false);
   const { user } = useAuth();
   
-  const generatePaymentQRCode = async (amount: number, loanId?: string): Promise<QRCodeResponse> => {
+  // Générer un QR code pour un paiement
+  const generatePaymentQRCode = async (
+    amount: number,
+    loanId?: string
+  ): Promise<QRCodeResponse> => {
     if (!user?.id) {
-      return {
+      return { 
         success: false,
-        error: "User not authenticated",
+        error: "Utilisateur non authentifié"
       };
     }
     
     setIsProcessingQRCode(true);
     
     try {
-      const result = await generateQRCode({
-        userId: user.id,
-        amount,
-        purpose: loanId ? 'loan_repayment' : 'payment',
-        loanId,
-        isWithdrawal: false
+      const { data, error } = await supabase.functions.invoke('mobile-money-verification', {
+        body: {
+          action: 'qrCode',
+          userId: user.id,
+          amount,
+          isWithdrawal: false,
+          loanId
+        }
       });
       
-      return result;
+      if (error) throw error;
+      
+      return data as QRCodeResponse;
     } catch (error: any) {
+      console.error('Erreur lors de la génération du QR code de paiement:', error);
       return {
         success: false,
-        error: error.message || "Failed to generate payment QR code",
+        error: error.message || "Erreur lors de la génération du QR code"
       };
     } finally {
       setIsProcessingQRCode(false);
     }
   };
   
-  const generateWithdrawalQRCode = async (amount: number): Promise<QRCodeResponse> => {
+  // Générer un QR code pour un retrait
+  const generateWithdrawalQRCode = async (
+    amount: number
+  ): Promise<QRCodeResponse> => {
     if (!user?.id) {
       return {
         success: false,
-        error: "User not authenticated",
+        error: "Utilisateur non authentifié"
       };
     }
     
     setIsProcessingQRCode(true);
     
     try {
-      const result = await generateQRCode({
-        userId: user.id,
-        amount,
-        purpose: 'withdrawal',
-        isWithdrawal: true
+      const { data, error } = await supabase.functions.invoke('mobile-money-verification', {
+        body: {
+          action: 'qrCode',
+          userId: user.id,
+          amount,
+          isWithdrawal: true
+        }
       });
       
-      return result;
+      if (error) throw error;
+      
+      return data as QRCodeResponse;
     } catch (error: any) {
+      console.error('Erreur lors de la génération du QR code de retrait:', error);
       return {
         success: false,
-        error: error.message || "Failed to generate withdrawal QR code",
+        error: error.message || "Erreur lors de la génération du QR code"
       };
     } finally {
       setIsProcessingQRCode(false);

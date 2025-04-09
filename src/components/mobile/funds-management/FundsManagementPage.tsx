@@ -1,174 +1,60 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import SecurePaymentTab from '../secure-payment';
-import { useTransactions } from '@/hooks/useTransactions';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useSfdAccounts } from '@/hooks/useSfdAccounts';
-import { useMobileDashboard } from '@/hooks/useMobileDashboard';
-import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
-import { useToast } from '@/hooks/use-toast';
-import FundsHeader from './FundsHeader';
-import FundsBalanceSection from './FundsBalanceSection';
 import TransferOptions from './TransferOptions';
-import AvailableChannels from './AvailableChannels';
-import TransactionList from '../TransactionList';
-import { formatCurrencyAmount } from '@/utils/transactionUtils';
+import TransactionHistory from './TransactionHistory';
 
-const FundsManagementPage = () => {
+const FundsManagementPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, activeSfdId, setActiveSfdId } = useAuth();
-  const { toast } = useToast();
-  const [activeView, setActiveView] = useState<'main' | 'withdraw' | 'deposit'>('main');
-  const [totalBalance, setTotalBalance] = useState<number>(0);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [selectedSfd, setSelectedSfd] = useState<string>('all');
-  
-  const { sfdAccounts, refetch: refetchSfdAccounts } = useSfdAccounts();
-  
-  const { 
-    transactions, 
-    isLoading: transactionsLoading, 
-    fetchTransactions
-  } = useTransactions(user?.id, selectedSfd !== 'all' ? selectedSfd : undefined);
-  
-  const { isSyncing, synchronizeWithSfd } = useRealtimeSynchronization();
-  
-  const { dashboardData, refreshDashboardData } = useMobileDashboard();
-  
-  useEffect(() => {
-    fetchTransactions();
-    calculateBalanceForSelectedSfd();
-  }, [selectedSfd, sfdAccounts]);
-
-  const calculateBalanceForSelectedSfd = () => {
-    if (selectedSfd === 'all') {
-      if (sfdAccounts && sfdAccounts.length > 0) {
-        const total = sfdAccounts.reduce((sum, account) => sum + (account.balance || 0), 0);
-        setTotalBalance(total);
-      } else if (dashboardData?.account?.balance) {
-        setTotalBalance(dashboardData.account.balance);
-      } else {
-        setTotalBalance(0);
-      }
-    } else {
-      const selectedAccount = sfdAccounts.find(account => account.id === selectedSfd);
-      setTotalBalance(selectedAccount?.balance || 0);
-    }
-  };
-
-  const handleSfdSelection = (sfdId: string) => {
-    setSelectedSfd(sfdId);
-    if (sfdId !== 'all') {
-      setActiveSfdId(sfdId);
-    }
-  };
+  const { user } = useAuth();
   
   const handleBack = () => {
-    if (activeView !== 'main') {
-      setActiveView('main');
-    } else {
-      navigate('/mobile-flow/main');
-    }
-  };
-
-  const refreshData = async () => {
-    setIsRefreshing(true);
-    
-    try {
-      await synchronizeWithSfd();
-      
-      if (refreshDashboardData) {
-        await refreshDashboardData();
-      }
-      
-      await refetchSfdAccounts();
-      
-      await fetchTransactions();
-      
-      calculateBalanceForSelectedSfd();
-      
-      toast({
-        title: "Données actualisées",
-        description: "Vos soldes et transactions ont été mis à jour",
-      });
-    } catch (error) {
-      console.error("Erreur lors de l'actualisation:", error);
-      toast({
-        title: "Erreur d'actualisation",
-        description: "Impossible de mettre à jour vos données",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
+    navigate('/mobile-flow');
   };
   
-  const formatTransactionData = () => {
-    return transactions.map(tx => ({
-      id: tx.id,
-      name: tx.name || (tx.type === 'deposit' ? 'Dépôt' : tx.type === 'withdrawal' ? 'Retrait' : 'Transaction'),
-      type: tx.type,
-      amount: tx.type === 'deposit' || tx.type === 'loan_disbursement' 
-        ? `+${formatCurrencyAmount(tx.amount)}` 
-        : `-${formatCurrencyAmount(tx.amount)}`,
-      date: new Date(tx.date || tx.created_at).toLocaleDateString(),
-      avatar: tx.avatar_url
-    }));
+  const handleWithdraw = () => {
+    navigate('/mobile-flow/secure-payment', { 
+      state: { isWithdrawal: true } 
+    });
   };
   
-  // Get the selected SFD account for the payment view
-  const selectedSfdAccount = selectedSfd !== 'all' 
-    ? sfdAccounts.find(account => account.id === selectedSfd) 
-    : undefined;
+  const handleDeposit = () => {
+    navigate('/mobile-flow/secure-payment');
+  };
   
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {activeView === 'main' ? (
-        <>
-          <FundsHeader 
-            onBack={handleBack} 
-            onRefresh={refreshData} 
-            isRefreshing={isRefreshing || isSyncing}
+    <div className="bg-gray-50 min-h-screen pb-20">
+      <div className="bg-white p-4 shadow-sm flex items-center">
+        <Button 
+          variant="ghost" 
+          className="p-1 mr-2" 
+          onClick={handleBack}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="font-semibold text-lg">Gestion des fonds</h1>
+      </div>
+      
+      <div className="p-4 space-y-6">
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+          <h2 className="text-xl font-semibold mb-2">Solde actuel</h2>
+          <p className="text-3xl font-bold text-[#0D6A51]">198 500 FCFA</p>
+          <p className="text-sm text-gray-500">Dernière mise à jour: {new Date().toLocaleDateString('fr-FR')}</p>
+        </div>
+        
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold">Options de transfert</h2>
+          <TransferOptions 
+            onWithdraw={handleWithdraw}
+            onDeposit={handleDeposit}
           />
-          
-          <FundsBalanceSection 
-            balance={totalBalance}
-            isRefreshing={isRefreshing || isSyncing}
-            sfdAccounts={sfdAccounts}
-            onSelectSfd={handleSfdSelection}
-            selectedSfd={selectedSfd}
-          />
-          
-          <div className="p-5 space-y-6 mt-2">
-            <h2 className="text-lg font-semibold text-gray-800">Options de transfert</h2>
-            
-            <TransferOptions 
-              onWithdraw={() => setActiveView('withdraw')} 
-              onDeposit={() => setActiveView('deposit')} 
-            />
-            
-            <h2 className="text-lg font-semibold text-gray-800 mt-6">Canaux disponibles</h2>
-            
-            <AvailableChannels />
-            
-            <TransactionList 
-              transactions={formatTransactionData()}
-              isLoading={transactionsLoading}
-              onViewAll={() => navigate('/mobile-flow/transactions')}
-              title="Transactions récentes"
-            />
-          </div>
-        </>
-      ) : (
-        <SecurePaymentTab 
-          onBack={handleBack} 
-          isWithdrawal={activeView === 'withdraw'} 
-          onComplete={refreshData}
-          selectedSfdId={selectedSfd !== 'all' ? selectedSfd : undefined}
-        />
-      )}
+        </div>
+        
+        <TransactionHistory />
+      </div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { QrCodeIcon, Scan } from 'lucide-react';
+import { QrCode } from 'lucide-react';
 
 interface QRCodeSectionProps {
   isWithdrawal: boolean;
@@ -10,25 +10,21 @@ interface QRCodeSectionProps {
 
 const QRCodeSection: React.FC<QRCodeSectionProps> = ({ isWithdrawal, onScanQRCode }) => {
   return (
-    <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-      <h3 className="font-semibold flex items-center gap-2 mb-2">
-        <QrCodeIcon className="h-5 w-5" /> 
-        {isWithdrawal ? 'Retrait en agence SFD' : 'Paiement en agence SFD'}
+    <div className="bg-white border border-gray-100 rounded-lg p-4 shadow-sm flex flex-col items-center justify-center">
+      <QrCode className="h-10 w-10 text-gray-400 mb-2" />
+      <h3 className="text-lg font-medium mb-1">
+        {isWithdrawal ? "Retrait en agence SFD" : "Paiement en agence SFD"}
       </h3>
-      
-      <p className="text-sm text-gray-600 mb-4">
-        {isWithdrawal 
-          ? "Scannez le code QR disponible en agence SFD pour effectuer votre retrait en espèces."
-          : "Scannez le code QR disponible en agence SFD pour effectuer votre paiement en espèces."
-        }
+      <p className="text-gray-500 text-sm text-center mb-3">
+        Générez un QR code à présenter en agence pour effectuer
+        {isWithdrawal ? " votre retrait" : " votre paiement"}
       </p>
-      
       <Button 
-        onClick={onScanQRCode} 
-        className="w-full flex items-center justify-center gap-2"
+        variant="outline" 
+        className="w-full"
+        onClick={onScanQRCode}
       >
-        <Scan className="h-4 w-4" />
-        Scanner le code QR
+        Générer un QR code
       </Button>
     </div>
   );

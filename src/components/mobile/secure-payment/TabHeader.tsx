@@ -1,7 +1,8 @@
 
 import React from 'react';
+import { ChevronLeft } from 'lucide-react';
+import { useLocalization } from '@/contexts/LocalizationContext';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 
 interface TabHeaderProps {
   onBack: () => void;
@@ -9,15 +10,24 @@ interface TabHeaderProps {
 }
 
 const TabHeader: React.FC<TabHeaderProps> = ({ onBack, isWithdrawal = false }) => {
+  const { t } = useLocalization();
+  
   return (
-    <div className="p-4 flex items-center justify-between border-b">
-      <Button variant="ghost" onClick={onBack} className="p-1">
-        <ArrowLeft className="h-5 w-5" />
+    <div className="bg-white p-4 shadow-sm flex items-center">
+      <Button 
+        variant="ghost" 
+        size="sm"
+        className="p-1 mr-2" 
+        onClick={onBack}
+      >
+        <ChevronLeft className="h-5 w-5" />
       </Button>
-      <h1 className="text-lg font-bold">
-        {isWithdrawal ? "Retrait de fonds" : "Remboursement de prêt"}
+      <h1 className="font-semibold text-lg">
+        {isWithdrawal 
+          ? "Retrait Mobile Money" 
+          : "Paiement sécurisé"
+        }
       </h1>
-      <div className="w-5"></div>
     </div>
   );
 };

@@ -1,39 +1,22 @@
 
-import React from "react";
-import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-interface LoaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  size?: "default" | "sm" | "lg";
-  variant?: "default" | "primary";
+interface LoaderProps {
+  size?: 'xs' | 'sm' | 'md' | 'lg';
+  className?: string;
 }
 
-export function Loader({
-  size = "default",
-  variant = "default",
-  className,
-  ...props
-}: LoaderProps) {
+export const Loader: React.FC<LoaderProps> = ({ size = 'md', className }) => {
+  const sizeClasses = {
+    xs: 'h-3 w-3',
+    sm: 'h-4 w-4',
+    md: 'h-6 w-6',
+    lg: 'h-10 w-10'
+  };
+
   return (
-    <div
-      className={cn(
-        "flex items-center justify-center",
-        className
-      )}
-      {...props}
-    >
-      <Loader2
-        className={cn(
-          "animate-spin",
-          {
-            "h-4 w-4": size === "sm",
-            "h-6 w-6": size === "default",
-            "h-8 w-8": size === "lg",
-            "text-primary": variant === "primary",
-            "text-muted-foreground": variant === "default",
-          }
-        )}
-      />
-    </div>
+    <Loader2 className={cn(`animate-spin ${sizeClasses[size]}`, className)} />
   );
-}
+};
