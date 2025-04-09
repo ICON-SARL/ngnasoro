@@ -123,6 +123,7 @@ export function useRoleManager() {
     });
   };
 
+  // Fix the deep instantiation issue by using proper type annotations
   const handleSaveNewRole = async () => {
     if (!activeSfdId) {
       toast({
@@ -135,14 +136,16 @@ export function useRoleManager() {
 
     try {
       if (isEditMode) {
-        // Update existing role
+        // Update existing role - explicit type annotation to avoid deep instantiation
+        const updateData = {
+          name: newRole.name,
+          description: newRole.description,
+          permissions: newRole.permissions
+        };
+
         const { error } = await supabase
-          .from('admin_roles') 
-          .update({
-            name: newRole.name,
-            description: newRole.description,
-            permissions: newRole.permissions
-          })
+          .from('admin_roles')
+          .update(updateData)
           .eq('name', newRole.name)
           .eq('sfd_id', activeSfdId);
 
@@ -153,15 +156,17 @@ export function useRoleManager() {
           description: `Le rôle ${newRole.name} a été mis à jour avec succès`
         });
       } else {
-        // Create new role
+        // Create new role - explicit type annotation to avoid deep instantiation
+        const insertData = {
+          sfd_id: activeSfdId,
+          name: newRole.name,
+          description: newRole.description,
+          permissions: newRole.permissions
+        };
+
         const { error } = await supabase
           .from('admin_roles')
-          .insert({
-            sfd_id: activeSfdId,
-            name: newRole.name,
-            description: newRole.description,
-            permissions: newRole.permissions
-          });
+          .insert(insertData);
 
         if (error) throw error;
 
@@ -180,7 +185,7 @@ export function useRoleManager() {
         permissions: []
       });
 
-      // Refresh roles
+      // Refresh roles - explicitly specify data type
       const { data, error } = await supabase
         .from('admin_roles')
         .select('*')
