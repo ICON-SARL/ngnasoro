@@ -8,7 +8,8 @@ import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { LoanSummaryChart } from './analytics/LoanSummaryChart';
 import { ClientActivityChart } from './analytics/ClientActivityChart';
 import { CurrentSfdBadge } from './CurrentSfdBadge';
-import { Users, CreditCard, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Users, CreditCard, Clock, AlertTriangle, CheckCircle, Shield } from 'lucide-react';
+import { PermissionsTable } from '@/components/admin/PermissionsTable';
 
 export function SfdDashboard() {
   const { activeSfdId, user } = useAuth();
@@ -87,10 +88,48 @@ export function SfdDashboard() {
             </Card>
           </div>
           
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 mb-6">
             <LoanSummaryChart sfdId={activeSfdId} staffRole={staffRole} />
             <ClientActivityChart sfdId={activeSfdId} staffRole={staffRole} />
           </div>
+          
+          <div className="mb-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Shield className="h-5 w-5 mr-2" />
+                  Structure des Permissions
+                </CardTitle>
+                <CardDescription>
+                  Vue d'ensemble hiérarchique des rôles et permissions dans le système
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-muted-foreground mb-4">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-start">
+                      <strong className="min-w-[120px]">MEREF:</strong>
+                      <span>Contrôle macro (règles, conformité, supervision générale)</span>
+                    </div>
+                    <div className="flex items-start">
+                      <strong className="min-w-[120px]">Admin SFD:</strong>
+                      <span>Gestion opérationnelle (clients, prêts, personnel de la SFD)</span>
+                    </div>
+                    <div className="flex items-start">
+                      <strong className="min-w-[120px]">Personnel SFD:</strong>
+                      <span>Opérations quotidiennes selon le rôle attribué (caisse, crédit, etc.)</span>
+                    </div>
+                    <div className="flex items-start">
+                      <strong className="min-w-[120px]">Clients:</strong>
+                      <span>Interactions self-service (consultation compte, demande de prêt)</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <PermissionsTable />
         </>
       ) : (
         <StaffDashboard staffRole={staffRole} />

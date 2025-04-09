@@ -35,7 +35,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     // Handle special case where SFD_ADMIN should match sfd_admin role
     const permitted = userRole === requiredRole || 
       (requiredRole === 'sfd_admin' && userRole === 'sfd_admin') ||
-      (requiredRole === UserRole.SFD_ADMIN && userRole === 'sfd_admin') ||
+      (requiredRole === 'SFD_ADMIN' && userRole === 'sfd_admin') ||
       (requiredRole === 'admin' && userRole === 'admin');
     
     setHasAccess(permitted);

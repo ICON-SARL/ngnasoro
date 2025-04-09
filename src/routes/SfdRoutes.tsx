@@ -1,64 +1,37 @@
-
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { UserRole } from '@/utils/auth/roleTypes';
-import ProtectedRoute from '@/components/routes/ProtectedRoute';
-import AccessDeniedPage from '@/pages/AccessDeniedPage';
-import { SfdDashboardPage } from '@/pages/SfdDashboardPage';
-import { SfdClientsPage } from '@/pages/SfdClientsPage';
-import { SfdLoansPage } from '@/pages/SfdLoansPage';
+import { Route, Routes } from 'react-router-dom';
+import { RoleGuard } from '@/components/RoleGuard';
+import SfdDashboardPage from '@/pages/SfdDashboardPage';
 import SfdRoleManagementPage from '@/pages/SfdRoleManagementPage';
+import SystemPermissionsPage from '@/pages/SystemPermissionsPage';
 
-const SfdRoutes = () => {
+export const SfdRoutes = () => {
   return (
     <Routes>
-      <Route 
-        path="dashboard" 
+      <Route
+        path="dashboard"
         element={
-          <ProtectedRoute 
-            component={SfdDashboardPage} 
-            requiredRole={UserRole.SFD_ADMIN}
-          />
-        } 
+          <RoleGuard requiredRole="sfd_admin">
+            <SfdDashboardPage />
+          </RoleGuard>
+        }
       />
-      
-      <Route 
-        path="loans" 
+      <Route
+        path="roles"
         element={
-          <ProtectedRoute 
-            component={SfdLoansPage} 
-            requiredRole={UserRole.SFD_ADMIN}
-            requiredPermission="manage_loans"
-          />
-        } 
+          <RoleGuard requiredRole="sfd_admin">
+            <SfdRoleManagementPage />
+          </RoleGuard>
+        }
       />
-      
-      <Route 
-        path="clients" 
+      <Route
+        path="permissions"
         element={
-          <ProtectedRoute 
-            component={SfdClientsPage} 
-            requiredRole={UserRole.SFD_ADMIN}
-            requiredPermission="manage_clients"
-          />
-        } 
+          <RoleGuard requiredRole="sfd_admin">
+            <SystemPermissionsPage />
+          </RoleGuard>
+        }
       />
-      
-      <Route 
-        path="role-management" 
-        element={
-          <ProtectedRoute 
-            component={SfdRoleManagementPage} 
-            requiredRole={UserRole.SFD_ADMIN}
-            requiredPermission="manage_users"
-          />
-        } 
-      />
-      
-      <Route path="access-denied" element={<AccessDeniedPage />} />
-      <Route path="*" element={<Navigate to="/sfd/dashboard" replace />} />
     </Routes>
   );
 };
-
-export default SfdRoutes;
