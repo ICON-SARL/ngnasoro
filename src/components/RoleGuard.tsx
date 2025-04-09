@@ -33,10 +33,11 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) 
     });
     
     // Convert the userRole to string to ensure string-to-string comparison
-    const userRoleString = String(userRole);
+    const userRoleString = String(userRole || '');
     
     // Super admin et admin ont accès à tout
     if (userRoleString === 'admin' || userRoleString === 'super_admin') {
+      console.log('Access granted: User is admin or super_admin');
       setHasAccess(true);
       return;
     }
@@ -52,6 +53,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) 
       // Special case for admin role - ensure string comparison
       (requiredRole === 'admin' && userRoleString === 'admin');
     
+    console.log('Access check result:', { userRoleString, requiredRole, permitted });
     setHasAccess(permitted);
     
     // Log access denied attempts

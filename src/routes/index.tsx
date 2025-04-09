@@ -6,6 +6,7 @@ import ClientLoginPage from '@/pages/ClientLoginPage';
 import MobileFlow from '@/components/mobile/MobileFlow';
 import AdminLoginPage from '@/pages/AdminLoginPage';
 import SfdLoginPage from '@/pages/SfdLoginPage';
+import SfdSelectionPage from '@/pages/SfdSelectionPage';
 import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
 import { SecurePaymentTab } from '@/components/mobile/secure-payment';
 import AdminRoutes from './AdminRoutes';
@@ -57,6 +58,7 @@ const AppRoutes = () => {
       <Route path="/client/auth" element={<ClientLoginPage />} />
       <Route path="/admin/auth" element={<AdminLoginPage />} />
       <Route path="/sfd/auth" element={<SfdLoginPage />} />
+      <Route path="/sfd-selection" element={<SfdSelectionPage />} />
       
       <Route path="/mobile-flow/*" element={<MobileFlow />} />
       <Route path="/mobile-flow/funds" element={<FundsManagementPage />} />

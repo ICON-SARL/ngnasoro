@@ -3,10 +3,12 @@ import React from 'react';
 import { SfdDashboard } from '@/components/sfd/SfdDashboard';
 import { SfdHeader } from '@/components/sfd/SfdHeader';
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 export const SfdDashboardPage = () => {
   const { user, activeSfdId } = useAuth();
+  const navigate = useNavigate();
   
   // Récupérer le rôle de l'utilisateur depuis les métadonnées
   const userRole = user?.app_metadata?.role;
@@ -21,12 +23,12 @@ export const SfdDashboardPage = () => {
           <p className="text-gray-600 mb-4">
             Vous devez sélectionner une SFD pour accéder au tableau de bord.
           </p>
-          <button 
+          <Button 
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-            onClick={() => window.location.href = '/sfd-selection'}
+            onClick={() => navigate('/sfd-selection')}
           >
             Sélectionner une SFD
-          </button>
+          </Button>
         </div>
       </div>
     );
