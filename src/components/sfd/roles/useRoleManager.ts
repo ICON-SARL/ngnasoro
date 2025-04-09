@@ -73,8 +73,9 @@ export function useRoleManager() {
         }
 
         if (data) {
-          // Transform the data with proper type handling
-          const rolesList: Role[] = (data as AdminRoleData[]).map(role => ({
+          // Transform the data with proper type assertion
+          const roleData = data as AdminRoleData[];
+          const rolesList: Role[] = roleData.map(role => ({
             id: role.id,
             name: role.name || '',
             description: role.description || '',
@@ -123,7 +124,7 @@ export function useRoleManager() {
     });
   };
 
-  // Fix the deep instantiation issue by using proper type annotations
+  // Fix the deep instantiation issue by using explicit type definitions
   const handleSaveNewRole = async () => {
     if (!activeSfdId) {
       toast({
@@ -136,8 +137,12 @@ export function useRoleManager() {
 
     try {
       if (isEditMode) {
-        // Update existing role - explicit type annotation to avoid deep instantiation
-        const updateData = {
+        // Define update data with explicit typing to avoid deep instantiation
+        const updateData: {
+          name: string;
+          description: string;
+          permissions: string[];
+        } = {
           name: newRole.name,
           description: newRole.description,
           permissions: newRole.permissions
@@ -156,8 +161,13 @@ export function useRoleManager() {
           description: `Le rôle ${newRole.name} a été mis à jour avec succès`
         });
       } else {
-        // Create new role - explicit type annotation to avoid deep instantiation
-        const insertData = {
+        // Define insert data with explicit typing to avoid deep instantiation
+        const insertData: {
+          sfd_id: string;
+          name: string;
+          description: string;
+          permissions: string[];
+        } = {
           sfd_id: activeSfdId,
           name: newRole.name,
           description: newRole.description,
@@ -185,7 +195,7 @@ export function useRoleManager() {
         permissions: []
       });
 
-      // Refresh roles - explicitly specify data type
+      // Refresh roles with explicit type handling
       const { data, error } = await supabase
         .from('admin_roles')
         .select('*')
@@ -194,8 +204,9 @@ export function useRoleManager() {
       if (error) throw error;
 
       if (data) {
-        // Update roles with proper typing
-        const rolesList: Role[] = (data as AdminRoleData[]).map(role => ({
+        // Use proper type assertion
+        const roleData = data as AdminRoleData[];
+        const rolesList: Role[] = roleData.map(role => ({
           id: role.id,
           name: role.name || '',
           description: role.description || '',
