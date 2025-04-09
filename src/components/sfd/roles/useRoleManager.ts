@@ -18,13 +18,15 @@ const SFD_PERMISSIONS = {
   MANAGE_STAFF: 'manage_staff',
 };
 
-type SfdRoleData = {
+// Define a type representing admin_roles table data
+interface AdminRoleData {
   id: string;
   name: string | null;
   description: string | null;
   permissions: string[] | null;
-  sfd_id: string | null;
-};
+  sfd_id?: string | null;
+  created_at?: string;
+}
 
 export function useRoleManager() {
   const [roles, setRoles] = useState<Role[]>([]);
@@ -71,8 +73,8 @@ export function useRoleManager() {
         }
 
         if (data) {
-          // Transform the data with explicit typing
-          const rolesList: Role[] = (data as SfdRoleData[]).map(role => ({
+          // Transform the data with proper type handling
+          const rolesList: Role[] = (data as AdminRoleData[]).map(role => ({
             id: role.id,
             name: role.name || '',
             description: role.description || '',
@@ -187,8 +189,8 @@ export function useRoleManager() {
       if (error) throw error;
 
       if (data) {
-        // Update roles with explicit typing
-        const rolesList: Role[] = (data as SfdRoleData[]).map(role => ({
+        // Update roles with proper typing
+        const rolesList: Role[] = (data as AdminRoleData[]).map(role => ({
           id: role.id,
           name: role.name || '',
           description: role.description || '',
