@@ -16,7 +16,6 @@ const SfdLoansPage = () => {
         </div>
         
         <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
-          {/* Loan management content will go here */}
           <p className="text-center text-muted-foreground py-8">
             Fonctionnalité de gestion des prêts en cours de développement
           </p>

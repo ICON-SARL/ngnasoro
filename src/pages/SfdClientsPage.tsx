@@ -16,7 +16,6 @@ const SfdClientsPage = () => {
         </div>
         
         <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
-          {/* Client management content will go here */}
           <p className="text-center text-muted-foreground py-8">
             Fonctionnalité de gestion des clients en cours de développement
           </p>

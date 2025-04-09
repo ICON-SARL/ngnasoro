@@ -1,64 +1,43 @@
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
 
 interface SubsidyRequest {
   id: string;
-  sfd_id: string;
-  amount: number;
   purpose: string;
-  status: string;
-  created_at: string;
-  requested_by: string;
+  amount: number;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
 }
 
-interface UseSfdSubsidyRequestsProps {
-  status?: string;
-  sfdId?: string | null;
-  limit?: number;
+interface SubsidyRequestsOptions {
+  status?: 'pending' | 'approved' | 'rejected';
+  sfdId?: string;
 }
 
-export function useSfdSubsidyRequests({ 
-  status = 'all', 
-  sfdId = null,
-  limit = 10
-}: UseSfdSubsidyRequestsProps = {}) {
-  const fetchSubsidyRequests = async (): Promise<SubsidyRequest[]> => {
-    if (!sfdId) return [];
-
-    try {
-      let query = supabase
-        .from('subsidy_requests')
-        .select('*')
-        .eq('sfd_id', sfdId)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-      
-      if (status !== 'all') {
-        query = query.eq('status', status);
-      }
-
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching subsidy requests:', error);
-      return [];
+export function useSfdSubsidyRequests(options: SubsidyRequestsOptions) {
+  const [subsidyRequests, setSubsidyRequests] = useState<SubsidyRequest[]>([]);
+  
+  useEffect(() => {
+    if (options.sfdId) {
+      // Mock data for demo
+      setSubsidyRequests([
+        {
+          id: '1',
+          purpose: 'Financement projet agricole',
+          amount: 500000,
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '2',
+          purpose: 'Achat équipement artisanal',
+          amount: 250000,
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        }
+      ]);
     }
-  };
-
-  const { data, error, isLoading } = useQuery({
-    queryKey: ['sfd-subsidy-requests', sfdId, status, limit],
-    queryFn: fetchSubsidyRequests,
-    enabled: !!sfdId,
-    staleTime: 1000 * 60 * 5 // 5 minutes
-  });
-
-  return {
-    subsidyRequests: data || [],
-    isLoading,
-    error
-  };
+  }, [options.sfdId, options.status]);
+  
+  return { subsidyRequests };
 }

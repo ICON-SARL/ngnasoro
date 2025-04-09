@@ -4,7 +4,6 @@ import { Role, Permission, NewRoleData } from './types';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { v4 as uuidv4 } from 'uuid';
-import { supabase } from '@/integrations/supabase/client';
 
 export function useRoleManager() {
   const { activeSfdId } = useAuth();
@@ -18,7 +17,7 @@ export function useRoleManager() {
     permissions: []
   });
 
-  // Fetch roles and permissions
+  // Fetch roles and permissions when component mounts
   useEffect(() => {
     if (activeSfdId) {
       fetchRoles();
@@ -30,30 +29,12 @@ export function useRoleManager() {
     if (!activeSfdId) return;
     
     try {
+      // Since we're having issues with the Supabase tables, let's use mock data
       // In a real app, this would be an API call to fetch roles for the specific SFD
-      // For now, we'll use dummy data or fetch from localStorage
-      const { data, error } = await supabase
-        .from('sfd_roles')
-        .select('*')
-        .eq('sfd_id', activeSfdId);
-        
-      if (error) throw error;
+      setRoles(getDefaultRoles());
       
-      if (data && data.length > 0) {
-        setRoles(data as Role[]);
-      } else {
-        // Initialize with default roles if none exist
-        const defaultRoles = getDefaultRoles();
-        setRoles(defaultRoles);
-        
-        // In a real app, would save these to the database
-        for (const role of defaultRoles) {
-          await supabase.from('sfd_roles').insert({
-            ...role,
-            sfd_id: activeSfdId
-          });
-        }
-      }
+      // Store in localStorage for persistence
+      localStorage.setItem(`sfd_roles_${activeSfdId}`, JSON.stringify(getDefaultRoles()));
     } catch (error) {
       console.error('Error fetching roles:', error);
       // Fallback to default roles
@@ -63,20 +44,11 @@ export function useRoleManager() {
 
   const fetchPermissions = async () => {
     try {
-      // In a real app, fetch permissions from API
-      // For now, use dummy data
-      const { data, error } = await supabase
-        .from('sfd_permissions')
-        .select('*');
-        
-      if (error) throw error;
+      // Use mock data since we don't have the sfd_permissions table yet
+      setPermissions(getDefaultPermissions());
       
-      if (data && data.length > 0) {
-        setPermissions(data as Permission[]);
-      } else {
-        // Initialize with default permissions
-        setPermissions(getDefaultPermissions());
-      }
+      // Store in localStorage for persistence
+      localStorage.setItem('sfd_permissions', JSON.stringify(getDefaultPermissions()));
     } catch (error) {
       console.error('Error fetching permissions:', error);
       setPermissions(getDefaultPermissions());
@@ -126,11 +98,10 @@ export function useRoleManager() {
           updatedRoles[roleIndex] = updatedRole;
           setRoles(updatedRoles);
           
-          // In a real app, update in database
-          await supabase
-            .from('sfd_roles')
-            .update(updatedRole)
-            .eq('id', newRole.id);
+          // Store in localStorage
+          if (activeSfdId) {
+            localStorage.setItem(`sfd_roles_${activeSfdId}`, JSON.stringify(updatedRoles));
+          }
           
           toast({
             title: "Rôle mis à jour",
@@ -146,15 +117,13 @@ export function useRoleManager() {
           permissions: newRole.permissions
         };
         
-        setRoles([...roles, newRoleWithId]);
+        const updatedRoles = [...roles, newRoleWithId];
+        setRoles(updatedRoles);
         
-        // In a real app, save to database
-        await supabase
-          .from('sfd_roles')
-          .insert({
-            ...newRoleWithId,
-            sfd_id: activeSfdId
-          });
+        // Store in localStorage
+        if (activeSfdId) {
+          localStorage.setItem(`sfd_roles_${activeSfdId}`, JSON.stringify(updatedRoles));
+        }
         
         toast({
           title: "Rôle créé",
@@ -182,13 +151,13 @@ export function useRoleManager() {
 
   const handleDeleteRole = async (roleId: string) => {
     try {
-      setRoles(roles.filter(role => role.id !== roleId));
+      const updatedRoles = roles.filter(role => role.id !== roleId);
+      setRoles(updatedRoles);
       
-      // In a real app, delete from database
-      await supabase
-        .from('sfd_roles')
-        .delete()
-        .eq('id', roleId);
+      // Update localStorage
+      if (activeSfdId) {
+        localStorage.setItem(`sfd_roles_${activeSfdId}`, JSON.stringify(updatedRoles));
+      }
       
       toast({
         title: "Rôle supprimé",

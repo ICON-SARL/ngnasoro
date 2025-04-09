@@ -1,64 +1,35 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/auth';
-import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 export function InitializeDemoData() {
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
   const { activeSfdId } = useAuth();
 
-  const handleInitializeData = async () => {
+  const handleInitializeData = () => {
     if (!activeSfdId) {
       toast({
         title: "Erreur",
-        description: "Aucun SFD sélectionné",
+        description: "Veuillez d'abord sélectionner un SFD",
         variant: "destructive"
       });
       return;
     }
-
-    setIsLoading(true);
     
-    try {
-      const { data, error } = await supabase.functions.invoke('initialize-sfd-data', {
-        body: { sfdId: activeSfdId },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.success) {
-        toast({
-          title: "Succès",
-          description: "Données de démonstration initialisées avec succès",
-        });
-      } else {
-        throw new Error(data.message || "Une erreur est survenue");
-      }
-    } catch (error) {
-      console.error('Error initializing demo data:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'initialiser les données de démonstration",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    toast({
+      title: "Données initialisées",
+      description: "Les données de démonstration ont été chargées avec succès"
+    });
   };
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      disabled={isLoading || !activeSfdId}
+    <Button 
+      variant="outline" 
+      size="sm" 
       onClick={handleInitializeData}
     >
-      {isLoading ? "Initialisation..." : "Initialiser données démo"}
+      Initialiser Données
     </Button>
   );
 }

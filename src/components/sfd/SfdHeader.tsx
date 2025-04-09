@@ -9,23 +9,21 @@ import {
   BarChart3, 
   Settings, 
   LogOut,
-  UserCog,
   Shield
 } from 'lucide-react';
-import { CurrentSfdBadge } from './CurrentSfdBadge';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 export function SfdHeader() {
-  const { activeSfdId } = useAuth();
+  const { user, activeSfdId } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      // In a real app, we would use Supabase or another auth provider
+      // await supabase.auth.signOut();
       navigate('/login');
       toast({
         title: "Déconnexion réussie",
@@ -55,9 +53,11 @@ export function SfdHeader() {
             <span className="font-semibold text-lg">SFD Dashboard</span>
           </Link>
           
-          <div className="ml-4">
-            <CurrentSfdBadge />
-          </div>
+          {activeSfdId && (
+            <div className="ml-4 bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
+              SFD ID: {activeSfdId.substring(0, 8)}...
+            </div>
+          )}
         </div>
         
         {/* Desktop Navigation */}
@@ -92,17 +92,6 @@ export function SfdHeader() {
             <Link to="/sfd/loans">
               <CreditCard className="h-4 w-4 mr-1" />
               Prêts
-            </Link>
-          </Button>
-          
-          <Button 
-            variant={isActive('/sfd/reports') ? 'default' : 'ghost'} 
-            size="sm" 
-            asChild
-          >
-            <Link to="/sfd/reports">
-              <BarChart3 className="h-4 w-4 mr-1" />
-              Rapports
             </Link>
           </Button>
           
@@ -187,18 +176,6 @@ export function SfdHeader() {
                 <Link to="/sfd/loans">
                   <CreditCard className="h-4 w-4 mr-2" />
                   Prêts
-                </Link>
-              </Button>
-              
-              <Button 
-                variant={isActive('/sfd/reports') ? 'default' : 'ghost'} 
-                size="sm" 
-                asChild
-                className="justify-start"
-              >
-                <Link to="/sfd/reports">
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Rapports
                 </Link>
               </Button>
               

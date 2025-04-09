@@ -1,131 +1,81 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdClientStats } from '@/hooks/sfd/useSfdClientStats';
 import { useSfdLoanStats } from '@/hooks/sfd/useSfdLoanStats';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Users, CreditCard, TrendingUp, Activity } from 'lucide-react';
+import { Users, CreditCard, AlertTriangle, CheckCircle } from 'lucide-react';
 
-export const SfdDashboardStats = () => {
+export function SfdDashboardStats() {
   const { activeSfdId } = useAuth();
-  const { clientStats, isLoading: isLoadingClients } = useSfdClientStats(activeSfdId);
-  const { loanStats, isLoading: isLoadingLoans } = useSfdLoanStats(activeSfdId);
-  
-  // Get latest subsidy requests
-  const { data: subsidyData, isLoading: isLoadingSubsidies } = useQuery({
-    queryKey: ['subsidy-stats', activeSfdId],
-    queryFn: async () => {
-      if (!activeSfdId) return { pendingCount: 0, totalAmount: 0 };
-      
-      // Get pending subsidy requests count
-      const { count: pendingCount, error: pendingError } = await supabase
-        .from('subsidy_requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('sfd_id', activeSfdId)
-        .eq('status', 'pending');
-      
-      if (pendingError) throw pendingError;
-      
-      // Get total subsidy amount
-      const { data, error } = await supabase
-        .from('sfd_subsidies')
-        .select('amount')
-        .eq('sfd_id', activeSfdId);
-        
-      if (error) throw error;
-      
-      const totalAmount = data?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
-      
-      return { pendingCount: pendingCount || 0, totalAmount };
-    },
-    enabled: !!activeSfdId,
-    staleTime: 1000 * 60 * 5 // 5 minutes
-  });
-  
-  const isLoading = isLoadingClients || isLoadingLoans || isLoadingSubsidies;
-  
+  const { clientStats } = useSfdClientStats(activeSfdId);
+  const { loanStats } = useSfdLoanStats(activeSfdId);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          {isLoadingClients ? (
-            <Skeleton className="h-7 w-20" />
-          ) : (
-            <>
-              <div className="text-2xl font-bold">{clientStats.totalClients}</div>
-              <p className="text-xs text-muted-foreground">
-                {clientStats.activeClients} actifs, {clientStats.pendingClients} en attente
-              </p>
-            </>
-          )}
+        <CardContent className="pt-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-blue-100 rounded-md mr-4">
+              <Users className="h-8 w-8 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-sm">Clients Actifs</p>
+              <h3 className="text-2xl font-bold">{clientStats.active}</h3>
+              <p className="text-xs text-green-600">+{clientStats.new} ce mois</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
-      
+
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Crédits Actifs</CardTitle>
-          <CreditCard className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          {isLoadingLoans ? (
-            <Skeleton className="h-7 w-20" />
-          ) : (
-            <>
-              <div className="text-2xl font-bold">{loanStats.activeLoans}</div>
+        <CardContent className="pt-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-green-100 rounded-md mr-4">
+              <CreditCard className="h-8 w-8 text-green-600" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-sm">Prêts Actifs</p>
+              <h3 className="text-2xl font-bold">{loanStats.active}</h3>
               <p className="text-xs text-muted-foreground">
-                sur {loanStats.totalLoans} crédits au total
+                {loanStats.pending} en attente
               </p>
-            </>
-          )}
+            </div>
+          </div>
         </CardContent>
       </Card>
-      
+
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Montant Distribué</CardTitle>
-          <TrendingUp className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          {isLoadingLoans ? (
-            <Skeleton className="h-7 w-28" />
-          ) : (
-            <>
-              <div className="text-2xl font-bold">
-                {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(loanStats.disbursedAmount)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                sur {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(loanStats.totalLoanAmount)} total
-              </p>
-            </>
-          )}
+        <CardContent className="pt-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-yellow-100 rounded-md mr-4">
+              <AlertTriangle className="h-8 w-8 text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-sm">Prêts en Retard</p>
+              <h3 className="text-2xl font-bold">{loanStats.overdue}</h3>
+              <p className="text-xs text-yellow-600">Nécessite attention</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
-      
+
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Demandes en Attente</CardTitle>
-          <Activity className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          {isLoadingSubsidies ? (
-            <Skeleton className="h-7 w-20" />
-          ) : (
-            <>
-              <div className="text-2xl font-bold">{subsidyData?.pendingCount || 0}</div>
+        <CardContent className="pt-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-purple-100 rounded-md mr-4">
+              <CheckCircle className="h-8 w-8 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-sm">Prêts Remboursés</p>
+              <h3 className="text-2xl font-bold">{loanStats.completed}</h3>
               <p className="text-xs text-muted-foreground">
-                Subventions: {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(subsidyData?.totalAmount || 0)}
+                {Math.round((loanStats.completed / loanStats.total) * 100)}% de taux
               </p>
-            </>
-          )}
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
   );
-};
+}
