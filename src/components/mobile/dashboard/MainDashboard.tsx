@@ -40,6 +40,17 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 
   const hasSfdAccount = sfdAccounts && sfdAccounts.length > 0;
 
+  // Ensure that the transactions are in the right format for the TransactionList component
+  const formattedTransactions = transactions.map(tx => ({
+    id: tx.id,
+    name: tx.name || tx.type,
+    type: tx.type,
+    amount: Number(tx.amount), // Ensure amount is a number
+    date: tx.date || new Date(tx.created_at).toLocaleDateString('fr-FR'),
+    avatar: tx.avatar_url,
+    sfdName: tx.sfdName
+  }));
+
   return (
     <div className="container max-w-md mx-auto p-4">
       <div className="flex flex-col space-y-4">
@@ -64,9 +75,10 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
         </div>
         
         <TransactionList
-          transactions={transactions}
+          transactions={formattedTransactions}
           isLoading={transactionsLoading}
           maxItems={5}
+          onViewAll={() => onAction('ViewAllTransactions')}
         />
       </div>
     </div>

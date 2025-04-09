@@ -11,20 +11,32 @@ interface Transaction {
   id: number | string;
   name: string;
   type: string;
-  amount: string;
+  amount: number; // Changed to number to match the actual data type
   date: string;
   avatar: string | null;
-  sfdName?: string; // Added SFD information
+  sfdName?: string;
 }
 
 interface TransactionListProps {
   transactions: Transaction[];
   isLoading?: boolean;
   onViewAll?: () => void;
-  title?: string; // Added optional title prop
+  title?: string;
+  maxItems?: number; // Added maxItems prop
 }
 
-const TransactionList = ({ transactions, isLoading = false, onViewAll, title = "Transactions Récentes" }: TransactionListProps) => {
+const TransactionList = ({ 
+  transactions, 
+  isLoading = false, 
+  onViewAll, 
+  title = "Transactions Récentes", 
+  maxItems 
+}: TransactionListProps) => {
+  // If maxItems is defined, limit the number of transactions
+  const displayTransactions = maxItems 
+    ? transactions.slice(0, maxItems) 
+    : transactions;
+
   return (
     <div className="px-4 mt-3 mb-20">
       <div className="flex items-center justify-between mb-3">
@@ -57,9 +69,9 @@ const TransactionList = ({ transactions, isLoading = false, onViewAll, title = "
                 <Skeleton className="h-4 w-16" />
               </div>
             ))
-          ) : transactions.length > 0 ? (
+          ) : displayTransactions.length > 0 ? (
             // Transactions list
-            transactions.map((transaction) => (
+            displayTransactions.map((transaction) => (
               <div 
                 key={transaction.id}
                 className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0"
@@ -87,12 +99,16 @@ const TransactionList = ({ transactions, isLoading = false, onViewAll, title = "
                 </div>
                 <p 
                   className={`font-semibold ${
-                    transaction.amount.startsWith('+') || !transaction.amount.startsWith('-') 
+                    // Here's the fix: Check if the amount is greater than 0 instead of using startsWith
+                    transaction.amount > 0 
                       ? 'text-lime-600' 
                       : 'text-gray-800'
                   }`}
                 >
-                  {transaction.amount}
+                  {/* Format the amount as a string with the appropriate sign */}
+                  {transaction.amount > 0 
+                    ? `+${transaction.amount}` 
+                    : transaction.amount}
                 </p>
               </div>
             ))
