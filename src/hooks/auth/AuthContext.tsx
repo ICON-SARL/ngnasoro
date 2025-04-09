@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext, useCallback, createContext } from 'react';
 import { User, AuthContextProps, Role } from './types';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,33 +38,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
-  const assignUserRole = useCallback(async (user: User) => {
-    if (!user || !user.app_metadata?.role || user.app_metadata.role_assigned) return;
+  // Handle role assignment without causing infinite recursion
+  const assignUserRole = useCallback(async (userId: string, role: string) => {
+    if (!userId || !role) return;
     
     try {
-      const validRole = user.app_metadata.role as "admin" | "sfd_admin" | "user";
-      
+      // Use a direct rpc call instead of a nested query that could cause recursion
       const { data: roleData, error: roleError } = await supabase.rpc('assign_role', {
-        user_id: user.id,
-        role: validRole
+        user_id: userId,
+        role: role
       });
       
-      if (!roleError) {
-        const { error: updateError } = await supabase.auth.updateUser({
-          data: {
-            ...user.app_metadata,
-            role_assigned: true
-          }
-        });
-        
-        if (updateError) {
-          console.error('Error updating user metadata:', updateError);
-        }
-      } else {
+      if (roleError) {
         console.error('Error assigning role:', roleError);
       }
+      
+      return { success: !roleError };
     } catch (err) {
       console.error('Error in assign_role process:', err);
+      return { success: false, error: err };
     }
   }, []);
 
@@ -101,8 +94,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    if (user) {
-      assignUserRole(user);
+    if (user?.id && user?.app_metadata?.role && !user?.app_metadata?.role_assigned) {
+      assignUserRole(user.id, user.app_metadata.role);
     }
   }, [user, assignUserRole]);
 

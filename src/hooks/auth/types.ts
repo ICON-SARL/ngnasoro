@@ -1,3 +1,4 @@
+
 export type Role = 'admin' | 'sfd_admin' | 'user' | 'client' | null;
 
 export enum UserRole {
@@ -14,7 +15,7 @@ export interface User {
   full_name: string;
   avatar_url?: string;
   sfd_id?: string;
-  phone?: string;
+  phone?: string | null;
   user_metadata: {
     [key: string]: any;
     sfd_id?: string;
