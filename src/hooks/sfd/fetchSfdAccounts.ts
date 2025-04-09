@@ -13,6 +13,8 @@ export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
       // Return predefined SFDs for test accounts
       return [
         {
+          user_id: userId,
+          sfd_id: 'premier-sfd-id',
           id: 'test-sfd1',
           is_default: false,
           sfds: {
@@ -24,6 +26,8 @@ export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
           }
         },
         {
+          user_id: userId,
+          sfd_id: 'deuxieme-sfd-id',
           id: 'test-sfd2',
           is_default: true,
           sfds: {
@@ -35,6 +39,8 @@ export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
           }
         },
         {
+          user_id: userId,
+          sfd_id: 'troisieme-sfd-id',
           id: 'test-sfd3',
           is_default: false,
           sfds: {

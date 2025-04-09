@@ -18,6 +18,15 @@ const MobileFlow: React.FC = () => {
   
   // If user is not authenticated, we would handle that in a parent component
 
+  // Default account for the MainDashboard component
+  const defaultAccount = {
+    id: 'default-account',
+    user_id: user?.id || 'default-user',
+    balance: 0,
+    currency: 'FCFA',
+    updated_at: new Date().toISOString()
+  };
+
   return (
     <div className="flex flex-col h-screen">
       <div className="flex-grow overflow-auto pb-16">
@@ -26,7 +35,15 @@ const MobileFlow: React.FC = () => {
           <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
           
           {/* Main dashboard */}
-          <Route path="/main" element={<MainDashboard onAction={() => {}} account={{}} transactions={[]} transactionsLoading={false} toggleMenu={() => {}} />} />
+          <Route path="/main" element={
+            <MainDashboard 
+              onAction={() => {}} 
+              account={defaultAccount} 
+              transactions={[]} 
+              transactionsLoading={false} 
+              toggleMenu={() => {}} 
+            />
+          } />
           
           {/* User profile page */}
           <Route path="/profile" element={<ProfilePage />} />

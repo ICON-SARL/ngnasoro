@@ -9,7 +9,11 @@ export async function fetchSfdBalance(userId: string, sfdId: string): Promise<Sf
     // For test accounts, return 0 balance
     if (userId.includes('test') || sfdId.includes('test') || 
         ['premier-sfd-id', 'deuxieme-sfd-id', 'troisieme-sfd-id'].includes(sfdId)) {
-      return { balance: 0, currency: 'FCFA' };
+      return { 
+        id: sfdId, 
+        balance: 0, 
+        currency: 'FCFA' 
+      };
     }
     
     const { apiClient } = await import('@/utils/apiClient');
@@ -24,20 +28,35 @@ export async function fetchSfdBalance(userId: string, sfdId: string): Promise<Sf
     if (error) {
       console.error(`Error fetching balance from database: ${error.message}`);
       // Fall back to the API client
-      return await apiClient.getSfdBalance(userId, sfdId);
+      const balanceData = await apiClient.getSfdBalance(userId, sfdId);
+      // Ensure it has an id
+      if (!balanceData.id) {
+        balanceData.id = sfdId;
+      }
+      return balanceData;
     }
     
     if (data) {
       return { 
+        id: sfdId,
         balance: data.balance || 0, 
         currency: data.currency || 'FCFA' 
       };
     } else {
       // If no record found, use the API client
-      return await apiClient.getSfdBalance(userId, sfdId);
+      const balanceData = await apiClient.getSfdBalance(userId, sfdId);
+      // Ensure it has an id
+      if (!balanceData.id) {
+        balanceData.id = sfdId;
+      }
+      return balanceData;
     }
   } catch (error) {
     console.error(`Failed to fetch balance for SFD ${sfdId}:`, error);
-    return { balance: 0, currency: 'FCFA' };
+    return { 
+      id: sfdId, 
+      balance: 0, 
+      currency: 'FCFA' 
+    };
   }
 }

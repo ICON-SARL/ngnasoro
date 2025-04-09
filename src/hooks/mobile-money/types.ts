@@ -1,5 +1,5 @@
 
-import { QRCodeResponse } from '@/utils/mobileMoneyApi';
+import { QRCodeResponse } from '@/hooks/sfd/types';
 
 export interface MobileMoneyPaymentHook {
   isProcessingPayment: boolean;
@@ -30,3 +30,6 @@ export interface MobileMoneyOperationsHook {
   processPayment: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
   processWithdrawal: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
 }
+
+// Re-export QRCodeResponse
+export type { QRCodeResponse };
