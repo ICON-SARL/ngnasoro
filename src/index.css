@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -99,18 +98,12 @@
     background-clip: text;
     display: inline-block;
   }
-  
-  /* ... keep existing code */
 }
 
-/* ... keep existing code */
-
-/* Smooth transition between light and dark mode */
 body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Modern authentication styles */
 .auth-card {
   @apply bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100;
 }

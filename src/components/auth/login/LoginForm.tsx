@@ -39,15 +39,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
   return (
     <div className="space-y-5 p-6 w-full">
       {adminMode && !isSfdAdmin && (
-        <div className="flex items-center gap-2 border border-amber-200 bg-amber-50 p-3 rounded-md">
-          <ShieldAlert className="h-5 w-5 text-amber-600" />
+        <div className="flex items-center gap-2 border border-[#f0e9d2] bg-[#fff8e6] p-3 rounded-md">
+          <ShieldAlert className="h-5 w-5 text-[#b88746]" />
           <div>
-            <h3 className="font-medium text-amber-800">Connexion Administration</h3>
-            <p className="text-xs text-amber-700">
+            <h3 className="font-medium text-[#8B5A2B]">Connexion Administration</h3>
+            <p className="text-xs text-[#a38449]">
               Accès réservé au personnel MEREF autorisé
             </p>
           </div>
-          <Badge variant="outline" className="ml-auto bg-amber-100 text-amber-800 border-amber-200">
+          <Badge variant="outline" className="ml-auto bg-[#fff2cc] text-[#8B5A2B] border-[#f0e9d2]">
             Admin MEREF
           </Badge>
         </div>
@@ -122,7 +122,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
             type="submit" 
             className={
               isSfdAdmin ? 'auth-btn-sfd' :
-              adminMode ? 'auth-btn-admin' : 
+              adminMode ? 'bg-[#b88746] hover:bg-[#a3793e] text-white auth-btn' : 
               'auth-btn-primary'
             }
             disabled={isLoading || cooldownActive}
