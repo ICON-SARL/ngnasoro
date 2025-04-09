@@ -1,32 +1,30 @@
 
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import DiscoverSfdsDialog from '../discover-sfds/DiscoverSfdsDialog';
 
-interface NoSfdAccountProps {
-  onConnect: () => void;
-}
+const NoSfdAccount: React.FC = () => {
+  const [showDiscoverDialog, setShowDiscoverDialog] = useState(false);
 
-const NoSfdAccount: React.FC<NoSfdAccountProps> = ({ onConnect }) => {
   return (
-    <Card className="border-0 shadow-md bg-white rounded-2xl overflow-hidden">
-      <CardContent className="p-4">
-        <div className="flex flex-col items-center text-center py-4">
-          <AlertCircle className="h-12 w-12 text-amber-500 mb-2" />
-          <h3 className="text-lg font-medium mb-2">Aucun compte SFD connecté</h3>
-          <p className="text-gray-500 mb-4">
-            Vous devez connecter un compte auprès d'une institution SFD pour accéder à vos soldes et prêts.
-          </p>
-          <Button 
-            className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-            onClick={onConnect}
-          >
-            Connecter un compte SFD
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="bg-white rounded-xl shadow-md p-6 text-center">
+      <h3 className="font-semibold text-xl mb-2">Pas de compte SFD</h3>
+      <p className="text-gray-600 mb-6">
+        Vous n'avez pas encore de compte auprès d'un SFD partenaire
+      </p>
+      
+      <Button 
+        onClick={() => setShowDiscoverDialog(true)}
+        className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white font-medium py-2 px-6"
+      >
+        Découvrir les SFDs
+      </Button>
+      
+      <DiscoverSfdsDialog 
+        open={showDiscoverDialog} 
+        onOpenChange={setShowDiscoverDialog} 
+      />
+    </div>
   );
 };
 

@@ -1,58 +1,74 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
-import ContextualHeader from '@/components/mobile/ContextualHeader';
-import SFDSavingsOverview from '@/components/mobile/SFDSavingsOverview';
+import { useAuth } from '@/hooks/useAuth';
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import FinancialSnapshot from '@/components/mobile/financial-snapshot/FinancialSnapshot';
 import TransactionList from '@/components/mobile/TransactionList';
-import { useMobileDashboard } from '@/hooks/useMobileDashboard';
-import { Account } from '@/types/transactions';
+import QuickActionsCard from '@/components/mobile/QuickActionsCard';
+import { Loader } from '@/components/ui/loader';
+import NoSfdAccount from '../financial-snapshot/NoSfdAccount';
 
 interface MainDashboardProps {
+  account?: any;
+  transactions?: any[];
+  transactionsLoading?: boolean;
   onAction: (action: string, data?: any) => void;
-  account: Account | null;
-  transactions: any[];
-  transactionsLoading: boolean;
   toggleMenu: () => void;
 }
 
 const MainDashboard: React.FC<MainDashboardProps> = ({
-  onAction,
   account,
-  transactions,
-  transactionsLoading,
+  transactions = [],
+  transactionsLoading = false,
+  onAction,
   toggleMenu
 }) => {
-  const { dashboardData, isLoading: dashboardLoading, refreshDashboardData } = useMobileDashboard();
-  
+  const { user, loading } = useAuth();
+  const { 
+    activeSfdAccount, 
+    sfdAccounts, 
+    isLoading: isSfdLoading 
+  } = useSfdAccounts();
+
+  if (loading || isSfdLoading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <Loader size="lg" />
+      </div>
+    );
+  }
+
+  const hasSfdAccount = sfdAccounts && sfdAccounts.length > 0;
+
   return (
-    <div className="space-y-4 pb-20">
-      <div className="bg-gradient-to-b from-[#0D6A51] to-[#0D6A51]/90 text-white p-4 rounded-b-3xl shadow-md relative">
-        <div className="absolute top-4 right-4">
-          <Button variant="ghost" size="sm" className="text-white p-1 hover:bg-white/10" onClick={toggleMenu}>
-            <Menu className="h-5 w-5" />
-          </Button>
+    <div className="container max-w-md mx-auto p-4">
+      <div className="flex flex-col space-y-4">
+        {!hasSfdAccount ? (
+          <NoSfdAccount />
+        ) : (
+          <FinancialSnapshot account={account} />
+        )}
+        
+        <QuickActionsCard onAction={onAction} />
+        
+        <div className="flex justify-between items-center mt-4">
+          <h2 className="text-xl font-bold">Transactions Récentes</h2>
+          {transactions && transactions.length > 0 && (
+            <button 
+              className="text-[#0D6A51] hover:underline text-sm font-medium"
+              onClick={() => onAction('ViewAllTransactions')}
+            >
+              Voir Prêts
+            </button>
+          )}
         </div>
-        <ContextualHeader />
+        
+        <TransactionList
+          transactions={transactions}
+          isLoading={transactionsLoading}
+          maxItems={5}
+        />
       </div>
-      
-      <div className="px-4 py-2">
-        <SFDSavingsOverview />
-      </div>
-      
-      <TransactionList 
-        transactions={(dashboardData?.transactions || transactions).map(tx => ({
-          id: tx.id,
-          name: tx.name,
-          type: tx.type,
-          amount: tx.amount.toString(),
-          date: new Date(tx.date).toLocaleDateString(),
-          avatar: tx.avatar_url
-        }))}
-        isLoading={transactionsLoading || dashboardLoading}
-        onViewAll={() => onAction('Loans')}
-        title="Transactions Récentes"
-      />
     </div>
   );
 };
