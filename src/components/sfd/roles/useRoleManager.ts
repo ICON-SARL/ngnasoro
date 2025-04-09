@@ -18,6 +18,14 @@ const SFD_PERMISSIONS = {
   MANAGE_STAFF: 'manage_staff',
 };
 
+type SfdRoleData = {
+  id: string;
+  name: string | null;
+  description: string | null;
+  permissions: string[] | null;
+  sfd_id: string | null;
+};
+
 export function useRoleManager() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -53,7 +61,7 @@ export function useRoleManager() {
       setIsLoading(true);
       try {
         // Use admin_roles table with a filter for SFD-specific roles
-        const { data: sfdRoles, error } = await supabase
+        const { data, error } = await supabase
           .from('admin_roles')
           .select('*')
           .eq('sfd_id', activeSfdId);
@@ -62,16 +70,16 @@ export function useRoleManager() {
           throw error;
         }
 
-        if (sfdRoles) {
-          // Explicitly define the type to avoid deep type instantiations
-          const roleObjects: Role[] = sfdRoles.map(role => ({
+        if (data) {
+          // Transform the data with explicit typing
+          const rolesList: Role[] = (data as SfdRoleData[]).map(role => ({
             id: role.id,
             name: role.name || '',
             description: role.description || '',
             permissions: Array.isArray(role.permissions) ? role.permissions : []
           }));
           
-          setRoles(roleObjects);
+          setRoles(rolesList);
         }
       } catch (error) {
         console.error('Error fetching SFD roles:', error);
@@ -171,21 +179,23 @@ export function useRoleManager() {
       });
 
       // Refresh roles
-      const { data: updatedRoles } = await supabase
+      const { data, error } = await supabase
         .from('admin_roles')
         .select('*')
         .eq('sfd_id', activeSfdId);
 
-      if (updatedRoles) {
-        // Explicitly define the type for role objects to prevent deep recursion
-        const roleObjects: Role[] = updatedRoles.map(role => ({
+      if (error) throw error;
+
+      if (data) {
+        // Update roles with explicit typing
+        const rolesList: Role[] = (data as SfdRoleData[]).map(role => ({
           id: role.id,
           name: role.name || '',
           description: role.description || '',
           permissions: Array.isArray(role.permissions) ? role.permissions : []
         }));
         
-        setRoles(roleObjects);
+        setRoles(rolesList);
       }
     } catch (error) {
       console.error('Error saving role:', error);
