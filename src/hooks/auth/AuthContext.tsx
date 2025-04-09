@@ -1,9 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Session, AuthError } from '@supabase/supabase-js';
+import { Session, AuthError } from '@supabase/supabase-js';
 import { SecureStorage } from '@/utils/crypto/secureStorage';
-import { UserRole, Role } from './types';
+import { UserRole, Role, User } from './types';
 
 // Clé pour le stockage biométrique local
 const BIOMETRIC_STORAGE_KEY = 'meref_biometric_enabled';
@@ -17,10 +17,17 @@ export interface AuthContextProps {
   loading: boolean;
   error: string | null;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
   signOut: () => Promise<void>;
   userRole: Role | null;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
+  isLoggedIn: boolean;
+  isAdmin: boolean;
+  isSfdAdmin: boolean;
+  activeSfdId: string | null;
+  setActiveSfdId: (sfdId: string | null) => void;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | null>(null);
@@ -32,6 +39,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<Role | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState<boolean>(false);
+  const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
+
+  // Computed properties
+  const isLoggedIn = !!user;
+  const isAdmin = userRole === 'admin';
+  const isSfdAdmin = userRole === 'sfd_admin';
 
   // Fonction pour attribuer le rôle utilisateur
   const assignUserRole = async (userId: string) => {
@@ -50,22 +63,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (data?.role) {
         setUserRole(data.role as Role);
-      } else if (user?.app_metadata?.role) {
-        setUserRole(user.app_metadata.role as Role);
-      } else if (user?.user_metadata?.role) {
-        setUserRole(user.user_metadata.role as Role);
+      } else if (session?.user?.app_metadata?.role) {
+        setUserRole(session.user.app_metadata.role as Role);
+      } else if (session?.user?.user_metadata?.role) {
+        setUserRole(session.user.user_metadata.role as Role);
       } else {
         setUserRole('user');
       }
     } catch (error) {
       console.error('Error assigning role:', error);
       // Utiliser app_metadata comme fallback
-      if (user?.app_metadata?.role) {
-        setUserRole(user.app_metadata.role as Role);
+      if (session?.user?.app_metadata?.role) {
+        setUserRole(session.user.app_metadata.role as Role);
       } else {
         setUserRole('user');
       }
     }
+  };
+
+  // Convert Supabase User to our custom User type
+  const createUserFromSupabaseUser = (supabaseUser: any): User => {
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email || '',
+      full_name: supabaseUser.user_metadata?.full_name || '',
+      avatar_url: supabaseUser.user_metadata?.avatar_url,
+      phone: supabaseUser.phone,
+      sfd_id: supabaseUser.user_metadata?.sfd_id || supabaseUser.app_metadata?.sfd_id,
+      user_metadata: {
+        ...supabaseUser.user_metadata
+      },
+      app_metadata: {
+        ...supabaseUser.app_metadata,
+        role: supabaseUser.app_metadata?.role || 
+              (supabaseUser.user_metadata?.role === 'sfd_admin' ? 'sfd_admin' : undefined) ||
+              (supabaseUser.user_metadata?.sfd_id ? 'sfd_admin' : undefined)
+      }
+    };
   };
 
   useEffect(() => {
@@ -86,31 +120,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (event, currentSession) => {
         console.log('Auth state changed:', event, currentSession?.user?.email);
         
-        if (currentSession) {
-          console.log('User authenticated with metadata:', {
-            email: currentSession.user.email,
-            role: currentSession.user.app_metadata?.role,
-            metadata: currentSession.user.app_metadata
-          });
-        }
-        
         setSession(currentSession);
-        setUser(currentSession?.user || null);
-        setLoading(false);
-
+        
         if (currentSession?.user) {
-          console.log('User authenticated:', {
-            email: currentSession.user.email,
-            role: currentSession.user.app_metadata?.role
+          const customUser = createUserFromSupabaseUser(currentSession.user);
+          setUser(customUser);
+          
+          console.log('User authenticated with metadata:', {
+            email: customUser.email,
+            role: customUser.app_metadata?.role,
+            metadata: customUser.app_metadata
           });
           
           // Attribuer le rôle après mise à jour du user state
           setTimeout(() => {
-            assignUserRole(currentSession.user.id);
+            assignUserRole(customUser.id);
           }, 0);
         } else {
+          setUser(null);
           setUserRole(null);
         }
+        
+        setLoading(false);
       }
     );
 
@@ -126,26 +157,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         
         if (currentSession) {
-          console.log('User session found, logged in as:', currentSession.user.email);
           setSession(currentSession);
-          setUser(currentSession.user || null);
           
           if (currentSession.user) {
+            const customUser = createUserFromSupabaseUser(currentSession.user);
+            setUser(customUser);
+            
             console.log('Authenticated user:', {
-              id: currentSession.user.id,
-              email: currentSession.user.email,
-              full_name: currentSession.user.user_metadata?.full_name,
-              avatar_url: currentSession.user.user_metadata?.avatar_url,
-              phone: currentSession.user.phone || '',
-              sfd_id: currentSession.user.user_metadata?.sfd_id,
-              user_metadata: currentSession.user.user_metadata,
-              app_metadata: currentSession.user.app_metadata
+              id: customUser.id,
+              email: customUser.email,
+              full_name: customUser.full_name,
+              avatar_url: customUser.avatar_url,
+              phone: customUser.phone || '',
+              sfd_id: customUser.sfd_id,
+              user_metadata: customUser.user_metadata,
+              app_metadata: customUser.app_metadata
             });
             
-            console.log('User role:', currentSession.user.app_metadata?.role);
-            
             // Attribuer le rôle utilisateur
-            await assignUserRole(currentSession.user.id);
+            await assignUserRole(customUser.id);
           }
         }
       } catch (error) {
@@ -187,6 +217,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Sign up new user
+  const signUp = async (email: string, password: string, metadata?: Record<string, any>) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata || {}
+        }
+      });
+
+      if (error) {
+        setError(error.message);
+        console.error('Signup error:', error);
+      }
+    } catch (err) {
+      setError('Une erreur inattendue est survenue lors de l\'inscription');
+      console.error('Unexpected signup error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Déconnexion utilisateur
   const signOut = async () => {
     setLoading(true);
@@ -197,6 +253,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Sign out error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Refresh the session
+  const refreshSession = async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error('Error refreshing session:', error);
+        return;
+      }
+      
+      setSession(data.session);
+      if (data.session?.user) {
+        const customUser = createUserFromSupabaseUser(data.session.user);
+        setUser(customUser);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error refreshing session:', error);
     }
   };
 
@@ -217,10 +294,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     error,
     signIn,
+    signUp,
     signOut,
     userRole,
     biometricEnabled,
-    toggleBiometricAuth
+    toggleBiometricAuth,
+    isLoggedIn,
+    isAdmin,
+    isSfdAdmin,
+    activeSfdId,
+    setActiveSfdId,
+    refreshSession
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

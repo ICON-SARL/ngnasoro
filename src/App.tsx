@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { AuthProvider } from './hooks/auth';
+import { AuthProvider } from './hooks/auth/AuthContext';
 import { ToasterProvider } from './components/ToasterProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
