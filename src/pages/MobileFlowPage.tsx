@@ -75,7 +75,7 @@ const MobileFlowPage = () => {
   
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col">
-      <div className="p-2">
+      <div className="p-2 bg-[#0D6A51] rounded-b-3xl shadow-md">
         <ContextualHeader />
       </div>
       <main className="flex-1 w-full h-full pb-16">

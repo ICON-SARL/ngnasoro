@@ -30,7 +30,7 @@ const MobileFlow: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full min-h-screen w-full">
-      <div className="p-2">
+      <div className="p-2 bg-[#0D6A51] rounded-b-3xl shadow-md">
         <ContextualHeader />
       </div>
       <div className="flex-grow overflow-auto pb-16 w-full">
