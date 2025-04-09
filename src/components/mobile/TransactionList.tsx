@@ -11,32 +11,20 @@ interface Transaction {
   id: number | string;
   name: string;
   type: string;
-  amount: number; // Changed to number to match the actual data type
+  amount: string;
   date: string;
   avatar: string | null;
-  sfdName?: string;
+  sfdName?: string; // Added SFD information
 }
 
 interface TransactionListProps {
   transactions: Transaction[];
   isLoading?: boolean;
   onViewAll?: () => void;
-  title?: string;
-  maxItems?: number; // Added maxItems prop
+  title?: string; // Added optional title prop
 }
 
-const TransactionList = ({ 
-  transactions, 
-  isLoading = false, 
-  onViewAll, 
-  title = "Transactions Récentes", 
-  maxItems 
-}: TransactionListProps) => {
-  // If maxItems is defined, limit the number of transactions
-  const displayTransactions = maxItems 
-    ? transactions.slice(0, maxItems) 
-    : transactions;
-
+const TransactionList = ({ transactions, isLoading = false, onViewAll, title = "Transactions Récentes" }: TransactionListProps) => {
   return (
     <div className="px-4 mt-3 mb-20">
       <div className="flex items-center justify-between mb-3">
@@ -69,9 +57,9 @@ const TransactionList = ({
                 <Skeleton className="h-4 w-16" />
               </div>
             ))
-          ) : displayTransactions.length > 0 ? (
+          ) : transactions.length > 0 ? (
             // Transactions list
-            displayTransactions.map((transaction) => (
+            transactions.map((transaction) => (
               <div 
                 key={transaction.id}
                 className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0"
@@ -99,16 +87,12 @@ const TransactionList = ({
                 </div>
                 <p 
                   className={`font-semibold ${
-                    // Here's the fix: Check if the amount is greater than 0 instead of using startsWith
-                    transaction.amount > 0 
+                    transaction.amount.startsWith('+') || !transaction.amount.startsWith('-') 
                       ? 'text-lime-600' 
                       : 'text-gray-800'
                   }`}
                 >
-                  {/* Format the amount as a string with the appropriate sign */}
-                  {transaction.amount > 0 
-                    ? `+${transaction.amount}` 
-                    : transaction.amount}
+                  {transaction.amount}
                 </p>
               </div>
             ))

@@ -1,86 +1,58 @@
 
 import React from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useSfdAccounts } from '@/hooks/useSfdAccounts';
-import FinancialSnapshot from '@/components/mobile/financial-snapshot/FinancialSnapshot';
+import { Button } from '@/components/ui/button';
+import { Menu } from 'lucide-react';
+import ContextualHeader from '@/components/mobile/ContextualHeader';
+import SFDSavingsOverview from '@/components/mobile/SFDSavingsOverview';
 import TransactionList from '@/components/mobile/TransactionList';
-import QuickActionsCard from '@/components/mobile/QuickActionsCard';
-import { Loader } from '@/components/ui/loader';
-import NoSfdAccount from '../financial-snapshot/NoSfdAccount';
+import { useMobileDashboard } from '@/hooks/useMobileDashboard';
+import { Account } from '@/types/transactions';
 
 interface MainDashboardProps {
-  account?: any;
-  transactions?: any[];
-  transactionsLoading?: boolean;
   onAction: (action: string, data?: any) => void;
+  account: Account | null;
+  transactions: any[];
+  transactionsLoading: boolean;
   toggleMenu: () => void;
 }
 
 const MainDashboard: React.FC<MainDashboardProps> = ({
-  account,
-  transactions = [],
-  transactionsLoading = false,
   onAction,
+  account,
+  transactions,
+  transactionsLoading,
   toggleMenu
 }) => {
-  const { user, loading } = useAuth();
-  const { 
-    activeSfdAccount, 
-    sfdAccounts, 
-    isLoading: isSfdLoading 
-  } = useSfdAccounts();
-
-  if (loading || isSfdLoading) {
-    return (
-      <div className="flex justify-center items-center h-40">
-        <Loader size="lg" />
-      </div>
-    );
-  }
-
-  const hasSfdAccount = sfdAccounts && sfdAccounts.length > 0;
-
-  // Ensure that the transactions are in the right format for the TransactionList component
-  const formattedTransactions = transactions.map(tx => ({
-    id: tx.id,
-    name: tx.name || tx.type,
-    type: tx.type,
-    amount: Number(tx.amount), // Ensure amount is a number
-    date: tx.date || new Date(tx.created_at).toLocaleDateString('fr-FR'),
-    avatar: tx.avatar_url,
-    sfdName: tx.sfdName
-  }));
-
+  const { dashboardData, isLoading: dashboardLoading, refreshDashboardData } = useMobileDashboard();
+  
   return (
-    <div className="container max-w-md mx-auto p-4">
-      <div className="flex flex-col space-y-4">
-        {!hasSfdAccount ? (
-          <NoSfdAccount />
-        ) : (
-          <FinancialSnapshot account={account} />
-        )}
-        
-        <QuickActionsCard onAction={onAction} />
-        
-        <div className="flex justify-between items-center mt-4">
-          <h2 className="text-xl font-bold">Transactions Récentes</h2>
-          {transactions && transactions.length > 0 && (
-            <button 
-              className="text-[#0D6A51] hover:underline text-sm font-medium"
-              onClick={() => onAction('ViewAllTransactions')}
-            >
-              Voir Prêts
-            </button>
-          )}
+    <div className="space-y-4 pb-20">
+      <div className="bg-gradient-to-b from-[#0D6A51] to-[#0D6A51]/90 text-white p-4 rounded-b-3xl shadow-md relative">
+        <div className="absolute top-4 right-4">
+          <Button variant="ghost" size="sm" className="text-white p-1 hover:bg-white/10" onClick={toggleMenu}>
+            <Menu className="h-5 w-5" />
+          </Button>
         </div>
-        
-        <TransactionList
-          transactions={formattedTransactions}
-          isLoading={transactionsLoading}
-          maxItems={5}
-          onViewAll={() => onAction('ViewAllTransactions')}
-        />
+        <ContextualHeader />
       </div>
+      
+      <div className="px-4 py-2">
+        <SFDSavingsOverview />
+      </div>
+      
+      <TransactionList 
+        transactions={(dashboardData?.transactions || transactions).map(tx => ({
+          id: tx.id,
+          name: tx.name,
+          type: tx.type,
+          amount: tx.amount.toString(),
+          date: new Date(tx.date).toLocaleDateString(),
+          avatar: tx.avatar_url
+        }))}
+        isLoading={transactionsLoading || dashboardLoading}
+        onViewAll={() => onAction('Loans')}
+        title="Transactions Récentes"
+      />
     </div>
   );
 };

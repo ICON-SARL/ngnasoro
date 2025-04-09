@@ -1,13 +1,19 @@
 
-export interface SfdAccount {
+// Define a more generic account type that works with both data sources
+export interface SfdAccountDisplay {
   id: string;
   name: string;
-  code: string;
+  logoUrl?: string;
   region?: string;
-  logo_url?: string;
-  is_default?: boolean;
+  code?: string;
+  isDefault?: boolean;
+  balance: number;
+  currency: string;
+  isVerified?: boolean;
+  status?: 'active' | 'pending' | 'inactive';
 }
 
+// Type for SFDs available to connect to
 export interface AvailableSfd {
   id: string;
   name: string;
@@ -17,21 +23,10 @@ export interface AvailableSfd {
   status: string;
 }
 
+// Type for SFD client request status
 export interface SfdClientRequest {
   id: string;
   sfd_id: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'validated' | 'rejected' | string; // Allow any string to accommodate database values
   created_at: string;
-}
-
-export interface SfdAccountItem {
-  id: string;
-  is_default: boolean;
-  sfds: {
-    id: string;
-    name: string;
-    code: string;
-    region?: string;
-    logo_url?: string;
-  };
 }
