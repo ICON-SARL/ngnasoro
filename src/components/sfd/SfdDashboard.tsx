@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { AgencyHeader } from '@/components/AgencyHeader';
-import { SfdDashboardStats } from '@/components/sfd/dashboard';
+import { SfdDashboardStats } from '@/components/sfd/dashboard/SfdDashboardStats';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { SfdSelector } from '@/components/sfd/SfdSelector';
 import { 
   ChevronRight, 
   Users, 
@@ -24,14 +26,22 @@ import { InitializeDemoData } from '@/components/sfd/InitializeDemoData';
 export function SfdDashboard() {
   const { user, activeSfdId } = useAuth();
   const navigate = useNavigate();
-  const { clientStats, isLoading: isLoadingClients } = useSfdClientStats(activeSfdId);
-  const { loanStats, isLoading: isLoadingLoans } = useSfdLoanStats(activeSfdId);
-  const { subsidyRequests, isLoading: isLoadingSubsidies } = useSfdSubsidyRequests({ 
+  const [selectorOpen, setSelectorOpen] = useState(!activeSfdId);
+  const { clientStats } = useSfdClientStats(activeSfdId);
+  const { loanStats } = useSfdLoanStats(activeSfdId);
+  const { subsidyRequests } = useSfdSubsidyRequests({ 
     status: 'pending',
     sfdId: activeSfdId
   });
 
-  if (!activeSfdId) {
+  // Open the SFD selector if no SFD is selected
+  useEffect(() => {
+    if (!activeSfdId) {
+      setSelectorOpen(true);
+    }
+  }, [activeSfdId]);
+
+  if (!activeSfdId && !selectorOpen) {
     return (
       <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
         <Card className="max-w-md w-full">
@@ -46,7 +56,7 @@ export function SfdDashboard() {
               Vous devez sélectionner un SFD pour accéder au tableau de bord.
             </p>
             <Button 
-              onClick={() => navigate('/profile')}
+              onClick={() => setSelectorOpen(true)}
               className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
             >
               Sélectionner un SFD
@@ -60,6 +70,13 @@ export function SfdDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <AgencyHeader />
+      
+      {/* SFD Selector Dialog */}
+      <SfdSelector 
+        isOpen={selectorOpen}
+        onClose={() => setSelectorOpen(false)}
+        onSfdSelected={() => setSelectorOpen(false)}
+      />
       
       <div className="container mx-auto p-4 md:p-6">
         <div className="flex justify-between items-center mb-6">
@@ -75,22 +92,22 @@ export function SfdDashboard() {
             <Button 
               variant="outline" 
               className="flex items-center gap-1"
-              onClick={() => navigate('/sfd-clients')}
+              onClick={() => setSelectorOpen(true)}
+            >
+              <TrendingUp className="h-4 w-4" />
+              Changer de SFD
+            </Button>
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-1"
+              onClick={() => navigate('/sfd/clients')}
             >
               <Users className="h-4 w-4" />
               Gérer les Clients
             </Button>
             <Button 
-              variant="outline" 
-              className="flex items-center gap-1"
-              onClick={() => navigate('/sfd-subsidy-requests')}
-            >
-              <FileText className="h-4 w-4" />
-              Demandes de Subvention
-            </Button>
-            <Button 
               className="flex items-center gap-1 bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-              onClick={() => navigate('/sfd-loans')}
+              onClick={() => navigate('/sfd/loans')}
             >
               <CreditCard className="h-4 w-4" />
               Gérer les Crédits
@@ -128,18 +145,14 @@ export function SfdDashboard() {
                 variant="ghost" 
                 size="sm" 
                 className="text-xs flex items-center"
-                onClick={() => navigate('/sfd-subsidy-requests')}
+                onClick={() => navigate('/sfd/subsidy-requests')}
               >
                 Voir tout
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </CardHeader>
             <CardContent>
-              {isLoadingSubsidies ? (
-                <div className="flex justify-center p-6">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-800" />
-                </div>
-              ) : subsidyRequests.length === 0 ? (
+              {subsidyRequests.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   Aucune demande récente
                 </div>
@@ -156,7 +169,7 @@ export function SfdDashboard() {
                       <Button 
                         size="sm" 
                         variant="outline"
-                        onClick={() => navigate(`/sfd-subsidy-requests/${request.id}`)}
+                        onClick={() => navigate(`/sfd/subsidy-requests/${request.id}`)}
                       >
                         Détails
                       </Button>
