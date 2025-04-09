@@ -7,6 +7,7 @@ import MobileNavigation from '@/components/MobileNavigation';
 import MobileFlowRoutes from '@/components/mobile/routes/MobileFlowRoutes';
 import ContextualHeader from '@/components/mobile/ContextualHeader';
 import { Account } from '@/types/transactions';
+import { useQueryClient } from '@tanstack/react-query'; // Import useQueryClient hook
 
 const MobileFlowPage = () => {
   const location = useLocation();
@@ -14,6 +15,7 @@ const MobileFlowPage = () => {
   const { user, loading: isLoading, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const queryClient = useQueryClient(); // Get query client from context
   
   // Vérifier si l'utilisateur est authentifié
   useEffect(() => {
