@@ -1,19 +1,26 @@
 
 import React from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { SfdHeader } from '@/components/sfd/SfdHeader';
-import { ClientManagementSystem } from '@/components/sfd/ClientManagementSystem';
 
 const SfdClientsPage = () => {
-  const { isAdmin } = useAuth();
-  
   return (
     <div className="min-h-screen bg-gray-50">
-      {isAdmin ? <SuperAdminHeader /> : <SfdHeader />}
+      <SfdHeader />
       
       <div className="container mx-auto py-6 px-4">
-        <ClientManagementSystem />
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">Gestion des Clients</h1>
+          <p className="text-muted-foreground">
+            Gérez les comptes clients et leurs informations
+          </p>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
+          {/* Client management content will go here */}
+          <p className="text-center text-muted-foreground py-8">
+            Fonctionnalité de gestion des clients en cours de développement
+          </p>
+        </div>
       </div>
     </div>
   );

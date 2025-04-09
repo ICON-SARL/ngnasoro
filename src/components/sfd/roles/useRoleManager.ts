@@ -1,71 +1,111 @@
 
-import { useState } from 'react';
-import { toast } from '@/hooks/use-toast';
+import { useState, useEffect } from 'react';
 import { Role, Permission, NewRoleData } from './types';
-import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { v4 as uuidv4 } from 'uuid';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useRoleManager() {
   const { activeSfdId } = useAuth();
-  const [roles, setRoles] = useState<Role[]>([
-    {
-      id: '1',
-      name: 'Administrateur SFD',
-      description: 'Accès complet à la gestion de la SFD',
-      permissions: ['manage_clients', 'manage_loans', 'approve_loans', 'manage_staff', 'view_reports', 'export_data']
-    },
-    {
-      id: '2',
-      name: 'Agent de crédit',
-      description: 'Gestion des demandes de prêts et suivi des clients',
-      permissions: ['view_clients', 'manage_loans', 'view_reports']
-    },
-    {
-      id: '3',
-      name: 'Caissier',
-      description: 'Gestion des opérations de caisse',
-      permissions: ['view_clients', 'process_transactions']
-    }
-  ]);
-
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [permissions, setPermissions] = useState<Permission[]>([]);
   const [showNewRoleDialog, setShowNewRoleDialog] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  
   const [newRole, setNewRole] = useState<NewRoleData>({
     name: '',
     description: '',
     permissions: []
   });
 
-  const permissions: Permission[] = [
-    { id: 'manage_clients', name: 'Gestion des clients', description: 'Ajouter, modifier et supprimer des clients' },
-    { id: 'view_clients', name: 'Voir les clients', description: 'Consulter les informations des clients' },
-    { id: 'manage_loans', name: 'Gestion des prêts', description: 'Créer et gérer des demandes de prêt' },
-    { id: 'approve_loans', name: 'Approuver les prêts', description: 'Autorité finale pour approuver les demandes de prêt' },
-    { id: 'process_transactions', name: 'Traiter les transactions', description: 'Effectuer des opérations de caisse (dépôts, retraits)' },
-    { id: 'manage_staff', name: 'Gestion du personnel', description: 'Ajouter et gérer le personnel de la SFD' },
-    { id: 'view_reports', name: 'Voir les rapports', description: 'Accès aux rapports et statistiques' },
-    { id: 'export_data', name: 'Exporter les données', description: 'Exporter les données vers Excel ou PDF' },
-    { id: 'manage_settings', name: 'Paramètres système', description: 'Modifier les paramètres de la SFD' },
-    { id: 'view_audit_logs', name: 'Journal d\'audit', description: 'Consulter les journaux d\'activité' }
-  ];
+  // Fetch roles and permissions
+  useEffect(() => {
+    if (activeSfdId) {
+      fetchRoles();
+      fetchPermissions();
+    }
+  }, [activeSfdId]);
+
+  const fetchRoles = async () => {
+    if (!activeSfdId) return;
+    
+    try {
+      // In a real app, this would be an API call to fetch roles for the specific SFD
+      // For now, we'll use dummy data or fetch from localStorage
+      const { data, error } = await supabase
+        .from('sfd_roles')
+        .select('*')
+        .eq('sfd_id', activeSfdId);
+        
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setRoles(data as Role[]);
+      } else {
+        // Initialize with default roles if none exist
+        const defaultRoles = getDefaultRoles();
+        setRoles(defaultRoles);
+        
+        // In a real app, would save these to the database
+        for (const role of defaultRoles) {
+          await supabase.from('sfd_roles').insert({
+            ...role,
+            sfd_id: activeSfdId
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      // Fallback to default roles
+      setRoles(getDefaultRoles());
+    }
+  };
+
+  const fetchPermissions = async () => {
+    try {
+      // In a real app, fetch permissions from API
+      // For now, use dummy data
+      const { data, error } = await supabase
+        .from('sfd_permissions')
+        .select('*');
+        
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setPermissions(data as Permission[]);
+      } else {
+        // Initialize with default permissions
+        setPermissions(getDefaultPermissions());
+      }
+    } catch (error) {
+      console.error('Error fetching permissions:', error);
+      setPermissions(getDefaultPermissions());
+    }
+  };
 
   const handleTogglePermission = (permissionId: string) => {
     setNewRole(prev => {
-      const updatedPermissions = prev.permissions?.includes(permissionId)
-        ? prev.permissions.filter(id => id !== permissionId)
-        : [...(prev.permissions || []), permissionId];
-      
-      return { ...prev, permissions: updatedPermissions };
+      const hasPermission = prev.permissions.includes(permissionId);
+      if (hasPermission) {
+        return {
+          ...prev,
+          permissions: prev.permissions.filter(id => id !== permissionId)
+        };
+      } else {
+        return {
+          ...prev,
+          permissions: [...prev.permissions, permissionId]
+        };
+      }
     });
   };
 
   const handleSaveNewRole = async () => {
-    if (!newRole.name) {
+    if (!newRole.name.trim()) {
       toast({
-        title: 'Erreur',
-        description: 'Le nom du rôle est requis',
-        variant: 'destructive'
+        title: "Erreur de validation",
+        description: "Le nom du rôle est requis.",
+        variant: "destructive"
       });
       return;
     }
@@ -73,52 +113,93 @@ export function useRoleManager() {
     try {
       if (isEditMode && newRole.id) {
         // Update existing role
-        // In a real implementation, this would update the role in the database
-        setRoles(prevRoles => 
-          prevRoles.map(role => 
-            role.id === newRole.id 
-              ? {
-                  ...role,
-                  name: newRole.name,
-                  description: newRole.description || '',
-                  permissions: newRole.permissions || []
-                }
-              : role
-          )
-        );
+        const updatedRole: Role = {
+          id: newRole.id,
+          name: newRole.name,
+          description: newRole.description,
+          permissions: newRole.permissions
+        };
         
-        toast({
-          title: 'Rôle mis à jour',
-          description: `Le rôle ${newRole.name} a été mis à jour avec succès`,
-          variant: 'default'
-        });
+        const roleIndex = roles.findIndex(role => role.id === newRole.id);
+        if (roleIndex !== -1) {
+          const updatedRoles = [...roles];
+          updatedRoles[roleIndex] = updatedRole;
+          setRoles(updatedRoles);
+          
+          // In a real app, update in database
+          await supabase
+            .from('sfd_roles')
+            .update(updatedRole)
+            .eq('id', newRole.id);
+          
+          toast({
+            title: "Rôle mis à jour",
+            description: `Le rôle "${newRole.name}" a été mis à jour avec succès.`
+          });
+        }
       } else {
         // Create new role
-        const newId = Date.now().toString();
-        const role: Role = {
-          id: newId,
+        const newRoleWithId: Role = {
+          id: uuidv4(),
           name: newRole.name,
-          description: newRole.description || '',
-          permissions: newRole.permissions || []
+          description: newRole.description,
+          permissions: newRole.permissions
         };
-
-        setRoles([...roles, role]);
+        
+        setRoles([...roles, newRoleWithId]);
+        
+        // In a real app, save to database
+        await supabase
+          .from('sfd_roles')
+          .insert({
+            ...newRoleWithId,
+            sfd_id: activeSfdId
+          });
         
         toast({
-          title: 'Rôle ajouté',
-          description: `Le rôle ${role.name} a été créé avec succès`,
-          variant: 'default'
+          title: "Rôle créé",
+          description: `Le rôle "${newRole.name}" a été créé avec succès.`
         });
       }
-
-      setNewRole({ name: '', description: '', permissions: [] });
-      setShowNewRoleDialog(false);
+      
+      // Reset form
+      setNewRole({
+        name: '',
+        description: '',
+        permissions: []
+      });
       setIsEditMode(false);
-    } catch (error: any) {
+      setShowNewRoleDialog(false);
+    } catch (error) {
+      console.error('Error saving role:', error);
       toast({
-        title: 'Erreur',
-        description: `Une erreur est survenue: ${error.message}`,
-        variant: 'destructive'
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'enregistrement du rôle.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteRole = async (roleId: string) => {
+    try {
+      setRoles(roles.filter(role => role.id !== roleId));
+      
+      // In a real app, delete from database
+      await supabase
+        .from('sfd_roles')
+        .delete()
+        .eq('id', roleId);
+      
+      toast({
+        title: "Rôle supprimé",
+        description: "Le rôle a été supprimé avec succès."
+      });
+    } catch (error) {
+      console.error('Error deleting role:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la suppression du rôle.",
+        variant: "destructive"
       });
     }
   };
@@ -134,17 +215,6 @@ export function useRoleManager() {
     setShowNewRoleDialog(true);
   };
 
-  const handleDeleteRole = (roleId: string) => {
-    // In a real implementation, this would delete the role from the database
-    setRoles(prevRoles => prevRoles.filter(role => role.id !== roleId));
-    
-    toast({
-      title: 'Rôle supprimé',
-      description: 'Le rôle a été supprimé avec succès',
-      variant: 'default'
-    });
-  };
-
   return {
     roles,
     permissions,
@@ -156,7 +226,45 @@ export function useRoleManager() {
     handleSaveNewRole,
     handleDeleteRole,
     handleEditRole,
-    isEditMode,
-    setIsEditMode
+    isEditMode
   };
+}
+
+// Helper functions to provide default data
+function getDefaultRoles(): Role[] {
+  return [
+    {
+      id: '1',
+      name: 'Caissier',
+      description: 'Gère les opérations de caisse et les transactions en agence',
+      permissions: ['transaction_deposit', 'transaction_withdraw']
+    },
+    {
+      id: '2',
+      name: 'Agent de Crédit',
+      description: 'Évalue les demandes de crédit et gère les dossiers de prêt',
+      permissions: ['loan_create', 'loan_approve', 'client_view']
+    },
+    {
+      id: '3',
+      name: 'Manager d\'Agence',
+      description: 'Supervise les opérations quotidiennes de l\'agence',
+      permissions: ['transaction_deposit', 'transaction_withdraw', 'loan_create', 'loan_approve', 'client_view', 'client_create', 'report_view']
+    }
+  ];
+}
+
+function getDefaultPermissions(): Permission[] {
+  return [
+    { id: 'client_view', name: 'Consulter les clients', description: 'Voir les informations des clients' },
+    { id: 'client_create', name: 'Créer des clients', description: 'Ajouter de nouveaux clients' },
+    { id: 'client_edit', name: 'Modifier les clients', description: 'Modifier les informations des clients existants' },
+    { id: 'loan_create', name: 'Créer des prêts', description: 'Initier des demandes de prêt' },
+    { id: 'loan_approve', name: 'Approuver des prêts', description: 'Valider les demandes de prêt' },
+    { id: 'loan_disburse', name: 'Débloquer des prêts', description: 'Effectuer le décaissement des prêts approuvés' },
+    { id: 'transaction_deposit', name: 'Dépôts', description: 'Enregistrer les dépôts clients' },
+    { id: 'transaction_withdraw', name: 'Retraits', description: 'Effectuer des retraits pour les clients' },
+    { id: 'report_view', name: 'Voir les rapports', description: 'Accéder aux rapports et statistiques' },
+    { id: 'report_export', name: 'Exporter les rapports', description: 'Exporter les rapports en PDF ou Excel' },
+  ];
 }

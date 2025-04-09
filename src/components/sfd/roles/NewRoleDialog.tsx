@@ -1,12 +1,11 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { PermissionList } from '@/components/admin/roles/PermissionList';
-import { Permission, NewRoleData } from './types';
+import { NewRoleData, Permission } from './types';
+import { PermissionList } from './PermissionList';
 
 interface NewRoleDialogProps {
   isOpen: boolean;
@@ -17,7 +16,7 @@ interface NewRoleDialogProps {
   onDescriptionChange: (description: string) => void;
   onTogglePermission: (permissionId: string) => void;
   onSave: () => void;
-  isEditMode?: boolean;
+  isEditMode: boolean;
 }
 
 export function NewRoleDialog({
@@ -29,47 +28,48 @@ export function NewRoleDialog({
   onDescriptionChange,
   onTogglePermission,
   onSave,
-  isEditMode = false
+  isEditMode,
 }: NewRoleDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? 'Modifier le Rôle' : 'Créer un Nouveau Rôle'}</DialogTitle>
-          <DialogDescription>
-            {isEditMode 
-              ? 'Modifiez les détails et les permissions du rôle.' 
-              : 'Définissez un nouveau rôle et ses permissions associées.'}
-          </DialogDescription>
+          <DialogTitle>
+            {isEditMode ? 'Modifier le Rôle' : 'Nouveau Rôle'}
+          </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nom du rôle</Label>
-            <Input 
-              id="name" 
-              placeholder="Nom du rôle" 
+            <label htmlFor="role-name" className="text-sm font-medium">
+              Nom du Rôle
+            </label>
+            <Input
+              id="role-name"
               value={newRole.name}
               onChange={(e) => onNameChange(e.target.value)}
+              placeholder="Ex: Caissier, Agent de Crédit..."
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea 
-              id="description" 
-              placeholder="Description du rôle" 
+            <label htmlFor="role-description" className="text-sm font-medium">
+              Description
+            </label>
+            <Textarea
+              id="role-description"
               value={newRole.description}
               onChange={(e) => onDescriptionChange(e.target.value)}
-              className="resize-none"
+              placeholder="Description des responsabilités de ce rôle..."
+              rows={3}
             />
           </div>
           
           <div className="space-y-2">
-            <Label>Permissions</Label>
-            <PermissionList 
-              permissions={permissions} 
-              selectedPermissions={newRole.permissions || []} 
+            <label className="text-sm font-medium">Permissions</label>
+            <PermissionList
+              permissions={permissions}
+              selectedPermissions={newRole.permissions}
               onTogglePermission={onTogglePermission}
             />
           </div>
@@ -79,7 +79,10 @@ export function NewRoleDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
-          <Button onClick={onSave}>
+          <Button 
+            onClick={onSave}
+            disabled={!newRole.name.trim()}
+          >
             {isEditMode ? 'Mettre à jour' : 'Créer'}
           </Button>
         </DialogFooter>
