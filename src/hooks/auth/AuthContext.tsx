@@ -2,33 +2,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, AuthError } from '@supabase/supabase-js';
-import { SecureStorage } from '@/utils/crypto/secureStorage';
-import { UserRole, Role, User } from './types';
-
-// Clé pour le stockage biométrique local
-const BIOMETRIC_STORAGE_KEY = 'meref_biometric_enabled';
-const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || 'secure_meref_key';
-
-const secureStorage = new SecureStorage(BIOMETRIC_STORAGE_KEY, ENCRYPTION_KEY);
-
-export interface AuthContextProps {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  error: string | null;
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
-  signOut: () => Promise<void>;
-  userRole: Role | null;
-  biometricEnabled: boolean;
-  toggleBiometricAuth: () => Promise<void>;
-  isLoggedIn: boolean;
-  isAdmin: boolean;
-  isSfdAdmin: boolean;
-  activeSfdId: string | null;
-  setActiveSfdId: (sfdId: string | null) => void;
-  refreshSession: () => Promise<void>;
-}
+import { secureStorage, getBiometricSettings, toggleBiometricAuthentication } from './secureStorageService';
+import { User, Role, AuthContextProps } from './types';
+import { createUserFromSupabaseUser, assignUserRole } from './authUtils';
 
 const AuthContext = createContext<AuthContextProps | null>(null);
 
@@ -46,76 +22,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdmin = userRole === 'admin';
   const isSfdAdmin = userRole === 'sfd_admin';
 
-  // Fonction pour attribuer le rôle utilisateur
-  const assignUserRole = async (userId: string) => {
-    try {
-      // Utiliser une requête avec une table spécifique pour éviter l'ambiguïté
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_roles.user_id', userId)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error assigning role:', error);
-        return;
-      }
-      
-      if (data?.role) {
-        setUserRole(data.role as Role);
-      } else if (session?.user?.app_metadata?.role) {
-        setUserRole(session.user.app_metadata.role as Role);
-      } else if (session?.user?.user_metadata?.role) {
-        setUserRole(session.user.user_metadata.role as Role);
-      } else {
-        setUserRole('user');
-      }
-    } catch (error) {
-      console.error('Error assigning role:', error);
-      // Utiliser app_metadata comme fallback
-      if (session?.user?.app_metadata?.role) {
-        setUserRole(session.user.app_metadata.role as Role);
-      } else {
-        setUserRole('user');
-      }
-    }
-  };
-
-  // Convert Supabase User to our custom User type
-  const createUserFromSupabaseUser = (supabaseUser: any): User => {
-    return {
-      id: supabaseUser.id,
-      email: supabaseUser.email || '',
-      full_name: supabaseUser.user_metadata?.full_name || '',
-      avatar_url: supabaseUser.user_metadata?.avatar_url,
-      phone: supabaseUser.phone,
-      sfd_id: supabaseUser.user_metadata?.sfd_id || supabaseUser.app_metadata?.sfd_id,
-      user_metadata: {
-        ...supabaseUser.user_metadata
-      },
-      app_metadata: {
-        ...supabaseUser.app_metadata,
-        role: supabaseUser.app_metadata?.role || 
-              (supabaseUser.user_metadata?.role === 'sfd_admin' ? 'sfd_admin' : undefined) ||
-              (supabaseUser.user_metadata?.sfd_id ? 'sfd_admin' : undefined)
-      }
-    };
-  };
-
   useEffect(() => {
-    // Vérifier si l'authentification biométrique est activée
-    const checkBiometricSettings = () => {
-      const storedSettings = secureStorage.getItem<{ enabled: boolean }>();
-      setBiometricEnabled(!!storedSettings?.enabled);
-    };
-
-    checkBiometricSettings();
+    // Check if biometric authentication is enabled
+    setBiometricEnabled(getBiometricSettings());
   }, []);
 
   useEffect(() => {
     console.log('Setting up auth state listener and checking session');
     
-    // Configurer l'écouteur d'état d'authentification
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log('Auth state changed:', event, currentSession?.user?.email);
@@ -132,9 +47,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             metadata: customUser.app_metadata
           });
           
-          // Attribuer le rôle après mise à jour du user state
+          // Assign user role after user state update
           setTimeout(() => {
-            assignUserRole(customUser.id);
+            handleUserRoleAssignment(customUser.id);
           }, 0);
         } else {
           setUser(null);
@@ -145,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // Vérifier la session existante
+    // Check existing session
     const checkCurrentSession = async () => {
       try {
         const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
@@ -174,8 +89,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               app_metadata: customUser.app_metadata
             });
             
-            // Attribuer le rôle utilisateur
-            await assignUserRole(customUser.id);
+            // Assign user role
+            await handleUserRoleAssignment(customUser.id);
           }
         }
       } catch (error) {
@@ -187,13 +102,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     checkCurrentSession();
 
-    // Nettoyer l'écouteur
+    // Clean up listener
     return () => {
       subscription.unsubscribe();
     };
   }, []);
+  
+  // Handle user role assignment with fallbacks
+  const handleUserRoleAssignment = async (userId: string) => {
+    try {
+      // First try to get role from user_roles table
+      const roleFromTable = await assignUserRole(userId);
+      
+      if (roleFromTable) {
+        setUserRole(roleFromTable);
+        return;
+      }
+      
+      // Fallback to app_metadata
+      if (session?.user?.app_metadata?.role) {
+        setUserRole(session.user.app_metadata.role as Role);
+        return;
+      }
+      
+      // Fallback to user_metadata
+      if (session?.user?.user_metadata?.role) {
+        setUserRole(session.user.user_metadata.role as Role);
+        return;
+      }
+      
+      // Default role
+      setUserRole('user');
+    } catch (error) {
+      console.error('Error in handleUserRoleAssignment:', error);
+      // Final fallback
+      if (session?.user?.app_metadata?.role) {
+        setUserRole(session.user.app_metadata.role as Role);
+      } else {
+        setUserRole('user');
+      }
+    }
+  };
 
-  // Connexion utilisateur
+  // SignIn function
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
@@ -217,7 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Sign up new user
+  // SignUp function
   const signUp = async (email: string, password: string, metadata?: Record<string, any>) => {
     setLoading(true);
     setError(null);
@@ -243,12 +194,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Déconnexion utilisateur
+  // SignOut function
   const signOut = async () => {
     setLoading(true);
     try {
       await supabase.auth.signOut();
-      // Pas besoin de réinitialiser user et session car onAuthStateChange le fera
+      // AuthStateChange will handle resetting user and session
     } catch (err) {
       console.error('Sign out error:', err);
     } finally {
@@ -256,7 +207,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Refresh the session
+  // Refresh session
   const refreshSession = async () => {
     try {
       const { data, error } = await supabase.auth.refreshSession();
@@ -277,14 +228,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Activer/désactiver l'authentification biométrique
+  // Toggle biometric authentication
   const toggleBiometricAuth = async () => {
-    const newState = !biometricEnabled;
-    
-    // Mettre à jour le stockage local sécurisé
-    secureStorage.setItem({ enabled: newState });
+    const newState = toggleBiometricAuthentication(biometricEnabled);
     setBiometricEnabled(newState);
-    
     return Promise.resolve();
   };
 
@@ -310,6 +257,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// Custom hook for using auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
