@@ -15,6 +15,17 @@ export interface UserSettings {
   offline_mode_enabled: boolean;
 }
 
+// Paramètres par défaut
+const defaultSettings: Omit<UserSettings, 'id'> = {
+  user_id: '',
+  push_notifications_enabled: true,
+  email_notifications_enabled: false,
+  sms_notifications_enabled: true,
+  app_language: 'french',
+  theme: 'light',
+  offline_mode_enabled: false
+};
+
 export function useUserSettings() {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,59 +42,79 @@ export function useUserSettings() {
       try {
         setLoading(true);
         
-        // Utiliser la version typée mais avec any
+        // Vérifier si la table existe
+        const { error: tableCheckError } = await supabase
+          .from('user_settings')
+          .select('id')
+          .limit(1);
+        
+        // Si la table n'existe pas, nous utilisons les valeurs par défaut
+        if (tableCheckError && tableCheckError.code === '42P01') {
+          console.log('Table user_settings does not exist, using default settings');
+          setSettings({
+            id: 'default',
+            user_id: user.id,
+            ...defaultSettings
+          });
+          setLoading(false);
+          return;
+        }
+        
+        // Récupérer les paramètres utilisateur
         const { data, error } = await supabase
-          .from('user_settings' as any)
+          .from('user_settings')
           .select('*')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
           
         if (error) {
-          console.error('Error fetching user settings:', error);
-          // If settings don't exist for the user yet, create them
-          if (error.code === 'PGRST116') {
-            const defaultSettings = {
-              user_id: user.id,
-              push_notifications_enabled: true,
-              email_notifications_enabled: false,
-              sms_notifications_enabled: true,
-              app_language: 'french',
-              theme: 'light',
-              offline_mode_enabled: false
-            };
-            
-            const { data: newSettings, error: insertError } = await supabase
-              .from('user_settings' as any)
-              .insert(defaultSettings)
+          console.log('Error fetching user settings, using defaults:', error);
+          setSettings({
+            id: 'default',
+            user_id: user.id,
+            ...defaultSettings
+          });
+        } else if (data) {
+          setSettings(data as UserSettings);
+        } else {
+          // Créer des paramètres par défaut pour l'utilisateur
+          const newSettings = {
+            user_id: user.id,
+            ...defaultSettings
+          };
+          
+          // Tenter de créer les paramètres pour l'utilisateur
+          try {
+            const { data: createdSettings, error: insertError } = await supabase
+              .from('user_settings')
+              .insert(newSettings)
               .select('*')
               .single();
               
             if (insertError) {
-              console.error('Error creating user settings:', insertError);
-              toast({ 
-                title: "Erreur de paramètres",
-                description: "Impossible de créer vos préférences. Veuillez réessayer plus tard.",
-                variant: "destructive"
+              console.log('Error creating user settings:', insertError);
+              // Utiliser des paramètres par défaut locaux
+              setSettings({
+                id: 'default',
+                ...newSettings
               });
             } else {
-              setSettings(newSettings as unknown as UserSettings);
+              setSettings(createdSettings as UserSettings);
             }
-          } else {
-            toast({ 
-              title: "Erreur de paramètres",
-              description: "Impossible de récupérer vos préférences. Veuillez vous reconnecter.",
-              variant: "destructive"
+          } catch (createError) {
+            console.log('Unexpected error creating settings:', createError);
+            setSettings({
+              id: 'default',
+              ...newSettings
             });
           }
-        } else {
-          setSettings(data as unknown as UserSettings);
         }
       } catch (error) {
-        console.error('Unexpected error fetching settings:', error);
-        toast({ 
-          title: "Erreur de paramètres",
-          description: "Une erreur est survenue lors de la récupération de vos préférences",
-          variant: "destructive"
+        console.log('Unexpected error in useUserSettings:', error);
+        setSettings({
+          id: 'default',
+          user_id: user.id || 'unknown',
+          ...defaultSettings
         });
       } finally {
         setLoading(false);
@@ -97,7 +128,7 @@ export function useUserSettings() {
     key: K, 
     value: UserSettings[K]
   ): Promise<boolean> => {
-    if (!user?.id || !settings?.id) {
+    if (!user?.id || !settings) {
       toast({ 
         title: "Erreur de paramètres",
         description: "Impossible de mettre à jour vos préférences. Veuillez vous reconnecter.",
@@ -107,10 +138,23 @@ export function useUserSettings() {
     }
 
     try {
+      // Si nous utilisons des paramètres par défaut locaux, ne pas tenter de mise à jour
+      if (settings.id === 'default') {
+        // Mise à jour locale uniquement
+        setSettings(prev => prev ? { ...prev, [key]: value } : null);
+        
+        toast({ 
+          title: "Paramètre mis à jour",
+          description: "Vos préférences ont été enregistrées localement",
+        });
+        
+        return true;
+      }
+      
       const updateData = { [key]: value, updated_at: new Date().toISOString() };
       
       const { error } = await supabase
-        .from('user_settings' as any)
+        .from('user_settings')
         .update(updateData)
         .eq('user_id', user.id);
         
