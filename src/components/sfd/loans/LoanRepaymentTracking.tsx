@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useLoanRepayments } from '@/hooks/useLoanRepayments';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -71,6 +70,32 @@ export function LoanRepaymentTracking() {
     setShowPaymentDialog(false);
     setCurrentLoan(null);
     setPaymentAmount('');
+  };
+  
+  const handleOpenPaymentDialog = (loan: any) => {
+    // Make sure loan has all required fields from the Loan interface before setting
+    const completeLoan: Loan = {
+      id: loan.id,
+      client_id: loan.client_id,
+      sfd_id: loan.sfd_id || '',
+      amount: loan.amount,
+      interest_rate: loan.interest_rate,
+      term_months: loan.term_months || loan.duration_months, // Use term_months if available, otherwise duration_months
+      duration_months: loan.duration_months,
+      status: loan.status,
+      created_at: loan.created_at,
+      updated_at: loan.updated_at || loan.created_at, // Default to created_at if updated_at isn't available
+      // Include optional properties that are available
+      purpose: loan.purpose,
+      monthly_payment: loan.monthly_payment,
+      next_payment_date: loan.next_payment_date,
+      client_name: loan.client_name,
+      reference: loan.reference
+    };
+    
+    setCurrentLoan(completeLoan);
+    setShowPaymentDialog(true);
+    setPaymentAmount(loan.monthly_payment?.toString() || '');
   };
   
   const renderLoanStatus = (status: string, daysOverdue?: number) => {
@@ -252,11 +277,7 @@ export function LoanRepaymentTracking() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => {
-                            setCurrentLoan(loan);
-                            setPaymentAmount(loan.monthly_payment?.toString() || '');
-                            setShowPaymentDialog(true);
-                          }}
+                          onClick={() => handleOpenPaymentDialog(loan)}
                         >
                           <ArrowDownRight className="h-4 w-4 mr-1" />
                           Paiement

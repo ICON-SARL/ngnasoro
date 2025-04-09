@@ -43,10 +43,29 @@ export function useRoleAssignment() {
       if (!user) throw new Error("Utilisateur non authentifié");
       
       // Convert role if needed for database storage
-      let dbRole = role;
+      // Map the UserRole values to strings that the database function expects
+      let dbRole: string;
+      
+      // Make sure we send a valid role string to the database
+      switch (role) {
+        case UserRole.ADMIN:
+          dbRole = "admin";
+          break;
+        case UserRole.SFD_ADMIN:
+          dbRole = "sfd_admin";
+          break;
+        case UserRole.USER:
+          dbRole = "user";
+          break;
+        case UserRole.CLIENT:
+          dbRole = "user"; // Map CLIENT to user for database purposes
+          break;
+        default:
+          dbRole = "user";
+      }
       
       // Check if the user has permission to assign this role
-      if (!isAdmin && dbRole === UserRole.ADMIN) {
+      if (!isAdmin && role === UserRole.ADMIN) {
         throw new Error("Vous n'avez pas la permission d'attribuer le rôle d'administrateur");
       }
       
