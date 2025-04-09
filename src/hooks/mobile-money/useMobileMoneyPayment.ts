@@ -57,11 +57,58 @@ export function useMobileMoneyPayment() {
     }
   };
   
+  // For compatibility with the existing code that might use these properties
+  const makePayment = async (
+    phoneNumber: string, 
+    amount: number, 
+    provider: string
+  ): Promise<boolean> => {
+    try {
+      await processPayment({ 
+        phoneNumber, 
+        amount, 
+        provider,
+        onSuccess: () => {}, 
+        onError: () => {} 
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+  
+  const processMobileMoneyPaymentFn = async (
+    phoneNumber: string, 
+    amount: number, 
+    provider: string,
+    isRepayment: boolean = false,
+    loanId?: string
+  ): Promise<boolean> => {
+    try {
+      await processPayment({ 
+        phoneNumber, 
+        amount, 
+        provider, 
+        isRepayment, 
+        loanId,
+        onSuccess: () => {}, 
+        onError: () => {} 
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+  
   return {
     processPayment,
     isLoading,
     error,
-    transactionId
+    transactionId,
+    // For backwards compatibility
+    isProcessingPayment: isLoading,
+    makePayment,
+    processMobileMoneyPayment: processMobileMoneyPaymentFn
   };
 }
 

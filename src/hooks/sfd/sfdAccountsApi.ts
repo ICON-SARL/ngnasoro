@@ -1,5 +1,5 @@
 
-import { SfdAccount, SfdLoan, SfdBalanceData, UserSfd, SyncResult } from './types';
+import { SfdAccount, SfdLoan, SfdBalanceData, UserSfd, SyncResult, LoanPaymentParams } from './types';
 
 // Re-export the fetchUserSfds and fetchSfdBalance functions
 export { fetchUserSfds } from './fetchSfdAccounts';
