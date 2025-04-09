@@ -43,10 +43,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!userId || !role) return;
     
     try {
-      // Use a direct rpc call instead of a nested query that could cause recursion
+      // Convert the Role type to match what the RPC function expects
+      let roleValue: 'admin' | 'sfd_admin' | 'user';
+      
+      if (role === 'admin' || role === 'sfd_admin' || role === 'user') {
+        roleValue = role;
+      } else if (role === 'client') {
+        // If role is 'client', map it to 'user' for the database
+        roleValue = 'user';
+      } else {
+        roleValue = 'user'; // Default fallback
+      }
+      
+      // Use the converted role value for the RPC call
       const { data: roleData, error: roleError } = await supabase.rpc('assign_role', {
         user_id: userId,
-        role // Pass the role directly, it's already the correct string type
+        role: roleValue
       });
       
       if (roleError) {
