@@ -1,13 +1,14 @@
 
 import { User as SupabaseUser } from '@supabase/supabase-js';
-import { User, Role } from './types';
+import { User, UserRole } from './types';
 import { supabase } from '@/integrations/supabase/client';
 
 // Convert Supabase User to our custom User type
 export const createUserFromSupabaseUser = (supabaseUser: SupabaseUser): User => {
   return {
-    id: supabaseUser.id,
-    email: supabaseUser.email || '',
+    // Include all SupabaseUser properties we're extending from
+    ...supabaseUser,
+    // Override metadata properties with our custom ones
     full_name: supabaseUser.user_metadata?.full_name || '',
     avatar_url: supabaseUser.user_metadata?.avatar_url,
     phone: supabaseUser.phone,
@@ -25,7 +26,7 @@ export const createUserFromSupabaseUser = (supabaseUser: SupabaseUser): User => 
 };
 
 // Fonction pour attribuer le rôle utilisateur
-export const assignUserRole = async (userId: string): Promise<Role | null> => {
+export const assignUserRole = async (userId: string): Promise<UserRole | null> => {
   try {
     // Utiliser une requête avec une table spécifique pour éviter l'ambiguïté
     const { data, error } = await supabase
@@ -40,7 +41,7 @@ export const assignUserRole = async (userId: string): Promise<Role | null> => {
     }
     
     if (data?.role) {
-      return data.role as Role;
+      return data.role as UserRole;
     }
     
     return null;

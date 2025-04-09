@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, AuthError } from '@supabase/supabase-js';
 import { secureStorage, getBiometricSettings, toggleBiometricAuthentication } from './secureStorageService';
-import { User, Role, AuthContextProps } from './types';
+import { User, UserRole, AuthContextProps } from './types';
 import { createUserFromSupabaseUser, assignUserRole } from './authUtils';
 
 const AuthContext = createContext<AuthContextProps | null>(null);
@@ -13,14 +13,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<Role | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState<boolean>(false);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
 
   // Computed properties
   const isLoggedIn = !!user;
-  const isAdmin = userRole === 'admin';
-  const isSfdAdmin = userRole === 'sfd_admin';
+  const isAdmin = userRole === UserRole.ADMIN;
+  const isSfdAdmin = userRole === UserRole.SFD_ADMIN;
 
   useEffect(() => {
     // Check if biometric authentication is enabled
@@ -115,31 +115,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const roleFromTable = await assignUserRole(userId);
       
       if (roleFromTable) {
-        setUserRole(roleFromTable);
+        setUserRole(roleFromTable as UserRole);
         return;
       }
       
       // Fallback to app_metadata
       if (session?.user?.app_metadata?.role) {
-        setUserRole(session.user.app_metadata.role as Role);
+        setUserRole(session.user.app_metadata.role as UserRole);
         return;
       }
       
       // Fallback to user_metadata
       if (session?.user?.user_metadata?.role) {
-        setUserRole(session.user.user_metadata.role as Role);
+        setUserRole(session.user.user_metadata.role as UserRole);
         return;
       }
       
       // Default role
-      setUserRole('user');
+      setUserRole(UserRole.USER);
     } catch (error) {
       console.error('Error in handleUserRoleAssignment:', error);
       // Final fallback
       if (session?.user?.app_metadata?.role) {
-        setUserRole(session.user.app_metadata.role as Role);
+        setUserRole(session.user.app_metadata.role as UserRole);
       } else {
-        setUserRole('user');
+        setUserRole(UserRole.USER);
       }
     }
   };
@@ -198,10 +198,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     setLoading(true);
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
       // AuthStateChange will handle resetting user and session
+      return { error };
     } catch (err) {
       console.error('Sign out error:', err);
+      return { error: err };
     } finally {
       setLoading(false);
     }

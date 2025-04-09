@@ -45,3 +45,16 @@ export interface AuthContextProps {
 }
 
 export type Role = UserRole;
+
+// Adding these types to fix the missing exports
+export interface AssociateSfdParams {
+  userId: string;
+  sfdId: string;
+  makeDefault?: boolean;
+}
+
+export interface AssociateSfdResult {
+  success: boolean;
+  error?: string;
+  userSfd?: any;
+}
