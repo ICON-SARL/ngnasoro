@@ -1,4 +1,6 @@
 
+import { Session, AuthError } from '@supabase/supabase-js';
+
 export type Role = 'admin' | 'sfd_admin' | 'user' | 'client' | null;
 
 export enum UserRole {
@@ -45,4 +47,17 @@ export interface AuthContextProps {
   activeSfdId: string | null;
   setActiveSfdId: (sfdId: string | null) => void;
   refreshSession: () => Promise<void>;
+}
+
+// Add interfaces for SFD Association
+export interface AssociateSfdParams {
+  userId: string;
+  sfdId: string;
+  makeDefault?: boolean;
+}
+
+export interface AssociateSfdResult {
+  success: boolean;
+  userSfd?: any;
+  error?: string;
 }
