@@ -11,3 +11,10 @@ export interface Role {
   description: string;
   permissions: string[];
 }
+
+export interface NewRoleData {
+  id?: string;
+  name: string;
+  description: string;
+  permissions: string[];
+}

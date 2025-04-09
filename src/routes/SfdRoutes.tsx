@@ -1,46 +1,50 @@
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import SfdAuthUI from '@/components/auth/SfdAuthUI';
-import RoleGuard from '@/components/RoleGuard';
-import { UserRole } from '@/hooks/auth/types';
-import AccessDeniedPage from '@/pages/AccessDeniedPage';
-import { SfdDashboard } from '@/components/sfd/SfdDashboard';
-import SfdClientsPage from '@/pages/SfdClientsPage';
+import SfdDashboardPage from '@/pages/SfdDashboardPage';
 import SfdLoansPage from '@/pages/SfdLoansPage';
+import SfdClientsPage from '@/pages/SfdClientsPage';
+import SfdRoleManagementPage from '@/pages/SfdRoleManagementPage';
+import ProtectedRoute from '@/components/routes/ProtectedRoute';
+import AccessDeniedPage from '@/pages/AccessDeniedPage';
 
 const SfdRoutes = () => {
   return (
     <Routes>
-      <Route path="auth" element={<SfdAuthUI />} />
       <Route 
         path="dashboard" 
         element={
-          <RoleGuard 
-            requiredRole={UserRole.SFD_ADMIN}
-          >
-            <SfdDashboard />
-          </RoleGuard>
-        } 
-      />
-      <Route 
-        path="clients" 
-        element={
-          <RoleGuard 
-            requiredRole={UserRole.SFD_ADMIN}
-          >
-            <SfdClientsPage />
-          </RoleGuard>
+          <ProtectedRoute 
+            component={SfdDashboardPage} 
+            requireSfdAdmin={true} 
+          />
         } 
       />
       <Route 
         path="loans" 
         element={
-          <RoleGuard 
-            requiredRole={UserRole.SFD_ADMIN}
-          >
-            <SfdLoansPage />
-          </RoleGuard>
+          <ProtectedRoute 
+            component={SfdLoansPage} 
+            requireSfdAdmin={true} 
+          />
+        } 
+      />
+      <Route 
+        path="clients" 
+        element={
+          <ProtectedRoute 
+            component={SfdClientsPage} 
+            requireSfdAdmin={true} 
+          />
+        } 
+      />
+      <Route 
+        path="role-management" 
+        element={
+          <ProtectedRoute 
+            component={SfdRoleManagementPage} 
+            requireSfdAdmin={true} 
+          />
         } 
       />
       <Route path="access-denied" element={<AccessDeniedPage />} />
