@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Role, Permission, NewRoleData } from './types';
@@ -123,7 +124,7 @@ export function useRoleManager() {
     });
   };
 
-  // Fully simplified to avoid type instantiation issues
+  // Fixed function to avoid type instantiation issues
   const handleSaveNewRole = async () => {
     if (!activeSfdId) {
       toast({
@@ -136,7 +137,7 @@ export function useRoleManager() {
 
     try {
       if (isEditMode) {
-        // Bypass TypeScript's type checking completely
+        // Define the update data structure explicitly
         const updateData = {
           name: newRole.name,
           description: newRole.description,
@@ -145,7 +146,7 @@ export function useRoleManager() {
         
         await supabase
           .from('admin_roles')
-          .update(updateData as Record<string, any>)
+          .update(updateData)
           .eq('name', newRole.name)
           .eq('sfd_id', activeSfdId);
 
@@ -154,7 +155,7 @@ export function useRoleManager() {
           description: `Le rôle ${newRole.name} a été mis à jour avec succès`
         });
       } else {
-        // Bypass TypeScript's type checking completely
+        // Define the insert data structure explicitly
         const insertData = {
           sfd_id: activeSfdId,
           name: newRole.name,
@@ -164,7 +165,7 @@ export function useRoleManager() {
         
         await supabase
           .from('admin_roles')
-          .insert(insertData as Record<string, any>);
+          .insert(insertData);
 
         toast({
           title: 'Rôle créé',
@@ -181,21 +182,22 @@ export function useRoleManager() {
         permissions: []
       });
 
-      // Simplify data fetching with minimal type inference
+      // Fetch updated roles
       const { data } = await supabase
         .from('admin_roles')
         .select('*')
         .eq('sfd_id', activeSfdId);
 
       if (data) {
-        const roles = data.map(role => ({
+        // Process the role data with explicit typing
+        const updatedRoles: Role[] = data.map(role => ({
           id: role.id,
           name: role.name || '',
           description: role.description || '',
-          permissions: (role.permissions || []) as string[]
+          permissions: Array.isArray(role.permissions) ? role.permissions : []
         }));
         
-        setRoles(roles);
+        setRoles(updatedRoles);
       }
     } catch (error) {
       console.error('Error saving role:', error);
