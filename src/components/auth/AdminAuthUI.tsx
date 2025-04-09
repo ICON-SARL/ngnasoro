@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from './Logo';
 import LoginForm from './login/LoginForm';
-import { Check, Shield } from 'lucide-react';
+import { Check } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
 
 const AdminAuthUI = () => {
@@ -56,7 +56,7 @@ const AdminAuthUI = () => {
   }
 
   return (
-    <div className="auth-container bg-gradient-to-b from-[#fcf9f2] to-[#f8f4e5]">
+    <div className="auth-container bg-gradient-to-b from-[#f8f7ff] to-[#e9e7f8]">
       <div className="absolute top-4 right-4">
         <LanguageSelector />
       </div>
@@ -64,26 +64,11 @@ const AdminAuthUI = () => {
       <div className="w-full max-w-md">
         <Logo />
         
-        <div className="auth-card">
-          <div className="p-4 bg-[#fcf9f2] border-b border-[#f0e9d2]">
-            <h2 className="text-[#8B5A2B] font-medium text-center">
+        <div className="auth-card shadow-lg border-0">
+          <div className="p-4 bg-gradient-to-r from-[#1A1F2C] to-[#2A3042] border-b border-gray-800">
+            <h2 className="text-white font-medium text-center">
               Connexion Administration MEREF
             </h2>
-          </div>
-          
-          <div className="p-4 bg-[#fff8e6] text-[#8B5A2B] border border-[#f0e9d2] rounded-md mb-4 mx-4">
-            <div className="flex items-start gap-3">
-              <Shield className="h-5 w-5 mt-0.5 flex-shrink-0 text-[#b88746]" />
-              <div>
-                <p className="text-sm font-medium">
-                  Accès réservé aux administrateurs MEREF
-                </p>
-                <p className="text-xs mt-1 text-[#a38449]">
-                  Cette interface est uniquement destinée aux administrateurs système. 
-                  Les administrateurs n'ont pas accès à l'interface mobile.
-                </p>
-              </div>
-            </div>
           </div>
           
           <LoginForm adminMode={true} isSfdAdmin={false} />

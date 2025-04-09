@@ -4,12 +4,11 @@ import {
   ErrorDisplay,
   CooldownAlert,
   useLoginForm
-} from '../login/index';
+} from './index';
 import SuccessState from './SuccessState';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Eye, EyeOff, Lock, ShieldAlert } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Mail, Eye, EyeOff, Lock } from 'lucide-react';
 
 interface LoginFormProps {
   adminMode?: boolean;
@@ -38,35 +37,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
 
   return (
     <div className="space-y-5 p-6 w-full">
-      {adminMode && !isSfdAdmin && (
-        <div className="flex items-center gap-2 border border-[#f0e9d2] bg-[#fff8e6] p-3 rounded-md">
-          <ShieldAlert className="h-5 w-5 text-[#b88746]" />
-          <div>
-            <h3 className="font-medium text-[#8B5A2B]">Connexion Administration</h3>
-            <p className="text-xs text-[#a38449]">
-              Accès réservé au personnel MEREF autorisé
-            </p>
-          </div>
-          <Badge variant="outline" className="ml-auto bg-[#fff2cc] text-[#8B5A2B] border-[#f0e9d2]">
-            Admin MEREF
-          </Badge>
-        </div>
-      )}
-      
-      {isSfdAdmin && (
-        <div className="flex items-center gap-2 border border-blue-200 bg-blue-50 p-3 rounded-md">
-          <ShieldAlert className="h-5 w-5 text-blue-600" />
-          <div>
-            <h3 className="font-medium text-blue-800">Connexion SFD</h3>
-            <p className="text-xs text-blue-700">
-              Accès réservé aux administrateurs SFD
-            </p>
-          </div>
-          <Badge variant="outline" className="ml-auto bg-blue-100 text-blue-800 border-blue-200">
-            Admin SFD
-          </Badge>
-        </div>
-      )}
       
       <ErrorDisplay message={errorMessage} />
       <CooldownAlert active={cooldownActive} remainingTime={cooldownTime} />
@@ -81,7 +51,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
                 id="email"
                 type="email"
                 placeholder={isSfdAdmin ? "admin@sfd.ml" : adminMode ? "admin@meref.ml" : "jean.dulac@anatec.io"}
-                className="auth-input pl-10 text-center"
+                className={`auth-input pl-10 text-center ${adminMode ? 'admin-input' : ''}`}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -99,7 +69,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••••••••"
-                className="auth-input pl-10 pr-10 text-center"
+                className={`auth-input pl-10 pr-10 text-center ${adminMode ? 'admin-input' : ''}`}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -122,7 +92,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
             type="submit" 
             className={
               isSfdAdmin ? 'auth-btn-sfd' :
-              adminMode ? 'bg-[#b88746] hover:bg-[#a3793e] text-white auth-btn' : 
+              adminMode ? 'admin-login-btn' : 
               'auth-btn-primary'
             }
             disabled={isLoading || cooldownActive}
