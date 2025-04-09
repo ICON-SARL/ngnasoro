@@ -64,10 +64,21 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
+			fontFamily: {
+				sans: ['Inter', 'system-ui', 'sans-serif'],
+			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				sm: 'calc(var(--radius) - 4px)',
+				xl: '1.25rem',
+				'2xl': '1.5rem',
+				'3xl': '2rem',
+			},
+			boxShadow: {
+				soft: '0 5px 30px rgba(0, 0, 0, 0.05)',
+				'soft-lg': '0 10px 40px rgba(0, 0, 0, 0.08)',
+				'inner-soft': 'inset 0 2px 6px rgba(0, 0, 0, 0.05)',
 			},
 			keyframes: {
 				'accordion-down': {
@@ -98,6 +109,10 @@ export default {
 					'0%': { backgroundPosition: '0% 50%' },
 					'50%': { backgroundPosition: '100% 50%' },
 					'100%': { backgroundPosition: '0% 50%' }
+				},
+				'soft-bounce': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-5px)' }
 				}
 			},
 			animation: {
@@ -107,10 +122,12 @@ export default {
 				'fade-up': 'fade-up 0.5s ease-out',
 				'scale-in': 'scale-in 0.3s ease-out',
 				'reveal-right': 'reveal-right 0.5s ease-out forwards',
-				'gradient-flow': 'gradient-flow 5s ease infinite'
+				'gradient-flow': 'gradient-flow 5s ease infinite',
+				'soft-bounce': 'soft-bounce 2s ease-in-out infinite'
 			},
 			transitionTimingFunction: {
 				'ease-soft': 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+				'bounce-soft': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
 			}
 		}
 	},

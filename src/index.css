@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,8 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 210 100% 50%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 160 100% 20%;
+    --primary-foreground: 160 40% 98%;
 
     --secondary: 210 20% 96%;
     --secondary-foreground: 222 47% 11%;
@@ -22,7 +23,7 @@
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 210 40% 96%;
+    --accent: 160 40% 96%;
     --accent-foreground: 222 47% 11%;
 
     --destructive: 0 84% 60%;
@@ -30,9 +31,9 @@
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 222 84% 48%;
+    --ring: 160 84% 20%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
   }
 
   .dark {
@@ -45,8 +46,8 @@
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 100% 50%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 160 60% 30%;
+    --primary-foreground: 210 40% 98%;
 
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
@@ -75,6 +76,7 @@
     @apply bg-background text-foreground font-sans antialiased;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -84,15 +86,19 @@
 
 @layer components {
   .glass-morphism {
-    @apply bg-white/70 backdrop-blur-lg dark:bg-black/70;
+    @apply bg-white/70 backdrop-blur-lg dark:bg-black/70 shadow-sm;
   }
   
   .glass-card {
-    @apply rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl shadow-sm;
+    @apply rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl shadow-sm transition-all duration-300;
   }
   
-  .gradient-blue-text {
-    background: linear-gradient(90deg, #0062ff 0%, #00c6ff 100%);
+  .soft-shadow {
+    @apply shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+  }
+  
+  .gradient-green-text {
+    background: linear-gradient(90deg, #0D6A51 0%, #13A180 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -127,12 +133,33 @@
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
   }
+  
+  .button-glow {
+    @apply relative overflow-hidden;
+  }
+  
+  .button-glow::after {
+    content: '';
+    @apply absolute inset-0 rounded-full bg-white/20 opacity-0 transition-opacity duration-300;
+  }
+  
+  .button-glow:hover::after {
+    @apply opacity-100;
+  }
+  
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-[1.03];
+  }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:translate-y-[-4px] hover:shadow-md;
+  }
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -140,12 +167,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.07);
+  border-radius: 50px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .dark ::-webkit-scrollbar-thumb {
@@ -159,4 +186,38 @@
 /* Smooth transition between light and dark mode */
 body {
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Card styles */
+.soft-card {
+  @apply bg-white rounded-2xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100/60 hover:shadow-[0_8px_25px_rgba(0,0,0,0.06)] transition-all duration-300;
+}
+
+/* Button styles */
+.button-soft {
+  @apply px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md active:scale-[0.98];
+}
+
+/* Animation utilities */
+@keyframes soft-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.animate-soft-bounce {
+  animation: soft-bounce 2s ease-in-out infinite;
+}
+
+/* Gradient backgrounds */
+.bg-gradient-green {
+  @apply bg-gradient-to-r from-[#0D6A51] to-[#13A180];
+}
+
+.bg-gradient-blue {
+  @apply bg-gradient-to-r from-blue-500 to-blue-400;
+}
+
+/* Enhanced form elements */
+input, select, textarea {
+  @apply transition-all duration-200 focus:shadow-[0_0_0_2px_rgba(13,106,81,0.2)] focus:border-[#0D6A51]/60;
 }
