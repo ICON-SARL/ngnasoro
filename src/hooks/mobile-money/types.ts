@@ -1,15 +1,42 @@
 
-import { QRCodeResponse as SfdQRCodeResponse } from '@/hooks/sfd/types';
+export interface MobileMoneyProvider {
+  id: string;
+  name: string;
+  logo?: string;
+}
 
 export interface MobileMoneyPaymentHook {
   isProcessingPayment: boolean;
   makePayment: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
-  processMobileMoneyPayment: (phoneNumber: string, amount: number, provider: string, isRepayment?: boolean, loanId?: string) => Promise<boolean>;
+  processMobileMoneyPayment: (
+    phoneNumber: string, 
+    amount: number, 
+    provider: string,
+    isRepayment?: boolean,
+    loanId?: string
+  ) => Promise<boolean>;
 }
 
 export interface MobileMoneyWithdrawalHook {
   isProcessingWithdrawal: boolean;
   makeWithdrawal: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
+}
+
+export interface QRCodeRequest {
+  amount: number;
+  loanId?: string;
+}
+
+export interface QRCodeResponse {
+  success: boolean;
+  qrCodeData?: string;
+  qrCode?: {
+    code: string;
+    expiresAt: string;
+  };
+  expiration?: string;
+  transactionId?: string;
+  error?: string;
 }
 
 export interface QRCodeGenerationHook {
@@ -19,29 +46,12 @@ export interface QRCodeGenerationHook {
 }
 
 export interface MobileMoneyOperationsHook {
-  mobileMoneyProviders: {
-    id: string;
-    name: string;
-    code: string;
-    icon: string;
-  }[];
-  defaultProvider: string;
-  isProcessing: boolean;
-  processPayment: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
-  processWithdrawal: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
+  isProcessingPayment: boolean;
+  isProcessingWithdrawal: boolean;
+  isProcessingQRCode: boolean;
+  makePayment: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
+  makeWithdrawal: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
+  generatePaymentQRCode: (amount: number, loanId?: string) => Promise<QRCodeResponse>;
+  generateWithdrawalQRCode: (amount: number) => Promise<QRCodeResponse>;
+  mobileMoneyProviders: MobileMoneyProvider[];
 }
-
-export interface QRCodeResponse {
-  success: boolean;
-  qrCodeData?: string;  // Added these properties to match what's used in components
-  expiration?: string;
-  transactionId?: string;
-  error?: string;
-  qrCode?: {
-    code: string;
-    expiresAt: string;
-  };
-}
-
-// Re-export the original QRCodeResponse for compatibility
-export type { SfdQRCodeResponse };
