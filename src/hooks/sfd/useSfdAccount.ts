@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchSfdBalance } from './fetchSfdBalance';
 import { fetchSfdLoans } from './fetchSfdLoans';
-import { SfdAccount, SfdLoan } from './types';
+import { SfdAccount, SfdLoan, SfdBalanceData } from './types';
 import { User } from '../auth/types';
 
 /**

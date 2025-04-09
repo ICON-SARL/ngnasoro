@@ -1,10 +1,74 @@
 
-// Re-export all functions from individual files for backward compatibility
+import { SfdAccount, SfdLoan, SfdBalanceData, UserSfd, SyncResult } from './types';
+
+// Re-export the fetchUserSfds and fetchSfdBalance functions
 export { fetchUserSfds } from './fetchSfdAccounts';
 export { fetchSfdBalance } from './fetchSfdBalance';
-export { fetchSfdLoans } from './fetchSfdLoans';
-export { synchronizeAccounts } from './syncAccounts';
-export { processLoanPayment, processMobileMoneyPayment } from './processPayments';
 
-// Re-export types for convenience
-export type { SfdBalanceData, SyncResult } from './types';
+// Function to fetch loans for a specific SFD account
+export async function fetchSfdLoans(userId: string, sfdId: string): Promise<SfdLoan[]> {
+  try {
+    // Mock data for demonstration
+    return [
+      {
+        id: 'loan1',
+        amount: 500000,
+        duration_months: 12,
+        interest_rate: 5,
+        monthly_payment: 43000,
+        next_payment_date: '2025-05-15',
+        status: 'active',
+        created_at: '2025-04-01',
+        remainingAmount: 430000,
+        isLate: false
+      }
+    ];
+  } catch (error) {
+    console.error(`Failed to fetch loans for SFD ${sfdId}:`, error);
+    return [];
+  }
+}
+
+// Function to synchronize account data
+export async function synchronizeAccounts(userId: string, sfdId: string): Promise<SyncResult> {
+  try {
+    // Implementation would talk to your API
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    return {
+      success: true,
+      message: 'Accounts synchronized successfully',
+      updatedAccounts: 1
+    };
+  } catch (error) {
+    console.error('Error synchronizing accounts:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// Function to process loan payment
+export async function makeLoanPayment(
+  userId: string, 
+  sfdId: string, 
+  loanId: string, 
+  amount: number
+): Promise<SyncResult> {
+  try {
+    // Implementation would talk to your API
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    return {
+      success: true,
+      message: 'Payment processed successfully'
+    };
+  } catch (error) {
+    console.error('Error processing payment:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}

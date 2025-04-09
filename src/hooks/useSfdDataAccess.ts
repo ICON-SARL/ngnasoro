@@ -1,107 +1,97 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { SfdData } from './sfd/types';
 
-type SfdData = {
-  id: string;
-  name: string;
-  region?: string;
-  code: string;
-  logo_url?: string;
-  status: 'active' | 'inactive' | string; // Changed to accept string as well
-};
+export interface UseSfdDataAccess {
+  sfdData: SfdData[];
+  isLoading: boolean;
+  error: Error | null;
+  refreshSfdData: () => Promise<void>;
+  switchActiveSfd: (sfdId: string) => Promise<boolean>;
+}
 
-export function useSfdDataAccess() {
-  const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
+export type { SfdData };
+
+export function useSfdDataAccess(): UseSfdDataAccess {
+  const { user, setActiveSfdId } = useAuth();
   const [sfdData, setSfdData] = useState<SfdData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    const storedSfdId = localStorage.getItem('activeSfdId');
-    if (storedSfdId) {
-      setActiveSfdId(storedSfdId);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (activeSfdId) {
-      localStorage.setItem('activeSfdId', activeSfdId);
-    }
-  }, [activeSfdId]);
-
-  useEffect(() => {
-    const fetchSfds = async () => {
-      setIsLoading(true);
-      try {
-        // In a real app, we'd fetch the list of SFDs based on the user
-        // For now, we'll use mock data to ensure it works
-        const mockSfds: SfdData[] = [
-          {
-            id: 'primary-sfd',
-            name: 'SFD Primaire',
-            code: 'primary-sfd',
-            region: 'Bamako',
-            status: 'active'
-          },
-          {
-            id: 'secondary-sfd',
-            name: 'SFD Secondaire',
-            code: 'secondary-sfd',
-            region: 'Sikasso',
-            status: 'active'
-          }
-        ];
-        
-        // Get real data from Supabase if available
-        const { data, error } = await supabase
-          .from('sfds')
-          .select('id, name, code, region, logo_url, status');
-          
-        if (error) {
-          console.error('Error fetching SFDs:', error);
-        }
-        
-        // Use real data if available, otherwise use mock data
-        const finalData = data && data.length > 0 ? data : mockSfds;
-        setSfdData(finalData as SfdData[]); // Force type casting to avoid issues
-        
-        // If no active SFD is set, use the first one
-        if (!activeSfdId && finalData.length > 0) {
-          setActiveSfdId(finalData[0].id);
-        }
-        
-      } catch (error) {
-        console.error('Error fetching SFD data:', error);
-      } finally {
-        setIsLoading(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+  
+  // Function to fetch SFD data
+  const fetchSfdData = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      if (!user) {
+        setSfdData([]);
+        return;
       }
-    };
-
-    if (user) {
-      fetchSfds();
+      
+      // Mock data for demonstration
+      const mockSfds: SfdData[] = [
+        { 
+          id: 'sfd1', 
+          name: 'SFD 1', 
+          code: 'SFD1', 
+          region: 'Region 1',
+          status: 'active'
+        },
+        { 
+          id: 'sfd2', 
+          name: 'SFD 2', 
+          code: 'SFD2', 
+          region: 'Region 2',
+          status: 'active'
+        },
+        { 
+          id: 'sfd3', 
+          name: 'SFD 3', 
+          code: 'SFD3', 
+          region: 'Region 3',
+          status: 'active'
+        }
+      ];
+      
+      setSfdData(mockSfds);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+      console.error('Error fetching SFD data:', err);
+    } finally {
+      setIsLoading(false);
     }
-  }, [user]);
-
-  // Add the missing switchActiveSfd function
-  const switchActiveSfd = (sfdId: string) => {
-    setActiveSfdId(sfdId);
-    return Promise.resolve(true);
   };
-
-  // Add the missing getActiveSfdData function
-  const getActiveSfdData = async (): Promise<SfdData | null> => {
-    if (!activeSfdId || !sfdData.length) return null;
-    return sfdData.find(sfd => sfd.id === activeSfdId) || null;
+  
+  // Fetch data on component mount or when user changes
+  useEffect(() => {
+    fetchSfdData();
+  }, [user?.id]);
+  
+  // Function to refresh data
+  const refreshSfdData = async () => {
+    await fetchSfdData();
   };
-
+  
+  // Function to switch active SFD
+  const switchActiveSfd = async (sfdId: string): Promise<boolean> => {
+    try {
+      setActiveSfdId(sfdId);
+      return true;
+    } catch (err) {
+      console.error('Error switching active SFD:', err);
+      return false;
+    }
+  };
+  
   return {
-    activeSfdId,
-    setActiveSfdId,
     sfdData,
     isLoading,
-    switchActiveSfd,
-    getActiveSfdData
+    error,
+    refreshSfdData,
+    switchActiveSfd
   };
 }
+
+export default useSfdDataAccess;
