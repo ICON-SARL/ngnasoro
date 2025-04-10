@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,8 +13,9 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { ModeToggle } from '@/components/ModeToggle';
-import { Briefcase, ChevronDown, Globe, LogOut, PieChart, Settings, UserPlus, Users, Wallet, Menu } from 'lucide-react';
+import { PieChart, ChevronDown, Globe, LogOut, Settings, Users, Menu, LayoutDashboard, FileText, Shield } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
 
 interface SuperAdminHeaderProps {
   additionalComponents?: React.ReactNode;
@@ -41,13 +43,11 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
     return location.pathname === route;
   };
 
+  // Removed the SFDs, Subventions, and Demandes SFD links
   const navLinks = [
-    { name: 'Tableau de bord', icon: <PieChart className="w-4 h-4 mr-2" />, path: '/admin-dashboard' },
-    { name: 'SFDs', icon: <Briefcase className="w-4 h-4 mr-2" />, path: '/clients' },
-    { name: 'Gestion SFD', icon: <Briefcase className="w-4 h-4 mr-2" />, path: '/sfd-management' },
+    { name: 'Tableau de bord', icon: <LayoutDashboard className="w-4 h-4 mr-2" />, path: '/super-admin-dashboard' },
+    { name: 'Gestion SFD', icon: <PieChart className="w-4 h-4 mr-2" />, path: '/sfd-management' },
     { name: 'Utilisateurs', icon: <Users className="w-4 h-4 mr-2" />, path: '/admin/users' },
-    { name: 'Subventions', icon: <Wallet className="w-4 h-4 mr-2" />, path: '/admin/subsidies' },
-    { name: 'Demandes SFD', icon: <UserPlus className="w-4 h-4 mr-2" />, path: '/admin/sfd-requests' },
     { name: 'Paramètres', icon: <Settings className="w-4 h-4 mr-2" />, path: '/admin/settings' },
   ];
   
@@ -56,21 +56,30 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
     : 'AD';
     
   return (
-    <header className="sticky top-0 z-40 border-b bg-background">
+    <header className="sticky top-0 z-40 border-b bg-gradient-to-r from-[#0D6A51]/90 to-[#0D6A51]/70 text-white shadow-md">
       <div className="container flex h-16 items-center justify-between py-4">
         <div className="flex items-center gap-4 md:gap-8">
-          <Link to="/admin-dashboard" className="flex items-center gap-2">
+          <Link to="/super-admin-dashboard" className="flex items-center gap-2">
             <img src="/lovable-uploads/1fd2272c-2539-4f58-9841-15710204f204.png" alt="Logo" className="h-8" />
-            <span className="font-semibold hidden md:block">N'GNA SÔRÔ Admin</span>
+            <div className="font-semibold hidden md:block">
+              <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-white">SÔRÔ</span>
+              <span className="ml-2 text-xs bg-[#FFAB2E]/20 px-2 py-0.5 rounded text-[#FFAB2E]">Admin</span>
+            </div>
           </Link>
           
           <div className="hidden md:flex gap-1">
             {navLinks.map(link => (
               <Button 
                 key={link.path}
-                variant={isActiveRoute(link.path) ? "default" : "ghost"} 
+                variant={isActiveRoute(link.path) ? "secondary" : "ghost"} 
                 asChild
                 size="sm"
+                className={cn(
+                  "text-white hover:text-white", 
+                  isActiveRoute(link.path) 
+                    ? "bg-white/20 hover:bg-white/30" 
+                    : "hover:bg-white/10"
+                )}
               >
                 <Link to={link.path} className="flex items-center">
                   {link.icon}
@@ -84,9 +93,19 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
         <div className="flex items-center gap-3">
           {additionalComponents}
           
+          <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10">
+            <Shield className="h-5 w-5" />
+            <span className="sr-only">Sécurité</span>
+          </Button>
+          
+          <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10">
+            <FileText className="h-5 w-5" />
+            <span className="sr-only">Rapports</span>
+          </Button>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
+              <Button variant="ghost" className="flex items-center gap-2 text-white hover:bg-white/10">
                 <Globe className="h-4 w-4" />
                 <span className="hidden md:inline-block">Français</span>
                 <ChevronDown className="h-4 w-4" />
@@ -102,9 +121,9 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full overflow-hidden border border-white/30 hover:bg-white/10">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary text-white">
+                  <AvatarFallback className="bg-[#FFAB2E] text-[#0D6A51]">
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
@@ -129,28 +148,21 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem onClick={handleLogout} className="text-red-500">
                 <LogOut className="mr-2 h-4 w-4" />
-                Log out
+                Se déconnecter
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="md:hidden">
+              <Button variant="ghost" size="sm" className="md:hidden text-white hover:bg-white/10">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
             <SheetContent side="right">
               <div className="grid gap-4 py-4">
-                <Link 
-                  to="/admin-dashboard" 
-                  className="flex items-center py-2 px-3 rounded-lg hover:bg-muted"
-                >
-                  <PieChart className="mr-2 h-4 w-4" />
-                  <span>Tableau de bord</span>
-                </Link>
                 {navLinks.map(link => (
                   <Link 
                     key={link.path}
