@@ -858,30 +858,42 @@ export type Database = {
       sfds: {
         Row: {
           code: string
+          contact_email: string | null
           created_at: string | null
+          description: string | null
           id: string
+          legal_document_url: string | null
           logo_url: string | null
           name: string
+          phone: string | null
           region: string | null
           status: string | null
           updated_at: string | null
         }
         Insert: {
           code: string
+          contact_email?: string | null
           created_at?: string | null
+          description?: string | null
           id?: string
+          legal_document_url?: string | null
           logo_url?: string | null
           name: string
+          phone?: string | null
           region?: string | null
           status?: string | null
           updated_at?: string | null
         }
         Update: {
           code?: string
+          contact_email?: string | null
           created_at?: string | null
+          description?: string | null
           id?: string
+          legal_document_url?: string | null
           logo_url?: string | null
           name?: string
+          phone?: string | null
           region?: string | null
           status?: string | null
           updated_at?: string | null
@@ -1227,6 +1239,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_sfd_with_admin: {
+        Args: { sfd_data: Json; admin_data?: Json }
+        Returns: Json
+      }
       get_sfd_admins: {
         Args: { sfd_id_param: string }
         Returns: {
@@ -1256,7 +1272,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "sfd_admin" | "user"
+      app_role: "admin" | "sfd_admin" | "user" | "meref_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1372,7 +1388,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "sfd_admin", "user"],
+      app_role: ["admin", "sfd_admin", "user", "meref_admin"],
     },
   },
 } as const

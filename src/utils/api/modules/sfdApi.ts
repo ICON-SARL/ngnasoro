@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { SfdBalanceData } from "@/hooks/sfd/types";
 
@@ -128,6 +129,40 @@ export const sfdApi = {
       activeSubsidies: 1750000000,
       pendingRequests: 12
     };
+  },
+
+  /**
+   * Crée une nouvelle SFD avec option d'ajouter un administrateur
+   * @param sfdData Les données de la nouvelle SFD
+   * @param adminData Données optionnelles pour créer un administrateur
+   * @returns La SFD créée et l'administrateur si applicable
+   */
+  createSfdWithAdmin: async (sfdData: any, adminData?: any) => {
+    try {
+      console.log("Appel à la fonction create-sfd...");
+      const { data, error } = await supabase.functions.invoke('create-sfd', {
+        body: { 
+          sfd_data: sfdData,
+          admin_data: adminData
+        }
+      });
+
+      if (error) {
+        console.error('Erreur fonction create-sfd:', error);
+        throw new Error(error.message);
+      }
+
+      if (!data || !data.success) {
+        console.error('Échec de création SFD:', data?.error || 'Raison inconnue');
+        throw new Error(data?.error || "Erreur lors de la création de la SFD");
+      }
+
+      console.log("SFD créée avec succès:", data);
+      return data;
+    } catch (error: any) {
+      console.error('Erreur lors de la création de la SFD:', error);
+      throw new Error(`Erreur lors de la création de la SFD: ${error.message}`);
+    }
   }
 };
 

@@ -10,12 +10,14 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Building, Search, UserPlus, Users } from 'lucide-react';
+import { Building, Search, UserPlus, Users, Plus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { AddSfdAdminDialog } from '@/components/admin/sfd/AddSfdAdminDialog';
 import { useSfdAdminManagement } from '@/hooks/useSfdAdminManagement';
 import { SfdAdminManager } from '@/components/admin/sfd/SfdAdminManager';
+import { SfdAddDialog } from '@/components/admin/sfd/SfdAddDialog';
+import { Badge } from '@/components/ui/badge';
 
 export function SfdManagementContainer() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,6 +26,7 @@ export function SfdManagementContainer() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('list');
   const [showAddAdminDialog, setShowAddAdminDialog] = useState(false);
+  const [showAddSfdDialog, setShowAddSfdDialog] = useState(false);
   const { toast } = useToast();
   const { isLoading: isLoadingAdmin, error, addSfdAdmin } = useSfdAdminManagement();
 
@@ -70,6 +73,19 @@ export function SfdManagementContainer() {
     setShowAddAdminDialog(false);
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-100 text-green-800">Actif</Badge>;
+      case 'pending':
+        return <Badge className="bg-amber-100 text-amber-800">En attente</Badge>;
+      case 'suspended':
+        return <Badge className="bg-red-100 text-red-800">Suspendu</Badge>;
+      default:
+        return <Badge>Inconnu</Badge>;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -83,13 +99,15 @@ export function SfdManagementContainer() {
           <Button 
             variant="outline" 
             className="gap-2"
+            onClick={() => setShowAddSfdDialog(true)}
           >
-            <Building className="h-4 w-4" />
+            <Plus className="h-4 w-4" />
             Nouvelle SFD
           </Button>
           <Button 
             onClick={() => setShowAddAdminDialog(true)}
             className="gap-2"
+            disabled={!selectedSfd}
           >
             <UserPlus className="h-4 w-4" />
             Ajouter un Admin SFD
@@ -132,7 +150,10 @@ export function SfdManagementContainer() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{sfd.name}</p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium truncate">{sfd.name}</p>
+                        <div className="ml-2">{getStatusBadge(sfd.status)}</div>
+                      </div>
                       <p className="text-xs text-muted-foreground truncate">
                         Code: {sfd.code} {sfd.region ? `• ${sfd.region}` : ''}
                       </p>
@@ -188,18 +209,36 @@ export function SfdManagementContainer() {
                         <div className="space-y-4">
                           <div>
                             <h3 className="text-sm font-medium text-muted-foreground">Statut</h3>
-                            <p>{selectedSfd.status === 'active' ? 'Actif' : 'Inactif'}</p>
+                            <p>{selectedSfd.status === 'active' ? 'Actif' : selectedSfd.status === 'pending' ? 'En attente' : 'Inactif'}</p>
                           </div>
                           <div>
                             <h3 className="text-sm font-medium text-muted-foreground">Date de création</h3>
                             <p>{new Date(selectedSfd.created_at).toLocaleDateString()}</p>
                           </div>
+                          {selectedSfd.contact_email && (
+                            <div>
+                              <h3 className="text-sm font-medium text-muted-foreground">Email de contact</h3>
+                              <p>{selectedSfd.contact_email}</p>
+                            </div>
+                          )}
+                          {selectedSfd.phone && (
+                            <div>
+                              <h3 className="text-sm font-medium text-muted-foreground">Téléphone</h3>
+                              <p>{selectedSfd.phone}</p>
+                            </div>
+                          )}
                         </div>
                         <div className="space-y-4">
                           <div>
                             <h3 className="text-sm font-medium text-muted-foreground">Dernière mise à jour</h3>
                             <p>{new Date(selectedSfd.updated_at).toLocaleDateString()}</p>
                           </div>
+                          {selectedSfd.description && (
+                            <div>
+                              <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
+                              <p>{selectedSfd.description}</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </TabsContent>
@@ -249,6 +288,11 @@ export function SfdManagementContainer() {
           error={error}
         />
       )}
+
+      <SfdAddDialog
+        open={showAddSfdDialog}
+        onOpenChange={setShowAddSfdDialog}
+      />
     </div>
   );
 }
