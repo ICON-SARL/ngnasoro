@@ -70,7 +70,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
       
       {isPending && (
         <div className="bg-[#0D6A51]/10 text-[#0D6A51] px-3 py-1 rounded-full text-xs mt-2 flex items-center">
-          <Loader size="xs" variant="primary" className="text-[#0D6A51] mr-1" />
+          <Loader size="sm" variant="primary" className="text-[#0D6A51] mr-1" />
           <p>Synchronisation en cours...</p>
         </div>
       )}
