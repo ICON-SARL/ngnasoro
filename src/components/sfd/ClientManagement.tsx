@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ClientManagementSystem } from './ClientManagementSystem';
-import ClientRequests from './ClientRequests';
 import { Badge } from '@/components/ui/badge';
 import { useSfdClients } from '@/hooks/useSfdClients';
+import ClientRequestList from './ClientRequestList';
 
 export const ClientManagement = () => {
   const [activeTab, setActiveTab] = useState('clients');
@@ -14,7 +14,7 @@ export const ClientManagement = () => {
   const pendingRequestsCount = clients.filter(client => client.status === 'pending').length;
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-montserrat">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-2 mb-8">
           <TabsTrigger value="clients">Clients</TabsTrigger>
@@ -33,7 +33,7 @@ export const ClientManagement = () => {
         </TabsContent>
         
         <TabsContent value="requests">
-          <ClientRequests />
+          <ClientRequestList />
         </TabsContent>
       </Tabs>
     </div>

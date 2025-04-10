@@ -1,11 +1,17 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { savingsAccountService, SavingsTransactionOptions } from '@/services/savings/savingsAccountService';
+import { supabase } from '@/integrations/supabase/client';
 
-/**
- * Hook for managing client savings account operations
- */
+export type SavingsTransactionOptions = {
+  clientId: string;
+  amount: number;
+  description?: string;
+  adminId: string;
+  transactionType: 'deposit' | 'withdrawal' | 'loan_disbursement' | 'loan_repayment';
+  referenceId?: string;
+};
+
 export function useSavingsAccount(clientId?: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -15,7 +21,18 @@ export function useSavingsAccount(clientId?: string) {
     queryKey: ['client-account', clientId],
     queryFn: async () => {
       if (!clientId) return null;
-      return savingsAccountService.getClientAccount(clientId);
+      
+      const { data, error } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', clientId)
+        .single();
+        
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+      
+      return data;
     },
     enabled: !!clientId
   });
@@ -25,7 +42,18 @@ export function useSavingsAccount(clientId?: string) {
     queryKey: ['client-transactions', clientId],
     queryFn: async () => {
       if (!clientId) return [];
-      return savingsAccountService.getTransactionHistory(clientId);
+      
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', clientId)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        throw error;
+      }
+      
+      return data || [];
     },
     enabled: !!clientId
   });
@@ -34,7 +62,32 @@ export function useSavingsAccount(clientId?: string) {
   const createAccount = useMutation({
     mutationFn: async ({ sfdId, initialBalance = 0 }: { sfdId: string, initialBalance?: number }) => {
       if (!clientId) throw new Error('Client ID is required');
-      return savingsAccountService.createSavingsAccount(clientId, sfdId, initialBalance);
+      
+      // First check if account already exists
+      const { data: existingAccount } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', clientId)
+        .single();
+        
+      if (existingAccount) {
+        return existingAccount;
+      }
+      
+      // Create new account
+      const { data, error } = await supabase
+        .from('accounts')
+        .insert({
+          user_id: clientId,
+          balance: initialBalance,
+          currency: 'FCFA',
+          sfd_id: sfdId
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
@@ -56,13 +109,24 @@ export function useSavingsAccount(clientId?: string) {
   const processDeposit = useMutation({
     mutationFn: async ({ amount, description, adminId }: Omit<SavingsTransactionOptions, 'clientId' | 'transactionType'>) => {
       if (!clientId) throw new Error('Client ID is required');
-      return savingsAccountService.processTransaction({
-        clientId,
-        amount,
-        description,
-        adminId,
-        transactionType: 'deposit'
-      });
+      
+      // Create the transaction
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: clientId,
+          amount,
+          type: 'deposit',
+          name: 'Dépôt',
+          description: description || 'Dépôt en agence',
+          status: 'success',
+          payment_method: 'sfd_agency'
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
@@ -81,37 +145,6 @@ export function useSavingsAccount(clientId?: string) {
     }
   });
   
-  // Process a loan disbursement
-  const processLoanDisbursement = useMutation({
-    mutationFn: async ({ amount, loanId, adminId, description }: { amount: number, loanId: string, adminId: string, description?: string }) => {
-      if (!clientId) throw new Error('Client ID is required');
-      return savingsAccountService.processTransaction({
-        clientId,
-        amount,
-        description: description || `Décaissement du prêt ${loanId}`,
-        adminId,
-        transactionType: 'loan_disbursement',
-        referenceId: loanId
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
-      queryClient.invalidateQueries({ queryKey: ['client-transactions', clientId] });
-      queryClient.invalidateQueries({ queryKey: ['loans'] }); // Invalidate loans queries to refresh loan status
-      toast({
-        title: "Prêt décaissé",
-        description: "Le montant du prêt a été crédité sur le compte du client"
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur",
-        description: `Impossible de décaisser le prêt: ${error.message}`,
-        variant: "destructive"
-      });
-    }
-  });
-  
   return {
     account: accountQuery.data,
     transactions: transactionsQuery.data,
@@ -119,7 +152,6 @@ export function useSavingsAccount(clientId?: string) {
     isError: accountQuery.isError || transactionsQuery.isError,
     createAccount,
     processDeposit,
-    processLoanDisbursement,
     refetch: () => {
       accountQuery.refetch();
       transactionsQuery.refetch();

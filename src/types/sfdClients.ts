@@ -1,18 +1,17 @@
 
-
 export interface SfdClient {
   id: string;
+  sfd_id: string;
+  user_id?: string;
   full_name: string;
   email?: string;
   phone?: string;
   address?: string;
   id_number?: string;
   id_type?: string;
-  sfd_id: string;
-  user_id?: string;
   status: 'pending' | 'validated' | 'rejected' | 'suspended';
   kyc_level: number;
-  created_at: string;
+  created_at?: string;
   validated_at?: string;
   validated_by?: string;
   notes?: string;
@@ -34,70 +33,24 @@ export interface ClientActivity {
   client_id: string;
   activity_type: string;
   description?: string;
-  performed_at: string;
   performed_by?: string;
+  performed_at: string;
 }
 
-// Updated Loan interface with all required properties
-export interface Loan {
+export interface ClientSavingsAccount {
   id: string;
   client_id: string;
-  sfd_id: string;
-  amount: number;
-  interest_rate: number;
-  term_months: number;
-  duration_months: number; // Added this property
-  status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'defaulted';
-  purpose?: string;
-  approved_at?: string;
-  approved_by?: string;
-  disbursed_at?: string;
-  start_date?: string;
-  end_date?: string;
-  created_at: string;
-  updated_at: string;
-  monthly_payment?: number; // Added this property
-  next_payment_date?: string; // Added this property
-  last_payment_date?: string; // Added this property
-  subsidy_amount?: number; // Added this property
-  subsidy_rate?: number; // Added this property
-  client_name?: string; // Added for convenience in components
-  reference?: string; // Added for display purposes
+  balance: number;
+  currency: string;
+  status: 'active' | 'frozen' | 'closed';
+  last_transaction_date?: string;
 }
 
-export interface LoanPayment {
-  id: string;
-  loan_id: string;
+export interface ClientBalanceOperation {
+  clientId: string;
   amount: number;
-  payment_date: string;
-  payment_method: string;
-  status: 'pending' | 'completed' | 'failed';
-  reference_number?: string;
-  notes?: string;
-}
-
-// Updated SfdSubsidy interface with all required properties
-export interface SfdSubsidy {
-  id: string;
-  sfd_id: string;
-  amount: number;
-  status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'active' | 'depleted' | 'expired' | 'cancelled'; // Added more status options
-  purpose: string;
-  region?: string;
-  requested_by: string;
-  requested_at: string;
-  approved_at?: string;
-  approved_by?: string;
-  rejected_reason?: string;
-  disbursed_at?: string;
-  priority: 'low' | 'medium' | 'high';
-  documents?: string[];
-  // Additional properties based on error messages
-  used_amount: number;
-  remaining_amount: number;
-  allocated_at: string;
-  allocated_by: string;
-  end_date?: string;
+  operationType: 'deposit' | 'withdrawal' | 'loan_disbursement' | 'loan_repayment';
   description?: string;
+  adminId: string;
+  reference?: string;
 }
-

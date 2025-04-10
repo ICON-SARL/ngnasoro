@@ -40,7 +40,6 @@ export function useAvailableSfds(userId?: string) {
         
       if (pendingRequestsError) throw pendingRequestsError;
       
-      // Cast the response to the correct type
       setPendingRequests(pendingSfdRequests as SfdClientRequest[] || []);
       
       // Get IDs of SFDs that user has pending requests for
@@ -73,7 +72,7 @@ export function useAvailableSfds(userId?: string) {
   };
 
   // Request access to a SFD
-  const requestSfdAccess = async (sfdId: string, phoneNumber?: string) => {
+  const requestSfdAccess = async (sfdId: string) => {
     if (!userId) {
       toast({
         title: 'Erreur',
@@ -96,36 +95,31 @@ export function useAvailableSfds(userId?: string) {
         return false;
       }
       
+      // Get user profile data
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', userId)
+        .single();
+        
+      if (profileError) {
+        console.error('Error fetching profile data:', profileError);
+      }
+      
       // Create a client request entry
       const { data, error } = await supabase
         .from('sfd_clients')
         .insert({
           user_id: userId,
           sfd_id: sfdId,
-          full_name: '', // Will be updated from user profile
-          phone: phoneNumber || null,
+          full_name: profile?.full_name || 'Client',
+          email: profile?.email || null,
           status: 'pending',
           kyc_level: 0
         })
         .select();
         
       if (error) throw error;
-      
-      // Update the client with user profile data
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, avatar_url')
-        .eq('id', userId)
-        .single();
-        
-      if (profile) {
-        await supabase
-          .from('sfd_clients')
-          .update({ 
-            full_name: profile.full_name || 'Client' 
-          })
-          .eq('id', data[0].id);
-      }
       
       // Refresh the pending requests list
       fetchAvailableSfds();
