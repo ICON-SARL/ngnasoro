@@ -1258,6 +1258,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_same_user: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
+      is_sfd_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       propagate_client_transaction: {
         Args: { p_transaction_id: string }
         Returns: boolean

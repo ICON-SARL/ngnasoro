@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { subsidyService } from '@/services/subsidyService';
 
 interface MerefSubsidyRequest {
   id: string;
@@ -25,6 +26,9 @@ export function useMerefSubsidyRequests() {
     queryKey: ['meref-subsidy-requests'],
     queryFn: async () => {
       try {
+        console.log("Récupération des demandes de subvention...");
+        
+        // Utilisation d'une requête simplifiée pour éviter des jointures complexes
         const { data, error } = await supabase
           .from('subsidy_requests')
           .select(`
@@ -34,23 +38,42 @@ export function useMerefSubsidyRequests() {
             status,
             created_at,
             region,
-            sfds:sfd_id(id, name)
+            sfd_id
           `)
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Erreur lors de la récupération des demandes de subvention:", error);
+          throw error;
+        }
 
-        // Générer une référence de style CREDIT-YYYY-XXX pour chaque demande
-        const formattedData = data.map((item, index) => {
+        // Récupérer les informations SFD séparément si nécessaire
+        const formattedData = await Promise.all(data.map(async (item, index) => {
           const date = new Date(item.created_at);
           const year = date.getFullYear();
-          // Formater l'index pour avoir au moins 3 chiffres
           const paddedIndex = String(index + 1).padStart(3, '0');
+          
+          // Récupérer le nom de la SFD séparément
+          let sfdName = 'SFD inconnu';
+          try {
+            const { data: sfdData, error: sfdError } = await supabase
+              .from('sfds')
+              .select('name')
+              .eq('id', item.sfd_id)
+              .single();
+              
+            if (!sfdError && sfdData) {
+              sfdName = sfdData.name;
+            }
+          } catch (sfdError) {
+            console.warn("Impossible de récupérer les détails de la SFD:", sfdError);
+          }
+          
           return {
             id: item.id,
             reference: `CREDIT-${year}-${paddedIndex}`,
-            sfd_id: item.sfds ? item.sfds.id : '',
-            sfd_name: item.sfds ? item.sfds.name : 'SFD inconnu',
+            sfd_id: item.sfd_id,
+            sfd_name: sfdName,
             amount: item.amount,
             purpose: item.purpose,
             created_at: item.created_at,
@@ -59,8 +82,9 @@ export function useMerefSubsidyRequests() {
             score: Math.floor(Math.random() * (95 - 30 + 1)) + 30,
             region: item.region || 'Non spécifié'
           };
-        });
+        }));
 
+        console.log("Demandes de subvention récupérées:", formattedData.length);
         return formattedData;
       } catch (error) {
         console.error('Erreur lors de la récupération des demandes de subvention:', error);
@@ -69,17 +93,16 @@ export function useMerefSubsidyRequests() {
     }
   });
 
-  // Approuver une demande de subvention
+  // Approuver une demande de subvention en utilisant le service
   const approveRequest = useMutation({
     mutationFn: async (requestId: string) => {
-      const { data, error } = await supabase
-        .from('subsidy_requests')
-        .update({ status: 'approved', reviewed_at: new Date().toISOString() })
-        .eq('id', requestId)
-        .select();
-
-      if (error) throw error;
-      return data;
+      try {
+        const result = await subsidyService.approveSubsidyRequest(requestId);
+        return result;
+      } catch (error) {
+        console.error("Erreur lors de l'approbation:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -97,17 +120,16 @@ export function useMerefSubsidyRequests() {
     }
   });
 
-  // Rejeter une demande de subvention
+  // Rejeter une demande de subvention en utilisant le service
   const rejectRequest = useMutation({
     mutationFn: async (requestId: string) => {
-      const { data, error } = await supabase
-        .from('subsidy_requests')
-        .update({ status: 'rejected', reviewed_at: new Date().toISOString() })
-        .eq('id', requestId)
-        .select();
-
-      if (error) throw error;
-      return data;
+      try {
+        const result = await subsidyService.rejectSubsidyRequest(requestId);
+        return result;
+      } catch (error) {
+        console.error("Erreur lors du rejet:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
