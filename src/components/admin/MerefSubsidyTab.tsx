@@ -45,13 +45,13 @@ export function MerefSubsidyTab() {
   );
 
   const handleApprove = (requestId: string) => {
-    approveRequest.mutate(requestId);
+    approveRequest(requestId);
     setConfirmDialogOpen(false);
     setSelectedRequest(null);
   };
 
   const handleReject = (requestId: string) => {
-    rejectRequest.mutate(requestId);
+    rejectRequest(requestId);
     setConfirmDialogOpen(false);
     setSelectedRequest(null);
   };

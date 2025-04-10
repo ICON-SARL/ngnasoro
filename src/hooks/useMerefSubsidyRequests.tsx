@@ -101,7 +101,7 @@ export function useMerefSubsidyRequests() {
   });
 
   // Approuver une demande de subvention en utilisant le service
-  const approveRequest = useMutation({
+  const approveMutation = useMutation({
     mutationFn: async (requestId: string) => {
       console.log("Tentative d'approbation de la requête:", requestId);
       try {
@@ -132,7 +132,7 @@ export function useMerefSubsidyRequests() {
   });
 
   // Rejeter une demande de subvention en utilisant le service
-  const rejectRequest = useMutation({
+  const rejectMutation = useMutation({
     mutationFn: async (params: { requestId: string, comments?: string }) => {
       console.log("Tentative de rejet de la requête:", params);
       try {
@@ -166,8 +166,8 @@ export function useMerefSubsidyRequests() {
     requests: requests || [],
     isLoading,
     isError,
-    approveRequest: (requestId: string) => approveRequest.mutate(requestId),
-    rejectRequest: (requestId: string, comments?: string) => rejectRequest.mutate({ requestId, comments }),
+    approveRequest: (requestId: string) => approveMutation.mutate(requestId),
+    rejectRequest: (requestId: string, comments?: string) => rejectMutation.mutate({ requestId, comments }),
     refetch
   };
 }
