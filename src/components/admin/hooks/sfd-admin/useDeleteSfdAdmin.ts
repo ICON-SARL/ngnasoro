@@ -1,72 +1,44 @@
 
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { deleteSfdAdmin } from './sfdAdminApiService';
 
 export function useDeleteSfdAdmin() {
-  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  const deleteSfdAdminMutation = useMutation({
+  const { mutate, isPending: isDeleting } = useMutation({
     mutationFn: async (adminId: string) => {
-      setIsDeleting(true);
-      setError(null);
-      
       try {
-        // First, remove user from user_sfds table
-        const { error: userSfdsError } = await supabase
-          .from('user_sfds')
-          .delete()
-          .eq('user_id', adminId);
-        
-        if (userSfdsError) {
-          console.error('Error removing SFD association:', userSfdsError);
-          throw userSfdsError;
-        }
-
-        // Then disable the admin user
-        // Use the appropriate field to mark user as inactive
-        const { error: updateError } = await supabase
-          .from('admin_users')
-          .update({ role: 'inactive_sfd_admin' })
-          .eq('id', adminId);
-          
-        if (updateError) {
-          console.error('Error disabling admin user:', updateError);
-          throw updateError;
-        }
-        
-        return true;
-      } catch (error: any) {
-        console.error('Error deleting SFD admin:', error);
-        setError(error.message || "Une erreur est survenue lors de la suppression de l'administrateur");
-        throw error;
-      } finally {
-        setIsDeleting(false);
+        setError(null);
+        return await deleteSfdAdmin(adminId);
+      } catch (err: any) {
+        console.error('Error deleting SFD admin:', err);
+        setError(err.message || "Une erreur s'est produite lors de la suppression de l'administrateur");
+        throw err;
       }
     },
     onSuccess: () => {
-      // Invalidate the query to refetch the admin list
       queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
-      
       toast({
-        title: "Succès",
-        description: "L'administrateur a été supprimé avec succès",
+        title: "Suppression réussie",
+        description: "L'administrateur SFD a été supprimé avec succès.",
+        variant: "default",
       });
     },
-    onError: (error: any) => {
+    onError: (err: Error) => {
       toast({
         title: "Erreur",
-        description: `Impossible de supprimer l'administrateur: ${error.message}`,
+        description: `Impossible de supprimer l'administrateur SFD: ${err.message}`,
         variant: "destructive",
       });
     }
   });
 
   return {
-    deleteSfdAdmin: deleteSfdAdminMutation.mutate,
+    deleteSfdAdmin: mutate,
     isDeleting,
     error
   };

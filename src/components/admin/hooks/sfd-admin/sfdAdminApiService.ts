@@ -42,11 +42,11 @@ export async function createSfdAdmin(adminData: {
     
     console.log("No existing user found with this email, proceeding with creation");
     
-    // 1. Create the auth user
+    // Utiliser l'API d'administration de Supabase avec les bons privilèges
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: adminData.email,
       password: adminData.password,
-      email_confirm: true,
+      email_confirm: true, // Confirmation automatique
       user_metadata: {
         full_name: adminData.full_name,
         sfd_id: adminData.sfd_id
@@ -67,7 +67,7 @@ export async function createSfdAdmin(adminData: {
     
     console.log('Auth user created:', authData.user.id);
     
-    // 2. Assign role in the database using RPC
+    // Assigner le rôle dans la base de données
     const { error: roleError } = await supabase.rpc('assign_role', {
       user_id: authData.user.id,
       role: 'sfd_admin'
@@ -75,10 +75,10 @@ export async function createSfdAdmin(adminData: {
     
     if (roleError) {
       console.error('Error assigning role:', roleError);
-      // Continue despite role assignment error, we'll handle it separately
+      // Continue malgré l'erreur d'attribution de rôle, nous la gérerons séparément
     }
     
-    // 3. Add user to admin_users table using direct insert
+    // Ajouter l'utilisateur à la table admin_users par insertion directe
     const { error: adminError } = await supabase
       .from('admin_users')
       .insert({
@@ -94,7 +94,7 @@ export async function createSfdAdmin(adminData: {
       throw new Error(`Erreur lors de l'ajout de l'administrateur: ${adminError.message}`);
     }
     
-    // 4. Create association with SFD
+    // Créer l'association avec la SFD
     const { error: assocError } = await supabase
       .from('user_sfds')
       .insert({
@@ -108,7 +108,7 @@ export async function createSfdAdmin(adminData: {
       throw new Error(`Erreur lors de l'association à la SFD: ${assocError.message}`);
     }
     
-    // 5. Log audit event
+    // Enregistrer l'événement d'audit
     await logAuditEvent({
       category: AuditLogCategory.ADMIN_ACTION,
       action: 'sfd_admin_created',
@@ -118,7 +118,7 @@ export async function createSfdAdmin(adminData: {
       },
       user_id: authData.user.id,
       severity: AuditLogSeverity.INFO,
-      status: 'success' // Adding the required status property
+      status: 'success'
     });
     
     console.log('SFD admin creation completed successfully');
@@ -157,7 +157,7 @@ export async function deleteSfdAdmin(adminId: string) {
     },
     user_id: undefined,
     severity: AuditLogSeverity.WARNING,
-    status: 'success' // Adding the required status property
+    status: 'success'
   });
   
   return true;
