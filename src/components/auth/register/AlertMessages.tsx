@@ -1,37 +1,32 @@
 
 import React from 'react';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface AlertMessagesProps {
   errorMessage: string | null;
   successMessage: string | null;
 }
 
-const AlertMessages: React.FC<AlertMessagesProps> = ({ 
-  errorMessage, 
-  successMessage 
-}) => {
-  if (!errorMessage && !successMessage) return null;
-  
+const AlertMessages: React.FC<AlertMessagesProps> = ({ errorMessage, successMessage }) => {
   return (
-    <div className="space-y-3 mb-4">
+    <>
       {errorMessage && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Erreur</AlertTitle>
+        <Alert className="mb-6 bg-red-50 border-red-200 text-red-800">
+          <AlertTriangle className="h-5 w-5" />
+          <AlertTitle>Erreur d'inscription</AlertTitle>
           <AlertDescription>{errorMessage}</AlertDescription>
         </Alert>
       )}
       
       {successMessage && (
-        <Alert variant="default" className="bg-green-50 text-green-800 border-green-200">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertTitle>Succès</AlertTitle>
+        <Alert className="mb-6 bg-green-50 border-green-200 text-green-800">
+          <CheckCircle className="h-5 w-5" />
+          <AlertTitle>Inscription réussie</AlertTitle>
           <AlertDescription>{successMessage}</AlertDescription>
         </Alert>
       )}
-    </div>
+    </>
   );
 };
 

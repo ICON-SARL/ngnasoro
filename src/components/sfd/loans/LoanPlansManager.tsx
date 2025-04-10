@@ -1,123 +1,161 @@
 
-import React, { useState } from 'react';
-import { useLoanPlans } from '@/hooks/useLoanPlans';
+import React, { useState, useEffect } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BadgePlus, Edit, Trash2, Check, Clock, Users, Percent, CalendarRange, Banknote } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { Plus, Edit, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import LoanPlanDialog from './LoanPlanDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
-export function LoanPlansManager() {
-  const { loanPlans, isLoading, createLoanPlan, updateLoanPlan, deleteLoanPlan } = useLoanPlans();
-  const [showNewPlanDialog, setShowNewPlanDialog] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
-  const [activeTab, setActiveTab] = useState<string>('all');
+interface LoanPlan {
+  id: string;
+  name: string;
+  description: string;
+  min_amount: number;
+  max_amount: number;
+  min_duration: number;
+  max_duration: number;
+  interest_rate: number;
+  fees: number;
+  requirements: string[];
+  is_active: boolean;
+}
+
+const LoanPlansManager = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const { activeSfdId } = useAuth();
+  const [loanPlans, setLoanPlans] = useState<LoanPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<LoanPlan | null>(null);
+  const [planToDelete, setPlanToDelete] = useState<string | null>(null);
   
-  const form = useForm({
-    defaultValues: {
-      name: '',
-      description: '',
-      min_amount: 10000,
-      max_amount: 500000,
-      min_duration: 1,
-      max_duration: 24,
-      interest_rate: 5.0,
-      fees: 1.0,
-      is_active: true,
-      requirements: ['Pièce d\'identité', 'Justificatif de domicile']
-    }
-  });
+  useEffect(() => {
+    fetchLoanPlans();
+  }, [user]);
   
-  // Filter loan plans based on active tab
-  const filteredPlans = loanPlans.filter(plan => {
-    if (activeTab === 'all') return true;
-    if (activeTab === 'active') return plan.is_active;
-    if (activeTab === 'inactive') return !plan.is_active;
-    return true;
-  });
-  
-  const handleCreatePlan = (data: any) => {
-    if (!activeSfdId) {
+  const fetchLoanPlans = async () => {
+    if (!user?.sfd_id) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('sfd_loan_plans')
+        .select('*')
+        .eq('sfd_id', user.sfd_id)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      setLoanPlans(data || []);
+    } catch (error) {
+      console.error('Error fetching loan plans:', error);
       toast({
         title: "Erreur",
-        description: "SFD non sélectionné",
-        variant: "destructive"
+        description: "Impossible de charger les plans de prêt",
+        variant: "destructive",
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-    
-    createLoanPlan.mutate({
-      ...data,
-      sfd_id: activeSfdId
-    }, {
-      onSuccess: () => {
-        toast({
-          title: "Plan de prêt créé",
-          description: "Le plan de prêt a été créé avec succès"
-        });
-        setShowNewPlanDialog(false);
-        form.reset();
-      }
-    });
   };
   
-  const handleEditPlan = (plan: any) => {
+  const handleOpenDialog = (plan: LoanPlan | null = null) => {
     setSelectedPlan(plan);
-    form.reset({
-      name: plan.name,
-      description: plan.description || '',
-      min_amount: plan.min_amount,
-      max_amount: plan.max_amount,
-      min_duration: plan.min_duration,
-      max_duration: plan.max_duration,
-      interest_rate: plan.interest_rate,
-      fees: plan.fees,
-      is_active: plan.is_active,
-      requirements: plan.requirements || []
-    });
-    setShowNewPlanDialog(true);
+    setIsDialogOpen(true);
   };
   
-  const handleSubmit = (data: any) => {
-    if (selectedPlan) {
-      updateLoanPlan.mutate({
-        id: selectedPlan.id,
-        ...data
-      }, {
-        onSuccess: () => {
-          toast({
-            title: "Plan mis à jour",
-            description: "Le plan de prêt a été mis à jour avec succès"
-          });
-          setShowNewPlanDialog(false);
-          setSelectedPlan(null);
-        }
+  const handleCloseDialog = () => {
+    setSelectedPlan(null);
+    setIsDialogOpen(false);
+  };
+  
+  const handleSaved = () => {
+    fetchLoanPlans();
+  };
+  
+  const confirmDelete = (planId: string) => {
+    setPlanToDelete(planId);
+  };
+  
+  const closeDeleteDialog = () => {
+    setPlanToDelete(null);
+  };
+  
+  const handleDelete = async () => {
+    if (!planToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from('sfd_loan_plans')
+        .delete()
+        .eq('id', planToDelete);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Plan supprimé",
+        description: "Le plan de prêt a été supprimé avec succès",
       });
-    } else {
-      handleCreatePlan(data);
+      
+      fetchLoanPlans();
+    } catch (error) {
+      console.error('Error deleting loan plan:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le plan de prêt",
+        variant: "destructive",
+      });
+    } finally {
+      closeDeleteDialog();
     }
   };
   
-  const handleDeletePlan = (planId: string) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce plan de prêt?")) {
-      deleteLoanPlan.mutate({ planId }, {
-        onSuccess: () => {
-          toast({
-            title: "Plan supprimé",
-            description: "Le plan de prêt a été supprimé avec succès"
-          });
-        }
+  const handleToggleActive = async (plan: LoanPlan) => {
+    try {
+      const { error } = await supabase
+        .from('sfd_loan_plans')
+        .update({
+          is_active: !plan.is_active,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', plan.id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: plan.is_active ? "Plan désactivé" : "Plan activé",
+        description: plan.is_active 
+          ? "Le plan de prêt n'est plus disponible" 
+          : "Le plan de prêt est maintenant disponible",
+      });
+      
+      fetchLoanPlans();
+    } catch (error) {
+      console.error('Error toggling plan status:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier le statut du plan",
+        variant: "destructive",
       });
     }
   };
@@ -128,240 +166,146 @@ export function LoanPlansManager() {
         <div>
           <h2 className="text-xl font-semibold">Plans de Prêt</h2>
           <p className="text-sm text-muted-foreground">
-            Définissez les différents plans de prêt disponibles pour vos clients
+            Configurez les différents types de prêts proposés par votre SFD
           </p>
         </div>
-        <Button onClick={() => {
-          setSelectedPlan(null);
-          form.reset();
-          setShowNewPlanDialog(true);
-        }}>
-          <BadgePlus className="h-4 w-4 mr-2" />
+        
+        <Button onClick={() => handleOpenDialog()} className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">
+          <Plus className="h-4 w-4 mr-2" />
           Nouveau Plan
         </Button>
       </div>
       
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="all">Tous les plans</TabsTrigger>
-          <TabsTrigger value="active">Actifs</TabsTrigger>
-          <TabsTrigger value="inactive">Inactifs</TabsTrigger>
-        </TabsList>
-      </Tabs>
-      
-      {isLoading ? (
-        <div className="flex justify-center p-8">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      {loading ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      ) : filteredPlans.length === 0 ? (
-        <div className="text-center p-8 border rounded-lg bg-muted/20">
-          <h3 className="font-medium">Aucun plan de prêt trouvé</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Commencez par créer un nouveau plan pour vos clients
-          </p>
-          <Button 
-            variant="outline" 
-            className="mt-4"
-            onClick={() => {
-              setSelectedPlan(null);
-              form.reset();
-              setShowNewPlanDialog(true);
-            }}
-          >
-            <BadgePlus className="h-4 w-4 mr-2" />
+      ) : loanPlans.length === 0 ? (
+        <div className="text-center py-10 border rounded-lg">
+          <p className="text-muted-foreground mb-4">Aucun plan de prêt configuré</p>
+          <Button onClick={() => handleOpenDialog()}>
+            <Plus className="h-4 w-4 mr-2" />
             Créer un plan
           </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredPlans.map(plan => (
-            <Card key={plan.id} className={!plan.is_active ? "opacity-70" : ""}>
-              <CardHeader className="pb-2">
+          {loanPlans.map((plan) => (
+            <Card key={plan.id} className={!plan.is_active ? 'opacity-70' : ''}>
+              <CardHeader>
                 <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>{plan.name}</CardTitle>
-                    <CardDescription className="mt-1">{plan.description}</CardDescription>
-                  </div>
+                  <CardTitle className="text-lg">{plan.name}</CardTitle>
                   {plan.is_active ? (
                     <Badge className="bg-green-100 text-green-800">Actif</Badge>
                   ) : (
-                    <Badge variant="outline" className="bg-gray-100">Inactif</Badge>
+                    <Badge variant="outline" className="text-gray-500">Inactif</Badge>
                   )}
                 </div>
+                <CardDescription>{plan.description}</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center text-sm">
-                    <Banknote className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>
-                      {plan.min_amount.toLocaleString()} à {plan.max_amount.toLocaleString()} FCFA
-                    </span>
+              <CardContent className="space-y-3">
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Montant</h4>
+                  <p className="text-sm">{plan.min_amount.toLocaleString()} - {plan.max_amount.toLocaleString()} FCFA</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Durée</h4>
+                  <p className="text-sm">{plan.min_duration} - {plan.max_duration} mois</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">Taux d'intérêt</h4>
+                    <p className="text-sm">{plan.interest_rate}%</p>
                   </div>
-                  <div className="flex items-center text-sm">
-                    <CalendarRange className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>
-                      {plan.min_duration} à {plan.max_duration} mois
-                    </span>
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">Frais</h4>
+                    <p className="text-sm">{plan.fees}%</p>
                   </div>
-                  <div className="flex items-center text-sm">
-                    <Percent className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>
-                      Taux d'intérêt: {plan.interest_rate}% + Frais: {plan.fees}%
-                    </span>
-                  </div>
-                  {plan.requirements && plan.requirements.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-sm font-medium mb-1">Documents requis:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {plan.requirements.map((req: string, idx: number) => (
-                          <Badge key={idx} variant="outline" className="bg-blue-50 text-blue-700">
-                            {req}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Documents requis</h4>
+                  {plan.requirements && plan.requirements.length > 0 ? (
+                    <ul className="text-sm pl-5 list-disc">
+                      {plan.requirements.slice(0, 3).map((req, index) => (
+                        <li key={index}>{req}</li>
+                      ))}
+                      {plan.requirements.length > 3 && (
+                        <li>+{plan.requirements.length - 3} autres</li>
+                      )}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Aucun document requis</p>
                   )}
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-end gap-2 pt-1">
-                <Button variant="outline" size="sm" onClick={() => handleEditPlan(plan)}>
-                  <Edit className="h-4 w-4 mr-1" />
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" size="sm" onClick={() => handleOpenDialog(plan)}>
+                  <Edit className="h-4 w-4 mr-2" />
                   Modifier
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-red-600 border-red-200 hover:bg-red-50"
-                  onClick={() => handleDeletePlan(plan.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleToggleActive(plan)}
+                    className={plan.is_active ? "text-red-500" : "text-green-500"}
+                  >
+                    {plan.is_active ? (
+                      <>
+                        <X className="h-4 w-4 mr-2" />
+                        Désactiver
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Activer
+                      </>
+                    )}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-red-500"
+                    onClick={() => confirmDelete(plan.id)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Supprimer
+                  </Button>
+                </div>
               </CardFooter>
             </Card>
           ))}
         </div>
       )}
       
-      <Dialog open={showNewPlanDialog} onOpenChange={setShowNewPlanDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{selectedPlan ? 'Modifier le plan' : 'Créer un nouveau plan de prêt'}</DialogTitle>
-            <DialogDescription>
-              Définissez les paramètres du plan de prêt pour vos clients
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Nom du plan</Label>
-                  <Input id="name" {...form.register('name')} required />
-                </div>
-                
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea 
-                    id="description" 
-                    {...form.register('description')} 
-                    placeholder="Description du plan de prêt"
-                  />
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label>Montants (FCFA)</Label>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      <div>
-                        <Label htmlFor="min_amount" className="text-xs">Minimum</Label>
-                        <Input 
-                          id="min_amount" 
-                          type="number" 
-                          {...form.register('min_amount', { valueAsNumber: true })} 
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="max_amount" className="text-xs">Maximum</Label>
-                        <Input 
-                          id="max_amount" 
-                          type="number" 
-                          {...form.register('max_amount', { valueAsNumber: true })} 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <Label>Durée (mois)</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    <div>
-                      <Label htmlFor="min_duration" className="text-xs">Minimum</Label>
-                      <Input 
-                        id="min_duration" 
-                        type="number" 
-                        {...form.register('min_duration', { valueAsNumber: true })} 
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="max_duration" className="text-xs">Maximum</Label>
-                      <Input 
-                        id="max_duration" 
-                        type="number" 
-                        {...form.register('max_duration', { valueAsNumber: true })} 
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="interest_rate">Taux d'intérêt (%)</Label>
-                  <Input 
-                    id="interest_rate" 
-                    type="number" 
-                    step="0.1" 
-                    {...form.register('interest_rate', { valueAsNumber: true })} 
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="fees">Frais de dossier (%)</Label>
-                  <Input 
-                    id="fees" 
-                    type="number" 
-                    step="0.1" 
-                    {...form.register('fees', { valueAsNumber: true })} 
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="is_active">Plan actif</Label>
-                  <Switch 
-                    id="is_active" 
-                    checked={form.watch('is_active')} 
-                    onCheckedChange={(checked) => form.setValue('is_active', checked)} 
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setShowNewPlanDialog(false)}
-              >
-                Annuler
-              </Button>
-              <Button type="submit">
-                {selectedPlan ? 'Mettre à jour' : 'Créer le plan'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Create/Edit Dialog */}
+      <LoanPlanDialog
+        isOpen={isDialogOpen}
+        onClose={handleCloseDialog}
+        onSaved={handleSaved}
+        planToEdit={selectedPlan}
+      />
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!planToDelete} onOpenChange={closeDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Êtes-vous sûr?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Le plan de prêt sera définitivement supprimé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
-}
+};
+
+export default LoanPlansManager;

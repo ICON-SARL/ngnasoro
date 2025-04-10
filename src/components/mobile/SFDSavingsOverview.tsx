@@ -28,9 +28,7 @@ const SFDSavingsOverview = () => {
   
   // Get active SFD data from dashboard if available
   const activeSfd = dashboardData?.sfdAccounts?.find(sfd => sfd.is_default);
-  
-  // Fallback if no active SFD found
-  const sfdName = activeSfd?.sfds?.name || activeSfdAccount?.name || "Mon Compte SFD";
+  const sfdName = activeSfd?.sfds?.name || activeSfdAccount?.name || "Premier SFD";
   const sfdBalance = dashboardData?.account?.balance || activeSfdAccount?.balance || 250000;
   const sfdCurrency = dashboardData?.account?.currency || activeSfdAccount?.currency || 'FCFA';
   
@@ -108,7 +106,17 @@ const SFDSavingsOverview = () => {
     navigate('/mobile-flow/secure-payment', { state: { isWithdrawal: true } });
   };
   
-  // Use fallback data instead of showing no account message
+  // Show a "no account" message if the user doesn't have an active SFD
+  if (!activeSfdId && !isLoading && !isDashboardLoading) {
+    return <NoAccountState />;
+  }
+  
+  // Show loading state
+  if (!activeSfdAccount && !activeSfd && (isLoading || isDashboardLoading)) {
+    return <LoadingState />;
+  }
+  
+  // Show error state
   if (hasError) {
     return (
       <ErrorState 
@@ -116,11 +124,6 @@ const SFDSavingsOverview = () => {
         retryFn={refreshBalance} 
       />
     );
-  }
-  
-  // Show loading state
-  if ((isLoading || isDashboardLoading) && !sfdBalance) {
-    return <LoadingState />;
   }
   
   return (

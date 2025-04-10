@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext, useCallback, createContext } from 'react';
 import { User, AuthContextProps, Role } from './types';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,37 +37,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
-  // Handle role assignment without causing infinite recursion
-  const assignUserRole = useCallback(async (userId: string, role: Role) => {
-    if (!userId || !role) return;
+  const assignUserRole = useCallback(async (user: User) => {
+    if (!user || !user.app_metadata?.role || user.app_metadata.role_assigned) return;
     
     try {
-      // Convert the Role type to match what the RPC function expects
-      let roleValue: 'admin' | 'sfd_admin' | 'user';
+      const validRole = user.app_metadata.role as "admin" | "sfd_admin" | "user";
       
-      if (role === 'admin' || role === 'sfd_admin' || role === 'user') {
-        roleValue = role;
-      } else if (role === 'client') {
-        // If role is 'client', map it to 'user' for the database
-        roleValue = 'user';
-      } else {
-        roleValue = 'user'; // Default fallback
-      }
-      
-      // Use the converted role value for the RPC call
       const { data: roleData, error: roleError } = await supabase.rpc('assign_role', {
-        user_id: userId,
-        role: roleValue
+        user_id: user.id,
+        role: validRole
       });
       
-      if (roleError) {
+      if (!roleError) {
+        const { error: updateError } = await supabase.auth.updateUser({
+          data: {
+            ...user.app_metadata,
+            role_assigned: true
+          }
+        });
+        
+        if (updateError) {
+          console.error('Error updating user metadata:', updateError);
+        }
+      } else {
         console.error('Error assigning role:', roleError);
       }
-      
-      return { success: !roleError };
     } catch (err) {
       console.error('Error in assign_role process:', err);
-      return { success: false, error: err };
     }
   }, []);
 
@@ -106,8 +101,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    if (user?.id && user?.app_metadata?.role && !user?.app_metadata?.role_assigned) {
-      assignUserRole(user.id, user.app_metadata.role);
+    if (user) {
+      assignUserRole(user);
     }
   }, [user, assignUserRole]);
 

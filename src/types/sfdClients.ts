@@ -1,39 +1,5 @@
 
-export interface ClientSavingsAccount {
-  id: string;
-  user_id: string;
-  balance: number;
-  currency: string;
-  updated_at: string;
-  last_updated: string;
-  last_transaction_date?: string;
-}
 
-export interface Loan {
-  id: string;
-  client_id: string;
-  sfd_id: string;
-  amount: number;
-  interest_rate: number;
-  term_months?: number; // Make term_months optional
-  duration_months: number; // Add duration_months as required
-  monthly_payment: number;
-  purpose: string;
-  status: string;
-  created_at: string;
-  next_payment_date?: string;
-  client_name?: string;
-  reference?: string;
-  subsidy_amount?: number;
-  subsidy_rate?: number;
-  // Fields that might be returned from the database
-  approved_at?: string;
-  approved_by?: string;
-  disbursed_at?: string;
-  last_payment_date?: string;
-}
-
-// Add missing interfaces that other files depend on
 export interface SfdClient {
   id: string;
   full_name: string;
@@ -42,14 +8,14 @@ export interface SfdClient {
   address?: string;
   id_number?: string;
   id_type?: string;
-  status: string;
   sfd_id: string;
   user_id?: string;
+  status: 'pending' | 'validated' | 'rejected' | 'suspended';
   kyc_level: number;
   created_at: string;
-  notes?: string;
   validated_at?: string;
   validated_by?: string;
+  notes?: string;
 }
 
 export interface ClientDocument {
@@ -61,16 +27,42 @@ export interface ClientDocument {
   verified: boolean;
   verified_at?: string;
   verified_by?: string;
-  filename?: string;
 }
 
 export interface ClientActivity {
   id: string;
   client_id: string;
   activity_type: string;
-  description: string;
+  description?: string;
   performed_at: string;
   performed_by?: string;
+}
+
+// Updated Loan interface with all required properties
+export interface Loan {
+  id: string;
+  client_id: string;
+  sfd_id: string;
+  amount: number;
+  interest_rate: number;
+  term_months: number;
+  duration_months: number; // Added this property
+  status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'defaulted';
+  purpose?: string;
+  approved_at?: string;
+  approved_by?: string;
+  disbursed_at?: string;
+  start_date?: string;
+  end_date?: string;
+  created_at: string;
+  updated_at: string;
+  monthly_payment?: number; // Added this property
+  next_payment_date?: string; // Added this property
+  last_payment_date?: string; // Added this property
+  subsidy_amount?: number; // Added this property
+  subsidy_rate?: number; // Added this property
+  client_name?: string; // Added for convenience in components
+  reference?: string; // Added for display purposes
 }
 
 export interface LoanPayment {
@@ -79,20 +71,33 @@ export interface LoanPayment {
   amount: number;
   payment_date: string;
   payment_method: string;
-  status: string;
-  transaction_id?: string;
-  created_at: string;
+  status: 'pending' | 'completed' | 'failed';
+  reference_number?: string;
+  notes?: string;
 }
 
+// Updated SfdSubsidy interface with all required properties
 export interface SfdSubsidy {
   id: string;
   sfd_id: string;
   amount: number;
+  status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'active' | 'depleted' | 'expired' | 'cancelled'; // Added more status options
+  purpose: string;
+  region?: string;
+  requested_by: string;
+  requested_at: string;
+  approved_at?: string;
+  approved_by?: string;
+  rejected_reason?: string;
+  disbursed_at?: string;
+  priority: 'low' | 'medium' | 'high';
+  documents?: string[];
+  // Additional properties based on error messages
   used_amount: number;
   remaining_amount: number;
-  allocated_by: string;
   allocated_at: string;
+  allocated_by: string;
   end_date?: string;
-  status: string;
   description?: string;
 }
+

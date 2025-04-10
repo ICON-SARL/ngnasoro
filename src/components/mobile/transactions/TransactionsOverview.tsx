@@ -70,35 +70,35 @@ const TransactionsOverview: React.FC = () => {
   };
 
   return (
-    <Card className="border-0 shadow-soft bg-white rounded-3xl overflow-hidden">
+    <Card className="border-0 shadow-sm bg-white rounded-2xl overflow-hidden">
       <CardContent className="p-0">
-        <div className="bg-gradient-to-br from-[#0D6A51] to-[#13A180] p-6 text-white">
-          <div className="flex justify-between items-center mb-3">
+        <div className="bg-gradient-to-r from-[#0D6A51] to-[#0D6A51]/90 p-4 text-white">
+          <div className="flex justify-between items-center mb-2">
             <h3 className="text-lg font-semibold">Solde Disponible</h3>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-white hover:bg-white/20 rounded-full" 
+              className="text-white hover:bg-white/20" 
               onClick={refreshData}
             >
               <RefreshCw className="h-5 w-5" />
             </Button>
           </div>
           
-          <div className="text-center py-6">
-            <p className="text-4xl font-bold mb-6">{formatCurrencyAmount(balance)} FCFA</p>
+          <div className="text-center py-4">
+            <p className="text-3xl font-bold mb-4">{formatCurrencyAmount(balance)} FCFA</p>
             
-            <div className="flex justify-center space-x-4">
+            <div className="flex justify-center space-x-3">
               <Button 
                 onClick={handleMakeDeposit}
-                className="bg-white/20 hover:bg-white/30 text-white rounded-full py-2 px-5 flex items-center button-glow"
+                className="bg-white/20 hover:bg-white/30 text-white rounded-full py-2 px-4 flex items-center"
               >
                 <ArrowDown className="h-4 w-4 mr-2" />
                 Dépôt
               </Button>
               <Button 
                 onClick={handleMakeWithdrawal}
-                className="bg-white/20 hover:bg-white/30 text-white rounded-full py-2 px-5 flex items-center button-glow"
+                className="bg-white/20 hover:bg-white/30 text-white rounded-full py-2 px-4 flex items-center"
               >
                 <ArrowUp className="h-4 w-4 mr-2" />
                 Retrait
@@ -108,14 +108,10 @@ const TransactionsOverview: React.FC = () => {
         </div>
         
         <Tabs defaultValue="recent" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="px-4 pt-4">
-            <TabsList className="grid grid-cols-2 w-full rounded-full bg-gray-100/80 p-1">
-              <TabsTrigger value="recent" className="text-sm rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                Transactions Récentes
-              </TabsTrigger>
-              <TabsTrigger value="scheduled" className="text-sm rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                Paiements Planifiés
-              </TabsTrigger>
+          <div className="px-4 pt-2">
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="recent" className="text-sm">Transactions Récentes</TabsTrigger>
+              <TabsTrigger value="scheduled" className="text-sm">Paiements Planifiés</TabsTrigger>
             </TabsList>
           </div>
           
@@ -129,15 +125,14 @@ const TransactionsOverview: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="scheduled" className="mt-0 px-4 py-6">
-            <div className="flex flex-col items-center justify-center text-center p-8 text-gray-500">
-              <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                <Clock className="h-7 w-7 text-gray-400" />
-              </div>
-              <h3 className="font-medium mb-2 text-lg">Aucun paiement planifié</h3>
+            <div className="flex flex-col items-center justify-center text-center p-4 text-gray-500">
+              <Clock className="h-12 w-12 mb-2 text-gray-400" />
+              <h3 className="font-medium mb-1">Aucun paiement planifié</h3>
               <p className="text-sm">Vos paiements planifiés apparaîtront ici</p>
             </div>
           </TabsContent>
         </Tabs>
+        
       </CardContent>
     </Card>
   );

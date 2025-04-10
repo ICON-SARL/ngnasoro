@@ -23,23 +23,23 @@ const FinancialOverview = () => {
   };
   
   return (
-    <div className="mx-4 mt-4">
-      <Card className="border-0 shadow-soft bg-white rounded-3xl overflow-hidden hover:shadow-soft-lg transition-all duration-300">
-        <CardContent className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-800">Aperçu Financier</h3>
-            <Badge className="bg-[#0D6A51]/10 text-[#0D6A51] text-xs border-0 rounded-full py-1 px-3">
+    <div className="mx-4 mt-3">
+      <Card className="border-0 shadow-sm bg-white rounded-2xl overflow-hidden">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-medium">Aperçu Financier</h3>
+            <Badge className="bg-[#0D6A51]/10 text-[#0D6A51] text-xs border-0">
               <Building className="h-3 w-3 mr-1" />
               Multi-SFD
             </Badge>
           </div>
           
-          <div className="grid grid-cols-2 gap-4 mb-5">
-            <div className="bg-gradient-to-br from-green-50 to-green-100/50 p-4 rounded-2xl card-hover">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-green-50 p-3 rounded-xl">
               <div className="flex items-start justify-between mb-2">
                 <p className="text-sm text-gray-600">Revenus</p>
-                <div className="h-7 w-7 rounded-full bg-green-100 flex items-center justify-center">
-                  <ArrowUpRight className="h-4 w-4 text-green-600" />
+                <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
+                  <ArrowUpRight className="h-3 w-3 text-green-600" />
                 </div>
               </div>
               <p className="text-xl font-semibold text-gray-800">
@@ -50,11 +50,11 @@ const FinancialOverview = () => {
               </p>
             </div>
             
-            <div className="bg-gradient-to-br from-red-50 to-red-100/50 p-4 rounded-2xl card-hover">
+            <div className="bg-red-50 p-3 rounded-xl">
               <div className="flex items-start justify-between mb-2">
                 <p className="text-sm text-gray-600">Dépenses</p>
-                <div className="h-7 w-7 rounded-full bg-red-100 flex items-center justify-center">
-                  <ArrowDownRight className="h-4 w-4 text-red-600" />
+                <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center">
+                  <ArrowDownRight className="h-3 w-3 text-red-600" />
                 </div>
               </div>
               <p className="text-xl font-semibold text-gray-800">
@@ -69,17 +69,17 @@ const FinancialOverview = () => {
           <div className="mt-4 pt-3 border-t border-gray-100">
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-500">Épargne du mois dernier</p>
-              <div className="flex items-center bg-gray-50 px-3 py-1 rounded-full">
-                <p className="font-medium text-sm mr-1">
+              <div className="flex items-center">
+                <p className="font-medium">
                   {isLoading ? "..." : formatCurrency(financialSummary.savings)}
                 </p>
-                <TrendingUp className="h-4 w-4 text-green-500" />
+                <TrendingUp className="h-4 w-4 text-green-500 ml-1" />
               </div>
             </div>
           </div>
           
           <button 
-            className="mt-4 w-full bg-gradient-to-r from-[#0D6A51] to-[#13A180] text-white py-3 rounded-xl font-medium transition-all hover:shadow-md active:scale-[0.98] flex items-center justify-center"
+            className="mt-3 w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white py-2 rounded-xl font-medium transition-colors flex items-center justify-center"
             onClick={() => navigate('/solvency-engine')}
           >
             <BarChart3 className="h-4 w-4 mr-2" />

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Edit, UserPlus, AlertTriangle, Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -7,14 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Sfd } from '../types/sfd-types';
 import { formatDate } from '@/utils/formatDate';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SfdAdminList } from './SfdAdminList';
+import { AddSfdAdminDialog } from './AddSfdAdminDialog';
 
 interface SfdDetailViewProps {
   sfd: Sfd;
   onBack: () => void;
-  onAddAdmin?: () => void; // Nouvelle prop pour ajouter un admin
+  onAddAdmin?: () => void;
 }
 
 export function SfdDetailView({ sfd, onBack, onAddAdmin }: SfdDetailViewProps) {
+  const [showAddAdminDialog, setShowAddAdminDialog] = useState(false);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -22,14 +27,6 @@ export function SfdDetailView({ sfd, onBack, onAddAdmin }: SfdDetailViewProps) {
           <ArrowLeft className="h-4 w-4" />
           Retour
         </Button>
-        <div className="flex gap-2">
-          {onAddAdmin && (
-            <Button onClick={onAddAdmin} className="flex items-center gap-1">
-              <UserPlus className="h-4 w-4" />
-              Ajouter un administrateur
-            </Button>
-          )}
-        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -140,7 +137,18 @@ export function SfdDetailView({ sfd, onBack, onAddAdmin }: SfdDetailViewProps) {
               
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Administrateurs</h3>
-                <p className="text-2xl font-bold mt-1">{sfd.admin_count || 0}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-2xl font-bold mt-1">{sfd.admin_count || 0}</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowAddAdminDialog(true)}
+                    className="flex items-center gap-1"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Ajouter
+                  </Button>
+                </div>
                 {(!sfd.admin_count || sfd.admin_count === 0) && (
                   <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200 mt-2">
                     <p className="text-sm text-yellow-700 flex items-center">
@@ -163,6 +171,49 @@ export function SfdDetailView({ sfd, onBack, onAddAdmin }: SfdDetailViewProps) {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <Tabs defaultValue="admins" className="w-full">
+            <TabsList className="w-full">
+              <TabsTrigger value="admins" className="flex-1">Administrateurs SFD</TabsTrigger>
+              <TabsTrigger value="clients" className="flex-1">Clients</TabsTrigger>
+              <TabsTrigger value="loans" className="flex-1">Prêts</TabsTrigger>
+            </TabsList>
+            <div className="mt-6">
+              <TabsContent value="admins">
+                <SfdAdminList 
+                  sfdId={sfd.id} 
+                  sfdName={sfd.name} 
+                  onAddAdmin={() => setShowAddAdminDialog(true)} 
+                />
+              </TabsContent>
+              <TabsContent value="clients">
+                <div className="p-8 text-center text-muted-foreground">
+                  Liste des clients associés à cette SFD
+                </div>
+              </TabsContent>
+              <TabsContent value="loans">
+                <div className="p-8 text-center text-muted-foreground">
+                  Liste des prêts associés à cette SFD
+                </div>
+              </TabsContent>
+            </div>
+          </Tabs>
+        </CardContent>
+      </Card>
+      
+      <AddSfdAdminDialog
+        open={showAddAdminDialog}
+        onOpenChange={setShowAddAdminDialog}
+        sfdId={sfd.id}
+        sfdName={sfd.name}
+        onAddAdmin={() => {
+          setShowAddAdminDialog(false);
+        }}
+        isLoading={false}
+        error={null}
+      />
     </div>
   );
 }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, lazy } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
@@ -71,7 +70,6 @@ const MobileFlow = () => {
   // Handler for payment submission
   const handlePaymentSubmit = async (data: { recipient: string, amount: number, note: string }) => {
     try {
-      // Fix: Correctly call mutateAsync with the expected parameter format
       await updateBalance.mutateAsync({ amount: -data.amount });
       
       if (createTransaction) {

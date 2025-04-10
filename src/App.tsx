@@ -32,7 +32,6 @@ import SfdManagementPage from '@/pages/SfdManagementPage';
 import CreditApprovalPage from '@/pages/CreditApprovalPage';
 import MerefSubsidyRequestPage from '@/pages/MerefSubsidyRequestPage';
 import UsersManagementPage from '@/pages/UsersManagementPage';
-import SfdSelectorPage from '@/pages/SfdSelectorPage';
 
 // Role types and permissions
 import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
@@ -233,12 +232,6 @@ const AppRoutes = () => {
       
       {/* SFD Management route */}
       <Route path="/sfd-management" element={<SfdManagementPage />} />
-      
-      {/* SFD Selector route */}
-      <Route
-        path="/sfd-selector"
-        element={<SfdSelectorPage />}
-      />
     </Routes>
   );
 };
