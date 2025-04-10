@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useAddSfdAdmin } from '@/components/admin/hooks/sfd-admin/useAddSfdAdmin';
@@ -7,6 +7,7 @@ import { AddSfdAdminDialog } from '@/components/admin/sfd/AddSfdAdminDialog';
 import { SfdAdminList } from '@/components/admin/sfd/SfdAdminList';
 import { Plus, Loader2, RefreshCw } from 'lucide-react';
 import { useSfdAdminsList } from '../hooks/sfd-admin/useSfdAdminsList';
+import { toast } from '@/hooks/use-toast';
 
 interface SfdAdminManagerProps {
   sfdId: string;
@@ -28,7 +29,7 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
     error: addError 
   } = useAddSfdAdmin();
 
-  const handleAddAdmin = (data: {
+  const handleAddAdmin = async (data: {
     email: string;
     password: string;
     full_name: string;
@@ -36,12 +37,32 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
     sfd_id: string;
     notify: boolean;
   }) => {
-    addSfdAdmin(data, {
-      onSuccess: () => {
-        setShowAddDialog(false);
-        refetchAdmins();
-      }
-    });
+    try {
+      await addSfdAdmin(data, {
+        onSuccess: () => {
+          setShowAddDialog(false);
+          toast({
+            title: "Succès",
+            description: "L'administrateur SFD a été créé avec succès",
+          });
+          refetchAdmins();
+        },
+        onError: (error: Error) => {
+          toast({
+            title: "Erreur",
+            description: `Erreur lors de la création de l'administrateur: ${error.message}`,
+            variant: "destructive",
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Erreur non gérée:", error);
+      toast({
+        title: "Erreur inattendue",
+        description: "Une erreur s'est produite lors de la création de l'administrateur",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

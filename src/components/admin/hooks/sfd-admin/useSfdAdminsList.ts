@@ -12,6 +12,7 @@ export function useSfdAdminsList(sfdId?: string) {
     queryKey: ['sfd-admins', sfdId],
     queryFn: () => sfdId ? fetchSfdAdminsForSfd(sfdId) : fetchSfdAdmins(),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1, // Only retry once to avoid excessive retries on server errors
   });
 
   return {
