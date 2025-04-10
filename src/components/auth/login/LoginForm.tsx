@@ -4,8 +4,8 @@ import {
   ErrorDisplay,
   CooldownAlert,
   useLoginForm
-} from '../login/index';
-import SuccessState from '../login/SuccessState';
+} from './index';
+import SuccessState from './SuccessState';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mail, Eye, EyeOff, Lock, ShieldAlert } from 'lucide-react';
@@ -14,9 +14,10 @@ import { Badge } from '@/components/ui/badge';
 interface LoginFormProps {
   adminMode?: boolean;
   isSfdAdmin?: boolean;
+  onError?: (errorMessage: string) => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = false }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = false, onError }) => {
   const {
     email,
     setEmail,
@@ -30,7 +31,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
     cooldownTime,
     emailSent,
     handleLogin
-  } = useLoginForm(adminMode, isSfdAdmin);
+  } = useLoginForm(adminMode, isSfdAdmin, onError);
 
   if (emailSent) {
     return <SuccessState email={email} />;

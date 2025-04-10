@@ -2,7 +2,7 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { AuthContextProps } from './types';
+import { AuthContextProps, UserRole } from './types';
 
 const AuthContext = createContext<AuthContextProps>({
   user: null,
@@ -24,6 +24,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
+  const [biometricEnabled, setBiometricEnabled] = useState<boolean>(false);
 
   useEffect(() => {
     setLoading(true);
@@ -161,6 +162,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata
+        }
+      });
+      
+      if (error) {
+        return { error };
+      }
+      
+      return { error: null };
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      return { error };
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -190,15 +212,43 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const toggleBiometricAuth = async () => {
+    // Implementation would connect to device biometrics
+    // For now, just toggle the state
+    setBiometricEnabled(!biometricEnabled);
+    return Promise.resolve();
+  };
+
+  // Determine user role based on metadata
+  const getUserRole = (): UserRole => {
+    if (!user) return UserRole.User;
+    
+    const roleString = user.app_metadata?.role || user.user_metadata?.role;
+    
+    if (roleString === 'admin') return UserRole.SuperAdmin;
+    if (roleString === 'sfd_admin') return UserRole.SfdAdmin;
+    return UserRole.User;
+  };
+
+  const userRole = getUserRole();
+  const isAdmin = userRole === UserRole.SuperAdmin;
+  const isSfdAdmin = userRole === UserRole.SfdAdmin;
+
   const value = {
-    user,
+    user: user as any, // Type assertion to match our extended User interface
     loading,
     session,
     signIn,
+    signUp,
     signOut,
     refreshSession,
     activeSfdId,
     setActiveSfdId,
+    isAdmin,
+    isSfdAdmin,
+    userRole,
+    biometricEnabled,
+    toggleBiometricAuth
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

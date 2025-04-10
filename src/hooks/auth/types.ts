@@ -1,7 +1,11 @@
 
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
-export type User = SupabaseUser;
+export interface User extends SupabaseUser {
+  full_name?: string;
+  avatar_url?: string;
+  sfd_id?: string;
+}
 
 export enum UserRole {
   SuperAdmin = 'admin',
@@ -16,10 +20,16 @@ export interface AuthContextProps {
   loading: boolean;
   session: any | null;
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
+  signUp?: (email: string, password: string, metadata?: any) => Promise<{ error: any | null }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
   activeSfdId: string | null;
   setActiveSfdId: (id: string | null) => void;
+  isAdmin?: boolean;
+  isSfdAdmin?: boolean;
+  userRole?: UserRole;
+  biometricEnabled?: boolean;
+  toggleBiometricAuth?: () => Promise<void>;
 }
 
 export interface AssociateSfdParams {
