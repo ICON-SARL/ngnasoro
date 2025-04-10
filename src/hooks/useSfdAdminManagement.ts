@@ -99,7 +99,23 @@ export function useSfdAdminManagement() {
 
         console.log("SFD admin role assigned successfully");
         
-        // 4. Send notification to admin if requested
+        // 4. Create association with SFD
+        const { error: assocError } = await supabase
+          .from('user_sfds')
+          .insert({
+            user_id: signUpData.user.id,
+            sfd_id: data.sfd_id,
+            is_default: true
+          });
+          
+        if (assocError) {
+          console.error("Error creating SFD association:", assocError);
+          throw assocError;
+        }
+        
+        console.log("SFD association created successfully");
+        
+        // 5. Send notification to admin if requested
         if (data.notify && user) {
           try {
             await sendNotification({
@@ -115,7 +131,7 @@ export function useSfdAdminManagement() {
           }
         }
         
-        // 5. Return the created user data
+        // 6. Return the created user data
         return signUpData.user;
         
       } catch (error: any) {

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { useSfdAdminManagement } from '@/components/admin/hooks/useSfdAdminManagement';
+import { useSfdAdminManagement } from '@/hooks/useSfdAdminManagement';
 import { AddSfdAdminDialog } from '@/components/admin/sfd/AddSfdAdminDialog';
 import { Plus, Loader2 } from 'lucide-react';
 

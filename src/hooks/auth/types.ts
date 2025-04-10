@@ -1,50 +1,25 @@
-export type Role = 'admin' | 'sfd_admin' | 'user' | 'client' | null;
+
+import { User as SupabaseUser } from '@supabase/supabase-js';
+
+export type User = SupabaseUser;
 
 export enum UserRole {
-  SUPER_ADMIN = 'admin',
-  ADMIN = 'admin',
-  SFD_ADMIN = 'sfd_admin',
-  CLIENT = 'client',
-  USER = 'user'
+  SuperAdmin = 'admin',
+  SfdAdmin = 'sfd_admin',
+  User = 'user'
 }
 
-export interface User {
-  id: string;
-  email: string;
-  full_name: string;
-  avatar_url?: string;
-  sfd_id?: string;
-  phone?: string;
-  user_metadata: {
-    [key: string]: any;
-    sfd_id?: string;
-  };
-  app_metadata: {
-    role?: Role;
-    role_assigned?: boolean;
-    roles?: string[];
-    sfd_id?: string;
-  };
-}
+export type Role = 'admin' | 'sfd_admin' | 'user';
 
 export interface AuthContextProps {
   user: User | null;
-  setUser: (user: User | null) => void;
-  signIn: (email: string, password: string) => Promise<{ error?: any }>;
-  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
-  signOut: () => Promise<void>;
   loading: boolean;
-  isLoggedIn: boolean;
-  isAdmin: boolean;
-  isSfdAdmin: boolean;
-  activeSfdId: string | null;
-  setActiveSfdId: (sfdId: string | null) => void;
-  userRole: Role;
-  biometricEnabled: boolean;
-  toggleBiometricAuth: () => Promise<void>;
   session: any | null;
-  isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: any | null }>;
+  signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  activeSfdId: string | null;
+  setActiveSfdId: (id: string | null) => void;
 }
 
 export interface AssociateSfdParams {
@@ -55,6 +30,6 @@ export interface AssociateSfdParams {
 
 export interface AssociateSfdResult {
   success: boolean;
-  error?: string;
   userSfd?: any;
+  error?: string;
 }

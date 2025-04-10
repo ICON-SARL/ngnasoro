@@ -1,308 +1,210 @@
-import React, { useState, useEffect, useContext, useCallback, createContext } from 'react';
-import { User, AuthContextProps, Role } from './types';
+
+import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
-import { logAuditEvent } from '@/utils/audit/auditLoggerCore';
-import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
-import { createUserFromSupabaseUser } from './authUtils';
+import { AuthContextProps } from './types';
 
-interface AuthContextType extends AuthContextProps { }
-
-const AuthContext = createContext<AuthContextType>({
+const AuthContext = createContext<AuthContextProps>({
   user: null,
-  setUser: () => { },
-  signIn: async () => ({}),
-  signUp: async () => { },
-  signOut: async () => { },
   loading: true,
-  isLoggedIn: false,
-  isAdmin: false,
-  isSfdAdmin: false,
-  activeSfdId: null,
-  setActiveSfdId: () => { },
-  userRole: null,
-  biometricEnabled: false,
-  toggleBiometricAuth: async () => { },
   session: null,
-  isLoading: false,
-  refreshSession: async () => { }
+  signIn: async () => ({ error: null }),
+  signOut: async () => {},
+  refreshSession: async () => {},
+  activeSfdId: null,
+  setActiveSfdId: () => {},
 });
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
 
-  const assignUserRole = useCallback(async (user: User) => {
-    if (!user || !user.app_metadata?.role || user.app_metadata.role_assigned) return;
+  useEffect(() => {
+    setLoading(true);
     
-    try {
-      const validRole = user.app_metadata.role as "admin" | "sfd_admin" | "user";
-      
-      const { data: roleData, error: roleError } = await supabase.rpc('assign_role', {
-        user_id: user.id,
-        role: validRole
-      });
-      
-      if (!roleError) {
-        const { error: updateError } = await supabase.auth.updateUser({
-          data: {
-            ...user.app_metadata,
-            role_assigned: true
-          }
-        });
-        
-        if (updateError) {
-          console.error('Error updating user metadata:', updateError);
-        }
-      } else {
-        console.error('Error assigning role:', roleError);
-      }
-    } catch (err) {
-      console.error('Error in assign_role process:', err);
-    }
-  }, []);
-
-  useEffect(() => {
-    const storedSfdId = localStorage.getItem('activeSfdId');
-    if (storedSfdId) {
-      setActiveSfdId(storedSfdId);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (activeSfdId) {
-      localStorage.setItem('activeSfdId', activeSfdId);
-    } else {
-      localStorage.removeItem('activeSfdId');
-    }
-  }, [activeSfdId]);
-
-  useEffect(() => {
-    const checkBiometricSupport = async () => {
-      if (typeof window !== 'undefined' && 'PublicKeyCredential' in window) {
-        try {
-          const isConditionalMediationAvailable = await (window.PublicKeyCredential as any).isConditionalMediationAvailable();
-          setBiometricEnabled(!!isConditionalMediationAvailable);
-        } catch (error) {
-          console.error("Error checking biometric support:", error);
-          setBiometricEnabled(false);
-        }
-      } else {
-        setBiometricEnabled(false);
-      }
-    };
-
-    checkBiometricSupport();
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      assignUserRole(user);
-    }
-  }, [user, assignUserRole]);
-
-  useEffect(() => {
-    console.log("Setting up auth state listener and checking session");
-    
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
-      console.log("Auth state changed:", event, newSession?.user?.email);
-      
-      if (newSession?.user) {
-        const mappedUser = createUserFromSupabaseUser(newSession.user);
-        setUser(mappedUser);
-        
-        // Log additional user data to troubleshoot role issues
-        console.log("User authenticated with metadata:", {
-          email: newSession.user.email,
-          role: newSession.user.app_metadata?.role,
-          metadata: newSession.user.app_metadata,
-          user_metadata: newSession.user.user_metadata
-        });
-      } else {
-        setUser(null);
-      }
-      setSession(newSession);
-      setLoading(false);
-      
-      if (newSession?.user) {
-        console.log("User authenticated:", {
-          email: newSession.user.email,
-          role: newSession.user.app_metadata?.role
-        });
-      } else if (event === 'SIGNED_OUT') {
-        console.log("User signed out");
-      }
-    });
-    
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log("Initial session check:", currentSession?.user?.email);
-      
+    // Get session from local storage on initial load
+    const savedSession = localStorage.getItem('supabase.auth.token');
+    if (savedSession) {
+      const { currentSession } = JSON.parse(savedSession);
       if (currentSession) {
         setSession(currentSession);
-        if (currentSession.user) {
-          const mappedUser = createUserFromSupabaseUser(currentSession.user);
-          setUser(mappedUser);
+        setUser(currentSession.user);
+      }
+    }
+    
+    // Setup auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+      setUser(session?.user ?? null);
+      setSession(session);
+      setLoading(false);
+      
+      // If the user logged in and is an SFD admin, check for default SFD
+      if (event === 'SIGNED_IN' && session?.user) {
+        const userRole = session.user.app_metadata?.role || session.user.user_metadata?.role;
+        
+        if (userRole === 'sfd_admin') {
+          await loadDefaultSfd(session.user.id);
         }
       }
-      
-      setLoading(false);
-    }).catch(error => {
-      console.error("Error fetching initial session:", error);
-      setLoading(false);
     });
     
+    // Initial session check
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user ?? null);
+        setSession(session);
+        
+        // If user is logged in and is an SFD admin, check for default SFD
+        if (session?.user) {
+          const userRole = session.user.app_metadata?.role || session.user.user_metadata?.role;
+          
+          if (userRole === 'sfd_admin') {
+            await loadDefaultSfd(session.user.id);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    initializeAuth();
+    
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
+  
+  const loadDefaultSfd = async (userId: string) => {
+    try {
+      // Get user's default SFD
+      const { data, error } = await supabase
+        .from('user_sfds')
+        .select('sfd_id')
+        .eq('user_id', userId)
+        .eq('is_default', true)
+        .single();
+      
+      if (error) {
+        if (error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+          console.error('Error fetching default SFD:', error);
+        }
+        
+        // If no default SFD, try to get any SFD
+        const { data: anySfd, error: anySfdError } = await supabase
+          .from('user_sfds')
+          .select('sfd_id')
+          .eq('user_id', userId)
+          .limit(1)
+          .single();
+        
+        if (anySfdError) {
+          console.error('Error fetching any SFD:', anySfdError);
+          return;
+        }
+        
+        if (anySfd) {
+          console.log('Setting active SFD ID from any SFD:', anySfd.sfd_id);
+          setActiveSfdId(anySfd.sfd_id);
+          
+          // Set it as default for next time
+          const { error: updateError } = await supabase
+            .from('user_sfds')
+            .update({ is_default: true })
+            .eq('user_id', userId)
+            .eq('sfd_id', anySfd.sfd_id);
+          
+          if (updateError) {
+            console.error('Error setting default SFD:', updateError);
+          }
+        }
+      } else if (data) {
+        console.log('Setting active SFD ID from default SFD:', data.sfd_id);
+        setActiveSfdId(data.sfd_id);
+      }
+    } catch (error) {
+      console.error('Error in loadDefaultSfd:', error);
+    }
+  };
 
   const signIn = async (email: string, password: string) => {
     try {
-      setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) {
-        console.error('Sign in error:', error);
         return { error };
       }
-      
-      if (data.session) {
-        const mappedUser = createUserFromSupabaseUser(data.session.user);
-        setUser(mappedUser);
-        setSession(data.session);
-      }
-      
-      return {};
-    } catch (error) {
-      console.error('Unexpected sign in error:', error);
-      return { error: error };
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const signUp = async (email: string, password: string, metadata: Record<string, any> = {}) => {
-    try {
-      setLoading(true);
-      console.log("Attempting to sign up user:", email, "with metadata:", metadata);
+      // Check if the user is an SFD admin and load their default SFD
+      const userRole = data.user?.app_metadata?.role || data.user?.user_metadata?.role;
       
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: metadata,
-        },
-      });
-      
-      if (error) {
-        console.error('Sign up error:', error);
-        throw error;
+      if (userRole === 'sfd_admin' && data.user) {
+        await loadDefaultSfd(data.user.id);
       }
       
-      if (data.session) {
-        const mappedUser = createUserFromSupabaseUser(data.session.user);
-        setUser(mappedUser);
-        setSession(data.session);
-        console.log("User signed up successfully:", data.user);
-      } else {
-        console.log("Sign up successful but no session returned (email confirmation might be required)");
-      }
-    } catch (error) {
-      console.error('Unexpected sign up error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
+      return { error: null };
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      return { error };
     }
   };
 
   const signOut = async () => {
     try {
-      setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('Sign out error:', error);
-        throw error;
-      }
-      
+      await supabase.auth.signOut();
       setUser(null);
       setSession(null);
-      navigate('/auth');
+      setActiveSfdId(null);
     } catch (error) {
-      console.error('Unexpected sign out error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
+      console.error('Sign out error:', error);
     }
   };
 
   const refreshSession = async () => {
     try {
-      setIsLoading(true);
-      const { data, error } = await supabase.auth.refreshSession();
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setSession(session);
       
-      if (error) {
-        console.error('refreshSession error:', error);
-      }
-      
-      if (data?.session) {
-        setSession(data.session);
-        if (data.session.user) {
-          const mappedUser = createUserFromSupabaseUser(data.session.user);
-          setUser(mappedUser);
+      if (session?.user) {
+        const userRole = session.user.app_metadata?.role || session.user.user_metadata?.role;
+        
+        if (userRole === 'sfd_admin') {
+          await loadDefaultSfd(session.user.id);
         }
       }
     } catch (error) {
-      console.error('Unexpected refreshSession error:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error refreshing session:', error);
     }
   };
 
-  const toggleBiometricAuth = async () => {
-    setBiometricEnabled(prev => !prev);
-  };
-
-  const isAdmin = user?.app_metadata?.role === 'admin';
-  const isSfdAdmin = user?.app_metadata?.role === 'sfd_admin';
-  const userRole = user?.app_metadata?.role as Role | null;
-
-  const value: AuthContextType = {
+  const value = {
     user,
-    setUser,
-    signIn,
-    signUp,
-    signOut,
     loading,
-    isLoggedIn: !!user,
-    isAdmin,
-    isSfdAdmin,
+    session,
+    signIn,
+    signOut,
+    refreshSession,
     activeSfdId,
     setActiveSfdId,
-    userRole,
-    biometricEnabled,
-    toggleBiometricAuth,
-    session,
-    isLoading,
-    refreshSession
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

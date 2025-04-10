@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -38,10 +37,6 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
       .toUpperCase();
   };
   
-  const userInitials = user?.user_metadata?.full_name 
-    ? getInitials(user.user_metadata.full_name) 
-    : 'AD';
-  
   const isActiveRoute = (route: string) => {
     return location.pathname === route;
   };
@@ -56,6 +51,10 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
     { name: 'Paramètres', icon: <Settings className="w-4 h-4 mr-2" />, path: '/admin/settings' },
   ];
   
+  const userInitials = user?.user_metadata?.full_name 
+    ? getInitials(user.user_metadata.full_name) 
+    : 'AD';
+    
   return (
     <header className="sticky top-0 z-40 border-b bg-background">
       <div className="container flex h-16 items-center justify-between py-4">

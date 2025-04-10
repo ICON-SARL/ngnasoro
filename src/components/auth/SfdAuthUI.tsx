@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Check } from 'lucide-react';
 import Logo from './Logo';
 import LoginForm from './login/LoginForm';
-import { Check } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
 import DemoAccountsCreator from './DemoAccountsCreator';
 
@@ -13,6 +14,7 @@ const SfdAuthUI = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     const hash = location.hash;
@@ -88,7 +90,19 @@ const SfdAuthUI = () => {
             </h2>
           </div>
           
-          <LoginForm adminMode={false} isSfdAdmin={true} />
+          {error && (
+            <Alert variant="destructive" className="mb-4 mx-4 mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Erreur</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
+          <LoginForm 
+            adminMode={false} 
+            isSfdAdmin={true} 
+            onError={(errorMessage) => setError(errorMessage)}
+          />
           
           <div className="mt-4 text-center pb-6 flex flex-col gap-2">
             <a 

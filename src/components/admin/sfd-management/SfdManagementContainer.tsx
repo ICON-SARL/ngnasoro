@@ -1,154 +1,252 @@
 
-import React, { useState } from 'react';
-import { useSfdManagement } from '../hooks/sfd-management/useSfdManagement';
-import { SfdTable } from '../sfd/SfdTable';
-import { SfdFilter } from '../sfd/SfdFilter';
-import { SfdToolbar } from './SfdToolbar';
-import { SfdDialogs } from './SfdDialogs';
-import { SfdDetailView } from '../sfd/SfdDetailView';
-import { Sfd } from '../types/sfd-types';
-import { useSfdAdminManagement } from '../hooks/useSfdAdminManagement';
-import { AddSfdAdminDialog } from '../sfd/AddSfdAdminDialog';
+import React, { useState, useEffect } from 'react';
+import { useToast } from "@/hooks/use-toast";
+import { Button } from '@/components/ui/button';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Building, Search, UserPlus, Users } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { AddSfdAdminDialog } from '@/components/admin/sfd/AddSfdAdminDialog';
+import { useSfdAdminManagement } from '@/hooks/useSfdAdminManagement';
+import { SfdAdminManager } from '@/components/admin/sfd/SfdAdminManager';
 
 export function SfdManagementContainer() {
-  const [showDetailsView, setShowDetailsView] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sfds, setSfds] = useState<any[]>([]);
+  const [selectedSfd, setSelectedSfd] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('list');
   const [showAddAdminDialog, setShowAddAdminDialog] = useState(false);
-  const [selectedSfdForAdmin, setSelectedSfdForAdmin] = useState<Sfd | null>(null);
-  
-  const {
-    filteredSfds,
-    isLoading,
-    isError,
-    selectedSfd,
-    setSelectedSfd,
-    searchTerm,
-    setSearchTerm,
-    statusFilter,
-    setStatusFilter,
-    showSuspendDialog,
-    setShowSuspendDialog,
-    showReactivateDialog,
-    setShowReactivateDialog,
-    showActivateDialog,
-    setShowActivateDialog,
-    showAddDialog,
-    setShowAddDialog,
-    showEditDialog,
-    setShowEditDialog,
-    suspendSfdMutation,
-    reactivateSfdMutation,
-    activateSfdMutation,
-    addSfdMutation,
-    editSfdMutation,
-    handleAddSfd,
-    handleEditSfd,
-    handleShowEditDialog,
-    handleSuspendSfd,
-    handleReactivateSfd,
-    handleActivateSfd,
-    handleExportPdf,
-    handleExportExcel
-  } = useSfdManagement();
+  const { toast } = useToast();
+  const { isLoading: isLoadingAdmin, error, addSfdAdmin } = useSfdAdminManagement();
 
-  const { isLoading: isLoadingAdmin, error: adminError, addSfdAdmin } = useSfdAdminManagement();
+  useEffect(() => {
+    fetchSfds();
+  }, []);
 
-  const handleViewDetails = (sfd: Sfd) => {
-    setSelectedSfd(sfd);
-    setShowDetailsView(true);
-  };
-
-  const handleAddAdmin = (sfd: Sfd) => {
-    setSelectedSfdForAdmin(sfd);
-    setShowAddAdminDialog(true);
-  };
-
-  const handleBackFromDetails = () => {
-    setShowDetailsView(false);
-    setSelectedSfd(null);
-  };
-
-  const handleAddAdminSubmit = async (data: any) => {
-    if (!selectedSfdForAdmin) return;
-    
+  const fetchSfds = async () => {
+    setIsLoading(true);
     try {
-      await addSfdAdmin({
-        ...data,
-        sfd_id: selectedSfdForAdmin.id,
-      });
+      const { data, error } = await supabase
+        .from('sfds')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
       
-      setShowAddAdminDialog(false);
-    } catch (error) {
-      console.error('Error adding SFD admin:', error);
+      setSfds(data || []);
+      if (data && data.length > 0 && !selectedSfd) {
+        setSelectedSfd(data[0]);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les SFDs: " + error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (showDetailsView && selectedSfd) {
-    return (
-      <SfdDetailView 
-        sfd={selectedSfd} 
-        onBack={handleBackFromDetails}
-      />
-    );
-  }
+  const filteredSfds = sfds.filter(sfd => 
+    sfd.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    sfd.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (sfd.region && sfd.region.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const handleAddAdmin = (data: any) => {
+    addSfdAdmin({
+      ...data,
+      role: 'sfd_admin'
+    });
+    setShowAddAdminDialog(false);
+  };
 
   return (
-    <div className="space-y-4">
-      <SfdToolbar 
-        sfdCount={filteredSfds?.length || 0}
-        onAddSfd={() => setShowAddDialog(true)}
-      />
-      
-      <SfdFilter
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        onExportPdf={handleExportPdf}
-        onExportExcel={handleExportExcel}
-      />
-      
-      <SfdTable 
-        sfds={filteredSfds}
-        isLoading={isLoading}
-        isError={isError}
-        onSuspend={handleSuspendSfd}
-        onReactivate={handleReactivateSfd}
-        onActivate={handleActivateSfd}
-        onEdit={handleShowEditDialog}
-        onViewDetails={handleViewDetails}
-        onAddAdmin={handleAddAdmin}
-      />
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Gestion des SFDs</h1>
+          <p className="text-sm text-muted-foreground">
+            Administration centrale des institutions de microfinance partenaires
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2"
+          >
+            <Building className="h-4 w-4" />
+            Nouvelle SFD
+          </Button>
+          <Button 
+            onClick={() => setShowAddAdminDialog(true)}
+            className="gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            Ajouter un Admin SFD
+          </Button>
+        </div>
+      </div>
 
-      <SfdDialogs 
-        showSuspendDialog={showSuspendDialog}
-        setShowSuspendDialog={setShowSuspendDialog}
-        showReactivateDialog={showReactivateDialog}
-        setShowReactivateDialog={setShowReactivateDialog}
-        showActivateDialog={showActivateDialog}
-        setShowActivateDialog={setShowActivateDialog}
-        showAddDialog={showAddDialog}
-        setShowAddDialog={setShowAddDialog}
-        showEditDialog={showEditDialog}
-        setShowEditDialog={setShowEditDialog}
-        selectedSfd={selectedSfd}
-        suspendSfdMutation={suspendSfdMutation}
-        reactivateSfdMutation={reactivateSfdMutation}
-        activateSfdMutation={activateSfdMutation}
-        addSfdMutation={addSfdMutation}
-        editSfdMutation={editSfdMutation}
-        handleAddSfd={handleAddSfd}
-        handleEditSfd={handleEditSfd}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>SFDs Partenaires</CardTitle>
+              <CardDescription>
+                {sfds.length} institutions enregistrées
+              </CardDescription>
+              <div className="relative mt-2">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Rechercher par nom ou région..."
+                  className="pl-9"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="h-[500px] overflow-auto">
+              <div className="space-y-2">
+                {filteredSfds.map((sfd) => (
+                  <div 
+                    key={sfd.id}
+                    className={`flex items-center p-2 rounded-md cursor-pointer hover:bg-muted ${selectedSfd?.id === sfd.id ? 'bg-muted' : ''}`}
+                    onClick={() => setSelectedSfd(sfd)}
+                  >
+                    <div className="flex-shrink-0 h-10 w-10 mr-3 bg-primary/10 rounded-full flex items-center justify-center">
+                      {sfd.logo_url ? (
+                        <img src={sfd.logo_url} alt={sfd.name} className="h-8 w-8 rounded-full" />
+                      ) : (
+                        <Building className="h-5 w-5 text-primary" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{sfd.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        Code: {sfd.code} {sfd.region ? `• ${sfd.region}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {filteredSfds.length === 0 && (
+                  <div className="text-center p-4 text-muted-foreground">
+                    Aucune SFD trouvée
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      {selectedSfdForAdmin && (
+        <div className="lg:col-span-2">
+          {selectedSfd ? (
+            <>
+              <Card className="mb-6">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <div className="space-y-1">
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      {selectedSfd.logo_url && (
+                        <img src={selectedSfd.logo_url} alt={selectedSfd.name} className="h-6 w-6 rounded-full" />
+                      )}
+                      {selectedSfd.name}
+                    </CardTitle>
+                    <CardDescription>
+                      Code: {selectedSfd.code} • Région: {selectedSfd.region || 'Non spécifiée'}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm">
+                      Modifier
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="mb-4">
+                      <TabsTrigger value="list">Informations</TabsTrigger>
+                      <TabsTrigger value="admins">
+                        <Users className="h-4 w-4 mr-1" />
+                        Administrateurs
+                      </TabsTrigger>
+                      <TabsTrigger value="subsidies">Subventions</TabsTrigger>
+                      <TabsTrigger value="clients">Clients</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="list">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-4">
+                          <div>
+                            <h3 className="text-sm font-medium text-muted-foreground">Statut</h3>
+                            <p>{selectedSfd.status === 'active' ? 'Actif' : 'Inactif'}</p>
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-medium text-muted-foreground">Date de création</h3>
+                            <p>{new Date(selectedSfd.created_at).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                        <div className="space-y-4">
+                          <div>
+                            <h3 className="text-sm font-medium text-muted-foreground">Dernière mise à jour</h3>
+                            <p>{new Date(selectedSfd.updated_at).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="admins">
+                      <SfdAdminManager sfdId={selectedSfd.id} sfdName={selectedSfd.name} />
+                    </TabsContent>
+                    
+                    <TabsContent value="subsidies">
+                      <div className="text-center p-4 text-muted-foreground">
+                        Informations sur les subventions à venir
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="clients">
+                      <div className="text-center p-4 text-muted-foreground">
+                        Informations sur les clients à venir
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <Card>
+              <CardContent className="flex items-center justify-center h-[300px]">
+                <div className="text-center">
+                  <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    Sélectionnez une SFD pour afficher ses détails
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {selectedSfd && (
         <AddSfdAdminDialog
           open={showAddAdminDialog}
           onOpenChange={setShowAddAdminDialog}
-          sfdId={selectedSfdForAdmin.id}
-          sfdName={selectedSfdForAdmin.name}
-          onAddAdmin={handleAddAdminSubmit}
+          sfdId={selectedSfd.id}
+          sfdName={selectedSfd.name}
+          onAddAdmin={handleAddAdmin}
           isLoading={isLoadingAdmin}
-          error={adminError}
+          error={error}
         />
       )}
     </div>
