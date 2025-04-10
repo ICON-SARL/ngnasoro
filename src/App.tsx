@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Footer } from '@/components';
@@ -77,10 +78,11 @@ const AppRoutes = () => {
         path="/super-admin-dashboard" 
         element={
           <PermissionProtectedRoute 
-            component={SuperAdminDashboard} 
             requiredRole={UserRole.SUPER_ADMIN}
             fallbackPath="/access-denied"
-          />
+          >
+            <SuperAdminDashboard />
+          </PermissionProtectedRoute>
         } 
       />
       
@@ -89,10 +91,11 @@ const AppRoutes = () => {
         path="/credit-approval" 
         element={
           <PermissionProtectedRoute 
-            component={CreditApprovalPage} 
             requiredPermission={PERMISSIONS.APPROVE_CREDIT}
             fallbackPath="/access-denied"
-          />
+          >
+            <CreditApprovalPage />
+          </PermissionProtectedRoute>
         } 
       />
       
@@ -100,7 +103,9 @@ const AppRoutes = () => {
       <Route
         path="/loan-application"
         element={
-          <ProtectedRoute component={LoanApplicationPage} />
+          <ProtectedRoute>
+            <LoanApplicationPage />
+          </ProtectedRoute>
         }
       />
 
@@ -109,10 +114,11 @@ const AppRoutes = () => {
         path="/meref-subsidy-request"
         element={
           <PermissionProtectedRoute 
-            component={MerefSubsidyRequestPage} 
             requiredRole={UserRole.SFD_ADMIN}
             fallbackPath="/access-denied"
-          />
+          >
+            <MerefSubsidyRequestPage />
+          </PermissionProtectedRoute>
         }
       />
       
@@ -121,10 +127,11 @@ const AppRoutes = () => {
         path="/sfd-admin-dashboard" 
         element={
           <PermissionProtectedRoute 
-            component={SfdAdminDashboard} 
             requiredRole={UserRole.SFD_ADMIN}
             fallbackPath="/access-denied"
-          />
+          >
+            <SfdAdminDashboard />
+          </PermissionProtectedRoute>
         } 
       />
       
@@ -133,10 +140,11 @@ const AppRoutes = () => {
         path="/sfd-subsidy-requests" 
         element={
           <PermissionProtectedRoute 
-            component={SfdSubsidyRequestPage} 
             requiredRole={UserRole.SFD_ADMIN}
             fallbackPath="/access-denied"
-          />
+          >
+            <SfdSubsidyRequestPage />
+          </PermissionProtectedRoute>
         } 
       />
       
@@ -145,10 +153,11 @@ const AppRoutes = () => {
         path="/sfd-subsidy-requests/:requestId" 
         element={
           <PermissionProtectedRoute 
-            component={SubsidyRequestDetailPage} 
             requiredRole={UserRole.SFD_ADMIN}
             fallbackPath="/access-denied"
-          />
+          >
+            <SubsidyRequestDetailPage />
+          </PermissionProtectedRoute>
         } 
       />
       
@@ -156,10 +165,11 @@ const AppRoutes = () => {
         path="/sfd-transactions" 
         element={
           <PermissionProtectedRoute 
-            component={SfdTransactionsPage} 
             requiredPermission={PERMISSIONS.ACCESS_SFD_DASHBOARD}
             fallbackPath="/access-denied"
-          />
+          >
+            <SfdTransactionsPage />
+          </PermissionProtectedRoute>
         } 
       />
       
@@ -167,10 +177,11 @@ const AppRoutes = () => {
         path="/sfd-clients" 
         element={
           <PermissionProtectedRoute 
-            component={SfdClientsPage} 
             requiredPermission={PERMISSIONS.MANAGE_CLIENTS}
             fallbackPath="/access-denied"
-          />
+          >
+            <SfdClientsPage />
+          </PermissionProtectedRoute>
         } 
       />
       
@@ -178,10 +189,11 @@ const AppRoutes = () => {
         path="/sfd-loans" 
         element={
           <PermissionProtectedRoute 
-            component={SfdLoansPage} 
             requiredPermission={PERMISSIONS.MANAGE_LOANS}
             fallbackPath="/access-denied"
-          />
+          >
+            <SfdLoansPage />
+          </PermissionProtectedRoute>
         } 
       />
 
@@ -190,10 +202,11 @@ const AppRoutes = () => {
         path="/audit-logs"
         element={
           <PermissionProtectedRoute
-            component={AuditLogsPage}
             requiredPermission={PERMISSIONS.EXPORT_DATA}
             fallbackPath="/access-denied"
-          />
+          >
+            <AuditLogsPage />
+          </PermissionProtectedRoute>
         }
       />
       
@@ -201,7 +214,9 @@ const AppRoutes = () => {
       <Route
         path="/mobile-flow/*"
         element={
-          <ProtectedRoute component={MobileFlow} />
+          <ProtectedRoute>
+            <MobileFlow />
+          </ProtectedRoute>
         }
       />
       
@@ -210,20 +225,22 @@ const AppRoutes = () => {
         path="/agency-dashboard"
         element={
           <PermissionProtectedRoute 
-            component={SfdAdminDashboard} 
             requiredRole={UserRole.SFD_ADMIN}
             fallbackPath="/access-denied"
-          />
+          >
+            <SfdAdminDashboard />
+          </PermissionProtectedRoute>
         }
       />
       
       {/* Admin Routes */}
       <Route path="/admin/users" element={
         <PermissionProtectedRoute 
-          component={UsersManagementPage} 
           requiredPermission="manage_users"
           fallbackPath="/access-denied"
-        />
+        >
+          <UsersManagementPage />
+        </PermissionProtectedRoute>
       } />
       
       {/* Fallback routes */}

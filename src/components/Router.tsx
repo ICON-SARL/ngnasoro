@@ -18,7 +18,7 @@ import MobileFlowPage from '@/pages/MobileFlowPage';
 import MobileFlow from '@/pages/MobileFlow';
 import SfdSetupPage from '@/pages/SfdSetupPage';
 import SfdSetupAssistantPage from '@/pages/SfdSetupAssistantPage';
-// Note: Using the correct path for UserProfilePage
+// Import UserProfilePage from the correct location
 import UserProfilePage from '@/pages/UserProfilePage';
 
 // Admin Components
