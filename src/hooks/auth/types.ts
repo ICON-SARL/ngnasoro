@@ -20,16 +20,16 @@ export interface AuthContextProps {
   loading: boolean;
   session: any | null;
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
-  signUp?: (email: string, password: string, metadata?: any) => Promise<{ error: any | null }>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: any | null }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
   activeSfdId: string | null;
   setActiveSfdId: (id: string | null) => void;
-  isAdmin?: boolean;
-  isSfdAdmin?: boolean;
-  userRole?: UserRole;
-  biometricEnabled?: boolean;
-  toggleBiometricAuth?: () => Promise<void>;
+  isAdmin: boolean;
+  isSfdAdmin: boolean;
+  userRole: UserRole;
+  biometricEnabled: boolean;
+  toggleBiometricAuth: () => Promise<void>;
 }
 
 export interface AssociateSfdParams {

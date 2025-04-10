@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -38,7 +39,7 @@ const AuthUI = () => {
       console.log('Authenticated user:', user);
       console.log('User role:', userRole);
       
-      if (userRole === UserRole.SUPER_ADMIN || user.app_metadata?.role === 'admin') {
+      if (userRole === UserRole.SuperAdmin || user.app_metadata?.role === 'admin') {
         if (location.pathname !== '/admin/auth' && !location.pathname.includes('admin')) {
           toast({
             title: "Redirection",
@@ -47,7 +48,7 @@ const AuthUI = () => {
           });
         }
         navigate('/super-admin-dashboard');
-      } else if (userRole === UserRole.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {
+      } else if (userRole === UserRole.SfdAdmin || user.app_metadata?.role === 'sfd_admin') {
         navigate('/agency-dashboard');
       } else {
         navigate('/mobile-flow');
