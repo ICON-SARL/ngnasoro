@@ -28,9 +28,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface SfdAdminListProps {
   sfdId: string;
+  sfdName?: string; // Make sfdName optional
+  onAddAdmin?: () => void;
 }
 
-export function SfdAdminList({ sfdId }: SfdAdminListProps) {
+export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) {
   const { sfdAdmins, isLoading, error, refetch } = useSfdAdminsList();
   const { deleteSfdAdmin, isDeleting, error: deleteError } = useDeleteSfdAdmin();
 
