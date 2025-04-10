@@ -50,7 +50,12 @@ export function useClientLoans() {
         return [];
       }
       
-      return data as Loan[];
+      // Convert data to Loan type
+      return data.map(loan => ({
+        ...loan,
+        // If term_months is expected elsewhere, map duration_months to it
+        term_months: loan.duration_months
+      })) as Loan[];
     },
     enabled: !!user?.id
   });
@@ -142,7 +147,11 @@ export function useClientLoans() {
             action_link: `/loans/${loanData.id}`
           });
           
-        return loanData as Loan;
+        // Add term_months to match the Loan interface
+        return {
+          ...loanData,
+          term_months: loanData.duration_months
+        } as Loan;
       } finally {
         setIsUploading(false);
       }

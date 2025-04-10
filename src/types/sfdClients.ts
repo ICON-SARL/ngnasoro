@@ -15,8 +15,8 @@ export interface Loan {
   sfd_id: string;
   amount: number;
   interest_rate: number;
-  term_months: number;
-  duration_months: number;
+  term_months?: number; // Make term_months optional
+  duration_months: number; // Add duration_months as required
   monthly_payment: number;
   purpose: string;
   status: string;
@@ -26,7 +26,11 @@ export interface Loan {
   reference?: string;
   subsidy_amount?: number;
   subsidy_rate?: number;
-  // Don't include updated_at here as it's not part of the Loan type
+  // Fields that might be returned from the database
+  approved_at?: string;
+  approved_by?: string;
+  disbursed_at?: string;
+  last_payment_date?: string;
 }
 
 // Add missing interfaces that other files depend on
