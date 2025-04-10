@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from '@/components/ui/button';
 import { 
@@ -10,7 +10,7 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Building, Search, UserPlus, Users, Plus } from 'lucide-react';
+import { Building, Search, UserPlus, Users, Plus, RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { AddSfdAdminDialog } from '@/components/admin/sfd/AddSfdAdminDialog';
@@ -18,6 +18,7 @@ import { useSfdAdminManagement } from '@/hooks/useSfdAdminManagement';
 import { SfdAdminManager } from '@/components/admin/sfd/SfdAdminManager';
 import { SfdAddDialog } from '@/components/admin/sfd/SfdAddDialog';
 import { Badge } from '@/components/ui/badge';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function SfdManagementContainer() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,12 +30,10 @@ export function SfdManagementContainer() {
   const [showAddSfdDialog, setShowAddSfdDialog] = useState(false);
   const { toast } = useToast();
   const { isLoading: isLoadingAdmin, error, addSfdAdmin } = useSfdAdminManagement();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchSfds();
-  }, []);
-
-  const fetchSfds = async () => {
+  // Fonction pour rafraîchir les données
+  const fetchSfds = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -57,7 +56,25 @@ export function SfdManagementContainer() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedSfd, toast]);
+
+  // Chargement initial des données
+  useEffect(() => {
+    fetchSfds();
+  }, [fetchSfds]);
+
+  // Ecouteur d'événements pour détecter l'ajout d'une nouvelle SFD
+  useEffect(() => {
+    // Configurez un écouteur pour le changement des données du QueryClient
+    const unsubscribe = queryClient.getQueryCache().subscribe(() => {
+      console.log("Query cache changed, refreshing SFDs...");
+      fetchSfds();
+    });
+    
+    return () => {
+      unsubscribe();
+    };
+  }, [queryClient, fetchSfds]);
 
   const filteredSfds = sfds.filter(sfd => 
     sfd.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -73,6 +90,15 @@ export function SfdManagementContainer() {
     setShowAddAdminDialog(false);
   };
 
+  const handleRefreshData = () => {
+    fetchSfds();
+    queryClient.invalidateQueries({ queryKey: ['sfds'] });
+    toast({
+      title: "Rafraîchissement",
+      description: "Liste des SFDs mise à jour",
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -86,6 +112,17 @@ export function SfdManagementContainer() {
     }
   };
 
+  // Surveiller les changements de dialogue pour rafraîchir les données
+  const handleAddDialogChange = (open: boolean) => {
+    setShowAddSfdDialog(open);
+    if (!open) {
+      // Si le dialogue se ferme, rafraîchir les données
+      setTimeout(() => {
+        fetchSfds();
+      }, 500);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -96,6 +133,14 @@ export function SfdManagementContainer() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleRefreshData}
+            className="gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Actualiser
+          </Button>
           <Button 
             variant="outline" 
             className="gap-2"
@@ -135,37 +180,43 @@ export function SfdManagementContainer() {
               </div>
             </CardHeader>
             <CardContent className="h-[500px] overflow-auto">
-              <div className="space-y-2">
-                {filteredSfds.map((sfd) => (
-                  <div 
-                    key={sfd.id}
-                    className={`flex items-center p-2 rounded-md cursor-pointer hover:bg-muted ${selectedSfd?.id === sfd.id ? 'bg-muted' : ''}`}
-                    onClick={() => setSelectedSfd(sfd)}
-                  >
-                    <div className="flex-shrink-0 h-10 w-10 mr-3 bg-primary/10 rounded-full flex items-center justify-center">
-                      {sfd.logo_url ? (
-                        <img src={sfd.logo_url} alt={sfd.name} className="h-8 w-8 rounded-full" />
-                      ) : (
-                        <Building className="h-5 w-5 text-primary" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium truncate">{sfd.name}</p>
-                        <div className="ml-2">{getStatusBadge(sfd.status)}</div>
+              {isLoading ? (
+                <div className="flex items-center justify-center h-40">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredSfds.map((sfd) => (
+                    <div 
+                      key={sfd.id}
+                      className={`flex items-center p-2 rounded-md cursor-pointer hover:bg-muted ${selectedSfd?.id === sfd.id ? 'bg-muted' : ''}`}
+                      onClick={() => setSelectedSfd(sfd)}
+                    >
+                      <div className="flex-shrink-0 h-10 w-10 mr-3 bg-primary/10 rounded-full flex items-center justify-center">
+                        {sfd.logo_url ? (
+                          <img src={sfd.logo_url} alt={sfd.name} className="h-8 w-8 rounded-full" />
+                        ) : (
+                          <Building className="h-5 w-5 text-primary" />
+                        )}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate">
-                        Code: {sfd.code} {sfd.region ? `• ${sfd.region}` : ''}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium truncate">{sfd.name}</p>
+                          <div className="ml-2">{getStatusBadge(sfd.status)}</div>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          Code: {sfd.code} {sfd.region ? `• ${sfd.region}` : ''}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {filteredSfds.length === 0 && (
-                  <div className="text-center p-4 text-muted-foreground">
-                    Aucune SFD trouvée
-                  </div>
-                )}
-              </div>
+                  ))}
+                  {filteredSfds.length === 0 && (
+                    <div className="text-center p-4 text-muted-foreground">
+                      Aucune SFD trouvée
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -290,8 +341,8 @@ export function SfdManagementContainer() {
       )}
 
       <SfdAddDialog
-        open={showAddSfdDialog}
-        onOpenChange={setShowAddSfdDialog}
+        open={showAddDialog}
+        onOpenChange={handleAddDialogChange}
       />
     </div>
   );

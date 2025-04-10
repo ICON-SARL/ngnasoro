@@ -8,6 +8,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { AddSfdForm } from './AddSfdForm';
+import { useCreateSfdMutation } from '../hooks/sfd-management/mutations';
 
 interface SfdAddDialogProps {
   open: boolean;
@@ -15,6 +16,8 @@ interface SfdAddDialogProps {
 }
 
 export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
+  const createSfdMutation = useCreateSfdMutation();
+
   const handleSuccess = () => {
     onOpenChange(false);
   };
@@ -36,6 +39,14 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
         <AddSfdForm 
           onSuccess={handleSuccess}
           onCancel={handleCancel}
+          isLoading={createSfdMutation.isPending}
+          onSubmit={(formData, createAdmin, adminData) => {
+            createSfdMutation.mutate({ 
+              sfdData: formData, 
+              createAdmin, 
+              adminData 
+            });
+          }}
         />
       </DialogContent>
     </Dialog>

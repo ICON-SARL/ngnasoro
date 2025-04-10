@@ -93,7 +93,10 @@ export function useCreateSfdMutation() {
       }
     },
     onSuccess: (data) => {
+      // Invalidate multiple related queries to ensure all data is refreshed
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
+      queryClient.invalidateQueries({ queryKey: ['sfd-stats'] });
       
       toast({
         title: 'SFD ajoutée',

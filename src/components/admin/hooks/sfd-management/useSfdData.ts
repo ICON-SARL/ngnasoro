@@ -1,20 +1,49 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Sfd } from '../../types/sfd-types';
 import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
+import { useEffect } from 'react';
 
 export function useSfdData() {
+  const queryClient = useQueryClient();
+
+  // Fonction pour configurer un écouteur de réaltime pour les changements dans la table sfds
+  useEffect(() => {
+    const channel = supabase
+      .channel('sfds-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'sfds' },
+        (payload) => {
+          console.log('Changement détecté dans la table sfds:', payload);
+          // Invalidate le cache pour forcer un rechargement
+          queryClient.invalidateQueries({ queryKey: ['sfds'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   // Fetch SFDs from Supabase
   const { data: sfds, isLoading, isError, refetch } = useQuery({
     queryKey: ['sfds'],
     queryFn: async () => {
+      console.log("Chargement des SFDs...");
       const { data, error } = await supabase
         .from('sfds')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur lors du chargement des SFDs:", error);
+        throw error;
+      }
+      
+      console.log("SFDs chargées:", data?.length);
       
       // Calculate subsidy balance for each SFD separately from the sfd_subsidies table
       const sfdsWithSubsidyBalance = await Promise.all(
@@ -75,7 +104,8 @@ export function useSfdData() {
 
       return sfdsWithSubsidyBalance;
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchInterval: 1000 * 60 * 3, // 3 minutes - refetch periodically
   });
 
   return {
