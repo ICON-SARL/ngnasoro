@@ -1,28 +1,10 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from "@/components/ui/scroll-area"
-
-interface ClientSavingsAccount {
-  id: string;
-  client_id: string;
-  balance: number;
-  currency: string;
-  status: 'active' | 'frozen' | 'closed';
-  last_updated?: string;
-}
-
-interface ClientBalanceOperation {
-  id: string;
-  client_id: string;
-  amount: number;
-  operation_type: 'deposit' | 'withdrawal' | 'loan_disbursement' | 'loan_repayment';
-  description?: string;
-  admin_id: string;
-  reference?: string;
-  created_at: string;
-}
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ClientSavingsAccount, ClientBalanceOperation } from '@/types/sfdClients';
 
 interface ClientSavingsManagementProps {
   account: ClientSavingsAccount | null;

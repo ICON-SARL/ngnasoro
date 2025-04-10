@@ -47,12 +47,14 @@ export interface ClientSavingsAccount {
 }
 
 export interface ClientBalanceOperation {
-  clientId: string;
+  id: string;
+  client_id: string;
   amount: number;
-  operationType: 'deposit' | 'withdrawal' | 'loan_disbursement' | 'loan_repayment';
+  operation_type: 'deposit' | 'withdrawal' | 'loan_disbursement' | 'loan_repayment';
   description?: string;
-  adminId: string;
+  admin_id: string;
   reference?: string;
+  created_at: string;
 }
 
 // Add missing Loan type definition
