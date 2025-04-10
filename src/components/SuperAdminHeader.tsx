@@ -12,17 +12,21 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
-import { ModeToggle } from './ModeToggle';
+import { ModeToggle } from '@/components/ModeToggle';
 import { Briefcase, ChevronDown, Globe, LogOut, PieChart, Settings, UserPlus, Users, Wallet, Menu } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
-export function SuperAdminHeader() {
-  const { logout, user } = useAuth();
+interface SuperAdminHeaderProps {
+  additionalComponents?: React.ReactNode;
+}
+
+export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps) {
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
   const handleLogout = () => {
-    logout();
+    signOut();
     navigate('/admin/auth');
   };
 
@@ -79,6 +83,8 @@ export function SuperAdminHeader() {
         </div>
         
         <div className="flex items-center gap-3">
+          {additionalComponents}
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2">

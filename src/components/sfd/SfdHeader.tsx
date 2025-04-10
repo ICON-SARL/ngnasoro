@@ -12,17 +12,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
-import { ModeToggle } from '../ModeToggle';
+import { ModeToggle } from '@/components/ModeToggle';
 import { Globe, ChevronDown, LogOut, Menu, Users, CreditCard, PieChart, Settings, Landmark, Bell } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 export function SfdHeader() {
-  const { logout, user, activeSfdId } = useAuth();
+  const { signOut, user, activeSfdId } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
   const handleLogout = () => {
-    logout();
+    signOut();
     navigate('/agency-auth');
   };
 

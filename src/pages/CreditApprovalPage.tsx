@@ -22,12 +22,14 @@ const CreditApprovalPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <SuperAdminHeader additionalComponents={
-        <div className="flex items-center gap-2">
-          <MerefSfdCommunication />
-          <AdminNotifications />
-        </div>
-      } />
+      <SuperAdminHeader 
+        additionalComponents={
+          <div className="flex items-center gap-2">
+            <MerefSfdCommunication />
+            <AdminNotifications />
+          </div>
+        } 
+      />
       
       <main className="flex-1 container mx-auto p-4 md:p-6">
         <div className="mb-6">
