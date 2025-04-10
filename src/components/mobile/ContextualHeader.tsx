@@ -6,10 +6,22 @@ import { Badge } from '@/components/ui/badge';
 
 const ContextualHeader = () => {
   const { user } = useAuth();
-  const { activeSfdId, sfdData } = useSfdDataAccess();
+  const { activeSfdId, getActiveSfdData } = useSfdDataAccess();
+  const [activeSFDName, setActiveSFDName] = React.useState('SFD Primaire');
   
-  const activeSFD = sfdData.find(sfd => sfd.id === activeSfdId);
-  const activeSFDName = activeSFD?.name || 'SFD Primaire';
+  React.useEffect(() => {
+    const fetchSfdName = async () => {
+      if (activeSfdId) {
+        const sfdData = await getActiveSfdData();
+        if (sfdData) {
+          setActiveSFDName(sfdData.name);
+        }
+      }
+    };
+    
+    fetchSfdName();
+  }, [activeSfdId, getActiveSfdData]);
+  
   const userName = user?.user_metadata?.full_name || user?.email || 'Utilisateur';
   
   // Récupérer le premier caractère du nom pour l'avatar
