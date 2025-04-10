@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { ClientSavingsManagement } from '@/components/sfd';
+import ClientSavingsManagement from '@/components/sfd/ClientSavingsManagement';
 
 // Define props interface if it doesn't exist
 interface ClientDetailProps {
