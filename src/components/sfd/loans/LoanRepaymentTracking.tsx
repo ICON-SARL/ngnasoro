@@ -240,51 +240,58 @@ export function LoanRepaymentTracking() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLoans.map(loan => (
-                  <TableRow key={loan.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <User className="h-4 w-4 text-primary" />
+                {filteredLoans.map(loan => {
+                  const newLoan = {
+                    ...loan,
+                    last_updated: new Date().toISOString()
+                  };
+                  
+                  return (
+                    <TableRow key={newLoan.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <User className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{newLoan.client_name}</p>
+                            <p className="text-xs text-muted-foreground">Réf: {newLoan.reference || newLoan.id.substring(0, 8)}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">{loan.client_name}</p>
-                          <p className="text-xs text-muted-foreground">Réf: {loan.reference || loan.id.substring(0, 8)}</p>
+                      </TableCell>
+                      <TableCell>
+                        {Number(newLoan.amount).toLocaleString()} FCFA
+                      </TableCell>
+                      <TableCell>
+                        {Number(newLoan.monthly_payment).toLocaleString()} FCFA
+                      </TableCell>
+                      <TableCell>
+                        {newLoan.next_payment_date 
+                          ? new Date(newLoan.next_payment_date).toLocaleDateString() 
+                          : 'Non définie'}
+                      </TableCell>
+                      <TableCell>
+                        {renderLoanStatus(newLoan.status)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleOpenPaymentDialog(loan)}
+                          >
+                            <ArrowDownRight className="h-4 w-4 mr-1" />
+                            Paiement
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <FileText className="h-4 w-4" />
+                            <span className="sr-only">Détails</span>
+                          </Button>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {Number(loan.amount).toLocaleString()} FCFA
-                    </TableCell>
-                    <TableCell>
-                      {Number(loan.monthly_payment).toLocaleString()} FCFA
-                    </TableCell>
-                    <TableCell>
-                      {loan.next_payment_date 
-                        ? new Date(loan.next_payment_date).toLocaleDateString() 
-                        : 'Non définie'}
-                    </TableCell>
-                    <TableCell>
-                      {renderLoanStatus(loan.status)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleOpenPaymentDialog(loan)}
-                        >
-                          <ArrowDownRight className="h-4 w-4 mr-1" />
-                          Paiement
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <FileText className="h-4 w-4" />
-                          <span className="sr-only">Détails</span>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
