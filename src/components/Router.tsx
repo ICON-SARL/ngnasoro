@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,7 +17,6 @@ import MobileFlowPage from '@/pages/MobileFlowPage';
 import MobileFlow from '@/pages/MobileFlow';
 import SfdSetupPage from '@/pages/SfdSetupPage';
 import SfdSetupAssistantPage from '@/pages/SfdSetupAssistantPage';
-// Import UserProfilePage from the correct file path - we're using the one that exists in your project
 import UserProfilePage from '@/pages/UserProfilePage';
 
 // Admin Components
