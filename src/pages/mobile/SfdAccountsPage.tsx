@@ -7,12 +7,10 @@ import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import AvailableSfdsList from '@/components/mobile/profile/sfd-accounts/AvailableSfdsList';
 import AccountsSection from '@/components/mobile/profile/sfd-accounts/AccountsSection';
-import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
 const SfdAccountsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { activeSfdId, switchActiveSfd } = useSfdDataAccess();
+  const { user, activeSfdId, switchActiveSfd } = useAuth();
   const [activeTab, setActiveTab] = useState('accounts');
   
   const handleGoBack = () => {

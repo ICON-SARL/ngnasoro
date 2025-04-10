@@ -44,12 +44,7 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       <Route path="profile" element={<ProfilePage />} />
       <Route path="profile/sfd-accounts" element={<SfdAccountsPage />} />
       <Route path="payment" element={<PaymentPage onPaymentSubmit={handlePaymentSubmit} />} />
-      <Route path="transactions" element={
-        <TransactionsPage 
-          transactions={transactions} 
-          isLoading={transactionsLoading} 
-        />
-      } />
+      <Route path="transactions" element={<TransactionsPage transactions={transactions} isLoading={transactionsLoading} />} />
       <Route path="secure-payment" element={<SecurePaymentPage onPaymentSubmit={handlePaymentSubmit} />} />
     </Routes>
   );

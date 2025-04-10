@@ -96,7 +96,6 @@ export function useSfdDataAccessCore() {
     loading,
     error,
     activeSfdId,
-    setActiveSfdId,
     fetchUserSfds: () => fetchUserSfds(user),
     switchActiveSfd,
     getActiveSfdData,

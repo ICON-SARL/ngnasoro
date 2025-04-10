@@ -2,8 +2,8 @@ import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Footer } from '@/components';
 
-// Import AuthProvider from the consistent location
-import { AuthProvider } from '@/hooks/auth';
+// Auth components
+import { AuthProvider } from '@/hooks/auth/AuthContext';
 
 // Auth pages
 import LoginPage from '@/pages/LoginPage';

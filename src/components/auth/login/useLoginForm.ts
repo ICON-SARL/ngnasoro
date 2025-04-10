@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/auth'; // Update to use the correct import path
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';

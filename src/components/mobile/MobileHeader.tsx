@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ContextualHeader from './ContextualHeader';
 import { 
   Select, 
@@ -12,31 +12,15 @@ import { Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
-import { useAuth } from '@/hooks/useAuth';
 
 const MobileHeader = () => {
   const { toast } = useToast();
-  const { activeSfdId } = useSfdDataAccess();
-  const { setActiveSfdId } = useAuth();
-  const [sfdOptions, setSfdOptions] = useState<Array<{id: string, name: string}>>([]);
-  
-  // Fetch available SFDs
-  useEffect(() => {
-    const fetchSfdOptions = async () => {
-      // This is a placeholder. In a real app, you would fetch from your API
-      setSfdOptions([
-        { id: 'primary-sfd', name: 'SFD Primaire' },
-        { id: 'secondary-sfd', name: 'SFD Secondaire' }
-      ]);
-    };
-    
-    fetchSfdOptions();
-  }, []);
+  const { activeSfdId, setActiveSfdId, sfdData } = useSfdDataAccess();
   
   const handleSfdChange = (value: string) => {
     setActiveSfdId(value);
     
-    const selectedSfd = sfdOptions.find(sfd => sfd.id === value);
+    const selectedSfd = sfdData.find(sfd => sfd.id === value);
     const sfdName = selectedSfd?.name || 'SFD Inconnue';
     
     toast({
@@ -56,7 +40,7 @@ const MobileHeader = () => {
               <SelectValue placeholder="Choisir une SFD" />
             </SelectTrigger>
             <SelectContent>
-              {sfdOptions.map(sfd => (
+              {sfdData.map(sfd => (
                 <SelectItem key={sfd.id} value={sfd.id} className="text-sm">
                   <div className="flex items-center">
                     <Shield className={`h-3 w-3 mr-1 ${
