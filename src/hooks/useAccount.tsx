@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -60,8 +61,9 @@ export function useAccount() {
     fetchAccount();
   }, [user]);
 
-  const updateBalance = useMutation(
-    async ({ amount }: { amount: number }) => {
+  // Fix: Properly format the useMutation hook with correct typing
+  const updateBalance = useMutation({
+    mutationFn: async ({ amount }: { amount: number }) => {
       if (!user) {
         throw new Error('User not authenticated');
       }
@@ -82,24 +84,22 @@ export function useAccount() {
 
       return data as Account;
     },
-    {
-      onSuccess: (data) => {
-        setAccount(data);
-        queryClient.invalidateQueries({ queryKey: ['account'] });
-        toast({
-          title: 'Balance updated',
-          description: `Your balance has been updated successfully.`,
-        });
-      },
-      onError: (error: any) => {
-        toast({
-          title: 'Error updating balance',
-          description: error.message,
-          variant: 'destructive',
-        });
-      },
+    onSuccess: (data) => {
+      setAccount(data);
+      queryClient.invalidateQueries({ queryKey: ['account'] });
+      toast({
+        title: 'Balance updated',
+        description: `Your balance has been updated successfully.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error updating balance',
+        description: error.message,
+        variant: 'destructive',
+      });
     }
-  );
+  });
 
   return {
     account,

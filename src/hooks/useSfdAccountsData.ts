@@ -9,7 +9,7 @@ export default function useSfdAccountsData(
   propsActiveSfdId?: string | null
 ) {
   const { activeSfdId: authActiveSfdId } = useAuth();
-  const { sfdAccounts, isLoading, error, refetch } = useSfdAccounts();
+  const { sfdAccounts, isLoading, refetch } = useSfdAccounts();
   
   const effectiveActiveSfdId = propsActiveSfdId !== undefined ? propsActiveSfdId : authActiveSfdId;
 
@@ -65,7 +65,6 @@ export default function useSfdAccountsData(
     effectiveActiveSfdId: effectiveActiveSfdId || (displayAccounts.length > 0 ? displayAccounts[0].id : null),
     displayAccounts,
     isLoading,
-    error,
     refetch
   };
 }
