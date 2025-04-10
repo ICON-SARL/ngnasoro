@@ -47,33 +47,39 @@ export function useMerefSubsidyRequests() {
           throw error;
         }
 
-        // Récupérer les informations SFD séparément si nécessaire
-        const formattedData = await Promise.all(data.map(async (item, index) => {
+        console.log("Données brutes récupérées:", data);
+
+        // Jointure manuelle avec les SFDs pour plus de robustesse
+        const sfdIds = data.map(item => item.sfd_id);
+        
+        let sfdsMap = {};
+        if (sfdIds.length > 0) {
+          const { data: sfdsData, error: sfdsError } = await supabase
+            .from('sfds')
+            .select('id, name')
+            .in('id', sfdIds);
+            
+          if (!sfdsError && sfdsData) {
+            sfdsMap = sfdsData.reduce((acc, sfd) => {
+              acc[sfd.id] = sfd.name;
+              return acc;
+            }, {});
+          } else {
+            console.warn("Impossible de récupérer les détails des SFDs:", sfdsError);
+          }
+        }
+        
+        // Formater les données
+        const formattedData = data.map((item, index) => {
           const date = new Date(item.created_at);
           const year = date.getFullYear();
           const paddedIndex = String(index + 1).padStart(3, '0');
-          
-          // Récupérer le nom de la SFD séparément
-          let sfdName = 'SFD inconnu';
-          try {
-            const { data: sfdData, error: sfdError } = await supabase
-              .from('sfds')
-              .select('name')
-              .eq('id', item.sfd_id)
-              .single();
-              
-            if (!sfdError && sfdData) {
-              sfdName = sfdData.name;
-            }
-          } catch (sfdError) {
-            console.warn("Impossible de récupérer les détails de la SFD:", sfdError);
-          }
           
           return {
             id: item.id,
             reference: `CREDIT-${year}-${paddedIndex}`,
             sfd_id: item.sfd_id,
-            sfd_name: sfdName,
+            sfd_name: sfdsMap[item.sfd_id] || 'SFD inconnu',
             amount: item.amount,
             purpose: item.purpose,
             created_at: item.created_at,
@@ -82,22 +88,25 @@ export function useMerefSubsidyRequests() {
             score: Math.floor(Math.random() * (95 - 30 + 1)) + 30,
             region: item.region || 'Non spécifié'
           };
-        }));
+        });
 
-        console.log("Demandes de subvention récupérées:", formattedData.length);
+        console.log("Demandes de subvention formatées:", formattedData.length);
         return formattedData;
       } catch (error) {
         console.error('Erreur lors de la récupération des demandes de subvention:', error);
         return [];
       }
-    }
+    },
+    refetchOnWindowFocus: false
   });
 
   // Approuver une demande de subvention en utilisant le service
   const approveRequest = useMutation({
     mutationFn: async (requestId: string) => {
+      console.log("Tentative d'approbation de la requête:", requestId);
       try {
         const result = await subsidyService.approveSubsidyRequest(requestId);
+        console.log("Résultat de l'approbation:", result);
         return result;
       } catch (error) {
         console.error("Erreur lors de l'approbation:", error);
@@ -112,9 +121,11 @@ export function useMerefSubsidyRequests() {
       queryClient.invalidateQueries({ queryKey: ['meref-subsidy-requests'] });
     },
     onError: (error: any) => {
+      const errorMessage = error.message || "Une erreur est survenue lors de l'approbation";
+      console.error("Erreur dans onError:", errorMessage);
       toast({
         title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de l'approbation",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -122,9 +133,11 @@ export function useMerefSubsidyRequests() {
 
   // Rejeter une demande de subvention en utilisant le service
   const rejectRequest = useMutation({
-    mutationFn: async (requestId: string) => {
+    mutationFn: async (params: { requestId: string, comments?: string }) => {
+      console.log("Tentative de rejet de la requête:", params);
       try {
-        const result = await subsidyService.rejectSubsidyRequest(requestId);
+        const result = await subsidyService.rejectSubsidyRequest(params.requestId, params.comments);
+        console.log("Résultat du rejet:", result);
         return result;
       } catch (error) {
         console.error("Erreur lors du rejet:", error);
@@ -139,9 +152,11 @@ export function useMerefSubsidyRequests() {
       queryClient.invalidateQueries({ queryKey: ['meref-subsidy-requests'] });
     },
     onError: (error: any) => {
+      const errorMessage = error.message || "Une erreur est survenue lors du rejet";
+      console.error("Erreur dans onError:", errorMessage);
       toast({
         title: "Erreur",
-        description: error.message || "Une erreur est survenue lors du rejet",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -151,8 +166,8 @@ export function useMerefSubsidyRequests() {
     requests: requests || [],
     isLoading,
     isError,
-    approveRequest,
-    rejectRequest,
+    approveRequest: (requestId: string) => approveRequest.mutate(requestId),
+    rejectRequest: (requestId: string, comments?: string) => rejectRequest.mutate({ requestId, comments }),
     refetch
   };
 }
