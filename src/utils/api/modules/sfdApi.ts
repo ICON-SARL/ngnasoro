@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { SfdBalanceData } from "@/hooks/sfd/types";
 
@@ -162,6 +161,25 @@ export const sfdApi = {
     } catch (error: any) {
       console.error('Erreur lors de la création de la SFD:', error);
       throw new Error(`Erreur lors de la création de la SFD: ${error.message}`);
+    }
+  },
+  
+  /**
+   * Crée une subvention pour une SFD
+   * @param subsidyData Les données de la subvention
+   * @returns La subvention créée
+   */
+  createSfdSubsidy: async (subsidyData: any) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create_sfd_subsidy', {
+        body: { subsidy_data: subsidyData }
+      });
+
+      if (error) throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      console.error('Erreur lors de la création de la subvention:', error);
+      throw new Error(`Erreur lors de la création de la subvention: ${error.message}`);
     }
   }
 };

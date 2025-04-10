@@ -112,8 +112,6 @@ export function SfdDialogs({
       <SfdAddDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
-        onSubmit={handleAddSfd}
-        isLoading={addSfdMutation.isPending}
       />
 
       {/* Edit Dialog */}
