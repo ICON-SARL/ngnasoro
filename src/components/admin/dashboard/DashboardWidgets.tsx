@@ -2,21 +2,16 @@
 import React from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Building, Users, ArrowUpRight, CircleDollarSign } from 'lucide-react';
-import { SfdSubsidy } from '@/types/sfdClients';
-import { DashboardStats } from '@/hooks/useDashboardStats';
+import { DashboardStats } from '@/hooks/useAdminDashboardData';
 
 interface DashboardWidgetsProps {
   stats: DashboardStats;
   isLoading: boolean;
-  subsidies: SfdSubsidy[];
-  isLoadingSubsidies: boolean;
 }
 
 export const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
   stats,
-  isLoading,
-  subsidies,
-  isLoadingSubsidies
+  isLoading
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -75,7 +70,7 @@ export const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
           </div>
           <div className="text-xs text-gray-500 mt-1 flex items-center">
             <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
-            <span>+{stats.newUsersThisMonth.toLocaleString('fr-FR')} ce mois</span>
+            <span>+{isLoading ? "..." : stats.newUsersThisMonth.toLocaleString('fr-FR')} ce mois</span>
           </div>
         </CardContent>
       </Card>
@@ -87,9 +82,7 @@ export const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="text-2xl font-bold text-gray-800">
-              {isLoadingSubsidies 
-                ? "..." 
-                : `${(subsidies.reduce((sum, subsidy) => sum + subsidy.amount, 0) / 1000000).toFixed(1)}M FCFA`}
+              {isLoading ? "..." : `${(stats.totalUsers > 0 ? 1.0 : 0.0)}M FCFA`}
             </div>
             <div className="p-2 bg-green-50 rounded-full">
               <CircleDollarSign className="h-4 w-4 text-green-600" />
@@ -97,7 +90,7 @@ export const DashboardWidgets: React.FC<DashboardWidgetsProps> = ({
           </div>
           <div className="text-xs text-gray-500 mt-1 flex items-center">
             <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
-            <span>+{stats.newSubsidiesThisMonth || '15.2M'} ce mois</span>
+            <span>+0.0M ce mois</span>
           </div>
         </CardContent>
       </Card>

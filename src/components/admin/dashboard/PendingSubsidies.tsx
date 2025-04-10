@@ -1,178 +1,131 @@
 
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Clock, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { PendingRequest } from '@/hooks/useAdminDashboardData';
+import { useNavigate } from 'react-router-dom';
 
-interface PendingRequest {
-  id: string;
-  sfd_name: string;
-  amount: number;
-  purpose: string;
-  created_at: string;
-  priority: 'low' | 'normal' | 'high' | 'urgent';
+interface PendingSubsidiesProps {
+  pendingRequests?: PendingRequest[];
+  isLoading?: boolean;
 }
 
-export function PendingSubsidies() {
-  const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export const PendingSubsidies: React.FC<PendingSubsidiesProps> = ({ 
+  pendingRequests = [], 
+  isLoading = false 
+}) => {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    async function fetchPendingRequests() {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('subsidy_requests')
-          .select(`
-            id,
-            amount,
-            purpose,
-            created_at,
-            priority,
-            sfds:sfd_id (id, name)
-          `)
-          .eq('status', 'pending')
-          .order('priority', { ascending: false })
-          .order('created_at', { ascending: false })
-          .limit(5);
-        
-        if (error) throw error;
-        
-        const formattedData = data.map(item => ({
-          id: item.id,
-          sfd_name: item.sfds?.name || 'Unknown SFD',
-          amount: item.amount,
-          purpose: item.purpose,
-          created_at: item.created_at,
-          priority: item.priority as 'low' | 'normal' | 'high' | 'urgent'
-        }));
-        
-        setPendingRequests(formattedData);
-      } catch (error) {
-        console.error('Error fetching pending requests:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
-    fetchPendingRequests();
-    
-    // Set up real-time subscription for updates
-    const requestsChannel = supabase
-      .channel('pending_requests_changes')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'subsidy_requests' 
-      }, () => {
-        fetchPendingRequests();
-      })
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(requestsChannel);
-    };
-  }, []);
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('fr-FR').format(amount) + ' XOF';
+  };
 
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', { 
-      style: 'currency', 
-      currency: 'XOF',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-  
+  // Format date
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR');
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' }).format(date);
   };
-  
-  const getPriorityBadge = (priority: string) => {
+
+  // Get priority badge color
+  const getPriorityBadgeColor = (priority: string) => {
     switch (priority) {
       case 'urgent':
-        return <Badge className="bg-red-100 text-red-800">Urgent</Badge>;
+        return 'bg-red-100 text-red-600 hover:bg-red-100';
       case 'high':
-        return <Badge className="bg-amber-100 text-amber-800">Haute</Badge>;
+        return 'bg-orange-100 text-orange-600 hover:bg-orange-100';
       case 'normal':
-        return <Badge className="bg-blue-100 text-blue-800">Normale</Badge>;
+        return 'bg-blue-100 text-blue-600 hover:bg-blue-100';
       case 'low':
-        return <Badge className="bg-green-100 text-green-800">Basse</Badge>;
+        return 'bg-green-100 text-green-600 hover:bg-green-100';
       default:
-        return <Badge className="bg-gray-100 text-gray-800">{priority}</Badge>;
+        return 'bg-gray-100 text-gray-600 hover:bg-gray-100';
     }
   };
-  
-  const viewAllRequests = () => {
-    navigate('/super-admin?tab=subsidy_requests');
+
+  // Get priority label in French
+  const getPriorityLabel = (priority: string) => {
+    switch (priority) {
+      case 'urgent':
+        return 'Urgent';
+      case 'high':
+        return 'Élevée';
+      case 'normal':
+        return 'Normale';
+      case 'low':
+        return 'Basse';
+      default:
+        return priority;
+    }
+  };
+
+  const handleExamine = (requestId: string) => {
+    navigate(`/subsidy-requests/${requestId}`);
   };
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <div className="flex items-center">
-          <Clock className="h-4 w-4 text-amber-500 mr-2" />
-          <CardTitle className="text-md font-medium">Demandes en attente</CardTitle>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="text-lg">Demandes en attente</CardTitle>
+            <CardDescription>
+              {pendingRequests.length} demande{pendingRequests.length !== 1 ? 's' : ''} en attente d'approbation
+            </CardDescription>
+          </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={viewAllRequests}>
-          <ExternalLink className="h-4 w-4 mr-1" />
-          Tout voir
-        </Button>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-          </div>
+          <div className="py-8 text-center text-gray-500">Chargement des demandes...</div>
         ) : pendingRequests.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <p>Aucune demande en attente</p>
-          </div>
+          <div className="py-8 text-center text-gray-500">Aucune demande en attente</div>
         ) : (
-          <div className="space-y-3">
-            {pendingRequests.map((request) => (
-              <div key={request.id} className="border rounded-md p-3">
-                <div className="flex justify-between items-start mb-2">
+          <div className="space-y-4">
+            {pendingRequests.slice(0, 3).map((request) => (
+              <div key={request.id} className="p-4 border rounded-lg bg-white">
+                <div className="flex justify-between items-start">
                   <div>
-                    <div className="font-medium">{request.sfd_name}</div>
-                    <div className="text-sm text-muted-foreground truncate max-w-[200px]">
+                    <h4 className="font-medium">{request.sfd_name}</h4>
+                    <p className="text-sm text-gray-500 truncate max-w-[250px]">
                       {request.purpose}
-                    </div>
+                    </p>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold">{formatAmount(request.amount)}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatDate(request.created_at)}
+                    <div className="font-bold">
+                      {formatCurrency(request.amount)}
                     </div>
+                    <div className="text-xs text-gray-500">{formatDate(request.created_at)}</div>
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  {getPriorityBadge(request.priority)}
+                <div className="flex items-center justify-between mt-4">
+                  <Badge className={`font-normal ${getPriorityBadgeColor(request.priority)}`}>
+                    {getPriorityLabel(request.priority)}
+                  </Badge>
                   <Button 
-                    size="sm" 
                     variant="outline" 
-                    onClick={() => navigate(`/subsidy-request/${request.id}`)}
+                    size="sm" 
+                    onClick={() => handleExamine(request.id)}
                   >
                     Examiner
                   </Button>
                 </div>
               </div>
             ))}
-            {pendingRequests.length > 0 && (
-              <div className="pt-2 text-center">
-                <Button variant="link" onClick={viewAllRequests}>
-                  Voir toutes les demandes
-                </Button>
-              </div>
+
+            {pendingRequests.length > 3 && (
+              <Button 
+                variant="link" 
+                className="w-full text-sm text-[#0D6A51]"
+                onClick={() => navigate('/subsidy-requests')}
+              >
+                Voir toutes les demandes
+              </Button>
             )}
           </div>
         )}
       </CardContent>
     </Card>
   );
-}
+};

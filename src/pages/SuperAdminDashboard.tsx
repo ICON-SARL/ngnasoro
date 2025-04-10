@@ -6,10 +6,10 @@ import {
   DashboardWidgets, 
   SuperAdminDashboardHeader, 
   DashboardTabs,
-  DashboardCharts
+  DashboardCharts,
+  RecentApprovals
 } from '@/components/admin/dashboard';
-import { useSubsidies } from '@/hooks/useSubsidies';
-import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 import { ReportGenerator } from '@/components/ReportGenerator';
 import { DataExport } from '@/components/DataExport';
 import { Button } from '@/components/ui/button';
@@ -26,11 +26,12 @@ import { Footer } from '@/components';
 import { FinancialReports } from '@/components/reports/FinancialReports';
 
 const SuperAdminDashboard = () => {
-  const { subsidies, isLoading: isLoadingSubsidies } = useSubsidies();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
-  const { stats, isLoading: isLoadingStats } = useDashboardStats();
   const navigate = useNavigate();
+  
+  // Fetch dashboard data
+  const { dashboardData, isLoading } = useAdminDashboardData();
   
   // Set the active tab based on query parameter
   useEffect(() => {
@@ -106,18 +107,35 @@ const SuperAdminDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="md:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <SubsidySummary />
-                  <PendingSubsidies />
+                  <SubsidySummary 
+                    subsidiesData={dashboardData?.subsidies} 
+                    isLoading={isLoading} 
+                  />
+                  <PendingSubsidies 
+                    pendingRequests={dashboardData?.pendingRequests} 
+                    isLoading={isLoading} 
+                  />
                 </div>
                 <DashboardWidgets 
-                  stats={stats} 
-                  isLoading={isLoadingStats} 
-                  subsidies={subsidies} 
-                  isLoadingSubsidies={isLoadingSubsidies} 
+                  stats={dashboardData?.stats || {
+                    activeSfds: 0,
+                    newSfdsThisMonth: 0,
+                    admins: 0,
+                    newAdminsThisMonth: 0,
+                    totalUsers: 0,
+                    newUsersThisMonth: 0,
+                  }} 
+                  isLoading={isLoading} 
                 />
               </div>
               <div>
-                <AuditLogsSummary />
+                <RecentApprovals 
+                  approvals={dashboardData?.recentApprovals}
+                  isLoading={isLoading}
+                />
+                <div className="mt-6">
+                  <AuditLogsSummary />
+                </div>
               </div>
             </div>
             <div className="mt-6">
