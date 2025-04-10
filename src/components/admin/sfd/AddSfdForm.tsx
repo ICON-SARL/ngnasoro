@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,14 +23,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SfdFormValues, sfdFormSchema } from './schemas/sfdFormSchema';
 import { Loader2 } from 'lucide-react';
-import { useCreateSfdMutation } from '../hooks/sfd-management/mutations/useCreateSfdMutation';
 
 interface AddSfdFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  onSubmit: (formData: SfdFormValues, createAdmin: boolean, adminData: any) => void;
 }
 
-export function AddSfdForm({ onSuccess, onCancel }: AddSfdFormProps) {
+export function AddSfdForm({ onSuccess, onCancel, onSubmit }: AddSfdFormProps) {
   const [activeTab, setActiveTab] = useState('info');
   const [createAdmin, setCreateAdmin] = useState(false);
   const [adminData, setAdminData] = useState({
@@ -39,8 +38,7 @@ export function AddSfdForm({ onSuccess, onCancel }: AddSfdFormProps) {
     password: '',
     full_name: '',
   });
-
-  const createSfdMutation = useCreateSfdMutation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<SfdFormValues>({
     resolver: zodResolver(sfdFormSchema),
@@ -57,13 +55,13 @@ export function AddSfdForm({ onSuccess, onCancel }: AddSfdFormProps) {
   });
 
   const handleSubmit = async (data: SfdFormValues) => {
-    await createSfdMutation.mutateAsync({
-      sfdData: data,
-      createAdmin,
-      adminData: createAdmin ? adminData : undefined
-    });
-
-    if (onSuccess) onSuccess();
+    setIsSubmitting(true);
+    try {
+      await onSubmit(data, createAdmin, createAdmin ? adminData : undefined);
+      if (onSuccess) onSuccess();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleAdminDataChange = (field: string, value: string) => {
@@ -72,8 +70,6 @@ export function AddSfdForm({ onSuccess, onCancel }: AddSfdFormProps) {
       [field]: value
     }));
   };
-
-  const isLoading = createSfdMutation.isPending;
 
   return (
     <Form {...form}>
@@ -271,15 +267,15 @@ export function AddSfdForm({ onSuccess, onCancel }: AddSfdFormProps) {
             type="button" 
             variant="outline" 
             onClick={onCancel}
-            disabled={isLoading}
+            disabled={isSubmitting}
           >
             Annuler
           </Button>
           <Button 
             type="submit"
-            disabled={isLoading}
+            disabled={isSubmitting}
           >
-            {isLoading ? (
+            {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Création en cours...

@@ -39,7 +39,6 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
         <AddSfdForm 
           onSuccess={handleSuccess}
           onCancel={handleCancel}
-          isLoading={createSfdMutation.isPending}
           onSubmit={(formData, createAdmin, adminData) => {
             createSfdMutation.mutate({ 
               sfdData: formData, 

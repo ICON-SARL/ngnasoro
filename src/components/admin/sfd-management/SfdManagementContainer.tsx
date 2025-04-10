@@ -341,7 +341,7 @@ export function SfdManagementContainer() {
       )}
 
       <SfdAddDialog
-        open={showAddDialog}
+        open={showAddSfdDialog}
         onOpenChange={handleAddDialogChange}
       />
     </div>
