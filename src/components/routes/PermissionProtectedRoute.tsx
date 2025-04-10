@@ -7,19 +7,17 @@ import { Loader2 } from 'lucide-react';
 import { UserRole } from '@/utils/auth/roleTypes';
 
 interface PermissionProtectedRouteProps {
-  component: React.ComponentType<any>;
+  children: React.ReactNode;
   requiredPermission?: string;
   requiredRole?: UserRole | string;
   fallbackPath?: string;
-  [x: string]: any;
 }
 
 const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({ 
-  component: Component, 
+  children, 
   requiredPermission,
   requiredRole,
-  fallbackPath = '/login',
-  ...rest 
+  fallbackPath = '/login'
 }) => {
   const { user } = useAuth();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
@@ -136,7 +134,7 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     return <Navigate to="/access-denied" state={{ from: location, requiredPermission, requiredRole }} replace />;
   }
 
-  return <Component {...rest} />;
+  return <>{children}</>;
 };
 
 export default PermissionProtectedRoute;

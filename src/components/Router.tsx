@@ -18,6 +18,7 @@ import MobileFlowPage from '@/pages/MobileFlowPage';
 import MobileFlow from '@/pages/MobileFlow';
 import SfdSetupPage from '@/pages/SfdSetupPage';
 import SfdSetupAssistantPage from '@/pages/SfdSetupAssistantPage';
+// Note: Using the correct path for UserProfilePage
 import UserProfilePage from '@/pages/UserProfilePage';
 
 // Admin Components
@@ -45,6 +46,8 @@ const Router = () => {
     }
   }, [user, loading]);
   
+  // Implementing a different pattern for protected routes
+  // We'll use elements directly rather than using the component prop
   return (
     <BrowserRouter>
       <Routes>
@@ -55,13 +58,29 @@ const Router = () => {
         <Route path="/admin/auth" element={<AdminAuthUI />} />
         <Route path="/access-denied" element={<AccessDeniedPage />} />
         
-        {/* Auth routes */}
-        <Route path="/user-profile/:userId" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
+        {/* Auth routes - Using a different pattern for protected routes */}
+        <Route path="/user-profile/:userId" element={
+          <ProtectedRoute>
+            <UserProfilePage />
+          </ProtectedRoute>
+        } />
         
         {/* Protected routes */}
-        <Route path="/mobile-flow/*" element={<ProtectedRoute><MobileFlowPage /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-        <Route path="/sfd-setup" element={<ProtectedRoute><SfdSetupAssistantPage /></ProtectedRoute>} />
+        <Route path="/mobile-flow/*" element={
+          <ProtectedRoute>
+            <MobileFlowPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/sfd-setup" element={
+          <ProtectedRoute>
+            <SfdSetupAssistantPage />
+          </ProtectedRoute>
+        } />
         
         {/* Admin routes */}
         <Route

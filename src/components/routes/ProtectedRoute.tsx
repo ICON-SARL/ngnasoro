@@ -4,17 +4,15 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth';
 
 interface ProtectedRouteProps {
-  component: React.ComponentType<any>;
+  children: React.ReactNode;
   requireAdmin?: boolean;
   requireSfdAdmin?: boolean;
-  [x: string]: any;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  component: Component, 
+  children, 
   requireAdmin = false,
   requireSfdAdmin = false,
-  ...rest 
 }) => {
   const { user, loading, session } = useAuth();
   const location = useLocation();
@@ -45,7 +43,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/sfd/auth" state={{ from: location, error: 'access_denied' }} replace />;
   }
 
-  return <Component {...rest} />;
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;
