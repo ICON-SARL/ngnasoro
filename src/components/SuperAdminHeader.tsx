@@ -1,10 +1,7 @@
 
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, Bell, Search, Settings, User, X } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import React from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,150 +10,159 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import AdminLogout from '@/components/admin/shared/AdminLogout';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '@/hooks/useAuth';
+import { ModeToggle } from './ModeToggle';
+import { Briefcase, ChevronDown, Globe, LogOut, PieChart, Settings, UserPlus, Users, Wallet, Menu } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 
-interface SuperAdminHeaderProps {
-  additionalComponents?: React.ReactNode;
-}
+export function SuperAdminHeader() {
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const handleLogout = () => {
+    logout();
+    navigate('/admin/auth');
+  };
 
-export const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ additionalComponents }) => {
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
+  
+  const userInitials = user?.user_metadata?.full_name 
+    ? getInitials(user.user_metadata.full_name) 
+    : 'AD';
+  
+  const isActiveRoute = (route: string) => {
+    return location.pathname === route;
+  };
 
+  const navLinks = [
+    { name: 'Tableau de bord', icon: <PieChart className="w-4 h-4 mr-2" />, path: '/admin-dashboard' },
+    { name: 'SFDs', icon: <Briefcase className="w-4 h-4 mr-2" />, path: '/clients' },
+    { name: 'Gestion SFD', icon: <Briefcase className="w-4 h-4 mr-2" />, path: '/sfd-management' },
+    { name: 'Utilisateurs', icon: <Users className="w-4 h-4 mr-2" />, path: '/admin/users' },
+    { name: 'Subventions', icon: <Wallet className="w-4 h-4 mr-2" />, path: '/admin/subsidies' },
+    { name: 'Demandes SFD', icon: <UserPlus className="w-4 h-4 mr-2" />, path: '/admin/sfd-requests' },
+    { name: 'Paramètres', icon: <Settings className="w-4 h-4 mr-2" />, path: '/admin/settings' },
+  ];
+  
   return (
-    <header className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
-      <div className="container mx-auto py-3 px-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden text-gray-700"
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-            >
-              {showMobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-            <Link to="/super-admin" className="flex items-center">
-              <div className="h-8 w-8 rounded-md bg-green-600 flex items-center justify-center text-white font-medium">
-                M
-              </div>
-              <span className="ml-2 font-medium hidden md:block text-gray-800">MEREF-SFD</span>
-            </Link>
-          </div>
-
-          <div className="hidden md:flex items-center space-x-6">
-            <Link to="/super-admin" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
-              Dashboard
-            </Link>
-            <Link to="/credit-approval" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
-              Crédits
-            </Link>
-            <Link to="/sfd-management" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
-              SFDs
-            </Link>
-            <Link to="/reports" className="text-gray-700 hover:text-green-600 transition-colors text-sm">
-              Rapports
-            </Link>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <div className="hidden md:flex relative">
-              <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-gray-400" />
-              <Input
-                type="search"
-                placeholder="Rechercher..."
-                className="pl-8 border-gray-200 text-sm w-[180px] focus-visible:ring-green-500 focus-visible:ring-opacity-50"
-              />
-            </div>
-
-            {additionalComponents}
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-gray-700">
-                  <Settings className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Paramètres Admin</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profil</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Préférences</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-green-100 text-green-800">
-                      SA
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profil</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Paramètres</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/auth/logout" className="text-red-600 cursor-pointer flex items-center">
-                    <AdminLogout variant="link" size="sm" className="w-full justify-start" />
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+    <header className="sticky top-0 z-40 border-b bg-background">
+      <div className="container flex h-16 items-center justify-between py-4">
+        <div className="flex items-center gap-4 md:gap-8">
+          <Link to="/admin-dashboard" className="flex items-center gap-2">
+            <img src="/lovable-uploads/1fd2272c-2539-4f58-9841-15710204f204.png" alt="Logo" className="h-8" />
+            <span className="font-semibold hidden md:block">N'GNA SÔRÔ Admin</span>
+          </Link>
+          
+          <div className="hidden md:flex gap-1">
+            {navLinks.map(link => (
+              <Button 
+                key={link.path}
+                variant={isActiveRoute(link.path) ? "default" : "ghost"} 
+                asChild
+                size="sm"
+              >
+                <Link to={link.path} className="flex items-center">
+                  {link.icon}
+                  {link.name}
+                </Link>
+              </Button>
+            ))}
           </div>
         </div>
-
-        {showMobileMenu && (
-          <div className="md:hidden mt-3 py-3 border-t border-gray-100">
-            <nav className="flex flex-col space-y-3">
-              <Link
-                to="/super-admin"
-                className="px-2 py-1.5 text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-md text-sm"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                Dashboard
-              </Link>
-              <Link
-                to="/credit-approval"
-                className="px-2 py-1.5 text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-md text-sm"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                Crédits
-              </Link>
-              <Link
-                to="/sfd-management"
-                className="px-2 py-1.5 text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-md text-sm"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                SFDs
-              </Link>
-              <Link
-                to="/reports"
-                className="px-2 py-1.5 text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-md text-sm"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                Rapports
-              </Link>
-            </nav>
-          </div>
-        )}
+        
+        <div className="flex items-center gap-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                <span className="hidden md:inline-block">Français</span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>Français</DropdownMenuItem>
+              <DropdownMenuItem>English</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <ModeToggle />
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-primary text-white">
+                    {userInitials}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {user?.user_metadata?.full_name || 'Admin'}
+                  </p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user?.email || 'admin@example.com'}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/admin/profile')}>
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/admin/settings')}>
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="md:hidden">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <div className="grid gap-4 py-4">
+                <Link 
+                  to="/admin-dashboard" 
+                  className="flex items-center py-2 px-3 rounded-lg hover:bg-muted"
+                >
+                  <PieChart className="mr-2 h-4 w-4" />
+                  <span>Tableau de bord</span>
+                </Link>
+                {navLinks.map(link => (
+                  <Link 
+                    key={link.path}
+                    to={link.path} 
+                    className={`flex items-center py-2 px-3 rounded-lg ${
+                      isActiveRoute(link.path) ? 'bg-muted font-medium' : 'hover:bg-muted'
+                    }`}
+                  >
+                    {link.icon}
+                    <span>{link.name}</span>
+                  </Link>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </header>
   );
-};
+}

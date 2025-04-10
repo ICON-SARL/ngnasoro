@@ -12,7 +12,12 @@ export function useSfdClients() {
   
   // Fetch all clients for the current SFD
   const fetchClients = async (): Promise<SfdClient[]> => {
-    if (!activeSfdId) return [];
+    if (!activeSfdId) {
+      console.warn('No active SFD ID available, cannot fetch clients');
+      return [];
+    }
+    
+    console.log('Fetching clients for SFD ID:', activeSfdId);
     
     const { data, error } = await supabase
       .from('sfd_clients')
@@ -29,6 +34,8 @@ export function useSfdClients() {
       });
       return [];
     }
+    
+    console.log('Clients fetched:', data?.length || 0);
     
     // Type assertion to ensure the status field is properly typed
     return (data || []) as SfdClient[];
