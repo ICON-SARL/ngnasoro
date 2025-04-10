@@ -17,9 +17,15 @@ const SfdAccountsPage: React.FC = () => {
     navigate('/mobile-flow/profile');
   };
   
-  const handleSwitchSfd = async (sfdId: string) => {
+  const handleSwitchSfd = async (sfdId: string): Promise<boolean> => {
     if (switchActiveSfd) {
-      return await switchActiveSfd(sfdId);
+      try {
+        await switchActiveSfd(sfdId);
+        return true;
+      } catch (error) {
+        console.error('Error switching SFD:', error);
+        return false;
+      }
     }
     return false;
   };

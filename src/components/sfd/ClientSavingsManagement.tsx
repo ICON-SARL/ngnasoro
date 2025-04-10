@@ -76,7 +76,8 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
   };
   
   // Format date from ISO string
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'Non disponible';
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', {
       day: 'numeric',
@@ -187,7 +188,7 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
                       </div>
                       <div>
                         <p className="text-muted-foreground">Dernière opération</p>
-                        <p>{account.last_transaction_date ? formatDate(account.last_transaction_date) : 'Aucune'}</p>
+                        <p>{formatDate(account.last_updated || account.updated_at)}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Devise</p>

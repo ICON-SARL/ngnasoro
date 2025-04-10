@@ -43,13 +43,11 @@ export function LoanRepaymentTracking() {
   } = useLoanRepayments();
   
   const filteredLoans = [...activeLoans, ...overdueLoans].filter(loan => {
-    // Apply status filter
     if (statusFilter !== 'all') {
       if (statusFilter === 'overdue' && loan.status !== 'overdue') return false;
       if (statusFilter === 'active' && loan.status === 'overdue') return false;
     }
     
-    // Apply search filter to client name or reference
     return (
       loan.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       loan.reference?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -73,21 +71,18 @@ export function LoanRepaymentTracking() {
   };
   
   const handleOpenPaymentDialog = (loan: any) => {
-    // Make sure loan has all required fields from the Loan interface before setting
     const completeLoan: Loan = {
       id: loan.id,
       client_id: loan.client_id,
       sfd_id: loan.sfd_id || '',
       amount: loan.amount,
       interest_rate: loan.interest_rate,
-      term_months: loan.term_months || loan.duration_months, // Use term_months if available, otherwise duration_months
+      term_months: loan.term_months || loan.duration_months,
       duration_months: loan.duration_months,
+      monthly_payment: loan.monthly_payment,
+      purpose: loan.purpose,
       status: loan.status,
       created_at: loan.created_at,
-      updated_at: loan.updated_at || loan.created_at, // Default to created_at if updated_at isn't available
-      // Include optional properties that are available
-      purpose: loan.purpose,
-      monthly_payment: loan.monthly_payment,
       next_payment_date: loan.next_payment_date,
       client_name: loan.client_name,
       reference: loan.reference
