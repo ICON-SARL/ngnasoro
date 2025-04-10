@@ -18,7 +18,7 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('accounts');
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { sfdData, activeSfdId, setActiveSfdId, switchActiveSfd } = useSfdDataAccess();
+  const { activeSfdId, switchActiveSfd } = useSfdDataAccess();
 
   const handleGoBack = () => {
     navigate('/mobile-flow/main');
@@ -52,8 +52,6 @@ const ProfilePage = () => {
         
         <TabsContent value="accounts" className="px-4">
           <SfdAccountsSection 
-            sfdData={sfdData} 
-            activeSfdId={activeSfdId} 
             onSwitchSfd={switchActiveSfd} 
           />
         </TabsContent>

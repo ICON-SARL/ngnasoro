@@ -189,9 +189,9 @@ export const ClientRequests = () => {
             <Button 
               className="bg-green-600 hover:bg-green-700"
               onClick={handleValidate}
-              disabled={validateClient.isLoading}
+              disabled={validateClient.isPending}
             >
-              {validateClient.isLoading ? (
+              {validateClient.isPending ? (
                 <>
                   <Loader size="sm" className="mr-2" />
                   Validation...
@@ -241,9 +241,9 @@ export const ClientRequests = () => {
             <Button 
               variant="destructive"
               onClick={handleReject}
-              disabled={rejectClient.isLoading}
+              disabled={rejectClient.isPending}
             >
-              {rejectClient.isLoading ? (
+              {rejectClient.isPending ? (
                 <>
                   <Loader size="sm" className="mr-2" />
                   Traitement...
