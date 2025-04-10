@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSavingsAccount } from '@/hooks/useSavingsAccount';
 import { useAuth } from '@/hooks/useAuth';
