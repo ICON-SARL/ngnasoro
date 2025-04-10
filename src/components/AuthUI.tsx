@@ -43,7 +43,7 @@ const AuthUI = () => {
       console.log('User role:', userRole);
       
       // Redirection based on user's role
-      if (userRole === 'admin' || user.app_metadata?.role === 'admin') {
+      if (userRole === UserRole.ADMIN || user.app_metadata?.role === 'admin') {
         if (location.pathname !== '/admin/auth' && !location.pathname.includes('admin')) {
           // If regular auth page is accessed by admin, show a message
           toast({
@@ -53,7 +53,7 @@ const AuthUI = () => {
           });
         }
         navigate('/super-admin-dashboard');
-      } else if (userRole === 'sfd_admin' || user.app_metadata?.role === 'sfd_admin') {
+      } else if (userRole === UserRole.SFD_ADMIN || user.app_metadata?.role === 'sfd_admin') {
         navigate('/agency-dashboard');
       } else {
         navigate('/mobile-flow');

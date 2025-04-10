@@ -49,7 +49,6 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   
-  // Function to create savings account if it doesn't exist
   const handleCreateAccount = async () => {
     if (!sfdId || !clientId) return;
     
@@ -59,7 +58,6 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
     });
   };
   
-  // Process deposit transaction
   const handleDeposit = async () => {
     if (!clientId || !amount || !user?.id) return;
     
@@ -74,20 +72,11 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
     setDescription('');
   };
   
-  // Format date from ISO string
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return 'Non disponible';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const formatDate = (date?: string) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString();
   };
   
-  // Render transaction type badge
   const renderTransactionType = (type: string) => {
     switch (type) {
       case 'deposit':
@@ -187,7 +176,7 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
                       </div>
                       <div>
                         <p className="text-muted-foreground">Dernière opération</p>
-                        <p>{formatDate(account.last_updated || account.updated_at)}</p>
+                        <p>{formatDate(account.last_updated)}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Devise</p>
@@ -233,7 +222,6 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
         </CardContent>
       </Card>
       
-      {/* Deposit Dialog */}
       <Dialog open={isDepositOpen} onOpenChange={setIsDepositOpen}>
         <DialogContent>
           <DialogHeader>
@@ -290,7 +278,6 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Withdrawal Dialog (similar to deposit dialog) */}
       <Dialog open={isWithdrawalOpen} onOpenChange={setIsWithdrawalOpen}>
         <DialogContent>
           <DialogHeader>
