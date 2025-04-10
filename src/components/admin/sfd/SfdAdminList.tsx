@@ -33,7 +33,7 @@ interface SfdAdminListProps {
 }
 
 export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) {
-  const { sfdAdmins, isLoading, error, refetch } = useSfdAdminsList();
+  const { sfdAdmins, isLoading, error, refetch } = useSfdAdminsList(sfdId);
   const { deleteSfdAdmin, isDeleting, error: deleteError } = useDeleteSfdAdmin();
 
   const handleDeleteAdmin = (adminId: string) => {
@@ -43,9 +43,6 @@ export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) 
       }
     });
   };
-
-  // Filtrer les administrateurs pour cette SFD (à implémenter plus tard)
-  // Pour l'instant, montrer tous les administrateurs SFD
 
   if (isLoading) {
     return (
@@ -72,8 +69,17 @@ export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) 
       <div className="text-center py-6 bg-muted/20 rounded-md">
         <User className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
         <p className="text-muted-foreground">
-          Aucun administrateur SFD trouvé.
+          Aucun administrateur SFD trouvé pour {sfdName || 'cette SFD'}.
         </p>
+        {onAddAdmin && (
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={onAddAdmin}
+          >
+            Ajouter un administrateur
+          </Button>
+        )}
       </div>
     );
   }

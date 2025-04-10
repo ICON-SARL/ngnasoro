@@ -42,11 +42,11 @@ export async function createSfdAdmin(adminData: {
     
     console.log("No existing user found with this email, proceeding with creation");
     
-    // Utiliser l'API d'administration de Supabase avec les bons privilèges
+    // 1. Créer l'utilisateur dans auth.users
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: adminData.email,
       password: adminData.password,
-      email_confirm: true, // Confirmation automatique
+      email_confirm: true,
       user_metadata: {
         full_name: adminData.full_name,
         sfd_id: adminData.sfd_id
@@ -67,18 +67,7 @@ export async function createSfdAdmin(adminData: {
     
     console.log('Auth user created:', authData.user.id);
     
-    // Assigner le rôle dans la base de données
-    const { error: roleError } = await supabase.rpc('assign_role', {
-      user_id: authData.user.id,
-      role: 'sfd_admin'
-    });
-    
-    if (roleError) {
-      console.error('Error assigning role:', roleError);
-      // Continue malgré l'erreur d'attribution de rôle, nous la gérerons séparément
-    }
-    
-    // Ajouter l'utilisateur à la table admin_users par insertion directe
+    // 2. Ajouter l'entrée admin_users directement
     const { error: adminError } = await supabase
       .from('admin_users')
       .insert({
@@ -94,7 +83,20 @@ export async function createSfdAdmin(adminData: {
       throw new Error(`Erreur lors de l'ajout de l'administrateur: ${adminError.message}`);
     }
     
-    // Créer l'association avec la SFD
+    // 3. Assigner le rôle dans la table user_roles
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .insert({
+        user_id: authData.user.id,
+        role: 'sfd_admin'
+      });
+    
+    if (roleError) {
+      console.error('Error assigning role:', roleError);
+      // Continue malgré l'erreur d'attribution de rôle, nous la gérerons séparément
+    }
+    
+    // 4. Créer l'association avec la SFD
     const { error: assocError } = await supabase
       .from('user_sfds')
       .insert({
@@ -133,34 +135,63 @@ export async function createSfdAdmin(adminData: {
  * Deletes an SFD admin user
  */
 export async function deleteSfdAdmin(adminId: string) {
-  // 1. Delete the auth user
-  const { error: authError } = await supabase.auth.admin.deleteUser(
-    adminId
-  );
-  
-  if (authError) throw authError;
-  
-  // 2. Delete from admin_users table
-  const { error: adminError } = await supabase
-    .from('admin_users')
-    .delete()
-    .eq('id', adminId);
+  try {
+    // 1. Supprimer l'association SFD
+    const { error: assocError } = await supabase
+      .from('user_sfds')
+      .delete()
+      .eq('user_id', adminId);
+      
+    if (assocError) {
+      console.error('Error removing SFD association:', assocError);
+      // Continue anyway to ensure cleanup
+    }
     
-  if (adminError) throw adminError;
-  
-  // 3. Log audit event
-  await logAuditEvent({
-    category: AuditLogCategory.ADMIN_ACTION,
-    action: 'sfd_admin_deleted',
-    details: {
-      admin_id: adminId
-    },
-    user_id: undefined,
-    severity: AuditLogSeverity.WARNING,
-    status: 'success'
-  });
-  
-  return true;
+    // 2. Supprimer le rôle
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('user_id', adminId);
+      
+    if (roleError) {
+      console.error('Error removing role:', roleError);
+      // Continue anyway to ensure cleanup
+    }
+    
+    // 3. Supprimer de admin_users
+    const { error: adminError } = await supabase
+      .from('admin_users')
+      .delete()
+      .eq('id', adminId);
+      
+    if (adminError) {
+      console.error('Error deleting from admin_users:', adminError);
+      throw adminError;
+    }
+    
+    // 4. Supprimer l'utilisateur d'auth
+    const { error: authError } = await supabase.auth.admin.deleteUser(adminId);
+    
+    if (authError) {
+      console.error('Error deleting auth user:', authError);
+      throw authError;
+    }
+    
+    // 5. Log audit event
+    await logAuditEvent({
+      category: AuditLogCategory.ADMIN_ACTION,
+      action: 'sfd_admin_deleted',
+      details: { admin_id: adminId },
+      user_id: undefined,
+      severity: AuditLogSeverity.WARNING,
+      status: 'success'
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Error in deleteSfdAdmin:', error);
+    throw error;
+  }
 }
 
 /**
@@ -168,16 +199,62 @@ export async function deleteSfdAdmin(adminId: string) {
  */
 export async function fetchSfdAdmins() {
   try {
+    // Récupérer tous les administrateurs SFD et filtrer côté client
     const { data, error } = await supabase
       .from('admin_users')
       .select('*')
       .eq('role', 'sfd_admin');
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching SFD admins:', error);
+      throw error;
+    }
     
     return data || [];
   } catch (error) {
-    console.error('Error fetching SFD admins:', error);
+    console.error('Error in fetchSfdAdmins:', error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches SFD admins for a specific SFD
+ */
+export async function fetchSfdAdminsForSfd(sfdId: string) {
+  try {
+    // First get all user_ids associated with this SFD
+    const { data: associations, error: assocError } = await supabase
+      .from('user_sfds')
+      .select('user_id')
+      .eq('sfd_id', sfdId);
+      
+    if (assocError) {
+      console.error('Error fetching SFD associations:', assocError);
+      throw assocError;
+    }
+    
+    if (!associations || associations.length === 0) {
+      return [];
+    }
+    
+    // Get all user IDs
+    const userIds = associations.map(assoc => assoc.user_id);
+    
+    // Then get admin details for these users
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('*')
+      .in('id', userIds)
+      .eq('role', 'sfd_admin');
+      
+    if (error) {
+      console.error('Error fetching SFD admins by SFD:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error in fetchSfdAdminsForSfd:', error);
     throw error;
   }
 }
