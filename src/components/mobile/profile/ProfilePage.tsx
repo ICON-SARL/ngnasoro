@@ -11,12 +11,13 @@ import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
 import KycVerificationSection from './KycVerificationSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('accounts');
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { activeSfdId } = useSfdDataAccess ? useSfdDataAccess() : { activeSfdId: null };
+  const { activeSfdId } = useSfdDataAccess();
 
   const handleGoBack = () => {
     navigate('/mobile-flow/main');

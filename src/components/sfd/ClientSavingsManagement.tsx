@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSavingsAccount } from '@/hooks/useSavingsAccount';
 import { useAuth } from '@/hooks/useAuth';
@@ -50,7 +49,6 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   
-  // Function to create savings account if it doesn't exist
   const handleCreateAccount = async () => {
     if (!sfdId || !clientId) return;
     
@@ -60,7 +58,6 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
     });
   };
   
-  // Process deposit transaction
   const handleDeposit = async () => {
     if (!clientId || !amount || !user?.id) return;
     
@@ -75,7 +72,6 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
     setDescription('');
   };
   
-  // Format date from ISO string
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', {
@@ -87,7 +83,6 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
     });
   };
   
-  // Render transaction type badge
   const renderTransactionType = (type: string) => {
     switch (type) {
       case 'deposit':
@@ -102,6 +97,12 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
         return <span>{type}</span>;
     }
   };
+  
+  const formattedDate = account?.last_transaction_date 
+    ? new Date(account.last_transaction_date).toLocaleDateString() 
+    : account?.updated_at 
+      ? new Date(account.updated_at).toLocaleDateString() 
+      : 'Non disponible';
   
   if (isLoading) {
     return (
@@ -187,7 +188,7 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
                       </div>
                       <div>
                         <p className="text-muted-foreground">Dernière opération</p>
-                        <p>{account.last_transaction_date ? formatDate(account.last_transaction_date) : 'Aucune'}</p>
+                        <p>{formattedDate}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Devise</p>
@@ -233,7 +234,6 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
         </CardContent>
       </Card>
       
-      {/* Deposit Dialog */}
       <Dialog open={isDepositOpen} onOpenChange={setIsDepositOpen}>
         <DialogContent>
           <DialogHeader>
@@ -290,7 +290,6 @@ const ClientSavingsManagement: React.FC<ClientSavingsManagementProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Withdrawal Dialog (similar to deposit dialog) */}
       <Dialog open={isWithdrawalOpen} onOpenChange={setIsWithdrawalOpen}>
         <DialogContent>
           <DialogHeader>
