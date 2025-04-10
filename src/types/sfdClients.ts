@@ -81,6 +81,10 @@ export interface Loan {
   approved_by?: string;
   total_paid?: number;
   remaining_amount?: number;
+  reference?: string;
+  client_name?: string;
+  subsidy_amount?: number;
+  term_months?: number;
 }
 
 export interface LoanPayment {
@@ -100,7 +104,7 @@ export interface SfdSubsidy {
   id: string;
   sfd_id: string;
   amount: number;
-  status: 'pending' | 'approved' | 'rejected' | 'disbursed';
+  status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'active' | 'revoked' | 'depleted';
   purpose: string;
   region: string;
   target_clients: number;
@@ -109,4 +113,9 @@ export interface SfdSubsidy {
   approved_at?: string;
   disbursed_at?: string;
   created_at: string;
+  allocated_at?: string;
+  end_date?: string;
+  description?: string;
+  used_amount?: number;
+  remaining_amount?: number;
 }
