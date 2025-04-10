@@ -1214,6 +1214,15 @@ export type Database = {
         Args: { user_id: string; role: Database["public"]["Enums"]["app_role"] }
         Returns: undefined
       }
+      create_admin_user: {
+        Args: {
+          admin_id: string
+          admin_email: string
+          admin_full_name: string
+          admin_role: string
+        }
+        Returns: undefined
+      }
       create_sample_transactions: {
         Args: Record<PropertyKey, never>
         Returns: undefined

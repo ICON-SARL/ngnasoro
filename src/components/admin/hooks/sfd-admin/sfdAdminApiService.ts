@@ -78,25 +78,34 @@ export async function createSfdAdmin(adminData: {
       // Continue despite role assignment error, we'll handle it separately
     }
     
-    // 3. Add user to admin_users table using a direct insert
-    // Use the RLS policies we've created instead of the RPC function
-    const { error: adminError } = await supabase
-      .from('admin_users')
-      .insert({
-        id: authData.user.id,
-        email: adminData.email,
-        full_name: adminData.full_name,
-        role: 'sfd_admin',
-        sfd_id: adminData.sfd_id,
-        has_2fa: false
-      });
+    // 3. Add user to admin_users table using our new secure function
+    const { error: adminError } = await supabase.rpc('create_admin_user', {
+      admin_id: authData.user.id,
+      admin_email: adminData.email,
+      admin_full_name: adminData.full_name,
+      admin_role: 'sfd_admin'
+    });
     
     if (adminError) {
       console.error('Error creating admin user record:', adminError);
       throw new Error(`Erreur lors de l'ajout de l'administrateur: ${adminError.message}`);
     }
     
-    // 4. Log audit event
+    // 4. Create association with SFD
+    const { error: assocError } = await supabase
+      .from('user_sfds')
+      .insert({
+        user_id: authData.user.id,
+        sfd_id: adminData.sfd_id,
+        is_default: true
+      });
+      
+    if (assocError) {
+      console.error('Error creating SFD association:', assocError);
+      throw new Error(`Erreur lors de l'association à la SFD: ${assocError.message}`);
+    }
+    
+    // 5. Log audit event
     await logAuditEvent({
       category: AuditLogCategory.ADMIN_ACTION,
       action: 'sfd_admin_created',

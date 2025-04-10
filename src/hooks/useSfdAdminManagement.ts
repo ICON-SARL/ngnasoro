@@ -41,40 +41,38 @@ export function useSfdAdminManagement() {
           throw new Error("This email is already registered. Please use a different email.");
         }
         
-        // 1. Create a user using Supabase's public API
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        // 1. Create auth user
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email: data.email,
           password: data.password,
-          options: {
-            data: {
-              full_name: data.full_name,
-              role: 'sfd_admin',
-              sfd_id: data.sfd_id
-            }
+          email_confirm: true,
+          user_metadata: {
+            full_name: data.full_name,
+            sfd_id: data.sfd_id
+          },
+          app_metadata: {
+            role: 'sfd_admin'
           }
         });
 
-        if (signUpError) {
-          console.error("Error signing up user:", signUpError);
-          throw signUpError;
+        if (authError) {
+          console.error("Error creating auth user:", authError);
+          throw authError;
         }
         
-        if (!signUpData.user) {
+        if (!authData.user) {
           throw new Error("No user created");
         }
 
-        console.log("User created successfully:", signUpData.user.id);
+        console.log("User created successfully:", authData.user.id);
 
-        // 2. Create entry in admin_users
-        const { error: adminError } = await supabase
-          .from('admin_users')
-          .insert({
-            id: signUpData.user.id,
-            email: data.email,
-            full_name: data.full_name,
-            role: 'sfd_admin',
-            has_2fa: false
-          });
+        // 2. Create entry in admin_users using the secure function
+        const { error: adminError } = await supabase.rpc('create_admin_user', {
+          admin_id: authData.user.id,
+          admin_email: data.email,
+          admin_full_name: data.full_name,
+          admin_role: 'sfd_admin'
+        });
 
         if (adminError) {
           console.error("Error creating admin user record:", adminError);
@@ -87,7 +85,7 @@ export function useSfdAdminManagement() {
         const { error: roleError } = await supabase.rpc(
           'assign_role',
           {
-            user_id: signUpData.user.id,
+            user_id: authData.user.id,
             role: 'sfd_admin'
           }
         );
@@ -103,7 +101,7 @@ export function useSfdAdminManagement() {
         const { error: assocError } = await supabase
           .from('user_sfds')
           .insert({
-            user_id: signUpData.user.id,
+            user_id: authData.user.id,
             sfd_id: data.sfd_id,
             is_default: true
           });
@@ -122,7 +120,7 @@ export function useSfdAdminManagement() {
               title: "SFD admin account created",
               message: `An admin account has been created for you. Please log in with the email ${data.email}.`,
               type: "info",
-              recipient_id: signUpData.user.id
+              recipient_id: authData.user.id
             });
             console.log("Notification sent successfully");
           } catch (notifError) {
@@ -132,7 +130,7 @@ export function useSfdAdminManagement() {
         }
         
         // 6. Return the created user data
-        return signUpData.user;
+        return authData.user;
         
       } catch (error: any) {
         console.error("Error creating SFD admin:", error);
