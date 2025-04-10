@@ -9,10 +9,16 @@ const AuthContext = createContext<AuthContextProps>({
   loading: true,
   session: null,
   signIn: async () => ({ error: null }),
+  signUp: async () => ({ error: null }),
   signOut: async () => {},
   refreshSession: async () => {},
   activeSfdId: null,
   setActiveSfdId: () => {},
+  isAdmin: false,
+  isSfdAdmin: false,
+  userRole: UserRole.User,
+  biometricEnabled: false,
+  toggleBiometricAuth: async () => {},
 });
 
 interface AuthProviderProps {
