@@ -1,35 +1,35 @@
+
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 // Auth and Public Components
-import LandingPage from '@/pages/LandingPage';
-import AuthPage from '@/pages/AuthPage';
+import LoginPage from '@/pages/LoginPage';
+import ClientLoginPage from '@/pages/ClientLoginPage';
+import AdminLoginPage from '@/pages/AdminLoginPage';
 import SfdAuthUI from '@/components/auth/SfdAuthUI';
 import AdminAuthUI from '@/components/auth/AdminAuthUI';
 
 // Protected Components
-import ProtectedRoute from '@/components/ProtectedRoute';
-import PermissionProtectedRoute from '@/components/PermissionProtectedRoute';
+import ProtectedRoute from '@/components/routes/ProtectedRoute';
+import PermissionProtectedRoute from '@/components/routes/PermissionProtectedRoute';
 import ProfilePage from '@/pages/ProfilePage';
-import DashboardPage from '@/pages/DashboardPage';
 import MobileFlowPage from '@/pages/MobileFlowPage';
+import MobileFlow from '@/pages/MobileFlow';
 import SfdSetupPage from '@/pages/SfdSetupPage';
 import SfdSetupAssistantPage from '@/pages/SfdSetupAssistantPage';
-import SecurePaymentPage from '@/pages/SecurePaymentPage';
 import UserProfilePage from '@/pages/UserProfilePage';
 
 // Admin Components
-import SuperAdminDashboardPage from '@/pages/SuperAdminDashboardPage';
-import AgencyDashboardPage from '@/pages/AgencyDashboardPage';
-import AdminUsersPage from '@/pages/AdminUsersPage';
+import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
+import AgencyDashboard from '@/pages/AgencyDashboard';
+import AuditLogsPage from '@/pages/AuditLogsPage';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import ClientsPage from '@/pages/ClientsPage';
 import SfdClientsPage from '@/pages/SfdClientsPage';
-import SfdLoansPage from '@/pages/SfdLoansPage';
-import SfdSubsidyRequestsPage from '@/pages/SfdSubsidyRequestsPage';
-import SfdDashboardPage from '@/pages/SfdDashboardPage';
-import NotFoundPage from '@/pages/NotFoundPage';
+import LoansPage from '@/pages/LoansPage';
+import MerefSubsidyRequestPage from '@/pages/MerefSubsidyRequestPage';
+import NotFound from '@/pages/NotFound';
 
 const Router = () => {
   const { user, loading } = useAuth();
@@ -49,8 +49,8 @@ const Router = () => {
     <BrowserRouter>
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/auth" element={<ClientLoginPage />} />
         <Route path="/sfd/auth" element={<SfdAuthUI />} />
         <Route path="/admin/auth" element={<AdminAuthUI />} />
         <Route path="/access-denied" element={<AccessDeniedPage />} />
@@ -68,7 +68,7 @@ const Router = () => {
           path="/super-admin-dashboard"
           element={
             <PermissionProtectedRoute requiredPermission="view_dashboard">
-              <SuperAdminDashboardPage />
+              <SuperAdminDashboard />
             </PermissionProtectedRoute>
           }
         />
@@ -76,7 +76,7 @@ const Router = () => {
           path="/agency-dashboard"
           element={
             <PermissionProtectedRoute requiredPermission="view_agency_dashboard">
-              <AgencyDashboardPage />
+              <AgencyDashboard />
             </PermissionProtectedRoute>
           }
         />
@@ -84,7 +84,7 @@ const Router = () => {
           path="/admin/users"
           element={
             <PermissionProtectedRoute requiredPermission="manage_users">
-              <AdminUsersPage />
+              <AuditLogsPage />
             </PermissionProtectedRoute>
           }
         />
@@ -109,8 +109,32 @@ const Router = () => {
           }
         />
         
+        {/* Loan management */}
+        <Route
+          path="/loans"
+          element={
+            <PermissionProtectedRoute 
+              requiredPermission="manage_loans"
+            >
+              <LoansPage />
+            </PermissionProtectedRoute>
+          }
+        />
+        
+        {/* Subsidy request routes */}
+        <Route
+          path="/sfd-subsidy-requests"
+          element={
+            <PermissionProtectedRoute 
+              requiredPermission="manage_subsidies"
+            >
+              <MerefSubsidyRequestPage />
+            </PermissionProtectedRoute>
+          }
+        />
+        
         {/* Not found */}
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
