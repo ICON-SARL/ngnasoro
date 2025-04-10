@@ -1,22 +1,11 @@
 
 import React from 'react';
-import { Mail, Phone, Lock, User } from 'lucide-react';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from '@/components/ui/form';
 import { UseFormReturn } from 'react-hook-form';
 import { RegisterFormValues } from './schema';
 
-interface RegisterFormFieldsProps {
-  form: UseFormReturn<RegisterFormValues>;
-}
-
-const RegisterFormFields: React.FC<RegisterFormFieldsProps> = ({ form }) => {
+const RegisterFormFields: React.FC<{ form: UseFormReturn<RegisterFormValues> }> = ({ form }) => {
   return (
     <>
       <FormField
@@ -24,21 +13,10 @@ const RegisterFormFields: React.FC<RegisterFormFieldsProps> = ({ form }) => {
         name="fullName"
         render={({ field }) => (
           <FormItem>
-            <FormLabel htmlFor="name" className="block text-sm font-medium mb-1">
-              Nom complet
-            </FormLabel>
-            <div className="relative">
-              <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <FormControl>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Nom et prénom"
-                  className="pl-10"
-                  {...field}
-                />
-              </FormControl>
-            </div>
+            <FormLabel>Nom Complet</FormLabel>
+            <FormControl>
+              <Input placeholder="Entrez votre nom complet" {...field} />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
@@ -49,21 +27,10 @@ const RegisterFormFields: React.FC<RegisterFormFieldsProps> = ({ form }) => {
         name="email"
         render={({ field }) => (
           <FormItem>
-            <FormLabel htmlFor="reg-email" className="block text-sm font-medium mb-1">
-              Email
-            </FormLabel>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <FormControl>
-                <Input
-                  id="reg-email"
-                  type="email"
-                  placeholder="email@example.com"
-                  className="pl-10"
-                  {...field}
-                />
-              </FormControl>
-            </div>
+            <FormLabel>Email</FormLabel>
+            <FormControl>
+              <Input type="email" placeholder="Entrez votre email" {...field} />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
@@ -74,21 +41,10 @@ const RegisterFormFields: React.FC<RegisterFormFieldsProps> = ({ form }) => {
         name="phoneNumber"
         render={({ field }) => (
           <FormItem>
-            <FormLabel htmlFor="phone-reg" className="block text-sm font-medium mb-1">
-              Numéro de téléphone
-            </FormLabel>
-            <div className="relative">
-              <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <FormControl>
-                <Input
-                  id="phone-reg"
-                  type="tel"
-                  placeholder="+223 00 00 00 00"
-                  className="pl-10"
-                  {...field}
-                />
-              </FormControl>
-            </div>
+            <FormLabel>Téléphone (optionnel)</FormLabel>
+            <FormControl>
+              <Input type="tel" placeholder="Entrez votre numéro de téléphone" {...field} />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
@@ -99,21 +55,10 @@ const RegisterFormFields: React.FC<RegisterFormFieldsProps> = ({ form }) => {
         name="password"
         render={({ field }) => (
           <FormItem>
-            <FormLabel htmlFor="reg-password" className="block text-sm font-medium mb-1">
-              Mot de passe
-            </FormLabel>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <FormControl>
-                <Input
-                  id="reg-password"
-                  type="password"
-                  placeholder="••••••••"
-                  className="pl-10"
-                  {...field}
-                />
-              </FormControl>
-            </div>
+            <FormLabel>Mot de passe</FormLabel>
+            <FormControl>
+              <Input type="password" placeholder="Créez un mot de passe" {...field} />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}

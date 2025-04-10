@@ -3,16 +3,16 @@ import React from 'react';
 
 const TermsDisclaimer: React.FC = () => {
   return (
-    <p className="text-center text-xs text-muted-foreground">
-      En créant un compte, vous acceptez nos{" "}
-      <a href="#" className="underline text-[#0D6A51]">
+    <p className="text-xs text-muted-foreground text-center mt-4">
+      En créant un compte, vous acceptez les{' '}
+      <a href="#" className="text-[#0D6A51] hover:underline">
         Conditions d'utilisation
-      </a>{" "}
-      et notre{" "}
-      <a href="#" className="underline text-[#0D6A51]">
+      </a>{' '}
+      et la{' '}
+      <a href="#" className="text-[#0D6A51] hover:underline">
         Politique de confidentialité
-      </a>
-      .
+      </a>{' '}
+      de N'gna sôrô.
     </p>
   );
 };
