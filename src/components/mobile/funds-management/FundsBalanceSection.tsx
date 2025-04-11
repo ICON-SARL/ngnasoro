@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -60,9 +59,7 @@ const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({
         
         {/* Balance Display */}
         {isRefreshing ? (
-          <div className="flex items-center justify-center h-16 w-full">
-            <Loader size="md" className="text-white" />
-          </div>
+          <LoadingOverlay />
         ) : (
           <div className="text-center">
             <h1 className="text-5xl font-bold tracking-tight mt-2">
@@ -85,5 +82,11 @@ const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({
     </div>
   );
 };
+
+const LoadingOverlay = () => (
+  <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 rounded-2xl">
+    <Loader size="md" />
+  </div>
+);
 
 export default FundsBalanceSection;

@@ -6,6 +6,7 @@ import { useSfdSwitch } from '@/hooks/useSfdSwitch';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 import { useToast } from '@/hooks/use-toast';
+import ErrorState from '../sfd-savings/ErrorState';
 
 interface SfdAccountsSectionProps {
   sfdData?: any[];
@@ -24,7 +25,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
   
   const { toast } = useToast();
   const { sfdAccounts, refetch, synchronizeBalances } = useSfdAccounts();
-  const { synchronizeWithSfd, isSyncing } = useRealtimeSynchronization();
+  const { synchronizeWithSfd, isSyncing, syncError } = useRealtimeSynchronization();
   
   // Synchronize accounts when component mounts
   useEffect(() => {
@@ -36,11 +37,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
         }
       } catch (error) {
         console.error("Failed to synchronize accounts on mount:", error);
-        toast({
-          title: "Erreur de synchronisation",
-          description: "Impossible de synchroniser vos comptes pour le moment. Veuillez réessayer plus tard.",
-          variant: "destructive",
-        });
+        // Error handling is now done in the useRealtimeSynchronization hook
       }
     };
     
@@ -79,6 +76,26 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
     
     return success;
   };
+
+  // Handle retry when there's a sync error
+  const handleRetrySync = () => {
+    synchronizeWithSfd()
+      .then(success => {
+        if (success) {
+          refetch();
+        }
+      });
+  };
+
+  // If there's a sync error, show the error state
+  if (syncError) {
+    return (
+      <ErrorState 
+        message={syncError}
+        retryFn={handleRetrySync}
+      />
+    );
+  }
 
   return (
     <>

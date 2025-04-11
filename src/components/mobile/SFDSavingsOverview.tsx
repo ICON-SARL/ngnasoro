@@ -21,7 +21,7 @@ const SFDSavingsOverview = () => {
   const { activeSfdAccount, isLoading, refetch } = useSfdAccounts();
   const { user, activeSfdId } = useAuth();
   const { dashboardData, isLoading: isDashboardLoading, refreshDashboardData } = useMobileDashboard();
-  const { isSyncing, synchronizeWithSfd } = useRealtimeSynchronization();
+  const { isSyncing, synchronizeWithSfd, syncError } = useRealtimeSynchronization();
   const [isHidden, setIsHidden] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -77,7 +77,16 @@ const SFDSavingsOverview = () => {
       setHasError(true);
       setErrorMessage("Aucun compte SFD trouvé pour votre profil.");
     }
-  }, [isLoading, isDashboardLoading, activeSfd, activeSfdAccount, user]);
+    
+    // Check for sync errors
+    if (syncError) {
+      setHasError(true);
+      setErrorMessage(syncError);
+    } else if (syncError === null && hasError) {
+      // Reset error state if syncError is cleared
+      setHasError(false);
+    }
+  }, [isLoading, isDashboardLoading, activeSfd, activeSfdAccount, user, syncError, hasError]);
 
   const refreshBalance = async () => {
     setIsUpdating(true);

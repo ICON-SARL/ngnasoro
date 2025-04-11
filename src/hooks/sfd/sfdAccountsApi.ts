@@ -8,6 +8,14 @@ import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
  */
 export async function synchronizeAccounts(userId: string): Promise<SyncResult> {
   try {
+    if (!userId) {
+      return {
+        success: false,
+        message: 'User ID is required for synchronization',
+        updates: []
+      };
+    }
+
     // Use the edgeFunctionApi to handle the call more gracefully
     const data = await edgeFunctionApi.callEdgeFunction('synchronize-sfd-accounts', { 
       userId,
@@ -18,7 +26,7 @@ export async function synchronizeAccounts(userId: string): Promise<SyncResult> {
     if (!data || !data.success) {
       return {
         success: false,
-        message: data?.message || 'Synchronization failed',
+        message: data?.message || 'Synchronization failed: No response from server',
         updates: []
       };
     }
@@ -30,7 +38,7 @@ export async function synchronizeAccounts(userId: string): Promise<SyncResult> {
     // Return a well-structured error response
     return {
       success: false,
-      message: error.message || 'Failed to synchronize accounts',
+      message: error.message || 'Failed to synchronize accounts: Network error',
       updates: []
     };
   }
@@ -41,6 +49,14 @@ export async function synchronizeAccounts(userId: string): Promise<SyncResult> {
  */
 export async function getSfdBalance(userId: string, sfdId: string): Promise<SfdBalanceData> {
   try {
+    if (!userId || !sfdId) {
+      console.error('Missing required parameters for getSfdBalance');
+      return {
+        balance: 0,
+        currency: 'FCFA'
+      };
+    }
+
     // Call the edge function to get the balance
     const { data, error } = await supabase.functions.invoke('get-sfd-balance', {
       body: { 
@@ -77,6 +93,10 @@ export async function processLoanPayment(
   params: LoanPaymentParams
 ): Promise<SyncResult> {
   try {
+    if (!userId || !sfdId || !params.loanId) {
+      throw new Error('Missing required parameters for loan payment');
+    }
+
     // Call the edge function to process the payment
     const { data, error } = await supabase.functions.invoke('process-loan-payment', {
       body: { 
