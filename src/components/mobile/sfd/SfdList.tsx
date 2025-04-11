@@ -43,8 +43,8 @@ const SfdList: React.FC = () => {
   }, []);
 
   const handleSelectSfd = (sfdId: string) => {
-    // Naviguer vers la page d'informations SFD ou d'inscription
-    navigate('/sfd-selector', { state: { selectedSfdId: sfdId } });
+    // Naviguer vers la page d'informations SFD ou d'inscription avec l'URL correcte
+    navigate('/mobile-flow/sfd-selector', { state: { selectedSfdId: sfdId } });
   };
 
   if (isLoading) {

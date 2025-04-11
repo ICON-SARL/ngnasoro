@@ -16,7 +16,7 @@ const ViewAllSfdsButton: React.FC<ViewAllSfdsButtonProps> = ({
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate('/sfd-selector');
+    navigate('/mobile-flow/sfd-selector');
   };
 
   return (

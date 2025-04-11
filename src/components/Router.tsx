@@ -18,6 +18,7 @@ import MobileFlowPage from '@/pages/MobileFlowPage';
 import SfdSetupPage from '@/pages/SfdSetupPage';
 import SfdSetupAssistantPage from '@/pages/SfdSetupAssistantPage';
 import UserProfilePage from '@/pages/UserProfilePage';
+import SfdSelectorPage from '@/pages/SfdSelectorPage';
 
 // Admin Components
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
@@ -41,6 +42,13 @@ const Router = () => {
       <Route path="/sfd/auth" element={<SfdAuthUI />} />
       <Route path="/admin/auth" element={<AdminAuthUI />} />
       <Route path="/access-denied" element={<AccessDeniedPage />} />
+      
+      {/* Added direct route to SfdSelectorPage outside of mobile-flow */}
+      <Route path="/sfd-selector" element={
+        <ProtectedRoute>
+          <SfdSelectorPage />
+        </ProtectedRoute>
+      } />
       
       {/* Auth routes - Using a different pattern for protected routes */}
       <Route path="/user-profile/:userId" element={
