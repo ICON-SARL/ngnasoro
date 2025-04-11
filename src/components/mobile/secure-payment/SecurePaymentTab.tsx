@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -40,10 +39,8 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   const { sfdAccounts, isLoading: accountsLoading } = useSfdAccounts();
   const [transactionAmount, setTransactionAmount] = useState(isWithdrawal ? 25000 : loanId ? 3500 : 10000);
   
-  // Use the explicitly passed selectedSfdId or fall back to activeSfdId
   const effectiveSfdId = selectedSfdId || activeSfdId;
   
-  // Get selected SFD account details
   const selectedSfdAccount = sfdAccounts.find(acc => acc.id === effectiveSfdId);
   
   const { 
@@ -60,7 +57,6 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     }
   };
   
-  // Handle payment based on the operation type
   const handlePayment = async () => {
     if (!user || !effectiveSfdId) {
       toast({
@@ -80,13 +76,11 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       return;
     }
     
-    // For SFD in-agency operations, open the QR code scanner
     if (paymentMethod === 'sfd') {
       setQrDialogOpen(true);
       return;
     }
     
-    // For other methods like Mobile Money
     setPaymentStatus('pending');
     setProgress(10);
     
@@ -97,13 +91,10 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       let result;
       
       if (isWithdrawal) {
-        // Withdrawal case
         result = await makeWithdrawal(transactionAmount, `Retrait via ${paymentMethod}`);
       } else if (loanId) {
-        // Loan repayment case
         result = await makeLoanRepayment(loanId, transactionAmount, `Remboursement de prêt via ${paymentMethod}`);
       } else {
-        // Deposit case
         result = await makeDeposit(transactionAmount, `Dépôt via ${paymentMethod}`);
       }
       
@@ -137,11 +128,9 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     }
   };
   
-  // Automatically detect sufficient balance
   useEffect(() => {
     const detectPrimaryAccount = () => {
       if (selectedSfdAccount && isWithdrawal) {
-        // Check if the selected account has enough balance
         const hasEnoughBalance = selectedSfdAccount.balance >= transactionAmount;
         setBalanceStatus(hasEnoughBalance ? 'sufficient' : 'insufficient');
         if (!hasEnoughBalance) {
@@ -167,6 +156,10 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     setMobileMoneyInitiated(true);
   };
   
+  const handleScanQRCode = () => {
+    setQrDialogOpen(true);
+  };
+  
   const handleAmountChange = (amount: number) => {
     setTransactionAmount(amount);
   };
@@ -190,7 +183,8 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
           paymentStatus={paymentStatus}
           selectedSfdAccount={selectedSfdAccount}
           onAmountChange={handleAmountChange}
-          onScanQRCode={() => setQrDialogOpen(true)}
+          onScanQRCode={handleScanQRCode}
+          onMobileMoneyPayment={handleMobileMoneyPayment}
         />
       )}
       
