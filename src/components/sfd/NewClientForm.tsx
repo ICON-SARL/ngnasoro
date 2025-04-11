@@ -50,8 +50,8 @@ export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
     }
   };
 
-  const handleSelectChange = (field: string, value: string) => {
-    setValue(field, value);
+  const handleSelectChange = (value: string) => {
+    setValue('id_type', value as "cni" | "passport" | "permis" | "autre");
   };
 
   return (
@@ -110,7 +110,7 @@ export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
         <div className="space-y-2">
           <Label htmlFor="id_type">Type de pièce d'identité</Label>
           <Select 
-            onValueChange={(value) => handleSelectChange('id_type', value)}
+            onValueChange={handleSelectChange}
             defaultValue="cni"
           >
             <SelectTrigger>

@@ -19,7 +19,7 @@ export function useAccountSynchronization() {
       if (!userEmail) {
         const { data: clientData, error: clientError } = await supabase
           .from('sfd_clients')
-          .select('email')
+          .select('email, sfd_id')
           .eq('id', clientId)
           .single();
           
@@ -71,6 +71,14 @@ export function useAccountSynchronization() {
       if (!userId) throw new Error("Impossible de créer ou trouver l'utilisateur");
       
       // 4. Lier le client SFD à l'utilisateur
+      const { data: clientData, error: clientDataError } = await supabase
+        .from('sfd_clients')
+        .select('sfd_id')
+        .eq('id', clientId)
+        .single();
+        
+      if (clientDataError) throw clientDataError;
+      
       const { error: updateError } = await supabase
         .from('sfd_clients')
         .update({ user_id: userId })
@@ -79,7 +87,7 @@ export function useAccountSynchronization() {
       if (updateError) throw updateError;
       
       // 5. Synchroniser les comptes
-      await synchronizeAccounts(clientId);
+      await synchronizeAccounts(clientId, clientData.sfd_id);
       
       toast({
         title: "Compte synchronisé",
@@ -103,11 +111,14 @@ export function useAccountSynchronization() {
   /**
    * Synchronise les balances et transactions entre comptes
    */
-  const synchronizeAccounts = async (clientId: string): Promise<boolean> => {
+  const synchronizeAccounts = async (clientId: string, sfdId: string): Promise<boolean> => {
     try {
       // Appeler la fonction de synchronisation dans la base de données
       const { data, error } = await supabase
-        .rpc('sync_client_accounts', { p_client_id: clientId });
+        .rpc('sync_client_accounts', { 
+          p_sfd_id: sfdId,
+          p_client_id: clientId 
+        });
         
       if (error) throw error;
       
