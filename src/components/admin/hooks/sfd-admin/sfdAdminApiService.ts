@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 
 export interface SfdAdmin {
   id: string;
@@ -12,35 +13,30 @@ export interface SfdAdmin {
 
 export const fetchSfdAdmins = async (): Promise<SfdAdmin[]> => {
   try {
-    const { data: admins, error } = await supabase.functions.invoke('fetch-sfd-admins');
-    
-    if (error) {
-      console.error('Erreur lors de la récupération des administrateurs:', error);
-      throw new Error(error.message);
-    }
-    
-    return admins || [];
+    // Utiliser l'API helper pour gérer les erreurs et les retries
+    const admins = await edgeFunctionApi.callEdgeFunction('fetch-sfd-admins');
+    return Array.isArray(admins) ? admins : [];
   } catch (error: any) {
     console.error('Erreur dans fetchSfdAdmins:', error);
-    throw error;
+    // Retourner un tableau vide au lieu de propager l'erreur
+    return [];
   }
 };
 
 export const fetchSfdAdminsForSfd = async (sfdId: string): Promise<SfdAdmin[]> => {
   try {
-    const { data: admins, error } = await supabase.functions.invoke('fetch-sfd-admins', {
-      body: JSON.stringify({ sfdId })
-    });
-    
-    if (error) {
-      console.error(`Erreur lors de la récupération des administrateurs pour SFD ${sfdId}:`, error);
-      throw new Error(error.message);
+    if (!sfdId) {
+      console.error('ID SFD manquant dans fetchSfdAdminsForSfd');
+      return [];
     }
     
-    return admins || [];
+    // Utiliser l'API helper avec meilleure gestion des erreurs
+    const admins = await edgeFunctionApi.callEdgeFunction('fetch-sfd-admins', { sfdId });
+    return Array.isArray(admins) ? admins : [];
   } catch (error: any) {
     console.error(`Erreur dans fetchSfdAdminsForSfd (${sfdId}):`, error);
-    throw error;
+    // Retourner un tableau vide au lieu de propager l'erreur
+    return [];
   }
 };
 

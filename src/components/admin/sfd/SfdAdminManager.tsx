@@ -16,10 +16,10 @@ interface SfdAdminManagerProps {
 
 export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const { toast } = useToast();
+  
   const { 
-    sfdAdmins, 
     isLoading: isLoadingAdmins, 
-    error: adminsError,
     refetch: refetchAdmins 
   } = useSfdAdminsList(sfdId);
   
@@ -40,11 +40,32 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
     try {
       await addSfdAdmin(data);
       setShowAddDialog(false);
-      refetchAdmins();
-    } catch (error) {
+      
+      // Refresh the list after short delay to ensure server has processed the add
+      setTimeout(() => {
+        refetchAdmins();
+        toast({
+          title: "Succès",
+          description: `L'administrateur ${data.full_name} a été ajouté avec succès`,
+        });
+      }, 1000);
+    } catch (error: any) {
       console.error("Error in handleAddAdmin:", error);
+      toast({
+        title: "Erreur",
+        description: `Impossible d'ajouter l'administrateur: ${error.message}`,
+        variant: "destructive",
+      });
     }
   };
+
+  const handleRefresh = () => {
+    refetchAdmins();
+    toast({
+      title: "Actualisation",
+      description: "La liste des administrateurs est en cours d'actualisation",
+    });
+  }
 
   return (
     <Card>
@@ -57,7 +78,7 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
           <Button 
             variant="outline" 
             size="icon"
-            onClick={() => refetchAdmins()}
+            onClick={handleRefresh}
             disabled={isLoadingAdmins || isAdding}
           >
             <RefreshCw className={`h-4 w-4 ${isLoadingAdmins ? 'animate-spin' : ''}`} />
@@ -69,7 +90,7 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
             {isAdding ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Chargement...
+                Ajout en cours...
               </>
             ) : (
               <>

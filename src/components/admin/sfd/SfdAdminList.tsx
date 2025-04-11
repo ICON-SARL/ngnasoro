@@ -9,13 +9,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { 
   Trash2, RefreshCw, UserPlus, AlertCircle,
-  Mail, Shield, Calendar
+  Mail, Shield, Calendar, ExternalLink
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { formatDate } from '@/utils/formatters';
+import { SfdAdmin } from '../hooks/sfd-admin/sfdAdminApiService';
 
 interface SfdAdminListProps {
   sfdId: string;
@@ -127,7 +128,7 @@ export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sfdAdmins.length === 0 ? (
+            {!isLoading && sfdAdmins.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3 py-4">
@@ -148,7 +149,7 @@ export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) 
                 </TableCell>
               </TableRow>
             ) : (
-              sfdAdmins.map((admin) => (
+              sfdAdmins.map((admin: SfdAdmin) => (
                 <TableRow key={admin.id}>
                   <TableCell className="font-medium">{admin.full_name}</TableCell>
                   <TableCell>
@@ -171,14 +172,24 @@ export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) 
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => promptDelete(admin.id)}
-                      disabled={isDeleting}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/admin/users/detail/${admin.id}`, '_blank')}
+                        title="Voir les détails"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => promptDelete(admin.id)}
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
