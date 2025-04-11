@@ -26,12 +26,15 @@ export const edgeFunctionApi = {
     try {
       // Set up a timeout promise to prevent hanging on API calls
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error(`Edge function call to ${functionName} timed out`)), timeout);
+        setTimeout(() => reject(new Error(`Edge function call to ${functionName} timed out after ${timeout/1000} seconds`)), timeout);
       });
       
       // Call the edge function with a retry mechanism
       const callWithRetry = async (retriesLeft = maxRetries, delay = 1000): Promise<any> => {
         try {
+          // Log le début de la tentative
+          console.log(`Tentative d'appel de ${functionName}, tentatives restantes: ${retriesLeft}`);
+          
           const response = await supabase.functions.invoke(functionName, {
             body: payload,
           });
@@ -48,6 +51,7 @@ export const edgeFunctionApi = {
             throw response.error;
           }
           
+          console.log(`Appel réussi à ${functionName}`, response.data);
           return response.data;
         } catch (err: any) {
           console.error(`Error in attempt for ${functionName}, retries left: ${retriesLeft-1}`, err);
@@ -66,9 +70,7 @@ export const edgeFunctionApi = {
       // Race the function call against the timeout
       const data = await Promise.race([
         callWithRetry(maxRetries),
-        timeoutPromise.then(() => {
-          throw new Error(`Edge function call to ${functionName} timed out after ${timeout}ms`);
-        })
+        timeoutPromise
       ]);
       
       return data;

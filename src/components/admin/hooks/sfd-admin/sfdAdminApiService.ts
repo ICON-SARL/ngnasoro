@@ -104,8 +104,15 @@ export async function deleteSfdAdmin(adminId: string): Promise<void> {
     // Ajouter un délai pour éviter les problèmes de rate limiting
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Utiliser la fonction Edge pour supprimer l'administrateur
-    const response = await edgeFunctionApi.callEdgeFunction('delete-sfd-admin', { adminId });
+    // Utiliser la fonction Edge pour supprimer l'administrateur avec timeout et retry
+    const response = await edgeFunctionApi.callEdgeFunction('delete-sfd-admin', 
+      { adminId }, 
+      { 
+        timeout: 15000,  // Augmenter le timeout à 15 secondes
+        maxRetries: 2,   // Limiter les retries à 2 dans le service
+        showToast: false // Gérer les toasts manuellement
+      }
+    );
     
     if (!response) {
       console.error('Réponse vide de la fonction Edge');
@@ -117,13 +124,16 @@ export async function deleteSfdAdmin(adminId: string): Promise<void> {
       throw new Error(`Erreur lors de la suppression: ${response.error}`);
     }
     
-    console.log('Administrateur SFD supprimé avec succès');
+    console.log('Administrateur SFD supprimé avec succès', response);
+    return response;
   } catch (error: any) {
-    console.error('Erreur non gérée dans deleteSfdAdmin:', error);
+    console.error('Erreur détectée dans deleteSfdAdmin:', error);
     
-    // Améliorer le message d'erreur pour l'utilisateur
+    // Améliorer le message d'erreur pour l'utilisateur avec plus de contexte
     if (error.message && error.message.includes('non-2xx status')) {
-      throw new Error('Le serveur a rencontré une erreur lors de la suppression. Veuillez réessayer.');
+      throw new Error('Le serveur a rencontré une erreur lors de la suppression. Veuillez réessayer dans quelques instants.');
+    } else if (error.message && error.message.includes('timed out')) {
+      throw new Error('La requête a expiré. Le serveur pourrait être occupé. Veuillez réessayer.');
     } else {
       throw new Error(error.message || 'Erreur lors de la suppression de l\'administrateur SFD');
     }

@@ -19,31 +19,30 @@ export function useDeleteSfdAdmin() {
         setError(null);
         console.log(`Tentative de suppression de l'administrateur SFD avec l'ID: ${adminId}`);
         
-        // Essayer de supprimer l'admin avec une stratégie de retry
+        // Stratégie de retry simplifiée mais efficace
         let retries = 3;
         let lastError: any = null;
         
-        while (retries > 0) {
+        for (let attempt = 1; attempt <= retries; attempt++) {
           try {
-            await deleteSfdAdmin(adminId);
-            console.log(`Administrateur SFD ${adminId} supprimé avec succès après ${3 - retries + 1} tentative(s)`);
+            console.log(`Tentative ${attempt}/${retries} de suppression de l'admin ${adminId}`);
+            const result = await deleteSfdAdmin(adminId);
+            console.log(`Administrateur SFD ${adminId} supprimé avec succès après ${attempt} tentative(s)`, result);
             return adminId;
           } catch (err: any) {
             lastError = err;
-            console.log(`Erreur lors de la tentative ${3 - retries + 1}, retries left: ${retries-1}`, err);
+            console.error(`Erreur lors de la tentative ${attempt}/${retries}:`, err);
             
-            // Récupérer le message d'erreur pour le journaliser
-            const errorMessage = err.message || "Erreur inconnue";
-            console.error(`Tentative ${3 - retries + 1} échouée: ${errorMessage}`);
-            
-            if (retries <= 1) {
-              // Dernière tentative échouée, on propage l'erreur
+            // Si c'est la dernière tentative, on propage l'erreur
+            if (attempt >= retries) {
+              console.error(`Toutes les tentatives ont échoué pour supprimer l'admin ${adminId}`);
               throw err;
             }
             
-            retries--;
-            // Attendre un délai croissant avant de réessayer (1s, puis 2s, puis 3s)
-            await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
+            // Attendre avec un délai exponentiel avant de réessayer
+            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+            console.log(`Nouvel essai dans ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
         }
         
@@ -55,7 +54,8 @@ export function useDeleteSfdAdmin() {
         throw new Error(errorMsg);
       }
     },
-    onSuccess: () => {
+    onSuccess: (adminId) => {
+      console.log(`Suppression réussie de l'admin ID: ${adminId}`);
       queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
       toast({
         title: "Succès",
@@ -63,6 +63,7 @@ export function useDeleteSfdAdmin() {
       });
     },
     onError: (error: any) => {
+      console.error("Erreur dans la mutation delete:", error);
       toast({
         title: "Erreur",
         description: `Erreur lors de la suppression de l'administrateur: ${error.message}`,
