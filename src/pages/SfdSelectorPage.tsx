@@ -96,11 +96,16 @@ const SfdSelectorPage: React.FC = () => {
                 <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4">
                   <h3 className="font-medium text-amber-800 mb-1">Demandes en cours</h3>
                   <ul className="list-disc list-inside text-sm text-amber-700">
-                    {pendingRequests.map(request => (
-                      <li key={request.id}>
-                        Demande pour {request.sfd_name || request.sfd_id} en attente
-                      </li>
-                    ))}
+                    {pendingRequests.map(request => {
+                      // Trouver le nom de la SFD correspondante
+                      const sfdName = availableSfds.find(sfd => sfd.id === request.sfd_id)?.name || request.sfd_id;
+                      
+                      return (
+                        <li key={request.id}>
+                          Demande pour {sfdName} en attente
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}

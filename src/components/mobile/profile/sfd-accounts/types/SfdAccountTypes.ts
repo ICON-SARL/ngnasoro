@@ -24,6 +24,7 @@ export interface AvailableSfd {
 export interface SfdClientRequest {
   id: string;
   sfd_id: string;
+  sfd_name?: string;  // Ajout de la propriété manquante
   status: string;
   created_at: string;
 }

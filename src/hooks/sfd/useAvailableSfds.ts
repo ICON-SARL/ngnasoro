@@ -40,8 +40,24 @@ export function useAvailableSfds(userId?: string) {
         
       if (pendingRequestsError) throw pendingRequestsError;
       
+      // Get all SFDs to find the names
+      const { data: allSfds, error: allSfdsError } = await supabase
+        .from('sfds')
+        .select('id, name');
+        
+      if (allSfdsError) throw allSfdsError;
+      
+      // Map SFD names to requests
+      const pendingRequestsWithNames = (pendingSfdRequests || []).map(request => {
+        const sfd = allSfds?.find(s => s.id === request.sfd_id);
+        return {
+          ...request,
+          sfd_name: sfd?.name
+        } as SfdClientRequest;
+      });
+      
       // Cast the response to the correct type
-      setPendingRequests(pendingSfdRequests as SfdClientRequest[] || []);
+      setPendingRequests(pendingRequestsWithNames || []);
       
       // Get IDs of SFDs that user has pending requests for
       const pendingSfdIds = pendingSfdRequests?.map(request => request.sfd_id) || [];
