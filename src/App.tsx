@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import AdminLoginPage from '@/pages/AdminLoginPage';
 import SfdLoginPage from '@/pages/SfdLoginPage';
@@ -21,10 +22,10 @@ function App() {
     <Router>
       <AuthProvider>
         <Routes>
-          {/* Redirection page - new route */}
+          {/* Redirection page - page de choix du type de connexion */}
           <Route path="/login" element={<AuthRedirectPage />} />
           
-          {/* Authentication routes */}
+          {/* Routes d'authentification */}
           <Route path="/auth" element={<AuthUI />} />
           <Route path="/admin/auth" element={<AdminLoginPage />} />
           <Route path="/sfd/auth" element={<SfdLoginPage />} />
@@ -104,6 +105,9 @@ function App() {
 
           {/* Mobile Flow */}
           <Route path="/mobile-flow" element={<AuthUI />} />
+          
+          {/* Redirection par défaut vers la page de sélection du type de connexion */}
+          <Route path="/" element={<AuthRedirectPage />} />
         </Routes>
       </AuthProvider>
     </Router>

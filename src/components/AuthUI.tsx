@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
@@ -56,18 +57,20 @@ const AuthUI = () => {
   }, [user, userRole, loading, navigate, location.pathname, toast]);
   
   useEffect(() => {
-    if (location.pathname.includes('register')) {
-      setActiveTab('register');
-    } else {
-      setActiveTab('login');
-    }
-    
+    // Vérifier si nous sommes sur une page spécifique pour définir le mode d'authentification
     if (location.pathname.includes('admin/auth') || location.search.includes('admin=true')) {
       setAuthMode('admin');
     } else if (location.pathname.includes('sfd/auth') || location.search.includes('sfd_admin=true')) {
       setAuthMode('sfd_admin');
     } else {
       setAuthMode('default');
+    }
+    
+    // Définir l'onglet actif (login ou register)
+    if (location.pathname.includes('register')) {
+      setActiveTab('register');
+    } else {
+      setActiveTab('login');
     }
   }, [location.pathname, location.search]);
   

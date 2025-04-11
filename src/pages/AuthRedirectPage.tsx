@@ -11,7 +11,8 @@ const AuthRedirectPage = () => {
   useEffect(() => {
     // Si l'URL est exactement /login, rediriger vers /auth qui est notre page d'authentification standard
     if (window.location.pathname === '/login') {
-      navigate('/auth');
+      // Pas de redirection automatique, nous laissons l'utilisateur choisir
+      console.log('Page de redirection chargée.');
     }
   }, [navigate]);
 
