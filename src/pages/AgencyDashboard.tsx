@@ -4,15 +4,23 @@ import { AgencyHeader } from '@/components/AgencyHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SfdUserManagement } from '@/components/sfd/SfdUserManagement';
-import { SfdRoleManager } from '@/components/sfd/roles'; // Updated import path
+import { SfdRoleManager } from '@/components/sfd/roles'; 
 import { ClientManagement } from '@/components/sfd/ClientManagement';
 import { LoanManagement } from '@/components/sfd/LoanManagement';
 import { ReportGenerator } from '@/components/ReportGenerator';
 import { DataExport } from '@/components/DataExport';
 import { FinancialReporting } from '@/components/FinancialReporting';
+import { useSfdDashboardStats } from '@/hooks/useSfdDashboardStats';
+import { Loader2 } from 'lucide-react';
 
 const AgencyDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { data: dashboardStats, isLoading } = useSfdDashboardStats();
+
+  // Format currency function
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('fr-FR') + ' FCFA';
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -40,40 +48,55 @@ const AgencyDashboard = () => {
           
           <div className="mt-4">
             <TabsContent value="dashboard">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle>Clients</CardTitle>
-                    <CardDescription>Résumé de vos clients</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">245</div>
-                    <p className="text-xs text-muted-foreground">+12% depuis le mois dernier</p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle>Prêts actifs</CardTitle>
-                    <CardDescription>Prêts en cours</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">86</div>
-                    <p className="text-xs text-muted-foreground">Total: 12,450,000 FCFA</p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle>Remboursements</CardTitle>
-                    <CardDescription>Ce mois-ci</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">1,245,000 FCFA</div>
-                    <p className="text-xs text-muted-foreground">98% taux de remboursement</p>
-                  </CardContent>
-                </Card>
-              </div>
+              {isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+                  <p>Chargement des statistiques...</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle>Clients</CardTitle>
+                      <CardDescription>Résumé de vos clients</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{dashboardStats?.clients.total || 0}</div>
+                      <p className="text-xs text-muted-foreground">
+                        +{dashboardStats?.clients.percentageChange || 0}% depuis le mois dernier
+                      </p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle>Prêts actifs</CardTitle>
+                      <CardDescription>Prêts en cours</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{dashboardStats?.loans.active || 0}</div>
+                      <p className="text-xs text-muted-foreground">
+                        Total: {formatCurrency(dashboardStats?.loans.totalAmount || 0)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle>Remboursements</CardTitle>
+                      <CardDescription>Ce mois-ci</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {formatCurrency(dashboardStats?.repayments.currentMonth || 0)}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {dashboardStats?.repayments.repaymentRate || 0}% taux de remboursement
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </TabsContent>
             
             <TabsContent value="clients">
