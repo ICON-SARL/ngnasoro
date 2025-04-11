@@ -4,18 +4,28 @@ import { useState, useEffect } from 'react';
 export interface DashboardStats {
   totalSfds: number;
   activeSfds: number;
-  totalSubsidies: number;
-  approvedSubsidies: number;
+  pendingSfds: number;
+  inactiveSfds: number;
+  newSfdsThisMonth: number;
+  admins: number;
+  sfdAdmins: number;
+  newAdminsThisMonth: number;
+  totalUsers: number;
+  newUsersThisMonth: number;
   pendingSubsidies: number;
   totalClients: number;
+  // Add other required properties
 }
 
 export interface SubsidiesData {
-  total: number;
-  approved: number;
-  pending: number;
+  totalAmount: number;
+  availableAmount: number;
+  usagePercentage: number;
   approvedAmount: number;
   pendingAmount: number;
+  total?: number;
+  approved?: number;
+  pending?: number;
 }
 
 export interface RecentApproval {
@@ -31,18 +41,27 @@ export const useAdminDashboardData = () => {
   const [stats, setStats] = useState<DashboardStats>({
     totalSfds: 0,
     activeSfds: 0,
-    totalSubsidies: 0,
-    approvedSubsidies: 0,
+    pendingSfds: 0,
+    inactiveSfds: 0,
+    newSfdsThisMonth: 0,
+    admins: 0,
+    sfdAdmins: 0,
+    newAdminsThisMonth: 0,
+    totalUsers: 0,
+    newUsersThisMonth: 0,
     pendingSubsidies: 0,
     totalClients: 0
   });
   
   const [subsidiesData, setSubsidiesData] = useState<SubsidiesData>({
+    totalAmount: 0,
+    availableAmount: 0,
+    usagePercentage: 0,
+    approvedAmount: 0,
+    pendingAmount: 0,
     total: 0,
     approved: 0,
-    pending: 0,
-    approvedAmount: 0,
-    pendingAmount: 0
+    pending: 0
   });
   
   const [recentApprovals, setRecentApprovals] = useState<RecentApproval[]>([]);
@@ -58,19 +77,28 @@ export const useAdminDashboardData = () => {
           setStats({
             totalSfds: 124,
             activeSfds: 115,
-            totalSubsidies: 87,
-            approvedSubsidies: 65,
+            pendingSfds: 5,
+            inactiveSfds: 4,
+            newSfdsThisMonth: 8,
+            admins: 12,
+            sfdAdmins: 35,
+            newAdminsThisMonth: 3,
+            totalUsers: 1840,
+            newUsersThisMonth: 120,
             pendingSubsidies: 22,
             totalClients: 1840
           });
           
           // Mock subsidies data
           setSubsidiesData({
+            totalAmount: 323000000,
+            availableAmount: 78000000,
+            usagePercentage: 76,
+            approvedAmount: 245000000,
+            pendingAmount: 78000000,
             total: 87,
             approved: 65,
-            pending: 22,
-            approvedAmount: 245000000,
-            pendingAmount: 78000000
+            pending: 22
           });
           
           // Mock recent approvals
@@ -86,48 +114,32 @@ export const useAdminDashboardData = () => {
             {
               id: '2',
               sfd_name: 'Nyèsigiso',
-              amount: 18000000,
-              date: '2023-04-12',
+              amount: 18500000,
+              date: '2023-04-10',
               status: 'approved',
-              region: 'Ségou'
+              region: 'Bamako'
             },
             {
               id: '3',
               sfd_name: 'Soro Yiriwaso',
-              amount: 22000000,
-              date: '2023-04-10',
-              status: 'approved',
-              region: 'Mopti'
-            },
-            {
-              id: '4',
-              sfd_name: 'RMCR',
               amount: 15000000,
-              date: '2023-04-08',
-              status: 'pending',
-              region: 'Kayes'
-            },
-            {
-              id: '5',
-              sfd_name: 'CAECE Jigiseme',
-              amount: 12000000,
               date: '2023-04-05',
-              status: 'approved',
-              region: 'Koulikoro'
+              status: 'pending',
+              region: 'Ségou'
             }
           ]);
           
           setIsLoading(false);
-        }, 1500);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        }, 1000);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
         setIsLoading(false);
       }
     };
-    
+
     fetchDashboardData();
   }, []);
-  
+
   return {
     stats,
     subsidiesData,

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { type User, UserRole, type AuthContextProps } from './auth/types';
 
@@ -41,7 +42,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (storedUser && storedToken) {
           const userData = JSON.parse(storedUser);
-          setUser(userData);
+          // Type assertion to match our extended User interface
+          setUser(userData as User);
           setSession({ access_token: storedToken });
           
           // Set userRole based on app_metadata or user_metadata
@@ -115,10 +117,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         },
         app_metadata: {
           role: 'client'
-        }
-      };
+        },
+        aud: 'authenticated',
+        created_at: new Date().toISOString()
+      } as User;
       
-      login(mockUser as User, 'mock-jwt-token');
+      login(mockUser, 'mock-jwt-token');
       return { error: null };
     } catch (error) {
       console.error('Login error:', error);
@@ -136,10 +140,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user_metadata: metadata || {},
         app_metadata: {
           role: 'client'
-        }
-      };
+        },
+        aud: 'authenticated',
+        created_at: new Date().toISOString()
+      } as User;
       
-      login(mockUser as User, 'mock-jwt-token');
+      login(mockUser, 'mock-jwt-token');
       return { error: null };
     } catch (error) {
       console.error('Registration error:', error);
@@ -168,7 +174,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         session, 
         loading, 
         activeSfdId, 
-        userRole,
+        userRole: userRole || UserRole.User,
         isAdmin,
         isSfdAdmin,
         setActiveSfdId,
@@ -187,3 +193,4 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+export type { User } from './auth/types';

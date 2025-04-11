@@ -36,7 +36,7 @@ const SuperAdminDashboardPage = () => {
                 <RecentApprovals approvals={recentApprovals} isLoading={isLoading} />
               </div>
               <div className="md:col-span-1">
-                <SubsidySummary subsidiesData={subsidiesData} isLoading={isLoading} />
+                <SubsidySummary data={subsidiesData} />
               </div>
             </div>
           </>

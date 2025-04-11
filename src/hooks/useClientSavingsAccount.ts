@@ -21,14 +21,16 @@ export interface SavingsAccount {
   currency: string;
   status: 'active' | 'inactive' | 'pending';
   createdAt: string;
+  last_updated: string; // Added this field to match usage
 }
 
 export interface Transaction {
   id: string;
   amount: number;
-  type: 'deposit' | 'withdrawal' | 'transfer';
+  type: 'deposit' | 'withdrawal' | 'transfer' | 'loan_disbursement' | 'loan_repayment';
   date: string;
   description?: string;
+  created_at: string; // Added this field to match usage
 }
 
 export const useClientSavingsAccount = () => {
@@ -54,28 +56,28 @@ export const useClientSavingsAccount = () => {
     return { success: true, message: 'Client data synchronized successfully' };
   };
 
-  // Adding the missing synchronizeAccounts function
+  // Adding the synchronizeAccounts function
   const synchronizeAccounts = async (clientId: string): Promise<SynchronizationResult> => {
     // Implementation details
     return { success: true, message: 'Accounts synchronized successfully' };
   };
 
-  const createAccount = async (clientId: string, sfdId: string, initialDeposit: number): Promise<SynchronizationResult> => {
+  const createAccount = async (initialDeposit: number): Promise<SynchronizationResult> => {
     // Implementation details
     return { success: true, message: 'Account created successfully' };
   };
 
-  const processDeposit = async (accountId: string, amount: number, description?: string): Promise<SynchronizationResult> => {
+  const processDeposit = async (amount: number, description?: string): Promise<boolean> => {
     // Implementation details
-    return { success: true, message: 'Deposit processed successfully' };
+    return true;
   };
 
-  const processWithdrawal = async (accountId: string, amount: number, description?: string): Promise<SynchronizationResult> => {
+  const processWithdrawal = async (amount: number, description?: string): Promise<boolean> => {
     // Implementation details
-    return { success: true, message: 'Withdrawal processed successfully' };
+    return true;
   };
 
-  const refreshData = async (clientId: string, sfdId: string): Promise<void> => {
+  const refreshData = async (): Promise<void> => {
     // Implementation to refresh account data
   };
 

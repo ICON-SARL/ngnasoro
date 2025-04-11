@@ -6,8 +6,8 @@ export interface User extends SupabaseUser {
   avatar_url?: string;
   phone?: string;
   sfd_id?: string;
+  created_at: string; // Making this required to match the base type
   aud: string;
-  created_at?: string;
 }
 
 export enum UserRole {

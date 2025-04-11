@@ -39,7 +39,7 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
     createAccount,
     processDeposit,
     refreshData
-  } = useClientSavingsAccount(clientId);
+  } = useClientSavingsAccount();
   
   // Handle deposit submission
   const handleDeposit = async () => {

@@ -13,7 +13,7 @@ export function useSfdAccounts() {
   const { user, activeSfdId } = useAuth();
   
   // Get list of user's SFDs
-  const { sfdAccounts, isLoading: isListLoading, isError: isListError, refetch: refetchList } = useSfdList(user as User);
+  const { sfdAccounts, isLoading: isListLoading, isError: isListError, refetch: refetchList } = useSfdList(user);
   
   // Get active SFD details - guard against invalid activeSfdId values
   const validSfdId = activeSfdId && 
@@ -26,10 +26,10 @@ export function useSfdAccounts() {
     isLoading: isActiveSfdLoading, 
     isError: isActiveSfdError, 
     refetch: refetchActive 
-  } = useSfdAccount(user as User, validSfdId);
+  } = useSfdAccount(user, validSfdId);
   
   // Get SFD account actions (sync, payments)
-  const { synchronizeBalances, makeLoanPayment } = useSfdAccountActions(user as User, validSfdId);
+  const { synchronizeBalances, makeLoanPayment } = useSfdAccountActions(user, validSfdId);
   
   // Combined refetch function
   const refetch = () => {
