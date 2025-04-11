@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { SfdClient, ClientDocument, ClientActivity } from "@/types/sfdClients";
 import { useToast } from "@/hooks/use-toast";

@@ -50,6 +50,13 @@ const Router = () => {
         </ProtectedRoute>
       } />
       
+      {/* Mobile flow routes with nested SfdSelector */}
+      <Route path="/mobile-flow/sfd-selector" element={
+        <ProtectedRoute>
+          <SfdSelectorPage />
+        </ProtectedRoute>
+      } />
+      
       {/* Auth routes - Using a different pattern for protected routes */}
       <Route path="/user-profile/:userId" element={
         <ProtectedRoute>
