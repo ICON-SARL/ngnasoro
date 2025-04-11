@@ -24,6 +24,8 @@ const distributionData = [
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 export const ChartsDisplay: React.FC = () => {
+  const isLoading = false; // Usually this would come from a query or state
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
@@ -85,7 +87,7 @@ export const ChartsDisplay: React.FC = () => {
           <CardTitle>Distribution des Opérations Financières</CardTitle>
         </CardHeader>
         <CardContent className="h-80">
-          <DistributionChart />
+          <DistributionChart isLoading={isLoading} />
         </CardContent>
       </Card>
     </div>

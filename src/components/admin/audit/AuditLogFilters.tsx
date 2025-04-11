@@ -79,8 +79,8 @@ export function AuditLogFilters({
         <div className="flex-1 space-y-2">
           <label className="text-sm font-medium">Depuis</label>
           <DatePicker
-            date={filters.startDate}
-            setDate={(date) => handleFilterChange('startDate', date)}
+            selected={filters.startDate}
+            onSelect={(date) => handleFilterChange('startDate', date)}
             placeholder="Date de début"
           />
         </div>
@@ -88,8 +88,8 @@ export function AuditLogFilters({
         <div className="flex-1 space-y-2">
           <label className="text-sm font-medium">Jusqu'à</label>
           <DatePicker
-            date={filters.endDate}
-            setDate={(date) => handleFilterChange('endDate', date)}
+            selected={filters.endDate}
+            onSelect={(date) => handleFilterChange('endDate', date)}
             placeholder="Date de fin"
           />
         </div>

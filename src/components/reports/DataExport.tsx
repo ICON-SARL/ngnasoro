@@ -190,11 +190,10 @@ export function DataExport() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <DatePicker
+                        <Calendar
                           mode="single"
                           selected={startDate}
                           onSelect={setStartDate}
-                          initialFocus
                         />
                       </PopoverContent>
                     </Popover>
@@ -207,11 +206,10 @@ export function DataExport() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <DatePicker
+                        <Calendar
                           mode="single"
                           selected={endDate}
                           onSelect={setEndDate}
-                          initialFocus
                         />
                       </PopoverContent>
                     </Popover>

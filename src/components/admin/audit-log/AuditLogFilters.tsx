@@ -120,8 +120,8 @@ export function AuditLogFilters({
           <div>
             <label className="text-sm font-medium mb-1 block">Date de début</label>
             <DatePicker
-              date={startDate}
-              setDate={setStartDate}
+              selected={startDate}
+              onSelect={setStartDate}
               placeholder="Choisir une date"
             />
           </div>
@@ -129,8 +129,8 @@ export function AuditLogFilters({
           <div>
             <label className="text-sm font-medium mb-1 block">Date de fin</label>
             <DatePicker
-              date={endDate}
-              setDate={setEndDate}
+              selected={endDate}
+              onSelect={setEndDate}
               placeholder="Choisir une date"
             />
           </div>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -175,7 +174,7 @@ export function TrendsAndCharts() {
                   <CardTitle>Distribution des Opérations</CardTitle>
                 </CardHeader>
                 <CardContent className="h-[400px]">
-                  <DistributionChart />
+                  <DistributionChart isLoading={false} />
                 </CardContent>
               </Card>
             </TabsContent>
