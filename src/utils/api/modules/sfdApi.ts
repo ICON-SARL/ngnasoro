@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { SfdBalanceData, SfdData, SfdLoan } from '@/hooks/sfd/types';
 
@@ -145,13 +144,20 @@ export const sfdApi = {
       if (error) throw error;
       
       // Transform to SfdLoan format
-      return (data || []).map(loan => ({
-        id: loan.id,
-        amount: loan.amount,
-        remainingAmount: loan.amount - (loan.paid_amount || 0),
-        nextDueDate: loan.next_payment_date || new Date().toISOString(),
-        isLate: new Date(loan.next_payment_date) < new Date()
-      }));
+      return (data || []).map(loan => {
+        // Calculate the remaining amount - handle the case where paid_amount might not exist
+        const paidAmount = loan.monthly_payment 
+          ? (loan.duration_months - (loan.next_payment_date ? 1 : 0)) * loan.monthly_payment 
+          : 0;
+          
+        return {
+          id: loan.id,
+          amount: loan.amount,
+          remainingAmount: loan.amount - paidAmount,
+          nextDueDate: loan.next_payment_date || new Date().toISOString(),
+          isLate: new Date(loan.next_payment_date) < new Date()
+        };
+      });
     } catch (error) {
       console.error('Error fetching SFD loans:', error);
       return [];
@@ -169,10 +175,10 @@ export const sfdApi = {
       
       if (error) throw error;
       
-      return data || { requests: 0, approved: 0, pending: 0, rejected: 0 };
+      return data || { requests: 0, approved: 0, pending: 0, rejected: 0, activeSfds: 0, pendingRequests: 0 };
     } catch (error) {
       console.error('Error fetching MEREF dashboard stats:', error);
-      return { requests: 0, approved: 0, pending: 0, rejected: 0 };
+      return { requests: 0, approved: 0, pending: 0, rejected: 0, activeSfds: 0, pendingRequests: 0 };
     }
   },
   

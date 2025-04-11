@@ -1,10 +1,11 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building, Users, CreditCard } from 'lucide-react';
 import { apiClient } from '@/utils/apiClient';
+import { useAuth } from '@/hooks/useAuth';
 
 export function SimplifiedMerefDashboard() {
+  const { user } = useAuth();
   const [stats, setStats] = useState({
     activeSfds: 0,
     activeUsers: 0,
@@ -15,7 +16,7 @@ export function SimplifiedMerefDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const dashboardStats = await apiClient.getMerefDashboardStats();
+        const dashboardStats = await apiClient.getMerefDashboardStats(user?.id || 'system');
         setStats({
           activeSfds: dashboardStats.activeSfds || 0,
           activeUsers: dashboardStats.activeSfds * 450 || 0, // Approximate number of users per SFD
@@ -29,7 +30,7 @@ export function SimplifiedMerefDashboard() {
     };
 
     fetchStats();
-  }, []);
+  }, [user]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
