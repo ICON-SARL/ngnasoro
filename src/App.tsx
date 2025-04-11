@@ -31,6 +31,8 @@ const App = () => {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/admin/auth" element={<AuthPage />} />
+            <Route path="/sfd/auth" element={<AuthPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route path="/dashboard" element={<SfdDashboardPage />} />
             <Route path="/admin-dashboard" element={<SuperAdminDashboardPage />} />
