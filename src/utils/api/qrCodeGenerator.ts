@@ -2,25 +2,43 @@
 // QR Code Generator API utility
 import { supabase } from '@/integrations/supabase/client';
 
+export interface QRCodeResponse {
+  success: boolean;
+  qrData?: string;
+  transactionId?: string;
+  expiresAt?: string;
+  error?: string;
+}
+
+export interface QRCodeRequest {
+  userId: string;
+  sfdId: string;
+  amount: number;
+  type: 'deposit' | 'withdrawal' | 'loan_payment';
+  loanId?: string;
+  reference?: string;
+}
+
 /**
  * Generate a QR code for payment or withdrawal
  */
 export async function generateQRCode(
-  userId: string,
-  amount: number,
-  isWithdrawal: boolean = false
-): Promise<string | null> {
+  params: QRCodeRequest
+): Promise<QRCodeResponse> {
   try {
-    if (!userId) {
+    if (!params.userId) {
       throw new Error('User ID is required');
     }
     
     const { data, error } = await supabase.functions.invoke('mobile-money-verification', {
       body: {
         action: 'qrCode',
-        userId,
-        amount,
-        isWithdrawal
+        userId: params.userId,
+        amount: params.amount,
+        isWithdrawal: params.type === 'withdrawal',
+        sfdId: params.sfdId,
+        loanId: params.loanId,
+        reference: params.reference
       }
     });
     
@@ -33,13 +51,18 @@ export async function generateQRCode(
       throw new Error('Failed to generate QR code');
     }
     
-    // In a real implementation, you would generate an actual QR code image data
-    // For demo purposes, we'll use a placeholder or the data returned from the function
-    
-    return `data:image/png;base64,iVBORw0KGgoAAAANSUhEU...`;
-  } catch (error) {
+    return {
+      success: true,
+      qrData: `data:image/png;base64,iVBORw0KGgoAAAANSUhEU...`,
+      transactionId: data.qrCode.code,
+      expiresAt: data.qrCode.expiresAt
+    };
+  } catch (error: any) {
     console.error('QR code generation error:', error);
-    return null;
+    return {
+      success: false,
+      error: error.message || 'Failed to generate QR code'
+    };
   }
 }
 
@@ -48,9 +71,7 @@ export async function generateQRCode(
  */
 export async function scanQRCodeForTransaction(
   qrCode: string,
-  amount: number,
-  isWithdrawal: boolean = false,
-  loanId?: string
+  userId: string
 ): Promise<{ success: boolean; message: string; transactionId?: string }> {
   try {
     // In a real implementation, you would parse the QR code and send to the server
@@ -58,9 +79,7 @@ export async function scanQRCodeForTransaction(
     const { data, error } = await supabase.functions.invoke('process-qr-transaction', {
       body: {
         qrCode,
-        amount,
-        isWithdrawal,
-        loanId,
+        userId,
         timestamp: Date.now()
       }
     });
@@ -76,7 +95,7 @@ export async function scanQRCodeForTransaction(
     
     return {
       success: true,
-      message: isWithdrawal ? 'Retrait effectué avec succès' : 'Paiement effectué avec succès',
+      message: data.isWithdrawal ? 'Retrait effectué avec succès' : 'Paiement effectué avec succès',
       transactionId: data.transactionId
     };
   } catch (error: any) {

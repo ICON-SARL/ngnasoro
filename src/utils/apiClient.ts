@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { handleError, handleApiResponse } from "./errorHandler";
-import { sfdApi, SfdBalanceResult } from "./api/modules/sfdApi";
+import { sfdApi } from "./api/modules/sfdApi";
 import { profileApi } from "./api/modules/profileApi";
 import { transactionApi } from "./api/modules/transactionApi";
 import { storageApi } from "./api/modules/storageApi";
@@ -20,6 +20,9 @@ export const apiClient = {
   getSfdBalance: sfdApi.getSfdBalance,
   getSfdLoans: sfdApi.getSfdLoans,
   getMerefDashboardStats: sfdApi.getMerefDashboardStats,
+  synchronizeAccounts: sfdApi.synchronizeAccounts,
+  createSfdWithAdmin: sfdApi.createSfdWithAdmin,
+  createSfdSubsidy: sfdApi.createSfdSubsidy,
   
   // User profile operations
   getUserProfile: profileApi.getUserProfile,

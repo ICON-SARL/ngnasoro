@@ -1,9 +1,8 @@
 
 import { useState } from 'react';
 import { useAuth } from '../useAuth';
-import { generateQRCode } from '@/utils/api/qrCodeGenerator';
+import { generateQRCode, QRCodeResponse, QRCodeRequest } from '@/utils/api/qrCodeGenerator';
 import { QRCodeGenerationHook } from './types';
-import { QRCodeResponse } from '@/utils/api/qrCodeGenerator';
 
 export function useQRCodeGeneration(): QRCodeGenerationHook {
   const [isProcessingQRCode, setIsProcessingQRCode] = useState(false);
@@ -20,14 +19,16 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
     setIsProcessingQRCode(true);
     
     try {
-      const result = await generateQRCode({
+      const request: QRCodeRequest = {
         userId: user.id,
         sfdId: '', // We'll use an empty string by default, as it might be filled in by the backend
         amount,
         type: loanId ? 'loan_payment' : 'deposit',
         loanId,
         reference: loanId ? `loan-payment-${loanId}` : `payment-${Date.now()}`
-      });
+      };
+      
+      const result = await generateQRCode(request);
       
       return result;
     } catch (error: any) {
@@ -51,13 +52,15 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
     setIsProcessingQRCode(true);
     
     try {
-      const result = await generateQRCode({
+      const request: QRCodeRequest = {
         userId: user.id,
         sfdId: '', // We'll use an empty string by default, as it might be filled in by the backend
         amount,
         type: 'withdrawal',
         reference: `withdrawal-${Date.now()}`
-      });
+      };
+      
+      const result = await generateQRCode(request);
       
       return result;
     } catch (error: any) {

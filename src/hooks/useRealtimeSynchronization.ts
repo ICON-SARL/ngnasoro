@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,7 +20,7 @@ export function useRealtimeSynchronization() {
     try {
       console.log(`Synchronizing accounts for user ${user.id}${activeSfdId ? ` with active SFD ${activeSfdId}` : ''}`);
       
-      const syncResult = await synchronizeAccounts(user.id, activeSfdId || undefined);
+      const syncResult = await synchronizeAccounts(user.id);
       
       if (syncResult.success) {
         setLastSynced(new Date());

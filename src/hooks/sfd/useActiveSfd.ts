@@ -1,7 +1,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { User } from '@/hooks/useAuth';
-import { fetchSfdBalance, fetchSfdLoans, fetchUserSfds } from './sfdAccountsApi';
+import { fetchSfdBalance } from './fetchSfdBalance';
+import { fetchSfdLoans } from './fetchSfdLoans';
+import { fetchUserSfds } from './fetchSfdAccounts';
 import { useToast } from '@/hooks/use-toast';
 
 export function useActiveSfd(user: User | null, activeSfdId: string | null) {
