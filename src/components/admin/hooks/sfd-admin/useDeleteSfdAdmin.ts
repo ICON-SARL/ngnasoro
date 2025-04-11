@@ -13,7 +13,8 @@ export function useDeleteSfdAdmin() {
     mutationFn: async (adminId: string) => {
       try {
         setError(null);
-        return await deleteSfdAdmin(adminId);
+        console.log('Deleting SFD admin with ID:', adminId);
+        await deleteSfdAdmin(adminId);
       } catch (err: any) {
         console.error('Error deleting SFD admin:', err);
         setError(err.message || "Une erreur s'est produite lors de la suppression de l'administrateur");
@@ -21,17 +22,18 @@ export function useDeleteSfdAdmin() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
       toast({
-        title: "Suppression réussie",
-        description: "L'administrateur SFD a été supprimé avec succès.",
-        variant: "default",
+        title: "Succès",
+        description: "L'administrateur a été supprimé avec succès",
       });
+      
+      // Invalider les requêtes pour forcer une actualisation des données
+      queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
     },
-    onError: (err: Error) => {
+    onError: (error: any) => {
       toast({
         title: "Erreur",
-        description: `Impossible de supprimer l'administrateur SFD: ${err.message}`,
+        description: error.message || "Une erreur s'est produite lors de la suppression",
         variant: "destructive",
       });
     }
