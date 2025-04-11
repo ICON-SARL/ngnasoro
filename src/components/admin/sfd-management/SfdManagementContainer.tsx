@@ -10,7 +10,7 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Building, Search, UserPlus, Users, Plus, RefreshCw, AlertCircle } from 'lucide-react';
+import { Building, Search, UserPlus, Users, Plus, RefreshCw, AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { AddSfdAdminDialog } from '@/components/admin/sfd/AddSfdAdminDialog';
@@ -19,7 +19,7 @@ import { SfdAdminManager } from '@/components/admin/sfd/SfdAdminManager';
 import { SfdAddDialog } from '@/components/admin/sfd/SfdAddDialog';
 import { Badge } from '@/components/ui/badge';
 import { useQueryClient } from '@tanstack/react-query';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function SfdManagementContainer() {
@@ -33,12 +33,44 @@ export function SfdManagementContainer() {
   const [showAddSfdDialog, setShowAddSfdDialog] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const { toast } = useToast();
   const { isLoading: isLoadingAdmin, error, addSfdAdmin } = useSfdAdminManagement();
   const queryClient = useQueryClient();
   
   const MAX_RETRIES = 5;
-  const RETRY_DELAY = 2000; // 2 seconds
+  const RETRY_DELAY = 2000; // 2 secondes
+
+  // Surveiller l'état de connexion réseau
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('Connexion réseau rétablie');
+      setIsOnline(true);
+      toast({
+        title: "Connexion rétablie",
+        description: "Connexion internet rétablie. Chargement des données...",
+      });
+      fetchSfds();
+    };
+
+    const handleOffline = () => {
+      console.log('Connexion réseau perdue');
+      setIsOnline(false);
+      toast({
+        title: "Connexion perdue",
+        description: "Connexion internet perdue. Certaines fonctionnalités peuvent être limitées.",
+        variant: "destructive",
+      });
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [toast]);
 
   // Fonction pour rafraîchir les données avec gestion de retry améliorée
   const fetchSfds = useCallback(async (isRetry = false) => {
@@ -62,10 +94,21 @@ export function SfdManagementContainer() {
       
       console.log('Tentative de récupération des SFDs...');
       
-      const { data, error } = await supabase
+      // Ajout d'un timeout pour la requête
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Délai de connexion dépassé')), 10000);
+      });
+      
+      const fetchPromise = supabase
         .from('sfds')
         .select('*')
         .order('name');
+        
+      // Course entre les deux promesses
+      const { data, error } = await Promise.race([
+        fetchPromise,
+        timeoutPromise as Promise<any>
+      ]);
 
       if (error) throw error;
       
@@ -83,6 +126,9 @@ export function SfdManagementContainer() {
       let errorMessage = error.message || "Erreur inconnue lors du chargement des SFDs";
       
       if (errorMessage.includes('Failed to fetch') || 
+          errorMessage.includes('NetworkError') ||
+          errorMessage.includes('net::ERR_') ||
+          errorMessage.includes('Délai de connexion dépassé') ||
           error.code === 'NETWORK_ERROR' || 
           error.code === 'CONNECTION_CLOSED') {
         errorMessage = "Problème de connexion au serveur. Veuillez vérifier votre réseau.";
@@ -130,17 +176,6 @@ export function SfdManagementContainer() {
       unsubscribe();
     };
   }, [queryClient, fetchSfds]);
-
-  // Écouteur pour les changements d'état de connectivité réseau
-  useEffect(() => {
-    const handleOnline = () => {
-      console.log('Connexion réseau rétablie, actualisation des données...');
-      fetchSfds();
-    };
-    
-    window.addEventListener('online', handleOnline);
-    return () => window.removeEventListener('online', handleOnline);
-  }, [fetchSfds]);
 
   const filteredSfds = sfds.filter(sfd => 
     sfd.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -204,7 +239,7 @@ export function SfdManagementContainer() {
             variant="outline" 
             onClick={handleRefreshData}
             className="gap-2"
-            disabled={isLoading || isRetrying}
+            disabled={isLoading || isRetrying || !isOnline}
           >
             {(isLoading || isRetrying) ? (
               <RefreshCw className="h-4 w-4 animate-spin" />
@@ -217,6 +252,7 @@ export function SfdManagementContainer() {
             variant="outline" 
             className="gap-2"
             onClick={() => setShowAddSfdDialog(true)}
+            disabled={!isOnline}
           >
             <Plus className="h-4 w-4" />
             Nouvelle SFD
@@ -224,7 +260,7 @@ export function SfdManagementContainer() {
           <Button 
             onClick={() => setShowAddAdminDialog(true)}
             className="gap-2"
-            disabled={!selectedSfd}
+            disabled={!selectedSfd || !isOnline}
           >
             <UserPlus className="h-4 w-4" />
             Ajouter un Admin SFD
@@ -232,28 +268,52 @@ export function SfdManagementContainer() {
         </div>
       </div>
 
+      {!isOnline && (
+        <Alert variant="destructive">
+          <WifiOff className="h-4 w-4" />
+          <div className="ml-2">
+            <AlertTitle>Vous êtes hors ligne</AlertTitle>
+            <AlertDescription>
+              <p>Vérifiez votre connexion internet et réessayez.</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefreshData} 
+                className="mt-2"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" /> 
+                Vérifier la connexion
+              </Button>
+            </AlertDescription>
+          </div>
+        </Alert>
+      )}
+
       {loadError && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <div className="ml-2">
-            <p>{loadError}</p>
-            <p className="text-sm mt-1">
-              {isRetrying ? (
-                `Nouvelles tentatives en cours... (${retryCount}/${MAX_RETRIES})`
-              ) : (
-                retryCount >= MAX_RETRIES ? "Nombre maximal de tentatives atteint." : ""
-              )}
-            </p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefreshData} 
-              className="mt-2"
-              disabled={isRetrying}
-            >
-              <RefreshCw className={`h-3 w-3 mr-1 ${isRetrying ? 'animate-spin' : ''}`} /> 
-              Réessayer manuellement
-            </Button>
+            <AlertTitle>Erreur de chargement</AlertTitle>
+            <AlertDescription>
+              <p>{loadError}</p>
+              <p className="text-sm mt-1">
+                {isRetrying ? (
+                  `Nouvelles tentatives en cours... (${retryCount}/${MAX_RETRIES})`
+                ) : (
+                  retryCount >= MAX_RETRIES ? "Nombre maximal de tentatives atteint." : ""
+                )}
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefreshData} 
+                className="mt-2"
+                disabled={isRetrying || !isOnline}
+              >
+                <RefreshCw className={`h-3 w-3 mr-1 ${isRetrying ? 'animate-spin' : ''}`} /> 
+                Réessayer manuellement
+              </Button>
+            </AlertDescription>
           </div>
         </Alert>
       )}
@@ -286,7 +346,7 @@ export function SfdManagementContainer() {
                 </div>
               ) : isRetrying ? (
                 <div className="flex flex-col items-center justify-center h-40">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
                   <p className="mt-2 text-sm text-muted-foreground">Tentative {retryCount}/{MAX_RETRIES}...</p>
                 </div>
               ) : filteredSfds.length > 0 ? (

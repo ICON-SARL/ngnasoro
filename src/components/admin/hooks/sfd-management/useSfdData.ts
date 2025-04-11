@@ -19,10 +19,21 @@ export function useSfdData() {
       try {
         console.log('Fetching SFDs...');
         
-        // Ajout d'un délai de 500ms pour éviter les problèmes de rate limiting
+        // Vérifier si la connexion réseau est disponible
+        if (!navigator.onLine) {
+          throw new Error("Pas de connexion internet");
+        }
+        
+        // Ajout d'un délai pour éviter les problèmes de rate limiting
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        const { data, error } = await supabase
+        // Création d'une promesse avec un timeout
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('La requête a expiré')), 15000); // 15 secondes timeout
+        });
+        
+        // La requête Supabase
+        const fetchPromise = supabase
           .from('sfds')
           .select(`
             id,
@@ -38,6 +49,12 @@ export function useSfdData() {
             updated_at
           `)
           .order('name');
+          
+        // Course entre les deux promesses
+        const result = await Promise.race([fetchPromise, timeoutPromise]);
+        
+        // Si nous avons atteint ce point, cela signifie que la requête s'est terminée avant le timeout
+        const { data, error } = result as any;
 
         if (error) {
           console.error('Error fetching SFDs:', error);
@@ -78,10 +95,21 @@ export function useSfdData() {
       } catch (error: any) {
         console.error('Unhandled error in fetchSfds:', error);
         
+        // Formatter un message d'erreur plus convivial
+        let errorMessage = error.message || "Erreur inconnue";
+        
+        if (errorMessage.includes('Failed to fetch') || 
+            errorMessage.includes('NetworkError') || 
+            errorMessage.includes('net::ERR_') || 
+            errorMessage.includes('La requête a expiré') ||
+            errorMessage.includes('Pas de connexion internet')) {
+          errorMessage = "Problème de connexion au serveur. Veuillez vérifier votre réseau.";
+        }
+        
         // Afficher une toast pour informer l'utilisateur
         toast({
           title: "Erreur de chargement",
-          description: `Impossible de charger les SFDs: ${error.message}`,
+          description: `Impossible de charger les SFDs: ${errorMessage}`,
           variant: "destructive",
         });
         
@@ -90,7 +118,7 @@ export function useSfdData() {
       }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 3, // Augmenter le nombre de tentatives
+    retry: 3, // Nombre de tentatives
     retryDelay: attempt => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 30 * 1000), // Backoff exponentiel
     refetchOnWindowFocus: false
   });
