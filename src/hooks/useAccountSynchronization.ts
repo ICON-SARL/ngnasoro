@@ -1,99 +1,138 @@
-import { useCallback, useState } from 'react';
+
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 
 export function useAccountSynchronization() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastSynced, setLastSynced] = useState<Date | null>(null);
+  const [isSynchronizing, setIsSynchronizing] = useState(false);
   const { toast } = useToast();
-  const { user, activeSfdId } = useAuth();
 
   /**
-   * Synchronize client accounts with user application accounts
-   * This can be called manually or automatically on schedule
+   * Synchronise un compte client SFD avec un compte utilisateur
+   * @param clientId Identifiant du client SFD
+   * @param userEmail Email de l'utilisateur à associer (optionnel)
    */
-  const synchronizeAccounts = useCallback(async (clientId?: string) => {
-    if (!activeSfdId) {
-      console.error("No active SFD found");
-      return false;
-    }
-
-    setIsLoading(true);
-    
+  const linkClientToUser = async (clientId: string, userEmail?: string): Promise<boolean> => {
+    setIsSynchronizing(true);
     try {
-      // If clientId is provided, sync only that client account
-      // Otherwise sync all client accounts in the SFD
-      const { data, error } = await supabase.functions.invoke('sync-client-accounts', {
-        body: { 
-          sfdId: activeSfdId,
-          clientId: clientId || null
+      // 1. Si aucun email n'est fourni, vérifier si le client a déjà un email
+      if (!userEmail) {
+        const { data: clientData, error: clientError } = await supabase
+          .from('sfd_clients')
+          .select('email')
+          .eq('id', clientId)
+          .single();
+          
+        if (clientError || !clientData.email) {
+          throw new Error("Email du client introuvable. Veuillez spécifier un email.");
         }
-      });
+        
+        userEmail = clientData.email;
+      }
       
-      if (error) throw error;
+      // 2. Vérifier si l'utilisateur existe déjà
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', userEmail)
+        .single();
+        
+      let userId: string | null = userData?.id || null;
       
-      setLastSynced(new Date());
+      // 3. Si l'utilisateur n'existe pas, créer un nouveau compte
+      if (!userId) {
+        // Générer un mot de passe temporaire
+        const tempPassword = Math.random().toString(36).slice(-10) + Math.random().toString(10).slice(-2);
+        
+        // Créer un nouvel utilisateur
+        const { data: newUser, error: signUpError } = await supabase.auth.signUp({
+          email: userEmail,
+          password: tempPassword,
+          options: {
+            data: {
+              full_name: (await supabase.from('sfd_clients').select('full_name').eq('id', clientId).single()).data?.full_name
+            }
+          }
+        });
+        
+        if (signUpError) throw signUpError;
+        userId = newUser.user?.id || null;
+        
+        // Envoyer un email avec les informations de connexion
+        await supabase.functions.invoke('send-client-credentials', {
+          body: {
+            email: userEmail,
+            password: tempPassword,
+            clientId: clientId
+          }
+        });
+      }
+      
+      if (!userId) throw new Error("Impossible de créer ou trouver l'utilisateur");
+      
+      // 4. Lier le client SFD à l'utilisateur
+      const { error: updateError } = await supabase
+        .from('sfd_clients')
+        .update({ user_id: userId })
+        .eq('id', clientId);
+        
+      if (updateError) throw updateError;
+      
+      // 5. Synchroniser les comptes
+      await synchronizeAccounts(clientId);
       
       toast({
-        title: "Synchronisation réussie",
-        description: clientId 
-          ? "Le compte client a été synchronisé avec succès" 
-          : "Tous les comptes clients ont été synchronisés avec succès",
+        title: "Compte synchronisé",
+        description: "Le compte client a été lié à un compte utilisateur avec succès",
       });
       
       return true;
     } catch (error: any) {
-      console.error("Error synchronizing accounts:", error);
+      console.error('Erreur lors de la synchronisation des comptes:', error);
       toast({
-        title: "Erreur de synchronisation",
-        description: error.message || "Une erreur s'est produite lors de la synchronisation",
+        title: "Erreur",
+        description: `Impossible de lier les comptes: ${error.message}`,
         variant: "destructive",
       });
       return false;
     } finally {
-      setIsLoading(false);
+      setIsSynchronizing(false);
     }
-  }, [activeSfdId, toast]);
+  };
 
   /**
-   * Propagate a specific transaction from a client account to a user application account
+   * Synchronise les balances et transactions entre comptes
    */
-  const propagateTransaction = useCallback(async (transactionId: string) => {
-    setIsLoading(true);
-    
+  const synchronizeAccounts = async (clientId: string): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.functions.invoke('propagate-transaction', {
-        body: { 
-          transactionId: transactionId
-        }
-      });
-      
+      // Appeler la fonction de synchronisation dans la base de données
+      const { data, error } = await supabase
+        .rpc('sync_client_accounts', { p_client_id: clientId });
+        
       if (error) throw error;
       
-      toast({
-        title: "Transaction propagée",
-        description: "La transaction a été enregistrée dans le compte utilisateur",
-      });
+      // Propager les transactions client vers le compte utilisateur
+      const { data: clientData, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+        
+      if (clientError || !clientData.user_id) {
+        console.error('Compte utilisateur non trouvé pour ce client');
+        return false;
+      }
       
       return true;
     } catch (error: any) {
-      console.error("Error propagating transaction:", error);
-      toast({
-        title: "Erreur de propagation",
-        description: error.message || "Une erreur s'est produite lors de la propagation de la transaction",
-        variant: "destructive",
-      });
+      console.error('Erreur lors de la synchronisation des comptes:', error);
       return false;
-    } finally {
-      setIsLoading(false);
     }
-  }, [toast]);
+  };
 
   return {
+    linkClientToUser,
     synchronizeAccounts,
-    propagateTransaction,
-    isLoading,
-    lastSynced
+    isSynchronizing
   };
 }
