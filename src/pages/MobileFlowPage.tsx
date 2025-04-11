@@ -6,13 +6,16 @@ import MobileMenu from '@/components/mobile/menu/MobileMenu';
 import MobileNavigation from '@/components/MobileNavigation';
 import MobileFlowRoutes from '@/components/mobile/routes/MobileFlowRoutes';
 import { Account } from '@/types/transactions';
+import { useToast } from '@/hooks/use-toast';
 
 const MobileFlowPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { user, loading: isLoading, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Vérifier si l'utilisateur est authentifié
   useEffect(() => {
@@ -63,6 +66,18 @@ const MobileFlowPage = () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     navigate('/mobile-flow/main');
   };
+
+  const handleRefreshBalance = () => {
+    setIsRefreshing(true);
+    // Simulate refresh delay
+    setTimeout(() => {
+      setIsRefreshing(false);
+      toast({
+        title: "Solde mis à jour",
+        description: "Votre solde a été actualisé avec succès",
+      });
+    }, 1500);
+  };
   
   if (isLoading) {
     return (
@@ -84,6 +99,8 @@ const MobileFlowPage = () => {
           showWelcome={showWelcome}
           setShowWelcome={setShowWelcome}
           handlePaymentSubmit={handlePaymentSubmit}
+          isBalanceRefreshing={isRefreshing}
+          onRefreshBalance={handleRefreshBalance}
         />
       </main>
       
