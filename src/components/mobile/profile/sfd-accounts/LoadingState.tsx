@@ -1,12 +1,15 @@
 
 import React from 'react';
-import { CardContent } from '@/components/ui/card';
+import { Loader } from '@/components/ui/loader';
 
 const LoadingState: React.FC = () => {
   return (
-    <CardContent className="pt-0 text-center py-6">
-      Chargement de vos comptes SFD...
-    </CardContent>
+    <div className="flex flex-col items-center justify-center p-8">
+      <Loader className="mb-4" />
+      <p className="text-sm text-gray-600">
+        Chargement de vos comptes SFD...
+      </p>
+    </div>
   );
 };
 

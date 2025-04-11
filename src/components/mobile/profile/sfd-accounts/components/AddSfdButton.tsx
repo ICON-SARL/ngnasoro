@@ -1,33 +1,22 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 
 interface AddSfdButtonProps {
   onAddSfd?: () => void;
 }
 
 const AddSfdButton: React.FC<AddSfdButtonProps> = ({ onAddSfd }) => {
-  const navigate = useNavigate();
-  
-  const handleAddSfd = () => {
-    if (onAddSfd) {
-      onAddSfd();
-    } else {
-      navigate('/sfd-setup');
-    }
-  };
+  if (!onAddSfd) return null;
   
   return (
-    <Button 
-      variant="outline" 
-      className="w-full mt-3 border-dashed flex items-center justify-center"
-      onClick={handleAddSfd}
+    <button
+      className="flex items-center justify-center w-full p-3 border border-dashed border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+      onClick={onAddSfd}
     >
-      <Plus className="h-4 w-4 mr-2" />
-      Ajouter une SFD
-    </Button>
+      <PlusCircle className="h-5 w-5 mr-2 text-gray-500" />
+      <span className="text-sm text-gray-600 font-medium">Associer un nouvel SFD</span>
+    </button>
   );
 };
 

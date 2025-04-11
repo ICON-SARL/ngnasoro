@@ -1,120 +1,59 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { synchronizeAccounts } from './sfd/sfdAccountsApi';
 
 export function useRealtimeSynchronization() {
-  const { user, activeSfdId } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const { toast } = useToast();
+  const { user, activeSfdId } = useAuth();
 
-  // Function to trigger manual synchronization with SFD systems
   const synchronizeWithSfd = useCallback(async () => {
-    if (!user?.id) {
-      console.log("Erreur: utilisateur non connecté");
+    if (!user) {
+      console.log("Cannot synchronize: No authenticated user");
       return false;
     }
-
+    
     setIsSyncing(true);
     
     try {
-      // Call the edge function to synchronize accounts
-      const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
-        body: JSON.stringify({ 
-          userId: user.id,
-          sfdId: activeSfdId || undefined,
-          forceSync: true // Force a full sync to ensure all balances are up-to-date
-        }),
-      });
+      console.log(`Synchronizing accounts for user ${user.id}${activeSfdId ? ` with active SFD ${activeSfdId}` : ''}`);
       
-      if (error) {
-        console.error("Erreur durant la synchronisation:", error);
-        throw error;
-      }
+      const syncResult = await synchronizeAccounts(user.id, activeSfdId || undefined);
       
-      if (data && data.success) {
-        setLastSyncTime(new Date());
+      if (syncResult.success) {
+        setLastSynced(new Date());
         
-        // Only show toast for manual synchronization
-        toast({
-          title: "Synchronisation réussie",
-          description: "Vos comptes ont été synchronisés avec succès",
-        });
+        if (syncResult.updates.length > 0) {
+          // Show success toast only if there were actual updates
+          toast({
+            title: "Synchronisation réussie",
+            description: "Vos comptes SFD ont été mis à jour",
+          });
+        }
+        
         return true;
       } else {
-        throw new Error(data?.message || "La synchronisation a échoué");
+        throw new Error(syncResult.message || "Échec de la synchronisation");
       }
     } catch (error: any) {
-      console.error('Synchronization error:', error);
-      // Ne pas afficher de toast d'erreur pour éviter de frustrer l'utilisateur
-      // en environnement de développement où la fonction edge peut ne pas exister
+      console.error("Error synchronizing with SFD:", error);
+      toast({
+        title: "Erreur de synchronisation",
+        description: error.message || "Impossible de synchroniser vos comptes",
+        variant: "destructive",
+      });
       return false;
     } finally {
       setIsSyncing(false);
     }
-  }, [user?.id, activeSfdId, toast]);
-
-  // Set up realtime listener for balance changes
-  useEffect(() => {
-    if (!user?.id) return;
-    
-    // Connect to realtime changes for accounts
-    const channel = supabase.channel('account_changes')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'accounts',
-        filter: `user_id=eq.${user.id}`
-      }, (payload) => {
-        // When account data changes, show a toast notification
-        toast({
-          title: "Compte mis à jour",
-          description: "Vos données financières ont été actualisées",
-        });
-        
-        // Update last sync time
-        setLastSyncTime(new Date());
-      })
-      .subscribe();
-      
-    // Also listen for changes to the user_sfds table
-    const sfdChannel = supabase.channel('sfd_account_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_sfds',
-        filter: `user_id=eq.${user.id}`
-      }, () => {
-        // When SFD accounts change, trigger a sync
-        synchronizeWithSfd();
-      })
-      .subscribe();
-    
-    return () => {
-      supabase.removeChannel(channel);
-      supabase.removeChannel(sfdChannel);
-    };
-  }, [user?.id, toast, synchronizeWithSfd]);
-
-  // Periodically sync in the background
-  useEffect(() => {
-    if (!user?.id) return;
-    
-    // Set up interval for periodic sync (every 15 minutes)
-    const intervalId = setInterval(() => {
-      synchronizeWithSfd();
-    }, 15 * 60 * 1000);
-    
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [user?.id, synchronizeWithSfd]);
+  }, [user, activeSfdId, toast]);
 
   return {
+    synchronizeWithSfd,
     isSyncing,
-    lastSyncTime,
-    synchronizeWithSfd
+    lastSynced
   };
 }

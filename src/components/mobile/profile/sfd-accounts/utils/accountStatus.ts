@@ -1,13 +1,23 @@
 
 import { SfdAccountDisplay } from '../types/SfdAccountTypes';
 
+export type AccountStatus = 'active' | 'verified' | 'pending' | 'inactive';
+
 /**
- * Determines the status of an SFD account
+ * Determines the account status from the SFD account data
  */
-export function getAccountStatus(sfd: SfdAccountDisplay): 'verified' | 'pending' {
-  if (sfd.isVerified !== undefined) {
-    return sfd.isVerified ? 'verified' : 'pending';
+export function getAccountStatus(account: SfdAccountDisplay): AccountStatus {
+  if (account.isDefault) {
+    return 'active';
   }
-  // Fallback to legacy logic if isVerified is not defined
-  return sfd.id.startsWith('1') ? 'pending' : 'verified';
+  
+  if (account.isVerified) {
+    return 'verified';
+  }
+  
+  if (account.status === 'pending') {
+    return 'pending';
+  }
+  
+  return 'inactive';
 }
