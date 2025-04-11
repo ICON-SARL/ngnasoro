@@ -30,3 +30,6 @@ port = 54327
 [functions]
 [functions.create-sfd-with-admin]
 verify_jwt = true
+
+[functions.create-sfd-admin]
+verify_jwt = true

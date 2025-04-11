@@ -83,7 +83,7 @@ export async function createSfdAdmin(adminData: {
   try {
     console.log('Creating SFD admin:', { ...adminData, password: '******' });
     
-    // Utiliser la fonction edge pour créer l'admin
+    // Use the edge function to create the admin user
     const { data, error } = await supabase.functions.invoke('create-sfd-admin', {
       body: JSON.stringify(adminData)
     });
