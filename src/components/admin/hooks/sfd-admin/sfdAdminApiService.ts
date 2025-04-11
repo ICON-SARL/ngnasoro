@@ -105,16 +105,27 @@ export async function deleteSfdAdmin(adminId: string): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 500));
     
     // Utiliser la fonction Edge pour supprimer l'administrateur
-    const data = await edgeFunctionApi.callEdgeFunction('delete-sfd-admin', { adminId });
+    const response = await edgeFunctionApi.callEdgeFunction('delete-sfd-admin', { adminId });
     
-    if (!data || data.error) {
-      console.error('Erreur dans la réponse de la fonction:', data?.error || 'Erreur inconnue');
-      throw new Error(data?.error || 'Erreur inconnue lors de la suppression de l\'administrateur');
+    if (!response) {
+      console.error('Réponse vide de la fonction Edge');
+      throw new Error('Erreur lors de la suppression: Réponse vide du serveur');
+    }
+    
+    if (response.error) {
+      console.error('Erreur dans la réponse de la fonction:', response.error);
+      throw new Error(`Erreur lors de la suppression: ${response.error}`);
     }
     
     console.log('Administrateur SFD supprimé avec succès');
   } catch (error: any) {
     console.error('Erreur non gérée dans deleteSfdAdmin:', error);
-    throw new Error(error.message || 'Erreur lors de la suppression de l\'administrateur SFD');
+    
+    // Améliorer le message d'erreur pour l'utilisateur
+    if (error.message && error.message.includes('non-2xx status')) {
+      throw new Error('Le serveur a rencontré une erreur lors de la suppression. Veuillez réessayer.');
+    } else {
+      throw new Error(error.message || 'Erreur lors de la suppression de l\'administrateur SFD');
+    }
   }
 }

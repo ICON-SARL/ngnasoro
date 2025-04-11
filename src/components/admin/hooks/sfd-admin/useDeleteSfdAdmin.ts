@@ -17,12 +17,42 @@ export function useDeleteSfdAdmin() {
         }
         
         setError(null);
-        await deleteSfdAdmin(adminId);
-        return adminId;
+        console.log(`Tentative de suppression de l'administrateur SFD avec l'ID: ${adminId}`);
+        
+        // Essayer de supprimer l'admin avec une stratégie de retry
+        let retries = 3;
+        let lastError: any = null;
+        
+        while (retries > 0) {
+          try {
+            await deleteSfdAdmin(adminId);
+            console.log(`Administrateur SFD ${adminId} supprimé avec succès après ${3 - retries + 1} tentative(s)`);
+            return adminId;
+          } catch (err: any) {
+            lastError = err;
+            console.log(`Erreur lors de la tentative ${3 - retries + 1}, retries left: ${retries-1}`, err);
+            
+            // Récupérer le message d'erreur pour le journaliser
+            const errorMessage = err.message || "Erreur inconnue";
+            console.error(`Tentative ${3 - retries + 1} échouée: ${errorMessage}`);
+            
+            if (retries <= 1) {
+              // Dernière tentative échouée, on propage l'erreur
+              throw err;
+            }
+            
+            retries--;
+            // Attendre un délai croissant avant de réessayer (1s, puis 2s, puis 3s)
+            await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
+          }
+        }
+        
+        throw lastError || new Error("Nombre maximum de tentatives atteint");
       } catch (err: any) {
         console.error('Error deleting SFD admin:', err);
-        setError(err.message || "Une erreur s'est produite lors de la suppression de l'administrateur");
-        throw err;
+        const errorMsg = err.message || "Une erreur s'est produite lors de la suppression de l'administrateur";
+        setError(errorMsg);
+        throw new Error(errorMsg);
       }
     },
     onSuccess: () => {
