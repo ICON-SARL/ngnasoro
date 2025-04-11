@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AddSfdAdminDialog } from '@/components/admin/sfd/AddSfdAdminDialog';
 import { SfdAddDialog } from '@/components/admin/sfd/SfdAddDialog';
@@ -70,10 +71,12 @@ export function SfdManagementContainer() {
         </div>
 
         <div className="lg:col-span-2">
-          <SfdDetail
-            selectedSfd={selectedSfd}
-            onEdit={() => {/* Edit functionality */}}
-          />
+          {selectedSfd && (
+            <SfdDetail
+              selectedSfd={selectedSfd}
+              onEdit={() => {/* Edit functionality */}}
+            />
+          )}
         </div>
       </div>
 

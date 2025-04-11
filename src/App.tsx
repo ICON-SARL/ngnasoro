@@ -11,7 +11,6 @@ import { AuthProvider } from '@/hooks/auth/AuthContext';
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
 import PermissionProtectedRoute from '@/components/routes/PermissionProtectedRoute';
 import { UserRole } from '@/utils/auth/roleTypes';
-import { SfdManagement } from '@/components/admin/SfdManagement';
 import { AdminManagementPage } from '@/components/admin/management/AdminManagementPage';
 import { SfdUserManagement } from '@/components/sfd/SfdUserManagement';
 import { UserManagement } from '@/components/UserManagement';
@@ -66,9 +65,9 @@ function App() {
           <Route
             path="/admin/sfds"
             element={
-              <ProtectedRoute requireAdmin>
-                <SfdManagement />
-              </ProtectedRoute>
+              <PermissionProtectedRoute requiredRole={UserRole.SUPER_ADMIN}>
+                <SfdManagementPage />
+              </PermissionProtectedRoute>
             }
           />
           
@@ -111,7 +110,7 @@ function App() {
           {/* Redirection par défaut vers la page de sélection du type de connexion */}
           <Route path="/" element={<AuthRedirectPage />} />
           
-          {/* Nouvelles routes pour la gestion des SFD et l'approbation de crédit */}
+          {/* Routes for SFD management and credit approval */}
           <Route
             path="/sfd-management"
             element={
