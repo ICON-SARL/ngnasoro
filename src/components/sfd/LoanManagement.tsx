@@ -52,8 +52,11 @@ export function LoanManagement() {
     recordPayment 
   } = useSfdLoans();
 
+  // Make sure loans is always an array before filtering
+  const loansArray = Array.isArray(loans) ? loans : [];
+
   // Filtrer les prêts selon le terme de recherche
-  const filteredLoans = loans.filter(loan => 
+  const filteredLoans = loansArray.filter(loan => 
     loan.purpose?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     loan.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (loan.amount && loan.amount.toString().includes(searchTerm))
