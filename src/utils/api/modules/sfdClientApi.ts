@@ -34,11 +34,13 @@ export const sfdClientApi = {
       if (error) throw error;
       
       // Convert to SfdClientAccount type with required fields
-      return {
+      const accountData: SfdClientAccount = {
         ...data,
         client_id: clientId,
-        sfd_id: data.sfd_id || '' // The database may not have this field, provide default
-      } as SfdClientAccount;
+        sfd_id: data.sfd_id || '' // Add default value if not in database
+      };
+      
+      return accountData;
     } catch (error) {
       console.error('Error fetching client account:', error);
       return null;
@@ -63,11 +65,13 @@ export const sfdClientApi = {
       
       if (existingAccount) {
         // Return with required fields
-        return {
+        const accountData: SfdClientAccount = {
           ...existingAccount,
           client_id: clientId,
           sfd_id: sfdId // Ensure sfd_id is set correctly
-        } as SfdClientAccount;
+        };
+        
+        return accountData;
       }
       
       // Create new account
@@ -85,11 +89,13 @@ export const sfdClientApi = {
       if (error) throw error;
       
       // Return with required fields
-      return {
+      const newAccountData: SfdClientAccount = {
         ...data,
         client_id: clientId,
         sfd_id: sfdId
-      } as SfdClientAccount;
+      };
+      
+      return newAccountData;
     } catch (error) {
       console.error('Error creating client account:', error);
       return null;
