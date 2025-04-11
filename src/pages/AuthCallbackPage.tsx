@@ -6,7 +6,7 @@ import { Loader } from 'lucide-react';
 
 const AuthCallbackPage = () => {
   const navigate = useNavigate();
-  const { setUser, setToken } = useAuth();
+  const auth = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,9 +32,10 @@ const AuthCallbackPage = () => {
             sfd_id: 'sfd-123'
           };
 
-          // Set the user in auth context
-          setUser(mockUser);
-          setToken('mock-jwt-token');
+          // Set the user in auth context - Note: we're adapting to the current auth context API
+          if (auth.login) {
+            auth.login(mockUser, 'mock-jwt-token');
+          }
 
           // Redirect based on role
           if (mockUser.role === 'admin') {
@@ -52,7 +53,7 @@ const AuthCallbackPage = () => {
     };
 
     processAuthCallback();
-  }, [navigate, setUser, setToken]);
+  }, [navigate, auth]);
 
   if (error) {
     return (

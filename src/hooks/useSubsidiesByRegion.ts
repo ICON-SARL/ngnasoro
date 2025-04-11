@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/initSupabase';
 
-interface SubsidyData {
+export interface SubsidyData {
   region: string;
   amount: number;
   sfds: number;

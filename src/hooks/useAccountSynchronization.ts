@@ -1,171 +1,90 @@
 
 import { useState } from 'react';
 import { createClient } from '@/utils/initSupabase';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
-interface ClientAccount {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string;
-  account_number?: string;
-  balance?: number;
-  status: 'active' | 'pending' | 'inactive';
-}
-
-interface LinkedAccount {
-  client_id: string;
-  sfd_id: string;
-  account_number: string;
-  balance: number;
-  status: 'active' | 'pending' | 'inactive';
-}
-
-interface SynchronizationResult {
+export interface SynchronizationResult {
   success: boolean;
   message: string;
-  accountData?: LinkedAccount;
+}
+
+export interface AccountSyncParams {
+  clientId: string;
+  sfdId: string;
+  accountNumber?: string;
 }
 
 export const useAccountSynchronization = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const linkClientAccount = async (
-    clientId: string,
-    sfdId: string,
-    accountNumber: string
-  ): Promise<SynchronizationResult> => {
+  const linkClientAccount = async (clientId: string, sfdId: string, accountNumber: string): Promise<SynchronizationResult> => {
     setIsLoading(true);
     setError(null);
-
+    
     try {
-      // In a real app, this would make an API call to link the account
-      // For now, we'll just simulate a successful response after a delay
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock successful response
-      const mockLinkedAccount: LinkedAccount = {
-        client_id: clientId,
-        sfd_id: sfdId,
-        account_number: accountNumber,
-        balance: 250000, // 250,000 FCFA
-        status: 'active',
-      };
-      
-      toast({
-        title: "Compte lié avec succès",
-        description: `Le compte #${accountNumber} a été lié au client.`,
-      });
-      
-      return {
-        success: true,
-        message: 'Compte lié avec succès',
-        accountData: mockLinkedAccount,
-      };
-    } catch (err) {
-      console.error('Error linking client account:', err);
-      const errorMessage = 'Impossible de lier le compte client. Veuillez réessayer.';
-      setError(errorMessage);
-      
-      toast({
-        title: "Erreur",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const unlinkClientAccount = async (
-    clientId: string,
-    sfdId: string,
-    accountNumber: string
-  ): Promise<SynchronizationResult> => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // In a real app, this would make an API call to unlink the account
-      // For now, we'll just simulate a successful response after a delay
-      
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
-        title: "Compte délié avec succès",
-        description: `Le compte #${accountNumber} a été délié du client.`,
+        title: "Compte lié",
+        description: `Le compte a été lié avec succès.`,
       });
       
-      return {
-        success: true,
-        message: 'Compte délié avec succès',
-      };
-    } catch (err) {
-      console.error('Error unlinking client account:', err);
-      const errorMessage = 'Impossible de délier le compte client. Veuillez réessayer.';
-      setError(errorMessage);
-      
-      toast({
-        title: "Erreur",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    } finally {
       setIsLoading(false);
+      return { success: true, message: "Account linked successfully" };
+    } catch (err) {
+      const errorMessage = "Failed to link account";
+      setError(errorMessage);
+      setIsLoading(false);
+      return { success: false, message: errorMessage };
     }
   };
 
-  const synchronizeClientData = async (params: { p_sfd_id: string; p_client_id?: string }) => {
+  const unlinkClientAccount = async (clientId: string, sfdId: string, accountNumber: string): Promise<SynchronizationResult> => {
     setIsLoading(true);
     setError(null);
-
+    
     try {
-      // In a real app, this would make an API call to synchronize client data
-      // For now, we'll just simulate a successful response after a delay
-      
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
-        title: "Synchronisation réussie",
-        description: "Les données du client ont été synchronisées avec succès.",
+        title: "Compte délié",
+        description: `Le compte a été délié avec succès.`,
       });
       
-      return {
-        success: true,
-        message: 'Données synchronisées avec succès',
-      };
-    } catch (err) {
-      console.error('Error synchronizing client data:', err);
-      const errorMessage = 'Impossible de synchroniser les données client. Veuillez réessayer.';
-      setError(errorMessage);
-      
-      toast({
-        title: "Erreur",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    } finally {
       setIsLoading(false);
+      return { success: true, message: "Account unlinked successfully" };
+    } catch (err) {
+      const errorMessage = "Failed to unlink account";
+      setError(errorMessage);
+      setIsLoading(false);
+      return { success: false, message: errorMessage };
+    }
+  };
+
+  const synchronizeClientData = async (params: AccountSyncParams): Promise<SynchronizationResult> => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "Données synchronisées",
+        description: `Les données du client ont été synchronisées avec succès.`,
+      });
+      
+      setIsLoading(false);
+      return { success: true, message: "Data synchronized successfully" };
+    } catch (err) {
+      const errorMessage = "Failed to synchronize data";
+      setError(errorMessage);
+      setIsLoading(false);
+      return { success: false, message: errorMessage };
     }
   };
 
@@ -174,6 +93,6 @@ export const useAccountSynchronization = () => {
     error,
     linkClientAccount,
     unlinkClientAccount,
-    synchronizeClientData,
+    synchronizeClientData
   };
 };

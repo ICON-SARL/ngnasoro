@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 const clientFormSchema = z.object({
   full_name: z.string().min(3, { message: 'Le nom doit contenir au moins 3 caractères' }),
@@ -35,6 +35,8 @@ export const NewClientForm = () => {
       notes: '',
     },
   });
+
+  const { toast } = useToast();
 
   const onSubmit = async (data: ClientFormValues) => {
     try {
