@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,6 +39,7 @@ export function SfdForm({
       region: '',
       description: '',
       contact_email: '',
+      email: '',
       phone: '',
       address: '',
       status: 'active',
@@ -80,7 +82,7 @@ export function SfdForm({
             name="code"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm text-slate-700">Code SFD*</FormLabel>
+                <FormLabel className="text-sm text-slate-700">Code*</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="Code unique" 
@@ -92,7 +94,9 @@ export function SfdForm({
               </FormItem>
             )}
           />
+        </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Region Field */}
           <FormField
             control={form.control}
@@ -102,9 +106,10 @@ export function SfdForm({
                 <FormLabel className="text-sm text-slate-700">Région</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder="Région d'opération" 
+                    placeholder="Région" 
                     {...field} 
                     className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
+                    value={field.value || ''}
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
@@ -112,6 +117,30 @@ export function SfdForm({
             )}
           />
 
+          {/* Status Field */}
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm text-slate-700">Statut</FormLabel>
+                <FormControl>
+                  <select 
+                    {...field}
+                    className="h-9 w-full text-sm rounded-md border border-slate-300 focus:border-blue-400 bg-white"
+                  >
+                    <option value="active">Actif</option>
+                    <option value="pending">En attente</option>
+                    <option value="suspended">Suspendu</option>
+                  </select>
+                </FormControl>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Contact Email Field */}
           <FormField
             control={form.control}
@@ -121,10 +150,11 @@ export function SfdForm({
                 <FormLabel className="text-sm text-slate-700">Email de contact</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder="Email de contact" 
                     type="email" 
+                    placeholder="contact@example.com" 
                     {...field} 
                     className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
+                    value={field.value || ''}
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
@@ -132,6 +162,29 @@ export function SfdForm({
             )}
           />
 
+          {/* Email Field (added for compatibility) */}
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm text-slate-700">Email</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="email" 
+                    placeholder="info@example.com" 
+                    {...field} 
+                    className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
+                    value={field.value || ''}
+                  />
+                </FormControl>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Phone Field */}
           <FormField
             control={form.control}
@@ -141,9 +194,10 @@ export function SfdForm({
                 <FormLabel className="text-sm text-slate-700">Téléphone</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder="Numéro de téléphone" 
+                    placeholder="+123 456 789" 
                     {...field} 
                     className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
+                    value={field.value || ''}
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
@@ -156,33 +210,14 @@ export function SfdForm({
             control={form.control}
             name="address"
             render={({ field }) => (
-              <FormItem className="col-span-2">
+              <FormItem>
                 <FormLabel className="text-sm text-slate-700">Adresse</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder="Adresse physique" 
+                    placeholder="Adresse" 
                     {...field} 
                     className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
-                  />
-                </FormControl>
-                <FormMessage className="text-xs" />
-              </FormItem>
-            )}
-          />
-
-          {/* Description Field */}
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem className="col-span-2">
-                <FormLabel className="text-sm text-slate-700">Description</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Description de la SFD" 
-                    rows={2}
-                    {...field} 
-                    className="text-sm rounded-md border-slate-300 focus:border-blue-400 resize-none"
+                    value={field.value || ''}
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
@@ -190,6 +225,70 @@ export function SfdForm({
             )}
           />
         </div>
+
+        {/* Logo URL Field */}
+        <FormField
+          control={form.control}
+          name="logo_url"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-sm text-slate-700">URL du logo</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="https://example.com/logo.png" 
+                  {...field} 
+                  className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
+                  value={field.value || ''}
+                />
+              </FormControl>
+              <FormMessage className="text-xs" />
+            </FormItem>
+          )}
+        />
+
+        {/* Description Field */}
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-sm text-slate-700">Description</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Description de la SFD" 
+                  {...field} 
+                  className="min-h-24 text-sm rounded-md border-slate-300 focus:border-blue-400"
+                  value={field.value || ''}
+                />
+              </FormControl>
+              <FormMessage className="text-xs" />
+            </FormItem>
+          )}
+        />
+
+        {/* Subsidy Balance Field */}
+        {formMode === 'create' && (
+          <FormField
+            control={form.control}
+            name="subsidy_balance"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm text-slate-700">Subvention initiale (FCFA)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    placeholder="0" 
+                    {...field} 
+                    className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
+                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                    value={field.value || 0}
+                  />
+                </FormControl>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        )}
       </form>
     </Form>
   );

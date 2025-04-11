@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,6 +28,7 @@ export function useSfdForm({ initialData, onSubmit }: UseSfdFormProps) {
       region: initialData?.region || '',
       description: initialData?.description || '',
       contact_email: initialData?.contact_email || '',
+      email: initialData?.contact_email || '', // Duplicate for compatibility
       phone: initialData?.phone || '',
       address: initialData?.address || '',
       status: (initialData?.status as 'active' | 'pending' | 'suspended') || 'active',

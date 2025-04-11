@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { sfdApi } from '@/utils/api/modules/sfdApi';
 import { useToast } from '@/hooks/use-toast';
@@ -34,8 +35,8 @@ export function useSfdMutations() {
   
   const updateSfd = useMutation({
     mutationFn: async ({ sfdId, data }: { sfdId: string; data: any }) => {
-      // Implémentation de la mise à jour de la SFD
-      // À compléter selon vos besoins
+      // Implementation of SFD update
+      // To be completed as needed
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
@@ -53,6 +54,7 @@ export function useSfdMutations() {
     },
   });
   
+  // Get all the individual mutations
   const addSfdMutation = useAddSfdMutation();
   const editSfdMutation = useEditSfdMutation();
   const suspendSfdMutation = useSuspendSfdMutation(); 
