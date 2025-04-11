@@ -41,7 +41,7 @@ export const sfdClientApi = {
         client_id: clientId,
         balance: data.balance,
         currency: data.currency,
-        sfd_id: data.sfd_id || '', // Ensure sfd_id is always defined, even if not present in database
+        sfd_id: data.sfd_id || '', // Make sure sfd_id is always defined, even if empty string
         updated_at: data.updated_at,
         last_updated: data.last_updated
       };
