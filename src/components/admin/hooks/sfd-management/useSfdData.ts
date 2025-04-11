@@ -19,21 +19,13 @@ export function useSfdData() {
       try {
         console.log('Fetching SFDs...');
         
-        // Vérifier si la connexion réseau est disponible
-        if (!navigator.onLine) {
-          throw new Error("Pas de connexion internet");
+        // Simuler un délai pour les tests en environnement de développement
+        if (process.env.NODE_ENV === 'development') {
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
-        
-        // Ajout d'un délai pour éviter les problèmes de rate limiting
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Création d'une promesse avec un timeout
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('La requête a expiré')), 15000); // 15 secondes timeout
-        });
-        
-        // La requête Supabase
-        const fetchPromise = supabase
+
+        // Utiliser la méthode directe sans timeout complexe
+        const { data, error } = await supabase
           .from('sfds')
           .select(`
             id,
@@ -50,12 +42,6 @@ export function useSfdData() {
           `)
           .order('name');
           
-        // Course entre les deux promesses
-        const result = await Promise.race([fetchPromise, timeoutPromise]);
-        
-        // Si nous avons atteint ce point, cela signifie que la requête s'est terminée avant le timeout
-        const { data, error } = result as any;
-
         if (error) {
           console.error('Error fetching SFDs:', error);
           throw new Error(`Erreur lors de la récupération des SFDs: ${error.message}`);
@@ -101,8 +87,8 @@ export function useSfdData() {
         if (errorMessage.includes('Failed to fetch') || 
             errorMessage.includes('NetworkError') || 
             errorMessage.includes('net::ERR_') || 
-            errorMessage.includes('La requête a expiré') ||
-            errorMessage.includes('Pas de connexion internet')) {
+            errorMessage.includes('timeout') ||
+            !navigator.onLine) {
           errorMessage = "Problème de connexion au serveur. Veuillez vérifier votre réseau.";
         }
         
@@ -120,7 +106,9 @@ export function useSfdData() {
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 3, // Nombre de tentatives
     retryDelay: attempt => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 30 * 1000), // Backoff exponentiel
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    // Ajouter un fallback pour éviter les erreurs infinies
+    placeholderData: []
   });
 
   return {

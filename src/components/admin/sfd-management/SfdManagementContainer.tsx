@@ -10,9 +10,8 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Building, Search, UserPlus, Users, Plus, RefreshCw, AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { Building, Search, UserPlus, Plus, RefreshCw, AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
 import { AddSfdAdminDialog } from '@/components/admin/sfd/AddSfdAdminDialog';
 import { useSfdAdminManagement } from '@/hooks/useSfdAdminManagement';
 import { SfdAdminManager } from '@/components/admin/sfd/SfdAdminManager';
@@ -21,25 +20,32 @@ import { Badge } from '@/components/ui/badge';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSfdData } from '../hooks/sfd-management/useSfdData';
 
 export function SfdManagementContainer() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [sfds, setSfds] = useState<any[]>([]);
   const [selectedSfd, setSelectedSfd] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('list');
   const [showAddAdminDialog, setShowAddAdminDialog] = useState(false);
   const [showAddSfdDialog, setShowAddSfdDialog] = useState(false);
-  const [isRetrying, setIsRetrying] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [didMount, setDidMount] = useState(false);
   const { toast } = useToast();
   const { isLoading: isLoadingAdmin, error, addSfdAdmin } = useSfdAdminManagement();
   const queryClient = useQueryClient();
+
+  const { sfds, isLoading, isError, refetch } = useSfdData();
   
   const MAX_RETRIES = 5;
   const RETRY_DELAY = 2000; // 2 secondes
+
+  // Marquer le composant comme monté
+  useEffect(() => {
+    setDidMount(true);
+    return () => setDidMount(false);
+  }, []);
 
   // Surveiller l'état de connexion réseau
   useEffect(() => {
@@ -50,7 +56,7 @@ export function SfdManagementContainer() {
         title: "Connexion rétablie",
         description: "Connexion internet rétablie. Chargement des données...",
       });
-      fetchSfds();
+      handleRefreshData();
     };
 
     const handleOffline = () => {
@@ -72,110 +78,48 @@ export function SfdManagementContainer() {
     };
   }, [toast]);
 
-  // Fonction pour rafraîchir les données avec gestion de retry améliorée
-  const fetchSfds = useCallback(async (isRetry = false) => {
-    if (isRetry) {
+  // Surveillez les erreurs et effectuer des retries automatiques
+  useEffect(() => {
+    if (isError && retryCount < MAX_RETRIES && didMount) {
       setIsRetrying(true);
-    } else {
-      setIsLoading(true);
-    }
-    
-    setLoadError(null);
-    
-    try {
-      // Vérifier la connectivité réseau
-      if (!navigator.onLine) {
-        throw new Error("Pas de connexion internet. Veuillez vérifier votre réseau et réessayer.");
-      }
+      const timer = setTimeout(() => {
+        console.log(`Nouvelle tentative de chargement (${retryCount + 1}/${MAX_RETRIES})...`);
+        refetch();
+        setRetryCount(prev => prev + 1);
+      }, RETRY_DELAY * Math.pow(1.5, retryCount));
       
-      // Ajouter un délai aléatoire pour éviter les conflits
-      const jitter = Math.floor(Math.random() * 500);
-      await new Promise(resolve => setTimeout(resolve, 500 + jitter));
-      
-      console.log('Tentative de récupération des SFDs...');
-      
-      // Ajout d'un timeout pour la requête
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Délai de connexion dépassé')), 10000);
-      });
-      
-      const fetchPromise = supabase
-        .from('sfds')
-        .select('*')
-        .order('name');
-        
-      // Course entre les deux promesses
-      const { data, error } = await Promise.race([
-        fetchPromise,
-        timeoutPromise as Promise<any>
-      ]);
-
-      if (error) throw error;
-      
-      console.log('SFDs chargés avec succès:', data?.length || 0);
-      setSfds(data || []);
-      setRetryCount(0); // Réinitialiser le compteur de tentatives après un succès
-      
-      if (data && data.length > 0 && !selectedSfd) {
-        setSelectedSfd(data[0]);
-      }
-    } catch (error: any) {
-      console.error('Erreur lors de la récupération des SFDs:', error);
-      
-      // Formatter un message d'erreur plus convivial
-      let errorMessage = error.message || "Erreur inconnue lors du chargement des SFDs";
-      
-      if (errorMessage.includes('Failed to fetch') || 
-          errorMessage.includes('NetworkError') ||
-          errorMessage.includes('net::ERR_') ||
-          errorMessage.includes('Délai de connexion dépassé') ||
-          error.code === 'NETWORK_ERROR' || 
-          error.code === 'CONNECTION_CLOSED') {
-        errorMessage = "Problème de connexion au serveur. Veuillez vérifier votre réseau.";
-      }
-      
-      setLoadError(`Impossible de charger les SFDs: ${errorMessage}`);
-      
-      // Gérer les retries automatiques
-      if (retryCount < MAX_RETRIES) {
-        const nextRetryDelay = RETRY_DELAY * Math.pow(1.5, retryCount);
-        console.log(`Nouvelle tentative dans ${nextRetryDelay/1000}s (${retryCount + 1}/${MAX_RETRIES})...`);
-        
-        setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-          fetchSfds(true);
-        }, nextRetryDelay);
-      } else {
-        // Afficher un toast uniquement lorsque toutes les tentatives ont échoué
-        toast({
-          title: "Erreur de chargement",
-          description: "Impossible de charger les SFDs après plusieurs tentatives. Veuillez réessayer plus tard.",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setIsLoading(false);
+      return () => clearTimeout(timer);
+    } else if (retryCount >= MAX_RETRIES && didMount) {
       setIsRetrying(false);
+      // Afficher un message final après toutes les tentatives
+      toast({
+        title: "Échec du chargement",
+        description: "Impossible de charger les SFDs après plusieurs tentatives. Veuillez réessayer plus tard.",
+        variant: "destructive",
+      });
     }
-  }, [selectedSfd, toast, retryCount]);
+  }, [isError, retryCount, refetch, toast, didMount]);
 
-  // Chargement initial des données
+  // Définir le SFD sélectionné lorsque les données sont chargées
   useEffect(() => {
-    fetchSfds();
-  }, [fetchSfds]);
+    if (sfds.length > 0 && !selectedSfd) {
+      setSelectedSfd(sfds[0]);
+    }
+  }, [sfds, selectedSfd]);
 
-  // Ecouteur d'événements pour détecter l'ajout d'une nouvelle SFD
+  // Ecouteur d'événements pour détecter les changements dans le QueryClient
   useEffect(() => {
-    // Configurez un écouteur pour le changement des données du QueryClient
     const unsubscribe = queryClient.getQueryCache().subscribe(() => {
       console.log("Cache de requêtes modifié, rafraîchissement des SFDs...");
-      fetchSfds();
+      if (didMount) {
+        refetch();
+      }
     });
     
     return () => {
       unsubscribe();
     };
-  }, [queryClient, fetchSfds]);
+  }, [queryClient, refetch, didMount]);
 
   const filteredSfds = sfds.filter(sfd => 
     sfd.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -193,7 +137,7 @@ export function SfdManagementContainer() {
 
   const handleRefreshData = () => {
     setRetryCount(0); // Réinitialiser le compteur de tentatives sur rafraîchissement manuel
-    fetchSfds();
+    refetch();
     queryClient.invalidateQueries({ queryKey: ['sfds'] });
     toast({
       title: "Rafraîchissement",
@@ -220,7 +164,7 @@ export function SfdManagementContainer() {
     if (!open) {
       // Si le dialogue se ferme, rafraîchir les données
       setTimeout(() => {
-        fetchSfds();
+        refetch();
       }, 500);
     }
   };
@@ -289,13 +233,13 @@ export function SfdManagementContainer() {
         </Alert>
       )}
 
-      {loadError && (
+      {isError && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <div className="ml-2">
             <AlertTitle>Erreur de chargement</AlertTitle>
             <AlertDescription>
-              <p>{loadError}</p>
+              <p>Impossible de charger les SFDs: Problème de connexion au serveur. Veuillez vérifier votre réseau.</p>
               <p className="text-sm mt-1">
                 {isRetrying ? (
                   `Nouvelles tentatives en cours... (${retryCount}/${MAX_RETRIES})`
@@ -412,7 +356,7 @@ export function SfdManagementContainer() {
                     <TabsList className="mb-4">
                       <TabsTrigger value="list">Informations</TabsTrigger>
                       <TabsTrigger value="admins">
-                        <Users className="h-4 w-4 mr-1" />
+                        <UserPlus className="h-4 w-4 mr-1" />
                         Administrateurs
                       </TabsTrigger>
                       <TabsTrigger value="subsidies">Subventions</TabsTrigger>
