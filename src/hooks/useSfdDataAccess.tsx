@@ -4,5 +4,29 @@ import { useSfdDataAccess as useOriginalSfdDataAccess } from './useSfdDataAccess
 export type { SfdData } from './useSfdDataAccess.ts';
 
 export function useSfdDataAccess() {
-  return useOriginalSfdDataAccess();
+  const { 
+    activeSfdId, 
+    sfdData, 
+    isLoading, 
+    error, 
+    setActiveSfd,
+    // Add the missing properties and methods that are causing errors
+    setActiveSfdId,
+    switchActiveSfd,
+    getActiveSfdData,
+    associateUserWithSfd
+  } = useOriginalSfdDataAccess();
+
+  return {
+    activeSfdId,
+    sfdData,
+    isLoading,
+    error,
+    setActiveSfd,
+    // Export the missing properties and methods
+    setActiveSfdId,
+    switchActiveSfd,
+    getActiveSfdData,
+    associateUserWithSfd
+  };
 }
