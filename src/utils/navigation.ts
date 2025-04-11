@@ -8,3 +8,7 @@ export const redirectToMobile = (navigate: NavigateFunction) => {
 export const redirectToAuth = (navigate: NavigateFunction) => {
   navigate('/login');
 };
+
+export const redirectToCapacitorGuide = (navigate: NavigateFunction) => {
+  navigate('/capacitor-guide');
+};
