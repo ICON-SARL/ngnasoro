@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -51,56 +50,42 @@ export function useSfdUserManagement() {
         throw new Error("Aucun SFD associé à votre compte");
       }
       
-      // Get all users associated with this SFD
-      const { data: sfdUserAssociations, error: usersError } = await supabase
-        .from('user_sfds')
-        .select(`
-          user_id,
-          users:user_id(
-            admin_users(
-              id,
-              email,
-              full_name,
-              role,
-              last_sign_in_at
-            )
-          )
-        `)
-        .eq('sfd_id', userSfds.sfd_id);
+      // Get all admin users associated with this SFD through the user_sfds table
+      const { data: adminUsers, error: usersError } = await supabase
+        .from('admin_users')
+        .select('id, email, full_name, role, last_sign_in_at')
+        .in('id', 
+          supabase
+            .from('user_sfds')
+            .select('user_id')
+            .eq('sfd_id', userSfds.sfd_id)
+        );
         
       if (usersError) {
         console.error('Erreur lors de la récupération des utilisateurs:', usersError);
         throw new Error("Impossible de charger les utilisateurs");
       }
       
-      if (!sfdUserAssociations) {
+      if (!adminUsers || adminUsers.length === 0) {
         setUsers([]);
         return;
       }
       
       // Transform the data into our SfdUser format
-      const formattedUsers: SfdUser[] = [];
-      
-      for (const assoc of sfdUserAssociations) {
-        if (assoc.users && assoc.users.admin_users && assoc.users.admin_users.length > 0) {
-          const userData = assoc.users.admin_users[0];
-          
-          formattedUsers.push({
-            id: userData.id,
-            name: userData.full_name,
-            email: userData.email,
-            role: userData.role === 'sfd_admin' ? 'Gérant' : 'Agent de Crédit',
-            status: 'active',
-            lastActive: userData.last_sign_in_at 
-              ? new Date(userData.last_sign_in_at).toLocaleDateString('fr-FR', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric'
-                })
-              : 'Jamais'
-          });
-        }
-      }
+      const formattedUsers: SfdUser[] = adminUsers.map(userData => ({
+        id: userData.id,
+        name: userData.full_name,
+        email: userData.email,
+        role: userData.role === 'sfd_admin' ? 'Gérant' : 'Agent de Crédit',
+        status: 'active',
+        lastActive: userData.last_sign_in_at 
+          ? new Date(userData.last_sign_in_at).toLocaleDateString('fr-FR', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            })
+          : 'Jamais'
+      }));
       
       setUsers(formattedUsers);
     } catch (err: any) {
