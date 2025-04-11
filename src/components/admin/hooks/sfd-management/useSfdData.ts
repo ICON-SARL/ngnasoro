@@ -29,11 +29,7 @@ export function useSfdData() {
             phone,
             description,
             created_at,
-            updated_at,
-            email,
-            address,
-            legal_document_url,
-            subsidy_balance
+            updated_at
           `)
           .order('name');
 
@@ -44,11 +40,19 @@ export function useSfdData() {
 
         console.log(`Retrieved ${data?.length || 0} SFDs`);
         
-        // Ensure the status is properly typed
-        return (data || []).map(sfd => ({
-          ...sfd,
-          status: (sfd.status as 'active' | 'suspended' | 'pending') || 'pending'
-        }));
+        // Ensure the status is properly typed and handle additional properties
+        // that might be used in components but not present in the database
+        return (data || []).map(sfd => {
+          return {
+            ...sfd,
+            status: (sfd.status as 'active' | 'suspended' | 'pending') || 'pending',
+            // Add empty values for properties used in the UI but not in DB query
+            email: sfd.contact_email || undefined,
+            address: undefined,
+            legal_document_url: undefined,
+            subsidy_balance: undefined
+          } as Sfd;
+        });
       } catch (error: any) {
         console.error('Unhandled error in fetchSfds:', error);
         throw new Error(`Impossible de charger les SFDs: ${error.message}`);
