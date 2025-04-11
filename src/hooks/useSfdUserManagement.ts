@@ -56,12 +56,14 @@ export function useSfdUserManagement() {
         .from('user_sfds')
         .select(`
           user_id,
-          admin_users:admin_users(
-            id,
-            email,
-            full_name,
-            role,
-            last_sign_in_at
+          users:user_id(
+            admin_users(
+              id,
+              email,
+              full_name,
+              role,
+              last_sign_in_at
+            )
           )
         `)
         .eq('sfd_id', userSfds.sfd_id);
@@ -77,18 +79,18 @@ export function useSfdUserManagement() {
       }
       
       // Transform the data into our SfdUser format
-      const formattedUsers: SfdUser[] = sfdUserAssociations
-        .filter(assoc => assoc.admin_users)
-        .map(assoc => {
-          const userData = assoc.admin_users;
-          if (!userData) return null;
+      const formattedUsers: SfdUser[] = [];
+      
+      for (const assoc of sfdUserAssociations) {
+        if (assoc.users && assoc.users.admin_users && assoc.users.admin_users.length > 0) {
+          const userData = assoc.users.admin_users[0];
           
-          return {
+          formattedUsers.push({
             id: userData.id,
             name: userData.full_name,
             email: userData.email,
             role: userData.role === 'sfd_admin' ? 'Gérant' : 'Agent de Crédit',
-            status: 'active' as const,
+            status: 'active',
             lastActive: userData.last_sign_in_at 
               ? new Date(userData.last_sign_in_at).toLocaleDateString('fr-FR', {
                   day: 'numeric',
@@ -96,9 +98,9 @@ export function useSfdUserManagement() {
                   year: 'numeric'
                 })
               : 'Jamais'
-          };
-        })
-        .filter((user): user is SfdUser => user !== null);
+          });
+        }
+      }
       
       setUsers(formattedUsers);
     } catch (err: any) {
