@@ -1,33 +1,39 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import SfdListPopup from './SfdListPopup';
 
 interface ViewAllSfdsButtonProps {
+  variant?: 'default' | 'outline' | 'secondary';
+  size?: 'default' | 'sm' | 'lg';
   className?: string;
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link" | null | undefined;
 }
 
 const ViewAllSfdsButton: React.FC<ViewAllSfdsButtonProps> = ({ 
-  className = "",
-  variant = "default"
+  variant = 'default',
+  size = 'default',
+  className = ''
 }) => {
-  const navigate = useNavigate();
-
-  const handleClick = () => {
-    navigate('/mobile-flow/sfd-selector');
-  };
+  const [showSfdList, setShowSfdList] = useState(false);
 
   return (
-    <Button
-      onClick={handleClick}
-      className={`w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90 ${className}`}
-      variant={variant}
-    >
-      <Building className="h-4 w-4 mr-2" />
-      Voir tous les SFDs disponibles
-    </Button>
+    <>
+      <Button
+        variant={variant}
+        size={size}
+        onClick={() => setShowSfdList(true)}
+        className={`w-full ${className}`}
+      >
+        <Building className="h-4 w-4 mr-2" />
+        Voir les SFDs disponibles
+      </Button>
+
+      <SfdListPopup 
+        isOpen={showSfdList}
+        onClose={() => setShowSfdList(false)}
+      />
+    </>
   );
 };
 

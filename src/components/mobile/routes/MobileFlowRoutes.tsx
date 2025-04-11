@@ -6,6 +6,7 @@ import MainDashboard from '../dashboard/MainDashboard';
 import WelcomeScreen from '../WelcomeScreen';
 import ProfilePage from '../profile/ProfilePage';
 import SplashScreen from '../SplashScreen';
+import SfdSelectorPage from '@/pages/SfdSelectorPage';
 
 interface MobileFlowRoutesProps {
   onAction: (action: string, data?: any) => void;
@@ -50,6 +51,10 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       
       <Route path="/profile" element={
         <ProfilePage />
+      } />
+      
+      <Route path="/sfd-selector" element={
+        <SfdSelectorPage />
       } />
       
       <Route path="*" element={<Navigate to="/mobile-flow/main" replace />} />

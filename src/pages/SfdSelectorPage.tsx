@@ -1,231 +1,137 @@
 
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import SfdList from '@/components/mobile/sfd/SfdList';
-import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { useAvailableSfds } from '@/hooks/sfd/useAvailableSfds';
+import { useAuth } from '@/hooks/useAuth';
+import { ArrowLeft, Building } from 'lucide-react';
+import SfdList from '@/components/mobile/sfd/SfdList';
+import { supabase } from '@/integrations/supabase/client';
 
-const SfdSelectorPage: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
-  const [selectedSfdId, setSelectedSfdId] = useState<string | null>(location.state?.selectedSfdId || null);
-  const [selectedSfdName, setSelectedSfdName] = useState<string>('');
-  
-  const { 
-    availableSfds, 
-    pendingRequests, 
-    requestSfdAccess,
-    isLoading 
-  } = useAvailableSfds(user?.id);
-  
-  // Form pour la demande d'association
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({
-    defaultValues: {
-      phoneNumber: ''
-    }
-  });
-  
-  const handleSfdSelect = (sfdId: string, sfdName: string) => {
-    setSelectedSfdId(sfdId);
-    setSelectedSfdName(sfdName);
-    setIsRequestDialogOpen(true);
-  };
-  
-  const onSubmitRequest = async (data: { phoneNumber: string }) => {
-    if (!selectedSfdId || !user) return;
-    
-    try {
-      const success = await requestSfdAccess(selectedSfdId, data.phoneNumber);
-      
-      if (success) {
-        toast({
-          title: "Demande envoyée",
-          description: `Votre demande d'accès à ${selectedSfdName} a été envoyée avec succès`,
-        });
-        setIsRequestDialogOpen(false);
-        reset();
-      }
-    } catch (error) {
-      console.error('Erreur lors de la demande d\'accès:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'envoyer votre demande. Veuillez réessayer.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  return (
-    <div className="container max-w-md mx-auto py-4 px-4">
-      <Button 
-        variant="ghost" 
-        className="mb-4" 
-        onClick={() => navigate(-1)}
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Retour
-      </Button>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl text-center text-[#0D6A51]">
-            SFDs Disponibles
-          </CardTitle>
-        </CardHeader>
-        
-        <CardContent className="pb-6">
-          {!user ? (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground mb-4">Vous devez être connecté pour voir les SFDs disponibles</p>
-              <Button onClick={() => navigate('/login')}>Se connecter</Button>
-            </div>
-          ) : (
-            <>
-              {pendingRequests.length > 0 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4">
-                  <h3 className="font-medium text-amber-800 mb-1">Demandes en cours</h3>
-                  <ul className="list-disc list-inside text-sm text-amber-700">
-                    {pendingRequests.map(request => {
-                      // Trouver le nom de la SFD correspondante
-                      const sfdName = availableSfds.find(sfd => sfd.id === request.sfd_id)?.name || request.sfd_id;
-                      
-                      return (
-                        <li key={request.id}>
-                          Demande pour {sfdName} en attente
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
-              
-              <CustomSfdList 
-                sfds={availableSfds} 
-                isLoading={isLoading}
-                onSelectSfd={handleSfdSelect}
-              />
-            </>
-          )}
-        </CardContent>
-      </Card>
-      
-      {/* Dialog pour demande d'association à une SFD */}
-      <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Demande d'accès SFD</DialogTitle>
-            <DialogDescription>
-              Envoyez une demande pour rejoindre {selectedSfdName}. Votre demande sera examinée par un administrateur.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleSubmit(onSubmitRequest)}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="phoneNumber">
-                  Numéro de téléphone <span className="text-xs text-muted-foreground">(optionnel)</span>
-                </Label>
-                <Input 
-                  id="phoneNumber"
-                  placeholder="Entrez votre numéro de téléphone"
-                  {...register('phoneNumber')}
-                />
-                {errors.phoneNumber && (
-                  <p className="text-sm text-red-500">{errors.phoneNumber.message}</p>
-                )}
-              </div>
-            </div>
-            
-            <DialogFooter className="mt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setIsRequestDialogOpen(false)}
-              >
-                Annuler
-              </Button>
-              <Button 
-                type="submit" 
-                className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-              >
-                Envoyer la demande
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-// Composant personnalisé pour la liste des SFDs
-interface CustomSfdListProps {
-  sfds: { id: string; name: string; region?: string; code?: string; logo_url?: string | null; }[];
-  isLoading: boolean;
-  onSelectSfd: (sfdId: string, sfdName: string) => void;
+interface LocationState {
+  selectedSfdId?: string;
 }
 
-const CustomSfdList: React.FC<CustomSfdListProps> = ({ sfds, isLoading, onSelectSfd }) => {
-  if (isLoading) {
-    return <div className="text-center py-6">Chargement des SFDs...</div>;
-  }
+const SfdSelectorPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  if (sfds.length === 0) {
-    return (
-      <div className="text-center py-6">
-        <p className="text-muted-foreground mb-2">Aucune SFD disponible pour le moment</p>
-        <p className="text-sm text-muted-foreground">Vous êtes peut-être déjà associé à toutes les SFDs disponibles</p>
-      </div>
-    );
-  }
-  
+  const { selectedSfdId } = (location.state as LocationState) || {};
+
+  useEffect(() => {
+    // If there's a selected SFD ID, we could pre-select it or handle it
+    if (selectedSfdId) {
+      console.log('Selected SFD ID:', selectedSfdId);
+    }
+  }, [selectedSfdId]);
+
+  const handleSendRequest = async (sfdId: string) => {
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour envoyer une demande",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      // First check if the user already has a request or association with this SFD
+      const { data: existingClient, error: checkError } = await supabase
+        .from('sfd_clients')
+        .select('id, status')
+        .eq('user_id', user.id)
+        .eq('sfd_id', sfdId)
+        .single();
+      
+      if (existingClient) {
+        if (existingClient.status === 'validated') {
+          toast({
+            title: "Information",
+            description: "Vous êtes déjà client de cette SFD",
+          });
+        } else {
+          toast({
+            title: "Information",
+            description: "Vous avez déjà une demande en cours pour cette SFD",
+          });
+        }
+        return;
+      }
+      
+      // Send the client registration request
+      const { data, error } = await supabase
+        .from('sfd_clients')
+        .insert({
+          user_id: user.id,
+          sfd_id: sfdId,
+          status: 'pending',
+          full_name: user.user_metadata?.full_name || '',
+          kyc_level: 0
+        })
+        .select();
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Demande envoyée",
+        description: "Votre demande a été envoyée avec succès. Vous serez notifié lorsqu'elle sera traitée.",
+      });
+      
+      // Redirect to profile or dashboard
+      navigate('/mobile-flow/profile');
+    } catch (error: any) {
+      console.error('Erreur lors de la soumission de la demande:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'envoyer votre demande. Veuillez réessayer plus tard.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="space-y-3">
-      {sfds.map((sfd) => (
-        <div
-          key={sfd.id}
-          onClick={() => onSelectSfd(sfd.id, sfd.name)}
-          className="flex items-center p-4 bg-white rounded-lg shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors"
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header className="bg-white shadow-sm p-4 flex items-center">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => navigate(-1)}
+          className="mr-2"
         >
-          <div className="h-12 w-12 flex-shrink-0 bg-gray-100 rounded-md flex items-center justify-center mr-4 overflow-hidden">
-            {sfd.logo_url ? (
-              <img
-                src={sfd.logo_url}
-                alt={sfd.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="text-xl font-bold text-gray-400">
-                {sfd.code || sfd.name.charAt(0)}
-              </span>
-            )}
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Retour
+        </Button>
+        <h1 className="text-lg font-medium flex-1 text-center text-[#0D6A51]">
+          SFDs Disponibles
+        </h1>
+        <div className="w-10"></div> {/* Spacer for center alignment */}
+      </header>
+      
+      <main className="flex-1 container mx-auto max-w-md p-4">
+        <Card className="p-4 mb-4 bg-white shadow-sm">
+          <div className="flex items-start space-x-3">
+            <Building className="h-6 w-6 text-[#0D6A51] mt-1" />
+            <div>
+              <h2 className="font-medium text-gray-900">SFDs Partenaires MEREF</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Sélectionnez une SFD pour envoyer une demande d'association de compte. 
+                L'agent SFD vérifiera votre identité et validera votre compte.
+              </p>
+            </div>
           </div>
-          <div className="flex-1">
-            <h3 className="font-medium text-gray-800">{sfd.name}</h3>
-            {sfd.region && (
-              <p className="text-sm text-gray-500">{sfd.region}</p>
-            )}
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="ml-2 border-[#0D6A51] text-[#0D6A51]"
-          >
-            Demander
-          </Button>
-        </div>
-      ))}
+        </Card>
+        
+        <SfdList onSelectSfd={handleSendRequest} />
+      </main>
     </div>
   );
 };

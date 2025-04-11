@@ -48,3 +48,6 @@ verify_jwt = true
 
 [edge-functions.sfd-accounts]
 verify_jwt = true
+
+[edge-functions.verify-sfd-client]
+verify_jwt = true
