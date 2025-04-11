@@ -80,7 +80,8 @@ export function useSfdLoans() {
   const rejectLoan = useMutation({
     mutationFn: ({ loanId }: { loanId: string }) => {
       if (!user?.id) throw new Error("Utilisateur non authentifié");
-      return sfdLoanApi.rejectLoan(loanId, user.id);
+      // Ajouter une raison par défaut pour le rejet
+      return sfdLoanApi.rejectLoan(loanId, user.id, "Demande rejetée");
     },
     onSuccess: () => {
       toast({

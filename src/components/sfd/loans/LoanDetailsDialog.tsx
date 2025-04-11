@@ -76,7 +76,8 @@ const LoanDetailsDialog = ({ isOpen, onClose, loan, onLoanUpdated }: LoanDetails
   const handleRejectLoan = async () => {
     try {
       setLoading(true);
-      await sfdLoanApi.rejectLoan(loan.id, user!.id);
+      // Ajouter une raison de rejet (3ème argument)
+      await sfdLoanApi.rejectLoan(loan.id, user!.id, "Demande rejetée par l'administrateur");
       toast({
         title: 'Prêt rejeté',
         description: 'Le prêt a été rejeté',
