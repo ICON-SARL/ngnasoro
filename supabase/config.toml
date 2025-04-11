@@ -33,3 +33,4 @@ verify_jwt = true
 
 [edge-functions.create-sfd-admin]
 verify_jwt = true
+
