@@ -10,7 +10,6 @@ export interface DashboardStats {
   totalUsers: number;
   newUsersThisMonth: number;
   newSubsidiesThisMonth: string;
-  totalSubsidies: string; // Added this property
 }
 
 export const useDashboardStats = () => {
@@ -22,7 +21,6 @@ export const useDashboardStats = () => {
     totalUsers: 0,
     newUsersThisMonth: 0,
     newSubsidiesThisMonth: '0',
-    totalSubsidies: '0', // Initialize the new property
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -81,18 +79,6 @@ export const useDashboardStats = () => {
           0
         );
         
-        // Fetch all subsidies for total
-        const { data: allSubsidies, error: allSubsidiesError } = await supabase
-          .from('sfd_subsidies')
-          .select('amount');
-          
-        if (allSubsidiesError) throw allSubsidiesError;
-        
-        const totalSubsidiesAmount = allSubsidies.reduce(
-          (sum, subsidy) => sum + subsidy.amount, 
-          0
-        );
-        
         // Update the stats state
         setStats({
           activeSfds: activeSfds.length,
@@ -102,7 +88,6 @@ export const useDashboardStats = () => {
           totalUsers: userCount || 24581, // Fallback to sample data
           newUsersThisMonth: newUsersThisMonth || 1245, // Fallback to sample data
           newSubsidiesThisMonth: `${(newSubsidiesAmount / 1000000).toFixed(1)}M`,
-          totalSubsidies: `${(totalSubsidiesAmount / 1000000).toFixed(1)}M`, // Format total subsidies
         });
         
         setIsLoading(false);
@@ -137,4 +122,3 @@ export const useDashboardStats = () => {
 
   return { stats, isLoading, error };
 };
-

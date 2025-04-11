@@ -39,10 +39,10 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
     <Routes>
       <Route 
         path="/" 
-        element={<Navigate to="main" replace />} 
+        element={<Navigate to="/mobile-flow/main" replace />} 
       />
       <Route 
-        path="main" 
+        path="/main" 
         element={
           <MainDashboard 
             onAction={onAction}
@@ -54,52 +54,52 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
         } 
       />
       <Route 
-        path="profile" 
+        path="/profile" 
         element={<ProfilePage />} 
       />
       <Route 
-        path="create-sfd" 
+        path="/create-sfd" 
         element={<SfdSetupPage />} 
       />
       <Route 
-        path="secure-payment" 
+        path="/secure-payment" 
         element={<SecurePaymentTab />} 
       />
       <Route 
-        path="sfd-clients" 
+        path="/sfd-clients" 
         element={<SfdClientsPage />} 
       />
       <Route 
-        path="schedule-transfer" 
+        path="/schedule-transfer" 
         element={<ScheduleTransferTab />} 
       />
       <Route 
-        path="funds-management" 
+        path="/funds-management" 
         element={<FundsManagementPage />} 
       />
       <Route 
-        path="payment-options" 
+        path="/payment-options" 
         element={<PaymentOptionsPage />} 
       />
       <Route 
-        path="loan-application" 
+        path="/loan-application" 
         element={<LoanApplicationPage />} 
       />
       <Route 
-        path="loan-activity" 
+        path="/loan-activity" 
         element={<LoanActivityPage />} 
       />
       <Route 
-        path="loan-details" 
+        path="/loan-details" 
         element={<LoanDetailsPage />} 
       />
       <Route 
-        path="loan-process" 
+        path="/loan-process" 
         element={<LoanProcessPage />} 
       />
       <Route 
         path="*" 
-        element={<Navigate to="main" replace />} 
+        element={<Navigate to="/mobile-flow/main" replace />} 
       />
     </Routes>
   );

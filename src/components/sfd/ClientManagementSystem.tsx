@@ -1,123 +1,92 @@
 
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ClientManagement } from './ClientManagement';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetDescription, 
-  SheetHeader, 
-  SheetTitle, 
-  SheetTrigger 
-} from '@/components/ui/sheet';
-import { NewClientForm } from './NewClientForm';
-import { UserPlus, Users, CreditCard, FileText, History } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, AlertCircle, Info, Users } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+import { useNavigate } from 'react-router-dom';
+import ClientsManagement from './ClientsManagement';
 
-export interface ClientManagementSystemProps {
-  sfdId?: string;
-}
-
-export const ClientManagementSystem: React.FC<ClientManagementSystemProps> = ({ sfdId }) => {
+export function ClientManagementSystem() {
+  const { user } = useAuth();
+  const { activeSfdId, sfdData, isLoading } = useSfdDataAccess();
   const [activeTab, setActiveTab] = useState('clients');
-  const [sheetOpen, setSheetOpen] = useState(false);
-
-  const handleAddClientSuccess = () => {
-    setSheetOpen(false);
-  };
-
+  const navigate = useNavigate();
+  
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Chargement des données SFD...</p>
+      </div>
+    );
+  }
+  
+  if (!activeSfdId) {
+    return (
+      <Alert variant="destructive" className="mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Erreur de configuration</AlertTitle>
+        <AlertDescription className="space-y-4">
+          <p>Aucune SFD active n'a été détectée pour votre compte. Pour résoudre ce problème :</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Votre compte doit être associé à au moins une SFD</li>
+            <li>Une SFD doit être définie comme active</li>
+          </ul>
+          <div className="pt-2">
+            <Button
+              onClick={() => navigate('/sfd-setup')}
+              className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+            >
+              Configurer votre compte SFD
+            </Button>
+          </div>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  
+  // Récupérer le nom de la SFD active pour l'afficher
+  const activeSfd = sfdData.find(sfd => sfd.id === activeSfdId);
+  
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Gestion clientèle</h2>
-          <p className="text-muted-foreground">
-            Gérez vos clients et suivez leurs activités.
-          </p>
-        </div>
-        <div className="mt-4 md:mt-0 flex gap-2">
-          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Nouveau client
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="sm:max-w-[540px] overflow-y-auto">
-              <SheetHeader className="mb-5">
-                <SheetTitle>Ajouter un nouveau client</SheetTitle>
-                <SheetDescription>
-                  Remplissez les informations du client ci-dessous
-                </SheetDescription>
-              </SheetHeader>
-              <NewClientForm onSuccess={handleAddClientSuccess} />
-            </SheetContent>
-          </Sheet>
-          
-          <Button variant="outline">
-            <FileText className="mr-2 h-4 w-4" />
-            Exporter
-          </Button>
-        </div>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Système de Gestion des Clients</h1>
+        {activeSfd && (
+          <div className="bg-[#0D6A51]/10 text-[#0D6A51] px-3 py-1 rounded-full text-sm font-medium">
+            SFD active: {activeSfd.name}
+          </div>
+        )}
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-6">
+      <Alert variant="default" className="bg-muted">
+        <Info className="h-4 w-4" />
+        <AlertTitle>Information</AlertTitle>
+        <AlertDescription>
+          Ce système vous permet de gérer les clients de votre SFD, de valider leurs comptes et de suivre leurs activités.
+        </AlertDescription>
+      </Alert>
+      
+      <Tabs 
+        defaultValue="clients" 
+        value={activeTab} 
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
+        <TabsList>
           <TabsTrigger value="clients" className="flex items-center">
-            <Users className="mr-2 h-4 w-4" />
+            <Users className="h-4 w-4 mr-1" />
             Clients
-          </TabsTrigger>
-          <TabsTrigger value="accounts" className="flex items-center">
-            <CreditCard className="mr-2 h-4 w-4" />
-            Comptes
-          </TabsTrigger>
-          <TabsTrigger value="transactions" className="flex items-center">
-            <History className="mr-2 h-4 w-4" />
-            Transactions
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="clients" className="mt-0">
-          <ClientManagement />
-        </TabsContent>
-        
-        <TabsContent value="accounts" className="mt-0">
-          <Card>
-            <CardHeader>
-              <CardTitle>Comptes Clients</CardTitle>
-              <CardDescription>
-                Gérez les comptes et produits financiers de vos clients
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-10">
-                <p className="text-muted-foreground">
-                  Module de gestion des comptes en cours de développement
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="transactions" className="mt-0">
-          <Card>
-            <CardHeader>
-              <CardTitle>Transactions Clients</CardTitle>
-              <CardDescription>
-                Suivez les transactions et mouvements financiers
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-10">
-                <p className="text-muted-foreground">
-                  Module de suivi des transactions en cours de développement
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="clients">
+          <ClientsManagement />
         </TabsContent>
       </Tabs>
     </div>
   );
-};
+}

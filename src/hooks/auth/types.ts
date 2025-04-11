@@ -4,10 +4,7 @@ import { User as SupabaseUser } from '@supabase/supabase-js';
 export interface User extends SupabaseUser {
   full_name?: string;
   avatar_url?: string;
-  phone?: string;
   sfd_id?: string;
-  created_at: string; // Making this required to match the base type
-  aud: string;
 }
 
 export enum UserRole {
@@ -33,7 +30,6 @@ export interface AuthContextProps {
   userRole: UserRole;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
-  login?: (userData: User, token: string) => void;
 }
 
 export interface AssociateSfdParams {

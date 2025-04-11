@@ -20,9 +20,6 @@ export const AgencyHeader = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Extract user name from metadata if available
-  const userName = user?.user_metadata?.full_name || user?.full_name || 'User';
-  
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -109,9 +106,9 @@ export const AgencyHeader = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder-avatar.jpg" alt={userName} />
+                    <AvatarImage src="/placeholder-avatar.jpg" alt={user?.full_name || 'User'} />
                     <AvatarFallback className="bg-[#0D6A51] text-white">
-                      {userName?.charAt(0) || 'U'}
+                      {user?.full_name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -119,7 +116,7 @@ export const AgencyHeader = () => {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{userName || 'SFD User'}</p>
+                    <p className="text-sm font-medium leading-none">{user?.full_name || 'SFD User'}</p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user?.email || 'sfd@example.com'}
                     </p>

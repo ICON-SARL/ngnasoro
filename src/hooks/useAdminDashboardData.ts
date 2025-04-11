@@ -1,152 +1,84 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from './use-toast';
 
-export interface DashboardStats {
-  totalSfds: number;
+export type DashboardStats = {
   activeSfds: number;
-  pendingSfds: number;
-  inactiveSfds: number;
   newSfdsThisMonth: number;
   admins: number;
-  sfdAdmins: number;
   newAdminsThisMonth: number;
   totalUsers: number;
   newUsersThisMonth: number;
-  pendingSubsidies: number;
-  totalClients: number;
-  totalSubsidies?: string; // Add optional totalSubsidies
-  // Add other required properties
-}
+};
 
-export interface SubsidiesData {
+export type SubsidiesData = {
   totalAmount: number;
+  allocatedAmount: number;
+  usedAmount: number;
   availableAmount: number;
   usagePercentage: number;
-  approvedAmount: number;
-  pendingAmount: number;
-  total?: number;
-  approved?: number;
-  pending?: number;
-}
+  newThisMonth: string;
+};
 
-export interface RecentApproval {
+export type PendingRequest = {
   id: string;
   sfd_name: string;
   amount: number;
-  date: string;
-  status: 'approved' | 'pending' | 'rejected';
-  region: string;
-}
+  purpose: string;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  created_at: string;
+};
 
-export const useAdminDashboardData = () => {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalSfds: 0,
-    activeSfds: 0,
-    pendingSfds: 0,
-    inactiveSfds: 0,
-    newSfdsThisMonth: 0,
-    admins: 0,
-    sfdAdmins: 0,
-    newAdminsThisMonth: 0,
-    totalUsers: 0,
-    newUsersThisMonth: 0,
-    pendingSubsidies: 0,
-    totalClients: 0,
-    totalSubsidies: '0', // Initialize the new property
-  });
-  
-  const [subsidiesData, setSubsidiesData] = useState<SubsidiesData>({
-    totalAmount: 0,
-    availableAmount: 0,
-    usagePercentage: 0,
-    approvedAmount: 0,
-    pendingAmount: 0,
-    total: 0,
-    approved: 0,
-    pending: 0
-  });
-  
-  const [recentApprovals, setRecentApprovals] = useState<RecentApproval[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        // This would be real API calls in production
-        // For now, we'll use mock data
-        setTimeout(() => {
-          // Mock dashboard stats
-          setStats({
-            totalSfds: 124,
-            activeSfds: 115,
-            pendingSfds: 5,
-            inactiveSfds: 4,
-            newSfdsThisMonth: 8,
-            admins: 12,
-            sfdAdmins: 35,
-            newAdminsThisMonth: 3,
-            totalUsers: 1840,
-            newUsersThisMonth: 120,
-            pendingSubsidies: 22,
-            totalClients: 1840,
-            totalSubsidies: '323M', // Add total subsidies
-          });
-          
-          // Mock subsidies data
-          setSubsidiesData({
-            totalAmount: 323000000,
-            availableAmount: 78000000,
-            usagePercentage: 76,
-            approvedAmount: 245000000,
-            pendingAmount: 78000000,
-            total: 87,
-            approved: 65,
-            pending: 22
-          });
-          
-          // Mock recent approvals
-          setRecentApprovals([
-            {
-              id: '1',
-              sfd_name: 'Kafo Jiginew',
-              amount: 25000000,
-              date: '2023-04-15',
-              status: 'approved',
-              region: 'Sikasso'
-            },
-            {
-              id: '2',
-              sfd_name: 'Nyèsigiso',
-              amount: 18500000,
-              date: '2023-04-10',
-              status: 'approved',
-              region: 'Bamako'
-            },
-            {
-              id: '3',
-              sfd_name: 'Soro Yiriwaso',
-              amount: 15000000,
-              date: '2023-04-05',
-              status: 'pending',
-              region: 'Ségou'
-            }
-          ]);
-          
-          setIsLoading(false);
-        }, 1000);
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setIsLoading(false);
+export type RecentApproval = {
+  id: string;
+  sfd_name: string;
+  amount: number;
+  approved_at: string;
+};
+
+export type AdminDashboardData = {
+  stats: DashboardStats;
+  subsidies: SubsidiesData;
+  pendingRequests: PendingRequest[];
+  recentApprovals: RecentApproval[];
+};
+
+export function useAdminDashboardData(timeframe: 'week' | 'month' | 'year' = 'month') {
+  const { toast } = useToast();
+
+  const fetchDashboardData = async (): Promise<AdminDashboardData> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-dashboard-data', {
+        body: JSON.stringify({ timeframe }),
+      });
+
+      if (error) throw error;
+      if (!data || !data.success) {
+        throw new Error(data?.message || 'Failed to fetch dashboard data');
       }
-    };
 
-    fetchDashboardData();
-  }, []);
+      return data.data as AdminDashboardData;
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer les données du tableau de bord",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['adminDashboardData', timeframe],
+    queryFn: fetchDashboardData,
+  });
 
   return {
-    stats,
-    subsidiesData,
-    recentApprovals,
-    isLoading
+    dashboardData: data,
+    isLoading,
+    error,
+    refetch,
   };
-};
+}

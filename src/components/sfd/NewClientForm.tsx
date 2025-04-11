@@ -1,99 +1,106 @@
-
 import React from 'react';
-import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import * as z from 'zod';
+import { useAuth } from '@/hooks/useAuth';
+import { useSfdClients } from '@/hooks/useSfdClients';
+import { Loader2 } from 'lucide-react';
 
-const clientFormSchema = z.object({
-  full_name: z.string().min(3, {
-    message: 'Le nom doit contenir au moins 3 caractères'
-  }),
-  email: z.string().email({
-    message: 'Email invalide'
-  }),
-  phone: z.string().min(8, {
-    message: 'Numéro de téléphone invalide'
-  }),
-  address: z.string().min(5, {
-    message: 'Adresse requise'
-  }),
-  id_type: z.enum(['passport', 'national_id', 'driver_license']),
-  id_number: z.string().min(3, {
-    message: 'Numéro d\'identification invalide'
-  }),
-  notes: z.string().optional()
+// Validation améliorée pour numéro de téléphone malien
+const phoneRegex = /^(\+223|00223)?[67]\d{7}$/;
+
+// Form validation schema
+const formSchema = z.object({
+  fullName: z.string().min(3, { message: 'Le nom doit contenir au moins 3 caractères' }),
+  email: z.string().email({ message: 'Email invalide' }).optional().or(z.literal('')),
+  phone: z.string()
+    .regex(phoneRegex, { message: "Numéro de téléphone malien invalide (format: +223 7XXXXXXX ou +223 6XXXXXXX)" })
+    .optional()
+    .or(z.literal('')),
+  address: z.string().optional().or(z.literal('')),
+  idType: z.string().optional().or(z.literal('')),
+  idNumber: z.string().optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal('')),
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface NewClientFormProps {
   onSuccess?: () => void;
 }
 
-export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
-  const { toast } = useToast();
+export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
+  const { activeSfdId } = useAuth();
+  const { createClient } = useSfdClients();
   
-  const form = useForm({
-    resolver: zodResolver(clientFormSchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      full_name: '',
+      fullName: '',
       email: '',
       phone: '',
       address: '',
-      id_type: 'national_id',
-      id_number: '',
-      notes: ''
+      idType: '',
+      idNumber: '',
+      notes: '',
     }
   });
 
-  const onSubmit = async (data: z.infer<typeof clientFormSchema>) => {
+  const onSubmit = async (data: FormValues) => {
     try {
-      // For now, we're just logging the data and showing a success message
-      console.log('Client data submitted:', data);
-      
-      toast({
-        title: 'Client créé avec succès',
-        description: `${data.full_name} a été ajouté à votre liste de clients.`
+      await createClient.mutateAsync({
+        full_name: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        id_type: data.idType,
+        id_number: data.idNumber,
+        notes: data.notes,
       });
       
       form.reset();
-      
-      if (onSuccess) {
-        onSuccess();
-      }
+      if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Error creating client:', error);
-      
-      toast({
-        title: 'Erreur',
-        description: 'Une erreur est survenue lors de la création du client.',
-        variant: 'destructive'
-      });
     }
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="full_name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nom complet</FormLabel>
-                <FormControl>
-                  <Input placeholder="Amadou Diallo" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="fullName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nom complet*</FormLabel>
+              <FormControl>
+                <Input placeholder="Nom et prénom" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="email"
@@ -101,7 +108,7 @@ export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="amadou.diallo@example.com" {...field} />
+                  <Input type="email" placeholder="email@example.com" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -113,45 +120,49 @@ export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Téléphone</FormLabel>
+                <FormLabel>Téléphone*</FormLabel>
                 <FormControl>
-                  <Input placeholder="+223 76 00 00 00" {...field} />
+                  <Input placeholder="+223 6XXXXXXX ou +223 7XXXXXXX" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Adresse</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Adresse du client" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="address"
+            name="idType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Adresse</FormLabel>
-                <FormControl>
-                  <Input placeholder="Bamako, Mali" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="id_type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Type d'identification</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormLabel>Type de pièce d'identité</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un type d'ID" />
+                      <SelectValue placeholder="Sélectionner un type" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="national_id">Carte d'identité nationale</SelectItem>
+                    <SelectItem value="cni">Carte Nationale d'Identité</SelectItem>
                     <SelectItem value="passport">Passeport</SelectItem>
-                    <SelectItem value="driver_license">Permis de conduire</SelectItem>
+                    <SelectItem value="driver">Permis de conduire</SelectItem>
+                    <SelectItem value="voter">Carte d'électeur</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -161,12 +172,12 @@ export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
           
           <FormField
             control={form.control}
-            name="id_number"
+            name="idNumber"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Numéro d'identification</FormLabel>
+                <FormLabel>Numéro de pièce d'identité</FormLabel>
                 <FormControl>
-                  <Input placeholder="12345678" {...field} />
+                  <Input placeholder="Numéro de la pièce" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -181,23 +192,23 @@ export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
             <FormItem>
               <FormLabel>Notes</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Informations supplémentaires sur le client..."
-                  className="min-h-[100px]"
-                  {...field}
-                />
+                <Textarea placeholder="Informations supplémentaires" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         
-        <div className="flex justify-end space-x-2">
-          <Button variant="outline" type="button" onClick={() => form.reset()}>
-            Réinitialiser
-          </Button>
-          <Button type="submit">
-            Créer le client
+        <div className="flex justify-end pt-4">
+          <Button type="submit" disabled={createClient.isPending}>
+            {createClient.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Création...
+              </>
+            ) : (
+              "Créer le client"
+            )}
           </Button>
         </div>
       </form>

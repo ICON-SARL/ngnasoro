@@ -1,7 +1,0 @@
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Import the global styles from index.css */
-@import './index.css';

@@ -1,98 +1,99 @@
-
-import { useState } from 'react';
-import { createClient } from '@/utils/initSupabase';
+import { useCallback, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
-export interface SynchronizationResult {
-  success: boolean;
-  message: string;
-}
-
-export interface AccountSyncParams {
-  clientId: string;
-  sfdId: string;
-  accountNumber?: string;
-}
-
-export const useAccountSynchronization = () => {
+export function useAccountSynchronization() {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const { toast } = useToast();
+  const { user, activeSfdId } = useAuth();
 
-  const linkClientAccount = async (clientId: string, sfdId: string, accountNumber: string): Promise<SynchronizationResult> => {
+  /**
+   * Synchronize client accounts with user application accounts
+   * This can be called manually or automatically on schedule
+   */
+  const synchronizeAccounts = useCallback(async (clientId?: string) => {
+    if (!activeSfdId) {
+      console.error("No active SFD found");
+      return false;
+    }
+
     setIsLoading(true);
-    setError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Compte lié",
-        description: `Le compte a été lié avec succès.`,
+      // If clientId is provided, sync only that client account
+      // Otherwise sync all client accounts in the SFD
+      const { data, error } = await supabase.functions.invoke('sync-client-accounts', {
+        body: { 
+          sfdId: activeSfdId,
+          clientId: clientId || null
+        }
       });
       
+      if (error) throw error;
+      
+      setLastSynced(new Date());
+      
+      toast({
+        title: "Synchronisation réussie",
+        description: clientId 
+          ? "Le compte client a été synchronisé avec succès" 
+          : "Tous les comptes clients ont été synchronisés avec succès",
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error("Error synchronizing accounts:", error);
+      toast({
+        title: "Erreur de synchronisation",
+        description: error.message || "Une erreur s'est produite lors de la synchronisation",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
       setIsLoading(false);
-      return { success: true, message: "Account linked successfully" };
-    } catch (err) {
-      const errorMessage = "Failed to link account";
-      setError(errorMessage);
-      setIsLoading(false);
-      return { success: false, message: errorMessage };
     }
-  };
+  }, [activeSfdId, toast]);
 
-  const unlinkClientAccount = async (clientId: string, sfdId: string, accountNumber: string): Promise<SynchronizationResult> => {
+  /**
+   * Propagate a specific transaction from a client account to a user application account
+   */
+  const propagateTransaction = useCallback(async (transactionId: string) => {
     setIsLoading(true);
-    setError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Compte délié",
-        description: `Le compte a été délié avec succès.`,
+      const { data, error } = await supabase.functions.invoke('propagate-transaction', {
+        body: { 
+          transactionId: transactionId
+        }
       });
       
-      setIsLoading(false);
-      return { success: true, message: "Account unlinked successfully" };
-    } catch (err) {
-      const errorMessage = "Failed to unlink account";
-      setError(errorMessage);
-      setIsLoading(false);
-      return { success: false, message: errorMessage };
-    }
-  };
-
-  const synchronizeClientData = async (params: AccountSyncParams): Promise<SynchronizationResult> => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (error) throw error;
       
       toast({
-        title: "Données synchronisées",
-        description: `Les données du client ont été synchronisées avec succès.`,
+        title: "Transaction propagée",
+        description: "La transaction a été enregistrée dans le compte utilisateur",
       });
       
+      return true;
+    } catch (error: any) {
+      console.error("Error propagating transaction:", error);
+      toast({
+        title: "Erreur de propagation",
+        description: error.message || "Une erreur s'est produite lors de la propagation de la transaction",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
       setIsLoading(false);
-      return { success: true, message: "Data synchronized successfully" };
-    } catch (err) {
-      const errorMessage = "Failed to synchronize data";
-      setError(errorMessage);
-      setIsLoading(false);
-      return { success: false, message: errorMessage };
     }
-  };
+  }, [toast]);
 
   return {
+    synchronizeAccounts,
+    propagateTransaction,
     isLoading,
-    error,
-    linkClientAccount,
-    unlinkClientAccount,
-    synchronizeClientData
+    lastSynced
   };
-};
+}

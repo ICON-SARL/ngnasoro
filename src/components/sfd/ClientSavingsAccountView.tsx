@@ -60,7 +60,7 @@ const ClientSavingsAccountView: React.FC<ClientSavingsAccountViewProps> = ({ cli
     processWithdrawal,
     createAccount,
     refreshData
-  } = useClientSavingsAccount();
+  } = useClientSavingsAccount(clientId);
 
   const handleCreateAccount = async () => {
     await createAccount(0);

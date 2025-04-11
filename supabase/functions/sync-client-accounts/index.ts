@@ -3,104 +3,109 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  // Handle CORS preflight request
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders, status: 204 });
   }
 
   try {
-    // Create a Supabase client with the service role key
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
 
-    // Get the request body
-    const { clientId, sfdId } = await req.json();
+    const { sfdId, clientId } = await req.json();
 
-    if (!clientId) {
+    if (!sfdId) {
       return new Response(
-        JSON.stringify({ success: false, error: "ID client manquant" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        JSON.stringify({ error: "SFD ID is required" }),
+        { headers: corsHeaders, status: 400 }
       );
     }
 
-    // First, check if the client exists
-    const { data: clientData, error: clientError } = await supabase
-      .from('sfd_clients')
-      .select('id, user_id, sfd_id')
-      .eq('id', clientId)
-      .single();
+    let query = supabase.from('sfd_clients')
+      .select('id, user_id')
+      .eq('sfd_id', sfdId)
+      .is('user_id', 'not.null');
 
-    if (clientError || !clientData) {
+    if (clientId) {
+      query = query.eq('id', clientId);
+    }
+
+    const { data: clients, error: clientsError } = await query;
+
+    if (clientsError) {
+      console.error("Error fetching clients:", clientsError);
       return new Response(
-        JSON.stringify({ success: false, error: "Client non trouvé", details: clientError }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+        JSON.stringify({ error: clientsError.message }),
+        { headers: corsHeaders, status: 500 }
       );
     }
 
-    // Ensure we have a user_id to link the account
-    if (!clientData.user_id) {
+    if (!clients || clients.length === 0) {
       return new Response(
-        JSON.stringify({ success: false, error: "Ce client n'est pas lié à un compte utilisateur" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        JSON.stringify({ message: "No clients found that need synchronization" }),
+        { headers: corsHeaders, status: 200 }
       );
     }
 
-    // Call the database function to sync client accounts
-    const { data: syncResult, error: syncError } = await supabase
-      .rpc('sync_client_accounts', { 
-        p_sfd_id: clientData.sfd_id, 
-        p_client_id: clientId 
-      });
+    let syncCount = 0;
+    for (const client of clients) {
+      if (!client.user_id) continue;
 
-    if (syncError) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Erreur lors de la synchronisation", details: syncError }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-      );
-    }
+      // Check if user already has an account
+      const { data: existingAccount, error: accountError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', client.user_id)
+        .maybeSingle();
 
-    // For each client transaction, ensure it's propagated to the user account
-    const { data: transactions, error: transactionsError } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('client_id', clientId)
-      .order('created_at', { ascending: false });
+      if (accountError) {
+        console.error(`Error checking account for user ${client.user_id}:`, accountError);
+        continue;
+      }
 
-    if (!transactionsError && transactions) {
-      for (const transaction of transactions) {
-        // Check if this transaction has already been propagated
-        const { data: existingTransaction, error: checkError } = await supabase
-          .from('transactions')
-          .select('id')
-          .eq('reference_id', `prop-${transaction.id}`)
-          .eq('user_id', clientData.user_id)
-          .single();
+      if (!existingAccount) {
+        // Create new account
+        const { error: createError } = await supabase
+          .from('accounts')
+          .insert({
+            user_id: client.user_id,
+            balance: 0,
+            currency: 'FCFA',
+            sfd_id: sfdId
+          });
 
-        if (!existingTransaction && !checkError) {
-          // Propagate the transaction to the user account
-          await supabase.rpc('propagate_client_transaction', { p_transaction_id: transaction.id });
+        if (createError) {
+          console.error(`Error creating account for user ${client.user_id}:`, createError);
+          continue;
         }
+        
+        syncCount++;
       }
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "Comptes synchronisés avec succès",
-        synchronized: syncResult
+        message: `Synchronized ${syncCount} accounts`,
+        syncedCount: syncCount 
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: corsHeaders, status: 200 }
     );
+
   } catch (error) {
+    console.error("Error in sync-client-accounts function:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      JSON.stringify({ error: error.message }),
+      { headers: corsHeaders, status: 500 }
     );
   }
 });

@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SfdData } from './types';
-import { User } from '@/hooks/auth/types';
+import { User } from '@/hooks/useAuth';
 
 export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateAction<SfdData[]>>) {
   const [loading, setLoading] = useState(true);

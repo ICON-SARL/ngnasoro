@@ -3,7 +3,6 @@ import { useAuth } from './useAuth';
 import { useSfdList } from './sfd/useSfdList';
 import { useSfdAccount } from './sfd/useSfdAccount';
 import { useSfdAccountActions } from './sfd/useSfdAccountActions';
-import { User } from './auth/types';
 
 // Export the SfdAccount type directly
 import { SfdAccount } from './sfd/types';

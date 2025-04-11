@@ -1,23 +1,25 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { LoanManagement } from '@/components/sfd/LoanManagement';
 import { AgencyHeader } from '@/components/AgencyHeader';
-import { useAuth } from '@/hooks/useAuth';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
+import { useAuth } from '@/hooks/useAuth';
 
 const LoansPage = () => {
   const { isAdmin } = useAuth();
-
+  
   return (
     <div className="min-h-screen bg-gray-50">
       {isAdmin ? <SuperAdminHeader /> : <AgencyHeader />}
       
       <div className="container mx-auto py-6 px-4">
-        <h1 className="text-2xl font-bold mb-6">Gestion des Prêts</h1>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">Prêts</h1>
+          <p className="text-muted-foreground">Gestion et suivi des prêts</p>
+        </div>
         
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-500 italic">
-            La page de gestion des prêts est en cours de développement.
-          </p>
+        <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
+          <LoanManagement />
         </div>
       </div>
     </div>

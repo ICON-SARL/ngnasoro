@@ -1,207 +1,142 @@
 
-import React, { useState, useEffect, ChangeEvent } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Search, Plus, UserCheck, UserX, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useSfdClients } from '@/hooks/useSfdClients';
 import { NewClientForm } from './NewClientForm';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Search } from 'lucide-react';
-
-interface Client {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string;
-  status: 'active' | 'inactive' | 'pending';
-  kyc_level: number;
-}
 
 export const ClientManagement = () => {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const { clients, isLoading, validateClient, rejectClient } = useSfdClients();
 
-  useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        // Simulate API call with mock data
-        setTimeout(() => {
-          const mockClients: Client[] = [
-            {
-              id: '1',
-              full_name: 'Amadou Diallo',
-              email: 'amadou.diallo@example.com',
-              phone: '+223 76 00 00 01',
-              status: 'active',
-              kyc_level: 2
-            },
-            {
-              id: '2',
-              full_name: 'Fatoumata Coulibaly',
-              email: 'fatoumata.c@example.com',
-              phone: '+223 76 00 00 02',
-              status: 'pending',
-              kyc_level: 1
-            },
-            {
-              id: '3',
-              full_name: 'Ibrahim Keita',
-              email: 'ibrahim.keita@example.com',
-              phone: '+223 76 00 00 03',
-              status: 'inactive',
-              kyc_level: 0
-            }
-          ];
-          
-          setClients(mockClients);
-          setFilteredClients(mockClients);
-          setIsLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error('Error fetching clients:', error);
-        setIsLoading(false);
-      }
-    };
-    
-    fetchClients();
-  }, []);
+  const filteredClients = clients.filter(client => 
+    client.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.phone?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredClients(clients);
-    } else {
-      const filtered = clients.filter(client => 
-        client.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.phone.includes(searchQuery)
-      );
-      setFilteredClients(filtered);
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge className="bg-amber-100 text-amber-800">En attente</Badge>;
+      case 'validated':
+        return <Badge className="bg-green-100 text-green-800">Validé</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800">Rejeté</Badge>;
+      default:
+        return <Badge>Inconnu</Badge>;
     }
-  }, [searchQuery, clients]);
-
-  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const handleAddClientSuccess = () => {
-    // Close dialog and refresh client list
-    setDialogOpen(false);
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Gestion des Clients</CardTitle>
-        <CardDescription>
-          Gérez vos clients et leur information
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex justify-between items-center mb-6">
-          <div className="relative w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher un client..."
-              value={searchQuery}
-              onChange={handleSearch}
-              className="pl-8"
-            />
-          </div>
-          
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>Ajouter un client</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Ajouter un nouveau client</DialogTitle>
-                <DialogDescription>
-                  Complétez le formulaire ci-dessous pour créer un nouveau client
-                </DialogDescription>
-              </DialogHeader>
-              <NewClientForm onSuccess={handleAddClientSuccess} />
-            </DialogContent>
-          </Dialog>
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold">Gestion des Clients</h2>
+        <Button onClick={() => setIsDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-1" />
+          Nouveau Client
+        </Button>
+      </div>
+      
+      <div className="mb-4 relative">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="search"
+          placeholder="Rechercher un client..."
+          className="pl-8"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+      
+      {isLoading ? (
+        <div className="text-center py-8">
+          <p>Chargement des clients...</p>
         </div>
-        
-        {isLoading ? (
-          <div className="flex justify-center my-8">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-          </div>
-        ) : (
-          <>
-            {filteredClients.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Aucun client trouvé
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Téléphone</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Niveau KYC</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredClients.map((client) => (
-                    <TableRow key={client.id}>
-                      <TableCell className="font-medium">{client.full_name}</TableCell>
-                      <TableCell>{client.email}</TableCell>
-                      <TableCell>{client.phone}</TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          client.status === 'active' ? 'bg-green-100 text-green-800' :
-                          client.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {client.status === 'active' ? 'Actif' : 
-                           client.status === 'pending' ? 'En attente' : 'Inactif'}
-                        </span>
-                      </TableCell>
-                      <TableCell>Niveau {client.kyc_level}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="sm" className="mr-2">
-                          Détails
+      ) : filteredClients.length === 0 ? (
+        <div className="text-center py-8">
+          <p>Aucun client trouvé</p>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nom complet</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Téléphone</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredClients.map((client) => (
+              <TableRow key={client.id}>
+                <TableCell className="font-medium">{client.full_name}</TableCell>
+                <TableCell>{client.email || 'Non renseigné'}</TableCell>
+                <TableCell>{client.phone || 'Non renseigné'}</TableCell>
+                <TableCell>{getStatusBadge(client.status)}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <FileText className="h-4 w-4" />
+                      <span className="sr-only">Détails</span>
+                    </Button>
+                    
+                    {client.status === 'pending' && (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => rejectClient.mutate({ clientId: client.id })}
+                        >
+                          <UserX className="h-4 w-4" />
+                          <span className="sr-only">Rejeter</span>
                         </Button>
-                        <Button variant="outline" size="sm">
-                          Éditer
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => validateClient.mutate({ clientId: client.id })}
+                        >
+                          <UserCheck className="h-4 w-4" />
+                          <span className="sr-only">Valider</span>
                         </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+                      </>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+      
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Ajouter un nouveau client</DialogTitle>
+            <DialogDescription>
+              Créez un compte client pour votre SFD
+            </DialogDescription>
+          </DialogHeader>
+          <NewClientForm onSuccess={() => setIsDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
+
+export default ClientManagement;
