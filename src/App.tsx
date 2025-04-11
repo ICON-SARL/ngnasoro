@@ -17,10 +17,10 @@ import AuthPage from '@/pages/AuthPage';
 import ProfilePage from '@/pages/ProfilePage';
 import ClientsPage from '@/pages/ClientsPage';
 import ClientDetailPage from '@/pages/ClientDetailPage';
-import { ThemeProvider } from '@/providers/ThemeProvider'; // Updated import path
+import { ThemeProvider } from '@/providers/ThemeProvider';
 import { AuthProvider } from '@/hooks/useAuth';
 import { Toaster } from '@/components/ui/toaster';
-import "@/global.css";
+import "./index.css";
 
 const App = () => {
   return (

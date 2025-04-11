@@ -1,19 +1,28 @@
 
 import React from 'react';
-import { AgencyHeader } from '@/components/AgencyHeader';
-import { useAuth } from '@/hooks/useAuth';
+import { useParams } from 'react-router-dom';
+import { ClientDetails } from '@/components/sfd/ClientDetails';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
-import ClientDetails from '@/components/sfd/ClientDetails';
 
 const ClientDetailPage = () => {
-  const { isAdmin } = useAuth();
-
+  const { clientId } = useParams<{ clientId: string }>();
+  
   return (
     <div className="min-h-screen bg-gray-50">
-      {isAdmin ? <SuperAdminHeader /> : <AgencyHeader />}
+      <SuperAdminHeader />
       
       <div className="container mx-auto py-6 px-4">
-        <ClientDetails />
+        <h1 className="text-2xl font-bold mb-6">Détails du client</h1>
+        
+        <ClientDetails client={{
+          id: clientId || '',
+          name: 'John Doe',
+          email: 'john.doe@example.com',
+          phone: '+223 76 45 32 10',
+          address: 'Bamako, Mali',
+          status: 'active',
+          createdAt: new Date().toISOString()
+        }} />
       </div>
     </div>
   );

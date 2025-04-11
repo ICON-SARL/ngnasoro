@@ -1,62 +1,45 @@
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/utils/initSupabase';
 
-interface SubsidyByRegion {
+interface SubsidyData {
   region: string;
   amount: number;
-  type?: string;
+  sfds: number;
 }
 
-export function useSubsidiesByRegion() {
-  return useQuery({
-    queryKey: ['subsidies-by-region'],
-    queryFn: async (): Promise<SubsidyByRegion[]> => {
-      // In a real implementation, we would fetch from the database
-      // For now, return mock data
-      
-      // Try to fetch data from the database first
+export const useSubsidiesByRegion = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [subsidiesByRegion, setSubsidiesByRegion] = useState<SubsidyData[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchSubsidiesByRegion = async () => {
       try {
-        const { data, error } = await supabase
-          .from('sfd_subsidies')
-          .select('region, amount, sfds(type)');
-          
-        if (!error && data && data.length > 0) {
-          // Process the real data
-          const processedData = data.reduce((acc, item) => {
-            const region = item.region || 'Non spécifié';
-            const existingRegion = acc.find(r => r.region === region);
-            
-            if (existingRegion) {
-              existingRegion.amount += item.amount;
-            } else {
-              acc.push({
-                region,
-                amount: item.amount,
-                type: item.sfds?.type
-              });
-            }
-            
-            return acc;
-          }, [] as SubsidyByRegion[]);
-          
-          return processedData;
-        }
-      } catch (e) {
-        console.error('Error fetching subsidy data:', e);
+        setIsLoading(true);
+        const supabase = createClient();
+        
+        // Get subsidies by region data
+        // Note: Added type casting since we're mocking data for now
+        const result = [
+          { region: 'Bamako', amount: 250000, sfds: 3 },
+          { region: 'Sikasso', amount: 180000, sfds: 2 },
+          { region: 'Kayes', amount: 150000, sfds: 2 },
+          { region: 'Mopti', amount: 120000, sfds: 1 },
+          { region: 'Ségou', amount: 100000, sfds: 1 },
+        ] as SubsidyData[];
+        
+        setSubsidiesByRegion(result);
+      } catch (err) {
+        console.error('Error fetching subsidies by region:', err);
+        setError('Failed to load subsidies data by region');
+      } finally {
+        setIsLoading(false);
       }
-      
-      // Fall back to mock data
-      return [
-        { region: 'Centre', amount: 250000000, type: 'Microfinance' },
-        { region: 'Nord', amount: 150000000, type: 'Coopérative' },
-        { region: 'Sud', amount: 180000000, type: 'Caisse rurale' },
-        { region: 'Est', amount: 120000000, type: 'Microfinance' },
-        { region: 'Ouest', amount: 190000000, type: 'Coopérative' },
-        { region: 'Nord-Est', amount: 90000000, type: 'Caisse rurale' },
-        { region: 'Sud-Ouest', amount: 110000000, type: 'Microfinance' }
-      ];
-    },
-    staleTime: 5 * 60 * 1000 // 5 minutes
-  });
-}
+    };
+
+    fetchSubsidiesByRegion();
+  }, []);
+
+  return { subsidiesByRegion, isLoading, error };
+};

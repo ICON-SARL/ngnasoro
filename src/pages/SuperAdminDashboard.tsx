@@ -1,195 +1,248 @@
 
-import React, { useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import React from 'react';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
-import { 
-  DashboardWidgets, 
-  SuperAdminDashboardHeader, 
-  DashboardTabs,
-  DashboardCharts,
-  RecentApprovals
-} from '@/components/admin/dashboard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
-import { ReportGenerator } from '@/components/ReportGenerator';
-import { DataExport } from '@/components/DataExport';
-import { Button } from '@/components/ui/button';
-import { FileText, Building, Users, Shield } from 'lucide-react';
-import { AdminManagement } from '@/components/admin/AdminManagement';
-import { SfdManagement } from '@/components/admin/SfdManagement';
-import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommunication';
-import { AdminNotifications } from '@/components/admin/shared/AdminNotifications';
-import { IntegratedDashboard } from '@/components/admin/shared/IntegratedDashboard';
-import AuditLogsSummary from '@/components/audit/AuditLogsSummary';
-import { SubsidySummary } from '@/components/admin/dashboard/SubsidySummary';
+import { useSubsidiesByRegion } from '@/hooks/useSubsidiesByRegion';
 import { PendingSubsidies } from '@/components/admin/dashboard/PendingSubsidies';
-import { Footer } from '@/components';
-import { FinancialReports } from '@/components/reports/FinancialReports';
-import SfdInspector from '@/components/admin/SfdInspector';
+
+// Define types
+interface DashboardStats {
+  totalSfds: number;
+  activeSfds: number;
+  pendingSubsidies: number;
+  totalClients: number;
+}
+
+interface SubsidiesData {
+  totalAmount: number;
+  approvedAmount: number;
+  pendingAmount: number;
+}
+
+interface RecentApproval {
+  id: string;
+  sfdName: string;
+  amount: number;
+  date: string;
+  region: string;
+}
 
 const SuperAdminDashboard = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'dashboard';
-  const navigate = useNavigate();
-  
-  // Fetch dashboard data
-  const { dashboardData, isLoading } = useAdminDashboardData();
-  
-  // Set the active tab based on query parameter
-  useEffect(() => {
-    if (!searchParams.get('tab')) {
-      setSearchParams({ tab: 'dashboard' });
-    }
-  }, [searchParams, setSearchParams]);
+  const { stats, subsidiesData, recentApprovals, isLoading } = useAdminDashboardData();
+  const { subsidiesByRegion } = useSubsidiesByRegion();
 
-  const handleTabChange = (value: string) => {
-    setSearchParams({ tab: value });
-  };
+  const mockPendingRequests = [
+    {
+      id: '1',
+      sfdName: 'Kafo Jiginew',
+      amount: 5000000,
+      date: '2024-04-05',
+      status: 'pending' as const,
+      region: 'Bamako'
+    },
+    {
+      id: '2',
+      sfdName: 'Nyèsigiso',
+      amount: 3500000,
+      date: '2024-04-03',
+      status: 'pending' as const,
+      region: 'Sikasso'
+    },
+    {
+      id: '3',
+      sfdName: 'Soro Yiriwaso',
+      amount: 2800000,
+      date: '2024-04-02',
+      status: 'pending' as const,
+      region: 'Ségou'
+    }
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <SuperAdminHeader additionalComponents={<AdminNotifications />} />
+    <div className="min-h-screen bg-gray-50">
+      <SuperAdminHeader />
       
-      <main className="flex-1 container mx-auto p-4 md:p-6">
-        <SuperAdminDashboardHeader />
+      <div className="container mx-auto py-6 px-4">
+        <h1 className="text-2xl font-bold mb-6">Tableau de bord Super Admin</h1>
         
-        {/* Quick Actions */}
-        <div className="mb-6 flex flex-wrap gap-2">
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm" 
-            onClick={() => navigate('/credit-approval')}
-          >
-            <FileText className="h-4 w-4 mr-2 text-gray-600" />
-            Approbation de Crédit
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-            onClick={() => navigate('/sfd-management')}
-          >
-            <Building className="h-4 w-4 mr-2 text-gray-600" />
-            Gestion des SFDs
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-            onClick={() => setSearchParams({ tab: 'reports' })}
-          >
-            <FileText className="h-4 w-4 mr-2 text-gray-600" />
-            Générer des Rapports
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-            onClick={() => setSearchParams({ tab: 'admins' })}
-          >
-            <Users className="h-4 w-4 mr-2 text-gray-600" />
-            Gestion Administrateurs
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-            onClick={() => navigate('/audit-logs')}
-          >
-            <Shield className="h-4 w-4 mr-2 text-gray-600" />
-            Journal d'Audit
-          </Button>
-          
-          <MerefSfdCommunication />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                SFDs
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {isLoading ? (
+                  <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                ) : (
+                  stats.totalSfds
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {isLoading ? (
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                ) : (
+                  `${stats.activeSfds} actifs`
+                )}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Subventions totales
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {isLoading ? (
+                  <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                ) : (
+                  `${(subsidiesData.totalAmount / 1000000).toFixed(1)}M FCFA`
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {isLoading ? (
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                ) : (
+                  `${stats.pendingSubsidies} demandes en attente`
+                )}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Clients
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {isLoading ? (
+                  <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                ) : (
+                  stats.totalClients.toLocaleString()
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {isLoading ? (
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                ) : (
+                  "Utilisateurs enregistrés"
+                )}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Subventions approuvées
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {isLoading ? (
+                  <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                ) : (
+                  `${(subsidiesData.approvedAmount / 1000000).toFixed(1)}M FCFA`
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {isLoading ? (
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                ) : (
+                  `${(subsidiesData.pendingAmount / 1000000).toFixed(1)}M FCFA en attente`
+                )}
+              </p>
+            </CardContent>
+          </Card>
         </div>
         
-        {/* Dashboard Widgets */}
-        {activeTab === 'dashboard' && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div className="md:col-span-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <SubsidySummary 
-                    subsidiesData={dashboardData?.subsidies} 
-                    isLoading={isLoading} 
-                  />
-                  <PendingSubsidies 
-                    pendingRequests={dashboardData?.pendingRequests} 
-                    isLoading={isLoading} 
-                  />
-                </div>
-                <DashboardWidgets 
-                  stats={dashboardData?.stats || {
-                    activeSfds: 0,
-                    newSfdsThisMonth: 0,
-                    admins: 0,
-                    newAdminsThisMonth: 0,
-                    totalUsers: 0,
-                    newUsersThisMonth: 0,
-                  }} 
-                  isLoading={isLoading} 
-                />
-              </div>
-              <div>
-                <RecentApprovals 
-                  approvals={dashboardData?.recentApprovals}
-                  isLoading={isLoading}
-                />
-                <div className="mt-6">
-                  <AuditLogsSummary />
-                </div>
-              </div>
+        <Tabs defaultValue="subsidies" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="subsidies">Subventions</TabsTrigger>
+            <TabsTrigger value="sfds">SFDs</TabsTrigger>
+            <TabsTrigger value="regions">Régions</TabsTrigger>
+          </TabsList>
+          <TabsContent value="subsidies" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <PendingSubsidies 
+                pendingRequests={mockPendingRequests}
+                isLoading={isLoading}
+              />
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Subventions récentes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  ) : recentApprovals.length === 0 ? (
+                    <p className="text-muted-foreground">Aucune subvention récemment approuvée.</p>
+                  ) : (
+                    <ul className="space-y-4">
+                      {recentApprovals.map((approval) => (
+                        <li key={approval.id} className="flex justify-between items-center border-b pb-2">
+                          <div>
+                            <p className="font-medium">{approval.sfdName}</p>
+                            <p className="text-sm text-muted-foreground">{approval.region}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium">{approval.amount.toLocaleString()} FCFA</p>
+                            <p className="text-sm text-muted-foreground">{approval.date}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
             </div>
-            <div className="mt-6">
-              <IntegratedDashboard />
-            </div>
-          </>
-        )}
-        
-        {/* Charts */}
-        {activeTab === 'charts' && (
-          <DashboardCharts />
-        )}
-        
-        {/* Financial Reports */}
-        {activeTab === 'financial_reports' && (
-          <FinancialReports />
-        )}
-        
-        {/* Reports */}
-        {activeTab === 'reports' && (
-          <div className="space-y-6">
-            <ReportGenerator />
-          </div>
-        )}
-        
-        {/* Data Export */}
-        {activeTab === 'export' && (
-          <div className="space-y-6">
-            <DataExport />
-          </div>
-        )}
-        
-        {/* Admin Management */}
-        {activeTab === 'admins' && (
-          <div className="space-y-6">
-            <AdminManagement />
-          </div>
-        )}
-        
-        {/* SFD Inspector */}
-        {activeTab === 'sfd-inspector' && (
-          <div className="space-y-6">
-            <SfdInspector />
-          </div>
-        )}
-        
-        <DashboardTabs 
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
-      </main>
-      
-      <Footer />
+          </TabsContent>
+          <TabsContent value="sfds">
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance des SFDs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Données sur la performance des SFDs à venir.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="regions">
+            <Card>
+              <CardHeader>
+                <CardTitle>Distribution par région</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {subsidiesByRegion.map((item) => (
+                    <div key={item.region} className="flex justify-between items-center">
+                      <div>
+                        <p className="font-medium">{item.region}</p>
+                        <p className="text-sm text-muted-foreground">{item.sfds} SFDs</p>
+                      </div>
+                      <p className="font-medium">{item.amount.toLocaleString()} FCFA</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
