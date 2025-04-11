@@ -33,3 +33,7 @@ verify_jwt = true
 
 [functions.create-sfd-admin]
 verify_jwt = true
+
+[functions.delete-sfd-admin]
+verify_jwt = true
+

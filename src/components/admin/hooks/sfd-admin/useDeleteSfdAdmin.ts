@@ -13,7 +13,6 @@ export function useDeleteSfdAdmin() {
     mutationFn: async (adminId: string) => {
       try {
         setError(null);
-        console.log('Deleting SFD admin with ID:', adminId);
         await deleteSfdAdmin(adminId);
       } catch (err: any) {
         console.error('Error deleting SFD admin:', err);
@@ -22,18 +21,16 @@ export function useDeleteSfdAdmin() {
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
       toast({
         title: "Succès",
-        description: "L'administrateur a été supprimé avec succès",
+        description: "L'administrateur SFD a été supprimé avec succès",
       });
-      
-      // Invalider les requêtes pour forcer une actualisation des données
-      queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
     },
     onError: (error: any) => {
       toast({
         title: "Erreur",
-        description: error.message || "Une erreur s'est produite lors de la suppression",
+        description: `Erreur lors de la suppression de l'administrateur: ${error.message}`,
         variant: "destructive",
       });
     }

@@ -23,6 +23,7 @@ export async function fetchSfdAdmins(): Promise<SfdAdmin[]> {
       throw new Error(`Erreur lors de la récupération des administrateurs: ${error.message}`);
     }
     
+    console.log('Successfully fetched SFD admins:', data?.length || 0);
     return data || [];
   } catch (error: any) {
     console.error('Unhandled error in fetchSfdAdmins:', error);
@@ -65,6 +66,7 @@ export async function fetchSfdAdminsForSfd(sfdId: string): Promise<SfdAdmin[]> {
       throw new Error(`Erreur lors de la récupération des administrateurs: ${error.message}`);
     }
     
+    console.log(`Successfully fetched ${data?.length || 0} SFD admins for SFD ${sfdId}`);
     return data || [];
   } catch (error: any) {
     console.error(`Unhandled error in fetchSfdAdminsForSfd for SFD ${sfdId}:`, error);
@@ -81,7 +83,13 @@ export async function createSfdAdmin(adminData: {
   notify: boolean;
 }): Promise<any> {
   try {
-    console.log('Creating SFD admin:', { ...adminData, password: '******' });
+    console.log('Creating SFD admin:', { 
+      email: adminData.email, 
+      full_name: adminData.full_name, 
+      role: adminData.role, 
+      sfd_id: adminData.sfd_id, 
+      notify: adminData.notify 
+    });
     
     // Use the edge function to create the admin user
     const { data, error } = await supabase.functions.invoke('create-sfd-admin', {

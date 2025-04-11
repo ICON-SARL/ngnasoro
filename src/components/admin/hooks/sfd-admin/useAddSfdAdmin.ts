@@ -27,8 +27,11 @@ export function useAddSfdAdmin() {
         
         setError(null);
         console.log("Creating SFD admin with data:", { 
-          ...adminData, 
-          password: "***" // Masquer le mot de passe dans les logs
+          email: adminData.email,
+          full_name: adminData.full_name,
+          role: adminData.role,
+          sfd_id: adminData.sfd_id,
+          notify: adminData.notify
         });
         
         return await createSfdAdmin(adminData);

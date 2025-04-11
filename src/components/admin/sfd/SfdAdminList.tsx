@@ -1,154 +1,139 @@
 
 import React from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Loader2, Mail, Trash2, User } from 'lucide-react';
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { useDeleteSfdAdmin } from '../hooks/sfd-admin/useDeleteSfdAdmin';
 import { useSfdAdminsList } from '../hooks/sfd-admin/useSfdAdminsList';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { useDeleteSfdAdmin } from '../hooks/sfd-admin/useDeleteSfdAdmin';
+import { Loader2, AlertTriangle, User, Mail, Shield, Trash } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface SfdAdminListProps {
   sfdId: string;
-  sfdName?: string; // Make sfdName optional
-  onAddAdmin?: () => void;
+  sfdName: string;
+  onAddAdmin: () => void;
 }
 
 export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) {
   const { sfdAdmins, isLoading, error, refetch } = useSfdAdminsList(sfdId);
-  const { deleteSfdAdmin, isDeleting, error: deleteError } = useDeleteSfdAdmin();
+  const { deleteSfdAdmin, isDeleting } = useDeleteSfdAdmin();
+  const [adminToDelete, setAdminToDelete] = React.useState<string | null>(null);
 
-  const handleDeleteAdmin = (adminId: string) => {
-    deleteSfdAdmin(adminId, {
-      onSuccess: () => {
-        refetch();
-      }
-    });
+  const handleDelete = async () => {
+    if (!adminToDelete) return;
+    
+    try {
+      await deleteSfdAdmin(adminToDelete);
+      setAdminToDelete(null);
+      refetch();
+    } catch (err) {
+      console.error("Error deleting admin:", err);
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-8">
+      <div className="flex justify-center items-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Chargement des administrateurs...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <Alert variant="destructive" className="my-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Erreur lors du chargement des administrateurs: {error}
-        </AlertDescription>
+      <Alert variant="destructive" className="mb-4">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Erreur</AlertTitle>
+        <AlertDescription>{error.toString()}</AlertDescription>
+        <div className="mt-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            Réessayer
+          </Button>
+        </div>
       </Alert>
     );
   }
 
-  if (sfdAdmins.length === 0) {
+  if (!sfdAdmins || sfdAdmins.length === 0) {
     return (
-      <div className="text-center py-6 bg-muted/20 rounded-md">
-        <User className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-        <p className="text-muted-foreground">
-          Aucun administrateur SFD trouvé pour {sfdName || 'cette SFD'}.
-        </p>
-        {onAddAdmin && (
-          <Button 
-            variant="outline" 
-            className="mt-4"
-            onClick={onAddAdmin}
-          >
-            Ajouter un administrateur
-          </Button>
-        )}
+      <div className="text-center p-8 border rounded-md bg-muted/20">
+        <div className="mb-4 text-muted-foreground">
+          Aucun administrateur trouvé pour cette SFD
+        </div>
+        <Button onClick={onAddAdmin}>
+          Ajouter un administrateur
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {deleteError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Erreur lors de la suppression: {deleteError}
-          </AlertDescription>
-        </Alert>
-      )}
-      
+    <div>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Nom</TableHead>
             <TableHead>Email</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead>Rôle</TableHead>
+            <TableHead className="w-[80px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sfdAdmins.map((admin) => (
             <TableRow key={admin.id}>
-              <TableCell className="font-medium">{admin.full_name}</TableCell>
+              <TableCell className="font-medium flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                {admin.full_name}
+              </TableCell>
               <TableCell>
-                <div className="flex items-center">
-                  <Mail className="h-4 w-4 mr-1 text-muted-foreground" />
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
                   {admin.email}
                 </div>
               </TableCell>
               <TableCell>
-                <Badge variant={admin.has_2fa ? "default" : "outline"}>
-                  {admin.has_2fa ? '2FA activé' : 'Sans 2FA'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-blue-500" />
+                  Administrateur SFD
+                </div>
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button 
-                      variant="ghost"
+                      variant="ghost" 
                       size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => setAdminToDelete(admin.id)}
                       disabled={isDeleting}
                     >
-                      {isDeleting ? 
-                        <Loader2 className="h-4 w-4 animate-spin" /> : 
-                        <Trash2 className="h-4 w-4" />
-                      }
+                      <Trash className="h-4 w-4 text-red-500" />
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Supprimer l'administrateur</AlertDialogTitle>
+                      <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Êtes-vous sûr de vouloir supprimer cet administrateur ?
-                        Cette action ne peut pas être annulée.
+                        Êtes-vous sûr de vouloir supprimer cet administrateur ? Cette action est irréversible.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction 
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        onClick={() => handleDeleteAdmin(admin.id)}
-                      >
-                        Supprimer
+                      <AlertDialogCancel onClick={() => setAdminToDelete(null)}>Annuler</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600">
+                        {isDeleting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Suppression...
+                          </>
+                        ) : (
+                          'Supprimer'
+                        )}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

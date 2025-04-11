@@ -3,22 +3,22 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchSfdAdmins, fetchSfdAdminsForSfd } from './sfdAdminApiService';
 
 export function useSfdAdminsList(sfdId?: string) {
-  const { 
-    data: sfdAdmins, 
-    isLoading, 
-    error, 
-    refetch 
+  const {
+    data: sfdAdmins,
+    isLoading,
+    error,
+    refetch
   } = useQuery({
-    queryKey: ['sfd-admins', sfdId],
+    queryKey: sfdId ? ['sfd-admins', sfdId] : ['sfd-admins'],
     queryFn: () => sfdId ? fetchSfdAdminsForSfd(sfdId) : fetchSfdAdmins(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 1, // Only retry once to avoid excessive retries on server errors
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
   });
 
   return {
-    sfdAdmins: sfdAdmins || [],
+    sfdAdmins,
     isLoading,
-    error: error ? (error as Error).message : null,
+    error,
     refetch
   };
 }

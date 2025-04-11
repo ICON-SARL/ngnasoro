@@ -38,30 +38,11 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
     notify: boolean;
   }) => {
     try {
-      await addSfdAdmin(data, {
-        onSuccess: () => {
-          setShowAddDialog(false);
-          toast({
-            title: "Succès",
-            description: "L'administrateur SFD a été créé avec succès",
-          });
-          refetchAdmins();
-        },
-        onError: (error: Error) => {
-          toast({
-            title: "Erreur",
-            description: `Erreur lors de la création de l'administrateur: ${error.message}`,
-            variant: "destructive",
-          });
-        }
-      });
+      await addSfdAdmin(data);
+      setShowAddDialog(false);
+      refetchAdmins();
     } catch (error) {
-      console.error("Erreur non gérée:", error);
-      toast({
-        title: "Erreur inattendue",
-        description: "Une erreur s'est produite lors de la création de l'administrateur",
-        variant: "destructive",
-      });
+      console.error("Error in handleAddAdmin:", error);
     }
   };
 
@@ -79,7 +60,7 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
             onClick={() => refetchAdmins()}
             disabled={isLoadingAdmins || isAdding}
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className={`h-4 w-4 ${isLoadingAdmins ? 'animate-spin' : ''}`} />
           </Button>
           <Button 
             onClick={() => setShowAddDialog(true)}
