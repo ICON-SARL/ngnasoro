@@ -1,34 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { User, UserRole, AuthContextProps } from './auth/types';
 
-export interface User {
-  id: string;
-  email: string;
-  name?: string;
-  role?: string;
-  sfd_id?: string;
-  app_metadata?: {
-    role?: string;
-    sfd_id?: string;
-  };
-  user_metadata?: {
-    full_name?: string;
-    role?: string;
-    sfd_id?: string;
-  };
-}
-
-export interface AuthContextProps {
-  user: User | null;
-  session: any | null;
-  loading: boolean;
-  error: string | null;
-  activeSfdId: string | null;
-  userRole: string | null;
-  setActiveSfdId: (sfdId: string) => void;
-  signOut: () => Promise<void>;
-  login: (user: User, token: string) => void;
-}
+export { User, UserRole, type AuthContextProps };
 
 const AuthContext = createContext<AuthContextProps>({
   user: null,
@@ -37,17 +11,17 @@ const AuthContext = createContext<AuthContextProps>({
   error: null,
   activeSfdId: null,
   userRole: null,
+  isAdmin: false,
+  isSfdAdmin: false,
   setActiveSfdId: () => {},
   signOut: async () => {},
+  signIn: async () => ({ error: null }),
+  signUp: async () => ({ error: null }),
+  refreshSession: async () => {},
   login: () => {},
+  biometricEnabled: false,
+  toggleBiometricAuth: async () => {},
 });
-
-export const UserRole = {
-  Client: 'client',
-  SfdAdmin: 'sfd_admin',
-  SfdStaff: 'sfd_staff',
-  SuperAdmin: 'admin',
-};
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -59,7 +33,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
 
   useEffect(() => {
     // Simulate checking for an existing session
@@ -76,7 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           // Set userRole based on app_metadata or user_metadata
           const role = userData.app_metadata?.role || userData.user_metadata?.role || 'client';
-          setUserRole(role);
+          setUserRole(role as UserRole);
           
           // Set activeSfdId if available
           if (userData.app_metadata?.sfd_id) {
@@ -108,7 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     // Set userRole based on app_metadata or user_metadata
     const role = userData.app_metadata?.role || userData.user_metadata?.role || 'client';
-    setUserRole(role);
+    setUserRole(role as UserRole);
     
     // Set activeSfdId if available
     if (userData.app_metadata?.sfd_id) {
@@ -129,7 +104,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setSession(null);
     setUserRole(null);
     setActiveSfdId(null);
+    return Promise.resolve();
   };
+
+  const signIn = async (email: string, password: string) => {
+    // Mock implementation for signIn
+    try {
+      // This would be a real authentication call in production
+      // For demo purposes, let's simulate a successful login
+      const mockUser = {
+        id: 'user-123',
+        email,
+        user_metadata: {
+          full_name: 'Test User'
+        },
+        app_metadata: {
+          role: 'client'
+        }
+      };
+      
+      login(mockUser as User, 'mock-jwt-token');
+      return { error: null };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { error };
+    }
+  };
+
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    // Mock implementation for signUp
+    try {
+      // This would be a real registration call in production
+      const mockUser = {
+        id: 'user-' + Date.now(),
+        email,
+        user_metadata: metadata || {},
+        app_metadata: {
+          role: 'client'
+        }
+      };
+      
+      login(mockUser as User, 'mock-jwt-token');
+      return { error: null };
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { error };
+    }
+  };
+
+  const refreshSession = async () => {
+    // Mock implementation for refreshSession
+    return Promise.resolve();
+  };
+
+  const toggleBiometricAuth = async () => {
+    setBiometricEnabled(!biometricEnabled);
+    return Promise.resolve();
+  };
+
+  // Calculate isAdmin and isSfdAdmin based on userRole
+  const isAdmin = userRole === UserRole.SuperAdmin;
+  const isSfdAdmin = userRole === UserRole.SfdAdmin;
 
   return (
     <AuthContext.Provider 
@@ -140,9 +175,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error, 
         activeSfdId, 
         userRole,
+        isAdmin,
+        isSfdAdmin,
         setActiveSfdId,
         signOut,
-        login
+        signIn,
+        signUp,
+        refreshSession,
+        login,
+        biometricEnabled,
+        toggleBiometricAuth
       }}
     >
       {children}

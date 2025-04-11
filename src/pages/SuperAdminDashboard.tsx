@@ -1,247 +1,191 @@
 
 import React from 'react';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
-import { useSubsidiesByRegion } from '@/hooks/useSubsidiesByRegion';
-import { PendingSubsidies } from '@/components/admin/dashboard/PendingSubsidies';
-
-// Define types
-interface DashboardStats {
-  totalSfds: number;
-  activeSfds: number;
-  pendingSubsidies: number;
-  totalClients: number;
-}
-
-interface SubsidiesData {
-  totalAmount: number;
-  approvedAmount: number;
-  pendingAmount: number;
-}
-
-interface RecentApproval {
-  id: string;
-  sfdName: string;
-  amount: number;
-  date: string;
-  region: string;
-}
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart, Building, ChevronUp, CreditCard, DollarSign, Users } from 'lucide-react';
 
 const SuperAdminDashboard = () => {
   const { stats, subsidiesData, recentApprovals, isLoading } = useAdminDashboardData();
-  const { subsidiesByRegion } = useSubsidiesByRegion();
-
-  const mockPendingRequests = [
-    {
-      id: '1',
-      sfdName: 'Kafo Jiginew',
-      amount: 5000000,
-      date: '2024-04-05',
-      status: 'pending' as const,
-      region: 'Bamako'
-    },
-    {
-      id: '2',
-      sfdName: 'Nyèsigiso',
-      amount: 3500000,
-      date: '2024-04-03',
-      status: 'pending' as const,
-      region: 'Sikasso'
-    },
-    {
-      id: '3',
-      sfdName: 'Soro Yiriwaso',
-      amount: 2800000,
-      date: '2024-04-02',
-      status: 'pending' as const,
-      region: 'Ségou'
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <SuperAdminHeader />
       
       <div className="container mx-auto py-6 px-4">
-        <h1 className="text-2xl font-bold mb-6">Tableau de bord Super Admin</h1>
+        <h1 className="text-2xl font-bold mb-6">Tableau de Bord MEREF</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                SFDs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading ? (
-                  <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
-                ) : (
-                  stats.totalSfds
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {isLoading ? (
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                ) : (
-                  `${stats.activeSfds} actifs`
-                )}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Subventions totales
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading ? (
-                  <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
-                ) : (
-                  `${(subsidiesData.totalAmount / 1000000).toFixed(1)}M FCFA`
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {isLoading ? (
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                ) : (
-                  `${stats.pendingSubsidies} demandes en attente`
-                )}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Clients
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading ? (
-                  <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
-                ) : (
-                  stats.totalClients.toLocaleString()
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {isLoading ? (
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                ) : (
-                  "Utilisateurs enregistrés"
-                )}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Subventions approuvées
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading ? (
-                  <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
-                ) : (
-                  `${(subsidiesData.approvedAmount / 1000000).toFixed(1)}M FCFA`
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {isLoading ? (
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                ) : (
-                  `${(subsidiesData.pendingAmount / 1000000).toFixed(1)}M FCFA en attente`
-                )}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <Tabs defaultValue="subsidies" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="subsidies">Subventions</TabsTrigger>
-            <TabsTrigger value="sfds">SFDs</TabsTrigger>
-            <TabsTrigger value="regions">Régions</TabsTrigger>
-          </TabsList>
-          <TabsContent value="subsidies" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <PendingSubsidies 
-                pendingRequests={mockPendingRequests}
-                isLoading={isLoading}
-              />
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Subventions récentes</CardTitle>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader className="pb-2">
+                  <div className="h-4 bg-gray-200 rounded w-1/3"></div>
                 </CardHeader>
                 <CardContent>
-                  {isLoading ? (
-                    <div className="space-y-4">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                    </div>
-                  ) : recentApprovals.length === 0 ? (
-                    <p className="text-muted-foreground">Aucune subvention récemment approuvée.</p>
-                  ) : (
-                    <ul className="space-y-4">
-                      {recentApprovals.map((approval) => (
-                        <li key={approval.id} className="flex justify-between items-center border-b pb-2">
-                          <div>
-                            <p className="font-medium">{approval.sfdName}</p>
-                            <p className="text-sm text-muted-foreground">{approval.region}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium">{approval.amount.toLocaleString()} FCFA</p>
-                            <p className="text-sm text-muted-foreground">{approval.date}</p>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <div className="h-10 bg-gray-200 rounded w-1/2"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    SFDs Enregistrées
+                  </CardTitle>
+                  <Building className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalSfds}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {stats.activeSfds} actives
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Subventions Totales
+                  </CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalSubsidies}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {stats.pendingSubsidies} en attente d'approbation
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Clients Enregistrés
+                  </CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalClients}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Via toutes les SFDs
+                  </p>
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
-          <TabsContent value="sfds">
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance des SFDs</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Données sur la performance des SFDs à venir.</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="regions">
-            <Card>
-              <CardHeader>
-                <CardTitle>Distribution par région</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {subsidiesByRegion.map((item) => (
-                    <div key={item.region} className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">{item.region}</p>
-                        <p className="text-sm text-muted-foreground">{item.sfds} SFDs</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>État des Subventions</CardTitle>
+                  <CardDescription>
+                    Aperçu des subventions approuvées et en attente
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center">
+                      <div className="w-full">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium">Approuvées</span>
+                          <span className="text-sm font-medium text-right">
+                            {subsidiesData.approved} / {subsidiesData.total}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="bg-green-600 h-2.5 rounded-full" 
+                            style={{ width: `${(subsidiesData.approved / subsidiesData.total) * 100}%` }}
+                          ></div>
+                        </div>
+                        <div className="text-sm text-right mt-1">
+                          {(subsidiesData.approvedAmount / 1000000).toFixed(1)}M FCFA
+                        </div>
                       </div>
-                      <p className="font-medium">{item.amount.toLocaleString()} FCFA</p>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                    
+                    <div className="flex items-center">
+                      <div className="w-full">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium">En attente</span>
+                          <span className="text-sm font-medium text-right">
+                            {subsidiesData.pending} / {subsidiesData.total}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="bg-amber-500 h-2.5 rounded-full" 
+                            style={{ width: `${(subsidiesData.pending / subsidiesData.total) * 100}%` }}
+                          ></div>
+                        </div>
+                        <div className="text-sm text-right mt-1">
+                          {(subsidiesData.pendingAmount / 1000000).toFixed(1)}M FCFA
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Approbations Récentes</CardTitle>
+                  <CardDescription>
+                    Dernières subventions approuvées
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {recentApprovals
+                      .filter(approval => approval.status === 'approved')
+                      .slice(0, 4)
+                      .map(approval => (
+                        <div key={approval.id} className="flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <span className="font-medium">{approval.sfd_name}</span>
+                            <span className="text-xs text-muted-foreground">{approval.region}</span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className="font-medium">
+                              {(approval.amount / 1000000).toFixed(1)}M FCFA
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(approval.date).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
+        
+        <div className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Statistiques détaillées</CardTitle>
+              <CardDescription>
+                Accédez à des rapports et analyses avancés
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col md:flex-row gap-4">
+              <button className="bg-[#0D6A51] text-white px-4 py-3 rounded-lg flex items-center justify-center hover:bg-[#0D6A51]/90 transition-colors">
+                <BarChart className="mr-2 h-5 w-5" />
+                <span>Voir les Rapports Détaillés</span>
+              </button>
+              
+              <button className="bg-white border border-gray-200 px-4 py-3 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors">
+                <CreditCard className="mr-2 h-5 w-5" />
+                <span>Gestion des Subventions</span>
+              </button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

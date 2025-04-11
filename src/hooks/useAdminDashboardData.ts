@@ -1,22 +1,21 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 export interface DashboardStats {
-  activeSfds: number;
-  suspendedSfds: number;
   totalSfds: number;
-  newSfdsThisMonth: number;
-  admins: number;
-  newAdminsThisMonth: number;
-  totalUsers: number;
-  newUsersThisMonth: number;
+  activeSfds: number;
+  totalSubsidies: number;
+  approvedSubsidies: number;
+  pendingSubsidies: number;
+  totalClients: number;
 }
 
 export interface SubsidiesData {
-  totalAmount: number;
-  availableAmount: number;
-  usagePercentage: number;
+  total: number;
+  approved: number;
+  pending: number;
+  approvedAmount: number;
+  pendingAmount: number;
 }
 
 export interface RecentApproval {
@@ -24,95 +23,115 @@ export interface RecentApproval {
   sfd_name: string;
   amount: number;
   date: string;
+  status: 'approved' | 'pending' | 'rejected';
+  region: string;
 }
 
-export function useAdminDashboardData() {
-  const [isLoading, setIsLoading] = useState(true);
+export const useAdminDashboardData = () => {
   const [stats, setStats] = useState<DashboardStats>({
-    activeSfds: 0,
-    suspendedSfds: 0,
     totalSfds: 0,
-    newSfdsThisMonth: 0,
-    admins: 0,
-    newAdminsThisMonth: 0,
-    totalUsers: 0,
-    newUsersThisMonth: 0
+    activeSfds: 0,
+    totalSubsidies: 0,
+    approvedSubsidies: 0,
+    pendingSubsidies: 0,
+    totalClients: 0
   });
   
   const [subsidiesData, setSubsidiesData] = useState<SubsidiesData>({
-    totalAmount: 0,
-    availableAmount: 0,
-    usagePercentage: 0
+    total: 0,
+    approved: 0,
+    pending: 0,
+    approvedAmount: 0,
+    pendingAmount: 0
   });
   
   const [recentApprovals, setRecentApprovals] = useState<RecentApproval[]>([]);
-
+  const [isLoading, setIsLoading] = useState(true);
+  
   useEffect(() => {
     const fetchDashboardData = async () => {
-      setIsLoading(true);
       try {
-        // In a real implementation, we would fetch data from the API
-        // For now, using mock data
-        
-        // Fetch SFD stats
-        const { data: sfdsData } = await supabase
-          .from('sfds')
-          .select('id, status, created_at');
+        // This would be real API calls in production
+        // For now, we'll use mock data
+        setTimeout(() => {
+          // Mock dashboard stats
+          setStats({
+            totalSfds: 124,
+            activeSfds: 115,
+            totalSubsidies: 87,
+            approvedSubsidies: 65,
+            pendingSubsidies: 22,
+            totalClients: 1840
+          });
           
-        const activeSfds = sfdsData?.filter(sfd => sfd.status === 'active').length || 0;
-        const suspendedSfds = sfdsData?.filter(sfd => sfd.status === 'suspended').length || 0;
-        const totalSfds = sfdsData?.length || 0;
-        
-        // Fetch admin stats
-        const { count: adminsCount } = await supabase
-          .from('profiles')
-          .select('id', { count: 'exact', head: true })
-          .eq('role', 'admin');
-        
-        // Fetch user stats
-        const { count: usersCount } = await supabase
-          .from('profiles')
-          .select('id', { count: 'exact', head: true });
-        
-        setStats({
-          activeSfds,
-          suspendedSfds,
-          totalSfds,
-          newSfdsThisMonth: 2,
-          admins: adminsCount || 0,
-          newAdminsThisMonth: 1,
-          totalUsers: usersCount || 0,
-          newUsersThisMonth: 15
-        });
-        
-        // Set mock subsidies data for now
-        setSubsidiesData({
-          totalAmount: 1000000000,
-          availableAmount: 650000000,
-          usagePercentage: 35
-        });
-        
-        // Set mock recent approvals
-        setRecentApprovals([
-          { id: '1', sfd_name: 'Micro Finance Alpha', amount: 5000000, date: '2025-03-15' },
-          { id: '2', sfd_name: 'Caisse Populaire Beta', amount: 3500000, date: '2025-03-10' },
-          { id: '3', sfd_name: 'Crédit Delta', amount: 2000000, date: '2025-03-05' }
-        ]);
-        
+          // Mock subsidies data
+          setSubsidiesData({
+            total: 87,
+            approved: 65,
+            pending: 22,
+            approvedAmount: 245000000,
+            pendingAmount: 78000000
+          });
+          
+          // Mock recent approvals
+          setRecentApprovals([
+            {
+              id: '1',
+              sfd_name: 'Kafo Jiginew',
+              amount: 25000000,
+              date: '2023-04-15',
+              status: 'approved',
+              region: 'Sikasso'
+            },
+            {
+              id: '2',
+              sfd_name: 'Nyèsigiso',
+              amount: 18000000,
+              date: '2023-04-12',
+              status: 'approved',
+              region: 'Ségou'
+            },
+            {
+              id: '3',
+              sfd_name: 'Soro Yiriwaso',
+              amount: 22000000,
+              date: '2023-04-10',
+              status: 'approved',
+              region: 'Mopti'
+            },
+            {
+              id: '4',
+              sfd_name: 'RMCR',
+              amount: 15000000,
+              date: '2023-04-08',
+              status: 'pending',
+              region: 'Kayes'
+            },
+            {
+              id: '5',
+              sfd_name: 'CAECE Jigiseme',
+              amount: 12000000,
+              date: '2023-04-05',
+              status: 'approved',
+              region: 'Koulikoro'
+            }
+          ]);
+          
+          setIsLoading(false);
+        }, 1500);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-      } finally {
         setIsLoading(false);
       }
     };
-
+    
     fetchDashboardData();
   }, []);
-
+  
   return {
     stats,
     subsidiesData,
     recentApprovals,
     isLoading
   };
-}
+};

@@ -15,10 +15,13 @@ const ProfileHeader = () => {
   const isKycVerified = true;
   const phoneNumber = user?.phone || user?.user_metadata?.phone || '+223 76 45 32 10';
   
+  // Get avatar from metadata or user props
+  const avatarUrl = user?.avatar_url || user?.user_metadata?.avatar_url || null;
+  
   return (
     <div className="flex flex-col items-center justify-center p-4 bg-gradient-to-b from-[#0D6A51]/80 to-[#0D6A51]/20 text-white">
       <Avatar className="h-24 w-24 border-4 border-white mb-3">
-        <AvatarImage src={user?.user_metadata?.avatar_url || user?.avatar_url} alt={userName} />
+        <AvatarImage src={avatarUrl} alt={userName} />
         <AvatarFallback className="bg-[#0D6A51] text-white text-xl">
           {userName.substring(0, 2).toUpperCase()}
         </AvatarFallback>
