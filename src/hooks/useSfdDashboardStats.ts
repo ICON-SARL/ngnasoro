@@ -91,17 +91,32 @@ export const useSfdDashboardStats = (sfdId?: string) => {
       
       const totalLoanAmount = activeLoans.reduce((sum, loan) => sum + (loan.amount || 0), 0);
       
-      // 3. Fetch repayments for current month
+      // 3. Fix: Fetch repayments for current month
+      // The issue is with the payment_date field in the join query
       const { data: currentMonthPayments, error: paymentsError } = await supabase
         .from('loan_payments')
-        .select('amount, loan_id, sfd_loans!inner(sfd_id)')
-        .eq('sfd_loans.sfd_id', effectiveSfdId)
-        .gte('payment_date', firstDayOfMonth)
-        .lte('payment_date', lastDayOfMonth);
+        .select('amount, loan_id')
+        .gte('created_at', firstDayOfMonth)
+        .lte('created_at', lastDayOfMonth);
         
       if (paymentsError) throw paymentsError;
       
-      const totalRepayments = currentMonthPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+      // Filter payments belonging to the correct SFD
+      const { data: sfdLoans, error: sfdLoansError } = await supabase
+        .from('sfd_loans')
+        .select('id')
+        .eq('sfd_id', effectiveSfdId);
+        
+      if (sfdLoansError) throw sfdLoansError;
+      
+      const sfdLoanIds = sfdLoans.map(loan => loan.id);
+      
+      // Filter payments for this SFD only
+      const sfdPayments = currentMonthPayments.filter(payment => 
+        sfdLoanIds.includes(payment.loan_id)
+      );
+      
+      const totalRepayments = sfdPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
       
       // Calculate repayment rate (placeholder - would need more complex logic in real app)
       // This is simplified and assumes a 98% rate for demonstration
