@@ -1,94 +1,69 @@
 
-import { toast } from "@/hooks/use-toast";
+import { toast } from '@/hooks/use-toast';
 
-export enum ErrorType {
-  AUTHENTICATION = "AUTHENTICATION",
-  NETWORK = "NETWORK",
-  SERVER = "SERVER",
-  VALIDATION = "VALIDATION",
-  DATABASE = "DATABASE",
-  UNKNOWN = "UNKNOWN"
+interface ErrorOptions {
+  title?: string;
+  variant?: 'default' | 'destructive';
+  duration?: number;
 }
 
-export interface AppError {
-  type: ErrorType;
-  message: string;
-  technical?: string;
-  statusCode?: number;
-}
-
-export const handleError = (error: unknown): AppError => {
-  console.error("Error caught:", error);
+/**
+ * Generic error handler for API errors
+ * @param error The error object
+ * @param options Custom options for error handling
+ */
+export function handleError(error: any, options: ErrorOptions = {}) {
+  console.error('Error occurred:', error);
   
-  // Default error
-  let appError: AppError = {
-    type: ErrorType.UNKNOWN,
-    message: "Une erreur inattendue s'est produite"
-  };
+  const {
+    title = 'Erreur',
+    variant = 'destructive',
+    duration = 5000
+  } = options;
   
-  // Handle Supabase errors
-  if (error instanceof Error) {
-    if (error.message.includes("PGRST")) {
-      appError = {
-        type: ErrorType.DATABASE,
-        message: "Erreur d'accès aux données",
-        technical: error.message
-      };
-    } else if (error.message.includes("NetworkError") || error.message.includes("Failed to fetch")) {
-      appError = {
-        type: ErrorType.NETWORK,
-        message: "Problème de connexion au serveur. Vérifiez votre connexion internet.",
-        technical: error.message
-      };
-    } else if (error.message.includes("Email")) {
-      appError = {
-        type: ErrorType.AUTHENTICATION,
-        message: "Informations d'identification invalides",
-        technical: error.message
-      };
-    } else {
-      appError = {
-        type: ErrorType.UNKNOWN,
-        message: "Une erreur s'est produite",
-        technical: error.message
-      };
-    }
+  // Extract a user-friendly message from the error
+  let message = "Une erreur inattendue s'est produite";
+  
+  if (typeof error === 'string') {
+    message = error;
+  } else if (error instanceof Error) {
+    message = error.message;
+  } else if (error?.message) {
+    message = error.message;
+  } else if (error?.error_description) {
+    message = error.error_description;
   }
   
-  // Show toast for user feedback
+  // Show the error as a toast
   toast({
-    title: "Erreur",
-    description: appError.message,
-    variant: "destructive",
+    title,
+    description: message,
+    variant,
+    duration
   });
-  
-  return appError;
-};
+}
 
-export const handleApiResponse = async (response: Response) => {
-  if (!response.ok) {
-    let errorDetail = "Erreur serveur inconnue";
-    
-    try {
-      const errorData = await response.json();
-      errorDetail = errorData.message || errorData.error || errorDetail;
-    } catch (e) {
-      // Couldn't parse JSON error response
-    }
-    
-    const appError: AppError = {
-      type: response.status === 401 || response.status === 403 
-        ? ErrorType.AUTHENTICATION 
-        : ErrorType.SERVER,
-      message: response.status === 401 || response.status === 403
-        ? "Accès non autorisé"
-        : "Erreur serveur",
-      technical: errorDetail,
-      statusCode: response.status
-    };
-    
-    throw appError;
+/**
+ * Network-specific error handler
+ * @param error The network error
+ */
+export function handleNetworkError(error: any) {
+  let message = "Problème de connexion réseau";
+  
+  // Handle specific network error types
+  if (error?.message?.includes('timeout')) {
+    message = "La requête a pris trop de temps. Vérifiez votre connexion internet.";
+  } else if (error?.message?.includes('Network request failed')) {
+    message = "Impossible de se connecter au serveur. Vérifiez votre connexion internet.";
   }
   
-  return response;
+  handleError(error, {
+    title: 'Erreur de connexion',
+    description: message
+  });
+}
+
+export default {
+  handleError,
+  handleNetworkError
 };
