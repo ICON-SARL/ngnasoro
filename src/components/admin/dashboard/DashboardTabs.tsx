@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Users,
   PieChart,
+  Building
 } from 'lucide-react';
 
 interface DashboardTabsProps {
@@ -47,6 +48,11 @@ export function DashboardTabs({ activeTab, onTabChange }: DashboardTabsProps) {
       id: 'admins',
       label: 'Administrateurs',
       icon: <Users className="h-4 w-4 mr-2" />
+    },
+    {
+      id: 'sfd-inspector',
+      label: 'Inspecteur SFD',
+      icon: <Building className="h-4 w-4 mr-2" />
     }
   ];
   

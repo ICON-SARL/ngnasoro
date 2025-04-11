@@ -24,6 +24,7 @@ import { SubsidySummary } from '@/components/admin/dashboard/SubsidySummary';
 import { PendingSubsidies } from '@/components/admin/dashboard/PendingSubsidies';
 import { Footer } from '@/components';
 import { FinancialReports } from '@/components/reports/FinancialReports';
+import SfdInspector from '@/components/admin/SfdInspector';
 
 const SuperAdminDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -172,6 +173,13 @@ const SuperAdminDashboard = () => {
         {activeTab === 'admins' && (
           <div className="space-y-6">
             <AdminManagement />
+          </div>
+        )}
+        
+        {/* SFD Inspector */}
+        {activeTab === 'sfd-inspector' && (
+          <div className="space-y-6">
+            <SfdInspector />
           </div>
         )}
         

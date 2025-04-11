@@ -1,20 +1,52 @@
 
 import React from 'react';
 import { AgencyHeader } from '@/components/AgencyHeader';
-import { SfdDashboardStats } from '@/components/sfd/dashboard';
+import { SfdDashboardStats, PendingSubsidies } from '@/components/sfd/dashboard';
 import { CreditTrendChart } from '@/components/sfd/analytics';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, FileText, CreditCard } from 'lucide-react';
+import { Users, FileText, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
+import { useAuth } from '@/hooks/useAuth';
+import { useSfdData } from '@/hooks/useSfdData';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 export function SfdAdminDashboard() {
   const navigate = useNavigate();
-  const { subsidyRequests, isLoading } = useSubsidyRequests({ 
-    status: 'pending',
-    sfdId: undefined // It will use the active SFD ID from auth context
-  });
+  const { user, activeSfdId } = useAuth();
+  const { data: sfdData, isLoading: sfdLoading } = useSfdData(activeSfdId);
+  
+  if (sfdLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <AgencyHeader />
+        <div className="flex flex-col items-center justify-center flex-1">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+          <p>Chargement des données SFD...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeSfdId || !sfdData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <AgencyHeader />
+        <div className="container mx-auto p-4 md:p-6">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Erreur de configuration</AlertTitle>
+            <AlertDescription>
+              <p className="mb-4">Aucune SFD active n'a été détectée pour votre compte. Veuillez contacter un administrateur.</p>
+              <Button onClick={() => navigate('/')} variant="outline">
+                Retour à l'accueil
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -25,7 +57,7 @@ export function SfdAdminDashboard() {
           <div>
             <h1 className="text-2xl font-bold">Tableau de Bord SFD</h1>
             <p className="text-muted-foreground">
-              Gérez vos clients, crédits et demandes de subvention
+              {sfdData?.name} - Gestion des clients, crédits et demandes de subvention
             </p>
           </div>
           
@@ -60,69 +92,7 @@ export function SfdAdminDashboard() {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
           <CreditTrendChart />
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Demandes de Subvention</CardTitle>
-              <CardDescription>
-                Demandes en attente de décision
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <p>Chargement des demandes...</p>
-              ) : subsidyRequests.length === 0 ? (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground mb-4">Aucune demande en attente</p>
-                  <Button 
-                    onClick={() => navigate('/sfd-subsidy-requests?tab=create')}
-                    className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Nouvelle Demande
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {subsidyRequests.slice(0, 5).map(request => (
-                    <div key={request.id} className="border rounded p-3 flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">{request.purpose}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(request.amount)}
-                        </p>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => navigate(`/sfd-subsidy-requests/${request.id}`)}
-                      >
-                        Détails
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  {subsidyRequests.length > 5 && (
-                    <Button 
-                      variant="link" 
-                      className="w-full" 
-                      onClick={() => navigate('/sfd-subsidy-requests')}
-                    >
-                      Voir toutes les demandes ({subsidyRequests.length})
-                    </Button>
-                  )}
-                  
-                  <Button 
-                    className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-                    onClick={() => navigate('/sfd-subsidy-requests?tab=create')}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Nouvelle Demande
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <PendingSubsidies />
         </div>
       </div>
     </div>

@@ -1,2 +1,3 @@
 
-export { SfdDashboardStats } from './SfdDashboardStats';
+export * from './SfdDashboardStats';
+export * from './PendingSubsidies';

@@ -1,2 +1,2 @@
 
-export { CreditTrendChart } from './CreditTrendChart';
+export * from './CreditTrendChart';
