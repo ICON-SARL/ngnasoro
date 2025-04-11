@@ -15,7 +15,7 @@ const NoAccountState: React.FC = () => {
         Vous n'avez pas encore de compte auprès d'un SFD partenaire
       </p>
       <Button 
-        onClick={() => navigate('/mobile-flow/sfds')}
+        onClick={() => navigate('/sfd-selector')}
         className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
       >
         Découvrir les SFDs
