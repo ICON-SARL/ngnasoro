@@ -1,8 +1,8 @@
 
-import { useSfdDataAccessCore } from './sfd/useSfdDataAccessCore';
+import { useSfdDataAccess as useOriginalSfdDataAccess } from './useSfdDataAccess.ts';
 // Use export type for TypeScript types when isolatedModules is enabled
-export type { SfdData } from './sfd/types';
+export type { SfdData } from './useSfdDataAccess.ts';
 
 export function useSfdDataAccess() {
-  return useSfdDataAccessCore();
+  return useOriginalSfdDataAccess();
 }

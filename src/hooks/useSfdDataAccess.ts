@@ -111,7 +111,7 @@ export function useSfdDataAccess() {
     };
 
     fetchSfds();
-  }, [user, toast]);
+  }, [user, toast, activeSfdId]);
 
   // Fonction pour changer la SFD active
   const setActiveSfd = useCallback((sfdId: string) => {
@@ -123,11 +123,146 @@ export function useSfdDataAccess() {
     });
   }, [toast]);
 
+  // Added missing functions used in other components
+  const switchActiveSfd = useCallback(async (sfdId: string): Promise<boolean> => {
+    if (!sfdData.find(sfd => sfd.id === sfdId)) {
+      toast({
+        title: "Erreur",
+        description: "La SFD n'existe pas ou n'est pas accessible",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    setActiveSfdId(sfdId);
+    
+    toast({
+      title: "SFD Modifiée",
+      description: "La SFD active a été changée avec succès",
+    });
+    
+    return true;
+  }, [sfdData, toast]);
+
+  const getActiveSfdData = useCallback(async (): Promise<SfdData | null> => {
+    if (!activeSfdId) return null;
+    return sfdData.find(s => s.id === activeSfdId) || null;
+  }, [activeSfdId, sfdData]);
+
+  const associateUserWithSfd = useCallback(async (sfdId: string, isDefault: boolean = false): Promise<boolean> => {
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour associer une SFD",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      // Check if the SFD exists
+      const { data: sfdExists, error: sfdError } = await supabase
+        .from('sfds')
+        .select('id')
+        .eq('id', sfdId)
+        .single();
+
+      if (sfdError || !sfdExists) {
+        throw new Error("SFD non trouvée");
+      }
+
+      // Check if user is already associated with this SFD
+      const { data: existingAssoc, error: assocError } = await supabase
+        .from('user_sfds')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('sfd_id', sfdId);
+
+      if (assocError) throw assocError;
+
+      if (existingAssoc && existingAssoc.length > 0) {
+        // Update existing association if default status changed
+        if (isDefault !== existingAssoc[0].is_default) {
+          // If setting as default, first remove default from all others
+          if (isDefault) {
+            await supabase
+              .from('user_sfds')
+              .update({ is_default: false })
+              .eq('user_id', user.id);
+          }
+
+          // Update this association
+          await supabase
+            .from('user_sfds')
+            .update({ is_default: isDefault })
+            .eq('id', existingAssoc[0].id);
+        }
+      } else {
+        // If setting as default, first remove default from all others
+        if (isDefault) {
+          await supabase
+            .from('user_sfds')
+            .update({ is_default: false })
+            .eq('user_id', user.id);
+        }
+
+        // Create new association
+        await supabase
+          .from('user_sfds')
+          .insert({
+            user_id: user.id,
+            sfd_id: sfdId,
+            is_default: isDefault
+          });
+      }
+
+      // Refresh SFD data
+      const { data: sfdsData, error: sfdsError } = await supabase
+        .from('sfds')
+        .select('*')
+        .eq('id', sfdId);
+
+      if (sfdsError) throw sfdsError;
+
+      // Set as active SFD
+      if (sfdsData && sfdsData.length > 0) {
+        setSfdData(prevData => {
+          // Update or add the new SFD
+          const exists = prevData.some(s => s.id === sfdId);
+          if (exists) {
+            return prevData.map(s => s.id === sfdId ? sfdsData[0] as SfdData : s);
+          } else {
+            return [...prevData, sfdsData[0] as SfdData];
+          }
+        });
+
+        setActiveSfdId(sfdId);
+      }
+
+      return true;
+    } catch (err: any) {
+      console.error('Error associating user with SFD:', err);
+      toast({
+        title: "Erreur",
+        description: `Impossible d'associer la SFD: ${err.message}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+  }, [user, toast]);
+
   return {
     activeSfdId,
     sfdData,
     isLoading,
     error,
-    setActiveSfd
+    setActiveSfd,
+    // Additional functions needed by other components
+    setActiveSfdId,
+    switchActiveSfd,
+    getActiveSfdData,
+    associateUserWithSfd
   };
 }
+
+export type { SfdData };
