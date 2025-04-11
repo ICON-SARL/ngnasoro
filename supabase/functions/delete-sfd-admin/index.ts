@@ -25,66 +25,57 @@ serve(async (req) => {
       );
     }
 
-    // Créer un client Supabase avec la clé de service pour accéder aux API Admin
+    // Créer un client Supabase avec la clé de service
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Extraire l'ID de l'admin à supprimer
+    // Extraire l'ID de l'administrateur à supprimer depuis la requête
     const { adminId } = await req.json();
     
     if (!adminId) {
       return new Response(
-        JSON.stringify({ error: "ID d'administrateur non fourni" }),
+        JSON.stringify({ error: "ID administrateur manquant" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Suppression de l'administrateur SFD: ${adminId}`);
+    console.log(`Suppression de l'administrateur avec ID: ${adminId}`);
     
-    // 1. Supprimer les associations avec les SFDs
+    // 1. Supprimer les associations SFD
     const { error: assocError } = await supabase
       .from('user_sfds')
       .delete()
       .eq('user_id', adminId);
-
+      
     if (assocError) {
       console.error("Erreur lors de la suppression des associations SFD:", assocError);
-      return new Response(
-        JSON.stringify({ error: `Erreur lors de la suppression des associations: ${assocError.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Continuer malgré l'erreur
     }
-
-    // 2. Supprimer l'entrée dans user_roles
-    const { error: roleError } = await supabase
-      .from('user_roles')
-      .delete()
-      .eq('user_id', adminId);
-
-    if (roleError) {
-      console.error("Erreur lors de la suppression des rôles:", roleError);
-      return new Response(
-        JSON.stringify({ error: `Erreur lors de la suppression des rôles: ${roleError.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // 3. Supprimer l'entrée dans admin_users
+    
+    // 2. Supprimer l'entrée dans admin_users
     const { error: adminError } = await supabase
       .from('admin_users')
       .delete()
       .eq('id', adminId);
-
+      
     if (adminError) {
       console.error("Erreur lors de la suppression de l'admin_user:", adminError);
-      return new Response(
-        JSON.stringify({ error: `Erreur lors de la suppression de l'admin_user: ${adminError.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Continuer malgré l'erreur
     }
-
-    // 4. Supprimer l'utilisateur auth
+    
+    // 3. Supprimer les rôles
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('user_id', adminId);
+      
+    if (roleError) {
+      console.error("Erreur lors de la suppression des rôles:", roleError);
+      // Continuer malgré l'erreur
+    }
+    
+    // 4. Supprimer l'utilisateur d'authentification
     const { error: authError } = await supabase.auth.admin.deleteUser(adminId);
-
+    
     if (authError) {
       console.error("Erreur lors de la suppression de l'utilisateur auth:", authError);
       return new Response(
@@ -93,13 +84,8 @@ serve(async (req) => {
       );
     }
 
-    console.log("Administrateur SFD supprimé avec succès");
-
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Administrateur SFD supprimé avec succès"
-      }),
+      JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
