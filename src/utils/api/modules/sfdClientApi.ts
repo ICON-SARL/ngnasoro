@@ -4,11 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 export interface SfdClientAccount {
   id: string;
   user_id: string;
-  client_id: string;
+  client_id?: string;  // Made optional since it might not always be provided
   balance: number;
   currency: string;
   sfd_id: string;
   updated_at: string;
+  last_updated?: string; // Added to match database schema
 }
 
 export interface ClientTransactionResult {
@@ -32,7 +33,12 @@ export const sfdClientApi = {
       
       if (error) throw error;
       
-      return data as SfdClientAccount;
+      // Convert to SfdClientAccount type with required fields
+      return {
+        ...data,
+        client_id: clientId,
+        sfd_id: data.sfd_id || ''
+      } as SfdClientAccount;
     } catch (error) {
       console.error('Error fetching client account:', error);
       return null;
@@ -56,7 +62,12 @@ export const sfdClientApi = {
         .single();
       
       if (existingAccount) {
-        return existingAccount as SfdClientAccount;
+        // Return with required fields
+        return {
+          ...existingAccount,
+          client_id: clientId,
+          sfd_id: existingAccount.sfd_id || sfdId
+        } as SfdClientAccount;
       }
       
       // Create new account
@@ -73,7 +84,12 @@ export const sfdClientApi = {
       
       if (error) throw error;
       
-      return data as SfdClientAccount;
+      // Return with required fields
+      return {
+        ...data,
+        client_id: clientId,
+        sfd_id: sfdId
+      } as SfdClientAccount;
     } catch (error) {
       console.error('Error creating client account:', error);
       return null;
@@ -113,11 +129,12 @@ export const sfdClientApi = {
       
       if (error) throw error;
       
-      // Record admin activity
+      // Record admin activity with severity field added
       await supabase.from('audit_logs').insert({
         user_id: adminId,
         action: 'client_deposit',
         category: 'financial',
+        severity: 'info',  // Add required severity field
         status: 'success',
         details: {
           client_id: clientId,
@@ -185,11 +202,12 @@ export const sfdClientApi = {
       
       if (error) throw error;
       
-      // Record admin activity
+      // Record admin activity with severity field added
       await supabase.from('audit_logs').insert({
         user_id: adminId,
         action: 'client_withdrawal',
         category: 'financial',
+        severity: 'info',  // Add required severity field
         status: 'success',
         details: {
           client_id: clientId,
@@ -274,11 +292,12 @@ export const sfdClientApi = {
         performed_by: adminId
       });
       
-      // Record admin activity
+      // Record admin activity with severity field added
       await supabase.from('audit_logs').insert({
         user_id: adminId,
         action: 'loan_disbursement',
         category: 'financial',
+        severity: 'info',  // Add required severity field
         status: 'success',
         details: {
           client_id: clientId,
@@ -371,11 +390,12 @@ export const sfdClientApi = {
       
       if (transactionError) throw transactionError;
       
-      // Record admin activity
+      // Record admin activity with severity field added
       await supabase.from('audit_logs').insert({
         user_id: adminId,
         action: `client_${transactionType}_mobile_money`,
         category: 'financial',
+        severity: 'info',  // Add required severity field
         status: 'success',
         details: {
           client_id: clientId,
@@ -426,11 +446,12 @@ export const sfdClientApi = {
         return { success: false, error: data.error || 'Failed to generate QR code' };
       }
       
-      // Record admin activity
+      // Record admin activity with severity field added
       await supabase.from('audit_logs').insert({
         user_id: adminId,
         action: `qr_code_generated_${transactionType}`,
         category: 'financial',
+        severity: 'info',  // Add required severity field
         status: 'success',
         details: {
           client_id: clientId,
