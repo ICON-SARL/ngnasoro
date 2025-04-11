@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -50,16 +51,30 @@ export function useSfdUserManagement() {
         throw new Error("Aucun SFD associé à votre compte");
       }
       
-      // Get all admin users associated with this SFD through the user_sfds table
+      // First get the user_ids associated with this SFD
+      const { data: userAssociations, error: associationsError } = await supabase
+        .from('user_sfds')
+        .select('user_id')
+        .eq('sfd_id', userSfds.sfd_id);
+        
+      if (associationsError) {
+        console.error('Erreur lors de la récupération des associations:', associationsError);
+        throw new Error("Impossible de charger les associations d'utilisateurs");
+      }
+      
+      if (!userAssociations || userAssociations.length === 0) {
+        setUsers([]);
+        return;
+      }
+
+      // Extract the user_ids from the associations
+      const userIds = userAssociations.map(assoc => assoc.user_id);
+      
+      // Get all admin users associated with those user_ids
       const { data: adminUsers, error: usersError } = await supabase
         .from('admin_users')
         .select('id, email, full_name, role, last_sign_in_at')
-        .in('id', 
-          supabase
-            .from('user_sfds')
-            .select('user_id')
-            .eq('sfd_id', userSfds.sfd_id)
-        );
+        .in('id', userIds);
         
       if (usersError) {
         console.error('Erreur lors de la récupération des utilisateurs:', usersError);
