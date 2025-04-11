@@ -14,12 +14,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Download, ExternalLink, File, FileCode, FileText, Filter, 
-  FileSpreadsheet, Table
+  FileSpreadsheet, Table, Calendar as CalendarIcon
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Calendar } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useFinancialExport } from '@/hooks/useFinancialExport';
@@ -46,7 +46,6 @@ export function DataExport() {
     setExportProgress(10);
     
     try {
-      // Simuler un progrès d'exportation
       const interval = setInterval(() => {
         setExportProgress((prev) => {
           const newProgress = prev + 20;
@@ -58,7 +57,6 @@ export function DataExport() {
         });
       }, 500);
       
-      // Récupérer les données pour l'export
       const data = await getReportData({
         type: activeTab as any,
         startDate,
@@ -68,7 +66,6 @@ export function DataExport() {
       
       setExportProgress(90);
       
-      // Effectuer l'export selon le format sélectionné
       if (exportFormat === 'excel') {
         await exportToExcel(data, { fileName });
       } else if (exportFormat === 'pdf') {
@@ -83,7 +80,6 @@ export function DataExport() {
       
       setExportProgress(100);
       
-      // Réinitialiser l'état après un moment
       setTimeout(() => {
         setIsExporting(false);
         setExportProgress(0);
@@ -186,14 +182,14 @@ export function DataExport() {
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-between">
                           {startDate ? format(startDate, 'dd/MM/yyyy') : 'Date de début'}
-                          <Calendar className="h-4 w-4 opacity-50" />
+                          <CalendarIcon className="h-4 w-4 opacity-50" />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
                           selected={startDate}
-                          onSelect={setStartDate}
+                          onSelect={(date) => setStartDate(date)}
                         />
                       </PopoverContent>
                     </Popover>
@@ -202,14 +198,14 @@ export function DataExport() {
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-between">
                           {endDate ? format(endDate, 'dd/MM/yyyy') : 'Date de fin'}
-                          <Calendar className="h-4 w-4 opacity-50" />
+                          <CalendarIcon className="h-4 w-4 opacity-50" />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
                           selected={endDate}
-                          onSelect={setEndDate}
+                          onSelect={(date) => setEndDate(date)}
                         />
                       </PopoverContent>
                     </Popover>

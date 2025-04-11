@@ -81,7 +81,6 @@ export function AuditLogFilters({
           <DatePicker
             selected={filters.startDate}
             onSelect={(date) => handleFilterChange('startDate', date)}
-            placeholder="Date de début"
           />
         </div>
         
@@ -90,7 +89,6 @@ export function AuditLogFilters({
           <DatePicker
             selected={filters.endDate}
             onSelect={(date) => handleFilterChange('endDate', date)}
-            placeholder="Date de fin"
           />
         </div>
         

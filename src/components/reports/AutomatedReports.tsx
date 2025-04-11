@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Card, 
@@ -28,6 +27,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Separator } from '@/components/ui/separator';
 import { useReportGeneration } from '@/hooks/useReportGeneration';
+import { Calendar } from '@/components/ui/calendar';
 
 const reportFormSchema = z.object({
   title: z.string().min(3, { message: "Le titre doit contenir au moins 3 caractères" }),
