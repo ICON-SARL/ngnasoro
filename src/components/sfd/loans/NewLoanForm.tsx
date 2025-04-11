@@ -1,15 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useSfdClients } from '@/hooks/useSfdClients';
 import { useAuth } from '@/hooks/useAuth';
 import { UseMutationResult } from '@tanstack/react-query';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface NewLoanFormProps {
   onSuccess: () => void;
@@ -19,17 +20,44 @@ interface NewLoanFormProps {
 export function NewLoanForm({ onSuccess, createLoan }: NewLoanFormProps) {
   const { user, activeSfdId } = useAuth();
   const { clients } = useSfdClients();
+  const [merefFunding, setMerefFunding] = useState<number | null>(null);
+  const [isLoadingMeref, setIsLoadingMeref] = useState(false);
   
   const [formData, setFormData] = useState({
     client_id: '',
     amount: '',
     duration_months: '',
     interest_rate: '5.5', // Taux d'intérêt par défaut
-    purpose: '',
-    subsidy_requested: false,
-    subsidy_amount: '',
-    subsidy_justification: ''
+    purpose: ''
   });
+  
+  // Récupérer les informations sur les fonds disponibles du MEREF
+  useEffect(() => {
+    const fetchMerefAvailableFunding = async () => {
+      if (!activeSfdId) return;
+      
+      setIsLoadingMeref(true);
+      try {
+        // Récupérer les fonds disponibles pour cette SFD
+        const { data, error } = await fetch(`/api/meref-funding/${activeSfdId}`).then(res => res.json());
+        
+        if (error) throw new Error(error.message);
+        
+        if (data && data.availableAmount) {
+          setMerefFunding(data.availableAmount);
+        } else {
+          setMerefFunding(0);
+        }
+      } catch (err) {
+        console.error("Erreur lors de la récupération des fonds MEREF:", err);
+        setMerefFunding(0);
+      } finally {
+        setIsLoadingMeref(false);
+      }
+    };
+    
+    fetchMerefAvailableFunding();
+  }, [activeSfdId]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -39,10 +67,6 @@ export function NewLoanForm({ onSuccess, createLoan }: NewLoanFormProps) {
   
   const handleSelectChange = (name: string, value: string) => {
     setFormData({ ...formData, [name]: value });
-  };
-  
-  const handleSwitchChange = (name: string, checked: boolean) => {
-    setFormData({ ...formData, [name]: checked });
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,9 +87,7 @@ export function NewLoanForm({ onSuccess, createLoan }: NewLoanFormProps) {
       duration_months: periods,
       interest_rate: parseFloat(formData.interest_rate),
       purpose: formData.purpose,
-      monthly_payment: Math.round(monthlyPayment * 100) / 100,
-      subsidy_amount: formData.subsidy_requested ? parseFloat(formData.subsidy_amount) : 0,
-      subsidy_rate: formData.subsidy_requested ? (parseFloat(formData.subsidy_amount) / amount) * 100 : 0
+      monthly_payment: Math.round(monthlyPayment * 100) / 100
     };
     
     try {
@@ -89,6 +111,17 @@ export function NewLoanForm({ onSuccess, createLoan }: NewLoanFormProps) {
   
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {merefFunding !== null && (
+        <Alert className={merefFunding > 0 ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}>
+          <AlertCircle className={merefFunding > 0 ? "h-4 w-4 text-green-600" : "h-4 w-4 text-amber-600"} />
+          <AlertDescription>
+            {merefFunding > 0 
+              ? `Financement MEREF disponible: ${merefFunding.toLocaleString('fr-FR')} FCFA`
+              : "Aucun financement MEREF disponible actuellement"}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <div>
@@ -133,7 +166,9 @@ export function NewLoanForm({ onSuccess, createLoan }: NewLoanFormProps) {
               onChange={handleInputChange}
             />
           </div>
-          
+        </div>
+        
+        <div className="space-y-4">
           <div>
             <Label htmlFor="interest_rate">Taux d'intérêt (%)</Label>
             <Input
@@ -146,9 +181,7 @@ export function NewLoanForm({ onSuccess, createLoan }: NewLoanFormProps) {
               onChange={handleInputChange}
             />
           </div>
-        </div>
-        
-        <div className="space-y-4">
+          
           <div>
             <Label htmlFor="purpose">Objet du prêt</Label>
             <Textarea
@@ -160,43 +193,6 @@ export function NewLoanForm({ onSuccess, createLoan }: NewLoanFormProps) {
               className="h-20"
             />
           </div>
-          
-          <div className="flex items-center space-x-2 pt-2">
-            <Switch
-              id="subsidy_requested"
-              checked={formData.subsidy_requested}
-              onCheckedChange={(checked) => handleSwitchChange('subsidy_requested', checked)}
-            />
-            <Label htmlFor="subsidy_requested">Demande de subvention</Label>
-          </div>
-          
-          {formData.subsidy_requested && (
-            <>
-              <div>
-                <Label htmlFor="subsidy_amount">Montant de la subvention (FCFA)</Label>
-                <Input
-                  id="subsidy_amount"
-                  name="subsidy_amount"
-                  type="number"
-                  placeholder="Ex: 20000"
-                  value={formData.subsidy_amount}
-                  onChange={handleInputChange}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="subsidy_justification">Justification</Label>
-                <Textarea
-                  id="subsidy_justification"
-                  name="subsidy_justification"
-                  placeholder="Justifiez la demande de subvention"
-                  value={formData.subsidy_justification}
-                  onChange={handleInputChange}
-                  className="h-20"
-                />
-              </div>
-            </>
-          )}
         </div>
       </div>
       
