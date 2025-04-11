@@ -22,10 +22,11 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
     try {
       const result = await generateQRCode({
         userId: user.id,
+        sfdId: '', // We'll use an empty string by default, as it might be filled in by the backend
         amount,
-        purpose: loanId ? 'loan_repayment' : 'payment',
+        type: loanId ? 'loan_payment' : 'deposit',
         loanId,
-        isWithdrawal: false
+        reference: loanId ? `loan-payment-${loanId}` : `payment-${Date.now()}`
       });
       
       return result;
@@ -52,9 +53,10 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
     try {
       const result = await generateQRCode({
         userId: user.id,
+        sfdId: '', // We'll use an empty string by default, as it might be filled in by the backend
         amount,
-        purpose: 'withdrawal',
-        isWithdrawal: true
+        type: 'withdrawal',
+        reference: `withdrawal-${Date.now()}`
       });
       
       return result;
