@@ -1,34 +1,38 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { LoanPaymentParams, SfdBalanceData, SyncResult } from './types';
+import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 
 /**
  * Synchronize accounts data from SFD
  */
 export async function synchronizeAccounts(userId: string): Promise<SyncResult> {
   try {
-    // Call the edge function to sync the accounts
-    const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
-      body: { 
-        userId,
-        forceSync: true
-      }
-    });
+    // Use the edgeFunctionApi to handle the call more gracefully
+    const data = await edgeFunctionApi.callEdgeFunction('synchronize-sfd-accounts', { 
+      userId,
+      forceSync: true
+    }, { showToast: false });
     
-    if (error) {
-      console.error('Error synchronizing accounts:', error);
-      throw error;
-    }
-    
-    // Check if the synchronization was successful
-    if (!data?.success) {
-      throw new Error(data?.message || 'Synchronization failed');
+    // Handle the case where the function returns a response but might not have data
+    if (!data || !data.success) {
+      return {
+        success: false,
+        message: data?.message || 'Synchronization failed',
+        updates: []
+      };
     }
     
     return data as SyncResult;
   } catch (error: any) {
     console.error('Account synchronization error:', error);
-    throw new Error(error.message || 'Failed to synchronize accounts');
+    
+    // Return a well-structured error response
+    return {
+      success: false,
+      message: error.message || 'Failed to synchronize accounts',
+      updates: []
+    };
   }
 }
 

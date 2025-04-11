@@ -25,6 +25,7 @@ const SFDSavingsOverview = () => {
   const [isHidden, setIsHidden] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>("Impossible de récupérer les informations de votre compte");
   
   // Get active SFD data from dashboard if available
   const activeSfd = dashboardData?.sfdAccounts?.find(sfd => sfd.is_default);
@@ -38,11 +39,17 @@ const SFDSavingsOverview = () => {
     const performInitialSync = async () => {
       if (activeSfdId) {
         try {
-          await synchronizeWithSfd();
-          setHasError(false);
+          const syncResult = await synchronizeWithSfd();
+          if (syncResult) {
+            setHasError(false);
+          } else {
+            setHasError(true);
+            setErrorMessage("Synchronisation échouée. Veuillez réessayer.");
+          }
         } catch (error) {
           console.error("Synchronization error:", error);
           setHasError(true);
+          setErrorMessage("Erreur lors de la connexion au serveur. Veuillez vérifier votre connexion.");
         }
       }
     };
@@ -68,17 +75,17 @@ const SFDSavingsOverview = () => {
     // If not loading and no data found, set error state
     if (!isLoading && !isDashboardLoading && !activeSfd && !activeSfdAccount && user) {
       setHasError(true);
-    } else {
-      setHasError(false);
+      setErrorMessage("Aucun compte SFD trouvé pour votre profil.");
     }
   }, [isLoading, isDashboardLoading, activeSfd, activeSfdAccount, user]);
 
   const refreshBalance = async () => {
     setIsUpdating(true);
+    setHasError(false);
     
     try {
       // Use synchronizeWithSfd for reliable updates
-      await synchronizeWithSfd();
+      const syncResult = await synchronizeWithSfd();
       
       // Refresh local data
       if (refreshDashboardData) {
@@ -89,11 +96,15 @@ const SFDSavingsOverview = () => {
       // Add a slight delay before removing the loading state
       setTimeout(() => {
         setIsUpdating(false);
-        setHasError(false);
+        if (!syncResult) {
+          setHasError(true);
+          setErrorMessage("Synchronisation échouée. Veuillez réessayer.");
+        }
       }, 1000);
     } catch (error) {
       console.error("Error refreshing balance:", error);
       setHasError(true);
+      setErrorMessage("Erreur de connexion au serveur. Veuillez vérifier votre connexion.");
       setIsUpdating(false);
     }
   };
@@ -120,7 +131,7 @@ const SFDSavingsOverview = () => {
   if (hasError) {
     return (
       <ErrorState 
-        message="Impossible de récupérer les informations de votre compte" 
+        message={errorMessage} 
         retryFn={refreshBalance} 
       />
     );

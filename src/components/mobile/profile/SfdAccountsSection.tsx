@@ -30,15 +30,22 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
   useEffect(() => {
     const syncOnMount = async () => {
       try {
-        await synchronizeWithSfd();
-        await refetch();
+        const syncResult = await synchronizeWithSfd();
+        if (syncResult) {
+          await refetch();
+        }
       } catch (error) {
         console.error("Failed to synchronize accounts on mount:", error);
+        toast({
+          title: "Erreur de synchronisation",
+          description: "Impossible de synchroniser vos comptes pour le moment. Veuillez réessayer plus tard.",
+          variant: "destructive",
+        });
       }
     };
     
     syncOnMount();
-  }, [synchronizeWithSfd, refetch]);
+  }, [synchronizeWithSfd, refetch, toast]);
   
   // Find the name of the pending SFD
   const pendingSfdName = React.useMemo(() => {
@@ -52,13 +59,22 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
     const success = await completeSwitch(code);
     
     if (success) {
-      await synchronizeBalances.mutateAsync();
-      refetch();
-      
-      toast({
-        title: "Synchronisation terminée",
-        description: "Les données de votre nouveau compte SFD ont été synchronisées",
-      });
+      try {
+        await synchronizeBalances.mutateAsync();
+        await refetch();
+        
+        toast({
+          title: "Synchronisation terminée",
+          description: "Les données de votre nouveau compte SFD ont été synchronisées",
+        });
+      } catch (error) {
+        console.error("Error synchronizing after verification:", error);
+        toast({
+          title: "Erreur de synchronisation",
+          description: "La vérification a réussi mais la synchronisation a échoué. Veuillez rafraîchir la page.",
+          variant: "destructive",
+        });
+      }
     }
     
     return success;
