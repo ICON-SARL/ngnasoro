@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +26,7 @@ export function useSfdUserManagement() {
     
     setIsLoading(true);
     try {
+      // Get the default SFD for the current user
       const { data: userSfds, error: sfdsError } = await supabase
         .from('user_sfds')
         .select('sfd_id, is_default')
@@ -41,6 +43,7 @@ export function useSfdUserManagement() {
         throw new Error("Aucun SFD associé à votre compte");
       }
       
+      // Get all users associated with this SFD
       const { data: sfdUserAssociations, error: usersError } = await supabase
         .from('user_sfds')
         .select(`
@@ -65,6 +68,7 @@ export function useSfdUserManagement() {
         return;
       }
       
+      // Transform the data into our SfdUser format
       const formattedUsers: SfdUser[] = sfdUserAssociations
         .filter(assoc => assoc.admin_users)
         .map(assoc => {
