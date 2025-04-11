@@ -1,11 +1,39 @@
 
-export { useMobileMoneyPayment } from './useMobileMoneyPayment';
-export { useMobileMoneyWithdrawal } from './useMobileMoneyWithdrawal';
-export { useQRCodeGeneration } from './useQRCodeGeneration';
-export { useMobileMoneyOperations } from './useMobileMoneyOperations';
-export type { 
-  MobileMoneyPaymentHook, 
-  MobileMoneyWithdrawalHook, 
+// Re-export the hooks and their types
+import { useQRCodeGeneration } from './useQRCodeGeneration';
+import { useMobileMoneyPayment } from './useMobileMoneyPayment';
+import { useMobileMoneyWithdrawal } from './useMobileMoneyWithdrawal';
+
+// Export types from the types file
+import { 
+  QRCodeGenerationHook, 
+  MobileMoneyPaymentHook,
+  MobileMoneyWithdrawalHook,
   MobileMoneyOperationsHook,
-  QRCodeGenerationHook 
+  MobileMoneyResponse,
+  QRCodeResponse 
 } from './types';
+
+export {
+  useQRCodeGeneration,
+  useMobileMoneyPayment,
+  useMobileMoneyWithdrawal,
+  // Export types
+  type QRCodeGenerationHook,
+  type MobileMoneyPaymentHook,
+  type MobileMoneyWithdrawalHook,
+  type MobileMoneyOperationsHook,
+  type MobileMoneyResponse,
+  type QRCodeResponse
+};
+
+export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
+  const { isProcessing: isPaymentProcessing, processPayment } = useMobileMoneyPayment();
+  const { isProcessing: isWithdrawalProcessing, processWithdrawal } = useMobileMoneyWithdrawal();
+
+  return {
+    isProcessing: isPaymentProcessing || isWithdrawalProcessing,
+    processPayment,
+    processWithdrawal
+  };
+}

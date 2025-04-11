@@ -11,3 +11,19 @@ export interface SfdAccountDisplay {
   isVerified?: boolean;
   status?: string;
 }
+
+export interface AvailableSfd {
+  id: string;
+  name: string;
+  code?: string;
+  region?: string;
+  logo_url?: string;
+  status: string;
+}
+
+export interface SfdClientRequest {
+  id: string;
+  sfd_id: string;
+  status: string;
+  created_at: string;
+}

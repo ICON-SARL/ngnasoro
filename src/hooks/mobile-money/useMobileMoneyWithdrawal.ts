@@ -1,45 +1,69 @@
 
 import { useState } from 'react';
-import { useAuth } from '../useAuth';
-import { processMobileMoneyPayment } from '../sfd/sfdAccountsApi';
-import { MobileMoneyWithdrawalHook } from './types';
+import { useToast } from '../use-toast';
+import { mobileMoneyApi } from '@/utils/mobileMoneyApi';
+import type { MobileMoneyWithdrawalHook, MobileMoneyResponse } from './types';
 
 export function useMobileMoneyWithdrawal(): MobileMoneyWithdrawalHook {
-  const [isProcessingWithdrawal, setIsProcessingWithdrawal] = useState(false);
-  const { user } = useAuth();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
   
-  const makeWithdrawal = async (
-    phoneNumber: string, 
+  const processWithdrawal = async (
     amount: number, 
+    phoneNumber: string, 
     provider: string
-  ): Promise<boolean> => {
-    if (!user?.id) {
-      return false;
+  ): Promise<MobileMoneyResponse> => {
+    if (!amount || amount <= 0) {
+      return {
+        success: false,
+        error: "Amount must be greater than zero"
+      };
     }
     
-    setIsProcessingWithdrawal(true);
+    if (!phoneNumber) {
+      return {
+        success: false,
+        error: "Phone number is required"
+      };
+    }
+    
+    setIsProcessing(true);
     
     try {
-      // Use the same function but with different parameters
-      const result = await processMobileMoneyPayment(
-        user.id,
-        phoneNumber,
-        amount,
-        provider,
-        false // Not a repayment for withdrawals
-      );
+      const result = await mobileMoneyApi.initiateWithdrawal(phoneNumber, amount, provider);
       
-      return result.success;
+      if (result.success) {
+        toast({
+          title: "Withdrawal Initiated",
+          description: "Check your phone to confirm the withdrawal",
+        });
+      } else {
+        toast({
+          title: "Withdrawal Failed",
+          description: result.message || "Unable to process withdrawal",
+          variant: "destructive",
+        });
+      }
+      
+      return result;
     } catch (error: any) {
-      console.error('Failed to process mobile money withdrawal:', error);
-      return false;
+      toast({
+        title: "Error",
+        description: error.message || "An error occurred while processing withdrawal",
+        variant: "destructive",
+      });
+      
+      return {
+        success: false,
+        error: error.message || "Withdrawal processing failed"
+      };
     } finally {
-      setIsProcessingWithdrawal(false);
+      setIsProcessing(false);
     }
   };
   
   return {
-    isProcessingWithdrawal,
-    makeWithdrawal
+    isProcessing,
+    processWithdrawal
   };
 }

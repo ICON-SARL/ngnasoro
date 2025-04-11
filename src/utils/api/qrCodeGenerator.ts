@@ -36,10 +36,56 @@ export async function generateQRCode(params: QRCodeRequest) {
   }
 }
 
+/**
+ * Scan a QR code and process the transaction
+ * @param code The QR code data to scan
+ * @param userId The user ID making the request
+ * @returns Result of the QR code scan operation
+ */
+export async function scanQRCodeForTransaction(code: string, userId: string): Promise<ScanQRCodeResponse> {
+  try {
+    const { data, error } = await supabase.functions.invoke('qr-code-verification', {
+      body: {
+        action: 'scan',
+        code,
+        userId
+      }
+    });
+
+    if (error) {
+      console.error('Error scanning QR code:', error);
+      return {
+        success: false,
+        message: error.message || 'Failed to scan QR code'
+      };
+    }
+
+    return {
+      success: data.success,
+      message: data.message,
+      transaction: data.transaction,
+      isWithdrawal: data.isWithdrawal
+    };
+  } catch (error: any) {
+    console.error('Error in scanQRCodeForTransaction:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to process QR code'
+    };
+  }
+}
+
 export interface QRCodeResponse {
   success: boolean;
   qrData?: string;
   transactionId?: string;
   expiresAt?: string;
   error?: string;
+}
+
+export interface ScanQRCodeResponse {
+  success: boolean;
+  message: string;
+  transaction?: any;
+  isWithdrawal?: boolean;
 }
