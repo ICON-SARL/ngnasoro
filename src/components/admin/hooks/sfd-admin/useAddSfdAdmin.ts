@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { createSfdAdmin } from './sfdAdminApiService';
+import { addSfdAdmin } from './sfdAdminApiService';
 import { useAuth } from '@/hooks/auth';
 
 export function useAddSfdAdmin() {
@@ -11,7 +11,7 @@ export function useAddSfdAdmin() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const { mutate: addSfdAdmin, isPending: isAdding } = useMutation({
+  const { mutate: addSfdAdminMutation, isPending: isAdding } = useMutation({
     mutationFn: async (adminData: {
       email: string;
       password: string;
@@ -37,7 +37,7 @@ export function useAddSfdAdmin() {
         let retries = 3;
         while (retries > 0) {
           try {
-            return await createSfdAdmin(adminData);
+            return await addSfdAdmin(adminData);
           } catch (err: any) {
             if (retries <= 1 || !err.message?.includes('infinite recursion')) {
               throw err;
@@ -74,7 +74,7 @@ export function useAddSfdAdmin() {
   });
 
   return {
-    addSfdAdmin,
+    addSfdAdmin: addSfdAdminMutation,
     isAdding,
     error
   };

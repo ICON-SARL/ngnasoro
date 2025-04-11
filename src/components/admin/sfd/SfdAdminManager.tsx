@@ -7,7 +7,7 @@ import { AddSfdAdminDialog } from '@/components/admin/sfd/AddSfdAdminDialog';
 import { SfdAdminList } from '@/components/admin/sfd/SfdAdminList';
 import { Plus, Loader2, RefreshCw } from 'lucide-react';
 import { useSfdAdminsList } from '../hooks/sfd-admin/useSfdAdminsList';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface SfdAdminManagerProps {
   sfdId: string;
