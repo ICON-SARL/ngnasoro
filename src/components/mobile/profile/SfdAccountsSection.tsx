@@ -1,5 +1,7 @@
-
 import React, { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Building } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import AccountsSection from './sfd-accounts/AccountsSection';
 import SfdVerificationDialog from './sfd-accounts/SfdVerificationDialog';
 import { useSfdSwitch } from '@/hooks/useSfdSwitch';
@@ -7,6 +9,7 @@ import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 import { useToast } from '@/hooks/use-toast';
 import ErrorState from '../sfd-savings/ErrorState';
+import ViewAllSfdsButton from '../sfd/ViewAllSfdsButton';
 
 interface SfdAccountsSectionProps {
   sfdData?: any[];
@@ -27,7 +30,6 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
   const { sfdAccounts, refetch, synchronizeBalances } = useSfdAccounts();
   const { synchronizeWithSfd, isSyncing, syncError } = useRealtimeSynchronization();
   
-  // Synchronize accounts when component mounts
   useEffect(() => {
     const syncOnMount = async () => {
       try {
@@ -37,14 +39,12 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
         }
       } catch (error) {
         console.error("Failed to synchronize accounts on mount:", error);
-        // Error handling is now done in the useRealtimeSynchronization hook
       }
     };
     
     syncOnMount();
   }, [synchronizeWithSfd, refetch, toast]);
   
-  // Find the name of the pending SFD
   const pendingSfdName = React.useMemo(() => {
     if (!pendingSfdId) return '';
     
@@ -77,7 +77,6 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
     return success;
   };
 
-  // Handle retry when there's a sync error
   const handleRetrySync = () => {
     synchronizeWithSfd()
       .then(success => {
@@ -87,7 +86,6 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
       });
   };
 
-  // If there's a sync error, show the error state
   if (syncError) {
     return (
       <ErrorState 
@@ -106,6 +104,10 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
           isSyncing={isSyncing}
           onRefresh={synchronizeWithSfd}
         />
+        
+        <div className="mt-4">
+          <ViewAllSfdsButton />
+        </div>
       </div>
       
       <SfdVerificationDialog 

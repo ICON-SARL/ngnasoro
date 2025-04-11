@@ -6,6 +6,7 @@ import ProfilePage from '@/components/mobile/profile/ProfilePage';
 import SecurePaymentTab from '@/components/mobile/secure-payment';
 import SfdSetupPage from '@/pages/SfdSetupPage';
 import SfdClientsPage from '@/pages/SfdClientsPage';
+import SfdSelectorPage from '@/pages/SfdSelectorPage';
 import ScheduleTransferTab from '@/components/mobile/ScheduleTransferTab';
 import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
 import PaymentOptionsPage from '@/components/mobile/payment-options/PaymentOptionsPage';
@@ -96,6 +97,10 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       <Route 
         path="/loan-process" 
         element={<LoanProcessPage />} 
+      />
+      <Route 
+        path="/sfd-selector" 
+        element={<SfdSelectorPage />} 
       />
       <Route 
         path="*" 

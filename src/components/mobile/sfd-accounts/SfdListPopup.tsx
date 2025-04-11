@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { X, Building } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,7 +32,6 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
       setError(null);
 
       try {
-        // Récupérer uniquement les SFDs actifs
         const { data, error } = await supabase
           .from('sfds')
           .select('id, name, region, logo_url')
@@ -54,7 +52,6 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
   }, [isOpen]);
 
   const handleSelectSfd = (sfdId: string) => {
-    // Naviguer vers la page d'inscription/demande de compte SFD
     navigate('/sfd-selector', { state: { selectedSfdId: sfdId } });
     onClose();
   };
@@ -133,6 +130,7 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
             onClick={() => navigate('/sfd-selector')}
             className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 w-full"
           >
+            <Building className="h-4 w-4 mr-2" />
             Voir tous les SFDs disponibles
           </Button>
         </div>
