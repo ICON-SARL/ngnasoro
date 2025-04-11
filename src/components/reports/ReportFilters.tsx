@@ -4,7 +4,7 @@ import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateRangePicker } from '@/components/ui/date-picker';
-import { Download, FileSpreadsheet, FilePdf } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText } from 'lucide-react';
 
 interface ReportFiltersProps {
   reportType: string;
@@ -63,7 +63,7 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
           onClick={onExportToPDF}
           disabled={isExporting || isLoading}
         >
-          <FilePdf className="h-4 w-4 mr-2" />
+          <FileText className="h-4 w-4 mr-2" />
           PDF
         </Button>
       </div>

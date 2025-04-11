@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Card, 
@@ -15,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Download, ExternalLink, File, FileCode, FileText, Filter, 
-  FileSpreadsheet, FilePdf, Table
+  FileSpreadsheet, Table
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -165,7 +164,7 @@ export function DataExport() {
                       onClick={() => setExportFormat('pdf')}
                       className="flex-1"
                     >
-                      <FilePdf className="h-4 w-4 mr-2" />
+                      <FileText className="h-4 w-4 mr-2" />
                       PDF
                     </Button>
                     <Button 

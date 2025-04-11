@@ -1,116 +1,109 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowUpRight, ArrowDownRight, CreditCard, Users, CircleDollarSign, TrendingUp } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Transaction } from '@/types/transactions';
+import { ArrowDown, ArrowUp, CreditCard, Users, Wallet } from 'lucide-react';
 
 interface DashboardCardsProps {
   transactions: Transaction[];
 }
 
 export const DashboardCards: React.FC<DashboardCardsProps> = ({ transactions }) => {
-  // Calculer les statistiques des transactions
-  const calculateStats = () => {
-    if (!transactions.length) {
-      return {
-        totalAmount: 0,
-        incomingAmount: 0,
-        outgoingAmount: 0,
-        transactionCount: 0,
-        percentageChange: 0
-      };
-    }
-
-    let totalAmount = 0;
-    let incomingAmount = 0;
-    let outgoingAmount = 0;
-    
-    transactions.forEach(tx => {
-      const amount = Number(tx.amount);
-      totalAmount += amount;
-      
-      if (tx.type === 'deposit' || tx.type === 'loan_disbursement' || tx.type === 'transfer_in') {
-        incomingAmount += amount;
-      } else if (tx.type === 'withdrawal' || tx.type === 'loan_repayment' || tx.type === 'transfer_out') {
-        outgoingAmount += amount;
-      }
-    });
-    
-    return {
-      totalAmount,
-      incomingAmount,
-      outgoingAmount,
-      transactionCount: transactions.length,
-      percentageChange: 5.2 // Exemple de valeur pour la démo
-    };
+  // Calculate total amount
+  const totalAmount = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+  
+  // Count number of transactions
+  const transactionCount = transactions.length;
+  
+  // Calculate inflow (deposits, transfers in)
+  const inflow = transactions
+    .filter(tx => ["deposit", "transfer_in"].includes(tx.type))
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  
+  // Calculate outflow (withdrawals, transfers out)
+  const outflow = transactions
+    .filter(tx => ["withdrawal", "transfer_out"].includes(tx.type))
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'XOF',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
   
-  const stats = calculateStats();
-
-  // Formater les montants en FCFA
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
-  };
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">
-            Volume Total
+            Volume total
           </CardTitle>
-          <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
+          <CardDescription>
+            Toutes transactions
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatAmount(stats.totalAmount)}</div>
-          <p className="text-xs text-muted-foreground flex items-center mt-1">
-            <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
-            <span className="text-green-500">{stats.percentageChange}%</span> depuis le mois dernier
+          <div className="text-2xl font-bold">{formatCurrency(totalAmount)}</div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {transactionCount} transactions
           </p>
         </CardContent>
       </Card>
       
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">
             Entrées
           </CardTitle>
-          <ArrowUpRight className="h-4 w-4 text-green-500" />
+          <CardDescription>
+            Dépôts et transferts entrants
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatAmount(stats.incomingAmount)}</div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {Math.round((stats.incomingAmount / stats.totalAmount) * 100) || 0}% du volume total
-          </p>
+          <div className="text-2xl font-bold text-green-600">{formatCurrency(inflow)}</div>
+          <div className="flex items-center text-xs text-green-600 mt-1">
+            <ArrowUp className="h-4 w-4 mr-1" />
+            <span>Entrées de fonds</span>
+          </div>
         </CardContent>
       </Card>
       
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">
             Sorties
           </CardTitle>
-          <ArrowDownRight className="h-4 w-4 text-red-500" />
+          <CardDescription>
+            Retraits et transferts sortants
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatAmount(stats.outgoingAmount)}</div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {Math.round((stats.outgoingAmount / stats.totalAmount) * 100) || 0}% du volume total
-          </p>
+          <div className="text-2xl font-bold text-red-600">{formatCurrency(outflow)}</div>
+          <div className="flex items-center text-xs text-red-600 mt-1">
+            <ArrowDown className="h-4 w-4 mr-1" />
+            <span>Sorties de fonds</span>
+          </div>
         </CardContent>
       </Card>
       
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">
-            Transactions
+            Balance
           </CardTitle>
-          <CreditCard className="h-4 w-4 text-muted-foreground" />
+          <CardDescription>
+            Solde net
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.transactionCount}</div>
+          <div className="text-2xl font-bold">
+            {formatCurrency(inflow - outflow)}
+          </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Nombre total de transactions
+            Période sélectionnée
           </p>
         </CardContent>
       </Card>
