@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     }
 
     // First check for validated SFD client entries
-    const { data: validatedSfdClients, error: clientError } = await supabase
+    let validatedSfdClientsQuery = supabase
       .from('sfd_clients')
       .select(`
         id,
@@ -69,7 +69,13 @@ Deno.serve(async (req) => {
       `)
       .eq('user_id', userId)
       .eq('status', 'validated')
-      .conditionalFilter(sfdId ? `sfd_id.eq.${sfdId}` : '')
+    
+    // If sfdId is provided, add an additional filter
+    if (sfdId) {
+      validatedSfdClientsQuery = validatedSfdClientsQuery.eq('sfd_id', sfdId)
+    }
+    
+    const { data: validatedSfdClients, error: clientError } = await validatedSfdClientsQuery
     
     if (clientError) {
       console.error('Error fetching validated client SFDs:', clientError)
@@ -103,7 +109,7 @@ Deno.serve(async (req) => {
     }
 
     // Now get the user's SFDs from user_sfds table
-    const { data: userSfds, error: sfdsError } = await supabase
+    let userSfdsQuery = supabase
       .from('user_sfds')
       .select(`
         id,
@@ -112,7 +118,13 @@ Deno.serve(async (req) => {
         sfds:sfd_id(id, name)
       `)
       .eq('user_id', userId)
-      .conditionalFilter(sfdId ? `sfd_id.eq.${sfdId}` : '')
+    
+    // If sfdId is provided, add an additional filter
+    if (sfdId) {
+      userSfdsQuery = userSfdsQuery.eq('sfd_id', sfdId)
+    }
+
+    const { data: userSfds, error: sfdsError } = await userSfdsQuery
 
     if (sfdsError) {
       throw new Error(`Error fetching user SFDs: ${sfdsError.message}`)

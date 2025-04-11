@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '../useAuth';
 import { generateQRCode } from '@/utils/api/qrCodeGenerator';
 import { QRCodeGenerationHook } from './types';
-import { QRCodeResponse } from '@/utils/mobileMoneyApi';
+import { QRCodeResponse } from '@/utils/api/qrCodeGenerator';
 
 export function useQRCodeGeneration(): QRCodeGenerationHook {
   const [isProcessingQRCode, setIsProcessingQRCode] = useState(false);

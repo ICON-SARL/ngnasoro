@@ -18,108 +18,108 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
     // Get the request body
-    const { userId, sfdId, loanId, amount } = await req.json()
+    const { userId, sfdId, loanId, amount, paymentMethod } = await req.json()
 
-    if (!userId || !sfdId || !loanId || !amount) {
-      throw new Error('Missing required parameters')
+    if (!userId || !sfdId) {
+      throw new Error('User ID and SFD ID are required')
     }
 
-    console.log(`Processing repayment for user ${userId}, loan ${loanId}, amount ${amount}`)
-
-    // 1. Create a loan payment record
-    const { data: paymentData, error: paymentError } = await supabase
-      .from('loan_payments')
-      .insert({
-        loan_id: loanId,
-        amount: amount,
-        payment_method: 'mobile_app',
-        status: 'completed'
-      })
-      .select()
-      .single();
-
-    if (paymentError) {
-      throw new Error(`Error recording loan payment: ${paymentError.message}`)
+    if (!loanId) {
+      throw new Error('Loan ID is required')
     }
 
-    // 2. Create a transaction record
-    const { data: transactionData, error: transactionError } = await supabase
+    if (!amount || amount <= 0) {
+      throw new Error('Valid amount is required')
+    }
+
+    if (!paymentMethod) {
+      throw new Error('Payment method is required')
+    }
+
+    console.log(`Processing loan repayment: ${amount} on loan ${loanId} for user ${userId} via ${paymentMethod}`)
+
+    // In a real implementation, we would:
+    // 1. Verify the loan belongs to the user
+    // 2. Process the payment through the appropriate payment processor
+    // 3. Update the loan status and remaining balance
+    // 4. Create transaction records
+    // 5. Notify the user of the result
+
+    // For this demo, we'll create a transaction record and update a mock loan
+    const transactionId = `repay-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+
+    // Create transaction record
+    const { error: txError } = await supabase
       .from('transactions')
       .insert({
+        id: transactionId,
         user_id: userId,
         sfd_id: sfdId,
-        amount: -amount, // Negative because it's money leaving the account
         type: 'loan_repayment',
+        amount: -amount, // Negative amount for outgoing funds
+        status: 'success',
         name: 'Remboursement de prêt',
-        description: `Remboursement pour le prêt ${loanId.substring(0, 8)}`,
-        payment_method: 'sfd_account'
+        description: `Remboursement de ${amount} FCFA pour le prêt ${loanId.substring(0, 8)}`,
+        payment_method: paymentMethod,
+        reference_id: loanId
       })
-      .select()
-      .single();
 
-    if (transactionError) {
-      throw new Error(`Error recording transaction: ${transactionError.message}`)
+    if (txError) {
+      console.error('Error creating transaction record:', txError)
+      throw new Error('Failed to record transaction')
     }
 
-    // 3. Get the loan details to update
+    // Find the loan and update it
     const { data: loanData, error: loanFetchError } = await supabase
       .from('sfd_loans')
       .select('*')
       .eq('id', loanId)
-      .single();
+      .eq('client_id', userId)
+      .single()
 
     if (loanFetchError) {
-      throw new Error(`Error fetching loan: ${loanFetchError.message}`)
+      console.error('Error fetching loan:', loanFetchError)
+      throw new Error('Loan not found or not accessible by this user')
     }
 
-    // Update loan with new last payment date and potentially update status
+    if (!loanData) {
+      throw new Error('Loan not found')
+    }
+
+    // Update the loan with the new payment
+    const newRemainingAmount = Math.max(0, loanData.remaining_amount - amount)
+    const newStatus = newRemainingAmount === 0 ? 'paid' : loanData.status
+
     const { error: loanUpdateError } = await supabase
       .from('sfd_loans')
       .update({
+        remaining_amount: newRemainingAmount,
         last_payment_date: new Date().toISOString(),
-        next_payment_date: new Date(
-          new Date().setMonth(new Date().getMonth() + 1)
-        ).toISOString(),
-        // If this was the last payment, mark loan as completed
-        status: (loanData.monthly_payment * loanData.duration_months - amount <= 0) 
-          ? 'completed' 
-          : 'active'
+        status: newStatus
       })
-      .eq('id', loanId);
+      .eq('id', loanId)
 
     if (loanUpdateError) {
-      throw new Error(`Error updating loan: ${loanUpdateError.message}`)
-    }
-
-    // 4. Add a loan activity record
-    const { error: activityError } = await supabase
-      .from('loan_activities')
-      .insert({
-        loan_id: loanId,
-        activity_type: 'payment',
-        description: `Paiement de ${amount} FCFA effectué via l'application mobile`
-      });
-
-    if (activityError) {
-      throw new Error(`Error recording loan activity: ${activityError.message}`)
+      console.error('Error updating loan:', loanUpdateError)
+      throw new Error('Failed to update loan status')
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Repayment processed successfully',
-        payment: paymentData,
-        transaction: transactionData
+        transactionId: transactionId,
+        remainingAmount: newRemainingAmount,
+        status: newStatus
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   } catch (error) {
-    console.error('Error handling repayment:', error)
+    console.error('Error processing repayment:', error)
     
     return new Response(
-      JSON.stringify({ success: false, message: error.message }),
+      JSON.stringify({ success: false, error: error.message }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
