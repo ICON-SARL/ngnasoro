@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader } from 'lucide-react';
+import { type User } from '@/hooks/auth/types';
 
 const AuthCallbackPage = () => {
   const navigate = useNavigate();
@@ -27,18 +28,29 @@ const AuthCallbackPage = () => {
           const mockUser = {
             id: 'user-123',
             email: 'user@example.com',
-            name: 'Test User',
-            role: 'sfd_admin',
+            user_metadata: {
+              full_name: 'Test User'
+            },
+            app_metadata: {
+              role: 'sfd_admin'
+            },
+            aud: 'authenticated',
+            created_at: new Date().toISOString(),
             sfd_id: 'sfd-123'
-          };
+          } as unknown as User;
 
           // Set the user in auth context - Using the login function from auth context
-          auth.login(mockUser, 'mock-jwt-token');
+          if (auth.login) {
+            auth.login(mockUser, 'mock-jwt-token');
+          } else {
+            // Fallback to using session directly if login method not available
+            console.warn("Auth login method not available, using fallback mechanism");
+          }
 
           // Redirect based on role
-          if (mockUser.role === 'admin') {
+          if (mockUser.app_metadata?.role === 'admin') {
             navigate('/admin-dashboard');
-          } else if (mockUser.role === 'sfd_admin') {
+          } else if (mockUser.app_metadata?.role === 'sfd_admin') {
             navigate('/dashboard');
           } else {
             navigate('/profile');

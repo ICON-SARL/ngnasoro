@@ -42,7 +42,7 @@ export function useSubsidiesByRegion() {
   }, []);
 
   return {
-    data: subsidiesByRegion, // Added this to fix the error
+    data: subsidiesByRegion, // This ensures backward compatibility
     subsidiesByRegion,
     isLoading,
     error

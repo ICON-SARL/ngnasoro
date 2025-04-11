@@ -6,7 +6,7 @@ export interface User extends SupabaseUser {
   avatar_url?: string;
   phone?: string;
   sfd_id?: string;
-  aud?: string;
+  aud: string;
   created_at?: string;
 }
 
@@ -33,6 +33,7 @@ export interface AuthContextProps {
   userRole: UserRole;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
+  login?: (userData: User, token: string) => void;
 }
 
 export interface AssociateSfdParams {

@@ -1,16 +1,12 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, UserRole, AuthContextProps } from './auth/types';
-
-export { User, UserRole, type AuthContextProps };
+import { type User, UserRole, type AuthContextProps } from './auth/types';
 
 const AuthContext = createContext<AuthContextProps>({
   user: null,
   session: null,
   loading: true,
-  error: null,
   activeSfdId: null,
-  userRole: null,
+  userRole: UserRole.User,
   isAdmin: false,
   isSfdAdmin: false,
   setActiveSfdId: () => {},
@@ -18,7 +14,6 @@ const AuthContext = createContext<AuthContextProps>({
   signIn: async () => ({ error: null }),
   signUp: async () => ({ error: null }),
   refreshSession: async () => {},
-  login: () => {},
   biometricEnabled: false,
   toggleBiometricAuth: async () => {},
 });
@@ -72,7 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     checkSession();
   }, []);
-
+  
   const login = (userData: User, token: string) => {
     // Store user data and token in localStorage
     localStorage.setItem('ngna_user', JSON.stringify(userData));
@@ -172,7 +167,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user, 
         session, 
         loading, 
-        error, 
         activeSfdId, 
         userRole,
         isAdmin,
