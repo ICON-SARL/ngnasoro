@@ -42,7 +42,7 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
         <MainDashboard
           account={account}
           transactions={transactions}
-          isLoading={transactionsLoading}
+          transactionsLoading={transactionsLoading}
           onAction={onAction}
           toggleMenu={toggleMenu}
         />
