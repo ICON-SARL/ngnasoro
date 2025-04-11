@@ -94,7 +94,7 @@ export const useSfdDashboardStats = (sfdId?: string) => {
       // 3. Fetch repayments for current month
       const { data: currentMonthPayments, error: paymentsError } = await supabase
         .from('loan_payments')
-        .select('amount, loan_payments.payment_date, loan_id, sfd_loans!inner(sfd_id)')
+        .select('amount, loan_id, sfd_loans!inner(sfd_id)')
         .eq('sfd_loans.sfd_id', effectiveSfdId)
         .gte('payment_date', firstDayOfMonth)
         .lte('payment_date', lastDayOfMonth);
