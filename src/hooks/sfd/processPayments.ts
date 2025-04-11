@@ -19,10 +19,19 @@ export async function processLoanPayment(
     userId: userId,
     sfdId: activeSfdId,
     loanId: params.loanId,
-    amount: params.amount
+    amount: params.amount,
+    paymentMethod: params.paymentMethod
   });
   
-  return { success: true };
+  return { 
+    success: true,
+    message: 'Payment processed successfully',
+    updates: [{
+      sfdId: activeSfdId,
+      name: 'SFD Account',
+      newBalance: 0 // The actual balance will be updated during sync
+    }]
+  };
 }
 
 /**
@@ -62,7 +71,12 @@ export async function processMobileMoneyPayment(
     
     return { 
       success: true,
-      message: 'Paiement mobile money initié avec succès'
+      message: 'Paiement mobile money initié avec succès',
+      updates: [{
+        sfdId: 'mobile-money',
+        name: 'Mobile Money',
+        newBalance: 0 // Mobile money doesn't directly update SFD balance
+      }]
     };
   } catch (error) {
     console.error('Failed to process mobile money payment:', error);

@@ -56,3 +56,23 @@ export interface SyncResult {
   message: string;
   updates: SyncUpdate[];
 }
+
+// For QR code functionality
+export interface QRCodeRequest {
+  userId: string;
+  sfdId: string;
+  amount: number;
+  type: 'deposit' | 'withdrawal' | 'loan_payment';
+  reference?: string;
+  loanId?: string;
+}
+
+// Define SfdData type for data access and token management
+export interface SfdData {
+  id: string;
+  name: string;
+  token: string | null;
+  lastFetched: Date | null;
+  region?: string;
+  code?: string;
+}

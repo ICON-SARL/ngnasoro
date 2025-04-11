@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -213,7 +212,8 @@ export const MultiSFDAccounts = () => {
                           className="w-full"
                           onClick={() => makeLoanPayment.mutate({ 
                             loanId: loan.id, 
-                            amount: loan.remainingAmount / 4 // Make a quarter payment
+                            amount: loan.remainingAmount / 4,
+                            paymentMethod: 'app'
                           })}
                         >
                           Effectuer un paiement
