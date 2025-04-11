@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +27,7 @@ const SFDSavingsOverview = () => {
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("Impossible de récupérer les informations de votre compte");
   const [connectionStatus, setConnectionStatus] = useState<boolean | null>(null);
+  const [hasAttemptedInitialSync, setHasAttemptedInitialSync] = useState(false);
   
   // Get active SFD data from dashboard if available
   const activeSfd = dashboardData?.sfdAccounts?.find(sfd => sfd.is_default);
@@ -34,61 +35,68 @@ const SFDSavingsOverview = () => {
   const sfdBalance = dashboardData?.account?.balance || activeSfdAccount?.balance || 250000;
   const sfdCurrency = dashboardData?.account?.currency || activeSfdAccount?.currency || 'FCFA';
   
-  // Check for updates from admin panel or SFD
-  useEffect(() => {
-    // Initial synchronization on component mount
-    const performInitialSync = async () => {
-      if (activeSfdId) {
-        try {
-          // Test connection before attempting full sync
-          const isConnected = await testConnection();
-          setConnectionStatus(isConnected);
-          
-          if (isConnected) {
-            const syncResult = await synchronizeWithSfd();
-            if (syncResult) {
-              setHasError(false);
-            } else {
-              setHasError(true);
-              setErrorMessage("Synchronisation échouée. Veuillez réessayer.");
-            }
-          } else {
-            setHasError(true);
-            setErrorMessage("Impossible de contacter le serveur. Veuillez vérifier votre connexion.");
-          }
-        } catch (error) {
-          console.error("Synchronization error:", error);
-          setHasError(true);
-          setErrorMessage("Erreur lors de la connexion au serveur. Veuillez vérifier votre connexion.");
-        }
-      }
-    };
+  // Initial synchronization function
+  const performInitialSync = useCallback(async () => {
+    if (!activeSfdId || hasAttemptedInitialSync) return;
     
+    try {
+      setHasAttemptedInitialSync(true);
+      
+      // Test connection before attempting full sync
+      const isConnected = await testConnection();
+      setConnectionStatus(isConnected);
+      
+      if (isConnected) {
+        const syncResult = await synchronizeWithSfd();
+        if (syncResult) {
+          setHasError(false);
+        } else {
+          setHasError(true);
+          setErrorMessage("Synchronisation échouée. Veuillez réessayer.");
+        }
+      } else {
+        setHasError(true);
+        setErrorMessage("Impossible de contacter le serveur. Veuillez vérifier votre connexion.");
+      }
+    } catch (error) {
+      console.error("Synchronization error:", error);
+      setHasError(true);
+      setErrorMessage("Erreur lors de la connexion au serveur. Veuillez vérifier votre connexion.");
+    }
+  }, [activeSfdId, synchronizeWithSfd, testConnection, hasAttemptedInitialSync]);
+  
+  // Check for updates from admin panel or SFD - Initial sync
+  useEffect(() => {
     performInitialSync();
+  }, [performInitialSync]);
+  
+  // Periodic sync effect - separate from initial sync
+  useEffect(() => {
+    if (!activeSfdId) return;
     
     // Set up a timer to periodically check for updates (every 5 minutes)
     const syncInterval = setInterval(() => {
-      if (activeSfdId) {
-        synchronizeWithSfd().catch(err => {
-          console.error("Periodic sync error:", err);
-        });
-      }
+      synchronizeWithSfd().catch(err => {
+        console.error("Periodic sync error:", err);
+      });
     }, 5 * 60 * 1000);
     
     return () => {
       clearInterval(syncInterval);
     };
-  }, [activeSfdId, synchronizeWithSfd, testConnection]);
+  }, [activeSfdId, synchronizeWithSfd]);
   
-  // Effect to detect account errors
+  // Effect to detect account errors - separate dependency array
   useEffect(() => {
     // If not loading and no data found, set error state
     if (!isLoading && !isDashboardLoading && !activeSfd && !activeSfdAccount && user) {
       setHasError(true);
       setErrorMessage("Aucun compte SFD trouvé pour votre profil.");
     }
-    
-    // Check for sync errors
+  }, [isLoading, isDashboardLoading, activeSfd, activeSfdAccount, user]);
+  
+  // Effect for sync errors - separate dependency array
+  useEffect(() => {
     if (syncError) {
       setHasError(true);
       setErrorMessage(syncError);
@@ -96,7 +104,7 @@ const SFDSavingsOverview = () => {
       // Reset error state if syncError is cleared
       setHasError(false);
     }
-  }, [isLoading, isDashboardLoading, activeSfd, activeSfdAccount, user, syncError, hasError]);
+  }, [syncError, hasError]);
 
   const refreshBalance = async () => {
     setIsUpdating(true);

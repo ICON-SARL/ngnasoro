@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { adminCommunicationApi } from '@/utils/api/modules/adminCommunicationApi';
@@ -12,10 +12,12 @@ export function useRealtimeSynchronization() {
   const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
   const { user, activeSfdId } = useAuth();
+  const syncInProgressRef = useRef(false);
   
   // Reset retry count when SFD changes
   useEffect(() => {
     setRetryCount(0);
+    setSyncError(null);
   }, [activeSfdId]);
 
   const synchronizeWithSfd = useCallback(async () => {
@@ -25,6 +27,13 @@ export function useRealtimeSynchronization() {
       return false;
     }
     
+    // Prevent concurrent synchronization calls
+    if (syncInProgressRef.current) {
+      console.log("Synchronization already in progress, skipping");
+      return false;
+    }
+    
+    syncInProgressRef.current = true;
     setIsSyncing(true);
     setSyncError(null);
     
@@ -50,6 +59,7 @@ export function useRealtimeSynchronization() {
           });
         }
         
+        syncInProgressRef.current = false;
         return true;
       } else {
         // If the function returned a failure but didn't throw
@@ -59,6 +69,7 @@ export function useRealtimeSynchronization() {
         // Increment retry count for exponential backoff
         setRetryCount(prev => prev + 1);
         
+        syncInProgressRef.current = false;
         throw new Error(errorMessage);
       }
     } catch (error: any) {
@@ -94,6 +105,7 @@ export function useRealtimeSynchronization() {
         });
       }
       
+      syncInProgressRef.current = false;
       return false;
     } finally {
       setIsSyncing(false);
