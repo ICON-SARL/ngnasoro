@@ -22,8 +22,16 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
 
   const handleLogout = async () => {
     try {
+      // Notification de début de déconnexion
+      toast({
+        title: "Déconnexion en cours",
+        description: "Veuillez patienter..."
+      });
+      
       // Clear any client-side states or cookies before calling sign out
       localStorage.removeItem('adminLastSeen');
+      localStorage.removeItem('sb-xnqysvnychmsockivqhb-auth-token');
+      localStorage.removeItem('supabase.auth.token');
       
       // Call Supabase auth signOut method
       const { error } = await supabase.auth.signOut();

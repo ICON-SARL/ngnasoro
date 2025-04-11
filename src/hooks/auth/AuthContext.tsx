@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -191,12 +190,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      console.log("Démarrage du processus de déconnexion...");
+      
+      // Nettoyage des données locales avant déconnexion
+      localStorage.removeItem('sb-xnqysvnychmsockivqhb-auth-token');
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('activeSfdId');
+      
+      // Déconnexion Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Erreur lors de la déconnexion Supabase:', error);
+        throw error;
+      }
+      
+      console.log("Déconnexion Supabase réussie");
+      
+      // Mise à jour de l'état de l'application
       setUser(null);
       setSession(null);
       setActiveSfdId(null);
+      
+      console.log("État d'authentification réinitialisé");
+      return { success: true };
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('Erreur complète lors de la déconnexion:', error);
+      return { success: false, error };
     }
   };
 

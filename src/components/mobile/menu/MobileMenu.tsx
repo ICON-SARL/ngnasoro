@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { mobileMenuSections } from '@/config/mobileNavigation';
 import * as Icons from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -13,12 +13,30 @@ interface MobileMenuProps {
 
 const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen = false, onClose = () => {}, onLogout = () => {} }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   if (!isOpen) return null;
 
   const navigateAndClose = (path: string) => {
     navigate(path);
     onClose();
+  };
+
+  const handleLogout = () => {
+    try {
+      onLogout();
+      toast({
+        title: "Déconnexion en cours",
+        description: "Veuillez patienter..."
+      });
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      toast({
+        title: "Erreur de déconnexion",
+        description: "Une erreur s'est produite lors de la déconnexion",
+        variant: "destructive"
+      });
+    }
   };
 
   // Fonction pour obtenir dynamiquement l'icône de Lucide
@@ -60,7 +78,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen = false, onClose = () =>
           ))}
           
           <div className="pt-4 border-t border-gray-200">
-            <Button variant="ghost" className="justify-start w-full" onClick={onLogout}>
+            <Button variant="ghost" className="justify-start w-full" onClick={handleLogout}>
               {getIcon('LogOut')} Déconnexion
             </Button>
           </div>

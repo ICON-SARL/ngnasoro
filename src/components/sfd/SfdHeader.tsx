@@ -10,19 +10,34 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth';
 import { ModeToggle } from '@/components/ModeToggle';
 import { Globe, ChevronDown, LogOut, Menu, Users, CreditCard, PieChart, Settings, Landmark, Bell } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useToast } from '@/hooks/use-toast';
 
 export function SfdHeader() {
   const { signOut, user, activeSfdId } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
   
-  const handleLogout = () => {
-    signOut();
-    navigate('/agency-auth');
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Déconnexion réussie",
+        description: "Vous avez été déconnecté avec succès"
+      });
+      navigate('/sfd/auth');
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      toast({
+        title: "Erreur de déconnexion",
+        description: "Une erreur s'est produite lors de la déconnexion",
+        variant: "destructive"
+      });
+    }
   };
 
   const getInitials = (name: string) => {
@@ -130,7 +145,7 @@ export function SfdHeader() {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Log out
+                Se déconnecter
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -155,6 +170,13 @@ export function SfdHeader() {
                     <span>{link.name}</span>
                   </Link>
                 ))}
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center py-2 px-3 rounded-lg text-red-500 hover:bg-muted"
+                >
+                  <LogOut className="h-5 w-5 mr-2" />
+                  <span>Se déconnecter</span>
+                </button>
               </div>
             </SheetContent>
           </Sheet>
