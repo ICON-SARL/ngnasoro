@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,10 +12,10 @@ import { CapacitorGuide } from '@/components/mobile/CapacitorGuide';
 // Import your routes here
 
 const Router = () => {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
 
   // If auth is still loading, don't render routes yet
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
