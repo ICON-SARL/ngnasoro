@@ -1,23 +1,23 @@
 
 import React from 'react';
-import { SuperAdminHeader } from '@/components/SuperAdminHeader';
+import { AgencyHeader } from '@/components/AgencyHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const SfdManagementPage = () => {
+const SfdSubsidiesPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <SuperAdminHeader />
+      <AgencyHeader />
       
       <div className="container mx-auto py-6 px-4">
-        <h1 className="text-2xl font-semibold mb-6">Gestion des SFD</h1>
+        <h1 className="text-2xl font-semibold mb-6">Subventions SFD</h1>
         
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Liste des SFD</CardTitle>
+            <CardTitle>Liste des subventions</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-gray-600">
-              Cette page permettra de gérer toutes les SFD enregistrées dans le système.
+              Cette page affichera la liste des subventions disponibles et demandées.
             </p>
           </CardContent>
         </Card>
@@ -26,4 +26,4 @@ const SfdManagementPage = () => {
   );
 };
 
-export default SfdManagementPage;
+export default SfdSubsidiesPage;
