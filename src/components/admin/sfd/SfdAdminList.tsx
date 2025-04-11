@@ -56,7 +56,7 @@ export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) 
 
   const handleDeleteConfirm = async () => {
     if (selectedAdminId) {
-      await deleteSfdAdmin({ adminId: selectedAdminId });
+      await deleteSfdAdmin(selectedAdminId);
       setIsConfirmOpen(false);
       setSelectedAdminId(null);
       refetch();
@@ -85,7 +85,7 @@ export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) 
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Erreur de chargement</AlertTitle>
         <AlertDescription>
-          Impossible de charger les administrateurs SFD. {error}
+          Impossible de charger les administrateurs SFD. {error.toString()}
           <div className="mt-2">
             <Button variant="outline" size="sm" onClick={handleRetry}>
               <RefreshCw className="h-4 w-4 mr-2" /> Réessayer

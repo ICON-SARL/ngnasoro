@@ -73,7 +73,7 @@ export function useDeleteSfdAdmin() {
   });
 
   return {
-    deleteSfdAdmin: mutate,
+    deleteSfdAdmin,
     isDeleting,
     error
   };

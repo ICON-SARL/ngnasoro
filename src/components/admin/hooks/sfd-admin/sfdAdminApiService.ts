@@ -1,141 +1,96 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 
-interface SfdAdmin {
+export interface SfdAdmin {
   id: string;
   email: string;
   full_name: string;
   role: string;
   has_2fa: boolean;
+  last_sign_in_at?: string;
 }
 
-export async function fetchSfdAdmins(): Promise<SfdAdmin[]> {
+export const fetchSfdAdmins = async (): Promise<SfdAdmin[]> => {
   try {
-    console.log('Récupération de tous les administrateurs SFD');
+    const { data: admins, error } = await supabase.functions.invoke('fetch-sfd-admins');
     
-    // Ajouter un délai pour éviter les problèmes de rate limiting
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Use the edge function API instead of direct query to avoid recursion issues
-    const data = await edgeFunctionApi.callEdgeFunction('fetch-sfd-admins', {});
-      
-    if (!data || data.error) {
-      console.error('Erreur lors de la récupération des administrateurs SFD:', data?.error || 'Erreur inconnue');
-      throw new Error(`Erreur lors de la récupération des administrateurs: ${data?.error || 'Erreur inconnue'}`);
+    if (error) {
+      console.error('Erreur lors de la récupération des administrateurs:', error);
+      throw new Error(error.message);
     }
     
-    console.log('Administrateurs SFD récupérés avec succès:', data?.length || 0);
-    return data || [];
+    return admins || [];
   } catch (error: any) {
-    console.error('Erreur non gérée dans fetchSfdAdmins:', error);
-    throw new Error(`Impossible de charger les administrateurs: ${error.message}`);
+    console.error('Erreur dans fetchSfdAdmins:', error);
+    throw error;
   }
-}
+};
 
-export async function fetchSfdAdminsForSfd(sfdId: string): Promise<SfdAdmin[]> {
+export const fetchSfdAdminsForSfd = async (sfdId: string): Promise<SfdAdmin[]> => {
   try {
-    console.log(`Récupération des administrateurs SFD pour la SFD ID: ${sfdId}`);
+    const { data: admins, error } = await supabase.functions.invoke('fetch-sfd-admins', {
+      body: JSON.stringify({ sfdId })
+    });
     
-    // Ajouter un délai pour éviter les problèmes de rate limiting
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Use the edge function API to avoid RLS recursion issues
-    const data = await edgeFunctionApi.callEdgeFunction('fetch-sfd-admins', { sfdId });
-      
-    if (!data || data.error) {
-      console.error('Erreur lors de la récupération des administrateurs SFD:', data?.error || 'Erreur inconnue');
-      throw new Error(`Erreur lors de la récupération des administrateurs: ${data?.error || 'Erreur inconnue'}`);
+    if (error) {
+      console.error(`Erreur lors de la récupération des administrateurs pour SFD ${sfdId}:`, error);
+      throw new Error(error.message);
     }
     
-    console.log(`${data?.length || 0} administrateurs SFD récupérés pour la SFD ${sfdId}`);
-    return data || [];
+    return admins || [];
   } catch (error: any) {
-    console.error(`Erreur non gérée dans fetchSfdAdminsForSfd pour la SFD ${sfdId}:`, error);
-    throw new Error(`Impossible de charger les administrateurs: ${error.message}`);
+    console.error(`Erreur dans fetchSfdAdminsForSfd (${sfdId}):`, error);
+    throw error;
   }
-}
+};
 
-export async function createSfdAdmin(adminData: {
+export const deleteSfdAdmin = async (adminId: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('delete-sfd-admin', {
+      body: JSON.stringify({ adminId })
+    });
+    
+    if (error) {
+      console.error(`Erreur lors de la suppression de l'administrateur ${adminId}:`, error);
+      throw new Error(error.message);
+    }
+    
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error(`Erreur dans deleteSfdAdmin (${adminId}):`, error);
+    throw error;
+  }
+};
+
+export const addSfdAdmin = async (data: {
   email: string;
   password: string;
   full_name: string;
   role: string;
   sfd_id: string;
   notify: boolean;
-}): Promise<any> {
+}): Promise<SfdAdmin> => {
   try {
-    console.log('Création d\'un administrateur SFD:', { 
-      email: adminData.email, 
-      full_name: adminData.full_name, 
-      role: adminData.role, 
-      sfd_id: adminData.sfd_id, 
-      notify: adminData.notify 
+    const response = await supabase.functions.invoke('create-sfd-admin', {
+      body: JSON.stringify(data)
     });
     
-    // Ajouter un délai pour éviter les problèmes de rate limiting
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Utiliser la fonction Edge pour créer l'administrateur et éviter les problèmes de RLS
-    const data = await edgeFunctionApi.callEdgeFunction('create-sfd-admin', adminData);
-    
-    if (!data || data.error) {
-      console.error('Erreur dans la réponse de la fonction:', data?.error || 'Erreur inconnue');
-      throw new Error(data?.error || 'Erreur inconnue lors de la création de l\'administrateur');
+    if (response.error) {
+      console.error(`Erreur lors de la création de l'administrateur:`, response.error);
+      throw new Error(response.error.message);
     }
     
-    console.log('Administrateur SFD créé avec succès:', data);
-    return data;
+    if (response.data?.error) {
+      throw new Error(response.data.error);
+    }
+    
+    return response.data?.user;
   } catch (error: any) {
-    // Si l'erreur concerne la récursion infinie, renvoyer un message plus clair
-    if (error.message && error.message.includes('infinite recursion')) {
-      throw new Error("Erreur de récursion détectée. Veuillez réessayer dans quelques instants.");
-    }
-    
-    console.error('Erreur non gérée dans createSfdAdmin:', error);
+    console.error(`Erreur dans addSfdAdmin:`, error);
     throw error;
   }
-}
-
-export async function deleteSfdAdmin(adminId: string): Promise<void> {
-  try {
-    console.log(`Suppression de l'administrateur SFD avec l'ID: ${adminId}`);
-    
-    // Ajouter un délai pour éviter les problèmes de rate limiting
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Utiliser la fonction Edge pour supprimer l'administrateur avec timeout et retry
-    const response = await edgeFunctionApi.callEdgeFunction('delete-sfd-admin', 
-      { adminId }, 
-      { 
-        timeout: 15000,  // Augmenter le timeout à 15 secondes
-        maxRetries: 2,   // Limiter les retries à 2 dans le service
-        showToast: false // Gérer les toasts manuellement
-      }
-    );
-    
-    if (!response) {
-      console.error('Réponse vide de la fonction Edge');
-      throw new Error('Erreur lors de la suppression: Réponse vide du serveur');
-    }
-    
-    if (response.error) {
-      console.error('Erreur dans la réponse de la fonction:', response.error);
-      throw new Error(`Erreur lors de la suppression: ${response.error}`);
-    }
-    
-    console.log('Administrateur SFD supprimé avec succès', response);
-    return response;
-  } catch (error: any) {
-    console.error('Erreur détectée dans deleteSfdAdmin:', error);
-    
-    // Améliorer le message d'erreur pour l'utilisateur avec plus de contexte
-    if (error.message && error.message.includes('non-2xx status')) {
-      throw new Error('Le serveur a rencontré une erreur lors de la suppression. Veuillez réessayer dans quelques instants.');
-    } else if (error.message && error.message.includes('timed out')) {
-      throw new Error('La requête a expiré. Le serveur pourrait être occupé. Veuillez réessayer.');
-    } else {
-      throw new Error(error.message || 'Erreur lors de la suppression de l\'administrateur SFD');
-    }
-  }
-}
+};
