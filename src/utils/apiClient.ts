@@ -7,6 +7,7 @@ import { transactionApi } from "./api/modules/transactionApi";
 import { storageApi } from "./api/modules/storageApi";
 import { edgeFunctionApi } from "./api/modules/edgeFunctionApi";
 import { dashboardApi } from "./api/modules/dashboardApi";
+import { sfdClientApi } from "./api/modules/sfdClientApi";
 
 // Main API client facade that exposes all modules
 export const apiClient = {
@@ -23,6 +24,16 @@ export const apiClient = {
   synchronizeAccounts: sfdApi.synchronizeAccounts,
   createSfdWithAdmin: sfdApi.createSfdWithAdmin,
   createSfdSubsidy: sfdApi.createSfdSubsidy,
+  
+  // SFD Client Account operations
+  getClientAccount: sfdClientApi.getClientAccount,
+  createClientAccount: sfdClientApi.createClientAccount,
+  processDeposit: sfdClientApi.processDeposit,
+  processWithdrawal: sfdClientApi.processWithdrawal,
+  processLoanDisbursement: sfdClientApi.processLoanDisbursement,
+  processMobileMoneyTransaction: sfdClientApi.processMobileMoneyTransaction,
+  generateTransactionQRCode: sfdClientApi.generateTransactionQRCode,
+  processQRCodeTransaction: sfdClientApi.processQRCodeTransaction,
   
   // User profile operations
   getUserProfile: profileApi.getUserProfile,
