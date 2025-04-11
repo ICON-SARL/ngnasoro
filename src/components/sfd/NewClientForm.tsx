@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,9 +21,9 @@ import {
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth } from '@/hooks/useAuth';
 import { useSfdClients } from '@/hooks/useSfdClients';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Validation améliorée pour numéro de téléphone malien
 const phoneRegex = /^(\+223|00223)?[67]\d{7}$/;
@@ -48,8 +49,7 @@ interface NewClientFormProps {
 }
 
 export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
-  const { activeSfdId } = useAuth();
-  const { createClient } = useSfdClients();
+  const { createClient, activeSfdId } = useSfdClients();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -66,6 +66,10 @@ export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
 
   const onSubmit = async (data: FormValues) => {
     try {
+      if (!activeSfdId) {
+        throw new Error("SFD ID non défini. Veuillez sélectionner une SFD active.");
+      }
+      
       await createClient.mutateAsync({
         full_name: data.fullName,
         email: data.email,
@@ -83,6 +87,19 @@ export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
     }
   };
 
+  // Display a warning if no SFD ID is available
+  if (!activeSfdId) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Aucune SFD active n'est sélectionnée. Veuillez sélectionner une SFD avant de créer un client.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  // Original form rendering
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

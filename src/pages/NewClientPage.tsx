@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,12 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdClients } from '@/hooks/useSfdClients';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const NewClientPage = () => {
   const navigate = useNavigate();
-  const { user, activeSfdId } = useAuth();
+  const { user } = useAuth();
+  const { activeSfdId } = useSfdDataAccess(); // Use the data access hook instead
   const { createClient } = useSfdClients();
   const { toast } = useToast();
   
@@ -28,12 +31,16 @@ const NewClientPage = () => {
     notes: ''
   });
   
-  // Redirect to SFD setup if no active SFD
-  React.useEffect(() => {
+  // Redirect if no active SFD is selected
+  useEffect(() => {
     if (!activeSfdId) {
-      navigate('/mobile-flow/create-sfd');
+      toast({
+        title: "Attention",
+        description: "Aucune SFD active n'est sélectionnée. Veuillez configurer votre SFD.",
+        variant: "destructive",
+      });
     }
-  }, [activeSfdId, navigate]);
+  }, [activeSfdId, navigate, toast]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -48,6 +55,15 @@ const NewClientPage = () => {
     e.preventDefault();
     
     try {
+      if (!activeSfdId) {
+        toast({
+          title: "Erreur",
+          description: "SFD ID non défini. Veuillez sélectionner une SFD active.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       await createClient.mutateAsync({
         full_name: formData.full_name,
         email: formData.email || undefined,
@@ -69,10 +85,36 @@ const NewClientPage = () => {
     }
   };
   
+  // Display a warning if no SFD ID is available
   if (!activeSfdId) {
-    return null; // Will redirect in the useEffect
+    return (
+      <div className="container mx-auto py-4 px-4 max-w-md">
+        <Button 
+          variant="ghost" 
+          className="mb-4" 
+          onClick={() => navigate('/mobile-flow/clients')}
+        >
+          ← Retour à la liste
+        </Button>
+        
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Aucune SFD active n'est sélectionnée. Veuillez configurer votre SFD avant de créer un client.
+          </AlertDescription>
+        </Alert>
+        
+        <Button 
+          className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90 mt-4"
+          onClick={() => navigate('/sfd-setup')}
+        >
+          Configurer ma SFD
+        </Button>
+      </div>
+    );
   }
   
+  // Original form rendering
   return (
     <div className="container mx-auto py-4 px-4 max-w-md">
       <Button 

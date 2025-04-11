@@ -1,16 +1,16 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { SfdClient } from '@/types/sfdClients';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
 export function useSfdClients() {
-  const { user, activeSfdId } = useAuth();
+  const { user } = useAuth();
+  const { activeSfdId } = useSfdDataAccess();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Fetch all clients for the current SFD
   const fetchClients = async (): Promise<SfdClient[]> => {
     if (!activeSfdId) {
       console.warn('No active SFD ID available, cannot fetch clients');
@@ -37,7 +37,6 @@ export function useSfdClients() {
     
     console.log('Clients fetched:', data?.length || 0);
     
-    // Type assertion to ensure the status field is properly typed
     return (data || []) as SfdClient[];
   };
   
@@ -47,7 +46,6 @@ export function useSfdClients() {
     enabled: !!activeSfdId,
   });
   
-  // Create a new client
   const createClient = useMutation({
     mutationFn: async (clientData: {
       full_name: string;
@@ -96,7 +94,6 @@ export function useSfdClients() {
     }
   });
   
-  // Validate a client
   const validateClient = useMutation({
     mutationFn: async ({ clientId }: { clientId: string }) => {
       if (!user?.id) throw new Error("Utilisateur non authentifié");
@@ -131,7 +128,6 @@ export function useSfdClients() {
     }
   });
   
-  // Reject a client
   const rejectClient = useMutation({
     mutationFn: async ({ clientId }: { clientId: string }) => {
       const { data, error } = await supabase
@@ -169,5 +165,6 @@ export function useSfdClients() {
     createClient,
     validateClient,
     rejectClient,
+    activeSfdId
   };
 }

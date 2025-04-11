@@ -25,6 +25,7 @@ export function useSfdDataAccess() {
   useEffect(() => {
     const storedSfdId = localStorage.getItem('activeSfdId');
     if (storedSfdId) {
+      console.log('Found stored SFD ID:', storedSfdId);
       setActiveSfdId(storedSfdId);
     }
   }, []);
@@ -32,6 +33,7 @@ export function useSfdDataAccess() {
   // Persister la SFD active dans le localStorage lorsqu'elle change
   useEffect(() => {
     if (activeSfdId) {
+      console.log('Setting active SFD ID in localStorage:', activeSfdId);
       localStorage.setItem('activeSfdId', activeSfdId);
     }
   }, [activeSfdId]);
@@ -65,7 +67,7 @@ export function useSfdDataAccess() {
           
           const { data: sfdsData, error: sfdsError } = await supabase
             .from('sfds')
-            .select('id, name, code, region, logo_url, status')
+            .select('*')
             .in('id', sfdIds);
             
           if (sfdsError) {
@@ -73,165 +75,59 @@ export function useSfdDataAccess() {
             throw sfdsError;
           }
           
-          setSfdData(sfdsData || []);
-          
-          // Si aucune SFD active n'est définie, utiliser la SFD par défaut ou la première
-          if (!activeSfdId && sfdsData && sfdsData.length > 0) {
-            // Trouver la SFD par défaut
-            const defaultSfd = userSfds.find(item => item.is_default);
-            if (defaultSfd) {
-              setActiveSfdId(defaultSfd.sfd_id);
-            } else {
-              setActiveSfdId(sfdsData[0].id);
+          if (sfdsData) {
+            setSfdData(sfdsData as SfdData[]);
+            
+            // Si aucune SFD active n'est définie, définir la SFD par défaut comme active
+            if (!activeSfdId && userSfds.length > 0) {
+              // Chercher d'abord une SFD marquée comme "default"
+              const defaultSfd = userSfds.find(sfd => sfd.is_default);
+              
+              if (defaultSfd) {
+                console.log('Setting default SFD as active:', defaultSfd.sfd_id);
+                setActiveSfdId(defaultSfd.sfd_id);
+              } else {
+                // Si aucune SFD par défaut, prendre la première
+                console.log('No default SFD found, setting first SFD as active:', userSfds[0].sfd_id);
+                setActiveSfdId(userSfds[0].sfd_id);
+              }
             }
           }
         } else {
-          // L'utilisateur n'a pas de SFD associée
           console.log('User has no associated SFDs');
           setSfdData([]);
-          setActiveSfdId(null);
         }
-      } catch (error) {
-        console.error('Error fetching SFD data:', error);
-        setError(error instanceof Error ? error.message : 'Unknown error');
-        
-        // Si une erreur se produit, utiliser les données de mock
-        const mockSfds: SfdData[] = [
-          {
-            id: 'primary-sfd',
-            name: 'SFD Primaire',
-            code: 'primary-sfd',
-            region: 'Bamako',
-            status: 'active'
-          },
-          {
-            id: 'secondary-sfd',
-            name: 'SFD Secondaire',
-            code: 'secondary-sfd',
-            region: 'Sikasso',
-            status: 'active'
-          }
-        ];
-        
-        setSfdData(mockSfds);
-        
-        if (!activeSfdId && mockSfds.length > 0) {
-          setActiveSfdId(mockSfds[0].id);
-        }
+      } catch (err: any) {
+        console.error('Error in fetchSfds:', err);
+        setError(err.message);
+        toast({
+          title: "Erreur",
+          description: "Impossible de récupérer les SFDs associées à votre compte",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchSfds();
-  }, [user, activeSfdId]);
+  }, [user, toast]);
 
   // Fonction pour changer la SFD active
-  const switchActiveSfd = useCallback((sfdId: string) => {
+  const setActiveSfd = useCallback((sfdId: string) => {
+    console.log('Changing active SFD to:', sfdId);
     setActiveSfdId(sfdId);
     toast({
-      title: "SFD active changée",
-      description: "Votre SFD active a été mise à jour",
+      title: "SFD Changée",
+      description: "La SFD active a été modifiée",
     });
-    return Promise.resolve(true);
   }, [toast]);
-
-  // Fonction pour récupérer les données de la SFD active
-  const getActiveSfdData = useCallback(async (): Promise<SfdData | null> => {
-    if (!activeSfdId || !sfdData.length) return null;
-    return sfdData.find(sfd => sfd.id === activeSfdId) || null;
-  }, [activeSfdId, sfdData]);
-  
-  // Fonction pour associer un utilisateur à une SFD
-  const associateUserWithSfd = useCallback(async (sfdId: string, isDefault: boolean = false): Promise<boolean> => {
-    if (!user) return false;
-    
-    try {
-      // Vérifier si l'association existe déjà
-      const { data: existingAssoc, error: checkError } = await supabase
-        .from('user_sfds')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('sfd_id', sfdId)
-        .single();
-        
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = "no rows returned"
-        console.error('Error checking SFD association:', checkError);
-        return false;
-      }
-      
-      // Si l'association existe déjà, la mettre à jour si nécessaire
-      if (existingAssoc) {
-        if (isDefault) {
-          // D'abord, mettre tous les is_default à false
-          await supabase
-            .from('user_sfds')
-            .update({ is_default: false })
-            .eq('user_id', user.id);
-            
-          // Ensuite, définir celle-ci comme par défaut
-          const { error: updateError } = await supabase
-            .from('user_sfds')
-            .update({ is_default: true })
-            .eq('id', existingAssoc.id);
-            
-          if (updateError) {
-            console.error('Error updating default SFD:', updateError);
-            return false;
-          }
-        }
-      } else {
-        // Si c'est la première SFD, la définir comme par défaut
-        const { data: countData } = await supabase
-          .from('user_sfds')
-          .select('id', { count: 'exact' })
-          .eq('user_id', user.id);
-          
-        const shouldBeDefault = isDefault || (countData && countData.length === 0);
-        
-        // Si c'est défini comme par défaut, mettre les autres à false
-        if (shouldBeDefault) {
-          await supabase
-            .from('user_sfds')
-            .update({ is_default: false })
-            .eq('user_id', user.id);
-        }
-        
-        // Créer la nouvelle association
-        const { error: insertError } = await supabase
-          .from('user_sfds')
-          .insert({
-            user_id: user.id,
-            sfd_id: sfdId,
-            is_default: shouldBeDefault
-          });
-          
-        if (insertError) {
-          console.error('Error creating SFD association:', insertError);
-          return false;
-        }
-      }
-      
-      // Mettre à jour l'état local
-      if (isDefault) {
-        setActiveSfdId(sfdId);
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Error in associateUserWithSfd:', error);
-      return false;
-    }
-  }, [user]);
 
   return {
     activeSfdId,
-    setActiveSfdId,
     sfdData,
     isLoading,
     error,
-    switchActiveSfd,
-    getActiveSfdData,
-    associateUserWithSfd
+    setActiveSfd
   };
 }
