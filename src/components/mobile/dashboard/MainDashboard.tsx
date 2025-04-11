@@ -1,30 +1,21 @@
-
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
-import ContextualHeader from '@/components/mobile/ContextualHeader';
-import SFDSavingsOverview from '@/components/mobile/SFDSavingsOverview';
-import TransactionList from '@/components/mobile/TransactionList';
-import { useMobileDashboard } from '@/hooks/useMobileDashboard';
 import { Account } from '@/types/transactions';
 
 interface MainDashboardProps {
-  onAction: (action: string, data?: any) => void;
-  account: Account | null;
+  account: Account;
   transactions: any[];
-  transactionsLoading: boolean;
+  transactionsLoading?: boolean;
   toggleMenu: () => void;
+  onAction: (action: string, data?: any) => void;
 }
 
-const MainDashboard: React.FC<MainDashboardProps> = ({
-  onAction,
-  account,
-  transactions,
-  transactionsLoading,
-  toggleMenu
+const MainDashboard: React.FC<MainDashboardProps> = ({ 
+  account, 
+  transactions, 
+  transactionsLoading = false,
+  toggleMenu,
+  onAction
 }) => {
-  const { dashboardData, isLoading: dashboardLoading, refreshDashboardData } = useMobileDashboard();
-  
   return (
     <div className="space-y-4 pb-20">
       <div className="bg-gradient-to-b from-[#0D6A51] to-[#0D6A51]/90 text-white p-4 rounded-b-3xl shadow-md relative">

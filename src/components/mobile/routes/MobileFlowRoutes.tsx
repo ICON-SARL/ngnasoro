@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import MainDashboard from '../dashboard/MainDashboard';
 import TransactionsPage from '../transactions/TransactionsPage';
 import LoanDetailsPage from '../LoanDetailsPage';
@@ -42,6 +42,7 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
   onRefreshBalance
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   
   // Hide welcome screen if user navigates to a different page
   useEffect(() => {
@@ -50,6 +51,12 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
     }
   }, [location, showWelcome, setShowWelcome]);
   
+  // Handle payment submission for PaymentTabContent
+  const handlePaymentContentSubmit = async (data: { recipient: string, amount: number, note: string }) => {
+    await handlePaymentSubmit(data);
+    navigate('/mobile-flow/main');
+  };
+
   return (
     <Routes>
       <Route path="/main" element={
@@ -58,16 +65,12 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
           transactions={transactions} 
           transactionsLoading={transactionsLoading}
           toggleMenu={toggleMenu}
-          showWelcome={showWelcome}
-          setShowWelcome={setShowWelcome}
+          onAction={onAction}
         />
       } />
       
       <Route path="/transactions" element={
-        <TransactionsPage 
-          transactions={transactions} 
-          isLoading={transactionsLoading} 
-        />
+        <TransactionsPage />
       } />
       
       <Route path="/funds-management" element={
@@ -87,12 +90,18 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       
       <Route path="/secure-payment" element={
         <SecurePaymentTab 
-          handlePaymentSubmit={handlePaymentSubmit} 
-          account={account}
+          onBack={() => navigate(-1)}
+          selectedSfdId={account.sfd_id}
         />
       } />
       
-      <Route path="/payment" element={<PaymentTabContent />} />
+      <Route path="/payment" element={
+        <PaymentTabContent 
+          onSubmit={handlePaymentContentSubmit}
+          onBack={() => navigate(-1)}
+        />
+      } />
+      
       <Route path="/profile" element={<ProfilePage />} />
     </Routes>
   );

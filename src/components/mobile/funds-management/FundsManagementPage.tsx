@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import FundsHeader from './FundsHeader';
 import FundsBalanceSection from './FundsBalanceSection';
 import TransferOptions from './TransferOptions';
 import AvailableChannels from './AvailableChannels';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { useToast } from '@/hooks/use-toast';
 
 interface FundsManagementPageProps {
   balanceAmount?: number;
@@ -19,6 +21,8 @@ const FundsManagementPage: React.FC<FundsManagementPageProps> = ({
   onRefreshBalance
 }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const { sfdAccounts } = useSfdAccounts();
   const [selectedSfd, setSelectedSfd] = useState<string>('all');
   
@@ -28,9 +32,29 @@ const FundsManagementPage: React.FC<FundsManagementPageProps> = ({
     console.log('Selected SFD:', sfdId);
   };
   
+  const handleBack = () => {
+    navigate(-1);
+  };
+  
+  const handleWithdraw = () => {
+    navigate('/mobile-flow/secure-payment', { state: { isWithdrawal: true } });
+  };
+  
+  const handleDeposit = () => {
+    navigate('/mobile-flow/secure-payment');
+    toast({
+      title: "Accès au paiement",
+      description: "Vous allez effectuer un remboursement",
+    });
+  };
+  
   return (
     <div className="flex flex-col h-full bg-white">
-      <FundsHeader />
+      <FundsHeader 
+        onBack={handleBack} 
+        onRefresh={onRefreshBalance || (() => {})}
+        isRefreshing={isBalanceRefreshing}
+      />
       
       <FundsBalanceSection 
         balance={balanceAmount} 
@@ -42,7 +66,7 @@ const FundsManagementPage: React.FC<FundsManagementPageProps> = ({
       />
       
       <div className="flex-1 px-4 pt-4 pb-20">
-        <TransferOptions />
+        <TransferOptions onWithdraw={handleWithdraw} onDeposit={handleDeposit} />
         <AvailableChannels />
       </div>
     </div>

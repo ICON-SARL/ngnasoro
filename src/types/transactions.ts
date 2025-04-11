@@ -1,4 +1,3 @@
-
 export interface Transaction {
   id: string;
   user_id?: string;
@@ -26,6 +25,7 @@ export interface Account {
   balance: number;
   currency: string;
   updated_at: string;
+  sfd_id?: string;
 }
 
 export interface TransactionStats {
