@@ -29,7 +29,11 @@ export function useSfdData() {
             phone,
             description,
             created_at,
-            updated_at
+            updated_at,
+            email,
+            address,
+            legal_document_url,
+            subsidy_balance
           `)
           .order('name');
 
@@ -39,7 +43,12 @@ export function useSfdData() {
         }
 
         console.log(`Retrieved ${data?.length || 0} SFDs`);
-        return data || [];
+        
+        // Ensure the status is properly typed
+        return (data || []).map(sfd => ({
+          ...sfd,
+          status: (sfd.status as 'active' | 'suspended' | 'pending') || 'pending'
+        }));
       } catch (error: any) {
         console.error('Unhandled error in fetchSfds:', error);
         throw new Error(`Impossible de charger les SFDs: ${error.message}`);
