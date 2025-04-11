@@ -112,8 +112,8 @@ export function useMerefLoanRequests() {
           duration_months: item.duration_months,
           created_at: item.created_at,
           submitted_at: item.submitted_at,
-          status: item.status,
-          meref_status: item.meref_status,
+          status: item.status as MerefLoanRequest['status'],
+          meref_status: item.meref_status as MerefLoanRequest['meref_status'],
           meref_reference: item.meref_reference,
           meref_feedback: item.meref_feedback
         }));
