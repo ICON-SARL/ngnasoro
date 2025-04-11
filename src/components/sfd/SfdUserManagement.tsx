@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +16,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
+  DialogTrigger
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -35,8 +35,9 @@ import {
 } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Trash2 } from 'lucide-react';
 
-// Définir le schéma de validation pour le formulaire d'ajout d'utilisateur
 const userFormSchema = z.object({
   name: z.string().min(1, { message: 'Le nom est requis' }),
   email: z.string().email({ message: 'Email invalide' }),
@@ -55,17 +56,18 @@ export function SfdUserManagement() {
     searchTerm,
     setSearchTerm,
     addSfdUser,
+    deleteSfdUser,
     refreshUsers
   } = useSfdUserManagement();
   
   const [showNewUserDialog, setShowNewUserDialog] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<SfdUser | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Définir les rôles disponibles
   const roles = ['Gérant', 'Agent de Crédit', 'Caissier', 'Agent de Terrain'];
 
-  // Initialiser le formulaire
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
     defaultValues: {
@@ -94,7 +96,22 @@ export function SfdUserManagement() {
     }
   };
 
-  // Formater le badge de rôle avec la bonne couleur
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const success = await deleteSfdUser(userToDelete.id);
+      if (success) {
+        setUserToDelete(null);
+      }
+    } catch (err) {
+      console.error('Erreur lors de la suppression:', err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const getRoleBadgeClass = (role: string) => {
     switch (role) {
       case 'Gérant':
@@ -319,15 +336,51 @@ export function SfdUserManagement() {
                     </span>
                   </div>
                   
-                  <Button variant="outline" size="sm">
-                    Modifier
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm">
+                      Modifier
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                      onClick={() => setUserToDelete(user)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer l'utilisateur</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer {userToDelete?.name} ? Cette action est définitive et ne peut pas être annulée.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteUser} 
+              disabled={isDeleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Suppression...
+                </>
+              ) : 'Supprimer'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

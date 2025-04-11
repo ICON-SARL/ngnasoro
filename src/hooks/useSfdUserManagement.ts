@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -21,13 +20,11 @@ export function useSfdUserManagement() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Charger la liste des utilisateurs SFD
   const fetchSfdUsers = async () => {
     if (!user) return;
     
     setIsLoading(true);
     try {
-      // Récupérer le SFD associé à l'utilisateur connecté
       const { data: userSfds, error: sfdsError } = await supabase
         .from('user_sfds')
         .select('sfd_id, is_default')
@@ -44,12 +41,11 @@ export function useSfdUserManagement() {
         throw new Error("Aucun SFD associé à votre compte");
       }
       
-      // Récupérer tous les utilisateurs associés à ce SFD
       const { data: sfdUserAssociations, error: usersError } = await supabase
         .from('user_sfds')
         .select(`
           user_id,
-          admin_users (
+          admin_users:user_id (
             id,
             email,
             full_name,
@@ -64,23 +60,32 @@ export function useSfdUserManagement() {
         throw new Error("Impossible de charger les utilisateurs");
       }
       
-      // Transformer les données pour notre interface
+      if (!sfdUserAssociations) {
+        setUsers([]);
+        return;
+      }
+      
       const formattedUsers: SfdUser[] = sfdUserAssociations
-        .filter(assoc => assoc.admin_users) // Filtrer les associations sans utilisateurs
-        .map(assoc => ({
-          id: assoc.admin_users.id,
-          name: assoc.admin_users.full_name,
-          email: assoc.admin_users.email,
-          role: assoc.admin_users.role === 'sfd_admin' ? 'Gérant' : 'Agent de Crédit',
-          status: 'active',
-          lastActive: assoc.admin_users.last_sign_in_at 
-            ? new Date(assoc.admin_users.last_sign_in_at).toLocaleDateString('fr-FR', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-              })
-            : 'Jamais'
-        }));
+        .filter(assoc => assoc.admin_users)
+        .map(assoc => {
+          if (!assoc.admin_users) return null;
+          
+          return {
+            id: assoc.admin_users.id,
+            name: assoc.admin_users.full_name,
+            email: assoc.admin_users.email,
+            role: assoc.admin_users.role === 'sfd_admin' ? 'Gérant' : 'Agent de Crédit',
+            status: 'active',
+            lastActive: assoc.admin_users.last_sign_in_at 
+              ? new Date(assoc.admin_users.last_sign_in_at).toLocaleDateString('fr-FR', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric'
+                })
+              : 'Jamais'
+          };
+        })
+        .filter((user): user is SfdUser => user !== null);
       
       setUsers(formattedUsers);
     } catch (err: any) {
@@ -96,7 +101,6 @@ export function useSfdUserManagement() {
     }
   };
 
-  // Ajouter un nouvel utilisateur SFD
   const addSfdUser = async (userData: {
     name: string;
     email: string;
@@ -115,7 +119,6 @@ export function useSfdUserManagement() {
     
     setIsLoading(true);
     try {
-      // Récupérer le SFD associé à l'utilisateur connecté
       const { data: userSfds, error: sfdsError } = await supabase
         .from('user_sfds')
         .select('sfd_id, is_default, sfds(name)')
@@ -131,7 +134,6 @@ export function useSfdUserManagement() {
         throw new Error("Aucun SFD associé à votre compte");
       }
       
-      // Appeler la fonction Edge pour créer l'admin SFD
       const { data, error } = await supabase.functions.invoke('create-sfd-admin', {
         body: JSON.stringify({
           email: userData.email,
@@ -157,7 +159,6 @@ export function useSfdUserManagement() {
         description: `${userData.name} a été ajouté en tant que ${userData.role}`,
       });
       
-      // Rafraîchir la liste des utilisateurs
       await fetchSfdUsers();
       
       return true;
@@ -175,7 +176,55 @@ export function useSfdUserManagement() {
     }
   };
 
-  // Filtrer les utilisateurs selon le terme de recherche
+  const deleteSfdUser = async (adminId: string) => {
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour effectuer cette action",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-sfd-admin', {
+        body: JSON.stringify({
+          adminId
+        })
+      });
+      
+      if (error) {
+        console.error('Erreur lors de la suppression de l\'utilisateur:', error);
+        throw new Error(`Erreur lors de la suppression de l'utilisateur: ${error.message}`);
+      }
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+      
+      toast({
+        title: "Succès",
+        description: "L'utilisateur a été supprimé avec succès",
+      });
+      
+      await fetchSfdUsers();
+      
+      return true;
+    } catch (err: any) {
+      console.error('Erreur lors de la suppression de l\'utilisateur:', err);
+      setError(err.message);
+      toast({
+        title: "Erreur",
+        description: err.message,
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const filteredUsers = users.filter(user => {
     const searchTermLower = searchTerm.toLowerCase();
     return (
@@ -185,7 +234,6 @@ export function useSfdUserManagement() {
     );
   });
 
-  // Charger les utilisateurs au chargement du composant
   useEffect(() => {
     if (user) {
       fetchSfdUsers();
@@ -199,6 +247,7 @@ export function useSfdUserManagement() {
     searchTerm,
     setSearchTerm,
     addSfdUser,
+    deleteSfdUser,
     refreshUsers: fetchSfdUsers
   };
 }
