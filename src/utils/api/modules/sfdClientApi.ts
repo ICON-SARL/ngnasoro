@@ -37,7 +37,7 @@ export const sfdClientApi = {
       return {
         ...data,
         client_id: clientId,
-        sfd_id: data.sfd_id || ''
+        sfd_id: data.sfd_id || '' // The database may not have this field, provide default
       } as SfdClientAccount;
     } catch (error) {
       console.error('Error fetching client account:', error);
@@ -66,7 +66,7 @@ export const sfdClientApi = {
         return {
           ...existingAccount,
           client_id: clientId,
-          sfd_id: existingAccount.sfd_id || sfdId
+          sfd_id: sfdId // Ensure sfd_id is set correctly
         } as SfdClientAccount;
       }
       
