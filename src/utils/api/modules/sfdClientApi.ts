@@ -33,11 +33,17 @@ export const sfdClientApi = {
       
       if (error) throw error;
       
-      // Convert to SfdClientAccount type with required fields
+      // The database table doesn't have sfd_id directly, so we need to construct
+      // the SfdClientAccount object with all required fields manually
       const accountData: SfdClientAccount = {
-        ...data,
+        id: data.id,
+        user_id: data.user_id,
         client_id: clientId,
-        sfd_id: data.sfd_id || '' // Add default value if not in database
+        balance: data.balance,
+        currency: data.currency,
+        sfd_id: '', // Default empty string as it's not in the database result
+        updated_at: data.updated_at,
+        last_updated: data.last_updated
       };
       
       return accountData;
@@ -64,11 +70,16 @@ export const sfdClientApi = {
         .single();
       
       if (existingAccount) {
-        // Return with required fields
+        // Create a properly structured account object with all required fields
         const accountData: SfdClientAccount = {
-          ...existingAccount,
+          id: existingAccount.id,
+          user_id: existingAccount.user_id,
           client_id: clientId,
-          sfd_id: sfdId // Ensure sfd_id is set correctly
+          balance: existingAccount.balance,
+          currency: existingAccount.currency,
+          sfd_id: sfdId, // Use the provided sfdId
+          updated_at: existingAccount.updated_at,
+          last_updated: existingAccount.last_updated
         };
         
         return accountData;
@@ -81,18 +92,23 @@ export const sfdClientApi = {
           user_id: clientId,
           balance: initialBalance,
           currency: 'FCFA',
-          sfd_id: sfdId
+          sfd_id: sfdId // We're setting this, but it might not be stored in the table
         })
         .select()
         .single();
       
       if (error) throw error;
       
-      // Return with required fields
+      // Create a new account object with all required fields
       const newAccountData: SfdClientAccount = {
-        ...data,
+        id: data.id,
+        user_id: data.user_id,
         client_id: clientId,
-        sfd_id: sfdId
+        balance: data.balance,
+        currency: data.currency,
+        sfd_id: sfdId, // Use the provided sfdId
+        updated_at: data.updated_at,
+        last_updated: data.last_updated
       };
       
       return newAccountData;
