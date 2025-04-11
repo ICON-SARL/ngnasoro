@@ -18,7 +18,7 @@ export const edgeFunctionApi = {
     const { 
       showToast = true, 
       requireAuth = true, 
-      timeout = 30000,
+      timeout = 55000,  // Augmenté à 55 secondes
       maxRetries = 3,
       retryDelay = 1000
     } = options;
@@ -80,8 +80,8 @@ export const edgeFunctionApi = {
             throw err;
           }
           
-          // Calculate exponential backoff with some jitter
-          const backoffDelay = Math.min(delay * (1.5 + Math.random() * 0.5), 10000);
+          // Calculate exponential backoff with jitter
+          const backoffDelay = Math.min(delay * (1.5 + Math.random() * 0.5), 15000);
           console.log(`Retrying ${functionName} in ${backoffDelay}ms, attempts left: ${retriesLeft-1}`);
           await new Promise(resolve => setTimeout(resolve, backoffDelay));
           return callWithRetry(retriesLeft - 1, backoffDelay);
@@ -119,6 +119,11 @@ export const edgeFunctionApi = {
       // Handle Failed to fetch errors specifically
       if (errorMessage.includes('Failed to fetch')) {
         errorMessage = `Network error when calling ${functionName}. Please check your connection and try again.`;
+      }
+      
+      // Handle timeout errors
+      if (errorMessage.includes('timed out')) {
+        errorMessage = `Operation timed out. The server is taking too long to respond. Please try again later.`;
       }
       
       // Use the generic error handler if showToast is true

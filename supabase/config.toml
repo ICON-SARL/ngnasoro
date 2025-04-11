@@ -24,6 +24,8 @@ enabled = true
 
 [edge-functions]
 enabled = true
+# Augmenter les timeouts pour toutes les fonctions
+timeout_seconds = 60
 
 [edge-functions.delete-sfd-admin]
 verify_jwt = true

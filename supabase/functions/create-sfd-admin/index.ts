@@ -30,7 +30,16 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Extraire les données de la requête
-    const requestData = await req.json();
+    let requestData;
+    try {
+      requestData = await req.json();
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: "Format de requête invalide" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     const { email, password, full_name, role, sfd_id, notify = false } = requestData;
 
     if (!email || !password || !full_name || !role || !sfd_id) {
@@ -42,7 +51,7 @@ serve(async (req) => {
 
     console.log(`Création d'un nouvel administrateur SFD: ${email}`);
 
-    // Étape 1: Vérifier si l'utilisateur existe déjà
+    // Vérification rapide si l'utilisateur existe déjà
     const { data: existingUsers, error: checkError } = await supabase
       .from('admin_users')
       .select('email')
@@ -64,7 +73,7 @@ serve(async (req) => {
       );
     }
 
-    // Étape 2: Créer un nouvel utilisateur avec l'API Supabase Auth
+    // Créer un nouvel utilisateur avec l'API Supabase Auth
     const { data: userData, error: userError } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -84,22 +93,21 @@ serve(async (req) => {
     const userId = userData.user.id;
     console.log(`Utilisateur créé avec succès, ID: ${userId}`);
 
-    // Étape 3: Ajouter les informations directement à la table admin_users avec une SQL query
-    // Cela permet d'éviter les problèmes de récursion avec RLS
-    const { error: adminError } = await supabase.rpc(
-      'create_admin_user',
-      {
-        admin_id: userId,
-        admin_email: email,
-        admin_full_name: full_name,
-        admin_role: role
-      }
-    );
+    // Ajouter directement dans la table admin_users
+    const { error: adminError } = await supabase
+      .from('admin_users')
+      .insert({
+        id: userId,
+        email: email,
+        full_name: full_name,
+        role: role,
+        has_2fa: false
+      });
 
     if (adminError) {
       console.error("Erreur lors de l'ajout dans admin_users:", adminError);
       
-      // Tenter de supprimer l'utilisateur créé pour éviter un état incohérent
+      // Si l'insertion échoue, supprimer l'utilisateur pour éviter un état incohérent
       await supabase.auth.admin.deleteUser(userId);
       
       return new Response(
@@ -108,7 +116,7 @@ serve(async (req) => {
       );
     }
 
-    // Étape 4: Ajouter le rôle administrateur avec la fonction RPC
+    // Attribuer le rôle administrateur
     const { error: roleError } = await supabase.rpc(
       'assign_role',
       {
@@ -129,7 +137,7 @@ serve(async (req) => {
       );
     }
 
-    // Étape 5: Associer l'administrateur à la SFD dans user_sfds
+    // Associer l'administrateur à la SFD
     const { error: assocError } = await supabase
       .from('user_sfds')
       .insert({
@@ -141,7 +149,7 @@ serve(async (req) => {
     if (assocError) {
       console.error("Erreur lors de l'association à la SFD:", assocError);
       
-      // Tenter de nettoyer les données créées précédemment
+      // Nettoyer les données créées précédemment
       await supabase.auth.admin.deleteUser(userId);
       
       return new Response(
@@ -150,10 +158,10 @@ serve(async (req) => {
       );
     }
 
-    // Étape 6: Si notify est true, envoyer un email de bienvenue (non implémenté ici)
+    // Notification (à implémenter si nécessaire)
     if (notify) {
       console.log(`Notification d'invitation à envoyer à ${email}`);
-      // Implémenter l'envoi d'email ici
+      // Implémenter l'envoi d'email ici si besoin
     }
 
     console.log(`Administrateur SFD créé avec succès: ${email}`);
