@@ -1,29 +1,29 @@
 
 import React from 'react';
-import { Account } from '@/types/transactions';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import ContextualHeader from '@/components/mobile/ContextualHeader';
 import SFDSavingsOverview from '@/components/mobile/SFDSavingsOverview';
 import TransactionList from '@/components/mobile/TransactionList';
 import { useMobileDashboard } from '@/hooks/useMobileDashboard';
+import { Account } from '@/types/transactions';
 
 interface MainDashboardProps {
-  account: Account;
-  transactions: any[];
-  transactionsLoading?: boolean;
-  toggleMenu: () => void;
   onAction: (action: string, data?: any) => void;
+  account: Account | null;
+  transactions: any[];
+  transactionsLoading: boolean;
+  toggleMenu: () => void;
 }
 
-const MainDashboard: React.FC<MainDashboardProps> = ({ 
-  account, 
-  transactions, 
-  transactionsLoading = false,
-  toggleMenu,
-  onAction
+const MainDashboard: React.FC<MainDashboardProps> = ({
+  onAction,
+  account,
+  transactions,
+  transactionsLoading,
+  toggleMenu
 }) => {
-  const { dashboardData, isLoading: dashboardLoading } = useMobileDashboard();
+  const { dashboardData, isLoading: dashboardLoading, refreshDashboardData } = useMobileDashboard();
   
   return (
     <div className="space-y-4 pb-20">
