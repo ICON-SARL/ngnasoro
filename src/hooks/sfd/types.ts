@@ -41,6 +41,8 @@ export interface SfdAccount {
   isVerified?: boolean;
   status?: string;
   loans?: SfdLoan[];
+  token?: string;
+  lastFetched?: Date;
 }
 
 export interface SfdLoan {

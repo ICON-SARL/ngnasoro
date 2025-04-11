@@ -1,82 +1,24 @@
-import { supabase } from "@/integrations/supabase/client";
-import { SfdBalanceData } from "@/hooks/sfd/types";
 
-// Define the SfdBalanceResult interface here to avoid circular dependencies
-export interface SfdBalanceResult {
-  balance: number;
-  currency: string;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { SfdBalanceData } from '@/hooks/sfd/types';
 
+// SFD API client module
 export const sfdApi = {
-  // Get the list of available SFDs
-  getSfdsList: async () => {
-    const { data, error } = await supabase
-      .from('sfds')
-      .select('*')
-      .eq('status', 'active');
-      
-    if (error) {
-      console.error('Error fetching SFDs:', error);
-      throw error;
-    }
-    
-    return data || [];
-  },
-  
-  // Get SFDs associated with a user
-  getUserSfds: async (userId: string) => {
+  /**
+   * Get the balance for a specific SFD account
+   */
+  getSfdBalance: async (userId: string, sfdId: string): Promise<SfdBalanceData> => {
     try {
-      const { data, error } = await supabase
-        .from('user_sfds')
-        .select(`
-          id,
-          is_default,
-          sfds:sfd_id(id, name, code, region, logo_url)
-        `)
-        .eq('user_id', userId);
-        
-      if (error) throw error;
+      // In a real implementation, you would call your backend API
+      const { data, error } = await supabase.functions.invoke('get-sfd-balance', {
+        body: { 
+          userId,
+          sfdId
+        }
+      });
       
-      if (!data || data.length === 0) {
-        return [];
-      }
-      
-      return data;
-    } catch (error) {
-      console.error('Error fetching user SFDs:', error);
-      throw error;
-    }
-  },
-  
-  // Check client status with a particular SFD
-  getSfdClientStatus: async (userId: string, sfdId: string) => {
-    const { data, error } = await supabase
-      .from('sfd_clients')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('sfd_id', sfdId)
-      .single();
-      
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-      console.error('Error checking client status:', error);
-      throw error;
-    }
-    
-    return data || null;
-  },
-  
-  // Get balance for a specific SFD
-  getSfdBalance: async (userId: string, sfdId: string): Promise<SfdBalanceResult> => {
-    try {
-      const { data, error } = await supabase
-        .from('accounts')
-        .select('balance, currency')
-        .eq('user_id', userId)
-        .single();
-        
       if (error) {
-        console.error('Error fetching balance:', error);
-        // Return a default balance if there's an error
+        console.error('Error fetching SFD balance:', error);
         return { balance: 0, currency: 'FCFA' };
       }
       
@@ -85,139 +27,32 @@ export const sfdApi = {
         currency: data?.currency || 'FCFA'
       };
     } catch (error) {
-      console.error('Error in getSfdBalance:', error);
+      console.error('SFD balance fetch error:', error);
       return { balance: 0, currency: 'FCFA' };
     }
   },
   
-  // Get loans associated with a SFD
-  getSfdLoans: async (userId: string, sfdId: string) => {
-    const { data, error } = await supabase
-      .from('sfd_loans')
-      .select(`
-        id, 
-        amount, 
-        duration_months, 
-        interest_rate,
-        monthly_payment, 
-        next_payment_date,
-        last_payment_date, 
-        status,
-        created_at
-      `)
-      .eq('sfd_id', sfdId)
-      .eq('client_id', userId);
-      
-    if (error) {
-      console.error('Error fetching SFD loans:', error);
-      return [];
-    }
-    
-    return data || [];
-  },
-  
-  // Get MEREF dashboard stats
-  getMerefDashboardStats: async () => {
-    // This would normally be a real API call to the MEREF dashboard
-    // For now, return mock data
-    return {
-      totalSfds: 45,
-      activeSfds: 42,
-      suspendedSfds: 3,
-      totalSubsidies: 2500000000,
-      activeSubsidies: 1750000000,
-      pendingRequests: 12
-    };
-  },
-
   /**
-   * Crée une nouvelle SFD avec option d'ajouter un administrateur
-   * @param sfdData Les données de la nouvelle SFD
-   * @param adminData Données optionnelles pour créer un administrateur
-   * @returns La SFD créée et l'administrateur si applicable
+   * Synchronize SFD accounts
    */
-  createSfdWithAdmin: async (sfdData: any, adminData?: any) => {
+  synchronizeAccounts: async (userId: string): Promise<boolean> => {
     try {
-      console.log("Appel à la fonction create-sfd...");
-      const { data, error } = await supabase.functions.invoke('create-sfd', {
+      const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
         body: { 
-          sfd_data: sfdData,
-          admin_data: adminData
+          userId,
+          forceSync: true
         }
       });
-
+      
       if (error) {
-        console.error('Erreur fonction create-sfd:', error);
-        throw new Error(error.message);
+        console.error('Error synchronizing SFD accounts:', error);
+        return false;
       }
-
-      if (!data || !data.success) {
-        console.error('Échec de création SFD:', data?.error || 'Raison inconnue');
-        throw new Error(data?.error || "Erreur lors de la création de la SFD");
-      }
-
-      console.log("SFD créée avec succès:", data);
-      return data;
-    } catch (error: any) {
-      console.error('Erreur lors de la création de la SFD:', error);
-      throw new Error(`Erreur lors de la création de la SFD: ${error.message}`);
+      
+      return data?.success || false;
+    } catch (error) {
+      console.error('SFD synchronization error:', error);
+      return false;
     }
-  },
-  
-  /**
-   * Crée une subvention pour une SFD
-   * @param subsidyData Les données de la subvention
-   * @returns La subvention créée
-   */
-  createSfdSubsidy: async (subsidyData: any) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('create_sfd_subsidy', {
-        body: { subsidy_data: subsidyData }
-      });
-
-      if (error) throw new Error(error.message);
-      return data;
-    } catch (error: any) {
-      console.error('Erreur lors de la création de la subvention:', error);
-      throw new Error(`Erreur lors de la création de la subvention: ${error.message}`);
-    }
-  }
-};
-
-/**
- * Crée une nouvelle SFD avec des permissions d'administrateur
- * @param sfdData Les données de la nouvelle SFD
- * @returns La SFD créée
- */
-export const createSfd = async (sfdData: any, adminId: string) => {
-  try {
-    const { data, error } = await supabase.functions.invoke('create_sfd', {
-      body: { sfd_data: sfdData, admin_id: adminId }
-    });
-
-    if (error) throw new Error(error.message);
-    return data;
-  } catch (error: any) {
-    console.error('Erreur lors de la création de la SFD:', error);
-    throw new Error(`Erreur lors de la création de la SFD: ${error.message}`);
-  }
-};
-
-/**
- * Crée une subvention pour une SFD
- * @param subsidyData Les données de la subvention
- * @returns La subvention créée
- */
-export const createSfdSubsidy = async (subsidyData: any) => {
-  try {
-    const { data, error } = await supabase.functions.invoke('create_sfd_subsidy', {
-      body: { subsidy_data: subsidyData }
-    });
-
-    if (error) throw new Error(error.message);
-    return data;
-  } catch (error: any) {
-    console.error('Erreur lors de la création de la subvention:', error);
-    throw new Error(`Erreur lors de la création de la subvention: ${error.message}`);
   }
 };
