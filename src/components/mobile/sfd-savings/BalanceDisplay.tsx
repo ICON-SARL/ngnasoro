@@ -33,7 +33,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
           disabled={isUpdating}
         >
           {isUpdating ? (
-            <Loader size="sm" variant="primary" className="text-[#0D6A51]" />
+            <Loader size="sm" className="text-[#0D6A51]" />
           ) : (
             <RefreshCw className="h-3 w-3" />
           )}
