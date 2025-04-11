@@ -21,11 +21,12 @@ const SFDSavingsOverview = () => {
   const { activeSfdAccount, isLoading, refetch } = useSfdAccounts();
   const { user, activeSfdId } = useAuth();
   const { dashboardData, isLoading: isDashboardLoading, refreshDashboardData } = useMobileDashboard();
-  const { isSyncing, synchronizeWithSfd, syncError } = useRealtimeSynchronization();
+  const { isSyncing, synchronizeWithSfd, syncError, retryCount, testConnection } = useRealtimeSynchronization();
   const [isHidden, setIsHidden] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("Impossible de récupérer les informations de votre compte");
+  const [connectionStatus, setConnectionStatus] = useState<boolean | null>(null);
   
   // Get active SFD data from dashboard if available
   const activeSfd = dashboardData?.sfdAccounts?.find(sfd => sfd.is_default);
@@ -39,12 +40,21 @@ const SFDSavingsOverview = () => {
     const performInitialSync = async () => {
       if (activeSfdId) {
         try {
-          const syncResult = await synchronizeWithSfd();
-          if (syncResult) {
-            setHasError(false);
+          // Test connection before attempting full sync
+          const isConnected = await testConnection();
+          setConnectionStatus(isConnected);
+          
+          if (isConnected) {
+            const syncResult = await synchronizeWithSfd();
+            if (syncResult) {
+              setHasError(false);
+            } else {
+              setHasError(true);
+              setErrorMessage("Synchronisation échouée. Veuillez réessayer.");
+            }
           } else {
             setHasError(true);
-            setErrorMessage("Synchronisation échouée. Veuillez réessayer.");
+            setErrorMessage("Impossible de contacter le serveur. Veuillez vérifier votre connexion.");
           }
         } catch (error) {
           console.error("Synchronization error:", error);
@@ -68,7 +78,7 @@ const SFDSavingsOverview = () => {
     return () => {
       clearInterval(syncInterval);
     };
-  }, [activeSfdId, synchronizeWithSfd]);
+  }, [activeSfdId, synchronizeWithSfd, testConnection]);
   
   // Effect to detect account errors
   useEffect(() => {
@@ -93,6 +103,17 @@ const SFDSavingsOverview = () => {
     setHasError(false);
     
     try {
+      // Test connection first
+      const isConnected = await testConnection();
+      setConnectionStatus(isConnected);
+      
+      if (!isConnected) {
+        setHasError(true);
+        setErrorMessage("Impossible de contacter le serveur. Veuillez vérifier votre connexion.");
+        setIsUpdating(false);
+        return;
+      }
+      
       // Use synchronizeWithSfd for reliable updates
       const syncResult = await synchronizeWithSfd();
       
@@ -141,7 +162,8 @@ const SFDSavingsOverview = () => {
     return (
       <ErrorState 
         message={errorMessage} 
-        retryFn={refreshBalance} 
+        retryFn={refreshBalance}
+        retryCount={retryCount}
       />
     );
   }
