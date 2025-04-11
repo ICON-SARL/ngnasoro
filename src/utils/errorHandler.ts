@@ -59,11 +59,47 @@ export function handleNetworkError(error: any) {
   
   handleError(error, {
     title: 'Erreur de connexion',
-    description: message
+    // Fixed property name from 'description' to match the ErrorOptions interface
+    variant: 'destructive'
   });
+}
+
+/**
+ * Handle API responses and throw standardized errors for non-OK responses
+ * @param response The fetch Response object
+ * @returns The original response if OK
+ */
+export async function handleApiResponse(response: Response) {
+  if (!response.ok) {
+    let errorDetail = "Erreur serveur inconnue";
+    
+    try {
+      const errorData = await response.json();
+      errorDetail = errorData.message || errorData.error || errorDetail;
+    } catch (e) {
+      // Couldn't parse JSON error response
+    }
+    
+    const error = new Error(
+      response.status === 401 || response.status === 403
+        ? "Accès non autorisé"
+        : errorDetail || "Erreur serveur"
+    );
+
+    // Add additional properties to the error
+    Object.assign(error, {
+      statusCode: response.status,
+      technical: errorDetail
+    });
+    
+    throw error;
+  }
+  
+  return response;
 }
 
 export default {
   handleError,
-  handleNetworkError
+  handleNetworkError,
+  handleApiResponse
 };

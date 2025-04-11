@@ -7,6 +7,7 @@ import { transactionApi } from "./api/modules/transactionApi";
 import { storageApi } from "./api/modules/storageApi";
 import { edgeFunctionApi } from "./api/modules/edgeFunctionApi";
 import { dashboardApi } from "./api/modules/dashboardApi";
+import { adminCommunicationApi } from "./api/modules/adminCommunicationApi";
 import { sfdClientApi } from "./api/modules/sfdClientApi";
 
 // Main API client facade that exposes all modules
