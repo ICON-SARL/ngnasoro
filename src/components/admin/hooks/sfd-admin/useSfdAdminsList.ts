@@ -1,8 +1,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchSfdAdmins, fetchSfdAdminsForSfd } from './sfdAdminApiService';
+import { useToast } from '@/hooks/use-toast';
 
 export function useSfdAdminsList(sfdId?: string) {
+  const { toast } = useToast();
+  
   const {
     data: sfdAdmins,
     isLoading,
@@ -13,6 +16,18 @@ export function useSfdAdminsList(sfdId?: string) {
     queryFn: () => sfdId ? fetchSfdAdminsForSfd(sfdId) : fetchSfdAdmins(),
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1,
+    meta: {
+      onSettled: (data, error) => {
+        if (error) {
+          console.error('Erreur lors de la récupération des administrateurs SFD:', error);
+          toast({
+            title: "Erreur",
+            description: `Impossible de charger les administrateurs: ${error.message}`,
+            variant: "destructive",
+          });
+        }
+      }
+    }
   });
 
   return {

@@ -14,24 +14,25 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    // Récupérer les variables d'environnement nécessaires
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error("Missing environment variables");
+      console.error("Variables d'environnement manquantes");
       return new Response(
-        JSON.stringify({ error: "Server configuration incorrect" }),
+        JSON.stringify({ error: "Configuration du serveur incorrecte" }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Create a Supabase client with the service key (admin privileges)
+    // Créer un client Supabase avec la clé de service (privilèges administratifs)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Extract data from request
+    // Extraire les données de la requête
     const { email, password, full_name, role, sfd_id, notify } = await req.json();
     
-    console.log("Received request to create SFD admin:", { 
+    console.log("Requête reçue pour créer un administrateur SFD:", { 
       email, 
       full_name, 
       role, 
@@ -40,15 +41,15 @@ serve(async (req) => {
       hasPassword: !!password 
     });
     
-    // Validate required fields
+    // Valider les champs requis
     if (!email || !password || !full_name || !sfd_id) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
+        JSON.stringify({ error: "Champs obligatoires manquants" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // 1. Create auth user with admin privileges
+    // 1. Créer un utilisateur Auth avec privilèges d'admin
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -63,24 +64,24 @@ serve(async (req) => {
     });
 
     if (authError) {
-      console.error("Error creating auth user:", authError);
+      console.error("Erreur lors de la création de l'utilisateur Auth:", authError);
       return new Response(
-        JSON.stringify({ error: `Error creating auth user: ${authError.message}` }),
+        JSON.stringify({ error: `Erreur lors de la création de l'utilisateur Auth: ${authError.message}` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     if (!authData.user) {
       return new Response(
-        JSON.stringify({ error: "No user created" }),
+        JSON.stringify({ error: "Aucun utilisateur créé" }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const userId = authData.user.id;
-    console.log("User created successfully with ID:", userId);
+    console.log("Utilisateur créé avec succès avec l'ID:", userId);
 
-    // 2. Create entry in admin_users table
+    // 2. Créer une entrée dans la table admin_users
     const { error: adminError } = await supabase
       .from('admin_users')
       .insert({
@@ -92,16 +93,16 @@ serve(async (req) => {
       });
 
     if (adminError) {
-      console.error("Error creating admin user record:", adminError);
+      console.error("Erreur lors de la création de l'enregistrement admin:", adminError);
       return new Response(
-        JSON.stringify({ error: `Error creating admin user record: ${adminError.message}` }),
+        JSON.stringify({ error: `Erreur lors de la création de l'enregistrement admin: ${adminError.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log("Admin user record created");
+    console.log("Enregistrement admin créé");
 
-    // 3. Assign SFD_ADMIN role
+    // 3. Attribuer le rôle SFD_ADMIN
     const { error: roleError } = await supabase.rpc(
       'assign_role',
       {
@@ -111,16 +112,16 @@ serve(async (req) => {
     );
 
     if (roleError) {
-      console.error("Error assigning role:", roleError);
+      console.error("Erreur lors de l'attribution du rôle:", roleError);
       return new Response(
-        JSON.stringify({ error: `Error assigning role: ${roleError.message}` }),
+        JSON.stringify({ error: `Erreur lors de l'attribution du rôle: ${roleError.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log("SFD_ADMIN role assigned");
+    console.log("Rôle SFD_ADMIN attribué");
 
-    // 4. Create association with SFD
+    // 4. Créer l'association avec la SFD
     const { error: assocError } = await supabase
       .from('user_sfds')
       .insert({
@@ -130,19 +131,19 @@ serve(async (req) => {
       });
 
     if (assocError) {
-      console.error("Error creating SFD association:", assocError);
+      console.error("Erreur lors de la création de l'association SFD:", assocError);
       return new Response(
-        JSON.stringify({ error: `Error creating SFD association: ${assocError.message}` }),
+        JSON.stringify({ error: `Erreur lors de la création de l'association SFD: ${assocError.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log("SFD association created");
+    console.log("Association SFD créée");
 
-    // 5. Send notification if requested (simplified for now)
+    // 5. Envoyer une notification si demandé (simplifié pour le moment)
     if (notify) {
-      console.log("Should send notification to:", email);
-      // Notification logic would go here
+      console.log("Devrait envoyer une notification à:", email);
+      // La logique de notification irait ici
     }
 
     return new Response(
@@ -155,13 +156,13 @@ serve(async (req) => {
           role: 'sfd_admin'
         }
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
     
   } catch (error) {
-    console.error("Unhandled error:", error);
+    console.error("Erreur non gérée:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
+      JSON.stringify({ error: error.message || "Une erreur inattendue s'est produite" }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

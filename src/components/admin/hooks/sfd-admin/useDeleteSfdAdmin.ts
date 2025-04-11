@@ -12,8 +12,13 @@ export function useDeleteSfdAdmin() {
   const { mutate, isPending: isDeleting } = useMutation({
     mutationFn: async (adminId: string) => {
       try {
+        if (!adminId) {
+          throw new Error("ID d'administrateur requis");
+        }
+        
         setError(null);
         await deleteSfdAdmin(adminId);
+        return adminId;
       } catch (err: any) {
         console.error('Error deleting SFD admin:', err);
         setError(err.message || "Une erreur s'est produite lors de la suppression de l'administrateur");

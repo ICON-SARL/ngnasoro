@@ -11,7 +11,7 @@ interface SfdAdmin {
 
 export async function fetchSfdAdmins(): Promise<SfdAdmin[]> {
   try {
-    console.log('Fetching all SFD admins');
+    console.log('Récupération de tous les administrateurs SFD');
     
     const { data, error } = await supabase
       .from('admin_users')
@@ -19,21 +19,21 @@ export async function fetchSfdAdmins(): Promise<SfdAdmin[]> {
       .eq('role', 'sfd_admin');
       
     if (error) {
-      console.error('Error fetching SFD admins:', error);
+      console.error('Erreur lors de la récupération des administrateurs SFD:', error);
       throw new Error(`Erreur lors de la récupération des administrateurs: ${error.message}`);
     }
     
-    console.log('Successfully fetched SFD admins:', data?.length || 0);
+    console.log('Administrateurs SFD récupérés avec succès:', data?.length || 0);
     return data || [];
   } catch (error: any) {
-    console.error('Unhandled error in fetchSfdAdmins:', error);
+    console.error('Erreur non gérée dans fetchSfdAdmins:', error);
     throw new Error(`Impossible de charger les administrateurs: ${error.message}`);
   }
 }
 
 export async function fetchSfdAdminsForSfd(sfdId: string): Promise<SfdAdmin[]> {
   try {
-    console.log(`Fetching SFD admins for SFD ID: ${sfdId}`);
+    console.log(`Récupération des administrateurs SFD pour la SFD ID: ${sfdId}`);
     
     // D'abord, récupérer les user_ids associés à cette SFD
     const { data: associations, error: assocError } = await supabase
@@ -42,12 +42,12 @@ export async function fetchSfdAdminsForSfd(sfdId: string): Promise<SfdAdmin[]> {
       .eq('sfd_id', sfdId);
       
     if (assocError) {
-      console.error('Error fetching SFD associations:', assocError);
+      console.error('Erreur lors de la récupération des associations SFD:', assocError);
       throw new Error(`Erreur lors de la récupération des associations: ${assocError.message}`);
     }
     
     if (!associations || associations.length === 0) {
-      console.log('No admins associated with this SFD');
+      console.log('Aucun administrateur associé à cette SFD');
       return [];
     }
     
@@ -62,14 +62,14 @@ export async function fetchSfdAdminsForSfd(sfdId: string): Promise<SfdAdmin[]> {
       .in('id', userIds);
       
     if (error) {
-      console.error('Error fetching SFD admins:', error);
+      console.error('Erreur lors de la récupération des administrateurs SFD:', error);
       throw new Error(`Erreur lors de la récupération des administrateurs: ${error.message}`);
     }
     
-    console.log(`Successfully fetched ${data?.length || 0} SFD admins for SFD ${sfdId}`);
+    console.log(`${data?.length || 0} administrateurs SFD récupérés pour la SFD ${sfdId}`);
     return data || [];
   } catch (error: any) {
-    console.error(`Unhandled error in fetchSfdAdminsForSfd for SFD ${sfdId}:`, error);
+    console.error(`Erreur non gérée dans fetchSfdAdminsForSfd pour la SFD ${sfdId}:`, error);
     throw new Error(`Impossible de charger les administrateurs: ${error.message}`);
   }
 }
@@ -83,7 +83,7 @@ export async function createSfdAdmin(adminData: {
   notify: boolean;
 }): Promise<any> {
   try {
-    console.log('Creating SFD admin:', { 
+    console.log('Création d\'un administrateur SFD:', { 
       email: adminData.email, 
       full_name: adminData.full_name, 
       role: adminData.role, 
@@ -91,51 +91,51 @@ export async function createSfdAdmin(adminData: {
       notify: adminData.notify 
     });
     
-    // Use the edge function to create the admin user
+    // Utiliser la fonction Edge pour créer l'administrateur
     const { data, error } = await supabase.functions.invoke('create-sfd-admin', {
       body: JSON.stringify(adminData)
     });
     
     if (error) {
-      console.error('Error invoking create-sfd-admin function:', error);
+      console.error('Erreur lors de l\'appel à la fonction create-sfd-admin:', error);
       throw new Error(`Erreur lors de la création de l'administrateur SFD: ${error.message}`);
     }
     
     if (!data || data.error) {
-      console.error('Error in function response:', data?.error || 'Unknown error');
+      console.error('Erreur dans la réponse de la fonction:', data?.error || 'Erreur inconnue');
       throw new Error(data?.error || 'Erreur inconnue lors de la création de l\'administrateur');
     }
     
-    console.log('SFD admin created successfully:', data);
+    console.log('Administrateur SFD créé avec succès:', data);
     return data;
   } catch (error: any) {
-    console.error('Unhandled error in createSfdAdmin:', error);
+    console.error('Erreur non gérée dans createSfdAdmin:', error);
     throw new Error(error.message || 'Erreur lors de la création de l\'administrateur SFD');
   }
 }
 
 export async function deleteSfdAdmin(adminId: string): Promise<void> {
   try {
-    console.log(`Deleting SFD admin with ID: ${adminId}`);
+    console.log(`Suppression de l'administrateur SFD avec l'ID: ${adminId}`);
     
-    // Utiliser la fonction edge pour supprimer l'admin
+    // Utiliser la fonction Edge pour supprimer l'administrateur
     const { data, error } = await supabase.functions.invoke('delete-sfd-admin', {
       body: JSON.stringify({ adminId })
     });
     
     if (error) {
-      console.error('Error invoking delete-sfd-admin function:', error);
+      console.error('Erreur lors de l\'appel à la fonction delete-sfd-admin:', error);
       throw new Error(`Erreur lors de la suppression de l'administrateur SFD: ${error.message}`);
     }
     
     if (!data || data.error) {
-      console.error('Error in function response:', data?.error || 'Unknown error');
+      console.error('Erreur dans la réponse de la fonction:', data?.error || 'Erreur inconnue');
       throw new Error(data?.error || 'Erreur inconnue lors de la suppression de l\'administrateur');
     }
     
-    console.log('SFD admin deleted successfully');
+    console.log('Administrateur SFD supprimé avec succès');
   } catch (error: any) {
-    console.error('Unhandled error in deleteSfdAdmin:', error);
+    console.error('Erreur non gérée dans deleteSfdAdmin:', error);
     throw new Error(error.message || 'Erreur lors de la suppression de l\'administrateur SFD');
   }
 }

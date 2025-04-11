@@ -14,87 +14,96 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    // Récupérer les variables d'environnement nécessaires
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error("Missing environment variables");
+      console.error("Variables d'environnement manquantes");
       return new Response(
-        JSON.stringify({ error: "Server configuration incorrect" }),
+        JSON.stringify({ error: "Configuration du serveur incorrecte" }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Create a Supabase client with the service key (admin privileges)
+    // Créer un client Supabase avec la clé de service (privilèges administratifs)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Extract admin ID from request
+    // Extraire l'ID de l'administrateur à supprimer
     const { adminId } = await req.json();
     
     if (!adminId) {
       return new Response(
-        JSON.stringify({ error: "Admin ID is required" }),
+        JSON.stringify({ error: "ID d'administrateur requis" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    console.log(`Processing deletion for admin ID: ${adminId}`);
-    
-    // First, remove the admin from user_sfds
-    const { error: sfdAssocError } = await supabase
+    console.log(`Suppression de l'administrateur SFD avec l'ID: ${adminId}`);
+
+    // 1. Supprimer l'association SFD
+    const { error: assocError } = await supabase
       .from('user_sfds')
       .delete()
       .eq('user_id', adminId);
-      
-    if (sfdAssocError) {
-      console.error("Error removing SFD association:", sfdAssocError);
-      // Continue with deletion even if this fails
+
+    if (assocError) {
+      console.error("Erreur lors de la suppression de l'association SFD:", assocError);
+      return new Response(
+        JSON.stringify({ error: `Erreur lors de la suppression de l'association SFD: ${assocError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-    
-    // Then remove the admin from user_roles
-    const { error: rolesError } = await supabase
+
+    // 2. Supprimer les rôles
+    const { error: roleError } = await supabase
       .from('user_roles')
       .delete()
-      .eq('user_id', adminId);
-      
-    if (rolesError) {
-      console.error("Error removing user roles:", rolesError);
-      // Continue with deletion even if this fails
+      .eq('user_id', adminId)
+      .eq('role', 'sfd_admin');
+
+    if (roleError) {
+      console.error("Erreur lors de la suppression du rôle:", roleError);
+      return new Response(
+        JSON.stringify({ error: `Erreur lors de la suppression du rôle: ${roleError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-    
-    // Remove from admin_users table
+
+    // 3. Supprimer l'enregistrement admin_users
     const { error: adminError } = await supabase
       .from('admin_users')
       .delete()
       .eq('id', adminId);
-      
+
     if (adminError) {
-      console.error("Error removing from admin_users:", adminError);
-      // Continue with auth user deletion even if this fails
-    }
-    
-    // Finally, delete the auth user
-    const { error: authError } = await supabase.auth.admin.deleteUser(adminId);
-    
-    if (authError) {
-      console.error("Error deleting auth user:", authError);
+      console.error("Erreur lors de la suppression de l'enregistrement admin:", adminError);
       return new Response(
-        JSON.stringify({ error: `Error deleting auth user: ${authError.message}` }),
+        JSON.stringify({ error: `Erreur lors de la suppression de l'enregistrement admin: ${adminError.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    console.log("SFD admin deleted successfully");
-    
+
+    // 4. Supprimer l'utilisateur Auth (le plus important)
+    const { error: authError } = await supabase.auth.admin.deleteUser(adminId);
+
+    if (authError) {
+      console.error("Erreur lors de la suppression de l'utilisateur Auth:", authError);
+      return new Response(
+        JSON.stringify({ error: `Erreur lors de la suppression de l'utilisateur Auth: ${authError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response(
-      JSON.stringify({ success: true, message: "SFD admin deleted successfully" }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, message: "Administrateur SFD supprimé avec succès" }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
     
   } catch (error) {
-    console.error("Unhandled error in deleteSfdAdmin:", error);
+    console.error("Erreur non gérée:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
+      JSON.stringify({ error: error.message || "Une erreur inattendue s'est produite" }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

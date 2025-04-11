@@ -25,18 +25,17 @@ export function useAddSfdAdmin() {
           throw new Error("Vous devez être connecté pour effectuer cette action");
         }
         
+        // Vérifier que tous les champs requis sont présents
+        if (!adminData.email || !adminData.password || !adminData.full_name || !adminData.sfd_id) {
+          throw new Error("Tous les champs obligatoires doivent être remplis");
+        }
+        
         setError(null);
-        console.log("Creating SFD admin with data:", { 
-          email: adminData.email,
-          full_name: adminData.full_name,
-          role: adminData.role,
-          sfd_id: adminData.sfd_id,
-          notify: adminData.notify
-        });
+        console.log("Starting SFD admin creation process", adminData);
         
         return await createSfdAdmin(adminData);
       } catch (err: any) {
-        console.error('Error adding SFD admin:', err);
+        console.error('Error creating SFD admin:', err);
         setError(err.message || "Une erreur s'est produite lors de la création de l'administrateur");
         throw err;
       }
