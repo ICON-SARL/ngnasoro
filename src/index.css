@@ -144,3 +144,14 @@ body {
 .auth-logo-container {
   @apply bg-white p-5 rounded-xl inline-block mb-6 shadow-md;
 }
+
+/* Modern form styles */
+.form-input-icon {
+  @apply absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors group-hover:text-primary;
+}
+
+/* Password field custom dots */
+input[type="password"]::placeholder {
+  letter-spacing: 2px;
+  font-family: sans-serif;
+}

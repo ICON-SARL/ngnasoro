@@ -7,25 +7,24 @@ interface EmailInputProps {
   email: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   disabled: boolean;
+  placeholder?: string;
 }
 
-const EmailInput = ({ email, onChange, disabled }: EmailInputProps) => {
+const EmailInput = ({ email, onChange, disabled, placeholder = "Entrez votre email" }: EmailInputProps) => {
   return (
-    <div>
-      <div className="relative">
-        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-6 w-6 text-[#0D6A51]" />
-        <Input
-          id="email"
-          type="email"
-          placeholder="Entrez votre email ici"
-          className="pl-12 h-16 text-lg border-2 border-[#0D6A51]/30 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-xl bg-white/90 font-medium shadow-md"
-          value={email}
-          onChange={onChange}
-          required
-          disabled={disabled}
-          autoComplete="email"
-        />
-      </div>
+    <div className="relative group">
+      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-hover:text-primary transition-colors" />
+      <Input
+        id="email"
+        type="email"
+        placeholder={placeholder}
+        className="pl-10 h-12 text-base rounded-lg border-gray-300 bg-white/90 focus:border-primary focus:ring-1 focus:ring-primary shadow-sm transition-all"
+        value={email}
+        onChange={onChange}
+        required
+        disabled={disabled}
+        autoComplete="email"
+      />
     </div>
   );
 };
