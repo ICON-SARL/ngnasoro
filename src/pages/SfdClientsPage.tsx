@@ -1,26 +1,19 @@
 
 import React from 'react';
-import { AgencyHeader } from '@/components/AgencyHeader';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/hooks/useAuth';
+import { SuperAdminHeader } from '@/components/SuperAdminHeader';
+import { SfdHeader } from '@/components/sfd/SfdHeader';
+import { ClientManagementSystem } from '@/components/sfd/ClientManagementSystem';
 
 const SfdClientsPage = () => {
+  const { isAdmin } = useAuth();
+  
   return (
     <div className="min-h-screen bg-gray-50">
-      <AgencyHeader />
+      {isAdmin ? <SuperAdminHeader /> : <SfdHeader />}
       
       <div className="container mx-auto py-6 px-4">
-        <h1 className="text-2xl font-semibold mb-6">Gestion des clients SFD</h1>
-        
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Liste des clients</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600">
-              Cette page affichera la liste des clients associés à cette SFD.
-            </p>
-          </CardContent>
-        </Card>
+        <ClientManagementSystem />
       </div>
     </div>
   );

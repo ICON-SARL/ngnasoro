@@ -1,59 +1,264 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import LoansPage from '@/pages/LoansPage';
-import SfdDashboardPage from '@/pages/SfdDashboardPage';
-import SfdAccountPage from '@/pages/SfdAccountPage';
-import SfdClientsPage from '@/pages/SfdClientsPage';
-import SfdSubsidiesPage from '@/pages/SfdSubsidiesPage';
-import AuthCallbackPage from '@/pages/AuthCallbackPage';
-import LandingPage from '@/pages/LandingPage';
-import SettingsPage from '@/pages/SettingsPage';
-import SfdRequestPage from '@/pages/SfdRequestPage';
-import SuperAdminDashboardPage from '@/pages/SuperAdminDashboardPage';
-import SfdManagementPage from '@/pages/SfdManagementPage';
-import LoanApplicationPage from '@/pages/LoanApplicationPage';
-import AuthPage from '@/pages/AuthPage';
-import ProfilePage from '@/pages/ProfilePage';
-import ClientsPage from '@/pages/ClientsPage';
-import ClientDetailPage from '@/pages/ClientDetailPage';
-import { ThemeProvider } from '@/components/theme-provider';
-import { AuthProvider } from '@/hooks/useAuth';
-import { Toaster } from '@/components/ui/toaster';
-import "./global.css";
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Footer } from '@/components';
 
-const App = () => {
+// Auth components
+import { AuthProvider } from '@/hooks/auth/AuthContext';
+
+// Auth pages
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import ClientLoginPage from '@/pages/ClientLoginPage';
+import SfdLoginPage from '@/pages/SfdLoginPage';
+import AdminLoginPage from '@/pages/AdminLoginPage';
+
+// Route protection components
+import ProtectedRoute from '@/components/routes/ProtectedRoute';
+import PermissionProtectedRoute from '@/components/routes/PermissionProtectedRoute';
+
+// Pages
+import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
+import SfdSubsidyRequestPage from '@/pages/SfdSubsidyRequestPage';
+import SfdTransactionsPage from '@/pages/SfdTransactionsPage';
+import SfdClientsPage from '@/pages/SfdClientsPage';
+import SfdLoansPage from '@/pages/SfdLoansPage';
+import SfdAdminDashboard from '@/components/admin/SfdAdminDashboard';
+import AccessDeniedPage from '@/pages/AccessDeniedPage';
+import AuditLogsPage from '@/pages/AuditLogsPage';
+import SubsidyRequestDetailPage from '@/pages/SubsidyRequestDetailPage';
+import MobileFlow from '@/pages/MobileFlow';
+import LoanApplicationPage from '@/pages/LoanApplicationPage';
+import SfdManagementPage from '@/pages/SfdManagementPage';
+import CreditApprovalPage from '@/pages/CreditApprovalPage';
+import MerefSubsidyRequestPage from '@/pages/MerefSubsidyRequestPage';
+import UsersManagementPage from '@/pages/UsersManagementPage';
+
+// Role types and permissions
+import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
+import { initializeSupabase } from '@/utils/initSupabase';
+import { Toaster } from "@/components/ui/toaster";
+
+// Initialize Supabase data structures
+initializeSupabase();
+
+// Wrapper component that conditionally renders the Footer
+const AppWithFooter = () => {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/' || location.pathname === '/index';
+  
   return (
-    <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-      <AuthProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/admin/auth" element={<AuthPage />} />
-            <Route path="/sfd/auth" element={<AuthPage />} />
-            <Route path="/auth/callback" element={<AuthCallbackPage />} />
-            <Route path="/dashboard" element={<SfdDashboardPage />} />
-            <Route path="/admin-dashboard" element={<SuperAdminDashboardPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/loans" element={<LoansPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/sfd-clients" element={<SfdClientsPage />} />
-            <Route path="/clients" element={<ClientsPage />} />
-            <Route path="/clients/:clientId" element={<ClientDetailPage />} />
-            <Route path="/sfd-account/:sfdId" element={<SfdAccountPage />} />
-            <Route path="/sfd-management" element={<SfdManagementPage />} />
-            <Route path="/subsidies" element={<SfdSubsidiesPage />} />
-            <Route path="/request" element={<SfdRequestPage />} />
-            <Route path="/loan-application" element={<LoanApplicationPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          <Toaster />
-        </Router>
-      </AuthProvider>
-    </ThemeProvider>
+    <>
+      <AppRoutes />
+      {isHomePage && <Footer />}
+      <Toaster />
+    </>
   );
 };
+
+// Main routes component
+const AppRoutes = () => {
+  return (
+    <Routes>
+      {/* Public Authentication routes */}
+      <Route path="/auth" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/login" element={<Navigate to="/auth" replace />} />
+      
+      {/* Specialized Auth routes */}
+      <Route path="/auth/client" element={<ClientLoginPage />} />
+      <Route path="/sfd/auth" element={<SfdLoginPage />} />
+      <Route path="/admin/auth" element={<AdminLoginPage />} />
+      
+      {/* Access denied page */}
+      <Route path="/access-denied" element={<AccessDeniedPage />} />
+      
+      {/* Protected routes with permissions */}
+      <Route 
+        path="/super-admin-dashboard" 
+        element={
+          <PermissionProtectedRoute 
+            requiredRole={UserRole.SUPER_ADMIN}
+            fallbackPath="/access-denied"
+          >
+            <SuperAdminDashboard />
+          </PermissionProtectedRoute>
+        } 
+      />
+      
+      {/* Credit Approval route */}
+      <Route 
+        path="/credit-approval" 
+        element={
+          <PermissionProtectedRoute 
+            requiredPermission={PERMISSIONS.APPROVE_CREDIT}
+            fallbackPath="/access-denied"
+          >
+            <CreditApprovalPage />
+          </PermissionProtectedRoute>
+        } 
+      />
+      
+      {/* Add Loan Application route */}
+      <Route
+        path="/loan-application"
+        element={
+          <ProtectedRoute>
+            <LoanApplicationPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Add MEREF Subsidy Request route - Modifier pour permettre l'accès avec le rôle SFD_ADMIN */}
+      <Route
+        path="/meref-subsidy-request"
+        element={
+          <PermissionProtectedRoute 
+            requiredRole={UserRole.SFD_ADMIN}
+            fallbackPath="/access-denied"
+          >
+            <MerefSubsidyRequestPage />
+          </PermissionProtectedRoute>
+        }
+      />
+      
+      {/* SFD Admin routes */}
+      <Route 
+        path="/sfd-admin-dashboard" 
+        element={
+          <PermissionProtectedRoute 
+            requiredRole={UserRole.SFD_ADMIN}
+            fallbackPath="/access-denied"
+          >
+            <SfdAdminDashboard />
+          </PermissionProtectedRoute>
+        } 
+      />
+      
+      {/* SFD functionality routes - Modifier pour utiliser le rôle plutôt que la permission */}
+      <Route 
+        path="/sfd-subsidy-requests" 
+        element={
+          <PermissionProtectedRoute 
+            requiredRole={UserRole.SFD_ADMIN}
+            fallbackPath="/access-denied"
+          >
+            <SfdSubsidyRequestPage />
+          </PermissionProtectedRoute>
+        } 
+      />
+      
+      {/* Add Subsidy Request Detail route */}
+      <Route 
+        path="/sfd-subsidy-requests/:requestId" 
+        element={
+          <PermissionProtectedRoute 
+            requiredRole={UserRole.SFD_ADMIN}
+            fallbackPath="/access-denied"
+          >
+            <SubsidyRequestDetailPage />
+          </PermissionProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/sfd-transactions" 
+        element={
+          <PermissionProtectedRoute 
+            requiredPermission={PERMISSIONS.ACCESS_SFD_DASHBOARD}
+            fallbackPath="/access-denied"
+          >
+            <SfdTransactionsPage />
+          </PermissionProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/sfd-clients" 
+        element={
+          <PermissionProtectedRoute 
+            requiredPermission={PERMISSIONS.MANAGE_CLIENTS}
+            fallbackPath="/access-denied"
+          >
+            <SfdClientsPage />
+          </PermissionProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/sfd-loans" 
+        element={
+          <PermissionProtectedRoute 
+            requiredPermission={PERMISSIONS.MANAGE_LOANS}
+            fallbackPath="/access-denied"
+          >
+            <SfdLoansPage />
+          </PermissionProtectedRoute>
+        } 
+      />
+
+      {/* Audit Logs page */}
+      <Route
+        path="/audit-logs"
+        element={
+          <PermissionProtectedRoute
+            requiredPermission={PERMISSIONS.EXPORT_DATA}
+            fallbackPath="/access-denied"
+          >
+            <AuditLogsPage />
+          </PermissionProtectedRoute>
+        }
+      />
+      
+      {/* Client routes */}
+      <Route
+        path="/mobile-flow/*"
+        element={
+          <ProtectedRoute>
+            <MobileFlow />
+          </ProtectedRoute>
+        }
+      />
+      
+      {/* Legacy protected routes for backward compatibility */}
+      <Route
+        path="/agency-dashboard"
+        element={
+          <PermissionProtectedRoute 
+            requiredRole={UserRole.SFD_ADMIN}
+            fallbackPath="/access-denied"
+          >
+            <SfdAdminDashboard />
+          </PermissionProtectedRoute>
+        }
+      />
+      
+      {/* Admin Routes */}
+      <Route path="/admin/users" element={
+        <PermissionProtectedRoute 
+          requiredPermission="manage_users"
+          fallbackPath="/access-denied"
+        >
+          <UsersManagementPage />
+        </PermissionProtectedRoute>
+      } />
+      
+      {/* Fallback routes */}
+      <Route path="/" element={<Navigate to="/auth" replace />} />
+      <Route path="*" element={<Navigate to="/auth" replace />} />
+      
+      {/* SFD Management route */}
+      <Route path="/sfd-management" element={<SfdManagementPage />} />
+    </Routes>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppWithFooter />
+    </AuthProvider>
+  );
+}
 
 export default App;

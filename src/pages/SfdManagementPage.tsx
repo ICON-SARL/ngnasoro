@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
+import { SfdManagement } from '@/components/admin/SfdManagement';
 
 const SfdManagementPage = () => {
   return (
@@ -9,18 +10,16 @@ const SfdManagementPage = () => {
       <SuperAdminHeader />
       
       <div className="container mx-auto py-6 px-4">
-        <h1 className="text-2xl font-semibold mb-6">Gestion des SFD</h1>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">Gestion des SFDs</h1>
+          <p className="text-muted-foreground">
+            Administration centralisée des partenaires SFD
+          </p>
+        </div>
         
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Liste des SFD</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600">
-              Cette page permettra de gérer toutes les SFD enregistrées dans le système.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
+          <SfdManagement />
+        </div>
       </div>
     </div>
   );

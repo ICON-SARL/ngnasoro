@@ -86,23 +86,6 @@ export function useClientSavingsAccount(clientId: string) {
     }
   }, [clientId, toast]);
 
-  // Get the client's SFD ID
-  const getSfdIdForClient = useCallback(async (): Promise<string | null> => {
-    try {
-      const { data, error } = await supabase
-        .from('sfd_clients')
-        .select('sfd_id')
-        .eq('id', clientId)
-        .single();
-        
-      if (error) throw error;
-      return data.sfd_id;
-    } catch (error) {
-      console.error('Error fetching SFD ID for client:', error);
-      return null;
-    }
-  }, [clientId]);
-
   // Process a deposit
   const processDeposit = useCallback(async (amount: number, description?: string) => {
     if (!clientId || !amount || amount <= 0) {
@@ -141,10 +124,7 @@ export function useClientSavingsAccount(clientId: string) {
       await fetchTransactionHistory();
       
       // Synchronize with user app account
-      const sfdId = await getSfdIdForClient();
-      if (sfdId) {
-        await synchronizeAccounts(clientId, sfdId);
-      }
+      await synchronizeAccounts(clientId);
       
       return true;
     } catch (error: any) {
@@ -158,7 +138,7 @@ export function useClientSavingsAccount(clientId: string) {
     } finally {
       setIsTransactionLoading(false);
     }
-  }, [clientId, toast, fetchAccountData, fetchTransactionHistory, synchronizeAccounts, getSfdIdForClient]);
+  }, [clientId, toast, fetchAccountData, fetchTransactionHistory, synchronizeAccounts]);
 
   // Process a withdrawal
   const processWithdrawal = useCallback(async (amount: number, description?: string) => {
@@ -207,10 +187,7 @@ export function useClientSavingsAccount(clientId: string) {
       await fetchTransactionHistory();
       
       // Synchronize with user app account
-      const sfdId = await getSfdIdForClient();
-      if (sfdId) {
-        await synchronizeAccounts(clientId, sfdId);
-      }
+      await synchronizeAccounts(clientId);
       
       return true;
     } catch (error: any) {
@@ -224,7 +201,7 @@ export function useClientSavingsAccount(clientId: string) {
     } finally {
       setIsTransactionLoading(false);
     }
-  }, [clientId, account, toast, fetchAccountData, fetchTransactionHistory, synchronizeAccounts, getSfdIdForClient]);
+  }, [clientId, account, toast, fetchAccountData, fetchTransactionHistory, synchronizeAccounts]);
 
   // Create a new account if it doesn't exist
   const createAccount = useCallback(async (initialBalance: number = 0) => {
@@ -239,12 +216,6 @@ export function useClientSavingsAccount(clientId: string) {
     
     setIsLoading(true);
     try {
-      // Get SFD ID for the client
-      const sfdId = await getSfdIdForClient();
-      if (!sfdId) {
-        throw new Error("Impossible de trouver le SFD associé au client");
-      }
-      
       // Check if account already exists
       const { data: existingAccount, error: checkError } = await supabase
         .from('accounts')
@@ -298,7 +269,7 @@ export function useClientSavingsAccount(clientId: string) {
       }
       
       // Synchronize with user app account
-      await synchronizeAccounts(clientId, sfdId);
+      await synchronizeAccounts(clientId);
       
       return true;
     } catch (error: any) {
@@ -312,7 +283,7 @@ export function useClientSavingsAccount(clientId: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [clientId, toast, fetchTransactionHistory, synchronizeAccounts, getSfdIdForClient]);
+  }, [clientId, toast, fetchTransactionHistory, synchronizeAccounts]);
 
   // Synchronize account with user application account
   const syncAccount = useCallback(async () => {
@@ -320,24 +291,16 @@ export function useClientSavingsAccount(clientId: string) {
     
     setIsLoading(true);
     try {
-      const sfdId = await getSfdIdForClient();
-      if (!sfdId) {
-        throw new Error("Impossible de trouver le SFD associé au client");
-      }
-      
-      const success = await synchronizeAccounts(clientId, sfdId);
+      const success = await synchronizeAccounts(clientId);
       if (success) {
         await fetchAccountData();
         await fetchTransactionHistory();
       }
       return success;
-    } catch (error) {
-      console.error('Error synchronizing account:', error);
-      return false;
     } finally {
       setIsLoading(false);
     }
-  }, [clientId, synchronizeAccounts, fetchAccountData, fetchTransactionHistory, getSfdIdForClient]);
+  }, [clientId, synchronizeAccounts, fetchAccountData, fetchTransactionHistory]);
 
   // Load data on component mount
   useEffect(() => {
