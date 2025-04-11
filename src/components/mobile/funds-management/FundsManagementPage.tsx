@@ -65,7 +65,7 @@ const FundsManagementPage: React.FC<FundsManagementPageProps> = ({
         onRefresh={onRefreshBalance}
       />
       
-      <div className="flex-1 px-4 pt-4 pb-20">
+      <div className="flex-1 px-5 pt-4 pb-20">
         <TransferOptions onWithdraw={handleWithdraw} onDeposit={handleDeposit} />
         <AvailableChannels />
       </div>

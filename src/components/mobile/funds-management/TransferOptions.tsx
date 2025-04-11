@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Wallet, CreditCard, ChevronRight } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { ArrowUp, ArrowDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface TransferOptionsProps {
   onWithdraw: () => void;
@@ -10,40 +10,31 @@ interface TransferOptionsProps {
 
 const TransferOptions: React.FC<TransferOptionsProps> = ({ onWithdraw, onDeposit }) => {
   return (
-    <div className="space-y-4">
-      <Card className="border hover:border-teal-500 cursor-pointer" onClick={onWithdraw}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                <Wallet className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="font-medium">Retirer des fonds</h3>
-                <p className="text-xs text-gray-500">Vers Mobile Money ou en agence</p>
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-gray-400" />
+    <div className="mb-8">
+      <h2 className="text-lg font-medium text-slate-800 mb-4">Options de transfert</h2>
+      <div className="grid grid-cols-2 gap-4">
+        <Button
+          onClick={onWithdraw}
+          className="h-auto py-5 px-4 flex flex-col items-center bg-[#FEF7CD] text-slate-800 hover:bg-[#FEF7CD]/90 border border-transparent shadow-sm rounded-xl"
+          variant="ghost"
+        >
+          <div className="h-10 w-10 flex items-center justify-center bg-white rounded-full mb-2 shadow-sm">
+            <ArrowUp className="h-5 w-5 text-amber-500" />
           </div>
-        </CardContent>
-      </Card>
-      
-      <Card className="border hover:border-teal-500 cursor-pointer" onClick={onDeposit}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mr-3">
-                <CreditCard className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <h3 className="font-medium">Rembourser un prêt</h3>
-                <p className="text-xs text-gray-500">Mobile Money ou compte SFD</p>
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-gray-400" />
+          <span className="text-base font-medium">Retrait</span>
+        </Button>
+        
+        <Button
+          onClick={onDeposit}
+          className="h-auto py-5 px-4 flex flex-col items-center bg-[#F2FCE2] text-slate-800 hover:bg-[#F2FCE2]/90 border border-transparent shadow-sm rounded-xl"
+          variant="ghost"
+        >
+          <div className="h-10 w-10 flex items-center justify-center bg-white rounded-full mb-2 shadow-sm">
+            <ArrowDown className="h-5 w-5 text-green-500" />
           </div>
-        </CardContent>
-      </Card>
+          <span className="text-base font-medium">Dépôt</span>
+        </Button>
+      </div>
     </div>
   );
 };
