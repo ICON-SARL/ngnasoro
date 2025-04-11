@@ -25,9 +25,17 @@ const MobileFlowPage = () => {
   useEffect(() => {
     const path = location.pathname;
     if (path === '/mobile-flow' || path === '/mobile-flow/') {
-      navigate('/mobile-flow/main');
+      navigate('/mobile-flow/splash');
     }
   }, [location.pathname, navigate]);
+  
+  // Gérer la redirection depuis le splash screen
+  useEffect(() => {
+    const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
+    if (location.pathname !== '/mobile-flow/splash' && !hasSeenSplash) {
+      sessionStorage.setItem('hasSeenSplash', 'true');
+    }
+  }, [location.pathname]);
   
   // Données de compte fictives pour le développement
   const mockAccount: Account = {
@@ -55,6 +63,11 @@ const MobileFlowPage = () => {
   
   const handleAction = (action: string, data?: any) => {
     console.log('Action:', action, data);
+    
+    if (action === 'Start') {
+      setShowWelcome(false);
+      navigate('/mobile-flow/main');
+    }
   };
   
   const handlePaymentSubmit = async (data: { recipient: string, amount: number, note: string }) => {
@@ -72,6 +85,9 @@ const MobileFlowPage = () => {
     );
   }
   
+  // Déterminer si on doit afficher la navigation
+  const showNavigation = !['/mobile-flow/splash', '/mobile-flow/welcome'].includes(location.pathname);
+  
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <main className="flex-1 w-full h-full pb-16">
@@ -87,7 +103,7 @@ const MobileFlowPage = () => {
         />
       </main>
       
-      <MobileNavigation onAction={handleAction} />
+      {showNavigation && <MobileNavigation onAction={handleAction} />}
       
       <MobileMenu 
         isOpen={menuOpen} 
