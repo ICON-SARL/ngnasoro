@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +10,7 @@ const AuthContext = createContext<AuthContextProps>({
   session: null,
   signIn: async () => ({ error: null }),
   signUp: async () => ({ error: null }),
-  signOut: async () => {},
+  signOut: async () => ({ success: true }),
   refreshSession: async () => {},
   activeSfdId: null,
   setActiveSfdId: () => {},

@@ -24,6 +24,11 @@ const ProfilePage = () => {
     navigate('/mobile-flow/main');
   };
 
+  // Create a wrapper for signOut that ignores the return value
+  const handleLogout = async () => {
+    await signOut();
+  };
+
   return (
     <div className="pb-20">
       <div className="bg-white py-2 sticky top-0 z-10 border-b">
@@ -61,7 +66,7 @@ const ProfilePage = () => {
         <TabsContent value="security" className="px-4">
           <SecuritySection />
           <NotificationsSection />
-          <AdvancedSettingsSection onLogout={signOut} />
+          <AdvancedSettingsSection onLogout={handleLogout} />
         </TabsContent>
         
         <TabsContent value="profile" className="px-4">
