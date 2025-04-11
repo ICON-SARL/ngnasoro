@@ -1,14 +1,21 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import SfdListPopup from '../sfd-accounts/SfdListPopup';
 
 interface NoSfdAccountProps {
   onConnect: () => void;
 }
 
 const NoSfdAccount: React.FC<NoSfdAccountProps> = ({ onConnect }) => {
+  const [showSfdList, setShowSfdList] = useState(false);
+  
+  const handleConnectClick = () => {
+    setShowSfdList(true);
+  };
+  
   return (
     <Card className="border-0 shadow-md bg-white rounded-2xl overflow-hidden">
       <CardContent className="p-4">
@@ -20,12 +27,17 @@ const NoSfdAccount: React.FC<NoSfdAccountProps> = ({ onConnect }) => {
           </p>
           <Button 
             className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-            onClick={onConnect}
+            onClick={handleConnectClick}
           >
             Connecter un compte SFD
           </Button>
         </div>
       </CardContent>
+      
+      <SfdListPopup 
+        isOpen={showSfdList} 
+        onClose={() => setShowSfdList(false)} 
+      />
     </Card>
   );
 };

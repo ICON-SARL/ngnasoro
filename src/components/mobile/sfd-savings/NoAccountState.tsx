@@ -1,11 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AlertOctagon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import SfdListPopup from '../sfd-accounts/SfdListPopup';
 
 const NoAccountState: React.FC = () => {
   const navigate = useNavigate();
+  const [showSfdList, setShowSfdList] = useState(false);
   
   return (
     <div className="flex flex-col items-center justify-center p-5 h-40">
@@ -15,11 +17,16 @@ const NoAccountState: React.FC = () => {
         Vous n'avez pas encore de compte auprès d'un SFD partenaire
       </p>
       <Button 
-        onClick={() => navigate('/sfd-selector')}
+        onClick={() => setShowSfdList(true)}
         className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
       >
         Découvrir les SFDs
       </Button>
+      
+      <SfdListPopup 
+        isOpen={showSfdList} 
+        onClose={() => setShowSfdList(false)} 
+      />
     </div>
   );
 };
