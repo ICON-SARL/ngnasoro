@@ -11,6 +11,10 @@ export interface QRCodeGenerationHook {
   qrCodeData: string | null;
   error: string | null;
   generateQRCode: (amount: number, type: 'payment' | 'withdrawal') => Promise<boolean>;
+  // Add additional properties for the modified implementation
+  isProcessingQRCode: boolean;
+  generatePaymentQRCode: (amount: number, loanId?: string) => Promise<QRCodeResponse>;
+  generateWithdrawalQRCode: (amount: number) => Promise<QRCodeResponse>;
 }
 
 // Define the mobile money payment hook response type
@@ -56,6 +60,7 @@ export interface MobileMoneyResponse {
   success: boolean;
   transactionId: string | null;
   message?: string;
+  error?: string; // Add error property
 }
 
 export interface QRCodeResponse {

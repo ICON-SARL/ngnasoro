@@ -6,28 +6,26 @@ import type { MobileMoneyPaymentHook, MobileMoneyResponse } from './types';
 
 export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   
   const processPayment = async (
+    phoneNumber: string,
     amount: number, 
-    phoneNumber: string, 
     provider: string
-  ): Promise<MobileMoneyResponse> => {
+  ): Promise<boolean> => {
     if (!amount || amount <= 0) {
-      return {
-        success: false,
-        error: "Amount must be greater than zero"
-      };
+      setError("Amount must be greater than zero");
+      return false;
     }
     
     if (!phoneNumber) {
-      return {
-        success: false,
-        error: "Phone number is required"
-      };
+      setError("Phone number is required");
+      return false;
     }
     
     setIsProcessing(true);
+    setError(null);
     
     try {
       const result = await mobileMoneyApi.initiatePayment(phoneNumber, amount, provider);
@@ -37,15 +35,16 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
           title: "Payment Initiated",
           description: "Check your phone to confirm the payment",
         });
+        return true;
       } else {
         toast({
           title: "Payment Failed",
           description: result.message || "Unable to process payment",
           variant: "destructive",
         });
+        setError(result.message || "Payment failed");
+        return false;
       }
-      
-      return result;
     } catch (error: any) {
       toast({
         title: "Error",
@@ -53,10 +52,8 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
         variant: "destructive",
       });
       
-      return {
-        success: false,
-        error: error.message || "Payment processing failed"
-      };
+      setError(error.message || "Payment processing failed");
+      return false;
     } finally {
       setIsProcessing(false);
     }
@@ -64,6 +61,7 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
   
   return {
     isProcessing,
+    error,
     processPayment
   };
 }

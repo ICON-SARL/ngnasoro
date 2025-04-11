@@ -3,6 +3,7 @@
 import { useQRCodeGeneration } from './useQRCodeGeneration';
 import { useMobileMoneyPayment } from './useMobileMoneyPayment';
 import { useMobileMoneyWithdrawal } from './useMobileMoneyWithdrawal';
+import { useMobileMoneyOperations } from './useMobileMoneyOperations';
 
 // Export types from the types file
 import { 
@@ -19,6 +20,7 @@ export {
   useQRCodeGeneration,
   useMobileMoneyPayment,
   useMobileMoneyWithdrawal,
+  useMobileMoneyOperations,
   // Export types
   type QRCodeGenerationHook,
   type MobileMoneyPaymentHook,
@@ -28,22 +30,3 @@ export {
   type QRCodeResponse,
   type MobileMoneyProvider
 };
-
-// Define available mobile money providers
-const MOBILE_MONEY_PROVIDERS: MobileMoneyProvider[] = [
-  { id: 'orange', name: 'Orange Money' },
-  { id: 'wave', name: 'Wave' },
-  { id: 'moov', name: 'Moov Money' }
-];
-
-export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
-  const { isProcessing: isPaymentProcessing, processPayment } = useMobileMoneyPayment();
-  const { isProcessing: isWithdrawalProcessing, processWithdrawal } = useMobileMoneyWithdrawal();
-
-  return {
-    isProcessing: isPaymentProcessing || isWithdrawalProcessing,
-    processPayment,
-    processWithdrawal,
-    mobileMoneyProviders: MOBILE_MONEY_PROVIDERS
-  };
-}

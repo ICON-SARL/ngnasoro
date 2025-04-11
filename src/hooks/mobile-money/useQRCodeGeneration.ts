@@ -5,8 +5,21 @@ import { generateQRCode, QRCodeResponse, QRCodeRequest } from '@/utils/api/qrCod
 import { QRCodeGenerationHook } from './types';
 
 export function useQRCodeGeneration(): QRCodeGenerationHook {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isProcessingQRCode, setIsProcessingQRCode] = useState(false);
   const { user } = useAuth();
+  
+  const generateQRCode = async (amount: number, type: 'payment' | 'withdrawal'): Promise<boolean> => {
+    if (type === 'payment') {
+      const result = await generatePaymentQRCode(amount);
+      return result.success;
+    } else {
+      const result = await generateWithdrawalQRCode(amount);
+      return result.success;
+    }
+  };
   
   const generatePaymentQRCode = async (amount: number, loanId?: string): Promise<QRCodeResponse> => {
     if (!user?.id) {
@@ -17,6 +30,8 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
     }
     
     setIsProcessingQRCode(true);
+    setIsGenerating(true);
+    setError(null);
     
     try {
       const request: QRCodeRequest = {
@@ -29,15 +44,20 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       };
       
       const result = await generateQRCode(request);
+      if (result.success && result.qrData) {
+        setQrCodeData(result.qrData);
+      }
       
       return result;
     } catch (error: any) {
+      setError(error.message || "Failed to generate payment QR code");
       return {
         success: false,
         error: error.message || "Failed to generate payment QR code",
       };
     } finally {
       setIsProcessingQRCode(false);
+      setIsGenerating(false);
     }
   };
   
@@ -50,6 +70,8 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
     }
     
     setIsProcessingQRCode(true);
+    setIsGenerating(true);
+    setError(null);
     
     try {
       const request: QRCodeRequest = {
@@ -61,19 +83,28 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       };
       
       const result = await generateQRCode(request);
+      if (result.success && result.qrData) {
+        setQrCodeData(result.qrData);
+      }
       
       return result;
     } catch (error: any) {
+      setError(error.message || "Failed to generate withdrawal QR code");
       return {
         success: false,
         error: error.message || "Failed to generate withdrawal QR code",
       };
     } finally {
       setIsProcessingQRCode(false);
+      setIsGenerating(false);
     }
   };
   
   return {
+    isGenerating,
+    qrCodeData,
+    error,
+    generateQRCode,
     isProcessingQRCode,
     generatePaymentQRCode,
     generateWithdrawalQRCode

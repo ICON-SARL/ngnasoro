@@ -6,28 +6,26 @@ import type { MobileMoneyWithdrawalHook, MobileMoneyResponse } from './types';
 
 export function useMobileMoneyWithdrawal(): MobileMoneyWithdrawalHook {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   
   const processWithdrawal = async (
+    phoneNumber: string,
     amount: number, 
-    phoneNumber: string, 
     provider: string
-  ): Promise<MobileMoneyResponse> => {
+  ): Promise<boolean> => {
     if (!amount || amount <= 0) {
-      return {
-        success: false,
-        error: "Amount must be greater than zero"
-      };
+      setError("Amount must be greater than zero");
+      return false;
     }
     
     if (!phoneNumber) {
-      return {
-        success: false,
-        error: "Phone number is required"
-      };
+      setError("Phone number is required");
+      return false;
     }
     
     setIsProcessing(true);
+    setError(null);
     
     try {
       const result = await mobileMoneyApi.initiateWithdrawal(phoneNumber, amount, provider);
@@ -37,15 +35,16 @@ export function useMobileMoneyWithdrawal(): MobileMoneyWithdrawalHook {
           title: "Withdrawal Initiated",
           description: "Check your phone to confirm the withdrawal",
         });
+        return true;
       } else {
         toast({
           title: "Withdrawal Failed",
           description: result.message || "Unable to process withdrawal",
           variant: "destructive",
         });
+        setError(result.message || "Withdrawal failed");
+        return false;
       }
-      
-      return result;
     } catch (error: any) {
       toast({
         title: "Error",
@@ -53,10 +52,8 @@ export function useMobileMoneyWithdrawal(): MobileMoneyWithdrawalHook {
         variant: "destructive",
       });
       
-      return {
-        success: false,
-        error: error.message || "Withdrawal processing failed"
-      };
+      setError(error.message || "Withdrawal processing failed");
+      return false;
     } finally {
       setIsProcessing(false);
     }
@@ -64,6 +61,7 @@ export function useMobileMoneyWithdrawal(): MobileMoneyWithdrawalHook {
   
   return {
     isProcessing,
+    error,
     processWithdrawal
   };
 }
