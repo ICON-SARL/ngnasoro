@@ -60,13 +60,15 @@ export interface MobileMoneyResponse {
   success: boolean;
   transactionId: string | null;
   message?: string;
-  error?: string; // Add error property
+  error?: string;
 }
 
 export interface QRCodeResponse {
   success: boolean;
-  qrCodeData?: string;
+  qrData?: string;
+  qrCodeData?: string; // Add this for backward compatibility
   expiration?: string;
+  expiresAt?: string; // Add this for backward compatibility
   transactionId?: string;
   error?: string;
 }

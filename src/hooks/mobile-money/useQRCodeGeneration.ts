@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '../useAuth';
-import { generateQRCode, QRCodeResponse, QRCodeRequest } from '@/utils/api/qrCodeGenerator';
+import { generateQRCode as generateQRCodeAPI, QRCodeResponse, QRCodeRequest } from '@/utils/api/qrCodeGenerator';
 import { QRCodeGenerationHook } from './types';
 
 export function useQRCodeGeneration(): QRCodeGenerationHook {
@@ -43,7 +43,9 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
         reference: loanId ? `loan-payment-${loanId}` : `payment-${Date.now()}`
       };
       
-      const result = await generateQRCode(request);
+      // Call the imported API function from qrCodeGenerator.ts
+      const result = await generateQRCodeAPI(request);
+      
       if (result.success && result.qrData) {
         setQrCodeData(result.qrData);
       }
@@ -82,7 +84,9 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
         reference: `withdrawal-${Date.now()}`
       };
       
-      const result = await generateQRCode(request);
+      // Call the imported API function from qrCodeGenerator.ts
+      const result = await generateQRCodeAPI(request);
+      
       if (result.success && result.qrData) {
         setQrCodeData(result.qrData);
       }
