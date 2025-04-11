@@ -11,7 +11,8 @@ import {
   MobileMoneyWithdrawalHook,
   MobileMoneyOperationsHook,
   MobileMoneyResponse,
-  QRCodeResponse 
+  QRCodeResponse,
+  MobileMoneyProvider 
 } from './types';
 
 export {
@@ -24,8 +25,16 @@ export {
   type MobileMoneyWithdrawalHook,
   type MobileMoneyOperationsHook,
   type MobileMoneyResponse,
-  type QRCodeResponse
+  type QRCodeResponse,
+  type MobileMoneyProvider
 };
+
+// Define available mobile money providers
+const MOBILE_MONEY_PROVIDERS: MobileMoneyProvider[] = [
+  { id: 'orange', name: 'Orange Money' },
+  { id: 'mtn', name: 'MTN Mobile Money' },
+  { id: 'wave', name: 'Wave' }
+];
 
 export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
   const { isProcessing: isPaymentProcessing, processPayment } = useMobileMoneyPayment();
@@ -34,6 +43,7 @@ export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
   return {
     isProcessing: isPaymentProcessing || isWithdrawalProcessing,
     processPayment,
-    processWithdrawal
+    processWithdrawal,
+    mobileMoneyProviders: MOBILE_MONEY_PROVIDERS
   };
 }

@@ -27,6 +27,7 @@ export interface MobileMoneyOperationsHook {
   isProcessing: boolean;
   processPayment: (amount: number, phoneNumber: string, provider: string) => Promise<MobileMoneyResponse>;
   processWithdrawal: (amount: number, phoneNumber: string, provider: string) => Promise<MobileMoneyResponse>;
+  mobileMoneyProviders: MobileMoneyProvider[];
 }
 
 export interface MobileMoneyResponse {
@@ -34,4 +35,10 @@ export interface MobileMoneyResponse {
   transactionId?: string;
   message?: string;
   error?: string;
+}
+
+export interface MobileMoneyProvider {
+  id: string;
+  name: string;
+  iconUrl?: string;
 }

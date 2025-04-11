@@ -24,7 +24,7 @@ export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateActio
         .select(`
           id,
           is_default,
-          sfds:sfd_id(id, name, code, region)
+          sfds:sfd_id(id, name, code, region, status)
         `)
         .eq('user_id', user.id);
         
@@ -34,6 +34,9 @@ export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateActio
         const sfdList: SfdData[] = data.map(item => ({
           id: item.sfds.id,
           name: item.sfds.name,
+          code: item.sfds.code,
+          region: item.sfds.region,
+          status: item.sfds.status || 'active',
           token: null,
           lastFetched: null
         }));

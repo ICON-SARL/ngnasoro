@@ -1,4 +1,3 @@
-
 import { SyncResult, LoanPaymentParams } from './types';
 
 /**

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { SfdAccount } from '@/hooks/sfd/types';
 import QRCodeSection from './QRCodeSection';
@@ -17,7 +16,7 @@ interface SecurePaymentContentProps {
   onScanQRCode: () => void;
 }
 
-const SecurePaymentContent: React.FC<SecurePaymentContentProps> = ({
+export const SecurePaymentContent: React.FC<SecurePaymentContentProps> = ({
   isWithdrawal,
   loanId,
   transactionAmount,
