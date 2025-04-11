@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Check } from 'lucide-react';
 import Logo from './Logo';
@@ -108,18 +108,12 @@ const SfdAuthUI = () => {
           />
           
           <div className="mt-4 text-center pb-6 flex flex-col gap-2">
-            <a 
-              href="/auth"
-              className="text-[#0D6A51] hover:underline font-medium"
+            <Link 
+              to="/login"
+              className="text-blue-600 hover:underline font-medium"
             >
-              Connexion Utilisateur Standard
-            </a>
-            <a 
-              href="/admin/auth"
-              className="text-amber-600 hover:underline font-medium"
-            >
-              Accès Administrateur MEREF
-            </a>
+              Changer de type de connexion
+            </Link>
           </div>
           
           <DemoAccountsCreator />

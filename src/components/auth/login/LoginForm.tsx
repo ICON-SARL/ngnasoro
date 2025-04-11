@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mail, Eye, EyeOff, Lock, ShieldAlert } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
 
 interface LoginFormProps {
   adminMode?: boolean;
@@ -17,7 +18,11 @@ interface LoginFormProps {
   onError?: (errorMessage: string) => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = false, onError }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ 
+  adminMode = false, 
+  isSfdAdmin = false,
+  onError
+}) => {
   const {
     email,
     setEmail,
@@ -75,14 +80,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
       <form onSubmit={handleLogin} className="space-y-5">
         <div className="space-y-4">
           <div>
-            <Label htmlFor="email" className="text-gray-700 font-medium mb-1.5 block">Adresse email</Label>
-            <div className="relative group">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-hover:text-primary transition-colors" />
+            <Label htmlFor="email" className="text-gray-700 font-medium mb-1 block">Adresse email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
               <Input 
                 id="email"
                 type="email"
-                placeholder={isSfdAdmin ? "admin@sfd.ml" : adminMode ? "admin@meref.ml" : "jean.dulac@example.com"}
-                className="pl-10 h-12 text-base rounded-lg border-gray-300 bg-white focus:border-primary focus:ring-1 focus:ring-primary shadow-sm transition-all"
+                placeholder={isSfdAdmin ? "admin@sfd.ml" : adminMode ? "admin@meref.ml" : "jean.dulac@anatec.io"}
+                className="pl-10 h-12 text-base border border-gray-300 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-md"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -93,14 +98,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
           </div>
           
           <div>
-            <Label htmlFor="password" className="text-gray-700 font-medium mb-1.5 block">Mot de passe</Label>
-            <div className="relative group">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-hover:text-primary transition-colors" />
+            <Label htmlFor="password" className="text-gray-700 font-medium mb-1 block">Mot de passe</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="••••••••••••"
-                className="pl-10 pr-10 h-12 text-base rounded-lg border-gray-300 bg-white focus:border-primary focus:ring-1 focus:ring-primary shadow-sm transition-all"
+                placeholder="••••••••••••••"
+                className="pl-10 pr-10 h-12 text-base border border-gray-300 focus:border-[#0D6A51] focus:ring-[#0D6A51] rounded-md"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -109,9 +114,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
               />
               <button 
                 type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 focus:outline-none transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 onClick={toggleShowPassword}
-                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
               >
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
@@ -122,11 +126,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
         <div className="pt-3 space-y-3">
           <button 
             type="submit" 
-            className={`w-full h-12 rounded-lg font-medium text-white shadow-md hover:shadow-lg transition-all ${
+            className={`w-full h-12 rounded-md font-semibold text-white ${
               isSfdAdmin ? 'bg-blue-600 hover:bg-blue-700' :
               adminMode ? 'bg-amber-600 hover:bg-amber-700' : 
               'bg-[#0D6A51] hover:bg-[#0D6A51]/90'
-            } flex items-center justify-center gap-2`}
+            } transition-all shadow-md flex items-center justify-center gap-2`}
             disabled={isLoading || cooldownActive}
           >
             {isLoading ? (
@@ -139,14 +143,17 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
               </span>
             ) : isSfdAdmin ? "Connexion SFD" : adminMode ? "Connexion Administration" : "Connexion"}
           </button>
-          
-          <div className="text-center">
-            <a href="#" className="text-sm text-gray-600 hover:text-primary transition-colors">
-              Mot de passe oublié ?
-            </a>
-          </div>
         </div>
       </form>
+      
+      <div className="flex justify-center pt-4">
+        <Link 
+          to="/login" 
+          className="text-sm text-primary hover:underline"
+        >
+          Changer de type de connexion
+        </Link>
+      </div>
     </div>
   );
 };

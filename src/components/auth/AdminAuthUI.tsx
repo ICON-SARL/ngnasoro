@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Logo from './Logo';
 import LoginForm from './login/LoginForm';
 import { Check, Shield } from 'lucide-react';
@@ -13,6 +13,7 @@ const AdminAuthUI = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     const hash = location.hash;
@@ -85,21 +86,19 @@ const AdminAuthUI = () => {
             </div>
           </div>
           
-          <LoginForm adminMode={true} isSfdAdmin={false} />
+          <LoginForm 
+            adminMode={true} 
+            isSfdAdmin={false} 
+            onError={(errorMessage) => setError(errorMessage)}
+          />
           
           <div className="mt-4 text-center pb-6 flex flex-col gap-2">
-            <a 
-              href="/auth"
-              className="text-[#0D6A51] hover:underline font-medium"
+            <Link 
+              to="/login"
+              className="text-amber-600 hover:underline font-medium"
             >
-              Connexion Utilisateur Standard
-            </a>
-            <a 
-              href="/sfd/auth"
-              className="text-blue-600 hover:underline font-medium"
-            >
-              Accès Administrateur SFD
-            </a>
+              Changer de type de connexion
+            </Link>
           </div>
           
           <DemoAccountsCreator />
