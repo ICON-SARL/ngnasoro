@@ -40,6 +40,17 @@ export function useAddSfdAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
+      toast({
+        title: "Succès",
+        description: "L'administrateur SFD a été créé avec succès",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: `Erreur lors de la création de l'administrateur: ${error.message}`,
+        variant: "destructive",
+      });
     }
   });
 

@@ -73,16 +73,16 @@ serve(async (req) => {
     const userId = authData.user.id;
     console.log("Utilisateur auth créé avec ID:", userId);
 
-    // 2. Créer l'entrée admin_users via RPC
-    const { data: adminUserData, error: adminError } = await supabase.rpc(
-      'create_admin_user',
-      {
-        admin_id: userId,
-        admin_email: adminData.email,
-        admin_full_name: adminData.full_name,
-        admin_role: 'sfd_admin'
-      }
-    );
+    // 2. Créer l'entrée admin_users
+    const { data: adminUserData, error: adminError } = await supabase
+      .from('admin_users')
+      .insert({
+        id: userId,
+        email: adminData.email,
+        full_name: adminData.full_name,
+        role: 'sfd_admin',
+        has_2fa: false
+      });
 
     if (adminError) {
       console.error("Erreur lors de la création de l'admin_user:", adminError);

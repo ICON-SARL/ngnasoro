@@ -20,13 +20,13 @@ export async function fetchSfdAdmins(): Promise<SfdAdmin[]> {
       
     if (error) {
       console.error('Error fetching SFD admins:', error);
-      throw error;
+      throw new Error(`Erreur lors de la récupération des administrateurs: ${error.message}`);
     }
     
     return data || [];
-  } catch (error) {
+  } catch (error: any) {
     console.error('Unhandled error in fetchSfdAdmins:', error);
-    return [];
+    throw new Error(`Impossible de charger les administrateurs: ${error.message}`);
   }
 }
 
@@ -42,7 +42,7 @@ export async function fetchSfdAdminsForSfd(sfdId: string): Promise<SfdAdmin[]> {
       
     if (assocError) {
       console.error('Error fetching SFD associations:', assocError);
-      throw assocError;
+      throw new Error(`Erreur lors de la récupération des associations: ${assocError.message}`);
     }
     
     if (!associations || associations.length === 0) {
@@ -62,13 +62,13 @@ export async function fetchSfdAdminsForSfd(sfdId: string): Promise<SfdAdmin[]> {
       
     if (error) {
       console.error('Error fetching SFD admins:', error);
-      throw error;
+      throw new Error(`Erreur lors de la récupération des administrateurs: ${error.message}`);
     }
     
     return data || [];
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Unhandled error in fetchSfdAdminsForSfd for SFD ${sfdId}:`, error);
-    return [];
+    throw new Error(`Impossible de charger les administrateurs: ${error.message}`);
   }
 }
 
@@ -89,7 +89,7 @@ export async function createSfdAdmin(adminData: {
     });
     
     if (error) {
-      console.error('Error creating SFD admin:', error);
+      console.error('Error invoking create-sfd-admin function:', error);
       throw new Error(`Erreur lors de la création de l'administrateur SFD: ${error.message}`);
     }
     
@@ -116,7 +116,7 @@ export async function deleteSfdAdmin(adminId: string): Promise<void> {
     });
     
     if (error) {
-      console.error('Error deleting SFD admin:', error);
+      console.error('Error invoking delete-sfd-admin function:', error);
       throw new Error(`Erreur lors de la suppression de l'administrateur SFD: ${error.message}`);
     }
     
