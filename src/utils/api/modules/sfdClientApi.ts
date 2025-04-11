@@ -41,7 +41,7 @@ export const sfdClientApi = {
         client_id: clientId,
         balance: data.balance,
         currency: data.currency,
-        sfd_id: data.sfd_id || '', // Make sure sfd_id is always defined, even if empty string
+        sfd_id: '', // Set a default empty string since sfd_id doesn't exist in the database table
         updated_at: data.updated_at,
         last_updated: data.last_updated
       };
@@ -92,7 +92,7 @@ export const sfdClientApi = {
           user_id: clientId,
           balance: initialBalance,
           currency: 'FCFA',
-          sfd_id: sfdId // We're setting this, but it might not be stored in the table
+          // Note: we don't add sfd_id to the database insert since that column might not exist
         })
         .select()
         .single();
