@@ -1,4 +1,6 @@
 
-export { SfdManagementContainer as SfdManagement } from './SfdManagementContainer';
-export { SfdToolbar } from './SfdToolbar';
-export { SfdDialogs } from './SfdDialogs';
+export { SfdManagementContainer } from './SfdManagementContainer';
+export { SfdHeader } from './SfdHeader';
+export { SfdList } from './SfdList';
+export { SfdDetail } from './SfdDetail';
+export { NetworkStatusAlerts } from './NetworkStatusAlerts';
