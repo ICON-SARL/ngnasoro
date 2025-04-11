@@ -1,160 +1,54 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 // Auth and Public Components
-import LoginPage from '@/pages/LoginPage';
-import ClientLoginPage from '@/pages/ClientLoginPage';
-import AdminLoginPage from '@/pages/AdminLoginPage';
-import SfdAuthUI from '@/components/auth/SfdAuthUI';
-import AdminAuthUI from '@/components/auth/AdminAuthUI';
+import LandingPage from '@/pages/LandingPage';
+import AuthPage from '@/pages/AuthPage';
+import AuthCallbackPage from '@/pages/AuthCallbackPage';
 
 // Protected Components
-import ProtectedRoute from '@/components/routes/ProtectedRoute';
-import PermissionProtectedRoute from '@/components/routes/PermissionProtectedRoute';
 import ProfilePage from '@/pages/ProfilePage';
-import MobileFlowPage from '@/pages/MobileFlowPage';
-import MobileFlow from '@/pages/MobileFlow';
-import SfdSetupPage from '@/pages/SfdSetupPage';
-import SfdSetupAssistantPage from '@/pages/SfdSetupAssistantPage';
-import UserProfilePage from '@/pages/UserProfilePage';
-
-// Admin Components
-import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
-import AgencyDashboard from '@/pages/AgencyDashboard';
-import AuditLogsPage from '@/pages/AuditLogsPage';
-import AccessDeniedPage from '@/pages/AccessDeniedPage';
-import ClientsPage from '@/pages/ClientsPage';
-import SfdClientsPage from '@/pages/SfdClientsPage';
+import SfdDashboardPage from '@/pages/SfdDashboardPage';
+import SuperAdminDashboardPage from '@/pages/SuperAdminDashboardPage';
 import LoansPage from '@/pages/LoansPage';
-import MerefSubsidyRequestPage from '@/pages/MerefSubsidyRequestPage';
-import NotFound from '@/pages/NotFound';
+import SettingsPage from '@/pages/SettingsPage';
+import SfdClientsPage from '@/pages/SfdClientsPage';
+import ClientsPage from '@/pages/ClientsPage';
+import ClientDetailPage from '@/pages/ClientDetailPage';
+import SfdAccountPage from '@/pages/SfdAccountPage';
+import SfdManagementPage from '@/pages/SfdManagementPage';
+import SfdSubsidiesPage from '@/pages/SfdSubsidiesPage';
+import SfdRequestPage from '@/pages/SfdRequestPage';
+import LoanApplicationPage from '@/pages/LoanApplicationPage';
 
-const Router = () => {
+const AppRoutes = () => {
   const { user, loading } = useAuth();
-
-  useEffect(() => {
-    if (!loading && user && window.location.pathname === '/auth') {
-      // Redirect based on role
-      if (user.app_metadata?.role === 'admin') {
-        window.location.href = '/super-admin-dashboard';
-      } else {
-        window.location.href = '/mobile-flow/main';
-      }
-    }
-  }, [user, loading]);
   
-  // Implementing a different pattern for protected routes
-  // We'll use elements directly rather than using the component prop
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/auth" element={<ClientLoginPage />} />
-        <Route path="/sfd/auth" element={<SfdAuthUI />} />
-        <Route path="/admin/auth" element={<AdminAuthUI />} />
-        <Route path="/access-denied" element={<AccessDeniedPage />} />
-        
-        {/* Auth routes - Using a different pattern for protected routes */}
-        <Route path="/user-profile/:userId" element={
-          <ProtectedRoute>
-            <UserProfilePage />
-          </ProtectedRoute>
-        } />
-        
-        {/* Protected routes */}
-        <Route path="/mobile-flow/*" element={
-          <ProtectedRoute>
-            <MobileFlowPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        } />
-        <Route path="/sfd-setup" element={
-          <ProtectedRoute>
-            <SfdSetupAssistantPage />
-          </ProtectedRoute>
-        } />
-        
-        {/* Admin routes */}
-        <Route
-          path="/super-admin-dashboard"
-          element={
-            <PermissionProtectedRoute requiredPermission="view_dashboard">
-              <SuperAdminDashboard />
-            </PermissionProtectedRoute>
-          }
-        />
-        <Route
-          path="/agency-dashboard"
-          element={
-            <PermissionProtectedRoute requiredPermission="view_agency_dashboard">
-              <AgencyDashboard />
-            </PermissionProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <PermissionProtectedRoute requiredPermission="manage_users">
-              <AuditLogsPage />
-            </PermissionProtectedRoute>
-          }
-        />
-        <Route
-          path="/clients"
-          element={
-            <PermissionProtectedRoute requiredPermission="manage_clients">
-              <ClientsPage />
-            </PermissionProtectedRoute>
-          }
-        />
-        
-        {/* SFD admin routes */}
-        <Route
-          path="/sfd-clients"
-          element={
-            <PermissionProtectedRoute 
-              requiredPermission="manage_clients"
-            >
-              <SfdClientsPage />
-            </PermissionProtectedRoute>
-          }
-        />
-        
-        {/* Loan management */}
-        <Route
-          path="/loans"
-          element={
-            <PermissionProtectedRoute 
-              requiredPermission="manage_loans"
-            >
-              <LoansPage />
-            </PermissionProtectedRoute>
-          }
-        />
-        
-        {/* Subsidy request routes */}
-        <Route
-          path="/sfd-subsidy-requests"
-          element={
-            <PermissionProtectedRoute 
-              requiredPermission="manage_subsidies"
-            >
-              <MerefSubsidyRequestPage />
-            </PermissionProtectedRoute>
-          }
-        />
-        
-        {/* Not found */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/auth" element={<AuthPage />} />
+      <Route path="/admin/auth" element={<AuthPage />} />
+      <Route path="/sfd/auth" element={<AuthPage />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      <Route path="/dashboard" element={<SfdDashboardPage />} />
+      <Route path="/admin-dashboard" element={<SuperAdminDashboardPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/loans" element={<LoansPage />} />
+      <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/sfd-clients" element={<SfdClientsPage />} />
+      <Route path="/clients" element={<ClientsPage />} />
+      <Route path="/clients/:clientId" element={<ClientDetailPage />} />
+      <Route path="/sfd-account/:sfdId" element={<SfdAccountPage />} />
+      <Route path="/sfd-management" element={<SfdManagementPage />} />
+      <Route path="/subsidies" element={<SfdSubsidiesPage />} />
+      <Route path="/request" element={<SfdRequestPage />} />
+      <Route path="/loan-application" element={<LoanApplicationPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 };
 
-export default Router;
+export default AppRoutes;
