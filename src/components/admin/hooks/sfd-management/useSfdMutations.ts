@@ -1,7 +1,12 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { sfdApi } from '@/utils/api/modules/sfdApi';
 import { useToast } from '@/hooks/use-toast';
+import { useCreateSfdMutation } from './mutations/useCreateSfdMutation';
+import { useEditSfdMutation } from './mutations/useEditSfdMutation';
+import { useSuspendSfdMutation } from './mutations/useSuspendSfdMutation';
+import { useReactivateSfdMutation } from './mutations/useReactivateSfdMutation';
+import { useActivateSfdMutation } from './mutations/useActivateSfdMutation';
+import { useAddSfdMutation } from './mutations/useAddSfdMutation';
 
 export function useSfdMutations() {
   const queryClient = useQueryClient();
@@ -48,8 +53,19 @@ export function useSfdMutations() {
     },
   });
   
+  const addSfdMutation = useAddSfdMutation();
+  const editSfdMutation = useEditSfdMutation();
+  const suspendSfdMutation = useSuspendSfdMutation(); 
+  const reactivateSfdMutation = useReactivateSfdMutation();
+  const activateSfdMutation = useActivateSfdMutation();
+  
   return {
     createSfd,
     updateSfd,
+    addSfdMutation,
+    editSfdMutation,
+    suspendSfdMutation,
+    reactivateSfdMutation,
+    activateSfdMutation
   };
 }

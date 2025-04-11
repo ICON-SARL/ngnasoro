@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -35,10 +34,10 @@ export function SfdEditDialog({
     code: sfd.code,
     region: sfd.region || '',
     description: sfd.description || '',
-    email: sfd.email || '',
     contact_email: sfd.contact_email || '',
     phone: sfd.phone || '',
     address: sfd.address || '',
+    email: sfd.email || '',
     status: sfd.status as 'active' | 'pending' | 'suspended',
     logo_url: sfd.logo_url || '',
     legal_document_url: sfd.legal_document_url || '',

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,7 +37,6 @@ export function SfdForm({
       code: '',
       region: '',
       description: '',
-      email: '',
       contact_email: '',
       phone: '',
       address: '',
@@ -105,26 +103,6 @@ export function SfdForm({
                 <FormControl>
                   <Input 
                     placeholder="Région d'opération" 
-                    {...field} 
-                    className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
-                  />
-                </FormControl>
-                <FormMessage className="text-xs" />
-              </FormItem>
-            )}
-          />
-
-          {/* Email Field */}
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm text-slate-700">Email</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="Email principal" 
-                    type="email" 
                     {...field} 
                     className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                   />

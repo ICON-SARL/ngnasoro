@@ -92,10 +92,17 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
   
   const handleSubmit = async (values: FormValues) => {
     try {
+      // Make sure adminData contains the required fields if createAdmin is true
+      const adminDataToSend = values.createAdmin && values.adminData ? {
+        full_name: values.adminData.full_name || '',
+        email: values.adminData.email || '',
+        password: values.adminData.password || '',
+      } : undefined;
+      
       await createSfdMutation.mutateAsync({
         sfdData: values.sfdData,
         createAdmin: values.createAdmin,
-        adminData: values.createAdmin ? values.adminData : undefined
+        adminData: adminDataToSend
       });
       onOpenChange(false);
       form.reset();
