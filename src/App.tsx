@@ -16,6 +16,8 @@ import { AdminManagementPage } from '@/components/admin/management/AdminManageme
 import { SfdUserManagement } from '@/components/sfd/SfdUserManagement';
 import { UserManagement } from '@/components/UserManagement';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
+import CreditApprovalPage from '@/pages/CreditApprovalPage';
+import SfdManagementPage from '@/pages/admin/SfdManagementPage';
 
 function App() {
   return (
@@ -108,6 +110,25 @@ function App() {
           
           {/* Redirection par défaut vers la page de sélection du type de connexion */}
           <Route path="/" element={<AuthRedirectPage />} />
+          
+          {/* Nouvelles routes pour la gestion des SFD et l'approbation de crédit */}
+          <Route
+            path="/sfd-management"
+            element={
+              <ProtectedRoute requireAdmin>
+                <SfdManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/credit-approval"
+            element={
+              <ProtectedRoute requireAdmin>
+                <CreditApprovalPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </AuthProvider>
     </Router>
