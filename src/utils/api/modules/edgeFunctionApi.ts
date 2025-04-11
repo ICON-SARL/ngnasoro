@@ -7,6 +7,7 @@ interface CallOptions {
   requireAuth?: boolean;
   timeout?: number;
   maxRetries?: number;
+  retryDelay?: number;
 }
 
 export const edgeFunctionApi = {
@@ -18,7 +19,8 @@ export const edgeFunctionApi = {
       showToast = true, 
       requireAuth = true, 
       timeout = 30000,
-      maxRetries = 3
+      maxRetries = 3,
+      retryDelay = 1000
     } = options;
     
     console.log(`Calling edge function: ${functionName}`, payload);
@@ -29,47 +31,66 @@ export const edgeFunctionApi = {
         setTimeout(() => reject(new Error(`Edge function call to ${functionName} timed out after ${timeout/1000} seconds`)), timeout);
       });
       
+      // Check network connectivity before making the API call
+      if (!navigator.onLine) {
+        throw new Error('No internet connection. Please check your network and try again.');
+      }
+      
       // Call the edge function with a retry mechanism
-      const callWithRetry = async (retriesLeft = maxRetries, delay = 1000): Promise<any> => {
+      const callWithRetry = async (retriesLeft = maxRetries, delay = retryDelay): Promise<any> => {
         try {
-          // Log le début de la tentative
-          console.log(`Tentative d'appel de ${functionName}, tentatives restantes: ${retriesLeft}`);
+          // Add a small random delay to avoid simultaneous requests
+          const jitter = Math.floor(Math.random() * 500);
+          await new Promise(resolve => setTimeout(resolve, jitter));
+          
+          console.log(`Attempting to call ${functionName}, attempts left: ${retriesLeft}`);
           
           const response = await supabase.functions.invoke(functionName, {
             body: payload,
           });
           
-          // Vérifier le code de statut dans la réponse
+          // Check if the response has an error
           if (response.error) {
             console.error(`Error response from ${functionName}:`, response.error);
             
-            // Si c'est une erreur de statut non-2xx, on la formate différemment
+            // Format non-2xx status error differently
             if (response.error.message && response.error.message.includes('non-2xx status')) {
-              throw new Error(`Edge Function returned a non-2xx status code. Details: ${response.error.message}`);
+              throw new Error(`Edge Function returned an error status. Details: ${response.error.message}`);
             }
             
             throw response.error;
           }
           
-          console.log(`Appel réussi à ${functionName}`, response.data);
+          console.log(`Successfully called ${functionName}`, response.data);
           return response.data;
         } catch (err: any) {
           console.error(`Error in attempt for ${functionName}, retries left: ${retriesLeft-1}`, err);
           
-          if (retriesLeft <= 1) {
-            console.error(`Max retries reached for ${functionName}`);
+          // Check if we should retry based on error type
+          const shouldRetry = retriesLeft > 1 && (
+            err.message?.includes('Failed to fetch') || 
+            err.message?.includes('timed out') ||
+            err.message?.includes('non-2xx status') ||
+            err.status === 429 || // Too many requests
+            (err.status >= 500 && err.status < 600) // Server errors
+          );
+          
+          if (!shouldRetry) {
+            console.error(`No more retries for ${functionName} or error not retriable`);
             throw err;
           }
           
-          console.log(`Retry attempt for ${functionName}, retries left: ${retriesLeft-1}, waiting ${delay}ms`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return callWithRetry(retriesLeft - 1, Math.min(delay * 2, 10000)); // Exponential backoff with 10s maximum
+          // Calculate exponential backoff with some jitter
+          const backoffDelay = Math.min(delay * (1.5 + Math.random() * 0.5), 10000);
+          console.log(`Retrying ${functionName} in ${backoffDelay}ms, attempts left: ${retriesLeft-1}`);
+          await new Promise(resolve => setTimeout(resolve, backoffDelay));
+          return callWithRetry(retriesLeft - 1, backoffDelay);
         }
       };
       
       // Race the function call against the timeout
       const data = await Promise.race([
-        callWithRetry(maxRetries),
+        callWithRetry(maxRetries, retryDelay),
         timeoutPromise
       ]);
       
@@ -78,9 +99,9 @@ export const edgeFunctionApi = {
       console.error(`Error in callEdgeFunction for ${functionName}:`, error);
       
       // Format the error message to be more user-friendly
-      let errorMessage = error.message || `Erreur lors de l'appel à ${functionName}`;
+      let errorMessage = error.message || `Error when calling ${functionName}`;
       
-      // Tenter de parser un message d'erreur JSON si possible
+      // Try to parse JSON error message if possible
       if (error.message && (error.message.startsWith('{') || error.message.includes('{'))) {
         try {
           const match = error.message.match(/{.+}/);
@@ -93,6 +114,11 @@ export const edgeFunctionApi = {
         } catch (e) {
           console.warn('Failed to parse error JSON:', e);
         }
+      }
+      
+      // Handle Failed to fetch errors specifically
+      if (errorMessage.includes('Failed to fetch')) {
+        errorMessage = `Network error when calling ${functionName}. Please check your connection and try again.`;
       }
       
       // Use the generic error handler if showToast is true
@@ -117,7 +143,9 @@ export const edgeFunctionApi = {
     
     return this.callEdgeFunction('admin-api-gateway', adminPayload, {
       ...options,
-      requireAuth: true // Always require auth for admin endpoints
+      requireAuth: true, // Always require auth for admin endpoints
+      maxRetries: 3,     // Default to 3 retries for admin endpoints
+      timeout: 45000     // Longer timeout for admin operations
     });
   },
   
@@ -129,6 +157,9 @@ export const edgeFunctionApi = {
       userId,
       sfdId,
       forceSync: true
+    }, {
+      timeout: 60000, // 1 minute timeout for synchronization
+      maxRetries: 2   // Limit retries for sync operations
     });
   },
   
@@ -136,13 +167,19 @@ export const edgeFunctionApi = {
    * Get MEREF stats for super admin
    */
   async getMerefStats() {
-    return this.callAdminApi('/stats/dashboard', 'GET');
+    return this.callAdminApi('/stats/dashboard', 'GET', null, {
+      maxRetries: 2, // Limit retries for stats
+      timeout: 20000 // 20 seconds timeout for stats
+    });
   },
   
   /**
    * Get SFD stats for SFD admin
    */
   async getSfdStats(sfdId: string) {
-    return this.callAdminApi(`/sfds/${sfdId}/stats`, 'GET');
+    return this.callAdminApi(`/sfds/${sfdId}/stats`, 'GET', null, {
+      maxRetries: 2, // Limit retries for stats
+      timeout: 20000 // 20 seconds timeout for stats
+    });
   }
 };

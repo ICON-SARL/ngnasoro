@@ -33,3 +33,18 @@ verify_jwt = true
 
 [edge-functions.create-sfd-admin]
 verify_jwt = true
+
+[edge-functions.admin-api-gateway]
+verify_jwt = true
+
+[edge-functions.synchronize-sfd-accounts]
+verify_jwt = true
+
+[edge-functions.get-meref-dashboard-stats]
+verify_jwt = true
+
+[edge-functions.get-sfd-balance]
+verify_jwt = true
+
+[edge-functions.sfd-accounts]
+verify_jwt = true
