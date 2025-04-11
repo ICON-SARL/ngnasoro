@@ -1,5 +1,6 @@
+
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 // Auth and Public Components
@@ -44,116 +45,113 @@ const Router = () => {
     }
   }, [user, loading]);
   
-  // Implementing a different pattern for protected routes
-  // We'll use elements directly rather than using the component prop
+  // Using elements directly for protected routes
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/auth" element={<ClientLoginPage />} />
-        <Route path="/sfd/auth" element={<SfdAuthUI />} />
-        <Route path="/admin/auth" element={<AdminAuthUI />} />
-        <Route path="/access-denied" element={<AccessDeniedPage />} />
-        
-        {/* Auth routes - Using a different pattern for protected routes */}
-        <Route path="/user-profile/:userId" element={
-          <ProtectedRoute>
-            <UserProfilePage />
-          </ProtectedRoute>
-        } />
-        
-        {/* Protected routes */}
-        <Route path="/mobile-flow/*" element={
-          <ProtectedRoute>
-            <MobileFlowPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        } />
-        <Route path="/sfd-setup" element={
-          <ProtectedRoute>
-            <SfdSetupAssistantPage />
-          </ProtectedRoute>
-        } />
-        
-        {/* Admin routes */}
-        <Route
-          path="/super-admin-dashboard"
-          element={
-            <PermissionProtectedRoute requiredPermission="view_dashboard">
-              <SuperAdminDashboard />
-            </PermissionProtectedRoute>
-          }
-        />
-        <Route
-          path="/agency-dashboard"
-          element={
-            <PermissionProtectedRoute requiredPermission="view_agency_dashboard">
-              <AgencyDashboard />
-            </PermissionProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <PermissionProtectedRoute requiredPermission="manage_users">
-              <AuditLogsPage />
-            </PermissionProtectedRoute>
-          }
-        />
-        <Route
-          path="/clients"
-          element={
-            <PermissionProtectedRoute requiredPermission="manage_clients">
-              <ClientsPage />
-            </PermissionProtectedRoute>
-          }
-        />
-        
-        {/* SFD admin routes */}
-        <Route
-          path="/sfd-clients"
-          element={
-            <PermissionProtectedRoute 
-              requiredPermission="manage_clients"
-            >
-              <SfdClientsPage />
-            </PermissionProtectedRoute>
-          }
-        />
-        
-        {/* Loan management */}
-        <Route
-          path="/loans"
-          element={
-            <PermissionProtectedRoute 
-              requiredPermission="manage_loans"
-            >
-              <LoansPage />
-            </PermissionProtectedRoute>
-          }
-        />
-        
-        {/* Subsidy request routes */}
-        <Route
-          path="/sfd-subsidy-requests"
-          element={
-            <PermissionProtectedRoute 
-              requiredPermission="manage_subsidies"
-            >
-              <MerefSubsidyRequestPage />
-            </PermissionProtectedRoute>
-          }
-        />
-        
-        {/* Not found */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      {/* Public routes */}
+      <Route path="/" element={<LoginPage />} />
+      <Route path="/auth" element={<ClientLoginPage />} />
+      <Route path="/sfd/auth" element={<SfdAuthUI />} />
+      <Route path="/admin/auth" element={<AdminAuthUI />} />
+      <Route path="/access-denied" element={<AccessDeniedPage />} />
+      
+      {/* Auth routes - Using a different pattern for protected routes */}
+      <Route path="/user-profile/:userId" element={
+        <ProtectedRoute>
+          <UserProfilePage />
+        </ProtectedRoute>
+      } />
+      
+      {/* Protected routes */}
+      <Route path="/mobile-flow/*" element={
+        <ProtectedRoute>
+          <MobileFlowPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <ProfilePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/sfd-setup" element={
+        <ProtectedRoute>
+          <SfdSetupAssistantPage />
+        </ProtectedRoute>
+      } />
+      
+      {/* Admin routes */}
+      <Route
+        path="/super-admin-dashboard"
+        element={
+          <PermissionProtectedRoute requiredPermission="view_dashboard">
+            <SuperAdminDashboard />
+          </PermissionProtectedRoute>
+        }
+      />
+      <Route
+        path="/agency-dashboard"
+        element={
+          <PermissionProtectedRoute requiredPermission="view_agency_dashboard">
+            <AgencyDashboard />
+          </PermissionProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <PermissionProtectedRoute requiredPermission="manage_users">
+            <AuditLogsPage />
+          </PermissionProtectedRoute>
+        }
+      />
+      <Route
+        path="/clients"
+        element={
+          <PermissionProtectedRoute requiredPermission="manage_clients">
+            <ClientsPage />
+          </PermissionProtectedRoute>
+        }
+      />
+      
+      {/* SFD admin routes */}
+      <Route
+        path="/sfd-clients"
+        element={
+          <PermissionProtectedRoute 
+            requiredPermission="manage_clients"
+          >
+            <SfdClientsPage />
+          </PermissionProtectedRoute>
+        }
+      />
+      
+      {/* Loan management */}
+      <Route
+        path="/loans"
+        element={
+          <PermissionProtectedRoute 
+            requiredPermission="manage_loans"
+          >
+            <LoansPage />
+          </PermissionProtectedRoute>
+        }
+      />
+      
+      {/* Subsidy request routes */}
+      <Route
+        path="/sfd-subsidy-requests"
+        element={
+          <PermissionProtectedRoute 
+            requiredPermission="manage_subsidies"
+          >
+            <MerefSubsidyRequestPage />
+          </PermissionProtectedRoute>
+        }
+      />
+      
+      {/* Not found */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 };
 

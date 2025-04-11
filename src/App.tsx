@@ -1,7 +1,8 @@
-
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import { Footer } from '@/components';
+import { Toaster } from "@/components/ui/toaster";
 
 // Auth components
 import { AuthProvider } from '@/hooks/auth/AuthContext';
@@ -37,7 +38,6 @@ import UsersManagementPage from '@/pages/UsersManagementPage';
 // Role types and permissions
 import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
 import { initializeSupabase } from '@/utils/initSupabase';
-import { Toaster } from "@/components/ui/toaster";
 
 // Initialize Supabase data structures
 initializeSupabase();
@@ -256,7 +256,9 @@ const AppRoutes = () => {
 function App() {
   return (
     <AuthProvider>
-      <AppWithFooter />
+      <BrowserRouter>
+        <AppWithFooter />
+      </BrowserRouter>
     </AuthProvider>
   );
 }
