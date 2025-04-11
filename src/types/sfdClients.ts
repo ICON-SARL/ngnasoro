@@ -1,5 +1,3 @@
-
-
 export interface SfdClient {
   id: string;
   full_name: string;
@@ -46,8 +44,8 @@ export interface Loan {
   amount: number;
   interest_rate: number;
   term_months: number;
-  duration_months: number; // Added this property
-  status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'defaulted';
+  duration_months: number;
+  status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'defaulted' | 'disbursed';
   purpose?: string;
   approved_at?: string;
   approved_by?: string;
@@ -56,13 +54,20 @@ export interface Loan {
   end_date?: string;
   created_at: string;
   updated_at: string;
-  monthly_payment?: number; // Added this property
-  next_payment_date?: string; // Added this property
-  last_payment_date?: string; // Added this property
-  subsidy_amount?: number; // Added this property
-  subsidy_rate?: number; // Added this property
-  client_name?: string; // Added for convenience in components
-  reference?: string; // Added for display purposes
+  monthly_payment?: number;
+  next_payment_date?: string;
+  last_payment_date?: string;
+  subsidy_amount?: number;
+  subsidy_rate?: number;
+  client_name?: string;
+  reference?: string;
+  payments?: Array<{
+    id: number;
+    amount: number;
+    created_at: string;
+    payment_method: string;
+    status: string;
+  }>;
 }
 
 export interface LoanPayment {
@@ -100,4 +105,3 @@ export interface SfdSubsidy {
   end_date?: string;
   description?: string;
 }
-
