@@ -14,6 +14,7 @@ export interface DashboardStats {
   newUsersThisMonth: number;
   pendingSubsidies: number;
   totalClients: number;
+  totalSubsidies?: string; // Add optional totalSubsidies
   // Add other required properties
 }
 
@@ -50,7 +51,8 @@ export const useAdminDashboardData = () => {
     totalUsers: 0,
     newUsersThisMonth: 0,
     pendingSubsidies: 0,
-    totalClients: 0
+    totalClients: 0,
+    totalSubsidies: '0', // Initialize the new property
   });
   
   const [subsidiesData, setSubsidiesData] = useState<SubsidiesData>({
@@ -86,7 +88,8 @@ export const useAdminDashboardData = () => {
             totalUsers: 1840,
             newUsersThisMonth: 120,
             pendingSubsidies: 22,
-            totalClients: 1840
+            totalClients: 1840,
+            totalSubsidies: '323M', // Add total subsidies
           });
           
           // Mock subsidies data

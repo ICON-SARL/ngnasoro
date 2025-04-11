@@ -54,9 +54,9 @@ const SuperAdminDashboard = () => {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalSubsidies}</div>
+                  <div className="text-2xl font-bold">{stats.totalSubsidies || "0"}</div>
                   <p className="text-xs text-muted-foreground">
-                    {stats.pendingSubsidies} en attente d'approbation
+                    {stats.pendingSubsidies || "0"} en attente d'approbation
                   </p>
                 </CardContent>
               </Card>
@@ -69,7 +69,7 @@ const SuperAdminDashboard = () => {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalClients}</div>
+                  <div className="text-2xl font-bold">{stats.totalClients || stats.totalUsers}</div>
                   <p className="text-xs text-muted-foreground">
                     Via toutes les SFDs
                   </p>
