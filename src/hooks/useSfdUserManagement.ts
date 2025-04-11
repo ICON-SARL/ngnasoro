@@ -13,6 +13,14 @@ export interface SfdUser {
   lastActive?: string;
 }
 
+export interface UserFormValues {
+  name: string;
+  email: string;
+  role: string;
+  password: string;
+  sendNotification: boolean;
+}
+
 export function useSfdUserManagement() {
   const [users, setUsers] = useState<SfdUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,7 +56,7 @@ export function useSfdUserManagement() {
         .from('user_sfds')
         .select(`
           user_id,
-          admin_users:user_id (
+          admin_users:admin_users(
             id,
             email,
             full_name,
@@ -106,13 +114,7 @@ export function useSfdUserManagement() {
     }
   };
 
-  const addSfdUser = async (userData: {
-    name: string;
-    email: string;
-    role: string;
-    password: string;
-    sendNotification: boolean;
-  }) => {
+  const addSfdUser = async (userData: UserFormValues) => {
     if (!user) {
       toast({
         title: "Erreur",

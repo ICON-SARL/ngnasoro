@@ -21,7 +21,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { useSfdUserManagement, SfdUser } from '@/hooks/useSfdUserManagement';
+import { useSfdUserManagement, SfdUser, UserFormValues } from '@/hooks/useSfdUserManagement';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -46,7 +46,7 @@ const userFormSchema = z.object({
   sendNotification: z.boolean().default(true)
 });
 
-type UserFormValues = z.infer<typeof userFormSchema>;
+type UserFormSchemaValues = z.infer<typeof userFormSchema>;
 
 export function SfdUserManagement() {
   const {
@@ -68,7 +68,7 @@ export function SfdUserManagement() {
 
   const roles = ['Gérant', 'Agent de Crédit', 'Caissier', 'Agent de Terrain'];
 
-  const form = useForm<UserFormValues>({
+  const form = useForm<UserFormSchemaValues>({
     resolver: zodResolver(userFormSchema),
     defaultValues: {
       name: '',
@@ -79,12 +79,20 @@ export function SfdUserManagement() {
     }
   });
 
-  const handleAddUser = async (values: UserFormValues) => {
+  const handleAddUser = async (values: UserFormSchemaValues) => {
     setIsSubmitting(true);
     setFormError(null);
     
     try {
-      const success = await addSfdUser(values);
+      const userData: UserFormValues = {
+        name: values.name,
+        email: values.email,
+        role: values.role,
+        password: values.password,
+        sendNotification: values.sendNotification
+      };
+      
+      const success = await addSfdUser(userData);
       if (success) {
         setShowNewUserDialog(false);
         form.reset();
