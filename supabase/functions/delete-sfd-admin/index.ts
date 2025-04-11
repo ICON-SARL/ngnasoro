@@ -31,75 +31,77 @@ serve(async (req) => {
 
     // Extraire l'ID de l'administrateur à supprimer
     const { adminId } = await req.json();
-    
+
     if (!adminId) {
       return new Response(
-        JSON.stringify({ error: "ID d'administrateur requis" }),
+        JSON.stringify({ error: "ID d'administrateur manquant" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
+
     console.log(`Suppression de l'administrateur SFD avec l'ID: ${adminId}`);
 
-    // 1. Supprimer l'association SFD
+    // Étape 1: Vérifier que l'administrateur existe et est bien un administrateur SFD
+    const { data: adminData, error: adminError } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('id', adminId)
+      .eq('role', 'sfd_admin')
+      .single();
+
+    if (adminError || !adminData) {
+      console.error("Administrateur SFD non trouvé:", adminError);
+      return new Response(
+        JSON.stringify({ error: "Administrateur SFD non trouvé ou non autorisé" }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Étape 2: Supprimer les associations avec les SFDs
     const { error: assocError } = await supabase
       .from('user_sfds')
       .delete()
       .eq('user_id', adminId);
 
     if (assocError) {
-      console.error("Erreur lors de la suppression de l'association SFD:", assocError);
+      console.error("Erreur lors de la suppression des associations SFD:", assocError);
       return new Response(
-        JSON.stringify({ error: `Erreur lors de la suppression de l'association SFD: ${assocError.message}` }),
+        JSON.stringify({ error: `Erreur lors de la suppression des associations: ${assocError.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // 2. Supprimer les rôles
-    const { error: roleError } = await supabase
-      .from('user_roles')
-      .delete()
-      .eq('user_id', adminId)
-      .eq('role', 'sfd_admin');
-
-    if (roleError) {
-      console.error("Erreur lors de la suppression du rôle:", roleError);
-      return new Response(
-        JSON.stringify({ error: `Erreur lors de la suppression du rôle: ${roleError.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // 3. Supprimer l'enregistrement admin_users
-    const { error: adminError } = await supabase
+    // Étape 3: Supprimer l'enregistrement de la table admin_users
+    const { error: removeError } = await supabase
       .from('admin_users')
       .delete()
       .eq('id', adminId);
 
-    if (adminError) {
-      console.error("Erreur lors de la suppression de l'enregistrement admin:", adminError);
+    if (removeError) {
+      console.error("Erreur lors de la suppression de l'admin_user:", removeError);
       return new Response(
-        JSON.stringify({ error: `Erreur lors de la suppression de l'enregistrement admin: ${adminError.message}` }),
+        JSON.stringify({ error: `Erreur lors de la suppression de l'admin_user: ${removeError.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // 4. Supprimer l'utilisateur Auth (le plus important)
-    const { error: authError } = await supabase.auth.admin.deleteUser(adminId);
+    // Étape 4: Supprimer l'utilisateur de la base d'authentification
+    const { error: deleteError } = await supabase.auth.admin.deleteUser(adminId);
 
-    if (authError) {
-      console.error("Erreur lors de la suppression de l'utilisateur Auth:", authError);
+    if (deleteError) {
+      console.error("Erreur lors de la suppression de l'utilisateur:", deleteError);
       return new Response(
-        JSON.stringify({ error: `Erreur lors de la suppression de l'utilisateur Auth: ${authError.message}` }),
+        JSON.stringify({ error: `Erreur lors de la suppression de l'utilisateur: ${deleteError.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log(`Administrateur SFD ${adminId} supprimé avec succès`);
+    
     return new Response(
-      JSON.stringify({ success: true, message: "Administrateur SFD supprimé avec succès" }),
+      JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-    
   } catch (error) {
     console.error("Erreur non gérée:", error);
     return new Response(

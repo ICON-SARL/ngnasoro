@@ -14,6 +14,9 @@ export async function fetchSfdAdmins(): Promise<SfdAdmin[]> {
   try {
     console.log('Récupération de tous les administrateurs SFD');
     
+    // Ajouter un délai pour éviter les problèmes de rate limiting
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     // Use the edge function API instead of direct query to avoid recursion issues
     const data = await edgeFunctionApi.callEdgeFunction('fetch-sfd-admins', {});
       
@@ -33,6 +36,9 @@ export async function fetchSfdAdmins(): Promise<SfdAdmin[]> {
 export async function fetchSfdAdminsForSfd(sfdId: string): Promise<SfdAdmin[]> {
   try {
     console.log(`Récupération des administrateurs SFD pour la SFD ID: ${sfdId}`);
+    
+    // Ajouter un délai pour éviter les problèmes de rate limiting
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // Use the edge function API
     const data = await edgeFunctionApi.callEdgeFunction('fetch-sfd-admins', { sfdId });
@@ -67,6 +73,9 @@ export async function createSfdAdmin(adminData: {
       notify: adminData.notify 
     });
     
+    // Ajouter un délai pour éviter les problèmes de rate limiting
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     // Utiliser la fonction Edge pour créer l'administrateur
     const data = await edgeFunctionApi.callEdgeFunction('create-sfd-admin', adminData);
     
@@ -86,6 +95,9 @@ export async function createSfdAdmin(adminData: {
 export async function deleteSfdAdmin(adminId: string): Promise<void> {
   try {
     console.log(`Suppression de l'administrateur SFD avec l'ID: ${adminId}`);
+    
+    // Ajouter un délai pour éviter les problèmes de rate limiting
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // Utiliser la fonction Edge pour supprimer l'administrateur
     const data = await edgeFunctionApi.callEdgeFunction('delete-sfd-admin', { adminId });

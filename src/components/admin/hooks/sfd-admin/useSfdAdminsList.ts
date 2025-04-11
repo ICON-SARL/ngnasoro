@@ -15,7 +15,8 @@ export function useSfdAdminsList(sfdId?: string) {
     queryKey: sfdId ? ['sfd-admins', sfdId] : ['sfd-admins'],
     queryFn: () => sfdId ? fetchSfdAdminsForSfd(sfdId) : fetchSfdAdmins(),
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1,
+    retry: 3, // Augmenter le nombre de tentatives
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000), // Délai exponentiel avec un max de 30 secondes
     meta: {
       onSettled: (data, error) => {
         if (error) {
@@ -31,7 +32,7 @@ export function useSfdAdminsList(sfdId?: string) {
   });
 
   return {
-    sfdAdmins,
+    sfdAdmins: sfdAdmins || [],
     isLoading,
     error,
     refetch

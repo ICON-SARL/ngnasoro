@@ -1,105 +1,54 @@
 
 import { toast } from '@/hooks/use-toast';
 
-interface ErrorOptions {
-  title?: string;
-  variant?: 'default' | 'destructive';
-  duration?: number;
+interface ErrorWithMessage {
+  message: string;
+  status?: number;
+  code?: string;
+  details?: string;
 }
 
-/**
- * Generic error handler for API errors
- * @param error The error object
- * @param options Custom options for error handling
- */
-export function handleError(error: any, options: ErrorOptions = {}) {
-  console.error('Error occurred:', error);
-  
-  const {
-    title = 'Erreur',
-    variant = 'destructive',
-    duration = 5000
-  } = options;
-  
-  // Extract a user-friendly message from the error
-  let message = "Une erreur inattendue s'est produite";
+export function handleError(error: unknown): void {
+  let displayMessage = "Une erreur s'est produite";
   
   if (typeof error === 'string') {
-    message = error;
+    displayMessage = error;
   } else if (error instanceof Error) {
-    message = error.message;
-  } else if (error?.message) {
-    message = error.message;
-  } else if (error?.error_description) {
-    message = error.error_description;
-  }
-  
-  // Show the error as a toast
-  toast({
-    title,
-    description: message,
-    variant,
-    duration
-  });
-}
-
-/**
- * Network-specific error handler
- * @param error The network error
- */
-export function handleNetworkError(error: any) {
-  let message = "Problème de connexion réseau";
-  
-  // Handle specific network error types
-  if (error?.message?.includes('timeout')) {
-    message = "La requête a pris trop de temps. Vérifiez votre connexion internet.";
-  } else if (error?.message?.includes('Network request failed')) {
-    message = "Impossible de se connecter au serveur. Vérifiez votre connexion internet.";
-  }
-  
-  handleError(error, {
-    title: 'Erreur de connexion',
-    // Fixed property name from 'description' to match the ErrorOptions interface
-    variant: 'destructive'
-  });
-}
-
-/**
- * Handle API responses and throw standardized errors for non-OK responses
- * @param response The fetch Response object
- * @returns The original response if OK
- */
-export async function handleApiResponse(response: Response) {
-  if (!response.ok) {
-    let errorDetail = "Erreur serveur inconnue";
+    displayMessage = error.message;
+  } else if (
+    error && 
+    typeof error === 'object' && 
+    'message' in error && 
+    typeof (error as ErrorWithMessage).message === 'string'
+  ) {
+    const errorObj = error as ErrorWithMessage;
+    displayMessage = errorObj.message;
     
-    try {
-      const errorData = await response.json();
-      errorDetail = errorData.message || errorData.error || errorDetail;
-    } catch (e) {
-      // Couldn't parse JSON error response
+    // Add additional error details if available
+    if (errorObj.details) {
+      displayMessage += `: ${errorObj.details}`;
     }
     
-    const error = new Error(
-      response.status === 401 || response.status === 403
-        ? "Accès non autorisé"
-        : errorDetail || "Erreur serveur"
-    );
-
-    // Add additional properties to the error
-    Object.assign(error, {
-      statusCode: response.status,
-      technical: errorDetail
-    });
-    
-    throw error;
+    // Add status code or error code if available
+    if (errorObj.status || errorObj.code) {
+      displayMessage += ` (${errorObj.status || errorObj.code})`;
+    }
   }
+
+  toast({
+    title: "Erreur",
+    description: displayMessage,
+    variant: "destructive",
+  });
   
-  return response;
+  console.error("Error handled:", error);
 }
 
-export default {
-  handleError,
-  handleNetworkError,
-  handleApiResponse
-};
+// Utility function to create an error object with a specific message
+export function createError(message: string, code?: string): Error {
+  const error = new Error(message);
+  if (code) {
+    (error as any).code = code;
+  }
+  return error;
+}

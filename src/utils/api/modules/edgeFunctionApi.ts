@@ -23,14 +23,27 @@ export const edgeFunctionApi = {
         setTimeout(() => reject(new Error(`Edge function call to ${functionName} timed out`)), timeout);
       });
       
-      // Call the edge function
-      const functionCall = supabase.functions.invoke(functionName, {
-        body: payload,
-      });
+      // Call the edge function with a retry mechanism
+      const callWithRetry = async (retries = 3, delay = 1000): Promise<any> => {
+        try {
+          const response = await supabase.functions.invoke(functionName, {
+            body: payload,
+          });
+          
+          if (response.error) throw response.error;
+          return response;
+        } catch (err) {
+          if (retries <= 1) throw err;
+          
+          console.log(`Retry attempt for ${functionName}, retries left: ${retries-1}`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return callWithRetry(retries - 1, delay * 2);
+        }
+      };
       
       // Race the function call against the timeout
       const { data, error } = await Promise.race([
-        functionCall,
+        callWithRetry(),
         timeoutPromise.then(() => {
           throw new Error(`Edge function call to ${functionName} timed out`);
         })

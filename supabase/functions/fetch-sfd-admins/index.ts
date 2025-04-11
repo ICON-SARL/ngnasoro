@@ -37,68 +37,84 @@ serve(async (req) => {
     if (sfdId) {
       console.log(`Récupération des administrateurs pour la SFD: ${sfdId}`);
       
-      // D'abord, récupérer les user_ids associés à cette SFD
-      const { data: associations, error: assocError } = await supabase
-        .from('user_sfds')
-        .select('user_id')
-        .eq('sfd_id', sfdId);
+      try {
+        // D'abord, récupérer les user_ids associés à cette SFD
+        const { data: associations, error: assocError } = await supabase
+          .from('user_sfds')
+          .select('user_id')
+          .eq('sfd_id', sfdId);
+          
+        if (assocError) {
+          console.error('Erreur lors de la récupération des associations SFD:', assocError);
+          return new Response(
+            JSON.stringify({ error: `Erreur lors de la récupération des associations: ${assocError.message}` }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
         
-      if (assocError) {
-        console.error('Erreur lors de la récupération des associations SFD:', assocError);
-        return new Response(
-          JSON.stringify({ error: `Erreur lors de la récupération des associations: ${assocError.message}` }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      if (!associations || associations.length === 0) {
-        console.log('Aucun administrateur associé à cette SFD');
-        return new Response(
-          JSON.stringify([]),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      // Extraire les IDs d'utilisateur
-      const userIds = associations.map(assoc => assoc.user_id);
-      
-      // Récupérer les détails des admins
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('role', 'sfd_admin')
-        .in('id', userIds);
+        if (!associations || associations.length === 0) {
+          console.log('Aucun administrateur associé à cette SFD');
+          return new Response(
+            JSON.stringify([]),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
         
-      if (error) {
-        console.error('Erreur lors de la récupération des administrateurs SFD:', error);
+        // Extraire les IDs d'utilisateur
+        const userIds = associations.map(assoc => assoc.user_id);
+        
+        // Récupérer les détails des admins
+        const { data, error } = await supabase
+          .from('admin_users')
+          .select('*')
+          .eq('role', 'sfd_admin')
+          .in('id', userIds);
+          
+        if (error) {
+          console.error('Erreur lors de la récupération des administrateurs SFD:', error);
+          return new Response(
+            JSON.stringify({ error: `Erreur lors de la récupération des administrateurs: ${error.message}` }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        admins = data;
+        console.log(`${data?.length || 0} administrateurs SFD récupérés pour la SFD ${sfdId}`);
+      } catch (error) {
+        console.error(`Erreur non gérée dans la récupération des admins pour SFD ${sfdId}:`, error);
         return new Response(
-          JSON.stringify({ error: `Erreur lors de la récupération des administrateurs: ${error.message}` }),
+          JSON.stringify({ error: `Erreur inattendue: ${error.message}` }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      
-      admins = data;
     } else {
       console.log('Récupération de tous les administrateurs SFD');
       
-      // Récupérer tous les admin_users avec le rôle sfd_admin
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('role', 'sfd_admin');
+      try {
+        // Récupérer tous les admin_users avec le rôle sfd_admin
+        const { data, error } = await supabase
+          .from('admin_users')
+          .select('*')
+          .eq('role', 'sfd_admin');
+          
+        if (error) {
+          console.error('Erreur lors de la récupération des administrateurs SFD:', error);
+          return new Response(
+            JSON.stringify({ error: `Erreur lors de la récupération des administrateurs: ${error.message}` }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
         
-      if (error) {
-        console.error('Erreur lors de la récupération des administrateurs SFD:', error);
+        admins = data;
+        console.log(`${data?.length || 0} administrateurs SFD récupérés au total`);
+      } catch (error) {
+        console.error('Erreur non gérée dans la récupération de tous les admins:', error);
         return new Response(
-          JSON.stringify({ error: `Erreur lors de la récupération des administrateurs: ${error.message}` }),
+          JSON.stringify({ error: `Erreur inattendue: ${error.message}` }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      
-      admins = data;
     }
-    
-    console.log(`${admins?.length || 0} administrateurs SFD récupérés`);
     
     return new Response(
       JSON.stringify(admins || []),

@@ -10,7 +10,7 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Building, Search, UserPlus, Users, Plus, RefreshCw } from 'lucide-react';
+import { Building, Search, UserPlus, Users, Plus, RefreshCw, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { AddSfdAdminDialog } from '@/components/admin/sfd/AddSfdAdminDialog';
@@ -19,12 +19,14 @@ import { SfdAdminManager } from '@/components/admin/sfd/SfdAdminManager';
 import { SfdAddDialog } from '@/components/admin/sfd/SfdAddDialog';
 import { Badge } from '@/components/ui/badge';
 import { useQueryClient } from '@tanstack/react-query';
+import { Alert } from '@/components/ui/alert';
 
 export function SfdManagementContainer() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sfds, setSfds] = useState<any[]>([]);
   const [selectedSfd, setSelectedSfd] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('list');
   const [showAddAdminDialog, setShowAddAdminDialog] = useState(false);
   const [showAddSfdDialog, setShowAddSfdDialog] = useState(false);
@@ -35,7 +37,11 @@ export function SfdManagementContainer() {
   // Fonction pour rafraîchir les données
   const fetchSfds = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
+      // Ajouter un délai pour éviter les problèmes de rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const { data, error } = await supabase
         .from('sfds')
         .select('*')
@@ -43,11 +49,15 @@ export function SfdManagementContainer() {
 
       if (error) throw error;
       
+      console.log('SFDs loaded successfully:', data?.length || 0);
       setSfds(data || []);
+      
       if (data && data.length > 0 && !selectedSfd) {
         setSelectedSfd(data[0]);
       }
     } catch (error: any) {
+      console.error('Error fetching SFDs:', error);
+      setLoadError(`Impossible de charger les SFDs: ${error.message}`);
       toast({
         title: "Erreur",
         description: "Impossible de charger les SFDs: " + error.message,
@@ -160,6 +170,23 @@ export function SfdManagementContainer() {
         </div>
       </div>
 
+      {loadError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <div className="ml-2">
+            <p>{loadError}</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefreshData} 
+              className="mt-2"
+            >
+              <RefreshCw className="h-3 w-3 mr-1" /> Réessayer
+            </Button>
+          </div>
+        </Alert>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
           <Card>
@@ -184,7 +211,7 @@ export function SfdManagementContainer() {
                 <div className="flex items-center justify-center h-40">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-              ) : (
+              ) : filteredSfds.length > 0 ? (
                 <div className="space-y-2">
                   {filteredSfds.map((sfd) => (
                     <div 
@@ -210,11 +237,10 @@ export function SfdManagementContainer() {
                       </div>
                     </div>
                   ))}
-                  {filteredSfds.length === 0 && (
-                    <div className="text-center p-4 text-muted-foreground">
-                      Aucune SFD trouvée
-                    </div>
-                  )}
+                </div>
+              ) : (
+                <div className="text-center p-4 text-muted-foreground">
+                  Aucune SFD trouvée
                 </div>
               )}
             </CardContent>
@@ -282,7 +308,7 @@ export function SfdManagementContainer() {
                         <div className="space-y-4">
                           <div>
                             <h3 className="text-sm font-medium text-muted-foreground">Dernière mise à jour</h3>
-                            <p>{new Date(selectedSfd.updated_at).toLocaleDateString()}</p>
+                            <p>{selectedSfd.updated_at ? new Date(selectedSfd.updated_at).toLocaleDateString() : 'Jamais'}</p>
                           </div>
                           {selectedSfd.description && (
                             <div>

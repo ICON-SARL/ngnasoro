@@ -2,8 +2,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Sfd } from '../../types/sfd-types';
+import { useToast } from '@/hooks/use-toast';
 
 export function useSfdData() {
+  const { toast } = useToast();
+
   const { 
     data: sfds, 
     isLoading, 
@@ -15,6 +18,9 @@ export function useSfdData() {
     queryFn: async (): Promise<Sfd[]> => {
       try {
         console.log('Fetching SFDs...');
+        
+        // Ajout d'un délai de 500ms pour éviter les problèmes de rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         const { data, error } = await supabase
           .from('sfds')
@@ -38,7 +44,7 @@ export function useSfdData() {
           throw new Error(`Erreur lors de la récupération des SFDs: ${error.message}`);
         }
 
-        console.log(`Retrieved ${data?.length || 0} SFDs`);
+        console.log(`Retrieved ${data?.length || 0} SFDs successfully`);
         
         // Convert to properly typed Sfd objects with all required fields
         return (data || []).map(sfd => {
@@ -71,11 +77,21 @@ export function useSfdData() {
         });
       } catch (error: any) {
         console.error('Unhandled error in fetchSfds:', error);
-        throw new Error(`Impossible de charger les SFDs: ${error.message}`);
+        
+        // Afficher une toast pour informer l'utilisateur
+        toast({
+          title: "Erreur de chargement",
+          description: `Impossible de charger les SFDs: ${error.message}`,
+          variant: "destructive",
+        });
+        
+        // Renvoyer un tableau vide pour éviter les erreurs d'affichage
+        return [];
       }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 2,
+    retry: 3, // Augmenter le nombre de tentatives
+    retryDelay: attempt => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 30 * 1000), // Backoff exponentiel
     refetchOnWindowFocus: false
   });
 
