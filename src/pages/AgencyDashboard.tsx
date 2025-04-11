@@ -7,8 +7,7 @@ import { SfdUserManagement } from '@/components/sfd/SfdUserManagement';
 import { SfdRoleManager } from '@/components/sfd/roles'; 
 import { ClientManagement } from '@/components/sfd/ClientManagement';
 import { LoanManagement } from '@/components/sfd/LoanManagement';
-import { ReportGenerator } from '@/components/ReportGenerator';
-import { DataExport } from '@/components/DataExport';
+import { Reports } from '@/components/reports';
 import { FinancialReporting } from '@/components/FinancialReporting';
 import { useSfdDashboardStats } from '@/hooks/useSfdDashboardStats';
 import { Loader2 } from 'lucide-react';
@@ -116,25 +115,7 @@ const AgencyDashboard = () => {
             </TabsContent>
             
             <TabsContent value="reports">
-              <Tabs defaultValue="generator">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="generator">Rapports automatisés</TabsTrigger>
-                  <TabsTrigger value="trends">Tendances & Graphiques</TabsTrigger>
-                  <TabsTrigger value="export">Export des données</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="generator">
-                  <ReportGenerator />
-                </TabsContent>
-                
-                <TabsContent value="trends">
-                  <FinancialReporting />
-                </TabsContent>
-                
-                <TabsContent value="export">
-                  <DataExport />
-                </TabsContent>
-              </Tabs>
+              <Reports />
             </TabsContent>
           </div>
         </Tabs>

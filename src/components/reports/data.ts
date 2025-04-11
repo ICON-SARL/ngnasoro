@@ -1,60 +1,75 @@
 
+// Données d'exemple pour les modèles de rapport
 export const reportTemplates = [
   {
     id: 1,
-    name: 'Rapport Mensuel d\'Activité',
-    description: 'Résumé mensuel des opérations financières et des indicateurs de performance.',
-    format: 'PDF/Excel',
+    title: 'Rapport mensuel de transactions',
+    description: 'Vue d\'ensemble des transactions du mois',
+    lastGenerated: '10/04/2025',
+    downloadCount: 15,
     frequency: 'Mensuel',
-    lastGenerated: '01/04/2023',
+    icon: 'calendar' as const
   },
   {
     id: 2,
-    name: 'Rapport de Conformité Réglementaire',
-    description: 'Analyse de la conformité aux exigences réglementaires et aux normes du secteur.',
-    format: 'PDF',
-    frequency: 'Trimestriel',
-    lastGenerated: '31/03/2023',
+    title: 'Performance des prêts',
+    description: 'Analyse détaillée de la performance des prêts',
+    lastGenerated: '05/04/2025',
+    downloadCount: 8,
+    frequency: 'Hebdomadaire',
+    icon: 'file' as const
   },
   {
     id: 3,
-    name: 'Analyse des Risques de Portefeuille',
-    description: 'Évaluation des risques associés au portefeuille de prêts et recommandations.',
-    format: 'PDF/Excel',
-    frequency: 'Mensuel',
-    lastGenerated: '01/04/2023',
+    title: 'Rapport clients en retard',
+    description: 'Liste des clients ayant des échéances dépassées',
+    lastGenerated: '08/04/2025',
+    downloadCount: 12,
+    frequency: 'Quotidien',
+    icon: 'clock' as const
   },
   {
     id: 4,
-    name: 'Rapport de Performance des Agences',
-    description: 'Comparaison des performances entre les différentes agences SFD.',
-    format: 'PDF/Excel',
+    title: 'Rapport de remboursement',
+    description: 'Suivi des remboursements par période',
+    downloadCount: 5,
     frequency: 'Mensuel',
-    lastGenerated: '01/04/2023',
-  },
+    icon: 'file' as const
+  }
 ];
 
+// Données d'exemple pour les rapports programmés
 export const scheduledReports = [
   {
-    id: 101,
-    name: 'Rapport Mensuel d\'Activité - Avril 2023',
-    format: 'PDF',
-    status: 'scheduled' as const,
-    scheduledDate: '01/05/2023',
+    id: 1,
+    name: 'Rapport mensuel - Avril 2025',
+    frequency: 'Mensuel',
+    lastRun: '01/04/2025',
+    nextRun: '01/05/2025',
+    status: 'active' as const
   },
   {
-    id: 102,
-    name: 'Analyse des Risques de Portefeuille - Avril 2023',
-    format: 'Excel',
-    status: 'processing' as const,
-    scheduledDate: '01/05/2023',
+    id: 2,
+    name: 'Rapport hebdomadaire - Semaine 15',
+    frequency: 'Hebdomadaire',
+    lastRun: '08/04/2025',
+    nextRun: '15/04/2025',
+    status: 'pending' as const
   },
   {
-    id: 103,
-    name: 'Rapport de Performance des Agences - Avril 2023',
-    format: 'PDF',
-    status: 'completed' as const,
-    scheduledDate: '01/05/2023',
-    completedDate: '01/05/2023',
+    id: 3,
+    name: 'Performance des prêts - T1 2025',
+    frequency: 'Trimestriel',
+    lastRun: '31/03/2025',
+    nextRun: '30/06/2025',
+    status: 'completed' as const
   },
+  {
+    id: 4,
+    name: 'Audit clients - Mars 2025',
+    frequency: 'Mensuel',
+    lastRun: '31/03/2025',
+    nextRun: '30/04/2025',
+    status: 'failed' as const
+  }
 ];

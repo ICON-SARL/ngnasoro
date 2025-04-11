@@ -10,8 +10,7 @@ import {
   RecentApprovals
 } from '@/components/admin/dashboard';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
-import { ReportGenerator } from '@/components/ReportGenerator';
-import { DataExport } from '@/components/DataExport';
+import { Reports } from '@/components/reports';
 import { Button } from '@/components/ui/button';
 import { FileText, Building, Users, Shield } from 'lucide-react';
 import { AdminManagement } from '@/components/admin/AdminManagement';
@@ -157,16 +156,7 @@ const SuperAdminDashboard = () => {
         
         {/* Reports */}
         {activeTab === 'reports' && (
-          <div className="space-y-6">
-            <ReportGenerator />
-          </div>
-        )}
-        
-        {/* Data Export */}
-        {activeTab === 'export' && (
-          <div className="space-y-6">
-            <DataExport />
-          </div>
+          <Reports />
         )}
         
         {/* Admin Management */}

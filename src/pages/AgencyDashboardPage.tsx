@@ -9,6 +9,7 @@ import { SfdDashboard } from '@/components/sfd/SfdDashboard';
 import { SfdUserManagement } from '@/components/sfd/SfdUserManagement';
 import { Button } from '@/components/ui/button';
 import { Settings, Users, CreditCard, Home, FileSpreadsheet, UserCog } from 'lucide-react';
+import { Reports } from '@/components/reports';
 
 export default function AgencyDashboardPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -63,37 +64,7 @@ export default function AgencyDashboardPage() {
           </TabsContent>
 
           <TabsContent value="reports" className="space-y-4">
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Rapports et Analyses</h2>
-                <p className="text-muted-foreground mb-6">
-                  Module de rapports et d'analyses pour suivre les performances de vos opérations de microfinance.
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <Button variant="outline" className="h-auto flex flex-col items-start p-4 justify-start">
-                    <div className="font-medium mb-1">Rapport de performance</div>
-                    <div className="text-sm text-muted-foreground text-left">
-                      Vue d'ensemble des performances de vos portefeuilles de prêts.
-                    </div>
-                  </Button>
-                  
-                  <Button variant="outline" className="h-auto flex flex-col items-start p-4 justify-start">
-                    <div className="font-medium mb-1">Rapport de remboursement</div>
-                    <div className="text-sm text-muted-foreground text-left">
-                      Analyse détaillée des taux de remboursement par catégorie.
-                    </div>
-                  </Button>
-                  
-                  <Button variant="outline" className="h-auto flex flex-col items-start p-4 justify-start">
-                    <div className="font-medium mb-1">Clients en retard</div>
-                    <div className="text-sm text-muted-foreground text-left">
-                      Liste des clients ayant des échéances de remboursement dépassées.
-                    </div>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <Reports />
           </TabsContent>
         </Tabs>
       </div>

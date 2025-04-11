@@ -1,77 +1,103 @@
 
 import React from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Download, Eye, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Download } from 'lucide-react';
 
 interface ScheduledReport {
   id: number;
   name: string;
-  format: string;
-  status: 'scheduled' | 'processing' | 'completed';
-  scheduledDate: string;
-  completedDate?: string;
+  frequency: string;
+  lastRun: string;
+  nextRun: string;
+  status: 'active' | 'pending' | 'completed' | 'failed';
 }
 
 interface ScheduledReportTableProps {
   reports: ScheduledReport[];
-  onExport?: (reportId: number) => void;
-  onView?: (reportId: number) => void;
+  onExport: (reportId: number) => void;
+  onView: (reportId: number) => void;
 }
 
-export const ScheduledReportTable: React.FC<ScheduledReportTableProps> = ({ 
+export const ScheduledReportTable: React.FC<ScheduledReportTableProps> = ({
   reports,
-  onExport = () => {},
-  onView = () => {}
+  onExport,
+  onView
 }) => {
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-100 text-green-800">Actif</Badge>;
+      case 'pending':
+        return <Badge className="bg-amber-100 text-amber-800">En attente</Badge>;
+      case 'completed':
+        return <Badge className="bg-blue-100 text-blue-800">Terminé</Badge>;
+      case 'failed':
+        return <Badge className="bg-red-100 text-red-800">Échoué</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
   return (
     <div className="border rounded-lg overflow-hidden">
-      <table className="min-w-full">
-        <thead className="bg-muted/50">
-          <tr>
-            <th className="px-4 py-3 text-left text-sm font-medium">Nom du rapport</th>
-            <th className="px-4 py-3 text-left text-sm font-medium">Format</th>
-            <th className="px-4 py-3 text-left text-sm font-medium">Statut</th>
-            <th className="px-4 py-3 text-left text-sm font-medium">Date</th>
-            <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {reports.map((report) => (
-            <tr key={report.id}>
-              <td className="px-4 py-3 text-sm">{report.name}</td>
-              <td className="px-4 py-3 text-sm">{report.format}</td>
-              <td className="px-4 py-3 text-sm">
-                {report.status === 'scheduled' && (
-                  <Badge variant="outline" className="bg-blue-50 text-blue-600">Programmé</Badge>
-                )}
-                {report.status === 'processing' && (
-                  <Badge variant="outline" className="bg-amber-50 text-amber-600">En cours</Badge>
-                )}
-                {report.status === 'completed' && (
-                  <Badge variant="outline" className="bg-green-50 text-green-600">Terminé</Badge>
-                )}
-              </td>
-              <td className="px-4 py-3 text-sm">
-                {report.status === 'completed' ? report.completedDate : report.scheduledDate}
-              </td>
-              <td className="px-4 py-3 text-sm text-right">
-                {report.status === 'completed' && (
-                  <Button variant="ghost" size="sm" onClick={() => onExport(report.id)}>
-                    <Download className="h-4 w-4 mr-1" />
-                    Télécharger
-                  </Button>
-                )}
-                {report.status === 'scheduled' && (
-                  <Button variant="ghost" size="sm" onClick={() => onView(report.id)}>
-                    Modifier
-                  </Button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nom</TableHead>
+            <TableHead>Fréquence</TableHead>
+            <TableHead>Dernière exécution</TableHead>
+            <TableHead>Prochaine exécution</TableHead>
+            <TableHead>Statut</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {reports.length > 0 ? (
+            reports.map((report) => (
+              <TableRow key={report.id}>
+                <TableCell className="font-medium">{report.name}</TableCell>
+                <TableCell>
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
+                    {report.frequency}
+                  </div>
+                </TableCell>
+                <TableCell>{report.lastRun}</TableCell>
+                <TableCell>{report.nextRun}</TableCell>
+                <TableCell>{getStatusBadge(report.status)}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => onView(report.id)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Voir
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => onExport(report.id)}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Exporter
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                Aucun rapport planifié
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 };

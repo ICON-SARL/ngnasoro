@@ -1,22 +1,20 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { FileText, FileSpreadsheet, ChevronDown, Calendar } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DateRangePicker } from '@/components/ui/date-picker';
+import { Download, FileSpreadsheet, FilePdf } from 'lucide-react';
 
 interface ReportFiltersProps {
   reportType: string;
-  setReportType: (value: string) => void;
+  setReportType: (type: string) => void;
   dateRange: DateRange | undefined;
   setDateRange: (range: DateRange | undefined) => void;
   onExportToExcel: () => void;
   onExportToPDF: () => void;
-  isExporting?: boolean;
-  isLoading?: boolean;
+  isExporting: boolean;
+  isLoading: boolean;
 }
 
 export const ReportFilters: React.FC<ReportFiltersProps> = ({
@@ -26,68 +24,49 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
   setDateRange,
   onExportToExcel,
   onExportToPDF,
-  isExporting = false,
-  isLoading = false
+  isExporting,
+  isLoading
 }) => {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col gap-4 sm:flex-row items-start sm:items-center">
       <Select value={reportType} onValueChange={setReportType}>
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-full sm:w-[180px]">
           <SelectValue placeholder="Type de rapport" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="month">Rapport Mensuel</SelectItem>
-          <SelectItem value="quarter">Rapport Trimestriel</SelectItem>
-          <SelectItem value="year">Rapport Annuel</SelectItem>
+          <SelectItem value="month">Mensuel</SelectItem>
+          <SelectItem value="quarter">Trimestriel</SelectItem>
+          <SelectItem value="year">Annuel</SelectItem>
+          <SelectItem value="custom">Personnalisé</SelectItem>
         </SelectContent>
       </Select>
       
-      <div className="relative">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
-              <Calendar className="mr-2 h-4 w-4" />
-              {dateRange?.from ? (
-                dateRange.to ? (
-                  <>
-                    {format(dateRange.from, "dd/MM/yyyy")} -{" "}
-                    {format(dateRange.to, "dd/MM/yyyy")}
-                  </>
-                ) : (
-                  format(dateRange.from, "dd/MM/yyyy")
-                )
-              ) : (
-                <span>Sélectionner une période</span>
-              )}
-              <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <DateRangePicker
-              date={dateRange}
-              setDate={setDateRange}
-            />
-          </PopoverContent>
-        </Popover>
+      <div className="w-full sm:w-auto">
+        <DateRangePicker 
+          value={dateRange} 
+          onChange={setDateRange} 
+          align="start"
+        />
       </div>
       
-      <Button 
-        variant="outline" 
-        onClick={onExportToExcel} 
-        disabled={isExporting || isLoading}
-        className="md:ml-2"
-      >
-        <FileSpreadsheet className="h-4 w-4 mr-1" />
-        Excel
-      </Button>
-      
-      <Button 
-        onClick={onExportToPDF} 
-        disabled={isExporting || isLoading}
-      >
-        <FileText className="h-4 w-4 mr-1" />
-        PDF
-      </Button>
+      <div className="flex gap-2 w-full sm:w-auto sm:ml-auto">
+        <Button 
+          variant="outline" 
+          onClick={onExportToExcel}
+          disabled={isExporting || isLoading}
+        >
+          <FileSpreadsheet className="h-4 w-4 mr-2" />
+          Excel
+        </Button>
+        <Button 
+          variant="outline" 
+          onClick={onExportToPDF}
+          disabled={isExporting || isLoading}
+        >
+          <FilePdf className="h-4 w-4 mr-2" />
+          PDF
+        </Button>
+      </div>
     </div>
   );
 };
