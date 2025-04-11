@@ -1,7 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, useParams, Navigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import LoansPage from '@/pages/LoansPage';
 import SfdDashboardPage from '@/pages/SfdDashboardPage';
 import SfdAccountPage from '@/pages/SfdAccountPage';
@@ -18,7 +17,7 @@ import AuthPage from '@/pages/AuthPage';
 import ProfilePage from '@/pages/ProfilePage';
 import ClientsPage from '@/pages/ClientsPage';
 import ClientDetailPage from '@/pages/ClientDetailPage';
-import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeProvider } from '@/providers/ThemeProvider'; // Updated import path
 import { AuthProvider } from '@/hooks/useAuth';
 import { Toaster } from '@/components/ui/toaster';
 import "@/global.css";

@@ -1,154 +1,156 @@
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useSfdClientDetails } from '@/hooks/useSfdClientDetails';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ClientDetailActions from './ClientDetailActions';
-import { ArrowLeft, User, Phone, Mail, MapPin, FileText, Calendar } from 'lucide-react';
+import { ChevronRight, Edit, File, Link, UserCircle } from 'lucide-react';
 
-const ClientDetails = () => {
-  const { clientId } = useParams<{ clientId: string }>();
-  const navigate = useNavigate();
-  const { client, isLoading, error, refetch } = useSfdClientDetails(clientId);
-  
+type ClientDetailsProps = {
+  client?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    status: 'active' | 'pending' | 'inactive';
+    createdAt: string;
+  };
+  onEdit?: () => void;
+  onViewDocuments?: () => void;
+  onViewSavings?: () => void;
+  onLinkAccount?: () => void;
+  isLoading?: boolean;
+}
+
+export const ClientDetails = ({
+  client,
+  onEdit,
+  onViewDocuments,
+  onViewSavings,
+  onLinkAccount,
+  isLoading = false
+}: ClientDetailsProps) => {
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center">
-          <Skeleton className="h-8 w-8 rounded-full" />
-          <Skeleton className="h-6 w-48 ml-2" />
-        </div>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-24" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <div className="h-5 w-32 animate-pulse bg-gray-200 rounded"></div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="space-y-2">
+                <div className="h-4 w-20 animate-pulse bg-gray-200 rounded"></div>
+                <div className="h-5 w-full animate-pulse bg-gray-200 rounded"></div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     );
   }
-  
-  if (error || !client) {
+
+  if (!client) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-500 mb-4">{error || "Client introuvable"}</p>
-        <Button onClick={() => navigate(-1)}>Retour</Button>
-      </div>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Client non trouvé</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-500">Les détails du client ne sont pas disponibles.</p>
+        </CardContent>
+      </Card>
     );
   }
-  
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Non défini';
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="flex items-center" 
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Retour
-        </Button>
-      </div>
-      
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="md:w-1/3 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Informations du client</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col">
-                <div className="flex items-center text-gray-700 mb-3">
-                  <User className="h-5 w-5 mr-2" />
-                  <span className="font-medium">Nom complet:</span>
-                </div>
-                <span className="text-lg font-semibold ml-7">{client.full_name}</span>
-              </div>
-              
-              {client.phone && (
-                <div className="flex flex-col">
-                  <div className="flex items-center text-gray-700 mb-1">
-                    <Phone className="h-5 w-5 mr-2" />
-                    <span className="font-medium">Téléphone:</span>
-                  </div>
-                  <span className="ml-7">{client.phone}</span>
-                </div>
-              )}
-              
-              {client.email && (
-                <div className="flex flex-col">
-                  <div className="flex items-center text-gray-700 mb-1">
-                    <Mail className="h-5 w-5 mr-2" />
-                    <span className="font-medium">Email:</span>
-                  </div>
-                  <span className="ml-7">{client.email}</span>
-                </div>
-              )}
-              
-              {client.address && (
-                <div className="flex flex-col">
-                  <div className="flex items-center text-gray-700 mb-1">
-                    <MapPin className="h-5 w-5 mr-2" />
-                    <span className="font-medium">Adresse:</span>
-                  </div>
-                  <span className="ml-7">{client.address}</span>
-                </div>
-              )}
-              
-              {client.id_number && (
-                <div className="flex flex-col">
-                  <div className="flex items-center text-gray-700 mb-1">
-                    <FileText className="h-5 w-5 mr-2" />
-                    <span className="font-medium">N° d'identification:</span>
-                  </div>
-                  <span className="ml-7">{client.id_type || 'Pièce d'identité'}: {client.id_number}</span>
-                </div>
-              )}
-              
-              <div className="flex flex-col">
-                <div className="flex items-center text-gray-700 mb-1">
-                  <Calendar className="h-5 w-5 mr-2" />
-                  <span className="font-medium">Date de création:</span>
-                </div>
-                <span className="ml-7">{formatDate(client.created_at)}</span>
-              </div>
-              
-              {client.validated_at && (
-                <div className="flex flex-col">
-                  <div className="flex items-center text-gray-700 mb-1">
-                    <Calendar className="h-5 w-5 mr-2" />
-                    <span className="font-medium">Date de validation:</span>
-                  </div>
-                  <span className="ml-7">{formatDate(client.validated_at)}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <UserCircle className="h-5 w-5" />
+          <span>{client.name}</span>
+          {onEdit && (
+            <Button variant="ghost" size="icon" onClick={onEdit} className="ml-auto">
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm font-medium text-gray-500">Email</p>
+            <p className="text-sm">{client.email}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Téléphone</p>
+            <p className="text-sm">{client.phone}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Adresse</p>
+            <p className="text-sm">{client.address}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Statut</p>
+            <div className="flex items-center">
+              <span className={`inline-block h-2 w-2 rounded-full mr-2 ${
+                client.status === 'active' ? 'bg-green-500' : 
+                client.status === 'pending' ? 'bg-amber-500' : 'bg-red-500'
+              }`}></span>
+              <span className="text-sm capitalize">{client.status}</span>
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Date de création</p>
+            <p className="text-sm">{new Date(client.createdAt).toLocaleDateString()}</p>
+          </div>
         </div>
-        
-        <div className="md:w-2/3">
-          <ClientDetailActions client={client} onClientUpdated={refetch} />
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
+          {onViewDocuments && (
+            <Button 
+              variant="outline" 
+              className="justify-between" 
+              onClick={onViewDocuments}
+            >
+              <div className="flex items-center">
+                <File className="h-4 w-4 mr-2" />
+                Documents
+              </div>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {onViewSavings && (
+            <Button 
+              variant="outline" 
+              className="justify-between" 
+              onClick={onViewSavings}
+            >
+              <div className="flex items-center">
+                <File className="h-4 w-4 mr-2" />
+                Comptes d'épargne
+              </div>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {onLinkAccount && (
+            <Button 
+              variant="outline" 
+              className="justify-between" 
+              onClick={onLinkAccount}
+            >
+              <div className="flex items-center">
+                <Link className="h-4 w-4 mr-2" />
+                Lier un compte
+              </div>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
-
-export default ClientDetails;
