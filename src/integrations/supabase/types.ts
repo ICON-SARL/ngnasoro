@@ -1270,6 +1270,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_sfd_admin_auth: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_super_admin_auth: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       propagate_client_transaction: {
         Args: { p_transaction_id: string }
         Returns: boolean

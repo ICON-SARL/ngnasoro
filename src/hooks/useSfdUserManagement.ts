@@ -33,6 +33,7 @@ export function useSfdUserManagement() {
     if (!user) return;
     
     setIsLoading(true);
+    setError(null);
     try {
       // Get the default SFD for the current user
       const { data: userSfds, error: sfdsError } = await supabase

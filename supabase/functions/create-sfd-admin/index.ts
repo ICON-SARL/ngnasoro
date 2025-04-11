@@ -74,7 +74,7 @@ serve(async (req) => {
     console.log("Utilisateur auth créé avec ID:", userId);
 
     // 2. Créer l'entrée admin_users
-    const { data: adminUserData, error: adminError } = await supabase
+    const { error: adminError } = await supabase
       .from('admin_users')
       .insert({
         id: userId,
