@@ -40,7 +40,7 @@ export async function fetchSfdAdminsForSfd(sfdId: string): Promise<SfdAdmin[]> {
     // Ajouter un délai pour éviter les problèmes de rate limiting
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Use the edge function API
+    // Use the edge function API to avoid RLS recursion issues
     const data = await edgeFunctionApi.callEdgeFunction('fetch-sfd-admins', { sfdId });
       
     if (!data || data.error) {
@@ -76,7 +76,7 @@ export async function createSfdAdmin(adminData: {
     // Ajouter un délai pour éviter les problèmes de rate limiting
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Utiliser la fonction Edge pour créer l'administrateur
+    // Utiliser la fonction Edge pour créer l'administrateur et éviter les problèmes de RLS
     const data = await edgeFunctionApi.callEdgeFunction('create-sfd-admin', adminData);
     
     if (!data || data.error) {
@@ -87,8 +87,13 @@ export async function createSfdAdmin(adminData: {
     console.log('Administrateur SFD créé avec succès:', data);
     return data;
   } catch (error: any) {
+    // Si l'erreur concerne la récursion infinie, renvoyer un message plus clair
+    if (error.message && error.message.includes('infinite recursion')) {
+      throw new Error("Erreur de récursion détectée. Veuillez réessayer dans quelques instants.");
+    }
+    
     console.error('Erreur non gérée dans createSfdAdmin:', error);
-    throw new Error(error.message || 'Erreur lors de la création de l\'administrateur SFD');
+    throw error;
   }
 }
 

@@ -33,7 +33,24 @@ export function useAddSfdAdmin() {
         setError(null);
         console.log("Starting SFD admin creation process", adminData);
         
-        return await createSfdAdmin(adminData);
+        // Essayer de créer l'admin avec une stratégie de retry
+        let retries = 3;
+        while (retries > 0) {
+          try {
+            return await createSfdAdmin(adminData);
+          } catch (err: any) {
+            if (retries <= 1 || !err.message?.includes('infinite recursion')) {
+              throw err;
+            }
+            
+            console.log(`Retry attempt, retries left: ${retries-1}`);
+            retries--;
+            // Attendre un court délai avant de réessayer
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+        
+        throw new Error("Nombre maximum de tentatives atteint");
       } catch (err: any) {
         console.error('Error creating SFD admin:', err);
         setError(err.message || "Une erreur s'est produite lors de la création de l'administrateur");
