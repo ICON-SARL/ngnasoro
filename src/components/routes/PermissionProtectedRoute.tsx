@@ -48,11 +48,16 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
       return;
     }
     
-    // Fix for SFD_ADMIN role and manage_subsidies permission
+    // Simple check for SFD_ADMIN role and SFD-specific routes
     if (userRole === 'sfd_admin' && (
-      requiredRole === UserRole.SFD_ADMIN || requiredPermission === 'manage_subsidies'
+      requiredRole === 'sfd_admin' || 
+      requiredRole === UserRole.SFD_ADMIN ||
+      requiredPermission === 'manage_subsidies' ||
+      requiredPermission === 'manage_clients' ||
+      requiredPermission === 'manage_loans' ||
+      requiredPermission === 'access_sfd_dashboard'
     )) {
-      console.log('SFD admin accessing subsidies, granting access');
+      console.log('SFD admin accessing subsidies or SFD features, granting access');
       setHasAccess(true);
       return;
     }
@@ -71,7 +76,6 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
     }
     
     // Check permissions - comparing string values with string literal enum values
-    // We need to properly type-check when comparing userRole with 'admin'
     let permissionMatch = !requiredPermission;
     
     // Admin has all permissions - using type guard to ensure proper comparison
@@ -121,9 +125,9 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
 
   if (!user) {
     // Redirect to appropriate auth page based on required role
-    if (requiredRole === UserRole.SUPER_ADMIN) {
+    if (requiredRole === UserRole.SUPER_ADMIN || requiredRole === 'admin') {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
-    } else if (requiredRole === UserRole.SFD_ADMIN) {
+    } else if (requiredRole === UserRole.SFD_ADMIN || requiredRole === 'sfd_admin') {
       return <Navigate to="/sfd/auth" state={{ from: location }} replace />;
     } else {
       return <Navigate to="/auth" state={{ from: location }} replace />;

@@ -37,25 +37,28 @@ const SfdAuthUI = () => {
       if (user.app_metadata?.role === 'sfd_admin') {
         console.log("SfdAuthUI: Redirecting sfd_admin to /agency-dashboard");
         navigate('/agency-dashboard');
+        return;
       } 
+      
       // Fallback to checking user_metadata if role is not in app_metadata
-      else if (user.user_metadata?.role === 'sfd_admin') {
+      if (user.user_metadata?.role === 'sfd_admin') {
         console.log("SfdAuthUI: Redirecting based on user_metadata.role to /agency-dashboard");
         navigate('/agency-dashboard');
+        return;
       }
+      
       // Check for sfd_id presence as another signal of SFD admin status
-      else if (user.user_metadata?.sfd_id || user.app_metadata?.sfd_id) {
+      if (user.user_metadata?.sfd_id || user.app_metadata?.sfd_id) {
         console.log("SfdAuthUI: Redirecting based on sfd_id presence to /agency-dashboard");
         navigate('/agency-dashboard');
+        return;
       }
+      
       // Redirect other users to their appropriate pages
-      else {
-        console.log("SfdAuthUI: User is not an SFD admin, redirecting elsewhere");
-        if (user.app_metadata?.role === 'admin') {
-          navigate('/admin/auth');
-        } else {
-          navigate('/auth');
-        }
+      if (user.app_metadata?.role === 'admin') {
+        navigate('/admin/auth');
+      } else {
+        navigate('/auth');
       }
     }
   }, [user, loading, navigate]);
