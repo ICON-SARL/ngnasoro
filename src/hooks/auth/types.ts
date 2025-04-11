@@ -21,7 +21,7 @@ export interface AuthContextProps {
   session: any | null;
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: any | null }>;
-  signOut: () => Promise<void>;
+  signOut: () => Promise<{ success: boolean; error?: any }>;  // Updated return type to match implementation
   refreshSession: () => Promise<void>;
   activeSfdId: string | null;
   setActiveSfdId: (id: string | null) => void;
