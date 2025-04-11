@@ -1,0 +1,115 @@
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  // CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    // Récupérer les variables d'environnement nécessaires
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("Variables d'environnement manquantes");
+      return new Response(
+        JSON.stringify({ error: "Configuration du serveur incorrecte" }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Créer un client Supabase avec la clé de service (privilèges administratifs)
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Récupérer le paramètre sfdId (s'il existe)
+    const { sfdId } = await req.json().catch(() => ({}));
+    
+    let admins;
+    
+    if (sfdId) {
+      console.log(`Récupération des administrateurs pour la SFD: ${sfdId}`);
+      
+      // D'abord, récupérer les user_ids associés à cette SFD
+      const { data: associations, error: assocError } = await supabase
+        .from('user_sfds')
+        .select('user_id')
+        .eq('sfd_id', sfdId);
+        
+      if (assocError) {
+        console.error('Erreur lors de la récupération des associations SFD:', assocError);
+        return new Response(
+          JSON.stringify({ error: `Erreur lors de la récupération des associations: ${assocError.message}` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (!associations || associations.length === 0) {
+        console.log('Aucun administrateur associé à cette SFD');
+        return new Response(
+          JSON.stringify([]),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Extraire les IDs d'utilisateur
+      const userIds = associations.map(assoc => assoc.user_id);
+      
+      // Récupérer les détails des admins
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('role', 'sfd_admin')
+        .in('id', userIds);
+        
+      if (error) {
+        console.error('Erreur lors de la récupération des administrateurs SFD:', error);
+        return new Response(
+          JSON.stringify({ error: `Erreur lors de la récupération des administrateurs: ${error.message}` }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      admins = data;
+    } else {
+      console.log('Récupération de tous les administrateurs SFD');
+      
+      // Récupérer tous les admin_users avec le rôle sfd_admin
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('role', 'sfd_admin');
+        
+      if (error) {
+        console.error('Erreur lors de la récupération des administrateurs SFD:', error);
+        return new Response(
+          JSON.stringify({ error: `Erreur lors de la récupération des administrateurs: ${error.message}` }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      admins = data;
+    }
+    
+    console.log(`${admins?.length || 0} administrateurs SFD récupérés`);
+    
+    return new Response(
+      JSON.stringify(admins || []),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+    
+  } catch (error) {
+    console.error("Erreur non gérée:", error);
+    return new Response(
+      JSON.stringify({ error: error.message || "Une erreur inattendue s'est produite" }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});

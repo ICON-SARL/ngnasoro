@@ -48,6 +48,27 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    // Vérifier si l'email existe déjà
+    const { data: existingUsers, error: checkError } = await supabase
+      .from('admin_users')
+      .select('email')
+      .eq('email', email);
+      
+    if (checkError) {
+      console.error("Erreur lors de la vérification de l'email:", checkError);
+      return new Response(
+        JSON.stringify({ error: `Erreur lors de la vérification de l'email: ${checkError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (existingUsers && existingUsers.length > 0) {
+      return new Response(
+        JSON.stringify({ error: "Cet email est déjà enregistré. Veuillez utiliser un email différent." }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // 1. Créer un utilisateur Auth avec privilèges d'admin
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -102,7 +123,7 @@ serve(async (req) => {
 
     console.log("Enregistrement admin créé");
 
-    // 3. Attribuer le rôle SFD_ADMIN
+    // 3. Attribuer le rôle SFD_ADMIN via RPC
     const { error: roleError } = await supabase.rpc(
       'assign_role',
       {

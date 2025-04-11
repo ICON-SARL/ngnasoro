@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 
 interface SfdAdmin {
   id: string;
@@ -13,14 +14,12 @@ export async function fetchSfdAdmins(): Promise<SfdAdmin[]> {
   try {
     console.log('Récupération de tous les administrateurs SFD');
     
-    const { data, error } = await supabase
-      .from('admin_users')
-      .select('*')
-      .eq('role', 'sfd_admin');
+    // Use the edge function API instead of direct query to avoid recursion issues
+    const data = await edgeFunctionApi.callEdgeFunction('fetch-sfd-admins', {});
       
-    if (error) {
-      console.error('Erreur lors de la récupération des administrateurs SFD:', error);
-      throw new Error(`Erreur lors de la récupération des administrateurs: ${error.message}`);
+    if (!data || data.error) {
+      console.error('Erreur lors de la récupération des administrateurs SFD:', data?.error || 'Erreur inconnue');
+      throw new Error(`Erreur lors de la récupération des administrateurs: ${data?.error || 'Erreur inconnue'}`);
     }
     
     console.log('Administrateurs SFD récupérés avec succès:', data?.length || 0);
@@ -35,35 +34,12 @@ export async function fetchSfdAdminsForSfd(sfdId: string): Promise<SfdAdmin[]> {
   try {
     console.log(`Récupération des administrateurs SFD pour la SFD ID: ${sfdId}`);
     
-    // D'abord, récupérer les user_ids associés à cette SFD
-    const { data: associations, error: assocError } = await supabase
-      .from('user_sfds')
-      .select('user_id')
-      .eq('sfd_id', sfdId);
+    // Use the edge function API
+    const data = await edgeFunctionApi.callEdgeFunction('fetch-sfd-admins', { sfdId });
       
-    if (assocError) {
-      console.error('Erreur lors de la récupération des associations SFD:', assocError);
-      throw new Error(`Erreur lors de la récupération des associations: ${assocError.message}`);
-    }
-    
-    if (!associations || associations.length === 0) {
-      console.log('Aucun administrateur associé à cette SFD');
-      return [];
-    }
-    
-    // Extraire les IDs d'utilisateur
-    const userIds = associations.map(assoc => assoc.user_id);
-    
-    // Récupérer les détails des admins
-    const { data, error } = await supabase
-      .from('admin_users')
-      .select('*')
-      .eq('role', 'sfd_admin')
-      .in('id', userIds);
-      
-    if (error) {
-      console.error('Erreur lors de la récupération des administrateurs SFD:', error);
-      throw new Error(`Erreur lors de la récupération des administrateurs: ${error.message}`);
+    if (!data || data.error) {
+      console.error('Erreur lors de la récupération des administrateurs SFD:', data?.error || 'Erreur inconnue');
+      throw new Error(`Erreur lors de la récupération des administrateurs: ${data?.error || 'Erreur inconnue'}`);
     }
     
     console.log(`${data?.length || 0} administrateurs SFD récupérés pour la SFD ${sfdId}`);
@@ -92,14 +68,7 @@ export async function createSfdAdmin(adminData: {
     });
     
     // Utiliser la fonction Edge pour créer l'administrateur
-    const { data, error } = await supabase.functions.invoke('create-sfd-admin', {
-      body: JSON.stringify(adminData)
-    });
-    
-    if (error) {
-      console.error('Erreur lors de l\'appel à la fonction create-sfd-admin:', error);
-      throw new Error(`Erreur lors de la création de l'administrateur SFD: ${error.message}`);
-    }
+    const data = await edgeFunctionApi.callEdgeFunction('create-sfd-admin', adminData);
     
     if (!data || data.error) {
       console.error('Erreur dans la réponse de la fonction:', data?.error || 'Erreur inconnue');
@@ -119,14 +88,7 @@ export async function deleteSfdAdmin(adminId: string): Promise<void> {
     console.log(`Suppression de l'administrateur SFD avec l'ID: ${adminId}`);
     
     // Utiliser la fonction Edge pour supprimer l'administrateur
-    const { data, error } = await supabase.functions.invoke('delete-sfd-admin', {
-      body: JSON.stringify({ adminId })
-    });
-    
-    if (error) {
-      console.error('Erreur lors de l\'appel à la fonction delete-sfd-admin:', error);
-      throw new Error(`Erreur lors de la suppression de l'administrateur SFD: ${error.message}`);
-    }
+    const data = await edgeFunctionApi.callEdgeFunction('delete-sfd-admin', { adminId });
     
     if (!data || data.error) {
       console.error('Erreur dans la réponse de la fonction:', data?.error || 'Erreur inconnue');
