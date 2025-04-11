@@ -53,7 +53,7 @@ export async function generateQRCode(
     
     return {
       success: true,
-      qrData: `data:image/png;base64,iVBORw0KGgoAAAANSUhEU...`,
+      qrData: data.qrCode.data || `data:image/png;base64,iVBORw0KGgoAAAANSUhEU...`,
       transactionId: data.qrCode.code,
       expiresAt: data.qrCode.expiresAt
     };
