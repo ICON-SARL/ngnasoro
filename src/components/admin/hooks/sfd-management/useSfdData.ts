@@ -40,18 +40,34 @@ export function useSfdData() {
 
         console.log(`Retrieved ${data?.length || 0} SFDs`);
         
-        // Ensure the status is properly typed and handle additional properties
-        // that might be used in components but not present in the database
+        // Convert to properly typed Sfd objects with all required fields
         return (data || []).map(sfd => {
-          return {
-            ...sfd,
+          const typedSfd: Sfd = {
+            id: sfd.id,
+            name: sfd.name,
+            code: sfd.code,
+            region: sfd.region || undefined,
             status: (sfd.status as 'active' | 'suspended' | 'pending') || 'pending',
-            // Add empty values for properties used in the UI but not in DB query
+            logo_url: sfd.logo_url || undefined,
+            contact_email: sfd.contact_email || undefined,
+            phone: sfd.phone || undefined,
+            description: sfd.description || undefined,
+            created_at: sfd.created_at,
+            updated_at: sfd.updated_at || undefined,
+            // Add properties used in UI that aren't in the database query
             email: sfd.contact_email || undefined,
             address: undefined,
             legal_document_url: undefined,
-            subsidy_balance: undefined
-          } as Sfd;
+            subsidy_balance: undefined,
+            suspended_at: undefined,
+            suspension_reason: undefined,
+            client_count: undefined,
+            loan_count: undefined,
+            total_loan_amount: undefined,
+            admin_count: undefined,
+            last_admin_login: undefined
+          };
+          return typedSfd;
         });
       } catch (error: any) {
         console.error('Unhandled error in fetchSfds:', error);
