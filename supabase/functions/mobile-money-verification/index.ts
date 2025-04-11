@@ -14,7 +14,7 @@ interface MobileMoneyRequest {
   userId: string;
   phoneNumber: string;
   amount: number;
-  provider: "orange" | "mtn" | "wave";
+  provider: "orange" | "wave" | "moov";
   isWithdrawal: boolean;
   loanId?: string;
   isRepayment?: boolean;
@@ -91,7 +91,7 @@ serve(async (req) => {
       }
       
       // Validate provider
-      if (!["orange", "mtn", "wave"].includes(provider)) {
+      if (!["orange", "wave", "moov"].includes(provider)) {
         return new Response(
           JSON.stringify({ error: "Invalid provider" }),
           { 

@@ -61,19 +61,7 @@ async function verifyWithdrawalLimit(userId: string, amount: number, provider: s
 
 // Security functions
 async function verifySignature(payload: any, signature: string, provider: string): Promise<boolean> {
-  if (provider === 'mtn') {
-    // MTN uses OAuth2 + standard signature verification
-    // This is a simplified example - real implementation would vary
-    const apiKey = Deno.env.get("MTN_API_KEY") ?? "";
-    const message = JSON.stringify(payload);
-    const encoder = new TextEncoder();
-    const data = encoder.encode(message + apiKey);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    return hashHex === signature;
-  } else if (provider === 'orange') {
+  if (provider === 'orange') {
     // Orange uses certificate-based verification
     // In a real implementation, this would validate using a certificate
     return true; // Simplified for example
@@ -101,6 +89,30 @@ async function verifySignature(payload: any, signature: string, provider: string
     const calculatedSignature = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
     
     return calculatedSignature === signature;
+  } else if (provider === 'moov') {
+    // Moov Money uses API key verification
+    // This is a simplified example
+    const apiKey = Deno.env.get("MOOV_API_KEY") ?? "";
+    const message = JSON.stringify(payload);
+    const encoder = new TextEncoder();
+    const data = encoder.encode(message + apiKey);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    return hashHex === signature;
+  } else if (provider === 'mtn') {
+    // MTN uses OAuth2 + standard signature verification
+    // This is a simplified example - real implementation would vary
+    const apiKey = Deno.env.get("MTN_API_KEY") ?? "";
+    const message = JSON.stringify(payload);
+    const encoder = new TextEncoder();
+    const data = encoder.encode(message + apiKey);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    return hashHex === signature;
   }
   
   return false;

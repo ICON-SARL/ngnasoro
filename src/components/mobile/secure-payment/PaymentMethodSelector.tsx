@@ -2,7 +2,6 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building, Phone } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface PaymentMethodSelectorProps {

@@ -70,7 +70,7 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
         </div>
         
         <Button 
-          className="w-full" 
+          className="w-full bg-yellow-500 hover:bg-yellow-600" 
           onClick={handleClick} 
           disabled={paymentStatus === 'pending' || phoneNumber.trim().length < 8}
         >

@@ -32,8 +32,8 @@ export {
 // Define available mobile money providers
 const MOBILE_MONEY_PROVIDERS: MobileMoneyProvider[] = [
   { id: 'orange', name: 'Orange Money' },
-  { id: 'mtn', name: 'MTN Mobile Money' },
-  { id: 'wave', name: 'Wave' }
+  { id: 'wave', name: 'Wave' },
+  { id: 'moov', name: 'Moov Money' }
 ];
 
 export function useMobileMoneyOperations(): MobileMoneyOperationsHook {

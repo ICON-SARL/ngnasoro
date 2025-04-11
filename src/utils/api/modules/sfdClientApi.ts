@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SfdClientAccount {
@@ -373,6 +372,11 @@ export const sfdClientApi = {
         if (!account || account.balance < amount) {
           return { success: false, error: 'Insufficient funds' };
         }
+      }
+      
+      // Validate provider
+      if (!['orange', 'wave', 'moov'].includes(provider)) {
+        return { success: false, error: 'Provider not supported. Use orange, wave, or moov.' };
       }
       
       // Call mobile money verification edge function
