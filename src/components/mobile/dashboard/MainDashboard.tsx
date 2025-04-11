@@ -1,5 +1,12 @@
+
 import React from 'react';
 import { Account } from '@/types/transactions';
+import { Button } from '@/components/ui/button';
+import { Menu } from 'lucide-react';
+import ContextualHeader from '@/components/mobile/ContextualHeader';
+import SFDSavingsOverview from '@/components/mobile/SFDSavingsOverview';
+import TransactionList from '@/components/mobile/TransactionList';
+import { useMobileDashboard } from '@/hooks/useMobileDashboard';
 
 interface MainDashboardProps {
   account: Account;
@@ -16,6 +23,8 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   toggleMenu,
   onAction
 }) => {
+  const { dashboardData, isLoading: dashboardLoading } = useMobileDashboard();
+  
   return (
     <div className="space-y-4 pb-20">
       <div className="bg-gradient-to-b from-[#0D6A51] to-[#0D6A51]/90 text-white p-4 rounded-b-3xl shadow-md relative">
