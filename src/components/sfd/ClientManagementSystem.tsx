@@ -1,181 +1,121 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ClientManagement } from '@/components/sfd/ClientManagement';
+import { ClientManagement } from './ClientManagement';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { NewClientForm } from '@/components/sfd/NewClientForm';
-import { UserPlus, Users, UserCheck, Clock, Filter } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetDescription, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetTrigger 
+} from '@/components/ui/sheet';
+import { NewClientForm } from './NewClientForm';
+import { UserPlus, Users, CreditCard, FileText, History } from 'lucide-react';
 
-export const ClientManagementSystem = () => {
-  const [activeTab, setActiveTab] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [isNewClientDialogOpen, setIsNewClientDialogOpen] = useState(false);
-  const [clientCounts, setClientCounts] = useState({
-    total: 0,
-    active: 0,
-    pending: 0
-  });
-  
-  // Fetch client counts when the component mounts
-  useEffect(() => {
-    // Simulate API call to get client counts
-    const fetchClientCounts = async () => {
-      // Mock data - in a real app, this would be an API call
-      setClientCounts({
-        total: 124,
-        active: 89,
-        pending: 35
-      });
-    };
-    
-    fetchClientCounts();
-  }, []);
+export interface ClientManagementSystemProps {
+  sfdId?: string;
+}
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    setStatusFilter(value === 'all' ? null : value);
-  };
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
+export const ClientManagementSystem: React.FC<ClientManagementSystemProps> = ({ sfdId }) => {
+  const [activeTab, setActiveTab] = useState('clients');
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const handleAddClientSuccess = () => {
-    setIsNewClientDialogOpen(false);
-    // Refresh client data or increment counts
-    setClientCounts(prev => ({
-      ...prev,
-      total: prev.total + 1,
-      active: prev.active + 1
-    }));
+    setSheetOpen(false);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold">Gestion des clients</h1>
-        
-        <Dialog open={isNewClientDialogOpen} onOpenChange={setIsNewClientDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Nouveau client
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Ajouter un nouveau client</DialogTitle>
-              <DialogDescription>
-                Remplissez le formulaire ci-dessous pour ajouter un nouveau client.
-              </DialogDescription>
-            </DialogHeader>
-            <NewClientForm onSuccess={handleAddClientSuccess} />
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total des clients
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-2xl font-bold">{clientCounts.total}</span>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Clients actifs
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2">
-              <UserCheck className="h-4 w-4 text-green-500" />
-              <span className="text-2xl font-bold">{clientCounts.active}</span>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              En attente de validation
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2">
-              <Clock className="h-4 w-4 text-amber-500" />
-              <span className="text-2xl font-bold">{clientCounts.pending}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-        <div className="w-full flex flex-col sm:flex-row gap-4">
-          <div className="relative w-full sm:max-w-xs">
-            <Input
-              placeholder="Rechercher un client..."
-              value={searchTerm}
-              onChange={handleSearch}
-              className="pl-9"
-            />
-            <div className="absolute left-3 top-1/2 -translate-y-1/2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </div>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Gestion clientèle</h2>
+          <p className="text-muted-foreground">
+            Gérez vos clients et suivez leurs activités.
+          </p>
+        </div>
+        <div className="mt-4 md:mt-0 flex gap-2">
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+            <SheetTrigger asChild>
+              <Button>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Nouveau client
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="sm:max-w-[540px] overflow-y-auto">
+              <SheetHeader className="mb-5">
+                <SheetTitle>Ajouter un nouveau client</SheetTitle>
+                <SheetDescription>
+                  Remplissez les informations du client ci-dessous
+                </SheetDescription>
+              </SheetHeader>
+              <NewClientForm onSuccess={handleAddClientSuccess} />
+            </SheetContent>
+          </Sheet>
           
-          <Select
-            value={statusFilter || "all"}
-            onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}
-          >
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Filtrer par statut" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les statuts</SelectItem>
-              <SelectItem value="active">Actifs</SelectItem>
-              <SelectItem value="pending">En attente</SelectItem>
-              <SelectItem value="inactive">Inactifs</SelectItem>
-            </SelectContent>
-          </Select>
+          <Button variant="outline">
+            <FileText className="mr-2 h-4 w-4" />
+            Exporter
+          </Button>
         </div>
       </div>
       
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="all">Tous les clients</TabsTrigger>
-          <TabsTrigger value="active">Actifs</TabsTrigger>
-          <TabsTrigger value="pending">En attente</TabsTrigger>
-          <TabsTrigger value="inactive">Inactifs</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="clients" className="flex items-center">
+            <Users className="mr-2 h-4 w-4" />
+            Clients
+          </TabsTrigger>
+          <TabsTrigger value="accounts" className="flex items-center">
+            <CreditCard className="mr-2 h-4 w-4" />
+            Comptes
+          </TabsTrigger>
+          <TabsTrigger value="transactions" className="flex items-center">
+            <History className="mr-2 h-4 w-4" />
+            Transactions
+          </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="all">
-          <ClientManagement onSuccess={handleAddClientSuccess} />
+        <TabsContent value="clients" className="mt-0">
+          <ClientManagement />
         </TabsContent>
         
-        <TabsContent value="active">
-          <ClientManagement onSuccess={handleAddClientSuccess} />
+        <TabsContent value="accounts" className="mt-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Comptes Clients</CardTitle>
+              <CardDescription>
+                Gérez les comptes et produits financiers de vos clients
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-10">
+                <p className="text-muted-foreground">
+                  Module de gestion des comptes en cours de développement
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
         
-        <TabsContent value="pending">
-          <ClientManagement onSuccess={handleAddClientSuccess} />
-        </TabsContent>
-        
-        <TabsContent value="inactive">
-          <ClientManagement onSuccess={handleAddClientSuccess} />
+        <TabsContent value="transactions" className="mt-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Transactions Clients</CardTitle>
+              <CardDescription>
+                Suivez les transactions et mouvements financiers
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-10">
+                <p className="text-muted-foreground">
+                  Module de suivi des transactions en cours de développement
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

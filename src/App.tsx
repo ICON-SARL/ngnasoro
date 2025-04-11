@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import LoansPage from '@/pages/LoansPage';
 import SfdDashboardPage from '@/pages/SfdDashboardPage';
 import SfdAccountPage from '@/pages/SfdAccountPage';
@@ -26,28 +26,26 @@ const App = () => {
   return (
     <ThemeProvider defaultTheme="light" storageKey="ui-theme">
       <AuthProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/auth/callback" element={<AuthCallbackPage />} />
-            <Route path="/dashboard" element={<SfdDashboardPage />} />
-            <Route path="/admin-dashboard" element={<SuperAdminDashboardPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/loans" element={<LoansPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/sfd-clients" element={<SfdClientsPage />} />
-            <Route path="/clients" element={<ClientsPage />} />
-            <Route path="/clients/:clientId" element={<ClientDetailPage />} />
-            <Route path="/sfd-account/:sfdId" element={<SfdAccountPage />} />
-            <Route path="/sfd-management" element={<SfdManagementPage />} />
-            <Route path="/subsidies" element={<SfdSubsidiesPage />} />
-            <Route path="/request" element={<SfdRequestPage />} />
-            <Route path="/loan-application" element={<LoanApplicationPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          <Toaster />
-        </Router>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/dashboard" element={<SfdDashboardPage />} />
+          <Route path="/admin-dashboard" element={<SuperAdminDashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/loans" element={<LoansPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/sfd-clients" element={<SfdClientsPage />} />
+          <Route path="/clients" element={<ClientsPage />} />
+          <Route path="/clients/:clientId" element={<ClientDetailPage />} />
+          <Route path="/sfd-account/:sfdId" element={<SfdAccountPage />} />
+          <Route path="/sfd-management" element={<SfdManagementPage />} />
+          <Route path="/subsidies" element={<SfdSubsidiesPage />} />
+          <Route path="/request" element={<SfdRequestPage />} />
+          <Route path="/loan-application" element={<LoanApplicationPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+        <Toaster />
       </AuthProvider>
     </ThemeProvider>
   );

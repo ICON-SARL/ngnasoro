@@ -26,3 +26,9 @@ export const createClient = () => {
     })
   } as any;
 };
+
+// Function used in register form
+export const initializeSupabase = () => {
+  // This is a placeholder for actual Supabase initialization
+  return createClient();
+};

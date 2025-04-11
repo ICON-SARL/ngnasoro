@@ -32,10 +32,8 @@ const AuthCallbackPage = () => {
             sfd_id: 'sfd-123'
           };
 
-          // Set the user in auth context - Note: we're adapting to the current auth context API
-          if (auth.login) {
-            auth.login(mockUser, 'mock-jwt-token');
-          }
+          // Set the user in auth context - Using the login function from auth context
+          auth.login(mockUser, 'mock-jwt-token');
 
           // Redirect based on role
           if (mockUser.role === 'admin') {

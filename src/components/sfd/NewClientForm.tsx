@@ -11,19 +11,33 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
 const clientFormSchema = z.object({
-  full_name: z.string().min(3, { message: 'Le nom doit contenir au moins 3 caractères' }),
-  email: z.string().email({ message: 'Email invalide' }),
-  phone: z.string().min(8, { message: 'Numéro de téléphone invalide' }),
-  address: z.string().min(5, { message: 'Adresse requise' }),
+  full_name: z.string().min(3, {
+    message: 'Le nom doit contenir au moins 3 caractères'
+  }),
+  email: z.string().email({
+    message: 'Email invalide'
+  }),
+  phone: z.string().min(8, {
+    message: 'Numéro de téléphone invalide'
+  }),
+  address: z.string().min(5, {
+    message: 'Adresse requise'
+  }),
   id_type: z.enum(['passport', 'national_id', 'driver_license']),
-  id_number: z.string().min(3, { message: 'Numéro d\'identification invalide' }),
-  notes: z.string().optional(),
+  id_number: z.string().min(3, {
+    message: 'Numéro d\'identification invalide'
+  }),
+  notes: z.string().optional()
 });
 
-type ClientFormValues = z.infer<typeof clientFormSchema>;
+interface NewClientFormProps {
+  onSuccess?: () => void;
+}
 
-export const NewClientForm = () => {
-  const form = useForm<ClientFormValues>({
+export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
+  const { toast } = useToast();
+  
+  const form = useForm({
     resolver: zodResolver(clientFormSchema),
     defaultValues: {
       full_name: '',
@@ -32,29 +46,32 @@ export const NewClientForm = () => {
       address: '',
       id_type: 'national_id',
       id_number: '',
-      notes: '',
-    },
+      notes: ''
+    }
   });
 
-  const { toast } = useToast();
-
-  const onSubmit = async (data: ClientFormValues) => {
+  const onSubmit = async (data: z.infer<typeof clientFormSchema>) => {
     try {
       // For now, we're just logging the data and showing a success message
       console.log('Client data submitted:', data);
       
       toast({
         title: 'Client créé avec succès',
-        description: `${data.full_name} a été ajouté à votre liste de clients.`,
+        description: `${data.full_name} a été ajouté à votre liste de clients.`
       });
       
       form.reset();
+      
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error('Error creating client:', error);
+      
       toast({
         title: 'Erreur',
         description: 'Une erreur est survenue lors de la création du client.',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
@@ -164,7 +181,7 @@ export const NewClientForm = () => {
             <FormItem>
               <FormLabel>Notes</FormLabel>
               <FormControl>
-                <Textarea 
+                <Textarea
                   placeholder="Informations supplémentaires sur le client..."
                   className="min-h-[100px]"
                   {...field}
@@ -179,7 +196,9 @@ export const NewClientForm = () => {
           <Button variant="outline" type="button" onClick={() => form.reset()}>
             Réinitialiser
           </Button>
-          <Button type="submit">Créer le client</Button>
+          <Button type="submit">
+            Créer le client
+          </Button>
         </div>
       </form>
     </Form>
