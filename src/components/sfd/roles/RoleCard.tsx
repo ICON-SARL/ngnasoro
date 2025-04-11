@@ -2,17 +2,30 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Shield, User } from 'lucide-react';
+import { CheckCircle, Shield, User, Edit, Trash2 } from 'lucide-react';
 import { Role, Permission } from './types';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface RoleCardProps {
   role: Role;
   permissions: Permission[];
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export function RoleCard({ role, permissions }: RoleCardProps) {
+export function RoleCard({ role, permissions, onEdit, onDelete }: RoleCardProps) {
   return (
-    <Card key={role.id}>
+    <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center mb-1">
           <div className={`h-8 w-8 rounded-full flex items-center justify-center mr-2 ${
@@ -47,8 +60,38 @@ export function RoleCard({ role, permissions }: RoleCardProps) {
           </div>
         </div>
         
-        <div className="flex justify-end mt-4">
-          <Button variant="outline" size="sm">Modifier</Button>
+        <div className="flex justify-end mt-4 space-x-2">
+          {onEdit && (
+            <Button variant="outline" size="sm" onClick={onEdit}>
+              <Edit className="h-3.5 w-3.5 mr-1" />
+              Modifier
+            </Button>
+          )}
+          
+          {onDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  Supprimer
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action ne peut pas être annulée. Cela supprimera définitivement le rôle {role.name} et pourrait affecter les utilisateurs ayant ce rôle.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700">
+                    Supprimer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </CardContent>
     </Card>

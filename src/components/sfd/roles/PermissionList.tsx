@@ -7,12 +7,14 @@ interface PermissionListProps {
   permissions: Permission[];
   selectedPermissions: string[];
   onTogglePermission: (permissionId: string) => void;
+  draggable?: boolean;
 }
 
 export function PermissionList({ 
   permissions, 
   selectedPermissions, 
-  onTogglePermission 
+  onTogglePermission,
+  draggable = false
 }: PermissionListProps) {
   return (
     <div className="border rounded-md p-3 space-y-3">

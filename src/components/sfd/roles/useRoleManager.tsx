@@ -26,6 +26,9 @@ export function useRoleManager() {
   ]);
 
   const [showNewRoleDialog, setShowNewRoleDialog] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editRoleId, setEditRoleId] = useState<string | null>(null);
+  
   const [newRole, setNewRole] = useState<{
     name: string;
     description?: string;
@@ -68,21 +71,65 @@ export function useRoleManager() {
       return;
     }
 
-    const role: Role = {
-      id: Date.now().toString(),
-      name: newRole.name,
-      description: newRole.description || '',
-      permissions: newRole.permissions || []
-    };
+    if (isEditMode && editRoleId) {
+      // Update existing role
+      setRoles(prevRoles => 
+        prevRoles.map(role => 
+          role.id === editRoleId 
+            ? {
+                ...role,
+                name: newRole.name,
+                description: newRole.description || '',
+                permissions: newRole.permissions || []
+              }
+            : role
+        )
+      );
+      
+      toast({
+        title: 'Rôle mis à jour',
+        description: `Le rôle ${newRole.name} a été mis à jour avec succès`,
+      });
+    } else {
+      // Create new role
+      const role: Role = {
+        id: Date.now().toString(),
+        name: newRole.name,
+        description: newRole.description || '',
+        permissions: newRole.permissions || []
+      };
 
-    setRoles([...roles, role]);
+      setRoles([...roles, role]);
+      
+      toast({
+        title: 'Rôle ajouté',
+        description: `Le rôle ${role.name} a été créé avec succès`,
+      });
+    }
+
     setNewRole({ name: '', description: '', permissions: [] });
     setShowNewRoleDialog(false);
+    setIsEditMode(false);
+    setEditRoleId(null);
+  };
+
+  const handleEditRole = (role: Role) => {
+    setNewRole({
+      name: role.name,
+      description: role.description,
+      permissions: [...role.permissions]
+    });
+    setEditRoleId(role.id);
+    setIsEditMode(true);
+    setShowNewRoleDialog(true);
+  };
+
+  const handleDeleteRole = (roleId: string) => {
+    setRoles(prevRoles => prevRoles.filter(role => role.id !== roleId));
     
     toast({
-      title: 'Rôle ajouté',
-      description: `Le rôle ${role.name} a été créé avec succès`,
-      variant: 'default'
+      title: 'Rôle supprimé',
+      description: 'Le rôle a été supprimé avec succès',
     });
   };
 
@@ -94,6 +141,10 @@ export function useRoleManager() {
     newRole,
     setNewRole,
     handleTogglePermission,
-    handleSaveNewRole
+    handleSaveNewRole,
+    handleEditRole,
+    handleDeleteRole,
+    isEditMode,
+    setIsEditMode
   };
 }
