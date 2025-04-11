@@ -72,16 +72,17 @@ export function useSfdUserManagement() {
       const formattedUsers: SfdUser[] = sfdUserAssociations
         .filter(assoc => assoc.admin_users)
         .map(assoc => {
-          if (!assoc.admin_users) return null;
+          const userData = assoc.admin_users;
+          if (!userData) return null;
           
           return {
-            id: assoc.admin_users.id,
-            name: assoc.admin_users.full_name,
-            email: assoc.admin_users.email,
-            role: assoc.admin_users.role === 'sfd_admin' ? 'Gérant' : 'Agent de Crédit',
-            status: 'active',
-            lastActive: assoc.admin_users.last_sign_in_at 
-              ? new Date(assoc.admin_users.last_sign_in_at).toLocaleDateString('fr-FR', {
+            id: userData.id,
+            name: userData.full_name,
+            email: userData.email,
+            role: userData.role === 'sfd_admin' ? 'Gérant' : 'Agent de Crédit',
+            status: 'active' as const,
+            lastActive: userData.last_sign_in_at 
+              ? new Date(userData.last_sign_in_at).toLocaleDateString('fr-FR', {
                   day: 'numeric',
                   month: 'long',
                   year: 'numeric'
