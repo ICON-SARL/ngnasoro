@@ -1,92 +1,210 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, AlertCircle, Info, Users } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { useNavigate } from 'react-router-dom';
-import ClientsManagement from './ClientsManagement';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { useSfdClients } from '@/hooks/useSfdClients';
+import { useClientAccountOperations } from '@/components/admin/hooks/sfd-client/useClientAccountOperations';
+import { NewClientForm } from './NewClientForm';
+import { 
+  Search, 
+  Plus, 
+  UserCheck, 
+  UserX, 
+  FileText, 
+  RefreshCw,
+  CreditCard,
+  Eye
+} from 'lucide-react';
 
-export function ClientManagementSystem() {
-  const { user } = useAuth();
-  const { activeSfdId, sfdData, isLoading } = useSfdDataAccess();
-  const [activeTab, setActiveTab] = useState('clients');
+export const ClientManagementSystem = () => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const navigate = useNavigate();
+  const { clients, isLoading, validateClient, rejectClient } = useSfdClients();
   
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Chargement des données SFD...</p>
-      </div>
-    );
-  }
+  // Filtrer les clients selon le terme de recherche et le statut
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = 
+      client.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (client.phone && client.phone.includes(searchTerm));
+      
+    const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
   
-  if (!activeSfdId) {
-    return (
-      <Alert variant="destructive" className="mb-6">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Erreur de configuration</AlertTitle>
-        <AlertDescription className="space-y-4">
-          <p>Aucune SFD active n'a été détectée pour votre compte. Pour résoudre ce problème :</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Votre compte doit être associé à au moins une SFD</li>
-            <li>Une SFD doit être définie comme active</li>
-          </ul>
-          <div className="pt-2">
-            <Button
-              onClick={() => navigate('/sfd-setup')}
-              className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-            >
-              Configurer votre compte SFD
-            </Button>
-          </div>
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge className="bg-amber-100 text-amber-800">En attente</Badge>;
+      case 'validated':
+        return <Badge className="bg-green-100 text-green-800">Validé</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800">Rejeté</Badge>;
+      default:
+        return <Badge>Inconnu</Badge>;
+    }
+  };
   
-  // Récupérer le nom de la SFD active pour l'afficher
-  const activeSfd = sfdData.find(sfd => sfd.id === activeSfdId);
-  
+  const handleViewClient = (clientId: string) => {
+    navigate(`/clients/${clientId}`);
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Système de Gestion des Clients</h1>
-        {activeSfd && (
-          <div className="bg-[#0D6A51]/10 text-[#0D6A51] px-3 py-1 rounded-full text-sm font-medium">
-            SFD active: {activeSfd.name}
-          </div>
-        )}
+    <div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <h2 className="text-2xl font-semibold">Gestion des Clients</h2>
+        <Button onClick={() => setIsDialogOpen(true)} className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">
+          <Plus className="h-4 w-4 mr-1" />
+          Nouveau Client
+        </Button>
       </div>
       
-      <Alert variant="default" className="bg-muted">
-        <Info className="h-4 w-4" />
-        <AlertTitle>Information</AlertTitle>
-        <AlertDescription>
-          Ce système vous permet de gérer les clients de votre SFD, de valider leurs comptes et de suivre leurs activités.
-        </AlertDescription>
-      </Alert>
-      
-      <Tabs 
-        defaultValue="clients" 
-        value={activeTab} 
-        onValueChange={setActiveTab}
-        className="space-y-4"
-      >
-        <TabsList>
-          <TabsTrigger value="clients" className="flex items-center">
-            <Users className="h-4 w-4 mr-1" />
-            Clients
-          </TabsTrigger>
-        </TabsList>
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative md:w-1/2">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Rechercher un client..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
         
-        <TabsContent value="clients">
-          <ClientsManagement />
-        </TabsContent>
-      </Tabs>
+        <div className="md:w-1/2">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filtrer par statut" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les statuts</SelectItem>
+              <SelectItem value="pending">En attente</SelectItem>
+              <SelectItem value="validated">Validé</SelectItem>
+              <SelectItem value="rejected">Rejeté</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      {isLoading ? (
+        <div className="text-center py-8">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto text-gray-400" />
+          <p className="mt-2 text-gray-500">Chargement des clients...</p>
+        </div>
+      ) : filteredClients.length === 0 ? (
+        <div className="text-center py-8 border rounded-lg bg-gray-50">
+          <p className="text-gray-500">Aucun client trouvé</p>
+        </div>
+      ) : (
+        <div className="overflow-auto rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nom complet</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Date de création</TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredClients.map((client) => (
+                <TableRow key={client.id}>
+                  <TableCell className="font-medium">{client.full_name}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      {client.email && <span className="text-xs">{client.email}</span>}
+                      {client.phone && <span className="text-xs">{client.phone}</span>}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(client.created_at || '').toLocaleDateString('fr-FR')}
+                  </TableCell>
+                  <TableCell>{getStatusBadge(client.status)}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleViewClient(client.id)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">Voir les détails</span>
+                      </Button>
+
+                      {client.status === 'pending' && (
+                        <>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-600"
+                            onClick={() => rejectClient.mutate({ clientId: client.id })}
+                          >
+                            <UserX className="h-4 w-4" />
+                            <span className="sr-only">Rejeter</span>
+                          </Button>
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="h-8 w-8 p-0 text-green-600"
+                            onClick={() => validateClient.mutate({ clientId: client.id })}
+                          >
+                            <UserCheck className="h-4 w-4" />
+                            <span className="sr-only">Valider</span>
+                          </Button>
+                        </>
+                      )}
+
+                      {client.status === 'validated' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="h-8 w-8 p-0 text-blue-600"
+                          onClick={() => handleViewClient(client.id)}
+                        >
+                          <CreditCard className="h-4 w-4" />
+                          <span className="sr-only">Gérer</span>
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+      
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Ajouter un nouveau client</DialogTitle>
+            <DialogDescription>
+              Créez un compte client pour votre SFD
+            </DialogDescription>
+          </DialogHeader>
+          <NewClientForm onSuccess={() => setIsDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
+};
+
+export default ClientManagementSystem;
