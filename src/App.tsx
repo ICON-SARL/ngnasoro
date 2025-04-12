@@ -17,7 +17,7 @@ import { UserManagement } from '@/components/UserManagement';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import CreditApprovalPage from '@/pages/CreditApprovalPage';
 import SfdManagementPage from '@/pages/admin/SfdManagementPage';
-import Router from '@/components/Router';
+import MobileRouter from '@/components/Router';
 import TestAuth from '@/components/auth/TestAuth';
 
 function App() {
@@ -108,7 +108,7 @@ function App() {
           <Route path="/access-denied" element={<AccessDeniedPage />} />
 
           {/* Mobile Flow - using Router component */}
-          <Route path="/mobile-flow/*" element={<Router />} />
+          <Route path="/mobile-flow/*" element={<MobileRouter />} />
           
           {/* Redirection par défaut vers la page de sélection du type de connexion */}
           <Route path="/" element={<AuthRedirectPage />} />

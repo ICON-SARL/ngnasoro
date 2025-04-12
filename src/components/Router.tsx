@@ -12,7 +12,7 @@ import TestAuth from '@/components/auth/TestAuth';
 
 // Import your routes here
 
-const Router = () => {
+const MobileRouter = () => {
   const { user, loading } = useAuth();
 
   // If auth is still loading, don't render routes yet
@@ -46,4 +46,4 @@ const Router = () => {
   );
 };
 
-export default Router;
+export default MobileRouter;
