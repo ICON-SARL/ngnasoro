@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -131,11 +130,7 @@ export function useMobileMoney() {
         .update({
           status: 'failed',
           processed_at: new Date().toISOString(),
-          raw_payload: supabase.rpc('jsonb_set', { 
-            target: supabase.raw('COALESCE(raw_payload, \'{}\')::jsonb'), 
-            path: '{failure_reason}', 
-            value: JSON.stringify(reason)
-          })
+          raw_payload: { failure_reason: reason }
         })
         .eq('id', webhookId)
         .select()
