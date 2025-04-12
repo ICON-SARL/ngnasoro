@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { SfdFormValues } from '../../../sfd/schemas/sfdFormSchema';
@@ -38,31 +39,57 @@ export function useCreateSfdMutation() {
         full_name: string;
       }
     }) => {
+      console.log("Starting SFD creation process...");
+      
       if (!user) {
+        console.error("No user found in AuthContext");
         throw new Error("Vous devez être connecté pour ajouter une SFD");
       }
 
-      const { data: userRoles } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id);
-      
-      const isAdmin = userRoles?.some(r => r.role === 'admin');
-      
-      if (!isAdmin) {
-        throw new Error("Vous n'avez pas les permissions nécessaires pour créer une SFD");
+      // Log the user ID for debugging
+      console.log("User ID:", user.id);
+
+      // Check user roles
+      try {
+        const { data: userRoles, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id);
+        
+        if (roleError) {
+          console.error("Error fetching user roles:", roleError);
+          throw new Error(`Erreur lors de la vérification des permissions: ${roleError.message}`);
+        }
+        
+        console.log("User roles:", userRoles);
+        
+        const isAdmin = userRoles?.some(r => r.role === 'admin');
+        
+        if (!isAdmin) {
+          console.error("User does not have admin role");
+          throw new Error("Vous n'avez pas les permissions nécessaires pour créer une SFD");
+        }
+      } catch (error: any) {
+        console.error("Role verification error:", error);
+        throw new Error(`Erreur de permission: ${error.message}`);
       }
 
+      // Validate admin data if creating an admin
       if (createAdmin && adminData) {
+        console.log("Validating admin data...");
+        
         if (!adminData.email || !adminData.password || !adminData.full_name) {
+          console.error("Incomplete admin data:", { ...adminData, password: '******' });
           throw new Error("Données administrateur incomplètes");
         }
 
         if (!isValidEmail(adminData.email)) {
+          console.error("Invalid email format:", adminData.email);
           throw new Error("Format d'email invalide pour l'administrateur");
         }
 
         if (!isValidPassword(adminData.password)) {
+          console.error("Invalid password format");
           throw new Error("Le mot de passe doit contenir au moins 8 caractères, dont au moins une majuscule, une minuscule et un chiffre");
         }
       }
@@ -80,9 +107,10 @@ export function useCreateSfdMutation() {
       };
 
       try {
-        console.log("Tentative de création de SFD...", sfdDataToSend);
-        console.log("Création d'admin?", createAdmin, "avec les données:", 
-          createAdmin && adminData ? { ...adminData, password: '******' } : null);
+        console.log("Calling Edge Function with data:", {
+          sfdData: sfdDataToSend,
+          adminData: createAdmin && adminData ? { ...adminData, password: '******' } : null
+        });
         
         const { data, error } = await supabase.functions.invoke('create-sfd-with-admin', {
           body: JSON.stringify({
@@ -92,21 +120,23 @@ export function useCreateSfdMutation() {
         });
 
         if (error) {
-          console.error("Erreur lors de l'appel à la fonction edge:", error);
+          console.error("Edge Function invocation error:", error);
           throw new Error(`Erreur de communication avec le serveur: ${error.message}`);
         }
         
+        console.log("Edge Function response:", data);
+        
         if (data?.error) {
-          console.error("Erreur renvoyée par la fonction edge:", data.error);
+          console.error("Edge Function returned error:", data.error);
           throw new Error(data.error);
         }
         
         if (!data?.sfd) {
-          console.error("Réponse invalide:", data);
+          console.error("Invalid response from Edge Function:", data);
           throw new Error("Réponse invalide du serveur");
         }
         
-        console.log("SFD créée avec succès:", data.sfd);
+        console.log("SFD created successfully:", data.sfd);
         
         return {
           sfd: data.sfd,
@@ -114,7 +144,7 @@ export function useCreateSfdMutation() {
           hasSubsidy: sfdData.subsidy_balance && sfdData.subsidy_balance > 0
         };
       } catch (error: any) {
-        console.error("Erreur critique lors de l'ajout de la SFD:", error);
+        console.error("Critical error during SFD creation:", error);
         
         let errorMessage = "Une erreur est survenue lors de la création de la SFD";
         
@@ -165,6 +195,8 @@ export function useCreateSfdMutation() {
       }
     },
     onError: (error: any) => {
+      console.error("Mutation error:", error);
+      
       toast({
         title: 'Erreur',
         description: `${error.message}`,
