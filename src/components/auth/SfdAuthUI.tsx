@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Check } from 'lucide-react';
 import Logo from './Logo';
 import LoginForm from './login/LoginForm';
+import { Check } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
 import DemoAccountsCreator from './DemoAccountsCreator';
 
@@ -14,7 +13,6 @@ const SfdAuthUI = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     const hash = location.hash;
@@ -31,34 +29,18 @@ const SfdAuthUI = () => {
   
   useEffect(() => {
     if (user && !loading) {
-      console.log("SfdAuthUI: Checking user role for redirection:", user.app_metadata?.role);
+      console.log("SfdAuthUI - User detected:", user);
+      console.log("SfdAuthUI - User role:", user.app_metadata?.role);
       
-      // First check for role in app_metadata
       if (user.app_metadata?.role === 'sfd_admin') {
-        console.log("SfdAuthUI: Redirecting sfd_admin to /agency-dashboard");
         navigate('/agency-dashboard');
-        return;
-      } 
-      
-      // Fallback to checking user_metadata if role is not in app_metadata
-      if (user.user_metadata?.role === 'sfd_admin') {
-        console.log("SfdAuthUI: Redirecting based on user_metadata.role to /agency-dashboard");
-        navigate('/agency-dashboard');
-        return;
-      }
-      
-      // Check for sfd_id presence as another signal of SFD admin status
-      if (user.user_metadata?.sfd_id || user.app_metadata?.sfd_id) {
-        console.log("SfdAuthUI: Redirecting based on sfd_id presence to /agency-dashboard");
-        navigate('/agency-dashboard');
-        return;
-      }
-      
-      // Redirect other users to their appropriate pages
-      if (user.app_metadata?.role === 'admin') {
-        navigate('/admin/auth');
       } else {
-        navigate('/auth');
+        // Rediriger les utilisateurs non-SFD vers leur page appropriée
+        if (user.app_metadata?.role === 'admin') {
+          navigate('/admin/auth');
+        } else {
+          navigate('/auth');
+        }
       }
     }
   }, [user, loading, navigate]);
@@ -93,18 +75,9 @@ const SfdAuthUI = () => {
             </h2>
           </div>
           
-          {error && (
-            <Alert variant="destructive" className="mb-4 mx-4 mt-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Erreur</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          
           <LoginForm 
             adminMode={false} 
-            isSfdAdmin={true} 
-            onError={(errorMessage) => setError(errorMessage)}
+            isSfdAdmin={true}
           />
           
           <div className="mt-4 text-center pb-6 flex flex-col gap-2">

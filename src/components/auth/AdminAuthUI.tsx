@@ -30,6 +30,9 @@ const AdminAuthUI = () => {
   
   useEffect(() => {
     if (user && !loading) {
+      console.log("AdminAuthUI - User detected:", user);
+      console.log("AdminAuthUI - User role:", user.app_metadata?.role);
+      
       if (user.app_metadata?.role === 'admin') {
         navigate('/super-admin-dashboard');
       } else {

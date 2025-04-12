@@ -17,6 +17,8 @@ import { UserManagement } from '@/components/UserManagement';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import CreditApprovalPage from '@/pages/CreditApprovalPage';
 import SfdManagementPage from '@/pages/admin/SfdManagementPage';
+import Router from '@/components/Router';
+import TestAuth from '@/components/auth/TestAuth';
 
 function App() {
   return (
@@ -30,6 +32,7 @@ function App() {
           <Route path="/auth" element={<AuthUI />} />
           <Route path="/admin/auth" element={<AdminLoginPage />} />
           <Route path="/sfd/auth" element={<SfdLoginPage />} />
+          <Route path="/test-auth" element={<TestAuth />} />
 
           {/* Agency Dashboard */}
           <Route 
@@ -104,8 +107,8 @@ function App() {
           {/* Access Denied Page */}
           <Route path="/access-denied" element={<AccessDeniedPage />} />
 
-          {/* Mobile Flow */}
-          <Route path="/mobile-flow" element={<AuthUI />} />
+          {/* Mobile Flow - using Router component */}
+          <Route path="/mobile-flow/*" element={<Router />} />
           
           {/* Redirection par défaut vers la page de sélection du type de connexion */}
           <Route path="/" element={<AuthRedirectPage />} />
