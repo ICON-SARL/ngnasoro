@@ -1,11 +1,6 @@
 
 import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Shield, Activity, Clock } from 'lucide-react';
-import { RoleAuditSystem } from './RoleAuditSystem';
-import { IntegrationTester } from './IntegrationTester';
-import { WebhookMonitor } from './WebhookMonitor';
 
 export function SfdManagementContainer() {
   return (
@@ -14,35 +9,6 @@ export function SfdManagementContainer() {
       <p className="text-muted-foreground mb-6">
         Administrez les institutions de microfinance partenaires et leurs comptes administrateurs
       </p>
-      
-      <Tabs defaultValue="audit">
-        <TabsList className="w-full border-b px-2">
-          <TabsTrigger value="audit" className="flex items-center">
-            <Shield className="h-4 w-4 mr-2" />
-            Audit RBAC
-          </TabsTrigger>
-          <TabsTrigger value="integration" className="flex items-center">
-            <Activity className="h-4 w-4 mr-2" />
-            Tests d'Intégration
-          </TabsTrigger>
-          <TabsTrigger value="webhooks" className="flex items-center">
-            <Clock className="h-4 w-4 mr-2" />
-            Monitoring Webhooks
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="audit" className="py-4">
-          <RoleAuditSystem />
-        </TabsContent>
-        
-        <TabsContent value="integration" className="py-4">
-          <IntegrationTester />
-        </TabsContent>
-        
-        <TabsContent value="webhooks" className="py-4">
-          <WebhookMonitor />
-        </TabsContent>
-      </Tabs>
       
       <Card className="mt-6">
         <CardContent className="pt-6">
