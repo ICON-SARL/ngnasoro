@@ -40,25 +40,27 @@ export function usePermissions() {
         }
 
         const roles = data.map(role => role.role as UserRole);
+        let combinedPermissions: string[] = [];
         
         // Default to USER role if no roles assigned
         if (roles.length === 0) {
           setUserRoles([UserRole.USER]);
-          setUserPermissions(DEFAULT_ROLE_PERMISSIONS[UserRole.USER] || []);
+          combinedPermissions = DEFAULT_ROLE_PERMISSIONS[UserRole.USER] || [];
         } else {
           setUserRoles(roles);
           
           // Combine permissions from all roles
-          const allPermissions = roles.reduce((acc, role) => {
+          combinedPermissions = roles.reduce((acc, role) => {
             return [...acc, ...(DEFAULT_ROLE_PERMISSIONS[role] || [])];
           }, [] as string[]);
-          
-          // Remove duplicates
-          setUserPermissions([...new Set(allPermissions)]);
-          
-          console.log('User roles loaded:', roles);
-          console.log('User permissions:', [...new Set(allPermissions)]);
         }
+        
+        // Remove duplicates
+        const uniquePermissions = [...new Set(combinedPermissions)];
+        setUserPermissions(uniquePermissions);
+        
+        console.log('User roles loaded:', roles);
+        console.log('User permissions:', uniquePermissions);
       } catch (err) {
         console.error('Error in usePermissions:', err);
         toast({
