@@ -11,11 +11,14 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, UserPlus, Shield, Mail, Calendar } from 'lucide-react';
+import { Loader2, RefreshCw, UserPlus, Shield, Mail, Calendar, Check, AlertTriangle } from 'lucide-react';
 import { formatDate } from '@/utils/formatters';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 export function AdminUsersList() {
   const { admins, isLoading, error, refetchAdmins } = useSuperAdminManagement();
+  const { hasPermission } = usePermissions();
+  const canManageUsers = hasPermission('manage_users');
   
   if (isLoading) {
     return (
@@ -52,10 +55,12 @@ export function AdminUsersList() {
             <RefreshCw className="h-4 w-4 mr-2" />
             Actualiser
           </Button>
-          <Button>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Nouvel Admin
-          </Button>
+          {canManageUsers && (
+            <Button>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Nouvel Admin
+            </Button>
+          )}
         </div>
       </div>
       
@@ -73,6 +78,7 @@ export function AdminUsersList() {
                 <TableHead>Email</TableHead>
                 <TableHead>Rôle</TableHead>
                 <TableHead>Dernière Connexion</TableHead>
+                <TableHead>Authentification 2FA</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -99,10 +105,23 @@ export function AdminUsersList() {
                         : 'Jamais connecté'}
                     </div>
                   </TableCell>
+                  <TableCell>
+                    {admin.has_2fa ? (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 flex items-center gap-1">
+                        <Check className="h-3 w-3" /> Activée
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-amber-50 text-amber-700 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" /> Non activée
+                      </Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="outline" size="sm">
-                      Modifier
-                    </Button>
+                    {canManageUsers && (
+                      <Button variant="outline" size="sm">
+                        Modifier
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
