@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { SfdFormValues } from '../../../sfd/schemas/sfdFormSchema';
-import { useAuth } from '@/hooks/auth/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { logAuditEvent } from '@/utils/audit/auditLogger';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { supabase } from '@/integrations/supabase/client';
@@ -113,6 +113,7 @@ export function useCreateSfdMutation() {
           adminData: createAdmin && adminData ? { ...adminData, password: '******' } : null
         });
         
+        // Set a longer timeout for the Edge Function call
         const { data, error } = await supabase.functions.invoke('create-sfd-with-admin', {
           body: JSON.stringify({
             sfdData: sfdDataToSend,
