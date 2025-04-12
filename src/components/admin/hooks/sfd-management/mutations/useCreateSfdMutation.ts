@@ -87,6 +87,12 @@ export function useCreateSfdMutation() {
               error.message.includes('NetworkError') ||
               error.message.includes('Failed to send')) {
             errorMessage = "Impossible de contacter le serveur. Veuillez vérifier votre connexion réseau.";
+          } else if (error.message.includes('déjà utilisé') || 
+                     error.message.includes('already registered') ||
+                     error.message.includes('already exists')) {
+            errorMessage = "Cet email est déjà utilisé. Veuillez utiliser une autre adresse email.";
+          } else if (error.message.includes('non-2xx status')) {
+            errorMessage = "Erreur de communication avec le serveur. Veuillez contacter l'administrateur.";
           } else {
             errorMessage = error.message;
           }
@@ -126,7 +132,7 @@ export function useCreateSfdMutation() {
     onError: (error: any) => {
       toast({
         title: 'Erreur',
-        description: `Une erreur est survenue: ${error.message}`,
+        description: `${error.message}`,
         variant: 'destructive',
       });
 
