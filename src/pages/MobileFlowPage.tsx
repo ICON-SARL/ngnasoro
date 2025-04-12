@@ -1,13 +1,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
 import MobileMenu from '@/components/mobile/menu/MobileMenu';
 import MobileNavigation from '@/components/MobileNavigation';
 import MobileFlowRoutes from '@/components/mobile/routes/MobileFlowRoutes';
 import { Account } from '@/types/transactions';
 
 const MobileFlowPage = () => {
+  console.log("Rendering MobileFlowPage");
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading: isLoading, signOut } = useAuth();
@@ -16,6 +17,7 @@ const MobileFlowPage = () => {
   
   // Vérifier si l'utilisateur est authentifié
   useEffect(() => {
+    console.log("Auth check in MobileFlowPage:", { user, isLoading });
     if (!isLoading && !user) {
       navigate('/auth');
     }
@@ -24,8 +26,9 @@ const MobileFlowPage = () => {
   // Vérifier que la route est valide
   useEffect(() => {
     const path = location.pathname;
+    console.log("Current path in MobileFlowPage:", path);
     if (path === '/mobile-flow' || path === '/mobile-flow/') {
-      navigate('/mobile-flow/splash');
+      navigate('/mobile-flow/main');
     }
   }, [location.pathname, navigate]);
   

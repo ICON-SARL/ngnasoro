@@ -10,8 +10,6 @@ import MobileFlowPage from '@/pages/MobileFlowPage';
 import { CapacitorGuide } from '@/components/mobile/CapacitorGuide';
 import TestAuth from '@/components/auth/TestAuth';
 
-// Import your routes here
-
 const MobileRouter = () => {
   const { user, loading } = useAuth();
 
@@ -27,12 +25,12 @@ const MobileRouter = () => {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<Navigate to="/auth" replace />} />
       <Route path="/capacitor-guide" element={<CapacitorGuide />} />
       <Route path="/test-auth" element={<TestAuth />} />
       
-      {/* Mobile flow routes */}
-      <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
+      {/* Mobile flow routes - Important: These routes are relative to the parent route */}
+      <Route path="/*" element={<MobileFlowPage />} />
       
       {/* Redirect to mobile flow by default if logged in, otherwise to login */}
       <Route 

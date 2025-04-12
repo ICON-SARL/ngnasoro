@@ -21,6 +21,8 @@ import MobileRouter from '@/components/Router';
 import TestAuth from '@/components/auth/TestAuth';
 
 function App() {
+  console.log("Rendering main App component");
+  
   return (
     <Router>
       <AuthProvider>
@@ -107,7 +109,7 @@ function App() {
           {/* Access Denied Page */}
           <Route path="/access-denied" element={<AccessDeniedPage />} />
 
-          {/* Mobile Flow - using Router component */}
+          {/* Mobile Flow - using Router component for all mobile-flow paths */}
           <Route path="/mobile-flow/*" element={<MobileRouter />} />
           
           {/* Redirection par défaut vers la page de sélection du type de connexion */}
@@ -131,10 +133,15 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
+          {/* Not found route */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
     </Router>
   );
 }
+
+import NotFound from '@/pages/NotFound';
 
 export default App;

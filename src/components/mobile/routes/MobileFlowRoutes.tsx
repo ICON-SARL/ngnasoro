@@ -29,17 +29,19 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
   setShowWelcome,
   handlePaymentSubmit
 }) => {
+  console.log("Rendering MobileFlowRoutes");
+  
   return (
     <Routes>
-      <Route path="/splash" element={
+      <Route path="splash" element={
         <SplashScreen onComplete={() => onAction('Start')} />
       } />
       
-      <Route path="/welcome" element={
+      <Route path="welcome" element={
         <WelcomeScreen onStart={() => onAction('Start')} />
       } />
       
-      <Route path="/main" element={
+      <Route path="main" element={
         <MainDashboard
           account={account}
           transactions={transactions}
@@ -49,15 +51,19 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
         />
       } />
       
-      <Route path="/profile" element={
+      <Route path="profile" element={
         <ProfilePage />
       } />
       
-      <Route path="/sfd-selector" element={
+      <Route path="sfd-selector" element={
         <SfdSelectorPage />
       } />
       
-      <Route path="*" element={<Navigate to="/mobile-flow/main" replace />} />
+      {/* Default route */}
+      <Route index element={<Navigate to="main" replace />} />
+      
+      {/* Catch all route */}
+      <Route path="*" element={<Navigate to="main" replace />} />
     </Routes>
   );
 };
