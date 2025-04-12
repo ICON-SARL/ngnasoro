@@ -51,6 +51,17 @@ serve(async (req) => {
           created_at: new Date().toISOString()
         }
       };
+    } else if (endpoint.includes('client-adhesion')) {
+      mockResponse = {
+        success: true,
+        adhesion: {
+          id: "123e4567-e89b-12d3-a456-426614174002",
+          client_name: requestBody.name,
+          sfd_id: requestBody.sfd_id,
+          status: "pending",
+          created_at: new Date().toISOString()
+        }
+      };
     } else {
       mockResponse = {
         success: false,

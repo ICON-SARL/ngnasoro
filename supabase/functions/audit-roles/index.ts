@@ -26,9 +26,9 @@ serve(async (req) => {
     const roleData = roles.map((role: string) => ({
       role_name: role,
       can_create_sfd: role === 'SUPER_ADMIN',
-      can_manage_admins: true,
+      can_manage_admins: role === 'SUPER_ADMIN' || role === 'SFD_ADMIN',
       can_approve_loans: role === 'SUPER_ADMIN' || role === 'SFD_ADMIN',
-      can_manage_clients: role === 'SUPER_ADMIN' || role === 'SFD_ADMIN'
+      can_manage_clients: role === 'SUPER_ADMIN' || role === 'SFD_ADMIN' || role === 'BRANCH_MANAGER'
     }));
     
     // Log the action

@@ -11,6 +11,9 @@ export function SfdManagementContainer() {
   return (
     <div className="container mx-auto p-4 space-y-6">
       <h1 className="text-2xl font-bold mb-6">Gestion des SFDs</h1>
+      <p className="text-muted-foreground mb-6">
+        Administrez les institutions de microfinance partenaires et leurs comptes administrateurs
+      </p>
       
       <Tabs defaultValue="audit">
         <TabsList className="w-full border-b px-2">

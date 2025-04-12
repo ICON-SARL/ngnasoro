@@ -55,6 +55,26 @@ serve(async (req) => {
         reference_id: 'mm_tx_123458',
         created_at: new Date(Date.now() - 7200000).toISOString(),
         transaction_type: 'withdrawal'
+      },
+      {
+        id: '4',
+        webhook_id: 'wh_123459',
+        provider: 'Orange Money',
+        status: 'pending',
+        amount: 10000,
+        reference_id: 'om_tx_123459',
+        created_at: new Date(Date.now() - 1800000).toISOString(),
+        transaction_type: 'deposit'
+      },
+      {
+        id: '5',
+        webhook_id: 'wh_123460',
+        provider: 'Wave',
+        status: 'success',
+        amount: 75000,
+        reference_id: 'wv_tx_123460',
+        created_at: new Date(Date.now() - 9000000).toISOString(),
+        transaction_type: 'payment'
       }
     ];
     

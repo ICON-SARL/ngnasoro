@@ -1,16 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Clock, RefreshCw, Check, X, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { AlertCircle, RefreshCw, ExternalLink, Clock } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format, formatDistance } from 'date-fns';
-import { fr } from 'date-fns/locale';
 
-interface Transaction {
+interface WebhookTransaction {
   id: string;
   webhook_id: string;
   provider: string;
@@ -22,155 +26,170 @@ interface Transaction {
 }
 
 export function WebhookMonitor() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<WebhookTransaction[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [limit, setLimit] = useState('10');
   const { toast } = useToast();
 
-  const fetchTransactionLogs = async () => {
-    setLoading(true);
-    setError(null);
-    
+  const fetchTransactions = async () => {
+    setIsLoading(true);
     try {
-      // This would call an edge function in production
+      // Call the edge function to get webhook transactions
       const { data, error } = await supabase.functions.invoke('monitor-webhooks', {
-        body: { limit: 10 }
+        body: { limit: parseInt(limit) },
       });
-      
+
       if (error) throw error;
-      
-      if (data) {
-        setTransactions(data);
-      } else {
-        // Fallback mock data
-        setTransactions([
-          {
-            id: '1',
-            webhook_id: 'wh_123',
-            provider: 'Mobile Money',
-            status: 'success',
-            amount: 25000,
-            reference_id: 'tx_456',
-            created_at: new Date().toISOString(),
-            transaction_type: 'payment'
-          },
-          {
-            id: '2',
-            webhook_id: 'wh_124',
-            provider: 'Mobile Money',
-            status: 'failed',
-            amount: 15000,
-            reference_id: 'tx_457',
-            created_at: new Date(Date.now() - 3600000).toISOString(),
-            transaction_type: 'transfer'
-          }
-        ]);
-      }
-    } catch (err: any) {
-      console.error('Error fetching transaction logs:', err);
-      setError(err.message || 'Failed to fetch transaction logs');
+      setTransactions(data || []);
+    } catch (error: any) {
+      console.error('Error fetching webhook transactions:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de récupérer les logs de transaction",
-        variant: "destructive"
+        title: 'Erreur',
+        description: `Impossible de récupérer les transactions: ${error.message}`,
+        variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTransactionLogs();
-  }, []);
+    fetchTransactions();
+  }, [limit]);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle className="text-xl flex items-center">
-            <Clock className="mr-2 h-5 w-5" />
-            Monitoring des Webhooks
-          </CardTitle>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <Clock className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold">Monitoring Webhooks</h2>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={fetchTransactionLogs}
-          disabled={loading}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Actualiser
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {error && (
-          <div className="bg-red-50 p-4 rounded-md mb-4 text-red-800 flex items-start">
-            <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
-            <p>{error}</p>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="limit" className="whitespace-nowrap">Nombre:</Label>
+            <Select value={limit} onValueChange={setLimit}>
+              <SelectTrigger id="limit" className="w-20">
+                <SelectValue placeholder="10" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        )}
-        
-        {transactions.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <Clock className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p>Aucune transaction récente</p>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Provider</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Montant</TableHead>
-                <TableHead>Référence</TableHead>
-                <TableHead>Statut</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transactions.map((tx) => (
-                <TableRow key={tx.id}>
-                  <TableCell className="whitespace-nowrap">
-                    <div className="flex flex-col">
-                      <span className="font-medium">
-                        {format(new Date(tx.created_at), 'dd/MM/yyyy')}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {formatDistance(new Date(tx.created_at), new Date(), { addSuffix: true, locale: fr })}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{tx.provider}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {tx.transaction_type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-mono font-medium">
-                    {tx.amount.toLocaleString()} FCFA
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {tx.reference_id}
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant={tx.status === 'success' ? 'default' : 'destructive'}
-                      className={tx.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
-                    >
-                      {tx.status === 'success' ? 'Succès' : 'Échec'}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-        
-        <div className="mt-4 text-sm text-gray-500 flex items-center">
-          <ExternalLink className="h-4 w-4 mr-1" />
-          <span>Configuration recommandée: utiliser Sentry ou Datadog pour l'analyse avancée.</span>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={fetchTransactions} 
+            disabled={isLoading}
+            className="flex items-center gap-1"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Actualiser
+          </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="px-4 py-2 text-left">ID Webhook</th>
+                  <th className="px-4 py-2 text-left">Fournisseur</th>
+                  <th className="px-4 py-2 text-left">Type</th>
+                  <th className="px-4 py-2 text-left">Référence</th>
+                  <th className="px-4 py-2 text-right">Montant</th>
+                  <th className="px-4 py-2 text-center">Statut</th>
+                  <th className="px-4 py-2 text-right">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                      {isLoading ? 'Chargement...' : 'Aucune transaction trouvée'}
+                    </td>
+                  </tr>
+                ) : (
+                  transactions.map((tx) => (
+                    <tr key={tx.id} className="border-b hover:bg-muted/50">
+                      <td className="px-4 py-2 font-mono text-xs">{tx.webhook_id}</td>
+                      <td className="px-4 py-2">{tx.provider}</td>
+                      <td className="px-4 py-2 capitalize">{tx.transaction_type}</td>
+                      <td className="px-4 py-2 font-mono text-xs">{tx.reference_id}</td>
+                      <td className="px-4 py-2 text-right">{tx.amount.toLocaleString()} FCFA</td>
+                      <td className="px-4 py-2 text-center">
+                        {tx.status === 'success' ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <Check className="h-3 w-3 mr-1" />
+                            Succès
+                          </span>
+                        ) : tx.status === 'failed' ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <X className="h-3 w-3 mr-1" />
+                            Échec
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            En attente
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-right">{formatDate(tx.created_at)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6">
+          <h3 className="font-semibold mb-2">À propos des Webhooks</h3>
+          <p className="text-sm text-muted-foreground">
+            Les webhooks permettent à des services externes de notifier notre application d'événements
+            en temps réel. Nous utilisons principalement les webhooks pour les paiements via Mobile Money.
+          </p>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-3 bg-muted rounded-md">
+              <h4 className="font-medium">Logging</h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                Toutes les tentatives sont stockées dans transaction_audit_logs pour vérification.
+              </p>
+            </div>
+            <div className="p-3 bg-muted rounded-md">
+              <h4 className="font-medium">Sécurité</h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                Chaque webhook est vérifié par signature pour garantir son authenticité.
+              </p>
+            </div>
+            <div className="p-3 bg-muted rounded-md">
+              <h4 className="font-medium">Résolution</h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                En cas d'échec, des tentatives automatiques sont effectuées toutes les 15 minutes.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
