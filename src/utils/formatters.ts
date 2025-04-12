@@ -1,42 +1,35 @@
 
 /**
- * Formate une date en format local français
+ * Format a date string to a human-readable format
  */
-export function formatDate(dateString: string, options: Intl.DateTimeFormatOptions = {}): string {
+export function formatDate(dateString: string): string {
+  if (!dateString) return 'N/A';
+  
   try {
     const date = new Date(dateString);
     
-    // Vérifier si la date est valide
+    // Check if date is valid
     if (isNaN(date.getTime())) {
       return 'Date invalide';
     }
     
-    // Options par défaut pour le format de date
-    const defaultOptions: Intl.DateTimeFormatOptions = {
+    // Format the date
+    return new Intl.DateTimeFormat('fr-FR', {
       day: 'numeric',
-      month: 'long', 
+      month: 'long',
       year: 'numeric',
-      ...options
-    };
-    
-    return date.toLocaleDateString('fr-FR', defaultOptions);
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
   } catch (error) {
-    console.error('Erreur de formatage de date:', error);
-    return dateString || 'Date inconnue';
+    console.error('Error formatting date:', error);
+    return 'Erreur de format';
   }
 }
 
 /**
- * Formate un nombre en devise avec le symbole spécifié
+ * Format a number to currency
  */
 export function formatCurrency(amount: number, currency: string = 'FCFA'): string {
-  try {
-    // Formater le nombre avec séparateurs de milliers
-    const formattedAmount = new Intl.NumberFormat('fr-FR').format(amount);
-    
-    return `${formattedAmount} ${currency}`;
-  } catch (error) {
-    console.error('Erreur de formatage de devise:', error);
-    return `${amount} ${currency}`;
-  }
+  return `${amount.toLocaleString('fr-FR')} ${currency}`;
 }
