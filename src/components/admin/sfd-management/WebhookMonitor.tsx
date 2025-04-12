@@ -43,9 +43,13 @@ export function WebhookMonitor() {
 
   useEffect(() => {
     // Log component mount for audit purposes
-    logAuditEvent('monitoring', 'view_webhook_monitor', {
-      component: 'WebhookMonitor',
-      action: 'component_mounted'
+    logAuditEvent({
+      category: 'monitoring',
+      action: 'view_webhook_monitor',
+      metadata: {
+        component: 'WebhookMonitor',
+        action: 'component_mounted'
+      }
     });
   }, []);
 
@@ -188,9 +192,13 @@ export function WebhookMonitor() {
                             variant="ghost" 
                             size="sm"
                             onClick={() => {
-                              logAuditEvent('monitoring', 'view_webhook_details', {
-                                webhook_id: webhook.id,
-                                provider: webhook.provider
+                              logAuditEvent({
+                                category: 'monitoring',
+                                action: 'view_webhook_details',
+                                metadata: {
+                                  webhook_id: webhook.id,
+                                  provider: webhook.provider
+                                }
                               });
                             }}
                           >

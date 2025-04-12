@@ -22,9 +22,13 @@ export function RoleAuditSystem() {
 
   useEffect(() => {
     // Log component mount for audit purposes
-    logAuditEvent('security', 'view_role_audit', {
-      component: 'RoleAuditSystem',
-      action: 'component_mounted'
+    logAuditEvent({
+      category: 'security',
+      action: 'view_role_audit',
+      metadata: {
+        component: 'RoleAuditSystem',
+        action: 'component_mounted'
+      }
     });
   }, []);
 
@@ -129,9 +133,13 @@ export function RoleAuditSystem() {
                             variant="ghost" 
                             size="sm"
                             onClick={() => {
-                              logAuditEvent('security', 'view_role_details', {
-                                role_id: role.id,
-                                role_name: role.name
+                              logAuditEvent({
+                                category: 'security',
+                                action: 'view_role_details',
+                                metadata: {
+                                  role_id: role.id,
+                                  role_name: role.name
+                                }
                               });
                             }}
                           >

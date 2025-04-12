@@ -78,16 +78,19 @@ export function useWebhookMonitor() {
       setError(null);
       
       // Log the refresh action
-      await logAuditEvent('monitoring', 'refresh_webhooks', {
-        triggered_by: 'manual',
-        timestamp: new Date().toISOString()
+      await logAuditEvent({
+        category: 'monitoring',
+        action: 'refresh_webhooks',
+        metadata: {
+          triggered_by: 'manual',
+          timestamp: new Date().toISOString()
+        }
       });
 
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       // In a real application, this would fetch data from the API
-      // For demo, we're just updating the timestamps
       setWebhooks(mockWebhooks.map(webhook => ({
         ...webhook,
         receivedAt: new Date(Date.now() - Math.random() * 1000 * 60 * 180).toISOString() // Random time within last 3 hours

@@ -27,10 +27,14 @@ export function useIntegrationTester() {
       setErrorMessage(null);
       
       // Log the test for audit purposes
-      await logAuditEvent('integration', 'run_integration_test', {
-        endpoint: selectedTest.endpoint,
-        method: selectedTest.method,
-        test_name: selectedTest.name
+      await logAuditEvent({
+        category: 'integration',
+        action: 'run_integration_test',
+        metadata: {
+          endpoint: selectedTest.endpoint,
+          method: selectedTest.method,
+          test_name: selectedTest.name
+        }
       });
 
       // Simulate API call

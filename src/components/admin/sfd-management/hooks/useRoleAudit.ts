@@ -59,9 +59,13 @@ export function useRoleAudit() {
       setError(null);
       
       // Log the audit action
-      await logAuditEvent('security', 'run_role_audit', {
-        triggered_by: 'manual',
-        timestamp: new Date().toISOString()
+      await logAuditEvent({
+        category: 'security',
+        action: 'run_role_audit',
+        metadata: {
+          triggered_by: 'manual',
+          timestamp: new Date().toISOString()
+        }
       });
 
       // Simulate API call delay
