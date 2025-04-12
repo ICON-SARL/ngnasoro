@@ -7,6 +7,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Email validation function
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+// Password validation function
+function isValidPassword(password: string): boolean {
+  // At least 8 characters, contains uppercase, lowercase and a number
+  return password.length >= 8 && 
+         /[A-Z]/.test(password) && 
+         /[a-z]/.test(password) && 
+         /[0-9]/.test(password);
+}
+
 serve(async (req) => {
   // CORS preflight
   if (req.method === 'OPTIONS') {
@@ -14,6 +29,16 @@ serve(async (req) => {
   }
 
   try {
+    // Get auth header to validate permissions
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      console.error("Requête non autorisée: Aucun header d'autorisation");
+      return new Response(
+        JSON.stringify({ error: "Requête non autorisée" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
@@ -38,12 +63,42 @@ serve(async (req) => {
       adminDataPresent: !!adminData
     }));
     
+    // Vérification des données SFD
     if (!sfdData || !sfdData.name || !sfdData.code) {
       console.error("Données SFD insuffisantes:", sfdData);
       return new Response(
         JSON.stringify({ error: "Données SFD insuffisantes. Nom et code requis." }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Vérification des données administrateur
+    if (adminData) {
+      if (!adminData.email || !adminData.password || !adminData.full_name) {
+        console.error("Données admin insuffisantes");
+        return new Response(
+          JSON.stringify({ error: "Données administrateur incomplètes" }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Validation de l'email
+      if (!isValidEmail(adminData.email)) {
+        console.error("Email invalid:", adminData.email);
+        return new Response(
+          JSON.stringify({ error: "Format d'email invalide" }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Validation du mot de passe
+      if (!isValidPassword(adminData.password)) {
+        console.error("Mot de passe trop faible");
+        return new Response(
+          JSON.stringify({ error: "Le mot de passe doit contenir au moins 8 caractères, dont au moins une majuscule, une minuscule et un chiffre" }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // 1. Créer la SFD

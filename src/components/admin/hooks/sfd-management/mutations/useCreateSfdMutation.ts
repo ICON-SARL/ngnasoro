@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { SfdFormValues } from '../../../sfd/schemas/sfdFormSchema';
@@ -6,6 +5,19 @@ import { useAuth } from '@/hooks/auth/AuthContext';
 import { logAuditEvent } from '@/utils/audit/auditLogger';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { supabase } from '@/integrations/supabase/client';
+
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+function isValidPassword(password: string): boolean {
+  // At least 8 characters, contains uppercase, lowercase and a number
+  return password.length >= 8 && 
+         /[A-Z]/.test(password) && 
+         /[a-z]/.test(password) && 
+         /[0-9]/.test(password);
+}
 
 export function useCreateSfdMutation() {
   const { toast } = useToast();
@@ -30,7 +42,31 @@ export function useCreateSfdMutation() {
         throw new Error("Vous devez être connecté pour ajouter une SFD");
       }
 
-      // Préparer les données pour la fonction edge
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+      
+      const isAdmin = userRoles?.some(r => r.role === 'admin');
+      
+      if (!isAdmin) {
+        throw new Error("Vous n'avez pas les permissions nécessaires pour créer une SFD");
+      }
+
+      if (createAdmin && adminData) {
+        if (!adminData.email || !adminData.password || !adminData.full_name) {
+          throw new Error("Données administrateur incomplètes");
+        }
+
+        if (!isValidEmail(adminData.email)) {
+          throw new Error("Format d'email invalide pour l'administrateur");
+        }
+
+        if (!isValidPassword(adminData.password)) {
+          throw new Error("Le mot de passe doit contenir au moins 8 caractères, dont au moins une majuscule, une minuscule et un chiffre");
+        }
+      }
+
       const sfdDataToSend = {
         name: sfdData.name,
         code: sfdData.code,
@@ -45,8 +81,9 @@ export function useCreateSfdMutation() {
 
       try {
         console.log("Tentative de création de SFD...", sfdDataToSend);
+        console.log("Création d'admin?", createAdmin, "avec les données:", 
+          createAdmin && adminData ? { ...adminData, password: '******' } : null);
         
-        // Créer la SFD avec ou sans administrateur
         const { data, error } = await supabase.functions.invoke('create-sfd-with-admin', {
           body: JSON.stringify({
             sfdData: sfdDataToSend,
@@ -79,7 +116,6 @@ export function useCreateSfdMutation() {
       } catch (error: any) {
         console.error("Erreur critique lors de l'ajout de la SFD:", error);
         
-        // Fournir un message d'erreur plus détaillé à l'utilisateur
         let errorMessage = "Une erreur est survenue lors de la création de la SFD";
         
         if (error.message) {
@@ -102,7 +138,6 @@ export function useCreateSfdMutation() {
       }
     },
     onSuccess: (data) => {
-      // Invalider plusieurs requêtes connexes
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
       queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
       queryClient.invalidateQueries({ queryKey: ['sfd-stats'] });
