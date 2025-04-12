@@ -71,20 +71,32 @@ export const addSfdAdmin = async (data: {
   notify: boolean;
 }): Promise<SfdAdmin> => {
   try {
+    console.log('Tentative de création de SFD admin avec les données:', {
+      ...data,
+      password: '******' // Ne pas logger le mot de passe réel
+    });
+    
     const response = await supabase.functions.invoke('create-sfd-admin', {
       body: JSON.stringify(data)
     });
     
     if (response.error) {
       console.error(`Erreur lors de la création de l'administrateur:`, response.error);
-      throw new Error(response.error.message);
+      throw new Error(response.error.message || "Une erreur s'est produite lors de la communication avec le serveur");
     }
     
     if (response.data?.error) {
+      console.error(`Erreur retournée par le serveur:`, response.data.error);
       throw new Error(response.data.error);
     }
     
-    return response.data?.user;
+    if (!response.data?.user) {
+      console.error(`Réponse inattendue:`, response.data);
+      throw new Error("Réponse invalide du serveur");
+    }
+    
+    console.log('Administrateur SFD créé avec succès:', response.data.user);
+    return response.data.user;
   } catch (error: any) {
     console.error(`Erreur dans addSfdAdmin:`, error);
     throw error;

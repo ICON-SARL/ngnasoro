@@ -29,7 +29,18 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Extract data from request
-    const { sfdData, adminData } = await req.json();
+    let requestData;
+    try {
+      requestData = await req.json();
+    } catch (error) {
+      console.error("Error parsing request:", error);
+      return new Response(
+        JSON.stringify({ error: "Invalid request format" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { sfdData, adminData } = requestData;
     
     console.log("Received SFD creation request:", { 
       sfdData, 
@@ -38,6 +49,7 @@ serve(async (req) => {
     
     // Validate SFD data
     if (!sfdData || !sfdData.name || !sfdData.code) {
+      console.error("Missing SFD data:", sfdData);
       return new Response(
         JSON.stringify({ error: "Incomplete SFD data. Name and code are required." }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -73,128 +85,143 @@ serve(async (req) => {
 
       console.log("SFD created successfully:", sfd);
 
-      // If admin data is provided, create the admin
       let admin = null;
+      
+      // If admin data is provided, create the admin
       if (adminData && adminData.email && adminData.password && adminData.full_name) {
         console.log("Creating SFD admin...");
         
-        // 2. Create the admin user in auth.users
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: adminData.email,
-          password: adminData.password,
-          email_confirm: true,
-          user_metadata: {
-            full_name: adminData.full_name,
-            sfd_id: sfd.id
-          },
-          app_metadata: {
-            role: 'sfd_admin'
+        try {
+          // 2. Create the admin user in auth.users
+          const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+            email: adminData.email,
+            password: adminData.password,
+            email_confirm: true,
+            user_metadata: {
+              full_name: adminData.full_name,
+              sfd_id: sfd.id
+            },
+            app_metadata: {
+              role: 'sfd_admin'
+            }
+          });
+
+          if (authError) {
+            console.error("Error creating auth user:", authError);
+            // Even if we fail to create the admin, return the SFD
+            return new Response(
+              JSON.stringify({ 
+                sfd, 
+                error: `Failed to create admin: ${authError.message}` 
+              }),
+              { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
           }
-        });
 
-        if (authError) {
-          console.error("Error creating auth user:", authError);
-          // Even if we fail to create the admin, return the SFD
-          return new Response(
-            JSON.stringify({ 
-              sfd, 
-              error: `Failed to create admin: ${authError.message}` 
-            }),
-            { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          if (!authData.user) {
+            console.error("No user created");
+            return new Response(
+              JSON.stringify({ 
+                sfd, 
+                error: "No user created" 
+              }),
+              { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+
+          const userId = authData.user.id;
+          console.log("Admin auth user created with ID:", userId);
+
+          // 3. Create admin_users record
+          const { error: adminError } = await supabase
+            .from('admin_users')
+            .insert({
+              id: userId,
+              email: adminData.email,
+              full_name: adminData.full_name,
+              role: 'sfd_admin',
+              has_2fa: false
+            });
+
+          if (adminError) {
+            console.error("Error creating admin_user:", adminError);
+            return new Response(
+              JSON.stringify({ 
+                sfd, 
+                error: `Failed to create admin record: ${adminError.message}` 
+              }),
+              { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+
+          console.log("Admin record created in admin_users");
+
+          // 4. Assign the sfd_admin role
+          const { error: roleError } = await supabase.rpc(
+            'assign_role',
+            {
+              user_id: userId,
+              role: 'sfd_admin'
+            }
           );
-        }
 
-        if (!authData.user) {
-          return new Response(
-            JSON.stringify({ 
-              sfd, 
-              error: "No user created" 
-            }),
-            { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
+          if (roleError) {
+            console.error("Error assigning role:", roleError);
+            return new Response(
+              JSON.stringify({ 
+                sfd, 
+                error: `Failed to assign role: ${roleError.message}` 
+              }),
+              { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
 
-        const userId = authData.user.id;
-        console.log("Admin auth user created with ID:", userId);
+          console.log("SFD admin role assigned");
 
-        // 3. Create admin_users record
-        const { error: adminError } = await supabase
-          .from('admin_users')
-          .insert({
+          // 5. Create the connection between the admin and the SFD
+          const { error: linkError } = await supabase
+            .from('user_sfds')
+            .insert({
+              user_id: userId,
+              sfd_id: sfd.id,
+              is_default: true
+            });
+
+          if (linkError) {
+            console.error("Error linking SFD to admin:", linkError);
+            return new Response(
+              JSON.stringify({ 
+                sfd, 
+                error: `Failed to link SFD to admin: ${linkError.message}` 
+              }),
+              { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+
+          console.log("Admin linked to SFD");
+          
+          admin = {
             id: userId,
             email: adminData.email,
-            full_name: adminData.full_name,
-            role: 'sfd_admin'
-          });
-
-        if (adminError) {
-          console.error("Error creating admin_user:", adminError);
+            full_name: adminData.full_name
+          };
+        } catch (adminError) {
+          console.error("Error in admin creation process:", adminError);
+          // Return SFD data even if admin creation fails
           return new Response(
             JSON.stringify({ 
               sfd, 
-              error: `Failed to create admin record: ${adminError.message}` 
+              error: `Admin creation failed: ${adminError.message}` 
             }),
             { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-
-        console.log("Admin record created in admin_users");
-
-        // 4. Assign the sfd_admin role
-        const { error: roleError } = await supabase.rpc(
-          'assign_role',
-          {
-            user_id: userId,
-            role: 'sfd_admin'
-          }
-        );
-
-        if (roleError) {
-          console.error("Error assigning role:", roleError);
-          return new Response(
-            JSON.stringify({ 
-              sfd, 
-              error: `Failed to assign role: ${roleError.message}` 
-            }),
-            { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-
-        console.log("SFD admin role assigned");
-
-        // 5. Create the connection between the admin and the SFD
-        const { error: linkError } = await supabase
-          .from('user_sfds')
-          .insert({
-            user_id: userId,
-            sfd_id: sfd.id,
-            is_default: true
-          });
-
-        if (linkError) {
-          console.error("Error linking SFD to admin:", linkError);
-          return new Response(
-            JSON.stringify({ 
-              sfd, 
-              error: `Failed to link SFD to admin: ${linkError.message}` 
-            }),
-            { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-
-        console.log("Admin linked to SFD");
-        
-        admin = {
-          id: userId,
-          email: adminData.email,
-          full_name: adminData.full_name
-        };
       }
 
       // Return success with SFD and admin info
       return new Response(
         JSON.stringify({ sfd, admin }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
       
     } catch (error: any) {

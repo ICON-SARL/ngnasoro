@@ -1,13 +1,14 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useAddSfdAdmin } from '@/components/admin/hooks/sfd-admin/useAddSfdAdmin';
 import { AddSfdAdminDialog } from '@/components/admin/sfd/AddSfdAdminDialog';
 import { SfdAdminList } from '@/components/admin/sfd/SfdAdminList';
-import { Plus, Loader2, RefreshCw } from 'lucide-react';
+import { Plus, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { useSfdAdminsList } from '../hooks/sfd-admin/useSfdAdminsList';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface SfdAdminManagerProps {
   sfdId: string;
@@ -16,10 +17,13 @@ interface SfdAdminManagerProps {
 
 export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
   
   const { 
+    sfdAdmins,
     isLoading: isLoadingAdmins, 
+    error: fetchError,
     refetch: refetchAdmins 
   } = useSfdAdminsList(sfdId);
   
@@ -28,6 +32,17 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
     isAdding, 
     error: addError 
   } = useAddSfdAdmin();
+
+  // Mettre à jour le message d'erreur si nécessaire
+  useEffect(() => {
+    if (fetchError) {
+      setErrorMessage(`Erreur de chargement des administrateurs: ${fetchError instanceof Error ? fetchError.message : 'Erreur inconnue'}`);
+    } else if (addError) {
+      setErrorMessage(addError);
+    } else {
+      setErrorMessage(null);
+    }
+  }, [fetchError, addError]);
 
   const handleAddAdmin = async (data: {
     email: string;
@@ -38,10 +53,14 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
     notify: boolean;
   }) => {
     try {
-      await addSfdAdmin(data);
+      setErrorMessage(null);
+      await addSfdAdmin({
+        ...data,
+        role: 'sfd_admin' // Forcer le rôle à sfd_admin pour plus de sécurité
+      });
       setShowAddDialog(false);
       
-      // Refresh the list after short delay to ensure server has processed the add
+      // Actualiser la liste après un court délai
       setTimeout(() => {
         refetchAdmins();
         toast({
@@ -51,15 +70,13 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
       }, 1000);
     } catch (error: any) {
       console.error("Error in handleAddAdmin:", error);
-      toast({
-        title: "Erreur",
-        description: `Impossible d'ajouter l'administrateur: ${error.message}`,
-        variant: "destructive",
-      });
+      setErrorMessage(error.message || "Impossible d'ajouter l'administrateur");
+      // Garder la boîte de dialogue ouverte pour permettre à l'utilisateur de corriger l'erreur
     }
   };
 
   const handleRefresh = () => {
+    setErrorMessage(null);
     refetchAdmins();
     toast({
       title: "Actualisation",
@@ -102,6 +119,13 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
         </div>
       </CardHeader>
       <CardContent>
+        {errorMessage && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+        
         <SfdAdminList 
           sfdId={sfdId} 
           sfdName={sfdName}
@@ -115,7 +139,7 @@ export function SfdAdminManager({ sfdId, sfdName }: SfdAdminManagerProps) {
           sfdName={sfdName}
           onAddAdmin={handleAddAdmin}
           isLoading={isAdding}
-          error={addError}
+          error={errorMessage}
         />
       </CardContent>
     </Card>

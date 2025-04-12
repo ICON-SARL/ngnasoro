@@ -33,27 +33,43 @@ export function useAddSfdAdmin() {
         setError(null);
         console.log("Starting SFD admin creation process", adminData);
         
-        // Essayer de créer l'admin avec une stratégie de retry
-        let retries = 3;
+        // Limiter les tentatives pour éviter les boucles infinies
+        let retries = 2;
+        let lastError = null;
+        
         while (retries > 0) {
           try {
             return await addSfdAdmin(adminData);
           } catch (err: any) {
-            if (retries <= 1 || !err.message?.includes('infinite recursion')) {
-              throw err;
+            lastError = err;
+            console.log(`Tentative échouée, tentatives restantes: ${retries-1}`);
+            retries--;
+            
+            // Ne pas réessayer pour certaines erreurs spécifiques
+            if (err.message?.includes('email est déjà utilisé') || 
+                err.message?.includes('already registered') || 
+                err.message?.includes('invalide') ||
+                err.message?.includes('SFD spécifiée n\'existe pas')) {
+              break;
             }
             
-            console.log(`Retry attempt, retries left: ${retries-1}`);
-            retries--;
             // Attendre un court délai avant de réessayer
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (retries > 0) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
           }
         }
         
-        throw new Error("Nombre maximum de tentatives atteint");
+        // Si toutes les tentatives ont échoué, lancer l'erreur
+        if (lastError) {
+          throw lastError;
+        }
+        
+        throw new Error("Erreur inconnue lors de la création de l'administrateur");
       } catch (err: any) {
         console.error('Error creating SFD admin:', err);
-        setError(err.message || "Une erreur s'est produite lors de la création de l'administrateur");
+        const errorMessage = err.message || "Une erreur s'est produite lors de la création de l'administrateur";
+        setError(errorMessage);
         throw err;
       }
     },

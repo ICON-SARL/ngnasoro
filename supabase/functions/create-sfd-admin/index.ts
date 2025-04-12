@@ -34,18 +34,37 @@ serve(async (req) => {
     try {
       requestData = await req.json();
     } catch (error) {
+      console.error("Erreur lors du parsing du JSON:", error);
       return new Response(
         JSON.stringify({ error: "Format de requête invalide" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
+    console.log("Données reçues:", JSON.stringify(requestData));
+    
     const { email, password, full_name, role, sfd_id, notify = false } = requestData;
 
     if (!email || !password || !full_name || !role || !sfd_id) {
+      console.error("Données manquantes:", { email, role, sfd_id, hasPassword: !!password, hasFullName: !!full_name });
       return new Response(
         JSON.stringify({ error: "Données manquantes pour créer l'administrateur" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Vérifier que la SFD existe
+    const { data: sfdExists, error: sfdError } = await supabase
+      .from('sfds')
+      .select('id')
+      .eq('id', sfd_id)
+      .single();
+      
+    if (sfdError || !sfdExists) {
+      console.error("SFD non trouvée:", sfd_id, sfdError);
+      return new Response(
+        JSON.stringify({ error: "La SFD spécifiée n'existe pas" }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -67,9 +86,10 @@ serve(async (req) => {
     }
 
     if (existingUsers && existingUsers.length > 0) {
+      console.error("Email déjà utilisé:", email);
       return new Response(
         JSON.stringify({ error: "Cet email est déjà utilisé. Veuillez utiliser un autre email." }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
