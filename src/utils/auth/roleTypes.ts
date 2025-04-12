@@ -23,11 +23,15 @@ export const PERMISSIONS = {
   MANAGE_SFD_REPAYMENTS: 'manage_sfd_repayments',
   MANAGE_SFD_SAVINGS: 'manage_sfd_savings',
   VALIDATE_MOBILE_MONEY: 'validate_mobile_money',
+  APPROVE_CLIENT_ADHESION: 'approve_client_adhesion',
+  REJECT_CLIENT_ADHESION: 'reject_client_adhesion',
+  VIEW_CLIENT_ADHESIONS: 'view_client_adhesions',
   
   // Client permissions
   ACCESS_SAVINGS: 'access_savings',
   USE_MOBILE_MONEY: 'use_mobile_money',
   VIEW_LOAN_HISTORY: 'view_loan_history',
+  REQUEST_ADHESION: 'request_adhesion',
   
   // Shared/Common permissions
   MANAGE_CLIENTS: 'manage_clients',
@@ -57,6 +61,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     PERMISSIONS.EXPORT_DATA,
     PERMISSIONS.APPROVE_CREDIT,
     PERMISSIONS.ACCESS_ADMIN_DASHBOARD,
+    PERMISSIONS.VIEW_CLIENT_ADHESIONS,
   ],
   
   // SFD Admin permissions
@@ -71,6 +76,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     PERMISSIONS.MANAGE_LOANS,
     PERMISSIONS.ACCESS_SFD_DASHBOARD,
     PERMISSIONS.MANAGE_SUBSIDIES,
+    PERMISSIONS.APPROVE_CLIENT_ADHESION,
+    PERMISSIONS.REJECT_CLIENT_ADHESION,
+    PERMISSIONS.VIEW_CLIENT_ADHESIONS,
   ],
   
   // Client permissions
@@ -79,8 +87,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     PERMISSIONS.USE_MOBILE_MONEY,
     PERMISSIONS.VIEW_LOAN_HISTORY,
     PERMISSIONS.ACCESS_CLIENT_DASHBOARD,
+    PERMISSIONS.REQUEST_ADHESION,
   ],
   
   // Basic user permissions (minimal)
-  [UserRole.USER]: [],
+  [UserRole.USER]: [
+    PERMISSIONS.REQUEST_ADHESION,
+  ],
 };

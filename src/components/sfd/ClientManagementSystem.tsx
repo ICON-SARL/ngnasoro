@@ -3,17 +3,21 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, AlertCircle, Info, Users } from 'lucide-react';
+import { Loader2, AlertCircle, Info, Users, UserPlus, ClipboardList } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { useNavigate } from 'react-router-dom';
 import ClientsManagement from './ClientsManagement';
+import { ClientAdhesionRequests } from './ClientAdhesionRequests';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 export function ClientManagementSystem() {
   const { user } = useAuth();
   const { activeSfdId, sfdData, isLoading } = useSfdDataAccess();
   const [activeTab, setActiveTab] = useState('clients');
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
+  const canViewAdhesions = hasPermission('view_client_adhesions');
   
   if (isLoading) {
     return (
@@ -81,11 +85,23 @@ export function ClientManagementSystem() {
             <Users className="h-4 w-4 mr-1" />
             Clients
           </TabsTrigger>
+          {canViewAdhesions && (
+            <TabsTrigger value="adhesions" className="flex items-center">
+              <ClipboardList className="h-4 w-4 mr-1" />
+              Demandes d'adhésion
+            </TabsTrigger>
+          )}
         </TabsList>
         
         <TabsContent value="clients">
           <ClientsManagement />
         </TabsContent>
+        
+        {canViewAdhesions && (
+          <TabsContent value="adhesions">
+            <ClientAdhesionRequests />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

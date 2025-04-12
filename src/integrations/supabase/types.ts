@@ -209,6 +209,65 @@ export type Database = {
           },
         ]
       }
+      client_adhesion_requests: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string
+          id: string
+          id_number: string | null
+          id_type: string | null
+          notes: string | null
+          phone: string | null
+          processed_at: string | null
+          processed_by: string | null
+          sfd_id: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          id_number?: string | null
+          id_type?: string | null
+          notes?: string | null
+          phone?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          sfd_id: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          id_number?: string | null
+          id_type?: string | null
+          notes?: string | null
+          phone?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          sfd_id?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_adhesion_requests_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_documents: {
         Row: {
           client_id: string
@@ -550,6 +609,90 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           webhook_secret?: string | null
+        }
+        Relationships: []
+      }
+      mobile_money_settings: {
+        Row: {
+          api_key: string | null
+          api_url: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          provider: string
+          updated_at: string | null
+          webhook_secret: string
+        }
+        Insert: {
+          api_key?: string | null
+          api_url?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          provider: string
+          updated_at?: string | null
+          webhook_secret: string
+        }
+        Update: {
+          api_key?: string | null
+          api_url?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          provider?: string
+          updated_at?: string | null
+          webhook_secret?: string
+        }
+        Relationships: []
+      }
+      mobile_money_webhooks: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string | null
+          id: string
+          is_verified: boolean | null
+          phone_number: string
+          processed_at: string | null
+          provider: string
+          raw_payload: Json | null
+          reference_id: string
+          signature: string | null
+          status: string
+          transaction_type: string
+          user_id: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string | null
+          id?: string
+          is_verified?: boolean | null
+          phone_number: string
+          processed_at?: string | null
+          provider: string
+          raw_payload?: Json | null
+          reference_id: string
+          signature?: string | null
+          status?: string
+          transaction_type: string
+          user_id?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string | null
+          id?: string
+          is_verified?: boolean | null
+          phone_number?: string
+          processed_at?: string | null
+          provider?: string
+          raw_payload?: Json | null
+          reference_id?: string
+          signature?: string | null
+          status?: string
+          transaction_type?: string
+          user_id?: string | null
         }
         Relationships: []
       }

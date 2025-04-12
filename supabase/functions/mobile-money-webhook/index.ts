@@ -61,14 +61,32 @@ async function verifyWithdrawalLimit(userId: string, amount: number, provider: s
 
 // Security functions
 async function verifySignature(payload: any, signature: string, provider: string): Promise<boolean> {
-  if (provider === 'orange') {
+  // Get provider settings
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: providerSettings, error: settingsError } = await supabase
+    .from("mobile_money_settings")
+    .select("webhook_secret")
+    .eq("provider", provider)
+    .single();
+  
+  if (settingsError || !providerSettings) {
+    console.error("Error fetching provider settings:", settingsError);
+    return false;
+  }
+  
+  const secretKey = providerSettings.webhook_secret;
+  
+  if (!secretKey) {
+    console.error("No webhook secret found for provider:", provider);
+    return false;
+  }
+  
+  if (provider === 'orange_money') {
     // Orange uses certificate-based verification
     // In a real implementation, this would validate using a certificate
     return true; // Simplified for example
-  } else if (provider === 'wave') {
-    // Wave uses HMAC-SHA256
-    // This is a simplified example - real implementation would be more complex
-    const secretKey = Deno.env.get("WAVE_SECRET_KEY") ?? "";
+  } else if (provider === 'mtn_mobile') {
+    // MTN uses HMAC-SHA256
     const message = JSON.stringify(payload);
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
@@ -89,33 +107,58 @@ async function verifySignature(payload: any, signature: string, provider: string
     const calculatedSignature = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
     
     return calculatedSignature === signature;
-  } else if (provider === 'moov') {
-    // Moov Money uses API key verification
-    // This is a simplified example
-    const apiKey = Deno.env.get("MOOV_API_KEY") ?? "";
+  } else {
+    // Generic HMAC-SHA256 verification
     const message = JSON.stringify(payload);
     const encoder = new TextEncoder();
-    const data = encoder.encode(message + apiKey);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secretKey),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
     
-    return hashHex === signature;
-  } else if (provider === 'mtn') {
-    // MTN uses OAuth2 + standard signature verification
-    // This is a simplified example - real implementation would vary
-    const apiKey = Deno.env.get("MTN_API_KEY") ?? "";
-    const message = JSON.stringify(payload);
-    const encoder = new TextEncoder();
-    const data = encoder.encode(message + apiKey);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    const signatureBuffer = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      encoder.encode(message)
+    );
     
-    return hashHex === signature;
+    const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+    const calculatedSignature = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    return calculatedSignature === signature;
   }
+}
+
+async function recordWebhook(payload: any, signature: string, isVerified: boolean): Promise<string> {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
-  return false;
+  try {
+    const { data, error } = await supabase
+      .from("mobile_money_webhooks")
+      .insert({
+        reference_id: payload.transactionId || payload.paymentId,
+        provider: payload.provider,
+        transaction_type: payload.type || "payment",
+        amount: payload.amount,
+        phone_number: payload.phoneNumber,
+        user_id: payload.userId,
+        status: "pending",
+        raw_payload: payload,
+        signature: signature,
+        is_verified: isVerified
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data.id;
+  } catch (error) {
+    console.error("Error recording webhook:", error);
+    throw error;
+  }
 }
 
 serve(async (req) => {
@@ -139,15 +182,22 @@ serve(async (req) => {
 
     // Extract security headers
     const signature = req.headers.get("x-signature") || "";
-    const provider = payload.provider || "mtn"; // Default to MTN if not specified
+    const provider = payload.provider || "mtn_mobile"; // Default to MTN if not specified
     
     // Verify signature based on provider
     const isValidSignature = await verifySignature(payload, signature, provider);
     
+    // Record the webhook even if signature is invalid (for security analysis)
+    const webhookId = await recordWebhook(payload, signature, isValidSignature);
+    
     if (!isValidSignature) {
       console.error("Invalid signature for provider:", provider);
       return new Response(
-        JSON.stringify({ error: "Invalid signature" }),
+        JSON.stringify({ 
+          error: "Invalid signature", 
+          webhookId: webhookId,
+          success: false 
+        }),
         { 
           status: 403, 
           headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -171,9 +221,13 @@ serve(async (req) => {
       secondAuthFactor
     } = payload;
 
-    if (!paymentId || !status || !loanId || !userId) {
+    if (!paymentId || !status || !userId) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
+        JSON.stringify({ 
+          error: "Missing required fields", 
+          webhookId: webhookId,
+          success: false 
+        }),
         { 
           status: 400, 
           headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -192,10 +246,30 @@ serve(async (req) => {
     const limitCheck = await verifyWithdrawalLimit(userId, amount, provider);
     if (!limitCheck.allowed) {
       console.warn(`Payment rejected: ${limitCheck.reason}`);
+      
+      // Update the webhook status
+      await supabase
+        .from("mobile_money_webhooks")
+        .update({
+          status: "failed",
+          processed_at: new Date().toISOString(),
+          raw_payload: { 
+            ...payload, 
+            failure_reason: limitCheck.reason,
+            daily_usage: {
+              used: limitCheck.dailyTotal,
+              limit: limitCheck.userLimit,
+              remaining: limitCheck.userLimit - limitCheck.dailyTotal
+            }
+          }
+        })
+        .eq("id", webhookId);
+      
       return new Response(
         JSON.stringify({ 
           success: false, 
           message: limitCheck.reason,
+          webhookId: webhookId,
           dailyUsage: {
             used: limitCheck.dailyTotal,
             limit: limitCheck.userLimit,
@@ -214,7 +288,7 @@ serve(async (req) => {
         .insert({
           user_id: userId,
           amount: amount,
-          name: "Remboursement prêt",
+          name: loanId ? "Remboursement prêt" : "Dépôt mobile money",
           type: `Paiement ${provider}`,
           reference: transactionId || paymentId
         });
@@ -223,30 +297,30 @@ serve(async (req) => {
         console.error("Error recording payment:", error);
         throw error;
       }
+      
+      // Update the webhook status
+      await supabase
+        .from("mobile_money_webhooks")
+        .update({
+          status: "processed",
+          processed_at: new Date().toISOString(),
+          account_id: data?.[0]?.id
+        })
+        .eq("id", webhookId);
 
-      // Broadcast the loan status update using Supabase Realtime
+      // Broadcast the transaction status update using Supabase Realtime
       const broadcastResult = await supabase
-        .channel('loan-status-changes')
+        .channel('payment-updates')
         .send({
           type: 'broadcast',
-          event: 'loan_status_update',
+          event: 'payment_processed',
           payload: {
-            paidAmount: 13.90, // Simulated, in a real app we'd calculate this
-            remainingAmount: 11.50,
-            progress: 55,
-            securityData: {
-              transactionId: transactionId || paymentId,
-              provider,
-              securityMethod: provider === 'mtn' ? 'OAuth2' : 
-                             provider === 'orange' ? 'Certificate' : 'HMAC',
-              timestamp: new Date().toISOString()
-            },
-            paymentHistory: [
-              { id: 4, date: new Date().toLocaleDateString('fr-FR'), amount: 3.50, status: 'paid' },
-              { id: 1, date: '05 August 2023', amount: 3.50, status: 'paid' },
-              { id: 2, date: '05 July 2023', amount: 3.50, status: 'paid' },
-              { id: 3, date: '05 June 2023', amount: 3.50, status: 'paid' }
-            ]
+            userId: userId,
+            amount: amount,
+            provider: provider,
+            transactionId: transactionId || paymentId,
+            webhookId: webhookId,
+            timestamp: new Date().toISOString()
           }
         });
 
@@ -256,14 +330,30 @@ serve(async (req) => {
         JSON.stringify({ 
           success: true, 
           message: "Payment recorded successfully",
-          transactionId: transactionId || paymentId
+          transactionId: transactionId || paymentId,
+          webhookId: webhookId
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } else {
       console.warn(`Payment not successful, status: ${status}`);
+      
+      // Update the webhook status
+      await supabase
+        .from("mobile_money_webhooks")
+        .update({
+          status: "failed",
+          processed_at: new Date().toISOString(),
+          raw_payload: { ...payload, failure_reason: `Payment status: ${status}` }
+        })
+        .eq("id", webhookId);
+      
       return new Response(
-        JSON.stringify({ success: false, message: `Payment not successful, status: ${status}` }),
+        JSON.stringify({ 
+          success: false, 
+          message: `Payment not successful, status: ${status}`,
+          webhookId: webhookId
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
