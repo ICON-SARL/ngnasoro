@@ -49,8 +49,8 @@ export function useCreateSfdMutation() {
       // Log the user ID for debugging
       console.log("User ID:", user.id);
 
-      // Check user roles
       try {
+        // Fetch user roles explicitly to confirm admin permissions
         const { data: userRoles, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
@@ -63,6 +63,7 @@ export function useCreateSfdMutation() {
         
         console.log("User roles:", userRoles);
         
+        // Check if user has admin role
         const isAdmin = userRoles?.some(r => r.role === 'admin');
         
         if (!isAdmin) {
@@ -113,7 +114,7 @@ export function useCreateSfdMutation() {
           adminData: createAdmin && adminData ? { ...adminData, password: '******' } : null
         });
         
-        // Set a longer timeout for the Edge Function call
+        // Make the request to the Edge Function with proper auth token
         const { data, error } = await supabase.functions.invoke('create-sfd-with-admin', {
           body: JSON.stringify({
             sfdData: sfdDataToSend,

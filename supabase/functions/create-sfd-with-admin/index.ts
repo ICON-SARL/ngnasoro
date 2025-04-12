@@ -23,7 +23,7 @@ function isValidPassword(password: string): boolean {
 }
 
 serve(async (req) => {
-  console.log("Edge function started with timeout of 90 seconds");
+  console.log("Edge function create-sfd-with-admin started");
   
   // CORS preflight
   if (req.method === 'OPTIONS') {
@@ -34,9 +34,9 @@ serve(async (req) => {
     // Get auth header to validate permissions
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
-      console.error("No authorization header");
+      console.error("No authorization header provided");
       return new Response(
-        JSON.stringify({ error: "Requête non autorisée" }),
+        JSON.stringify({ error: "Requête non autorisée - Pas d'en-tête d'autorisation" }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -48,40 +48,64 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("Missing environment variables");
       return new Response(
-        JSON.stringify({ error: "Configuration du serveur incorrecte" }),
+        JSON.stringify({ error: "Configuration du serveur incorrecte - Variables d'environnement manquantes" }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Create Supabase client with service key
+    // Create Supabase client with service key for admin operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const authClient = supabase.auth.admin;
+    
+    // Create Supabase client with the provided JWT for permission verification
+    const clientToken = authHeader.replace('Bearer ', '');
+    const clientSupabase = createClient(supabaseUrl, supabaseServiceKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${clientToken}`
+        }
+      }
+    });
+    
+    console.log("Supabase clients created");
 
-    // Extract JWT token
-    const jwt = authHeader.replace('Bearer ', '');
-    console.log("JWT token received");
-
-    // Verify JWT token and get user information
+    // Verify user identity and permissions
     let userId;
     try {
-      const { data: jwtData, error: jwtError } = await authClient.getUser(jwt);
+      // Get user ID from JWT token
+      const { data: { user }, error: userError } = await supabase.auth.getUser(clientToken);
       
-      if (jwtError) {
-        console.error("JWT verification error:", jwtError);
+      if (userError || !user) {
+        console.error("JWT verification error:", userError);
         return new Response(
-          JSON.stringify({ error: `Erreur d'authentification: ${jwtError.message}` }),
+          JSON.stringify({ error: `Erreur d'authentification: ${userError?.message || "Utilisateur non identifié"}` }),
           { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
-      userId = jwtData?.user?.id;
-      console.log("Authenticated user ID:", userId);
+      userId = user.id;
+      console.log("User identified:", userId);
       
-      if (!userId) {
-        console.error("No user ID found in JWT");
+      // Check if user has admin role
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+      
+      if (rolesError) {
+        console.error("Error fetching roles:", rolesError);
         return new Response(
-          JSON.stringify({ error: "Token d'authentification invalide" }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: `Erreur lors de la vérification des rôles: ${rolesError.message}` }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      const hasAdminRole = roles?.some(r => r.role === 'admin');
+      console.log("User has admin role:", hasAdminRole);
+      
+      if (!hasAdminRole) {
+        return new Response(
+          JSON.stringify({ error: "Vous n'avez pas les permissions nécessaires pour créer une SFD" }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     } catch (authError: any) {
@@ -91,32 +115,6 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    // Verify user has admin role
-    const { data: roles, error: rolesError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId);
-    
-    if (rolesError) {
-      console.error("Error fetching user roles:", rolesError);
-      return new Response(
-        JSON.stringify({ error: `Erreur lors de la vérification des permissions: ${rolesError.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    const isAdmin = roles?.some(r => r.role === 'admin');
-    
-    if (!isAdmin) {
-      console.error("User does not have admin role:", userId);
-      return new Response(
-        JSON.stringify({ error: "Vous n'avez pas les permissions nécessaires pour créer une SFD" }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    console.log("Admin permissions verified");
 
     // Parse request body
     let requestBody;
@@ -175,9 +173,28 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+      
+      // Check if email is already in use
+      const { data: existingUser, error: existingUserError } = await supabase
+        .from('admin_users')
+        .select('id, email')
+        .eq('email', adminData.email)
+        .maybeSingle();
+
+      if (existingUserError) {
+        console.error("Error checking existing email:", existingUserError);
+      } else if (existingUser) {
+        console.error("Email already in use:", adminData.email);
+        return new Response(
+          JSON.stringify({ error: "Cet email est déjà utilisé. Veuillez utiliser une autre adresse email." }),
+          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     try {
+      console.log("Starting SFD creation transaction");
+      
       // 1. Create SFD
       console.log("Creating SFD record");
       const { data: newSfd, error: sfdError } = await supabase
@@ -224,39 +241,18 @@ serve(async (req) => {
         });
 
       if (statsError) {
-        console.warn("Error creating statistics:", statsError);
+        console.warn("Error creating SFD stats:", statsError);
+      } else {
+        console.log("SFD stats created");
       }
 
       // 3. Create admin if requested
       let adminResult = null;
-      if (createAdmin && adminData && adminData.email && adminData.password && adminData.full_name) {
+      if (createAdmin && adminData) {
         console.log("Creating SFD admin");
         
         try {
-          // Check if user already exists
-          console.log("Checking if email already exists");
-          const { data: existingUser, error: existingUserError } = await supabase
-            .from('admin_users')
-            .select('id, email')
-            .eq('email', adminData.email)
-            .maybeSingle();
-
-          if (existingUserError) {
-            console.error("Error checking email:", existingUserError);
-          }
-
-          if (existingUser) {
-            console.error("Email already used:", adminData.email);
-            return new Response(
-              JSON.stringify({ 
-                error: "Cet email est déjà utilisé. Veuillez utiliser une autre adresse email.",
-                sfd: newSfd
-              }),
-              { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
-          }
-          
-          // Create user in auth.users
+          // Create auth user with email confirmation disabled
           console.log("Creating auth user");
           const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
             email: adminData.email,
@@ -297,7 +293,7 @@ serve(async (req) => {
           console.log("Auth user created with ID:", adminUserId);
 
           // Create admin_users entry
-          console.log("Creating admin_users entry");
+          console.log("Creating admin_users record");
           const { error: adminError } = await supabase
             .from('admin_users')
             .insert({
@@ -309,12 +305,18 @@ serve(async (req) => {
             });
 
           if (adminError) {
-            console.error("Error creating admin_user:", adminError);
-          } else {
-            console.log("admin_users record created");
+            console.error("Error creating admin_user record:", adminError);
+            return new Response(
+              JSON.stringify({ 
+                error: `Erreur lors de la création de l'enregistrement admin: ${adminError.message}`,
+                sfd: newSfd
+              }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
           }
+          console.log("admin_users record created");
 
-          // Assign SFD_ADMIN role using assign_role function
+          // Assign SFD_ADMIN role
           console.log("Assigning sfd_admin role");
           const { error: roleError } = await supabase.rpc(
             'assign_role',
@@ -326,9 +328,15 @@ serve(async (req) => {
 
           if (roleError) {
             console.error("Error assigning role:", roleError);
-          } else {
-            console.log("sfd_admin role assigned");
+            return new Response(
+              JSON.stringify({ 
+                error: `Erreur lors de l'attribution du rôle: ${roleError.message}`,
+                sfd: newSfd
+              }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
           }
+          console.log("sfd_admin role assigned");
 
           // Create user-SFD association
           console.log("Creating user-SFD association");
@@ -342,9 +350,15 @@ serve(async (req) => {
 
           if (assocError) {
             console.error("Error creating SFD association:", assocError);
-          } else {
-            console.log("SFD association created");
+            return new Response(
+              JSON.stringify({ 
+                error: `Erreur lors de la création de l'association SFD: ${assocError.message}`,
+                sfd: newSfd
+              }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
           }
+          console.log("SFD association created");
 
           adminResult = {
             id: adminUserId,
@@ -353,7 +367,7 @@ serve(async (req) => {
             role: 'sfd_admin'
           };
           
-          console.log("SFD admin creation completed successfully");
+          console.log("SFD admin created successfully:", adminResult);
         } catch (adminCreateError: any) {
           console.error("Unhandled error during admin creation:", adminCreateError);
           return new Response(
