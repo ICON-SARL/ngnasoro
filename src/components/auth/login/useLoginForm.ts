@@ -72,15 +72,17 @@ export const useLoginForm = (
         }
       } else if (result.data) {
         console.log('Login successful:', result.data);
+        
+        // Get user role from metadata
+        const userRole = result.data?.user?.app_metadata?.role;
+        console.log('User role from login:', userRole);
+        
         toast({
           title: "Connexion réussie",
           description: "Vous êtes maintenant connecté.",
         });
         
         // Redirect based on user role
-        const userRole = result.data?.user?.app_metadata?.role;
-        console.log('User role from login:', userRole);
-        
         if (adminMode && userRole === 'admin') {
           navigate('/super-admin-dashboard');
         } else if (isSfdAdmin && userRole === 'sfd_admin') {

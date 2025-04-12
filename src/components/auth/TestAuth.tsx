@@ -18,7 +18,7 @@ const TestAuth = () => {
   }, [user, userRole]);
   
   const testAccounts = [
-    { email: "client@test.com", password: "password123", role: "client" },
+    { email: "client@test.com", password: "password123", role: "user" },
     { email: "sfd@test.com", password: "password123", role: "sfd_admin" },
     { email: "admin@test.com", password: "password123", role: "admin" },
     { email: "sfd2@test.com", password: "password123", role: "sfd_admin" }

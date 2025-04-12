@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Logo from './auth/Logo';
-import LoginForm from './auth/login/LoginForm';
+import LoginForm from './auth/LoginForm';
 import RegisterForm from './auth/RegisterForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
@@ -37,15 +37,16 @@ const AuthUI = () => {
   useEffect(() => {
     if (user && !loading) {
       console.log('Authenticated user:', user);
-      console.log('User role:', userRole);
+      console.log('User role from auth context:', userRole);
       
       // Get user role from app_metadata
       const role = user.app_metadata?.role;
       console.log('User role from metadata:', role);
       
-      if (role === 'admin') {
+      // Redirect based on role
+      if (role === UserRole.SuperAdmin) {
         navigate('/super-admin-dashboard');
-      } else if (role === 'sfd_admin') {
+      } else if (role === UserRole.SfdAdmin) {
         navigate('/agency-dashboard');
       } else {
         navigate('/mobile-flow/main');
@@ -54,7 +55,7 @@ const AuthUI = () => {
   }, [user, userRole, loading, navigate, location.pathname, toast]);
   
   useEffect(() => {
-    // Vérifier si nous sommes sur une page spécifique pour définir le mode d'authentification
+    // Check if we're on a specific page to set authentication mode
     if (location.pathname.includes('admin/auth') || location.search.includes('admin=true')) {
       setAuthMode('admin');
     } else if (location.pathname.includes('sfd/auth') || location.search.includes('sfd_admin=true')) {
@@ -63,7 +64,7 @@ const AuthUI = () => {
       setAuthMode('default');
     }
     
-    // Définir l'onglet actif (login ou register)
+    // Set active tab (login or register)
     if (location.pathname.includes('register')) {
       setActiveTab('register');
     } else {
