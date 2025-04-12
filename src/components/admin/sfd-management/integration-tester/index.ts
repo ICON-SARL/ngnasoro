@@ -1,0 +1,2 @@
+
+export { IntegrationTester } from './IntegrationTester';
