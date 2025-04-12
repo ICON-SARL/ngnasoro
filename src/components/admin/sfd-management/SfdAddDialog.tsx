@@ -105,11 +105,22 @@ export const SfdAddDialog: React.FC<SfdAddDialogProps> = ({ open, onOpenChange }
         return;
       }
       
-      // Call mutation
+      // Here's the fix - ensure adminData has all required properties when createAdmin is true
+      let adminData = undefined;
+      
+      if (data.createAdmin && data.admin) {
+        adminData = {
+          email: data.admin.email,
+          password: data.admin.password,
+          full_name: data.admin.full_name
+        };
+      }
+      
+      // Call mutation with properly typed adminData
       await createSfdMutation.mutateAsync({
         sfdData,
         createAdmin: data.createAdmin,
-        adminData: data.createAdmin ? data.admin : undefined
+        adminData
       });
       
       // Reset form and close dialog on success
