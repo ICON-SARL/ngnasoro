@@ -9,10 +9,7 @@ export enum AuditLogCategory {
   USER_MANAGEMENT = 'user_management',
   SYSTEM = 'system',
   TOKEN_MANAGEMENT = 'token_management',
-  FINANCIAL = 'financial',  // Added FINANCIAL category
-  INTEGRATION = 'integration', // Adding INTEGRATION category
-  SECURITY = 'security',    // Adding SECURITY category
-  MONITORING = 'monitoring' // Adding MONITORING category
+  FINANCIAL = 'financial'  // Added FINANCIAL category
 }
 
 export enum AuditLogSeverity {
@@ -59,7 +56,6 @@ export interface AuditLogFilterOptions {
 // Interface for audit log entry for services
 export interface AuditLogEntry extends AuditLogEvent {
   // This alias ensures backward compatibility
-  metadata?: Record<string, any>; // Added metadata field as an alias for details
 }
 
 // Interface for CSV export response

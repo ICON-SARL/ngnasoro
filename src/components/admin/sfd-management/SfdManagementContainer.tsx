@@ -1,71 +1,101 @@
 
 import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
-import { Shield, Activity, Clock } from 'lucide-react';
-import { RoleAuditSystem } from './RoleAuditSystem';
-import { IntegrationTester } from './IntegrationTester';
-import { WebhookMonitor } from './WebhookMonitor';
+import { AddSfdAdminDialog } from '@/components/admin/sfd/AddSfdAdminDialog';
+import { SfdAddDialog } from '@/components/admin/sfd/SfdAddDialog';
+import { SfdHeader } from './SfdHeader';
+import { NetworkStatusAlerts } from './NetworkStatusAlerts';
+import { SfdList } from './SfdList';
+import { SfdDetail } from './SfdDetail';
+import { useSfdManagementContainerState } from './useSfdManagementContainerState';
 
 export function SfdManagementContainer() {
+  const {
+    searchQuery,
+    selectedSfd,
+    showAddAdminDialog,
+    showAddSfdDialog,
+    retryCount,
+    isRetrying,
+    isOnline,
+    isLoadingAdmin,
+    error,
+    sfds,
+    isLoading,
+    isError,
+    filteredSfds,
+    MAX_RETRIES,
+    setSelectedSfd,
+    setShowAddAdminDialog,
+    setShowAddSfdDialog,
+    handleAddAdmin,
+    handleRefreshData,
+    handleAddDialogChange,
+    handleSearchChange
+  } = useSfdManagementContainerState();
+
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <h1 className="text-2xl font-bold mb-6">Gestion des SFDs</h1>
-      <p className="text-muted-foreground mb-6">
-        Administrez les institutions de microfinance partenaires et leurs comptes administrateurs
-      </p>
-      
-      <Tabs defaultValue="audit">
-        <TabsList className="w-full border-b px-2">
-          <TabsTrigger value="audit" className="flex items-center">
-            <Shield className="h-4 w-4 mr-2" />
-            Audit RBAC
-          </TabsTrigger>
-          <TabsTrigger value="integration" className="flex items-center">
-            <Activity className="h-4 w-4 mr-2" />
-            Tests d'Intégration
-          </TabsTrigger>
-          <TabsTrigger value="webhooks" className="flex items-center">
-            <Clock className="h-4 w-4 mr-2" />
-            Monitoring Webhooks
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="audit" className="py-4">
-          <RoleAuditSystem />
-        </TabsContent>
-        
-        <TabsContent value="integration" className="py-4">
-          <IntegrationTester />
-        </TabsContent>
-        
-        <TabsContent value="webhooks" className="py-4">
-          <WebhookMonitor />
-        </TabsContent>
-      </Tabs>
-      
-      <Card className="mt-6">
-        <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold mb-2">Recommandations techniques</h3>
-          <ul className="space-y-2 list-disc pl-5">
-            <li>
-              <strong>Transactions SQL atomiques :</strong> Utiliser des transactions SQL pour garantir l'intégrité des données.
-              <pre className="bg-gray-50 p-2 rounded mt-1 text-sm font-mono">
-                BEGIN;<br/>
-                UPDATE sfd_operation SET balance = balance - 100 WHERE sfd_id = 123;<br/>
-                UPDATE client_loan SET balance = balance + 100 WHERE client_id = 456;<br/>
-                COMMIT;
-              </pre>
-            </li>
-            <li>
-              <strong>Verrous optimistes :</strong> Implémenter des mécanismes de versioning pour éviter les conflits de concurrence.
-            </li>
-            <li>
-              <strong>Logs d'audit :</strong> Stocker toutes les tentatives de transaction dans transaction_audit_logs.
-            </li>
-          </ul>
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      <SfdHeader
+        isLoading={isLoading}
+        isRetrying={isRetrying}
+        isOnline={isOnline}
+        selectedSfd={selectedSfd}
+        onRefresh={handleRefreshData}
+        onAddSfd={() => setShowAddSfdDialog(true)}
+        onAddAdmin={() => setShowAddAdminDialog(true)}
+      />
+
+      <NetworkStatusAlerts
+        isOnline={isOnline}
+        isError={isError}
+        isRetrying={isRetrying}
+        retryCount={retryCount}
+        maxRetries={MAX_RETRIES}
+        onRetry={handleRefreshData}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <SfdList
+            sfds={sfds}
+            filteredSfds={filteredSfds}
+            isLoading={isLoading}
+            isRetrying={isRetrying}
+            searchQuery={searchQuery}
+            selectedSfd={selectedSfd}
+            retryCount={retryCount}
+            maxRetries={MAX_RETRIES}
+            onSearchChange={handleSearchChange}
+            onSelectSfd={setSelectedSfd}
+          />
+        </div>
+
+        <div className="lg:col-span-2">
+          {selectedSfd && (
+            <SfdDetail
+              selectedSfd={selectedSfd}
+              onEdit={() => {/* Edit functionality */}}
+            />
+          )}
+        </div>
+      </div>
+
+      {selectedSfd && (
+        <AddSfdAdminDialog
+          open={showAddAdminDialog}
+          onOpenChange={setShowAddAdminDialog}
+          sfdId={selectedSfd.id}
+          sfdName={selectedSfd.name}
+          onAddAdmin={handleAddAdmin}
+          isLoading={isLoadingAdmin}
+          error={error}
+        />
+      )}
+
+      <SfdAddDialog
+        open={showAddSfdDialog}
+        onOpenChange={handleAddDialogChange}
+      />
     </div>
   );
 }

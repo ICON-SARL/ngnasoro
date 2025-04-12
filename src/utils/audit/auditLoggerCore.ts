@@ -17,9 +17,6 @@ export async function logAuditEvent(entry: AuditLogEntry) {
       throw new Error('Missing required audit log fields');
     }
 
-    // Handle metadata field (alias for details)
-    const details = entry.metadata || entry.details;
-
     // Prepare the audit log entry with defaults
     const auditEntry = {
       user_id: entry.user_id || 'anonymous', // Make sure we accept 'anonymous' as a value
@@ -29,7 +26,7 @@ export async function logAuditEvent(entry: AuditLogEntry) {
       status: entry.status,
       target_resource: entry.target_resource,
       error_message: entry.error_message,
-      details: details ? details : null,
+      details: entry.details ? entry.details : null,
       ip_address: null, // Will be filled by edge functions or server-side
       device_info: null, // Will be filled by edge functions or server-side
     };
