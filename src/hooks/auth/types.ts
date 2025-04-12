@@ -1,5 +1,5 @@
 
-import { User as SupabaseUser } from '@supabase/supabase-js';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 export interface User extends SupabaseUser {
   full_name?: string;
@@ -18,10 +18,10 @@ export type Role = 'admin' | 'sfd_admin' | 'user';
 export interface AuthContextProps {
   user: User | null;
   loading: boolean;
-  session: any | null;
-  signIn: (email: string, password: string) => Promise<{ error: any | null }>;
+  session: Session | null;
+  signIn: (email: string, password: string) => Promise<{ data?: any; error?: any }>;
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: any | null }>;
-  signOut: () => Promise<{ success: boolean; error?: any }>;  // Updated return type to match implementation
+  signOut: () => Promise<{ error: any }>;
   refreshSession: () => Promise<void>;
   activeSfdId: string | null;
   setActiveSfdId: (id: string | null) => void;

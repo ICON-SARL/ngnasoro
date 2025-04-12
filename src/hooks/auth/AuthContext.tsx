@@ -1,18 +1,10 @@
 
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Session, User } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { logAuditEvent } from '@/utils/audit/auditLogger';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
-
-interface AuthContextProps {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ data?: any; error?: any }>;
-  signOut: () => Promise<{ error: any }>;
-  refreshSession: () => Promise<void>;
-}
+import { User, AuthContextProps, UserRole, Role } from './types';
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
@@ -20,6 +12,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+
+  // Computed properties based on user role
+  const userRole = user?.app_metadata?.role as UserRole || UserRole.User;
+  const isAdmin = userRole === UserRole.SuperAdmin;
+  const isSfdAdmin = userRole === UserRole.SfdAdmin;
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -32,7 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         setSession(data.session);
-        setUser(data.session?.user || null);
+        setUser(data.session?.user as User || null);
         
         // Debug log
         if (data.session?.user) {
@@ -55,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        setUser(newSession?.user || null);
+        setUser(newSession?.user as User || null);
         setSession(newSession);
         setLoading(false);
         
@@ -103,6 +102,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  // Load and set biometric preference
+  useEffect(() => {
+    const loadBiometricPreference = async () => {
+      try {
+        const storedPreference = localStorage.getItem('biometricEnabled');
+        if (storedPreference !== null) {
+          setBiometricEnabled(storedPreference === 'true');
+        }
+      } catch (error) {
+        console.error('Error loading biometric preference:', error);
+      }
+    };
+
+    loadBiometricPreference();
+  }, []);
+
   const signIn = async (email: string, password: string) => {
     try {
       const result = await supabase.auth.signInWithPassword({ email, password });
@@ -137,6 +152,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata || {}
+        }
+      });
+      
+      if (error) {
+        console.error('Error signing up:', error);
+        return { error };
+      }
+      
+      return { error: null };
+    } catch (error) {
+      console.error('Error signing up:', error);
+      return { error };
+    }
+  };
+
   const signOut = async () => {
     try {
       const result = await supabase.auth.signOut();
@@ -156,9 +193,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       setSession(data.session);
-      setUser(data.session?.user || null);
+      setUser(data.session?.user as User || null);
     } catch (error) {
       console.error('Error refreshing session:', error);
+    }
+  };
+
+  const toggleBiometricAuth = async () => {
+    try {
+      const newState = !biometricEnabled;
+      setBiometricEnabled(newState);
+      localStorage.setItem('biometricEnabled', String(newState));
+    } catch (error) {
+      console.error('Error toggling biometric auth:', error);
     }
   };
 
@@ -167,8 +214,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     session,
     loading,
     signIn,
+    signUp,
     signOut,
-    refreshSession
+    refreshSession,
+    activeSfdId,
+    setActiveSfdId,
+    isAdmin,
+    isSfdAdmin,
+    userRole,
+    biometricEnabled,
+    toggleBiometricAuth
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
