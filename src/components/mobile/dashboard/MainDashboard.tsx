@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import ContextualHeader from '@/components/mobile/ContextualHeader';
@@ -7,6 +7,7 @@ import SFDSavingsOverview from '@/components/mobile/SFDSavingsOverview';
 import TransactionList from '@/components/mobile/TransactionList';
 import { useMobileDashboard } from '@/hooks/useMobileDashboard';
 import { Account } from '@/types/transactions';
+import { useToast } from '@/hooks/use-toast';
 
 interface MainDashboardProps {
   onAction: (action: string, data?: any) => void;
@@ -24,6 +25,34 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   toggleMenu
 }) => {
   const { dashboardData, isLoading: dashboardLoading, refreshDashboardData } = useMobileDashboard();
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    console.log("MainDashboard mounted with account:", account);
+    console.log("MainDashboard transactions:", transactions);
+    
+    // Rafraîchir les données du dashboard au montage
+    if (refreshDashboardData) {
+      refreshDashboardData().catch(error => {
+        console.error("Erreur lors du rafraîchissement des données:", error);
+      });
+    }
+  }, [refreshDashboardData]);
+  
+  const displayTransactions = transactions && transactions.length > 0 
+    ? transactions 
+    : (dashboardData?.transactions || []);
+    
+  const formatTransactionData = () => {
+    return displayTransactions.map(tx => ({
+      id: tx.id,
+      name: tx.name || (tx.type === 'deposit' ? 'Dépôt' : tx.type === 'withdrawal' ? 'Retrait' : 'Transaction'),
+      type: tx.type,
+      amount: tx.amount.toString(),
+      date: new Date(tx.date || tx.created_at).toLocaleDateString(),
+      avatar: tx.avatar_url
+    }));
+  };
   
   return (
     <div className="space-y-4 pb-20">
@@ -37,18 +66,11 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
       </div>
       
       <div className="px-4 py-2">
-        <SFDSavingsOverview />
+        <SFDSavingsOverview account={account} />
       </div>
       
       <TransactionList 
-        transactions={(dashboardData?.transactions || transactions).map(tx => ({
-          id: tx.id,
-          name: tx.name,
-          type: tx.type,
-          amount: tx.amount.toString(),
-          date: new Date(tx.date).toLocaleDateString(),
-          avatar: tx.avatar_url
-        }))}
+        transactions={formatTransactionData()}
         isLoading={transactionsLoading || dashboardLoading}
         onViewAll={() => onAction('Loans')}
         title="Transactions Récentes"

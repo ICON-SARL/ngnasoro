@@ -1,214 +1,89 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { useAuth } from '@/hooks/useAuth';
-import { useMobileDashboard } from '@/hooks/useMobileDashboard';
-import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
-import { 
-  SavingsHeader, 
-  AccountStats, 
-  BalanceDisplay,
-  NoAccountState,
-  LoadingState,
-  ErrorState
-} from './sfd-savings';
+import { Account } from '@/types/transactions';
 
-const SFDSavingsOverview = () => {
+interface SFDSavingsOverviewProps {
+  account?: Account | null;
+}
+
+const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({ account }) => {
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const { activeSfdAccount, isLoading, refetch } = useSfdAccounts();
-  const { user, activeSfdId } = useAuth();
-  const { dashboardData, isLoading: isDashboardLoading, refreshDashboardData } = useMobileDashboard();
-  const { isSyncing, synchronizeWithSfd, syncError, retryCount, testConnection } = useRealtimeSynchronization();
-  const [isHidden, setIsHidden] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [hasError, setHasError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string>("Impossible de récupérer les informations de votre compte");
-  const [connectionStatus, setConnectionStatus] = useState<boolean | null>(null);
-  const [hasAttemptedInitialSync, setHasAttemptedInitialSync] = useState(false);
+  const { user } = useAuth();
   
-  // Get active SFD data from dashboard if available
-  const activeSfd = dashboardData?.sfdAccounts?.find(sfd => sfd.is_default);
-  const sfdName = activeSfd?.sfds?.name || activeSfdAccount?.name || "Premier SFD";
-  const sfdBalance = dashboardData?.account?.balance || activeSfdAccount?.balance || 250000;
-  const sfdCurrency = dashboardData?.account?.currency || activeSfdAccount?.currency || 'FCFA';
-  
-  // Initial synchronization function
-  const performInitialSync = useCallback(async () => {
-    if (!activeSfdId || hasAttemptedInitialSync) return;
-    
-    try {
-      setHasAttemptedInitialSync(true);
-      
-      // Test connection before attempting full sync
-      const isConnected = await testConnection();
-      setConnectionStatus(isConnected);
-      
-      if (isConnected) {
-        const syncResult = await synchronizeWithSfd();
-        if (syncResult) {
-          setHasError(false);
-        } else {
-          setHasError(true);
-          setErrorMessage("Synchronisation échouée. Veuillez réessayer.");
-        }
-      } else {
-        setHasError(true);
-        setErrorMessage("Impossible de contacter le serveur. Veuillez vérifier votre connexion.");
-      }
-    } catch (error) {
-      console.error("Synchronization error:", error);
-      setHasError(true);
-      setErrorMessage("Erreur lors de la connexion au serveur. Veuillez vérifier votre connexion.");
-    }
-  }, [activeSfdId, synchronizeWithSfd, testConnection, hasAttemptedInitialSync]);
-  
-  // Check for updates from admin panel or SFD - Initial sync
   useEffect(() => {
-    performInitialSync();
-  }, [performInitialSync]);
-  
-  // Periodic sync effect - separate from initial sync
-  useEffect(() => {
-    if (!activeSfdId) return;
+    console.log("SFDSavingsOverview mounted with account:", account);
+    // Simuler un chargement
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
     
-    // Set up a timer to periodically check for updates (every 5 minutes)
-    const syncInterval = setInterval(() => {
-      synchronizeWithSfd().catch(err => {
-        console.error("Periodic sync error:", err);
-      });
-    }, 5 * 60 * 1000);
-    
-    return () => {
-      clearInterval(syncInterval);
-    };
-  }, [activeSfdId, synchronizeWithSfd]);
+    return () => clearTimeout(timer);
+  }, [account]);
   
-  // Effect to detect account errors - separate dependency array
-  useEffect(() => {
-    // If not loading and no data found, set error state
-    if (!isLoading && !isDashboardLoading && !activeSfd && !activeSfdAccount && user) {
-      setHasError(true);
-      setErrorMessage("Aucun compte SFD trouvé pour votre profil.");
-    }
-  }, [isLoading, isDashboardLoading, activeSfd, activeSfdAccount, user]);
-  
-  // Effect for sync errors - separate dependency array
-  useEffect(() => {
-    if (syncError) {
-      setHasError(true);
-      setErrorMessage(syncError);
-    } else if (syncError === null && hasError) {
-      // Reset error state if syncError is cleared
-      setHasError(false);
-    }
-  }, [syncError, hasError]);
-
-  const refreshBalance = async () => {
-    setIsUpdating(true);
-    setHasError(false);
-    
-    try {
-      // Test connection first
-      const isConnected = await testConnection();
-      setConnectionStatus(isConnected);
-      
-      if (!isConnected) {
-        setHasError(true);
-        setErrorMessage("Impossible de contacter le serveur. Veuillez vérifier votre connexion.");
-        setIsUpdating(false);
-        return;
-      }
-      
-      // Use synchronizeWithSfd for reliable updates
-      const syncResult = await synchronizeWithSfd();
-      
-      // Refresh local data
-      if (refreshDashboardData) {
-        await refreshDashboardData();
-      }
-      await refetch();
-      
-      // Add a slight delay before removing the loading state
-      setTimeout(() => {
-        setIsUpdating(false);
-        if (!syncResult) {
-          setHasError(true);
-          setErrorMessage("Synchronisation échouée. Veuillez réessayer.");
-        }
-      }, 1000);
-    } catch (error) {
-      console.error("Error refreshing balance:", error);
-      setHasError(true);
-      setErrorMessage("Erreur de connexion au serveur. Veuillez vérifier votre connexion.");
-      setIsUpdating(false);
-    }
+  const goToSelector = () => {
+    navigate('/sfd-selector');
   };
   
-  const toggleVisibility = () => {
-    setIsHidden(!isHidden);
-  };
-
-  const handleWithdrawal = () => {
-    navigate('/mobile-flow/secure-payment', { state: { isWithdrawal: true } });
+  const goToSavings = () => {
+    navigate('/mobile-flow/savings');
   };
   
-  // Show a "no account" message if the user doesn't have an active SFD
-  if (!activeSfdId && !isLoading && !isDashboardLoading) {
-    return <NoAccountState />;
-  }
-  
-  // Show loading state
-  if (!activeSfdAccount && !activeSfd && (isLoading || isDashboardLoading)) {
-    return <LoadingState />;
-  }
-  
-  // Show error state
-  if (hasError) {
+  if (isLoading) {
     return (
-      <ErrorState 
-        message={errorMessage} 
-        retryFn={refreshBalance}
-        retryCount={retryCount}
-      />
+      <Card className="border-0 shadow-md bg-white rounded-2xl overflow-hidden">
+        <CardContent className="p-4">
+          <div className="flex justify-center items-center h-40">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </CardContent>
+      </Card>
     );
   }
   
+  // Si aucun compte n'est disponible
+  if (!account) {
+    return (
+      <Card className="border-0 shadow-md bg-white rounded-2xl overflow-hidden">
+        <CardContent className="p-4">
+          <div className="text-center py-6">
+            <h3 className="text-lg font-medium mb-2">Aucun compte SFD</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Connectez-vous à un SFD pour accéder à vos services financiers.
+            </p>
+            <Button 
+              className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+              onClick={goToSelector}
+            >
+              Connecter un SFD
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // Afficher les informations du compte
   return (
-    <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
+    <Card className="border-0 shadow-md bg-white rounded-2xl overflow-hidden">
       <CardContent className="p-4">
-        <SavingsHeader 
-          sfdName={sfdName}
-          isHidden={isHidden}
-          toggleVisibility={toggleVisibility}
-        />
-        
-        <AccountStats 
-          isHidden={isHidden} 
-          balance={sfdBalance}
-        />
-        
-        <BalanceDisplay 
-          isHidden={isHidden}
-          balance={sfdBalance}
-          currency={sfdCurrency}
-          isUpdating={isUpdating || isSyncing}
-          refreshBalance={refreshBalance}
-          isPending={isSyncing}
-        />
-        
-        <Button 
-          className="mt-3 w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white py-2 rounded-xl font-medium transition-colors"
-          onClick={handleWithdrawal}
-        >
-          Effectuer un retrait
-        </Button>
-        
-        <p className="text-sm text-gray-500 mt-2 text-center">
-          Retirez vos fonds facilement via Mobile Money ou en agence SFD
-        </p>
+        <div className="text-center py-4">
+          <h3 className="text-lg font-medium mb-2">Solde Disponible</h3>
+          <p className="text-2xl font-bold mb-4">
+            {account.balance.toLocaleString()} {account.currency}
+          </p>
+          <Button 
+            className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+            onClick={goToSavings}
+          >
+            Gérer mes fonds
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

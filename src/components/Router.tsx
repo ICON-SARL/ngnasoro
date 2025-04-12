@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,8 +10,16 @@ import MobileFlowPage from '@/pages/MobileFlowPage';
 import { CapacitorGuide } from '@/components/mobile/CapacitorGuide';
 import TestAuth from '@/components/auth/TestAuth';
 
-// Create a client for the mobile router
-const queryClient = new QueryClient();
+// Create a client for the mobile router with longer staleTime
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30 * 1000, // 30 secondes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const MobileRouter = () => {
   const { user, loading } = useAuth();
