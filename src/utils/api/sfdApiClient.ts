@@ -1,11 +1,25 @@
 
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+
+// Extend the AxiosInstance type to include our transaction method
+interface SfdApiClient extends AxiosInstance {
+  transaction: (operations: Array<{
+    method: string;
+    url: string;
+    data?: any;
+    headers?: Record<string, string>;
+  }>) => Promise<{
+    success: boolean;
+    results?: any[];
+    error?: string;
+  }>;
+}
 
 // Create an axios instance for SFD-specific API calls
 const sfdApiClient = axios.create({
   baseURL: '/api/sfd',
   timeout: 10000
-});
+}) as SfdApiClient;
 
 // Add a request interceptor to include the SFD ID in the URL
 sfdApiClient.interceptors.request.use(
@@ -76,7 +90,7 @@ sfdApiClient.transaction = async (operations) => {
       console.error('Rolled back transaction due to error:', error);
       throw error;
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Transaction failed:', error);
     return {
       success: false,

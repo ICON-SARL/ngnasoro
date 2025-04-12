@@ -74,7 +74,7 @@ export async function approveLoanWithTransaction(
     } else {
       throw new Error(result.error || 'Transaction failed');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Loan approval transaction failed:', error);
     
     // Log failure
@@ -176,7 +176,7 @@ export async function disburseLoanWithTransaction(
     } else {
       throw new Error(result.error || 'Transaction failed');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Loan disbursement transaction failed:', error);
     
     // Log failure
@@ -223,7 +223,7 @@ export async function processLoanRepaymentWithTransaction(
     // First, get the loan details to determine remaining amount
     const { data: loan, error: loanError } = await supabase
       .from('sfd_loans')
-      .select('amount, status, remaining_amount')
+      .select('amount, status')
       .eq('id', loanId)
       .single();
       
@@ -231,8 +231,20 @@ export async function processLoanRepaymentWithTransaction(
       throw new Error('Failed to retrieve loan details');
     }
     
-    // Calculate new remaining amount and determine if loan is paid off
-    const currentRemainingAmount = loan.remaining_amount || loan.amount;
+    // Since remaining_amount column doesn't exist, we need to handle repayments differently
+    // We'll need to fetch any previous payments to calculate the remaining amount
+    const { data: payments, error: paymentsError } = await supabase
+      .from('loan_payments')
+      .select('amount')
+      .eq('loan_id', loanId);
+      
+    if (paymentsError) {
+      throw new Error('Failed to retrieve loan payment history');
+    }
+    
+    // Calculate total paid amount and remaining amount
+    const totalPaid = payments ? payments.reduce((sum, payment) => sum + Number(payment.amount), 0) : 0;
+    const currentRemainingAmount = loan.amount - totalPaid;
     const newRemainingAmount = Math.max(0, currentRemainingAmount - amount);
     const newStatus = newRemainingAmount === 0 ? 'paid' : loan.status;
     
@@ -243,7 +255,6 @@ export async function processLoanRepaymentWithTransaction(
         method: 'PUT',
         url: `/loans/${loanId}`,
         data: {
-          remaining_amount: newRemainingAmount,
           status: newStatus,
           last_payment_date: new Date().toISOString()
         }
@@ -316,7 +327,7 @@ export async function processLoanRepaymentWithTransaction(
     } else {
       throw new Error(result.error || 'Transaction failed');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Loan repayment transaction failed:', error);
     
     // Log failure

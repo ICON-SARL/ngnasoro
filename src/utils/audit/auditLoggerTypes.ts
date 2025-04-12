@@ -12,7 +12,8 @@ export enum AuditLogCategory {
   FINANCIAL = 'financial',
   INTEGRATION = 'integration',
   SECURITY = 'security',
-  MONITORING = 'monitoring'
+  MONITORING = 'monitoring',
+  LOAN_OPERATIONS = 'loan_operations'
 }
 
 export enum AuditLogSeverity {
