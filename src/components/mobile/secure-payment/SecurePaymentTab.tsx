@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+
+import React, { useEffect } from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import TabHeader from './TabHeader';
 import SuccessView from './SuccessView';
 import SecurePaymentContent from './SecurePaymentContent';
 import MobileMoneyModal from '../loan/MobileMoneyModal';
-import QRCodePaymentDialog from '../loan/QRCodePaymentDialog';
-import { useTransactions } from '@/hooks/useTransactions';
-import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import QRCodePaymentDialog from './QRCodePaymentDialog';
+import { useSecurePayment } from './hooks/useSecurePayment';
 
 export interface SecurePaymentTabProps {
   onBack?: () => void;
@@ -26,143 +25,39 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   onComplete,
   selectedSfdId
 }) => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { user, activeSfdId } = useAuth();
-  const [paymentMethod, setPaymentMethod] = useState('sfd');
-  const [balanceStatus, setBalanceStatus] = useState<'sufficient' | 'insufficient'>('sufficient');
-  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed' | null>(null);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
-  const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const { sfdAccounts, isLoading: accountsLoading } = useSfdAccounts();
-  const [transactionAmount, setTransactionAmount] = useState(isWithdrawal ? 25000 : loanId ? 3500 : 10000);
+  const { activeSfdId } = useAuth();
   
   const effectiveSfdId = selectedSfdId || activeSfdId;
-  
   const selectedSfdAccount = sfdAccounts.find(acc => acc.id === effectiveSfdId);
   
-  const { 
-    makeDeposit, 
-    makeWithdrawal,
-    makeLoanRepayment
-  } = useTransactions(user?.id, effectiveSfdId);
+  const {
+    paymentSuccess,
+    paymentStatus,
+    progress,
+    mobileMoneyInitiated,
+    qrDialogOpen,
+    transactionAmount,
+    setMobileMoneyInitiated,
+    setQrDialogOpen,
+    handleBackAction,
+    handlePayment,
+    handleMobileMoneyPayment,
+    handleScanQRCode,
+    handleAmountChange,
+    detectInsufficientBalance
+  } = useSecurePayment({ 
+    onBack, 
+    isWithdrawal, 
+    loanId, 
+    onComplete, 
+    selectedSfdId 
+  });
   
-  const handleBackAction = () => {
-    if (onBack) {
-      onBack();
-    } else {
-      navigate(-1);
-    }
-  };
-  
-  const handlePayment = async () => {
-    if (!user || !effectiveSfdId) {
-      toast({
-        title: "Erreur",
-        description: "Utilisateur ou SFD non défini",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (transactionAmount <= 0) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez entrer un montant valide",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (paymentMethod === 'sfd') {
-      setQrDialogOpen(true);
-      return;
-    }
-    
-    setPaymentStatus('pending');
-    setProgress(10);
-    
-    setTimeout(() => setProgress(30), 500);
-    setTimeout(() => setProgress(60), 1000);
-    
-    try {
-      let result;
-      
-      if (isWithdrawal) {
-        result = await makeWithdrawal(transactionAmount, `Retrait via ${paymentMethod}`);
-      } else if (loanId) {
-        result = await makeLoanRepayment(loanId, transactionAmount, `Remboursement de prêt via ${paymentMethod}`);
-      } else {
-        result = await makeDeposit(transactionAmount, `Dépôt via ${paymentMethod}`);
-      }
-      
-      setTimeout(() => setProgress(100), 1500);
-      
-      if (result) {
-        setTimeout(() => {
-          setPaymentStatus('success');
-          setPaymentSuccess(true);
-          if (onComplete) {
-            onComplete();
-          }
-        }, 2000);
-      } else {
-        setTimeout(() => {
-          setPaymentStatus('failed');
-          toast({
-            title: "Erreur",
-            description: "La transaction a échoué. Veuillez réessayer.",
-            variant: "destructive",
-          });
-        }, 2000);
-      }
-    } catch (error: any) {
-      setPaymentStatus('failed');
-      toast({
-        title: "Erreur",
-        description: error.message || "La transaction a échoué. Veuillez réessayer.",
-        variant: "destructive",
-      });
-    }
-  };
-  
+  // Detect insufficient balance when account changes
   useEffect(() => {
-    const detectPrimaryAccount = () => {
-      if (selectedSfdAccount && isWithdrawal) {
-        const hasEnoughBalance = selectedSfdAccount.balance >= transactionAmount;
-        setBalanceStatus(hasEnoughBalance ? 'sufficient' : 'insufficient');
-        if (!hasEnoughBalance) {
-          setPaymentMethod('mobile');
-          toast({
-            title: "Solde SFD insuffisant",
-            description: "Basculement automatique vers Mobile Money",
-            variant: "default",
-          });
-        } else {
-          setPaymentMethod('sfd');
-        }
-      } else {
-        setBalanceStatus('sufficient');
-        setPaymentMethod('sfd');
-      }
-    };
-    
-    detectPrimaryAccount();
-  }, [toast, isWithdrawal, selectedSfdAccount, transactionAmount]);
-  
-  const handleMobileMoneyPayment = () => {
-    setMobileMoneyInitiated(true);
-  };
-  
-  const handleScanQRCode = () => {
-    setQrDialogOpen(true);
-  };
-  
-  const handleAmountChange = (amount: number) => {
-    setTransactionAmount(amount);
-  };
+    detectInsufficientBalance(selectedSfdAccount);
+  }, [selectedSfdAccount, transactionAmount]);
   
   return (
     <div className="bg-white h-full pb-24">
@@ -185,6 +80,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
           onAmountChange={handleAmountChange}
           onScanQRCode={handleScanQRCode}
           onMobileMoneyPayment={handleMobileMoneyPayment}
+          handlePayment={handlePayment}
         />
       )}
       

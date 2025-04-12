@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
-import { SfdAccount } from '@/hooks/sfd/types';
-import QRCodeSection from './QRCodeSection';
+import { SfdAccount } from '@/hooks/useSfdAccounts';
 import { SecurityFeatures } from './SecurityFeatures';
 import { ReconciliationSection } from './ReconciliationSection';
 import PaymentDetails from './PaymentDetails';
@@ -20,9 +19,10 @@ interface SecurePaymentContentProps {
   onAmountChange: (amount: number) => void;
   onScanQRCode: () => void;
   onMobileMoneyPayment?: () => void;
+  handlePayment: () => void;
 }
 
-export const SecurePaymentContent: React.FC<SecurePaymentContentProps> = ({
+const SecurePaymentContent: React.FC<SecurePaymentContentProps> = ({
   isWithdrawal,
   loanId,
   transactionAmount,
@@ -31,7 +31,8 @@ export const SecurePaymentContent: React.FC<SecurePaymentContentProps> = ({
   selectedSfdAccount,
   onAmountChange,
   onScanQRCode,
-  onMobileMoneyPayment
+  onMobileMoneyPayment,
+  handlePayment
 }) => {
   // Determine if balance is insufficient for withdrawal
   const insufficientBalance = isWithdrawal && 
@@ -44,6 +45,16 @@ export const SecurePaymentContent: React.FC<SecurePaymentContentProps> = ({
 
   const handleMethodChange = (method: 'qrcode' | 'mobile') => {
     setPaymentMethod(method);
+  };
+
+  const handleActionButton = () => {
+    if (paymentMethod === 'qrcode') {
+      onScanQRCode();
+    } else if (paymentMethod === 'mobile' && onMobileMoneyPayment) {
+      onMobileMoneyPayment();
+    } else {
+      handlePayment(); // Fallback to default payment handler
+    }
   };
 
   return (
@@ -81,7 +92,7 @@ export const SecurePaymentContent: React.FC<SecurePaymentContentProps> = ({
       <div className="mt-4">
         {paymentMethod === 'qrcode' ? (
           <Button 
-            onClick={onScanQRCode} 
+            onClick={handleActionButton} 
             className="w-full flex items-center justify-center gap-2"
           >
             <Scan className="h-4 w-4" />
@@ -89,7 +100,7 @@ export const SecurePaymentContent: React.FC<SecurePaymentContentProps> = ({
           </Button>
         ) : (
           <Button 
-            onClick={onMobileMoneyPayment} 
+            onClick={handleActionButton} 
             className="w-full flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600"
           >
             <Smartphone className="h-4 w-4" />
