@@ -49,16 +49,16 @@ export function usePermissions() {
           setUserRoles(roles);
           
           // Combine permissions from all roles
-          const permissions = roles.reduce((allPermissions, role) => {
+          const allPermissions = roles.reduce((allPermissions, role) => {
             return [...allPermissions, ...(DEFAULT_ROLE_PERMISSIONS[role] || [])];
           }, [] as string[]);
           
           // Remove duplicates
-          setUserPermissions([...new Set(permissions)]);
+          setUserPermissions([...new Set(allPermissions)]);
         }
         
         console.log('User roles loaded:', roles);
-        console.log('User permissions:', [...new Set(permissions)]);
+        console.log('User permissions:', [...new Set(allPermissions)]);
       } catch (err) {
         console.error('Error in usePermissions:', err);
         toast({
