@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { logAuditEvent } from '@/utils/audit';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
@@ -62,6 +63,8 @@ export function useRoleAudit() {
       await logAuditEvent({
         category: AuditLogCategory.SECURITY,
         action: 'run_role_audit',
+        status: 'success',
+        severity: AuditLogSeverity.INFO,
         metadata: {
           triggered_by: 'manual',
           timestamp: new Date().toISOString()

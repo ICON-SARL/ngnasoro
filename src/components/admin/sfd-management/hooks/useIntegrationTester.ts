@@ -31,6 +31,8 @@ export function useIntegrationTester() {
       await logAuditEvent({
         category: AuditLogCategory.INTEGRATION,
         action: 'run_integration_test',
+        status: 'success',
+        severity: AuditLogSeverity.INFO,
         metadata: {
           endpoint: selectedTest.endpoint,
           method: selectedTest.method,

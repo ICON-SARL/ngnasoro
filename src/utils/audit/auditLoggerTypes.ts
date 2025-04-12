@@ -1,3 +1,4 @@
+
 // Exporting the enums separately to make sure they're properly exported
 export enum AuditLogCategory {
   AUTHENTICATION = 'authentication',
@@ -58,6 +59,7 @@ export interface AuditLogFilterOptions {
 // Interface for audit log entry for services
 export interface AuditLogEntry extends AuditLogEvent {
   // This alias ensures backward compatibility
+  metadata?: Record<string, any>; // Added metadata field as an alias for details
 }
 
 // Interface for CSV export response

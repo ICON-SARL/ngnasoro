@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Loader2, Send, Check, X, PlayCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { logAuditEvent } from '@/utils/audit';
 import { useIntegrationTester, TestEndpoint } from './hooks/useIntegrationTester';
-import { AuditLogCategory } from '@/utils/audit/auditLoggerTypes';
+import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 
 const testEndpoints = [
   { 
@@ -57,7 +58,9 @@ export function IntegrationTester() {
     // Log the test for audit purposes
     await logAuditEvent({
       category: AuditLogCategory.INTEGRATION,
-      action: 'run_integration_test', 
+      action: 'run_integration_test',
+      status: 'success',
+      severity: AuditLogSeverity.INFO,
       metadata: {
         endpoint: selectedTest.endpoint,
         method: selectedTest.method,

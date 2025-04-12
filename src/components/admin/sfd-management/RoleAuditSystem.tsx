@@ -7,7 +7,7 @@ import { useRoleAudit } from './hooks/useRoleAudit';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { logAuditEvent } from '@/utils/audit';
-import { AuditLogCategory } from '@/utils/audit/auditLoggerTypes';
+import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 
 export function RoleAuditSystem() {
   const { 
@@ -25,6 +25,8 @@ export function RoleAuditSystem() {
     logAuditEvent({
       category: AuditLogCategory.SECURITY,
       action: 'view_role_audit',
+      status: 'success',
+      severity: AuditLogSeverity.INFO,
       metadata: {
         component: 'RoleAuditSystem',
         action: 'component_mounted'
@@ -136,6 +138,8 @@ export function RoleAuditSystem() {
                               logAuditEvent({
                                 category: AuditLogCategory.SECURITY,
                                 action: 'view_role_details',
+                                status: 'success',
+                                severity: AuditLogSeverity.INFO,
                                 metadata: {
                                   role_id: role.id,
                                   role_name: role.name

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { logAuditEvent } from '@/utils/audit';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
@@ -81,6 +82,8 @@ export function useWebhookMonitor() {
       await logAuditEvent({
         category: AuditLogCategory.MONITORING,
         action: 'refresh_webhooks',
+        status: 'success',
+        severity: AuditLogSeverity.INFO,
         metadata: {
           triggered_by: 'manual',
           timestamp: new Date().toISOString()

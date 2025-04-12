@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +25,7 @@ import { useWebhookMonitor } from './hooks/useWebhookMonitor';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { logAuditEvent } from '@/utils/audit';
-import { AuditLogCategory } from '@/utils/audit/auditLoggerTypes';
+import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 
 // This component would be connected to real data in a production environment
 export function WebhookMonitor() {
@@ -47,6 +46,8 @@ export function WebhookMonitor() {
     logAuditEvent({
       category: AuditLogCategory.MONITORING,
       action: 'view_webhook_monitor',
+      status: 'success',
+      severity: AuditLogSeverity.INFO,
       metadata: {
         component: 'WebhookMonitor',
         action: 'component_mounted'
@@ -196,6 +197,8 @@ export function WebhookMonitor() {
                               logAuditEvent({
                                 category: AuditLogCategory.MONITORING,
                                 action: 'view_webhook_details',
+                                status: 'success',
+                                severity: AuditLogSeverity.INFO,
                                 metadata: {
                                   webhook_id: webhook.id,
                                   provider: webhook.provider
