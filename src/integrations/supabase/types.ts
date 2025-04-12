@@ -720,6 +720,47 @@ export type Database = {
         }
         Relationships: []
       }
+      sfd_accounts: {
+        Row: {
+          account_type: string
+          balance: number
+          created_at: string | null
+          currency: string
+          id: string
+          sfd_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          account_type: string
+          balance?: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          sfd_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          account_type?: string
+          balance?: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          sfd_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sfd_accounts_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sfd_clients: {
         Row: {
           address: string | null
@@ -1384,6 +1425,10 @@ export type Database = {
       }
       create_sfd_with_admin: {
         Args: { sfd_data: Json; admin_data?: Json }
+        Returns: Json
+      }
+      create_sfd_with_admin_and_accounts: {
+        Args: { sfd_data: Json; admin_data: Json; account_types?: string[] }
         Returns: Json
       }
       get_sfd_admins: {

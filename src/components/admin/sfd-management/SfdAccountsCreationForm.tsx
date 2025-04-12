@@ -21,14 +21,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from '@/components/ui/textarea';
 import { useSfdAccountsCreation } from '@/hooks/useSfdAccountsCreation';
 
+// Define schemas with required fields matching the API interfaces
 const sfdSchema = z.object({
   name: z.string().min(1, { message: 'Le nom est requis' }),
   code: z.string().min(1, { message: 'Le code est requis' }),
   region: z.string().optional(),
   status: z.enum(['active', 'pending', 'suspended']).default('active'),
-  contact_email: z.string().email({ message: 'Email invalide' }).optional().nullable(),
-  phone: z.string().optional().nullable(),
-  description: z.string().optional().nullable(),
+  contact_email: z.string().email({ message: 'Email invalide' }).optional(),
+  phone: z.string().optional(),
+  description: z.string().optional(),
+  logo_url: z.string().optional(),
 });
 
 const adminSchema = z.object({
@@ -63,6 +65,9 @@ export function SfdAccountsCreationForm() {
         region: '',
         status: 'active',
         description: '',
+        contact_email: '',
+        phone: '',
+        logo_url: '',
       },
       adminData: {
         full_name: '',
@@ -86,8 +91,22 @@ export function SfdAccountsCreationForm() {
       if (values.accounts.includeSavingsAccount) accountTypes.push('epargne');
       
       await createSfdWithAccounts.mutateAsync({
-        sfdData: values.sfdData,
-        adminData: values.adminData,
+        // Ensure all required fields are present in the data being sent
+        sfdData: {
+          name: values.sfdData.name, // Required field
+          code: values.sfdData.code, // Required field
+          region: values.sfdData.region,
+          status: values.sfdData.status,
+          contact_email: values.sfdData.contact_email,
+          phone: values.sfdData.phone,
+          description: values.sfdData.description,
+          logo_url: values.sfdData.logo_url,
+        },
+        adminData: {
+          email: values.adminData.email, // Required field
+          password: values.adminData.password, // Required field
+          full_name: values.adminData.full_name, // Required field
+        },
         accounts: { types: accountTypes }
       });
       
