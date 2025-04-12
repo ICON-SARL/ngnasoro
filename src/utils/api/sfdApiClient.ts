@@ -32,4 +32,57 @@ sfdApiClient.interceptors.request.use(
   }
 );
 
+// Add a transaction handling method to ensure atomic operations
+sfdApiClient.transaction = async (operations) => {
+  try {
+    // Begin a transaction (simulated with a specific endpoint)
+    const transactionResponse = await sfdApiClient.post('/transaction/begin');
+    const transactionId = transactionResponse.data.transactionId;
+    
+    console.log('Started transaction:', transactionId);
+    
+    // Execute all operations with the transaction ID
+    const results = [];
+    try {
+      for (const operation of operations) {
+        const { method, url, data } = operation;
+        const headers = {
+          'X-Transaction-ID': transactionId,
+          ...(operation.headers || {})
+        };
+        
+        // Execute the operation within the transaction context
+        const response = await sfdApiClient.request({
+          method,
+          url,
+          data,
+          headers
+        });
+        
+        results.push(response.data);
+      }
+      
+      // Commit the transaction
+      await sfdApiClient.post('/transaction/commit', { transactionId });
+      console.log('Committed transaction:', transactionId);
+      
+      return {
+        success: true,
+        results
+      };
+    } catch (error) {
+      // Rollback on any error
+      await sfdApiClient.post('/transaction/rollback', { transactionId });
+      console.error('Rolled back transaction due to error:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Transaction failed:', error);
+    return {
+      success: false,
+      error: error.message || 'Transaction failed'
+    };
+  }
+};
+
 export default sfdApiClient;

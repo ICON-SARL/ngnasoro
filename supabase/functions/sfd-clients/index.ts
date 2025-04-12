@@ -5,9 +5,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.4.0';
 // CORS headers for browser requests
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-sfd-id, x-sfd-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-sfd-id, x-sfd-token, x-transaction-id',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 };
+
+// Active transactions store (in memory for this example)
+// In a production environment, this would be persisted in a database
+const activeTransactions = new Map();
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -24,6 +28,11 @@ serve(async (req) => {
     // Parse the URL to extract SFD ID
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/');
+    
+    // Check for transaction operations
+    if (pathParts.includes('transaction')) {
+      return await handleTransactionOperation(req, supabase, pathParts, corsHeaders);
+    }
     
     // Check if the path follows the pattern /sfd-clients/api/sfd/{sfd_id}/clients
     const apiIndex = pathParts.findIndex(part => part === 'api');
@@ -217,3 +226,106 @@ serve(async (req) => {
     );
   }
 });
+
+// Transaction operation handler
+async function handleTransactionOperation(req, supabase, pathParts, corsHeaders) {
+  const transactionOperation = pathParts[pathParts.indexOf('transaction') + 1];
+  const data = await req.json().catch(() => ({}));
+  
+  switch (transactionOperation) {
+    case 'begin':
+      // Start a new transaction
+      const transactionId = crypto.randomUUID();
+      activeTransactions.set(transactionId, {
+        status: 'active',
+        operations: [],
+        createdAt: new Date().toISOString()
+      });
+      
+      console.log(`Transaction started: ${transactionId}`);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          transactionId,
+          message: 'Transaction started' 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+      
+    case 'commit':
+      // Commit a transaction
+      if (!data.transactionId || !activeTransactions.has(data.transactionId)) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Invalid transaction ID' 
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      const transaction = activeTransactions.get(data.transactionId);
+      
+      // In a real implementation, we would execute all operations in a database transaction
+      // For this example, we'll simulate successful commit
+      console.log(`Committing transaction: ${data.transactionId} with ${transaction.operations.length} operations`);
+      
+      activeTransactions.delete(data.transactionId);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Transaction committed' 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+      
+    case 'rollback':
+      // Rollback a transaction
+      if (!data.transactionId || !activeTransactions.has(data.transactionId)) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Invalid transaction ID' 
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      console.log(`Rolling back transaction: ${data.transactionId}`);
+      activeTransactions.delete(data.transactionId);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Transaction rolled back' 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+      
+    default:
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Invalid transaction operation' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+  }
+}
