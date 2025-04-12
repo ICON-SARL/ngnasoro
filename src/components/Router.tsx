@@ -8,6 +8,7 @@ import LoginPage from '@/pages/LoginPage';
 import NotFound from '@/pages/NotFound';
 import MobileFlowPage from '@/pages/MobileFlowPage';
 import { CapacitorGuide } from '@/components/mobile/CapacitorGuide';
+import TestAuth from '@/components/auth/TestAuth';
 
 // Import your routes here
 
@@ -28,6 +29,7 @@ const Router = () => {
       {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/capacitor-guide" element={<CapacitorGuide />} />
+      <Route path="/test-auth" element={<TestAuth />} />
       
       {/* Mobile flow routes */}
       <Route path="/mobile-flow/*" element={<MobileFlowPage />} />

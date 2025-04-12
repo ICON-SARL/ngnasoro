@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 const AuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
   const [authMode, setAuthMode] = useState<'default' | 'admin' | 'sfd_admin'>('default');
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, loading, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
@@ -27,7 +27,7 @@ const AuthUI = () => {
       setAuthSuccess(true);
       
       const timer = setTimeout(() => {
-        navigate('/mobile-flow');
+        navigate('/mobile-flow/main');
       }, 2000);
       
       return () => clearTimeout(timer);
@@ -39,19 +39,16 @@ const AuthUI = () => {
       console.log('Authenticated user:', user);
       console.log('User role:', userRole);
       
-      if (userRole === UserRole.SuperAdmin || user.app_metadata?.role === 'admin') {
-        if (location.pathname !== '/admin/auth' && !location.pathname.includes('admin')) {
-          toast({
-            title: "Redirection",
-            description: "Les administrateurs doivent utiliser l'interface d'administration.",
-            variant: "default",
-          });
-        }
+      // Get user role from app_metadata
+      const role = user.app_metadata?.role;
+      console.log('User role from metadata:', role);
+      
+      if (role === 'admin') {
         navigate('/super-admin-dashboard');
-      } else if (userRole === UserRole.SfdAdmin || user.app_metadata?.role === 'sfd_admin') {
+      } else if (role === 'sfd_admin') {
         navigate('/agency-dashboard');
       } else {
-        navigate('/mobile-flow');
+        navigate('/mobile-flow/main');
       }
     }
   }, [user, userRole, loading, navigate, location.pathname, toast]);
@@ -150,12 +147,37 @@ const AuthUI = () => {
           </Tabs>
           
           <div className="mt-4 text-center pb-6">
-            <Link 
-              to="/login"
-              className="text-[#0D6A51] hover:underline font-medium"
-            >
-              Changer de type de connexion
-            </Link>
+            {authMode === 'admin' ? (
+              <>
+                <Link to="/auth" className="text-[#0D6A51] hover:underline font-medium">
+                  Accès Client
+                </Link>
+                <span className="mx-2 text-gray-400">•</span>
+                <Link to="/sfd/auth" className="text-blue-600 hover:underline font-medium">
+                  Accès SFD
+                </Link>
+              </>
+            ) : authMode === 'sfd_admin' ? (
+              <>
+                <Link to="/auth" className="text-[#0D6A51] hover:underline font-medium">
+                  Accès Client
+                </Link>
+                <span className="mx-2 text-gray-400">•</span>
+                <Link to="/admin/auth" className="text-amber-600 hover:underline font-medium">
+                  Accès Admin
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/admin/auth" className="text-amber-600 hover:underline font-medium">
+                  Accès Admin
+                </Link>
+                <span className="mx-2 text-gray-400">•</span>
+                <Link to="/sfd/auth" className="text-blue-600 hover:underline font-medium">
+                  Accès SFD
+                </Link>
+              </>
+            )}
           </div>
           
           <DemoAccountsCreator />

@@ -48,7 +48,7 @@ export const useLoginForm = (
     setErrorMessage(null);
     
     try {
-      const { error } = await signIn(email, password);
+      const { error, data } = await signIn(email, password);
       
       if (error) {
         console.error('Login error:', error);
@@ -71,12 +71,23 @@ export const useLoginForm = (
           setErrorMessage("Accès refusé. Ce compte n'a pas les droits administrateur nécessaires.");
         }
       } else {
+        console.log('Login successful:', data);
         toast({
           title: "Connexion réussie",
           description: "Vous êtes maintenant connecté.",
         });
         
-        // No need to redirect, the AuthUI component will handle it
+        // Redirect based on user role
+        const userRole = data?.user?.app_metadata?.role;
+        console.log('User role from login:', userRole);
+        
+        if (adminMode && userRole === 'admin') {
+          navigate('/super-admin-dashboard');
+        } else if (isSfdAdmin && userRole === 'sfd_admin') {
+          navigate('/agency-dashboard');
+        } else {
+          navigate('/mobile-flow/main');
+        }
       }
     } catch (err) {
       console.error('Unexpected login error:', err);
