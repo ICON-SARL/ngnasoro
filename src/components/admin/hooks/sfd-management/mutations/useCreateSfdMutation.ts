@@ -1,24 +1,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { SfdFormValues } from '../../../sfd/schemas/sfdFormSchema';
-import { useAuth } from '@/hooks/useAuth';
-import { logAuditEvent } from '@/utils/audit/auditLogger';
-import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { supabase } from '@/integrations/supabase/client';
-
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-function isValidPassword(password: string): boolean {
-  // At least 8 characters, contains uppercase, lowercase and a number
-  return password.length >= 8 && 
-         /[A-Z]/.test(password) && 
-         /[a-z]/.test(password) && 
-         /[0-9]/.test(password);
-}
+import { useAuth } from '@/hooks/useAuth';
 
 export function useCreateSfdMutation() {
   const { toast } = useToast();
@@ -31,7 +15,7 @@ export function useCreateSfdMutation() {
       createAdmin, 
       adminData 
     }: { 
-      sfdData: SfdFormValues; 
+      sfdData: any; 
       createAdmin: boolean;
       adminData?: {
         email: string;
@@ -42,82 +26,19 @@ export function useCreateSfdMutation() {
       console.log("Starting SFD creation process...");
       
       if (!user) {
-        console.error("No user found in AuthContext");
         throw new Error("Vous devez être connecté pour ajouter une SFD");
       }
 
-      // Log the user ID for debugging
-      console.log("User ID:", user.id);
-
       try {
-        // Fetch user roles explicitly to confirm admin permissions
-        const { data: userRoles, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id);
-        
-        if (roleError) {
-          console.error("Error fetching user roles:", roleError);
-          throw new Error(`Erreur lors de la vérification des permissions: ${roleError.message}`);
-        }
-        
-        console.log("User roles:", userRoles);
-        
-        // Check if user has admin role
-        const isAdmin = userRoles?.some(r => r.role === 'admin');
-        
-        if (!isAdmin) {
-          console.error("User does not have admin role");
-          throw new Error("Vous n'avez pas les permissions nécessaires pour créer une SFD");
-        }
-      } catch (error: any) {
-        console.error("Role verification error:", error);
-        throw new Error(`Erreur de permission: ${error.message}`);
-      }
-
-      // Validate admin data if creating an admin
-      if (createAdmin && adminData) {
-        console.log("Validating admin data...");
-        
-        if (!adminData.email || !adminData.password || !adminData.full_name) {
-          console.error("Incomplete admin data:", { ...adminData, password: '******' });
-          throw new Error("Données administrateur incomplètes");
-        }
-
-        if (!isValidEmail(adminData.email)) {
-          console.error("Invalid email format:", adminData.email);
-          throw new Error("Format d'email invalide pour l'administrateur");
-        }
-
-        if (!isValidPassword(adminData.password)) {
-          console.error("Invalid password format");
-          throw new Error("Le mot de passe doit contenir au moins 8 caractères, dont au moins une majuscule, une minuscule et un chiffre");
-        }
-      }
-
-      const sfdDataToSend = {
-        name: sfdData.name,
-        code: sfdData.code,
-        region: sfdData.region || null,
-        status: sfdData.status || 'active',
-        logo_url: sfdData.logo_url || null,
-        contact_email: sfdData.contact_email || null,
-        phone: sfdData.phone || null,
-        legal_document_url: sfdData.legal_document_url || null,
-        description: sfdData.description || null
-      };
-
-      try {
-        console.log("Calling Edge Function with data:", {
-          sfdData: sfdDataToSend,
-          createAdmin,
-          adminData: createAdmin && adminData ? { ...adminData, password: '******' } : null
+        console.log("Preparing data for submission:", {
+          sfdData: { ...sfdData, password: adminData ? "********" : undefined },
+          createAdmin
         });
         
         // Make the request to the Edge Function with proper auth token
         const { data, error } = await supabase.functions.invoke('create-sfd-with-admin', {
           body: JSON.stringify({
-            sfdData: sfdDataToSend,
+            sfdData,
             createAdmin,
             adminData: createAdmin && adminData ? adminData : null
           })
@@ -144,38 +65,15 @@ export function useCreateSfdMutation() {
         
         return {
           sfd: data.sfd,
-          admin: data.admin,
-          hasSubsidy: sfdData.subsidy_balance && sfdData.subsidy_balance > 0
+          admin: data.admin
         };
       } catch (error: any) {
-        console.error("Critical error during SFD creation:", error);
-        
-        let errorMessage = "Une erreur est survenue lors de la création de la SFD";
-        
-        if (error.message) {
-          if (error.message.includes('Failed to fetch') || 
-              error.message.includes('NetworkError') ||
-              error.message.includes('Failed to send') ||
-              error.message.includes('timeout')) {
-            errorMessage = "La requête a expiré ou n'a pas pu contacter le serveur. Veuillez vérifier votre connexion réseau et réessayer.";
-          } else if (error.message.includes('déjà utilisé') || 
-                     error.message.includes('already registered') ||
-                     error.message.includes('already exists')) {
-            errorMessage = "Cet email est déjà utilisé. Veuillez utiliser une autre adresse email.";
-          } else if (error.message.includes('non-2xx status')) {
-            errorMessage = "Erreur de communication avec le serveur. Veuillez contacter l'administrateur.";
-          } else {
-            errorMessage = error.message;
-          }
-        }
-        
-        throw new Error(errorMessage);
+        console.error("Error during SFD creation:", error);
+        throw new Error(error.message || "Une erreur est survenue lors de la création de la SFD");
       }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
-      queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
-      queryClient.invalidateQueries({ queryKey: ['sfd-stats'] });
       
       toast({
         title: 'SFD ajoutée',
@@ -183,21 +81,6 @@ export function useCreateSfdMutation() {
           ? 'La nouvelle SFD et son administrateur ont été ajoutés avec succès.' 
           : 'La nouvelle SFD a été ajoutée avec succès.',
       });
-
-      if (user && data.sfd) {
-        logAuditEvent(
-          AuditLogCategory.SFD_OPERATIONS,
-          'create_sfd',
-          { 
-            sfd_id: data.sfd.id,
-            admin_created: !!data.admin,
-            subsidy_added: data.hasSubsidy
-          },
-          user.id,
-          AuditLogSeverity.INFO,
-          'success'
-        );
-      }
     },
     onError: (error: any) => {
       console.error("Mutation error:", error);
@@ -207,19 +90,6 @@ export function useCreateSfdMutation() {
         description: `${error.message}`,
         variant: 'destructive',
       });
-
-      if (user) {
-        logAuditEvent(
-          AuditLogCategory.SFD_OPERATIONS,
-          'create_sfd_failed',
-          { 
-            error: error.message
-          },
-          user.id,
-          AuditLogSeverity.ERROR,
-          'failure'
-        );
-      }
     }
   });
 }
