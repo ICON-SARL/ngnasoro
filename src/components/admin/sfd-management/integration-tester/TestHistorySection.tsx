@@ -44,7 +44,7 @@ export function TestHistorySection({ history }: TestHistorySectionProps) {
               <TableCell>{item.method}</TableCell>
               <TableCell>
                 {item.status >= 200 && item.status < 300 ? (
-                  <Badge variant="success" className="flex items-center gap-1">
+                  <Badge variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-800 hover:bg-green-200">
                     <CheckCircle className="h-3 w-3" />
                     {item.status}
                   </Badge>

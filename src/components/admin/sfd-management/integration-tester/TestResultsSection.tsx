@@ -19,7 +19,7 @@ export function TestResultsSection({ results }: TestResultsSectionProps) {
     );
     
     if (status >= 200 && status < 300) return (
-      <Badge variant="success" className="flex items-center gap-1">
+      <Badge variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-800 hover:bg-green-200">
         <CheckCircle className="h-3 w-3" />
         Succès
       </Badge>
