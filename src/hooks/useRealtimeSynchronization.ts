@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { adminCommunicationApi } from '@/utils/api/modules/adminCommunicationApi';
 import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useRealtimeSynchronization() {
   const [isSyncing, setIsSyncing] = useState(false);
