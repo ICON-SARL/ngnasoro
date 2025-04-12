@@ -3,7 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { SfdFormValues } from '../../../sfd/schemas/sfdFormSchema';
 import { useAuth } from '@/hooks/auth/AuthContext';
-import { AuditLogCategory, AuditLogSeverity, logAuditEvent } from '@/utils/audit/auditLogger';
+import { logAuditEvent } from '@/utils/audit/auditLogger';
+import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useCreateSfdMutation() {
