@@ -7,7 +7,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import SfdSetupPage from './pages/SfdSetupPage';
-import SFDSelector from './pages/SFDSelector';
+import SfdSelectorPage from './pages/SfdSelectorPage';
 import ProtectedRoute from './components/routes/ProtectedRoute';
 import PrivateLayout from './components/layouts/PrivateLayout';
 
@@ -17,7 +17,7 @@ const AppRoutes = () => {
       {/* Public Routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/sfd-selector" element={<SFDSelector />} />
+      <Route path="/sfd-selector" element={<SfdSelectorPage />} />
       
       {/* Protected Routes */}
       <Route path="/" element={<ProtectedRoute><Navigate to="/mobile-flow" replace /></ProtectedRoute>} />
