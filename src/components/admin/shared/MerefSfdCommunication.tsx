@@ -1,143 +1,92 @@
-import React, { useState } from 'react';
-import { MessageSquare, Send } from 'lucide-react';
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { MessageCircle, Send, Users } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { toast } from 'sonner';
-import { useAdminCommunication } from '@/hooks/useAdminCommunication';
+import { ErrorAlert } from './ErrorAlert';
 import { useSfdAdminManagement } from '../hooks/sfd-admin/useSfdAdminManagement';
 
-const formSchema = z.object({
-  title: z.string().min(5, 'Le titre doit contenir au moins 5 caractères'),
-  message: z.string().min(10, 'Le message doit contenir au moins 10 caractères'),
-});
-
-export const MerefSfdCommunication = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const { sfdAdmins } = useSfdAdminManagement();
-  const { sendNotification } = useAdminCommunication();
-  const [notification, setNotification] = useState({
-    title: '',
-    message: '',
-    type: 'info',
-    recipient_id: '',
-    recipient_role: 'sfd_admin'
-  });
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: '',
-      message: '',
-    },
-  });
-
-  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      const notificationToSend = {
-        ...notification,
-        title: values.title,
-        message: values.message,
-        recipient_role: 'sfd_admin'
-      };
-
-      const result = await sendNotification(notificationToSend);
-      
-      if (result.success) {
-        toast.success('Message envoyé aux administrateurs SFD');
-        setIsOpen(false);
-        form.reset();
-      } else {
-        toast.error(`Erreur lors de l'envoi du message: ${result.error}`);
-      }
-    } catch (error) {
-      console.error('Erreur lors de l\'envoi du message:', error);
-      toast.error('Erreur lors de l\'envoi du message');
-    }
+export function MerefSfdCommunication() {
+  const [message, setMessage] = useState('');
+  const [activeTab, setActiveTab] = useState('recent');
+  const { sfdAdmins, isLoading, error } = useSfdAdminManagement();
+  
+  const handleSendMessage = () => {
+    if (!message.trim()) return;
+    // Logic to send message would go here
+    setMessage('');
   };
-
+  
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="flex items-center bg-white border-gray-200 hover:bg-gray-50 hover:text-green-600 text-sm"
-        >
-          <MessageSquare className="h-4 w-4 mr-2 text-gray-600" />
-          Communiquer avec SFDs
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Communiquer avec les SFDs</DialogTitle>
-        </DialogHeader>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Titre du message</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Entrez le titre" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+    <Card className="h-full">
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <MessageCircle className="mr-2 h-5 w-5" />
+          Communication MEREF-SFD
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+          <TabsList className="w-full grid grid-cols-2">
+            <TabsTrigger value="recent">Récents</TabsTrigger>
+            <TabsTrigger value="sfd">Administrateurs SFD</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="recent" className="p-4 h-[calc(100%-48px)]">
+            <div className="space-y-4 h-[calc(100%-80px)] overflow-y-auto">
+              {isLoading ? (
+                <div className="py-4 text-center">Chargement des messages...</div>
+              ) : (
+                <div className="text-center text-muted-foreground py-10">
+                  Aucun message récent
+                </div>
               )}
-            />
+            </div>
             
-            <FormField
-              control={form.control}
-              name="message"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Message</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Composez votre message pour les administrateurs SFD" 
-                      className="resize-y min-h-[120px]" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setIsOpen(false);
-                  form.reset();
-                  setNotification({
-                    title: '',
-                    message: '',
-                    type: 'info',
-                    recipient_id: '',
-                    recipient_role: 'sfd_admin',
-                  });
-                }}
-              >
-                Annuler
-              </Button>
-              <Button type="submit">
-                <Send className="h-4 w-4 mr-2" />
-                Envoyer
+            <div className="mt-4 flex gap-2">
+              <Textarea 
+                placeholder="Écrivez votre message..." 
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={handleSendMessage} disabled={!message.trim()}>
+                <Send className="h-5 w-5" />
               </Button>
             </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          </TabsContent>
+          
+          <TabsContent value="sfd" className="p-4 h-[calc(100%-48px)]">
+            <ErrorAlert error={error ? error.toString() : null} />
+            
+            <div className="space-y-4 h-[calc(100%-80px)] overflow-y-auto">
+              {isLoading ? (
+                <div className="py-4 text-center">Chargement des administrateurs...</div>
+              ) : sfdAdmins && sfdAdmins.length > 0 ? (
+                sfdAdmins.map((admin: any) => (
+                  <div key={admin.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 cursor-pointer">
+                    <Avatar>
+                      <AvatarFallback>{admin.full_name?.charAt(0) || 'A'}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="font-medium">{admin.full_name || 'Admin SFD'}</div>
+                      <div className="text-sm text-gray-500">{admin.email}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-muted-foreground py-10">
+                  <Users className="mx-auto h-10 w-10 text-gray-400 mb-2" />
+                  Aucun administrateur SFD trouvé
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
-};
+}
