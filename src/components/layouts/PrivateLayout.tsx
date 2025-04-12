@@ -8,9 +8,9 @@ interface PrivateLayoutProps {
 }
 
 const PrivateLayout: React.FC<PrivateLayoutProps> = ({ children }) => {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
