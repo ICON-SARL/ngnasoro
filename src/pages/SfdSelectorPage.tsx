@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -23,7 +22,6 @@ const SfdSelectorPage = () => {
   const { selectedSfdId } = (location.state as LocationState) || {};
 
   useEffect(() => {
-    // If there's a selected SFD ID, we could pre-select it or handle it
     if (selectedSfdId) {
       console.log('Selected SFD ID:', selectedSfdId);
     }
@@ -42,7 +40,6 @@ const SfdSelectorPage = () => {
     setIsSubmitting(true);
     
     try {
-      // First check if the user already has a request or association with this SFD
       const { data: existingClient, error: checkError } = await supabase
         .from('sfd_clients')
         .select('id, status')
@@ -65,7 +62,6 @@ const SfdSelectorPage = () => {
         return;
       }
       
-      // Send the client registration request
       const { data, error } = await supabase
         .from('sfd_clients')
         .insert({
@@ -84,7 +80,6 @@ const SfdSelectorPage = () => {
         description: "Votre demande a été envoyée avec succès. Vous serez notifié lorsqu'elle sera traitée.",
       });
       
-      // Redirect to profile or dashboard
       navigate('/mobile-flow/profile');
     } catch (error: any) {
       console.error('Erreur lors de la soumission de la demande:', error);

@@ -49,8 +49,8 @@ export function useSfdData() {
 
         console.log(`Retrieved ${data?.length || 0} SFDs successfully`);
         
-        // Convert to properly typed Sfd objects with all required fields
-        return (data || []).map(sfd => {
+        // Convert to properly typed Sfd objects and sort priority SFDs
+        const typedSfds = (data || []).map(sfd => {
           const typedSfd: Sfd = {
             id: sfd.id,
             name: sfd.name,
@@ -78,6 +78,9 @@ export function useSfdData() {
           };
           return typedSfd;
         });
+        
+        // Sort with priority SFDs first
+        return sortPrioritySfds(typedSfds);
       } catch (error: any) {
         console.error('Unhandled error in fetchSfds:', error);
         
@@ -110,6 +113,25 @@ export function useSfdData() {
     // Ajouter un fallback pour éviter les erreurs infinies
     placeholderData: []
   });
+  
+  // Function to prioritize certain SFDs
+  const sortPrioritySfds = (sfds: Sfd[]): Sfd[] => {
+    const prioritySfdNames = ["premier sfd", "deuxieme", "troisieme"];
+    
+    return [...sfds].sort((a, b) => {
+      const aIsPriority = prioritySfdNames.includes(a.name.toLowerCase());
+      const bIsPriority = prioritySfdNames.includes(b.name.toLowerCase());
+      
+      if (aIsPriority && !bIsPriority) return -1;
+      if (!aIsPriority && bIsPriority) return 1;
+      
+      if (aIsPriority && bIsPriority) {
+        return prioritySfdNames.indexOf(a.name.toLowerCase()) - prioritySfdNames.indexOf(b.name.toLowerCase());
+      }
+      
+      return a.name.localeCompare(b.name);
+    });
+  };
 
   return {
     sfds: sfds || [],

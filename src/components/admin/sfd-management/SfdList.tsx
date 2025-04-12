@@ -44,6 +44,28 @@ export function SfdList({
     }
   };
 
+  // Function to sort SFDs with priority names first
+  const prioritizeSfds = (sfds: any[]) => {
+    const prioritySfdNames = ["premier sfd", "deuxieme", "troisieme"];
+    
+    return [...sfds].sort((a, b) => {
+      const aIsPriority = prioritySfdNames.includes(a.name.toLowerCase());
+      const bIsPriority = prioritySfdNames.includes(b.name.toLowerCase());
+      
+      if (aIsPriority && !bIsPriority) return -1;
+      if (!aIsPriority && bIsPriority) return 1;
+      
+      if (aIsPriority && bIsPriority) {
+        return prioritySfdNames.indexOf(a.name.toLowerCase()) - prioritySfdNames.indexOf(b.name.toLowerCase());
+      }
+      
+      return a.name.localeCompare(b.name);
+    });
+  };
+  
+  // Apply prioritization to the filtered SFDs
+  const sortedFilteredSfds = prioritizeSfds(filteredSfds);
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -74,9 +96,9 @@ export function SfdList({
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             <p className="mt-2 text-sm text-muted-foreground">Tentative {retryCount}/{maxRetries}...</p>
           </div>
-        ) : filteredSfds.length > 0 ? (
+        ) : sortedFilteredSfds.length > 0 ? (
           <div className="space-y-2">
-            {filteredSfds.map((sfd) => (
+            {sortedFilteredSfds.map((sfd) => (
               <div 
                 key={sfd.id}
                 className={`flex items-center p-2 rounded-md cursor-pointer hover:bg-muted ${selectedSfd?.id === sfd.id ? 'bg-muted' : ''}`}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ChevronRight, Building } from 'lucide-react';
@@ -39,7 +38,9 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
           .order('name');
 
         if (error) throw error;
-        setSfds(data || []);
+        
+        const sortedSfds = sortPrioritySfds(data || []);
+        setSfds(sortedSfds);
       } catch (err: any) {
         console.error('Erreur lors du chargement des SFDs:', err);
         setError('Impossible de charger la liste des SFDs. Veuillez réessayer plus tard.');
@@ -50,6 +51,24 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
 
     fetchActiveSfds();
   }, [isOpen]);
+
+  const sortPrioritySfds = (sfds: Sfd[]): Sfd[] => {
+    const prioritySfdNames = ["premier sfd", "deuxieme", "troisieme"];
+    
+    return [...sfds].sort((a, b) => {
+      const aIsPriority = prioritySfdNames.includes(a.name.toLowerCase());
+      const bIsPriority = prioritySfdNames.includes(b.name.toLowerCase());
+      
+      if (aIsPriority && !bIsPriority) return -1;
+      if (!aIsPriority && bIsPriority) return 1;
+      
+      if (aIsPriority && bIsPriority) {
+        return prioritySfdNames.indexOf(a.name.toLowerCase()) - prioritySfdNames.indexOf(b.name.toLowerCase());
+      }
+      
+      return a.name.localeCompare(b.name);
+    });
+  };
 
   const handleSelectSfd = (sfdId: string) => {
     navigate('/mobile-flow/sfd-selector', { state: { selectedSfdId: sfdId } });

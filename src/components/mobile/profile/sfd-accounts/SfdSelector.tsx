@@ -25,6 +25,28 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ userId, onRequestSent }) => {
     requestSfdAccess
   } = useAvailableSfds(userId);
   
+  // Function to sort SFDs with priority
+  const sortPrioritySfds = (sfds: any[]) => {
+    const prioritySfdNames = ["premier sfd", "deuxieme", "troisieme"];
+    
+    return [...sfds].sort((a, b) => {
+      const aIsPriority = prioritySfdNames.includes(a.name.toLowerCase());
+      const bIsPriority = prioritySfdNames.includes(b.name.toLowerCase());
+      
+      if (aIsPriority && !bIsPriority) return -1;
+      if (!aIsPriority && bIsPriority) return 1;
+      
+      if (aIsPriority && bIsPriority) {
+        return prioritySfdNames.indexOf(a.name.toLowerCase()) - prioritySfdNames.indexOf(b.name.toLowerCase());
+      }
+      
+      return a.name.localeCompare(b.name);
+    });
+  };
+  
+  // Sort availableSfds to prioritize specific SFDs
+  const sortedSfds = sortPrioritySfds(availableSfds);
+  
   const handleRequestAccess = async () => {
     if (!selectedSfd) {
       toast({
@@ -81,7 +103,7 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ userId, onRequestSent }) => {
             </div>
           )}
           
-          {availableSfds.length === 0 ? (
+          {sortedSfds.length === 0 ? (
             <div className="text-center py-8 bg-gray-50 rounded-lg">
               <p className="text-gray-600">Aucune SFD disponible pour le moment.</p>
               <p className="text-sm text-gray-500 mt-1">
@@ -93,7 +115,7 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ userId, onRequestSent }) => {
               <div className="space-y-4">
                 <h3 className="font-medium text-lg">SFDs disponibles</h3>
                 <div className="grid gap-3">
-                  {availableSfds.map(sfd => (
+                  {sortedSfds.map(sfd => (
                     <Card 
                       key={sfd.id}
                       className={`cursor-pointer border transition-colors ${

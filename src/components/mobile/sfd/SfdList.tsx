@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,7 +31,9 @@ const SfdList: React.FC<SfdListProps> = ({ onSelectSfd }) => {
           .order('name');
           
         if (error) throw error;
-        setSfds(data || []);
+        
+        const sortedSfds = sortSfdsWithPriority(data || []);
+        setSfds(sortedSfds);
       } catch (err: any) {
         console.error('Error fetching SFDs:', err);
         setError('Une erreur est survenue lors du chargement des SFDs.');
@@ -43,6 +44,24 @@ const SfdList: React.FC<SfdListProps> = ({ onSelectSfd }) => {
     
     fetchSfds();
   }, []);
+
+  const sortSfdsWithPriority = (sfds: Sfd[]): Sfd[] => {
+    const prioritySfdNames = ["premier sfd", "deuxieme", "troisieme"];
+    
+    return [...sfds].sort((a, b) => {
+      const aIsPriority = prioritySfdNames.includes(a.name.toLowerCase());
+      const bIsPriority = prioritySfdNames.includes(b.name.toLowerCase());
+      
+      if (aIsPriority && !bIsPriority) return -1;
+      if (!aIsPriority && bIsPriority) return 1;
+      
+      if (aIsPriority && bIsPriority) {
+        return prioritySfdNames.indexOf(a.name.toLowerCase()) - prioritySfdNames.indexOf(b.name.toLowerCase());
+      }
+      
+      return a.name.localeCompare(b.name);
+    });
+  };
 
   if (isLoading) {
     return (
