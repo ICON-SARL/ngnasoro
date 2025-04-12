@@ -2,8 +2,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { SfdFormValues } from '../../../sfd/schemas/sfdFormSchema';
-import { useAuth } from '@/hooks/useAuth';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
+import { useAuth } from '@/hooks/auth/AuthContext';
+import { AuditLogCategory, AuditLogSeverity, logAuditEvent } from '@/utils/audit/auditLogger';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useCreateSfdMutation() {
@@ -70,35 +70,6 @@ export function useCreateSfdMutation() {
         
         console.log("SFD créée avec succès:", data.sfd);
         
-        // Si nous avons une subvention initiale, créons-la
-        if (sfdData.subsidy_balance && sfdData.subsidy_balance > 0 && data.sfd.id) {
-          console.log("Création de la subvention initiale...");
-          
-          try {
-            const { data: subsidyData, error: subsidyError } = await supabase.functions.invoke('create_sfd_subsidy', {
-              body: JSON.stringify({
-                subsidy_data: {
-                  sfd_id: data.sfd.id,
-                  amount: parseFloat(String(sfdData.subsidy_balance)),
-                  remaining_amount: parseFloat(String(sfdData.subsidy_balance)),
-                  allocated_by: user.id,
-                  status: 'active',
-                  description: 'Subvention initiale lors de la création de la SFD'
-                }
-              })
-            });
-
-            if (subsidyError) {
-              console.warn("Erreur lors de la création de la subvention:", subsidyError);
-            } else {
-              console.log("Subvention créée avec succès:", subsidyData);
-            }
-          } catch (subsidyError) {
-            console.warn("Exception lors de la création de la subvention:", subsidyError);
-            // Nous continuons malgré l'erreur de subvention
-          }
-        }
-
         return {
           sfd: data.sfd,
           admin: data.admin,
@@ -124,7 +95,7 @@ export function useCreateSfdMutation() {
       }
     },
     onSuccess: (data) => {
-      // Invalider plusieurs requêtes connexes pour garantir que toutes les données sont actualisées
+      // Invalider plusieurs requêtes connexes
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
       queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
       queryClient.invalidateQueries({ queryKey: ['sfd-stats'] });
@@ -137,18 +108,18 @@ export function useCreateSfdMutation() {
       });
 
       if (user && data.sfd) {
-        logAuditEvent({
-          user_id: user.id,
-          action: 'create_sfd',
-          category: AuditLogCategory.SFD_OPERATIONS,
-          severity: AuditLogSeverity.INFO,
-          details: { 
+        logAuditEvent(
+          AuditLogCategory.SFD_OPERATIONS,
+          'create_sfd',
+          { 
             sfd_id: data.sfd.id,
             admin_created: !!data.admin,
             subsidy_added: data.hasSubsidy
           },
-          status: 'success',
-        });
+          user.id,
+          AuditLogSeverity.INFO,
+          'success'
+        );
       }
     },
     onError: (error: any) => {
@@ -159,16 +130,17 @@ export function useCreateSfdMutation() {
       });
 
       if (user) {
-        logAuditEvent({
-          user_id: user.id,
-          action: 'create_sfd',
-          category: AuditLogCategory.SFD_OPERATIONS,
-          severity: AuditLogSeverity.ERROR,
-          details: { error: error.message },
-          status: 'failure',
-          error_message: error.message,
-        });
+        logAuditEvent(
+          AuditLogCategory.SFD_OPERATIONS,
+          'create_sfd_failed',
+          { 
+            error: error.message
+          },
+          user.id,
+          AuditLogSeverity.ERROR,
+          'failure'
+        );
       }
-    },
+    }
   });
 }

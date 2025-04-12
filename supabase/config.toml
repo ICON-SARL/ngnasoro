@@ -1,55 +1,13 @@
 
-project_id = "xnqysvnychmsockivqhb"
+# This file controls the configuration for the Supabase functions.
+# project_id = "xnqysvnychmsockivqhb"
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage"]
-
-[db]
-port = 54322
-
-[studio]
-port = 54323
-
-[inbucket]
-port = 54324
-
-[auth]
-enabled = true
-site_url = "http://localhost:3000"
-
-[storage]
-enabled = true
-
-[edge-functions]
-enabled = true
-# Augmenter les timeouts pour toutes les fonctions
-timeout_seconds = 60
-
-[edge-functions.delete-sfd-admin]
+[functions]
+[functions.create-sfd-admin]
 verify_jwt = true
 
-[edge-functions.fetch-sfd-admins]
+[functions.create-sfd-with-admin]
 verify_jwt = true
 
-[edge-functions.create-sfd-admin]
-verify_jwt = true
-
-[edge-functions.admin-api-gateway]
-verify_jwt = true
-
-[edge-functions.synchronize-sfd-accounts]
-verify_jwt = true
-
-[edge-functions.get-meref-dashboard-stats]
-verify_jwt = true
-
-[edge-functions.get-sfd-balance]
-verify_jwt = true
-
-[edge-functions.sfd-accounts]
-verify_jwt = true
-
-[edge-functions.verify-sfd-client]
+[functions.fetch-sfd-admins]
 verify_jwt = true

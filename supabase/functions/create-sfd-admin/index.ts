@@ -14,10 +14,10 @@ serve(async (req) => {
   }
 
   try {
-    // Récupérer les variables d'environnement nécessaires
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
+    // Vérification des variables d'environnement
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("Variables d'environnement manquantes");
       return new Response(
@@ -26,191 +26,125 @@ serve(async (req) => {
       );
     }
 
-    // Créer un client Supabase avec la clé de service (privilèges administratifs)
+    // Création du client Supabase avec la clé de service
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Extraire les données de la requête
-    let requestData;
-    try {
-      requestData = await req.json();
-    } catch (error) {
-      console.error("Erreur lors du parsing du JSON:", error);
-      return new Response(
-        JSON.stringify({ error: "Format de requête invalide" }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    console.log("Données reçues:", JSON.stringify({
-      ...requestData,
-      password: "******" // Masquer le mot de passe dans les logs
-    }));
-    
-    const { email, password, full_name, role, sfd_id, notify = false } = requestData;
+    // Récupération du corps de la requête
+    const { email, password, full_name, role, sfd_id, notify } = await req.json();
 
     // Validation des données
-    if (!email || !password || !full_name || !role || !sfd_id) {
-      console.error("Données manquantes:", { 
-        hasEmail: !!email, 
-        hasPassword: !!password, 
-        hasFullName: !!full_name, 
-        hasRole: !!role, 
-        hasSfdId: !!sfd_id 
-      });
+    if (!email || !password || !full_name || !sfd_id) {
       return new Response(
-        JSON.stringify({ error: "Données manquantes pour créer l'administrateur" }),
+        JSON.stringify({ error: "Données insuffisantes. Email, password, full_name et sfd_id sont requis." }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Vérification du format d'email basique
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return new Response(
-        JSON.stringify({ error: "Format d'email invalide" }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Vérification de la longueur du mot de passe
-    if (password.length < 8) {
-      return new Response(
-        JSON.stringify({ error: "Le mot de passe doit contenir au moins 8 caractères" }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    console.log(`Création d'un admin SFD pour ${email}`);
 
     // Vérifier que la SFD existe
     const { data: sfdExists, error: sfdError } = await supabase
       .from('sfds')
-      .select('id, name, status')
+      .select('id, name')
       .eq('id', sfd_id)
       .single();
-      
+
     if (sfdError || !sfdExists) {
-      console.error("SFD non trouvée:", sfd_id, sfdError);
+      console.error("Erreur ou SFD introuvable:", sfdError);
       return new Response(
         JSON.stringify({ error: "La SFD spécifiée n'existe pas" }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Vérifier si la SFD est active
-    if (sfdExists.status !== 'active') {
-      return new Response(
-        JSON.stringify({ error: "Impossible de créer un administrateur pour une SFD inactive" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Création d'un nouvel administrateur SFD: ${email} pour la SFD ${sfdExists.name}`);
-
-    // Vérification rapide si l'utilisateur existe déjà
-    const { data: existingUsers, error: checkError } = await supabase
+    // Vérifier si l'email est déjà utilisé
+    const { data: existingUser, error: existingUserError } = await supabase
       .from('admin_users')
-      .select('email')
+      .select('id')
       .eq('email', email)
-      .limit(1);
+      .maybeSingle();
 
-    if (checkError) {
-      console.error("Erreur lors de la vérification de l'utilisateur existant:", checkError);
+    if (existingUser) {
       return new Response(
-        JSON.stringify({ error: `Erreur lors de la vérification de l'utilisateur: ${checkError.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Cet email est déjà utilisé" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (existingUsers && existingUsers.length > 0) {
-      console.error("Email déjà utilisé:", email);
-      return new Response(
-        JSON.stringify({ error: "Cet email est déjà utilisé. Veuillez utiliser un autre email." }),
-        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Créer un nouvel utilisateur avec l'API Supabase Auth
-    const { data: userData, error: userError } = await supabase.auth.admin.createUser({
+    // 1. Créer l'utilisateur dans auth.users
+    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
-      user_metadata: { full_name },
-      email_confirm: true, // Auto-confirmer l'email
-      app_metadata: { provider: 'email', role: role }
+      email_confirm: true,
+      user_metadata: {
+        full_name,
+        sfd_id
+      },
+      app_metadata: {
+        role: 'sfd_admin'
+      }
     });
 
-    if (userError) {
-      console.error("Erreur lors de la création de l'utilisateur:", userError);
-      
-      // Gestion spéciale pour les erreurs d'email déjà utilisé
-      if (userError.message.includes('already registered') || userError.message.includes('already been registered')) {
-        return new Response(
-          JSON.stringify({ error: "Cet email est déjà utilisé. Veuillez utiliser un autre email." }),
-          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
+    if (authError) {
+      console.error("Erreur lors de la création de l'utilisateur auth:", authError);
       return new Response(
-        JSON.stringify({ error: `Erreur lors de la création de l'utilisateur: ${userError.message}` }),
+        JSON.stringify({ error: authError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Vérifier que l'utilisateur a bien été créé
-    if (!userData?.user?.id) {
-      console.error("Utilisateur non créé - données manquantes:", userData);
+    if (!authUser.user) {
+      console.error("Aucun utilisateur créé");
       return new Response(
-        JSON.stringify({ error: "Erreur lors de la création de l'utilisateur: données manquantes" }),
+        JSON.stringify({ error: "Échec de création de l'utilisateur admin" }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const userId = userData.user.id;
-    console.log(`Utilisateur créé avec succès, ID: ${userId}`);
+    const userId = authUser.user.id;
+    console.log("Utilisateur auth créé avec ID:", userId);
 
-    // Ajouter directement dans la table admin_users
+    // 2. Créer l'entrée admin_users
     const { error: adminError } = await supabase
       .from('admin_users')
       .insert({
         id: userId,
-        email: email,
-        full_name: full_name,
-        role: role,
+        email,
+        full_name,
+        role: 'sfd_admin',
         has_2fa: false
       });
 
     if (adminError) {
-      console.error("Erreur lors de l'ajout dans admin_users:", adminError);
-      
-      // Si l'insertion échoue, supprimer l'utilisateur pour éviter un état incohérent
-      await supabase.auth.admin.deleteUser(userId);
-      
+      console.error("Erreur lors de la création de l'admin_user:", adminError);
       return new Response(
-        JSON.stringify({ error: `Erreur lors de l'ajout dans admin_users: ${adminError.message}` }),
+        JSON.stringify({ error: adminError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Attribuer le rôle administrateur
+    console.log("Enregistrement admin_users créé");
+
+    // 3. Assigner le rôle SFD_ADMIN
     const { error: roleError } = await supabase.rpc(
       'assign_role',
       {
         user_id: userId,
-        role: role
+        role: 'sfd_admin'
       }
     );
 
     if (roleError) {
       console.error("Erreur lors de l'attribution du rôle:", roleError);
-      
-      // Nettoyer en cas d'erreur
-      await supabase.auth.admin.deleteUser(userId);
-      
       return new Response(
-        JSON.stringify({ error: `Erreur lors de l'attribution du rôle: ${roleError.message}` }),
+        JSON.stringify({ error: roleError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Associer l'administrateur à la SFD
+    console.log("Rôle sfd_admin attribué");
+
+    // 4. Créer l'association avec la SFD
     const { error: assocError } = await supabase
       .from('user_sfds')
       .insert({
@@ -220,41 +154,56 @@ serve(async (req) => {
       });
 
     if (assocError) {
-      console.error("Erreur lors de l'association à la SFD:", assocError);
-      
-      // Nettoyer les données créées précédemment
-      await supabase.auth.admin.deleteUser(userId);
-      
+      console.error("Erreur lors de la création de l'association SFD:", assocError);
       return new Response(
-        JSON.stringify({ error: `Erreur lors de l'association à la SFD: ${assocError.message}` }),
+        JSON.stringify({ error: assocError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Notification (à implémenter si nécessaire)
+    console.log("Association SFD créée");
+
+    // 5. Si notify est true, envoyer une notification
     if (notify) {
-      console.log(`Notification d'invitation à envoyer à ${email}`);
-      // Implémenter l'envoi d'email ici si besoin
+      try {
+        const { error: notifError } = await supabase
+          .from('admin_notifications')
+          .insert({
+            recipient_id: userId,
+            sender_id: userId, // Auto-notification pour l'instant
+            title: "Compte administrateur créé",
+            message: `Un compte administrateur a été créé pour vous sur la SFD ${sfdExists.name}. Veuillez vous connecter avec l'email ${email}.`,
+            type: "account_creation"
+          });
+
+        if (notifError) {
+          console.warn("Erreur lors de l'envoi de la notification:", notifError);
+        }
+      } catch (notifError) {
+        console.warn("Erreur lors de l'envoi de la notification:", notifError);
+        // Continuer même si la notification échoue
+      }
     }
 
-    console.log(`Administrateur SFD créé avec succès: ${email}`);
-    
+    // 6. Retourner les données de l'utilisateur créé
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        user: { 
-          id: userId, 
-          email, 
-          full_name, 
-          role 
-        } 
+      JSON.stringify({
+        success: true,
+        user: {
+          id: userId,
+          email,
+          full_name,
+          role: 'sfd_admin',
+          has_2fa: false
+        }
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
   } catch (error) {
     console.error("Erreur non gérée:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Une erreur inattendue s'est produite" }),
+      JSON.stringify({ error: `Erreur inattendue: ${error.message}` }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

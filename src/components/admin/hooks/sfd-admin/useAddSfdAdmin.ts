@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { addSfdAdmin } from './sfdAdminApiService';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/auth/AuthContext';
 
 export function useAddSfdAdmin() {
   const [error, setError] = useState<string | null>(null);
@@ -44,39 +44,7 @@ export function useAddSfdAdmin() {
         setError(null);
         console.log("Starting SFD admin creation process", adminData);
         
-        // Limiter les tentatives pour éviter les boucles infinies
-        let retries = 1; // Réduit à 1 seul retry pour éviter trop de tentatives inutiles
-        let lastError = null;
-        
-        while (retries >= 0) {
-          try {
-            return await addSfdAdmin(adminData);
-          } catch (err: any) {
-            lastError = err;
-            console.log(`Tentative échouée, tentatives restantes: ${retries}`);
-            retries--;
-            
-            // Ne pas réessayer pour certaines erreurs spécifiques
-            if (err.message?.includes('email est déjà utilisé') || 
-                err.message?.includes('already registered') || 
-                err.message?.includes('invalide') ||
-                err.message?.includes('SFD spécifiée n\'existe pas')) {
-              break;
-            }
-            
-            // Attendre un court délai avant de réessayer
-            if (retries >= 0) {
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-          }
-        }
-        
-        // Si toutes les tentatives ont échoué, lancer l'erreur
-        if (lastError) {
-          throw lastError;
-        }
-        
-        throw new Error("Erreur inconnue lors de la création de l'administrateur");
+        return await addSfdAdmin(adminData);
       } catch (err: any) {
         console.error('Error creating SFD admin:', err);
         const errorMessage = err.message || "Une erreur s'est produite lors de la création de l'administrateur";

@@ -187,19 +187,29 @@ export const sfdApi = {
    */
   createSfdWithAdmin: async (sfdData: any, adminData: any = null) => {
     try {
+      console.log('Creating SFD with data:', sfdData);
+      
       const { data, error } = await supabase.functions.invoke('create-sfd-with-admin', {
-        body: { 
+        body: JSON.stringify({ 
           sfdData,
           adminData
-        }
+        })
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating SFD with admin:', error);
+        throw error;
+      }
+      
+      if (data?.error) {
+        console.error('Error returned from edge function:', data.error);
+        throw new Error(data.error);
+      }
       
       return data;
-    } catch (error) {
-      console.error('Error creating SFD with admin:', error);
-      throw error;
+    } catch (error: any) {
+      console.error('Error in createSfdWithAdmin:', error);
+      throw new Error(error.message || 'Failed to create SFD');
     }
   },
   
