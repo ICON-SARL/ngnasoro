@@ -40,43 +40,45 @@ export function useRealtimeSynchronization() {
     try {
       console.log(`Synchronizing accounts for user ${user.id}${activeSfdId ? ` with active SFD ${activeSfdId}` : ''}`);
       
-      // Use the edgeFunctionApi to handle the call more gracefully
-      const result = await edgeFunctionApi.callEdgeFunction('synchronize-sfd-accounts', {
-        userId: user.id,
-        sfdId: activeSfdId,
-        forceSync: true
-      }, { showToast: false });
+      // Direct call to the supabase functions API for more control
+      const { data: functionResponse, error: functionError } = await supabase.functions.invoke('synchronize-sfd-accounts', {
+        body: JSON.stringify({
+          userId: user.id,
+          sfdId: activeSfdId,
+          forceSync: true
+        })
+      });
       
-      if (result && result.success) {
-        setLastSynced(new Date());
-        setRetryCount(0); // Reset retry count on success
-        
-        if (result.updates && result.updates.length > 0) {
-          // Show success toast only if there were actual updates
-          toast({
-            title: "Synchronisation réussie",
-            description: "Vos comptes SFD ont été mis à jour",
-          });
-        }
-        
-        syncInProgressRef.current = false;
-        return true;
-      } else {
-        // If the function returned a failure but didn't throw
-        const errorMessage = result?.message || "Échec de la synchronisation";
-        setSyncError(errorMessage);
-        
-        // Increment retry count for exponential backoff
-        setRetryCount(prev => prev + 1);
-        
-        syncInProgressRef.current = false;
-        throw new Error(errorMessage);
+      if (functionError) {
+        console.error("Error calling synchronize-sfd-accounts function:", functionError);
+        throw new Error(`Erreur de communication avec le serveur: ${functionError.message}`);
       }
+      
+      if (!functionResponse.success) {
+        throw new Error(functionResponse.message || "Échec de la synchronisation");
+      }
+      
+      setLastSynced(new Date());
+      setRetryCount(0); // Reset retry count on success
+      
+      if (functionResponse.updates && functionResponse.updates.length > 0) {
+        // Show success toast only if there were actual updates
+        toast({
+          title: "Synchronisation réussie",
+          description: "Vos comptes SFD ont été mis à jour",
+        });
+      }
+      
+      syncInProgressRef.current = false;
+      return true;
     } catch (error: any) {
       console.error("Error synchronizing with SFD:", error);
       
       // Set the error message
       setSyncError(error.message || "Impossible de synchroniser vos comptes pour le moment");
+      
+      // Increment retry count for exponential backoff
+      setRetryCount(prev => prev + 1);
       
       // Report error to admin backend
       if (activeSfdId) {

@@ -10,6 +10,8 @@ import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 import { useToast } from '@/hooks/use-toast';
 import ErrorState from '../sfd-savings/ErrorState';
 import ViewAllSfdsButton from '../sfd/ViewAllSfdsButton';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
 
 interface SfdAccountsSectionProps {
   sfdData?: any[];
@@ -28,13 +30,15 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
   
   const { toast } = useToast();
   const { sfdAccounts, refetch, synchronizeBalances } = useSfdAccounts();
-  const { synchronizeWithSfd, isSyncing, syncError } = useRealtimeSynchronization();
+  const { synchronizeWithSfd, isSyncing, syncError, retryCount } = useRealtimeSynchronization();
   
   useEffect(() => {
+    let isMounted = true;
+    
     const syncOnMount = async () => {
       try {
         const syncResult = await synchronizeWithSfd();
-        if (syncResult) {
+        if (syncResult && isMounted) {
           await refetch();
         }
       } catch (error) {
@@ -43,7 +47,11 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
     };
     
     syncOnMount();
-  }, [synchronizeWithSfd, refetch, toast]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [synchronizeWithSfd, refetch]);
   
   const pendingSfdName = React.useMemo(() => {
     if (!pendingSfdId) return '';
@@ -91,6 +99,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
       <ErrorState 
         message={syncError}
         retryFn={handleRetrySync}
+        retryCount={retryCount}
       />
     );
   }

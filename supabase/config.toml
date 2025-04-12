@@ -12,3 +12,8 @@ timeout_seconds = 90
 
 [functions.fetch-sfd-admins]
 verify_jwt = true
+
+[functions.synchronize-sfd-accounts]
+verify_jwt = true
+timeout_seconds = 90
+
