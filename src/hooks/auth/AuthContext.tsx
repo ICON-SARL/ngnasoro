@@ -176,7 +176,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      // Clear any client-side states or cookies
+      localStorage.removeItem('adminLastSeen');
+      localStorage.removeItem('sb-xnqysvnychmsockivqhb-auth-token');
+      localStorage.removeItem('supabase.auth.token');
+      
+      // Call Supabase auth signOut method
       const result = await supabase.auth.signOut();
+      
+      // Reset the user and session state
+      setUser(null);
+      setSession(null);
+      
       return result;
     } catch (error) {
       console.error('Error signing out:', error);

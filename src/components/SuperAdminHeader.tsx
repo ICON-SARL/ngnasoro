@@ -16,6 +16,7 @@ import { ModeToggle } from '@/components/ModeToggle';
 import { PieChart, ChevronDown, Globe, LogOut, Settings, Users, Menu, LayoutDashboard, FileText, Shield } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface SuperAdminHeaderProps {
   additionalComponents?: React.ReactNode;
@@ -25,10 +26,37 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
   
-  const handleLogout = () => {
-    signOut();
-    navigate('/admin/auth');
+  const handleLogout = async () => {
+    try {
+      const { error } = await signOut();
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Show success toast
+      toast({
+        title: "Déconnexion réussie",
+        description: "Vous avez été déconnecté avec succès",
+      });
+      
+      // Clear any localStorage items
+      localStorage.removeItem('adminLastSeen');
+      localStorage.removeItem('sb-xnqysvnychmsockivqhb-auth-token');
+      localStorage.removeItem('supabase.auth.token');
+      
+      // Force a full page reload to clear any remaining state
+      window.location.href = '/auth';
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Erreur de déconnexion",
+        description: error.message || "Une erreur s'est produite lors de la déconnexion",
+        variant: "destructive",
+      });
+    }
   };
 
   const getInitials = (name: string) => {
@@ -175,6 +203,13 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
                     <span>{link.name}</span>
                   </Link>
                 ))}
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center py-2 px-3 rounded-lg text-red-500 hover:bg-muted"
+                >
+                  <LogOut className="h-5 w-5 mr-2" />
+                  <span>Se déconnecter</span>
+                </button>
               </div>
             </SheetContent>
           </Sheet>
