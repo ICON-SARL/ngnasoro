@@ -41,14 +41,41 @@ serve(async (req) => {
       );
     }
     
-    console.log("Données reçues:", JSON.stringify(requestData));
+    console.log("Données reçues:", JSON.stringify({
+      ...requestData,
+      password: "******" // Masquer le mot de passe dans les logs
+    }));
     
     const { email, password, full_name, role, sfd_id, notify = false } = requestData;
 
+    // Validation des données
     if (!email || !password || !full_name || !role || !sfd_id) {
-      console.error("Données manquantes:", { email, role, sfd_id, hasPassword: !!password, hasFullName: !!full_name });
+      console.error("Données manquantes:", { 
+        hasEmail: !!email, 
+        hasPassword: !!password, 
+        hasFullName: !!full_name, 
+        hasRole: !!role, 
+        hasSfdId: !!sfd_id 
+      });
       return new Response(
         JSON.stringify({ error: "Données manquantes pour créer l'administrateur" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Vérification du format d'email basique
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ error: "Format d'email invalide" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Vérification de la longueur du mot de passe
+    if (password.length < 8) {
+      return new Response(
+        JSON.stringify({ error: "Le mot de passe doit contenir au moins 8 caractères" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -56,7 +83,7 @@ serve(async (req) => {
     // Vérifier que la SFD existe
     const { data: sfdExists, error: sfdError } = await supabase
       .from('sfds')
-      .select('id')
+      .select('id, name, status')
       .eq('id', sfd_id)
       .single();
       
@@ -68,7 +95,15 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Création d'un nouvel administrateur SFD: ${email}`);
+    // Vérifier si la SFD est active
+    if (sfdExists.status !== 'active') {
+      return new Response(
+        JSON.stringify({ error: "Impossible de créer un administrateur pour une SFD inactive" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Création d'un nouvel administrateur SFD: ${email} pour la SFD ${sfdExists.name}`);
 
     // Vérification rapide si l'utilisateur existe déjà
     const { data: existingUsers, error: checkError } = await supabase
@@ -104,8 +139,26 @@ serve(async (req) => {
 
     if (userError) {
       console.error("Erreur lors de la création de l'utilisateur:", userError);
+      
+      // Gestion spéciale pour les erreurs d'email déjà utilisé
+      if (userError.message.includes('already registered') || userError.message.includes('already been registered')) {
+        return new Response(
+          JSON.stringify({ error: "Cet email est déjà utilisé. Veuillez utiliser un autre email." }),
+          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ error: `Erreur lors de la création de l'utilisateur: ${userError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Vérifier que l'utilisateur a bien été créé
+    if (!userData?.user?.id) {
+      console.error("Utilisateur non créé - données manquantes:", userData);
+      return new Response(
+        JSON.stringify({ error: "Erreur lors de la création de l'utilisateur: données manquantes" }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

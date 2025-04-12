@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
 
@@ -54,6 +54,8 @@ export function AddSfdAdminDialog({
   isLoading,
   error
 }: AddSfdAdminDialogProps) {
+  const [formError, setFormError] = useState<string | null>(null);
+  
   const form = useForm<AddAdminFormValues>({
     resolver: zodResolver(addAdminSchema),
     defaultValues: {
@@ -64,8 +66,28 @@ export function AddSfdAdminDialog({
       notify: true
     },
   });
+  
+  // Mise à jour de l'erreur à partir des props
+  useEffect(() => {
+    setFormError(error);
+  }, [error]);
+  
+  // Réinitialiser le formulaire lorsque le dialogue s'ouvre
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        full_name: '',
+        email: '',
+        password: '',
+        role: 'sfd_admin',
+        notify: true
+      });
+      setFormError(null);
+    }
+  }, [open, form]);
 
   const handleSubmit = (values: AddAdminFormValues) => {
+    setFormError(null);
     onAddAdmin({
       ...values,
       sfd_id: sfdId,
@@ -73,7 +95,11 @@ export function AddSfdAdminDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpenState) => {
+      // Si l'utilisateur ferme le dialogue et qu'un chargement est en cours, ne pas fermer
+      if (isLoading && !newOpenState) return;
+      onOpenChange(newOpenState);
+    }}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Ajouter un administrateur SFD</DialogTitle>
@@ -82,10 +108,10 @@ export function AddSfdAdminDialog({
           </DialogDescription>
         </DialogHeader>
         
-        {error && (
+        {formError && (
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>{formError}</AlertDescription>
           </Alert>
         )}
         
@@ -154,11 +180,18 @@ export function AddSfdAdminDialog({
               )}
             />
             
+            <Alert variant="info" className="bg-blue-50">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-600">
+                L'administrateur aura accès à la gestion des clients et des prêts pour cette SFD.
+              </AlertDescription>
+            </Alert>
+            
             <DialogFooter>
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => onOpenChange(false)}
+                onClick={() => !isLoading && onOpenChange(false)}
                 disabled={isLoading}
               >
                 Annuler

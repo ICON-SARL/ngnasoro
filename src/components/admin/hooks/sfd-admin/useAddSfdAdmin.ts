@@ -30,19 +30,30 @@ export function useAddSfdAdmin() {
           throw new Error("Tous les champs obligatoires doivent être remplis");
         }
         
+        // Vérification basique du format email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(adminData.email)) {
+          throw new Error("Format d'email invalide");
+        }
+        
+        // Vérification de la longueur du mot de passe
+        if (adminData.password.length < 8) {
+          throw new Error("Le mot de passe doit contenir au moins 8 caractères");
+        }
+        
         setError(null);
         console.log("Starting SFD admin creation process", adminData);
         
         // Limiter les tentatives pour éviter les boucles infinies
-        let retries = 2;
+        let retries = 1; // Réduit à 1 seul retry pour éviter trop de tentatives inutiles
         let lastError = null;
         
-        while (retries > 0) {
+        while (retries >= 0) {
           try {
             return await addSfdAdmin(adminData);
           } catch (err: any) {
             lastError = err;
-            console.log(`Tentative échouée, tentatives restantes: ${retries-1}`);
+            console.log(`Tentative échouée, tentatives restantes: ${retries}`);
             retries--;
             
             // Ne pas réessayer pour certaines erreurs spécifiques
@@ -54,7 +65,7 @@ export function useAddSfdAdmin() {
             }
             
             // Attendre un court délai avant de réessayer
-            if (retries > 0) {
+            if (retries >= 0) {
               await new Promise(resolve => setTimeout(resolve, 1000));
             }
           }
@@ -81,9 +92,19 @@ export function useAddSfdAdmin() {
       });
     },
     onError: (error: any) => {
+      // Personnaliser le message selon le type d'erreur
+      let errorMessage = error.message || "Erreur lors de la création de l'administrateur";
+      
+      // Messages d'erreur plus conviviaux pour les cas courants
+      if (errorMessage.includes('already registered') || errorMessage.includes('déjà utilisé')) {
+        errorMessage = "Cet email est déjà utilisé par un autre compte. Veuillez utiliser une autre adresse email.";
+      } else if (errorMessage.includes('non-2xx status')) {
+        errorMessage = "Le serveur a rencontré une erreur. Veuillez réessayer ultérieurement.";
+      }
+      
       toast({
         title: "Erreur",
-        description: `Erreur lors de la création de l'administrateur: ${error.message}`,
+        description: errorMessage,
         variant: "destructive",
       });
     }
