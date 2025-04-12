@@ -48,12 +48,12 @@ export const useLoginForm = (
     setErrorMessage(null);
     
     try {
-      const { error, data } = await signIn(email, password);
+      const result = await signIn(email, password);
       
-      if (error) {
-        console.error('Login error:', error);
+      if (result.error) {
+        console.error('Login error:', result.error);
         
-        const errorMsg = error.message || "Une erreur s'est produite lors de la connexion.";
+        const errorMsg = result.error.message || "Une erreur s'est produite lors de la connexion.";
         setErrorMessage(errorMsg);
         
         // Pass error to parent component if callback exists
@@ -62,23 +62,23 @@ export const useLoginForm = (
         }
         
         // If too many requests, start cooldown
-        if (error.message && error.message.includes('Too many requests')) {
+        if (result.error.message && result.error.message.includes('Too many requests')) {
           startCooldown(30);
         }
         
         // Specific error for admin login
-        if (adminMode && error.message && error.message.includes('Invalid login')) {
+        if (adminMode && result.error.message && result.error.message.includes('Invalid login')) {
           setErrorMessage("Accès refusé. Ce compte n'a pas les droits administrateur nécessaires.");
         }
-      } else {
-        console.log('Login successful:', data);
+      } else if (result.data) {
+        console.log('Login successful:', result.data);
         toast({
           title: "Connexion réussie",
           description: "Vous êtes maintenant connecté.",
         });
         
         // Redirect based on user role
-        const userRole = data?.user?.app_metadata?.role;
+        const userRole = result.data?.user?.app_metadata?.role;
         console.log('User role from login:', userRole);
         
         if (adminMode && userRole === 'admin') {
