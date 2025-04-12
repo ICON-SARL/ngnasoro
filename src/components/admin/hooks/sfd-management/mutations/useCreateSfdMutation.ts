@@ -109,12 +109,14 @@ export function useCreateSfdMutation() {
       try {
         console.log("Calling Edge Function with data:", {
           sfdData: sfdDataToSend,
+          createAdmin,
           adminData: createAdmin && adminData ? { ...adminData, password: '******' } : null
         });
         
         const { data, error } = await supabase.functions.invoke('create-sfd-with-admin', {
           body: JSON.stringify({
             sfdData: sfdDataToSend,
+            createAdmin,
             adminData: createAdmin && adminData ? adminData : null
           })
         });
@@ -151,8 +153,9 @@ export function useCreateSfdMutation() {
         if (error.message) {
           if (error.message.includes('Failed to fetch') || 
               error.message.includes('NetworkError') ||
-              error.message.includes('Failed to send')) {
-            errorMessage = "Impossible de contacter le serveur. Veuillez vérifier votre connexion réseau.";
+              error.message.includes('Failed to send') ||
+              error.message.includes('timeout')) {
+            errorMessage = "La requête a expiré ou n'a pas pu contacter le serveur. Veuillez vérifier votre connexion réseau et réessayer.";
           } else if (error.message.includes('déjà utilisé') || 
                      error.message.includes('already registered') ||
                      error.message.includes('already exists')) {
