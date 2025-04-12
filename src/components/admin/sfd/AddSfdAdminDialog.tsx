@@ -180,7 +180,7 @@ export function AddSfdAdminDialog({
               )}
             />
             
-            <Alert variant="info" className="bg-blue-50">
+            <Alert variant="default" className="bg-blue-50">
               <Info className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-600">
                 L'administrateur aura accès à la gestion des clients et des prêts pour cette SFD.

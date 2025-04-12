@@ -13,6 +13,8 @@ const alertVariants = cva(
           "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
         warning:
           "border-yellow-500/30 text-yellow-800 dark:border-yellow-600 [&>svg]:text-yellow-800",
+        info:
+          "border-blue-500/30 text-blue-800 dark:border-blue-600 [&>svg]:text-blue-800",
       },
     },
     defaultVariants: {
