@@ -15,6 +15,9 @@ export const PERMISSIONS = {
   GENERATE_REPORTS: 'generate_reports',
   MANAGE_USERS: 'manage_users',
   MANAGE_SFDS: 'manage_sfds',
+  CREATE_SFD: 'create_sfd',
+  CREATE_SFD_ADMIN: 'create_sfd_admin',
+  AUDIT_REPORTS: 'audit_reports',
   
   // SFD Admin permissions
   VALIDATE_CLIENT_ACCOUNTS: 'validate_client_accounts',
@@ -62,6 +65,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     PERMISSIONS.APPROVE_CREDIT,
     PERMISSIONS.ACCESS_ADMIN_DASHBOARD,
     PERMISSIONS.VIEW_CLIENT_ADHESIONS,
+    PERMISSIONS.CREATE_SFD,
+    PERMISSIONS.CREATE_SFD_ADMIN,
+    PERMISSIONS.AUDIT_REPORTS,
   ],
   
   // SFD Admin permissions
@@ -95,3 +101,4 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     PERMISSIONS.REQUEST_ADHESION,
   ],
 };
+
