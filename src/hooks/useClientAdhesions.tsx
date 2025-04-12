@@ -98,7 +98,7 @@ export function useClientAdhesions() {
           id_number: data.id_number,
           id_type: data.id_type,
           notes: data.notes,
-          status: 'pending'
+          status: 'pending_validation'
         })
         .select()
         .single();

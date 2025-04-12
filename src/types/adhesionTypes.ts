@@ -9,7 +9,7 @@ export interface ClientAdhesionRequest {
   address?: string;
   id_number?: string;
   id_type?: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending_validation' | 'pending' | 'approved' | 'rejected';
   created_at: string;
   processed_at?: string;
   processed_by?: string;

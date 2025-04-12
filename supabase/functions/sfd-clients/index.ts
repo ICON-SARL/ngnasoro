@@ -1,331 +1,341 @@
 
-import { serve } from 'https://deno.land/std@0.131.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.4.0';
+import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import * as crypto from "https://deno.land/std@0.177.0/crypto/mod.ts";
 
-// CORS headers for browser requests
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-sfd-id, x-sfd-token, x-transaction-id',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-sfd-id, x-signature",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
 };
 
-// Active transactions store (in memory for this example)
-// In a production environment, this would be persisted in a database
-const activeTransactions = new Map();
+// Create a Supabase client with the Auth context
+const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+// Verify webhook signatures
+async function verifyWebhookSignature(payload: any, signature: string, secret: string): Promise<boolean> {
+  try {
+    // Create HMAC using the secret
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    
+    // Calculate signature
+    const payloadStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    const signatureBuffer = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      encoder.encode(payloadStr)
+    );
+    
+    // Convert to hex string
+    const calculatedSignature = Array.from(new Uint8Array(signatureBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+      
+    // Compare signatures using a constant-time comparison
+    return signature === calculatedSignature;
+  } catch (error) {
+    console.error("Error verifying signature:", error);
+    return false;
+  }
+}
+
+// Encrypt sensitive data using AES-256
+async function encryptData(data: string, encryptionKey: string): Promise<string> {
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(encryptionKey),
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["encrypt"]
+    );
+    
+    // Generate random IV (16 bytes)
+    const iv = crypto.getRandomValues(new Uint8Array(16));
+    
+    // Encrypt the data
+    const encryptedBuffer = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      encoder.encode(data)
+    );
+    
+    // Combine IV and encrypted data, then encode as base64
+    const result = new Uint8Array(iv.length + new Uint8Array(encryptedBuffer).length);
+    result.set(iv, 0);
+    result.set(new Uint8Array(encryptedBuffer), iv.length);
+    
+    return btoa(String.fromCharCode(...result));
+  } catch (error) {
+    console.error("Encryption error:", error);
+    throw new Error("Failed to encrypt data");
+  }
+}
+
+// Decrypt sensitive data
+async function decryptData(encryptedData: string, encryptionKey: string): Promise<string> {
+  try {
+    const decoder = new TextDecoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(encryptionKey),
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["decrypt"]
+    );
+    
+    // Decode from base64
+    const data = new Uint8Array(
+      atob(encryptedData)
+        .split('')
+        .map(c => c.charCodeAt(0))
+    );
+    
+    // Extract IV (first 16 bytes)
+    const iv = data.slice(0, 16);
+    const ciphertext = data.slice(16);
+    
+    // Decrypt
+    const decryptedBuffer = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      key,
+      ciphertext
+    );
+    
+    return decoder.decode(decryptedBuffer);
+  } catch (error) {
+    console.error("Decryption error:", error);
+    throw new Error("Failed to decrypt data");
+  }
+}
+
+// Notify SFD admin via WebSocket about a new client request
+async function notifySfdAdmin(sfdId: string, requestData: any): Promise<boolean> {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Get admin users for this SFD
+    const { data: admins, error: adminsError } = await supabase
+      .from('user_sfds')
+      .select('user_id')
+      .eq('sfd_id', sfdId)
+      .eq('is_default', true);
+      
+    if (adminsError) {
+      console.error("Error fetching SFD admins:", adminsError);
+      return false;
+    }
+    
+    // Send notification via Supabase Realtime
+    if (admins && admins.length > 0) {
+      // Broadcast to all admins
+      const broadcastResult = await supabase
+        .channel('admin-notifications')
+        .send({
+          type: 'broadcast',
+          event: 'new_client_request',
+          payload: {
+            sfdId,
+            requestId: requestData.id,
+            clientName: requestData.full_name,
+            status: requestData.status,
+            timestamp: new Date().toISOString()
+          }
+        });
+        
+      console.log("WebSocket notification result:", broadcastResult);
+      
+      // Create notifications in the database
+      for (const admin of admins) {
+        await supabase
+          .from('admin_notifications')
+          .insert({
+            recipient_id: admin.user_id,
+            title: 'Nouvelle demande client',
+            message: `${requestData.full_name} a soumis une demande d'adhésion qui nécessite une validation.`,
+            type: 'client_request',
+            action_link: `/clients/requests/${requestData.id}`
+          });
+      }
+      
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error("Error sending admin notification:", error);
+    return false;
+  }
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders, status: 204 });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
   }
-
+  
   try {
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-    // Parse the URL to extract SFD ID
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const url = new URL(req.url);
-    const pathParts = url.pathname.split('/');
+    const path = url.pathname.split('/').filter(Boolean);
     
-    // Check for transaction operations
-    if (pathParts.includes('transaction')) {
-      return await handleTransactionOperation(req, supabase, pathParts, corsHeaders);
-    }
-    
-    // Check if the path follows the pattern /sfd-clients/api/sfd/{sfd_id}/clients
-    const apiIndex = pathParts.findIndex(part => part === 'api');
-    if (apiIndex === -1 || pathParts[apiIndex + 1] !== 'sfd' || !pathParts[apiIndex + 2]) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'Invalid API path. Expected /api/sfd/{sfd_id}/clients' 
-        }), 
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    const sfdId = pathParts[apiIndex + 2];
-    console.log('Accessing clients for SFD ID:', sfdId);
-    
-    // Authenticate the request
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ success: false, message: 'Authentication required' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-    
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ success: false, message: 'Invalid authentication' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-    
-    // Verify the user has access to this SFD
-    const { data: userSfds, error: sfdError } = await supabase
-      .from('user_sfds')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('sfd_id', sfdId);
+    // Mobile Money Webhook Handler
+    if (path[0] === "webhook" && path[1] === "mobile-money") {
+      const signature = req.headers.get("X-Momo-Signature") || "";
+      const payload = await req.json();
       
-    if (sfdError || !userSfds || userSfds.length === 0) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'You do not have access to this SFD' 
-        }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Process based on HTTP method
-    if (req.method === 'GET') {
-      // Get clients for the specified SFD
-      const { data: clients, error: clientsError } = await supabase
-        .from('sfd_clients')
-        .select('*')
-        .eq('sfd_id', sfdId)
-        .order('created_at', { ascending: false });
+      // Get webhook secret from settings
+      const { data: settings, error: settingsError } = await supabase
+        .from('mobile_money_settings')
+        .select('webhook_secret, api_key')
+        .eq('provider', payload.provider || 'default')
+        .single();
         
-      if (clientsError) {
-        console.error('Error fetching clients:', clientsError);
+      if (settingsError || !settings) {
+        console.error("Error fetching webhook settings:", settingsError);
         return new Response(
-          JSON.stringify({ 
-            success: false, 
-            message: clientsError.message || 'Failed to fetch clients' 
-          }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
+          JSON.stringify({ error: "Invalid configuration" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
-      // Log the access for audit purposes
-      await supabase.from('audit_logs').insert({
-        user_id: user.id,
-        action: 'view_sfd_clients',
-        category: 'DATA_ACCESS',
-        severity: 'info',
-        status: 'success',
-        target_resource: `sfd:${sfdId}/clients`,
-        details: {
-          sfd_id: sfdId,
-          client_count: clients?.length || 0,
-          timestamp: new Date().toISOString()
-        }
-      });
+      // Verify signature
+      const isValid = await verifyWebhookSignature(payload, signature, settings.webhook_secret);
+      if (!isValid) {
+        console.error("Invalid webhook signature");
+        return new Response(
+          JSON.stringify({ error: "Invalid signature" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          data: clients || [] 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    } 
-    else if (req.method === 'POST') {
-      // Create a new client for this SFD
-      const clientData = await req.json();
+      // If there's sensitive data, encrypt it before storing
+      if (payload.mobile_money_ref) {
+        payload.mobile_money_ref = await encryptData(
+          payload.mobile_money_ref, 
+          settings.api_key // Using API key as encryption key
+        );
+      }
       
-      // Ensure the client is created for the specified SFD
-      clientData.sfd_id = sfdId;
+      if (payload.phone_number) {
+        payload.phone_number = await encryptData(
+          payload.phone_number,
+          settings.api_key
+        );
+      }
       
-      const { data: newClient, error: createError } = await supabase
-        .from('sfd_clients')
-        .insert(clientData)
+      // Record the webhook
+      const { data: webhookRecord, error: webhookError } = await supabase
+        .from('mobile_money_webhooks')
+        .insert({
+          provider: payload.provider,
+          reference_id: payload.reference_id,
+          transaction_type: payload.transaction_type,
+          amount: payload.amount,
+          phone_number: payload.phone_number,
+          raw_payload: payload,
+          signature: signature,
+          is_verified: true
+        })
         .select()
         .single();
         
-      if (createError) {
-        console.error('Error creating client:', createError);
+      if (webhookError) {
+        console.error("Error recording webhook:", webhookError);
         return new Response(
-          JSON.stringify({ 
-            success: false, 
-            message: createError.message || 'Failed to create client' 
-          }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
+          JSON.stringify({ error: "Failed to process webhook" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
-      // Log the client creation for audit purposes
-      await supabase.from('audit_logs').insert({
-        user_id: user.id,
-        action: 'create_sfd_client',
-        category: 'DATA_MODIFICATION',
-        severity: 'info',
-        status: 'success',
-        target_resource: `sfd:${sfdId}/clients/${newClient.id}`,
-        details: {
-          sfd_id: sfdId,
-          client_id: newClient.id,
-          client_name: newClient.full_name,
-          timestamp: new Date().toISOString()
-        }
-      });
-      
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          data: newClient 
-        }),
-        { 
-          status: 201, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ success: true, webhookId: webhookRecord.id }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    else {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: `Method ${req.method} not supported` 
-        }),
-        { 
-          status: 405, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-  } catch (error) {
-    console.error('Error handling request:', error);
     
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        message: error.message || 'An unknown error occurred' 
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    // Client Adhesion Request Handler
+    if (path[0] === "adhesion") {
+      if (req.method === "POST") {
+        const adhesionRequest = await req.json();
+        
+        // Add the intermediate status if needed
+        if (!adhesionRequest.status) {
+          adhesionRequest.status = "pending_validation";
+        }
+        
+        // Insert the client adhesion request
+        const { data: newRequest, error: requestError } = await supabase
+          .from('client_adhesion_requests')
+          .insert(adhesionRequest)
+          .select()
+          .single();
+          
+        if (requestError) {
+          console.error("Error creating adhesion request:", requestError);
+          return new Response(
+            JSON.stringify({ error: requestError.message }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        
+        // Notify SFD administrators about the new request
+        await notifySfdAdmin(adhesionRequest.sfd_id, newRequest);
+        
+        return new Response(
+          JSON.stringify({ success: true, data: newRequest }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
+      
+      // Update adhesion request status
+      if (req.method === "PUT" && path[1]) {
+        const requestId = path[1];
+        const updates = await req.json();
+        
+        // Update the client adhesion request
+        const { data: updatedRequest, error: updateError } = await supabase
+          .from('client_adhesion_requests')
+          .update(updates)
+          .eq('id', requestId)
+          .select()
+          .single();
+          
+        if (updateError) {
+          console.error("Error updating adhesion request:", updateError);
+          return new Response(
+            JSON.stringify({ error: updateError.message }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        
+        return new Response(
+          JSON.stringify({ success: true, data: updatedRequest }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    
+    // Default response for unhandled endpoints
+    return new Response(
+      JSON.stringify({ error: "Invalid endpoint" }),
+      { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error: any) {
+    console.error("Server error:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
-
-// Transaction operation handler
-async function handleTransactionOperation(req, supabase, pathParts, corsHeaders) {
-  const transactionOperation = pathParts[pathParts.indexOf('transaction') + 1];
-  const data = await req.json().catch(() => ({}));
-  
-  switch (transactionOperation) {
-    case 'begin':
-      // Start a new transaction
-      const transactionId = crypto.randomUUID();
-      activeTransactions.set(transactionId, {
-        status: 'active',
-        operations: [],
-        createdAt: new Date().toISOString()
-      });
-      
-      console.log(`Transaction started: ${transactionId}`);
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          transactionId,
-          message: 'Transaction started' 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-      
-    case 'commit':
-      // Commit a transaction
-      if (!data.transactionId || !activeTransactions.has(data.transactionId)) {
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            message: 'Invalid transaction ID' 
-          }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
-      
-      const transaction = activeTransactions.get(data.transactionId);
-      
-      // In a real implementation, we would execute all operations in a database transaction
-      // For this example, we'll simulate successful commit
-      console.log(`Committing transaction: ${data.transactionId} with ${transaction.operations.length} operations`);
-      
-      activeTransactions.delete(data.transactionId);
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'Transaction committed' 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-      
-    case 'rollback':
-      // Rollback a transaction
-      if (!data.transactionId || !activeTransactions.has(data.transactionId)) {
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            message: 'Invalid transaction ID' 
-          }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
-      
-      console.log(`Rolling back transaction: ${data.transactionId}`);
-      activeTransactions.delete(data.transactionId);
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'Transaction rolled back' 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-      
-    default:
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'Invalid transaction operation' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-  }
-}
