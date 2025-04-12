@@ -26,6 +26,7 @@ import { useWebhookMonitor } from './hooks/useWebhookMonitor';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { logAuditEvent } from '@/utils/audit';
+import { AuditLogCategory } from '@/utils/audit/auditLoggerTypes';
 
 // This component would be connected to real data in a production environment
 export function WebhookMonitor() {
@@ -44,7 +45,7 @@ export function WebhookMonitor() {
   useEffect(() => {
     // Log component mount for audit purposes
     logAuditEvent({
-      category: 'monitoring',
+      category: AuditLogCategory.MONITORING,
       action: 'view_webhook_monitor',
       metadata: {
         component: 'WebhookMonitor',
@@ -193,7 +194,7 @@ export function WebhookMonitor() {
                             size="sm"
                             onClick={() => {
                               logAuditEvent({
-                                category: 'monitoring',
+                                category: AuditLogCategory.MONITORING,
                                 action: 'view_webhook_details',
                                 metadata: {
                                   webhook_id: webhook.id,

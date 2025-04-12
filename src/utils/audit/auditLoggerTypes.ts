@@ -1,4 +1,3 @@
-
 // Exporting the enums separately to make sure they're properly exported
 export enum AuditLogCategory {
   AUTHENTICATION = 'authentication',
@@ -9,7 +8,10 @@ export enum AuditLogCategory {
   USER_MANAGEMENT = 'user_management',
   SYSTEM = 'system',
   TOKEN_MANAGEMENT = 'token_management',
-  FINANCIAL = 'financial'  // Added FINANCIAL category
+  FINANCIAL = 'financial',  // Added FINANCIAL category
+  INTEGRATION = 'integration', // Adding INTEGRATION category
+  SECURITY = 'security',    // Adding SECURITY category
+  MONITORING = 'monitoring' // Adding MONITORING category
 }
 
 export enum AuditLogSeverity {

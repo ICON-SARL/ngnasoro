@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { useRoleAudit } from './hooks/useRoleAudit';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { logAuditEvent } from '@/utils/audit';
+import { AuditLogCategory } from '@/utils/audit/auditLoggerTypes';
 
 export function RoleAuditSystem() {
   const { 
@@ -23,7 +23,7 @@ export function RoleAuditSystem() {
   useEffect(() => {
     // Log component mount for audit purposes
     logAuditEvent({
-      category: 'security',
+      category: AuditLogCategory.SECURITY,
       action: 'view_role_audit',
       metadata: {
         component: 'RoleAuditSystem',
@@ -134,7 +134,7 @@ export function RoleAuditSystem() {
                             size="sm"
                             onClick={() => {
                               logAuditEvent({
-                                category: 'security',
+                                category: AuditLogCategory.SECURITY,
                                 action: 'view_role_details',
                                 metadata: {
                                   role_id: role.id,

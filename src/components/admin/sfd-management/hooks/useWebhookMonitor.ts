@@ -1,6 +1,6 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { logAuditEvent } from '@/utils/audit';
+import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 
 // Mock data for demonstration purposes
 const mockWebhooks = [
@@ -79,7 +79,7 @@ export function useWebhookMonitor() {
       
       // Log the refresh action
       await logAuditEvent({
-        category: 'monitoring',
+        category: AuditLogCategory.MONITORING,
         action: 'refresh_webhooks',
         metadata: {
           triggered_by: 'manual',

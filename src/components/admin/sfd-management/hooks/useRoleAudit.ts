@@ -1,6 +1,6 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { logAuditEvent } from '@/utils/audit';
+import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 
 // Mock data for demonstration purposes
 const mockRoles = [
@@ -60,7 +60,7 @@ export function useRoleAudit() {
       
       // Log the audit action
       await logAuditEvent({
-        category: 'security',
+        category: AuditLogCategory.SECURITY,
         action: 'run_role_audit',
         metadata: {
           triggered_by: 'manual',

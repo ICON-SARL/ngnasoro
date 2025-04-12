@@ -1,6 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { logAuditEvent } from '@/utils/audit';
+import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 
 export interface TestEndpoint {
   id: string;
@@ -28,7 +29,7 @@ export function useIntegrationTester() {
       
       // Log the test for audit purposes
       await logAuditEvent({
-        category: 'integration',
+        category: AuditLogCategory.INTEGRATION,
         action: 'run_integration_test',
         metadata: {
           endpoint: selectedTest.endpoint,
