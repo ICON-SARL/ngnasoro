@@ -1,187 +1,122 @@
 
-import { serve } from 'https://deno.land/std@0.131.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.4.0';
+import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders, status: 204 });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
   }
-  
-  // Initialize the Supabase client
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
-  
+
+  // Get the Authorization header from the request
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: 'Missing Authorization header' }),
+      { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    );
+  }
+
   try {
-    // Extract the JWT token from the request
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ success: false, message: 'Unauthorized' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-      );
-    }
-    
-    // Get the current user from the token
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ success: false, message: 'Invalid token' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-      );
-    }
-    
-    // Get request body
+    // Parse the request body
     const { sfdId, loanId, action, amount } = await req.json();
     
-    if (!sfdId || !loanId || !action) {
+    // Create Supabase client with the auth header
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    
+    // Get the user from the JWT
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
       return new Response(
-        JSON.stringify({ success: false, message: 'Missing required parameters' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        JSON.stringify({ error: 'Invalid token or user not found' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
     
-    // Verify user has access to the loan
-    const { data: loanData, error: loanError } = await supabase
-      .from('sfd_loans')
-      .select('client_id, sfd_id')
-      .eq('id', loanId)
-      .single();
+    // Authorize the mobile money operation
+    // In a real-world scenario, this would involve checking balances, permissions, etc.
     
-    if (loanError || !loanData) {
-      return new Response(
-        JSON.stringify({ success: false, message: 'Loan not found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
-      );
-    }
+    let isAuthorized = true;
+    let message = "";
     
-    // Verify user is associated with the loan's client_id
-    const { data: clientData, error: clientError } = await supabase
-      .from('sfd_clients')
-      .select('user_id')
-      .eq('id', loanData.client_id)
-      .single();
-    
-    if (clientError || !clientData || clientData.user_id !== user.id) {
-      return new Response(
-        JSON.stringify({ success: false, message: 'User not authorized for this loan' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
-      );
-    }
-    
-    // Check SFD authorization (simulated here - in a real system, this would involve SFD admin approval)
-    if (action === 'payment') {
-      // Simulate SFD approval for payments
-      const isAuthorized = true;
+    // For withdrawals, check if the user has sufficient balance
+    if (action === 'withdrawal') {
+      // Get user's balance from the accounts table
+      const { data: accountData, error: accountError } = await supabase
+        .from('accounts')
+        .select('balance')
+        .eq('user_id', user.id)
+        .eq('sfd_id', sfdId)
+        .single();
       
-      // Log the transaction request
-      await supabase.from('audit_logs').insert({
-        action: 'mobile_money_payment_request',
-        user_id: user.id,
-        category: 'payment',
-        details: {
-          sfd_id: sfdId,
-          loan_id: loanId,
-          amount,
-          action
-        },
-        status: isAuthorized ? 'approved' : 'rejected',
-        target_resource: `loan:${loanId}`
-      });
-      
-      // If authorized, record the payment
-      if (isAuthorized && amount > 0) {
-        const { data: paymentData, error: paymentError } = await supabase
-          .from('loan_payments')
-          .insert({
-            loan_id: loanId,
-            amount,
-            payment_method: 'mobile_money',
-            status: 'completed',
-            transaction_id: `MM-${Date.now()}`
-          })
-          .select()
-          .single();
-        
-        if (paymentError) {
-          console.error('Error recording payment:', paymentError);
-        } else {
-          // Update loan status
-          await supabase
-            .from('sfd_loans')
-            .update({
-              last_payment_date: new Date().toISOString(),
-              next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // Add 30 days
-            })
-            .eq('id', loanId);
-          
-          // Log loan activity
-          await supabase.from('loan_activities').insert({
-            loan_id: loanId,
-            activity_type: 'payment',
-            description: `Payment of ${amount} FCFA via Mobile Money`,
-            performed_by: user.id
-          });
-        }
+      if (accountError || !accountData) {
+        isAuthorized = false;
+        message = "Could not retrieve account information";
+      } else if (accountData.balance < amount) {
+        isAuthorized = false;
+        message = "Insufficient balance for withdrawal";
       }
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          authorized: isAuthorized,
-          message: isAuthorized ? 'Payment authorized' : 'Payment not authorized by SFD' 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } else if (action === 'withdrawal') {
-      // Simulate SFD admin approval for withdrawals
-      const isAuthorized = true;
-      
-      // Log the withdrawal request
-      await supabase.from('audit_logs').insert({
-        action: 'mobile_money_withdrawal_request',
-        user_id: user.id,
-        category: 'withdrawal',
-        details: {
-          sfd_id: sfdId,
-          loan_id: loanId,
-          amount,
-          action
-        },
-        status: isAuthorized ? 'approved' : 'rejected',
-        target_resource: `loan:${loanId}`
-      });
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          authorized: isAuthorized,
-          message: isAuthorized ? 'Withdrawal authorized' : 'Withdrawal not authorized by SFD admin' 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
     
+    // For loan repayments, verify the loan exists and belongs to the user
+    if (action === 'payment' && loanId) {
+      const { data: loanData, error: loanError } = await supabase
+        .from('sfd_loans')
+        .select('status, amount_due')
+        .eq('id', loanId)
+        .eq('user_id', user.id)
+        .single();
+      
+      if (loanError || !loanData) {
+        isAuthorized = false;
+        message = "Loan not found or does not belong to you";
+      } else if (loanData.status === 'fully_paid') {
+        isAuthorized = false;
+        message = "This loan has already been fully paid";
+      }
+    }
+    
+    // Create audit log of the authorization attempt
+    await supabase
+      .from('audit_logs')
+      .insert({
+        user_id: user.id,
+        action: `mobile_money_${action}_authorization`,
+        status: isAuthorized ? 'success' : 'failure',
+        details: {
+          amount,
+          sfd_id: sfdId,
+          loan_id: loanId,
+          message
+        }
+      });
+    
     return new Response(
-      JSON.stringify({ success: false, message: 'Invalid action' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      JSON.stringify({
+        authorized: isAuthorized,
+        message: isAuthorized ? 
+          "Operation authorized" : 
+          message || "Operation not authorized"
+      }),
+      { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
-    
   } catch (error) {
-    console.error('Error processing request:', error);
+    console.error("Error:", error);
     
     return new Response(
-      JSON.stringify({ success: false, message: 'Server error', details: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   }
 });

@@ -1,109 +1,113 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.31.0'
+import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
-Deno.serve(async (req) => {
+const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  // Get the Authorization header from the request
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: 'Missing Authorization header' }),
+      { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    );
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-    // Get the request body
-    const {
+    // Parse the request body
+    const { userId, amount, type, loanId } = await req.json();
+    
+    // Create Supabase client with the auth header
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    
+    // Get the user from the JWT
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid token or user not found' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+    
+    // Verify the user is the same as in the request (for security)
+    if (user.id !== userId) {
+      return new Response(
+        JSON.stringify({ error: 'User ID mismatch' }),
+        { status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+    
+    // Generate a unique transaction ID
+    const transactionId = `${type.substring(0, 3).toUpperCase()}-${Date.now()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+    
+    // Generate QR code data
+    const qrData = {
+      transactionId,
       userId,
-      sfdId,
       amount,
       type,
-      reference,
-      loanId
-    } = await req.json()
-
-    if (!userId) {
-      throw new Error('User ID is required')
-    }
-
-    if (!amount || amount <= 0) {
-      throw new Error('Valid amount is required')
-    }
-
-    if (!type || !['deposit', 'withdrawal', 'loan_payment'].includes(type)) {
-      throw new Error('Valid transaction type is required')
-    }
-
-    console.log(`Generating QR code for user ${userId}, amount: ${amount}, type: ${type}`)
-
-    // In a real implementation, we would:
-    // 1. Verify the user and their permissions
-    // 2. Check if they have sufficient balance for withdrawals
-    // 3. Generate a secure transaction reference
-    // 4. Store the pending transaction in the database
-    // 5. Generate an actual QR code (e.g., using a library or external service)
-
-    // For this demo, we'll create a mock QR code
-    const transactionId = `tx-${Date.now()}-${Math.floor(Math.random() * 1000)}`
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutes from now
-
-    // Create a pseudo QR code as a base64 string
-    // In a real implementation, this would be an actual QR code image or data
-    const mockQRData = btoa(JSON.stringify({
-      trx: transactionId,
-      amt: amount,
-      typ: type,
-      uid: userId.substring(0, 8), // Only include part of the user ID for security
-      ref: reference || transactionId,
-      exp: expiresAt,
-      sfid: sfdId || 'default'
-    }))
-
-    // Record this transaction in the database
+      loanId: loanId || null,
+      timestamp: new Date().toISOString()
+    };
+    
+    // In a real app, you would generate an actual QR code image or data
+    // For this demo, we'll just use the JSON data that would be encoded
+    
+    // Store transaction data in the database
     const { error: txError } = await supabase
-      .from('pending_transactions')
+      .from('qr_transactions')
       .insert({
-        id: transactionId,
+        transaction_id: transactionId,
         user_id: userId,
-        sfd_id: sfdId || null,
-        amount: amount,
-        type: type,
+        amount,
+        type,
+        loan_id: loanId,
         status: 'pending',
-        reference: reference || transactionId,
-        loan_id: loanId || null,
-        expires_at: expiresAt
-      })
-
+        expires_at: new Date(Date.now() + 30 * 60000).toISOString() // 30 minutes expiry
+      });
+    
     if (txError) {
-      console.error('Error storing transaction:', txError)
-      // Continue anyway for demo purposes
+      console.error("Error storing transaction:", txError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to generate QR code' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
     }
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        qrData: mockQRData,
-        transactionId: transactionId,
-        expiresAt: expiresAt
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    )
-  } catch (error) {
-    console.error('Error generating QR code:', error)
+    
+    // In a real implementation, this would be an actual image
+    // For this demo, we're returning the data that would be encoded in the QR
+    const qrImageData = `data:image/svg+xml;base64,${btoa(JSON.stringify(qrData))}`;
     
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
-      }
-    )
+      JSON.stringify({
+        success: true,
+        qrData: qrImageData,
+        transactionId,
+        expiresAt: new Date(Date.now() + 30 * 60000).toISOString()
+      }),
+      { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    );
+  } catch (error) {
+    console.error("Error:", error);
+    
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    );
   }
-})
+});

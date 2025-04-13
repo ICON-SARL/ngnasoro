@@ -1,4 +1,6 @@
 
+# A string used to distinguish different Supabase projects on the same host. Defaults to the
+# working directory name when running `supabase init`.
 project_id = "xnqysvnychmsockivqhb"
 
 [api]
@@ -24,31 +26,67 @@ pop3_port = 54326
 file_size_limit = "50MiB"
 
 [auth]
-site_url = "http://127.0.0.1:5173"
-additional_redirect_urls = ["https://127.0.0.1:5173"]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
-enable_signup = true
 
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = false
+enable_confirmations = true
 
-[auth.external.facebook]
+[auth.external.apple]
 enabled = false
 client_id = ""
 secret = ""
-url = "https://www.facebook.com/v16.0/dialog/oauth"
-redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"
+redirect_uri = ""
+
+[auth.external.github]
+enabled = false
+client_id = ""
+secret = ""
+redirect_uri = ""
+
+[auth.external.gitlab]
+enabled = false
+client_id = ""
+secret = ""
+redirect_uri = ""
 
 [auth.external.google]
 enabled = false
 client_id = ""
 secret = ""
-url = "https://accounts.google.com/o/oauth2/v2/auth"
-redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"
+redirect_uri = ""
 
+[auth.external.facebook]
+enabled = false
+client_id = ""
+secret = ""
+redirect_uri = ""
+
+[auth.external.twitter]
+enabled = false
+client_id = ""
+secret = ""
+redirect_uri = ""
+
+[auth.external.discord]
+enabled = false
+client_id = ""
+secret = ""
+redirect_uri = ""
+
+[functions]
 [functions.user_settings]
+verify_jwt = true
+[functions.generate-qr-code]
+verify_jwt = true
+[functions.qr-code-verification]
+verify_jwt = true
+[functions.mobile-money-authorization]
+verify_jwt = true
+[functions.mobile-money-verification]
 verify_jwt = true
