@@ -82,7 +82,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   return (
     <div className="space-y-4 pb-20">
       <div className="bg-[#0D6A51] text-white rounded-b-3xl shadow-md relative">
-        <MobileHeader title="Tableau de bord" />
+        <MobileHeader showWelcomeText={false} />
       </div>
       
       <div className="px-4 py-2">

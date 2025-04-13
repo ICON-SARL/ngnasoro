@@ -7,9 +7,13 @@ import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
 interface MobileHeaderProps {
   title?: string;
+  showWelcomeText?: boolean;
 }
 
-const MobileHeader: React.FC<MobileHeaderProps> = ({ title }) => {
+const MobileHeader: React.FC<MobileHeaderProps> = ({ 
+  title, 
+  showWelcomeText = true 
+}) => {
   const { toast } = useToast();
   const { activeSfdId } = useSfdDataAccess();
   
@@ -52,7 +56,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({ title }) => {
         </div>
       </div>
       
-      {title && (
+      {title && showWelcomeText && (
         <div className="mt-5">
           <h1 className="text-2xl font-bold text-white">{title}</h1>
           <p className="text-white/80 text-sm">Bienvenue sur votre espace personnel</p>
