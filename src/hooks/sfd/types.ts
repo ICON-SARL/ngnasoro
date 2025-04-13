@@ -51,7 +51,7 @@ export interface SfdClientAccount {
   updated_at?: string;
 }
 
-// Use SfdClientAccount as the main interface and export SfdAccount as an alias for backward compatibility
+// Export SfdAccount as a type alias for backward compatibility
 export type SfdAccount = SfdClientAccount;
 
 export interface SfdLoan {

@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../useAuth';
 import { fetchSfdLoans } from './fetchSfdLoans';
-import { SfdAccount, SfdClientAccount, SfdLoan } from './types';
+import { SfdClientAccount, SfdLoan } from './types';
 
 interface SfdAccountResult {
   activeSfdAccount: SfdClientAccount | null;

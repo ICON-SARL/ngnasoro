@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { SfdClientAccount, SfdAccount } from '@/hooks/sfd/types';
+import { SfdClientAccount } from '@/hooks/sfd/types';
 import { SecurityFeatures } from './SecurityFeatures';
 import { ReconciliationSection } from './ReconciliationSection';
 import PaymentDetails from './PaymentDetails';
