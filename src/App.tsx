@@ -9,6 +9,9 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import SfdLoginPage from './pages/SfdLoginPage';
 import AuthRedirectPage from './pages/AuthRedirectPage';
 import MobileFlowPage from './pages/MobileFlowPage';
+import PremiumDashboardPage from './pages/PremiumDashboard';
+import CreditApprovalPage from './pages/CreditApprovalPage';
+import AppRoutes from './routes';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -26,23 +29,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
-          <Routes>
-            {/* Auth Routes */}
-            <Route path="/auth" element={<LoginPage />} />
-            <Route path="/login" element={<AuthRedirectPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/admin/auth" element={<AdminLoginPage />} />
-            <Route path="/sfd/auth" element={<SfdLoginPage />} />
-            
-            {/* Mobile Flow Main Route */}
-            <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
-            
-            {/* Default route */}
-            <Route path="/" element={<Navigate to="/auth" replace />} />
-            
-            {/* Fallback - redirect to auth */}
-            <Route path="*" element={<Navigate to="/auth" replace />} />
-          </Routes>
+          <AppRoutes />
         </Router>
       </AuthProvider>
     </QueryClientProvider>

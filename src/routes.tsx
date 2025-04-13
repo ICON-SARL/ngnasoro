@@ -10,8 +10,12 @@ import SfdLoginPage from './pages/SfdLoginPage';
 import AuthRedirectPage from './pages/AuthRedirectPage';
 import SfdSetupPage from './pages/SfdSetupPage';
 import SfdSelectorPage from './pages/SfdSelectorPage';
+import CreditApprovalPage from './pages/CreditApprovalPage';
+import PremiumDashboardPage from './pages/PremiumDashboard';
 import SfdManagementPage from './pages/admin/SfdManagementPage';
+import AccessDeniedPage from './pages/AccessDeniedPage';
 import ProtectedRoute from './components/routes/ProtectedRoute';
+import PermissionProtectedRoute from './components/routes/PermissionProtectedRoute';
 import PrivateLayout from './components/layouts/PrivateLayout';
 import NotFound from './pages/NotFound';
 
@@ -25,18 +29,43 @@ const AppRoutes = () => {
       <Route path="/admin/auth" element={<AdminLoginPage />} />
       <Route path="/sfd/auth" element={<SfdLoginPage />} />
       <Route path="/sfd-selector" element={<SfdSelectorPage />} />
+      <Route path="/access-denied" element={<AccessDeniedPage />} />
       
       {/* Protected Routes */}
-      <Route path="/" element={<ProtectedRoute><Navigate to="/mobile-flow" replace /></ProtectedRoute>} />
+      <Route path="/" element={<Navigate to="/mobile-flow" replace />} />
       
       {/* Mobile Flow Routes */}
-      <Route path="/mobile-flow/*" element={<ProtectedRoute><MobileFlowPage /></ProtectedRoute>} />
+      <Route path="/mobile-flow/*" element={
+        <ProtectedRoute>
+          <MobileFlowPage />
+        </ProtectedRoute>
+      } />
       
       {/* SFD Setup Route */}
-      <Route path="/sfd-setup" element={<ProtectedRoute><PrivateLayout><SfdSetupPage /></PrivateLayout></ProtectedRoute>} />
+      <Route path="/sfd-setup" element={
+        <ProtectedRoute>
+          <PrivateLayout>
+            <SfdSetupPage />
+          </PrivateLayout>
+        </ProtectedRoute>
+      } />
       
       {/* Admin Routes */}
-      <Route path="/sfd-management" element={<ProtectedRoute><SfdManagementPage /></ProtectedRoute>} />
+      <Route path="/super-admin-dashboard" element={
+        <ProtectedRoute requireAdmin={true}>
+          <PremiumDashboardPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/credit-approval" element={
+        <ProtectedRoute requireAdmin={true}>
+          <CreditApprovalPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/sfd-management" element={
+        <ProtectedRoute requireAdmin={true}>
+          <SfdManagementPage />
+        </ProtectedRoute>
+      } />
       
       {/* Fallback Route */}
       <Route path="*" element={<NotFound />} />
