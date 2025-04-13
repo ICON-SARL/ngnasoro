@@ -28,13 +28,12 @@ export const AgencyHeader = () => {
         description: "Veuillez patienter..."
       });
       
-      // Clear localStorage items first
-      localStorage.removeItem('adminLastSeen');
-      localStorage.removeItem('sb-xnqysvnychmsockivqhb-auth-token');
-      localStorage.removeItem('supabase.auth.token');
-      
       // Call signOut method
-      await signOut();
+      const { error } = await signOut();
+      
+      if (error) {
+        throw error;
+      }
       
       toast({
         title: "Déconnexion réussie",
@@ -43,11 +42,11 @@ export const AgencyHeader = () => {
       
       // Force a full page reload
       window.location.href = '/auth';
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
       toast({
         title: "Erreur de déconnexion",
-        description: "Une erreur s'est produite lors de la déconnexion",
+        description: error.message || "Une erreur s'est produite lors de la déconnexion",
         variant: "destructive"
       });
     }

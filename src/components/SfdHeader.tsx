@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 
 export function SfdHeader() {
-  const { signOut, user, activeSfdId } = useAuth();
+  const { user, signOut, activeSfdId } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -31,13 +30,12 @@ export function SfdHeader() {
         description: "Veuillez patienter..."
       });
       
-      // Clear localStorage items first
-      localStorage.removeItem('adminLastSeen');
-      localStorage.removeItem('sb-xnqysvnychmsockivqhb-auth-token');
-      localStorage.removeItem('supabase.auth.token');
-      
       // Call signOut method
-      await signOut();
+      const { error } = await signOut();
+      
+      if (error) {
+        throw error;
+      }
       
       toast({
         title: "Déconnexion réussie",
@@ -46,11 +44,11 @@ export function SfdHeader() {
       
       // Force a full page reload to clear any remaining state
       window.location.href = '/auth';
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
       toast({
         title: "Erreur de déconnexion",
-        description: "Une erreur s'est produite lors de la déconnexion",
+        description: error.message || "Une erreur s'est produite lors de la déconnexion",
         variant: "destructive"
       });
     }
@@ -63,10 +61,6 @@ export function SfdHeader() {
       .join('')
       .toUpperCase();
   };
-  
-  const userInitials = user?.user_metadata?.full_name 
-    ? getInitials(user.user_metadata.full_name) 
-    : 'AD';
   
   const isActiveRoute = (route: string) => {
     return location.pathname === route;

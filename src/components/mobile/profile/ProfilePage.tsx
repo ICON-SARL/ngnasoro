@@ -13,20 +13,48 @@ import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
 import KycVerificationSection from './KycVerificationSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
+import { useToast } from '@/hooks/use-toast';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('accounts');
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { sfdData, activeSfdId, setActiveSfdId, switchActiveSfd } = useSfdDataAccess();
+  const { toast } = useToast();
 
   const handleGoBack = () => {
     navigate('/mobile-flow/main');
   };
 
-  // Create a wrapper for signOut that ignores the return value
+  // Create a wrapper for signOut that properly handles errors and success
   const handleLogout = async () => {
-    await signOut();
+    try {
+      toast({
+        title: "Déconnexion en cours",
+        description: "Veuillez patienter..."
+      });
+      
+      const { error } = await signOut();
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Déconnexion réussie",
+        description: "Vous avez été déconnecté avec succès"
+      });
+      
+      // Force a reload to clear any remaining state
+      window.location.href = '/auth';
+    } catch (error: any) {
+      console.error('Erreur lors de la déconnexion:', error);
+      toast({
+        title: "Erreur de déconnexion",
+        description: error.message || "Une erreur s'est produite lors de la déconnexion",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

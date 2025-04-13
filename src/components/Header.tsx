@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -36,18 +35,32 @@ const Header = () => {
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      toast({
+        title: "Déconnexion en cours",
+        description: "Veuillez patienter..."
+      });
+      
+      const { error } = await signOut();
+      
+      if (error) {
+        throw error;
+      }
+      
       toast({
         title: "Déconnexion réussie",
         description: "Vous avez été déconnecté avec succès"
       });
+      
       navigate('/auth');
       setMobileMenuOpen(false);
-    } catch (error) {
+      
+      // Force a reload to clear any remaining state
+      window.location.href = '/auth';
+    } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
       toast({
         title: "Erreur de déconnexion",
-        description: "Une erreur s'est produite lors de la déconnexion",
+        description: error.message || "Une erreur s'est produite lors de la déconnexion",
         variant: "destructive"
       });
     }
