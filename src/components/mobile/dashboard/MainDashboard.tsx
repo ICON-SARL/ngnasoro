@@ -1,13 +1,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
-import ContextualHeader from '@/components/mobile/ContextualHeader';
 import SFDSavingsOverview from '@/components/mobile/SFDSavingsOverview';
 import TransactionList from '@/components/mobile/TransactionList';
 import { useMobileDashboard } from '@/hooks/useMobileDashboard';
 import { Account } from '@/types/transactions';
 import { useToast } from '@/hooks/use-toast';
+import MobileHeader from '@/components/mobile/MobileHeader';
 
 interface MainDashboardProps {
   onAction: (action: string, data?: any) => void;
@@ -82,13 +81,8 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   
   return (
     <div className="space-y-4 pb-20">
-      <div className="bg-gradient-to-br from-[#0D6A51] to-[#064032] text-white p-4 rounded-b-3xl shadow-md relative">
-        <ContextualHeader />
-        
-        <div className="mt-6">
-          <h1 className="text-2xl font-bold text-white">Tableau de bord</h1>
-          <p className="text-white/80 text-sm">Bienvenue sur votre espace personnel</p>
-        </div>
+      <div className="bg-gradient-to-br from-[#0D6A51] to-[#064032] text-white rounded-b-3xl shadow-md relative">
+        <MobileHeader title="Tableau de bord" />
       </div>
       
       <div className="px-4 py-2">

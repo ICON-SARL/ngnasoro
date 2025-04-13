@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
 import { useClientLoans } from '@/hooks/useClientLoans';
@@ -11,7 +10,7 @@ import { ArrowRight, Clock, CheckCircle, XCircle, CreditCard, Plus, ScrollText, 
 import { Loan } from '@/types/sfdClients';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import ContextualHeader from './ContextualHeader';
+import MobileHeader from '@/components/mobile/MobileHeader';
 
 interface LoanCardProps {
   loan: Loan;
@@ -82,7 +81,6 @@ const MobileMyLoansPage: React.FC = () => {
   const [tabValue, setTabValue] = useState("all");
   const navigate = useNavigate();
   
-  // Filter loans based on tab selection
   const filteredLoans = loans.filter(loan => {
     if (tabValue === 'all') return true;
     if (tabValue === 'pending') return loan.status === 'pending';
@@ -102,14 +100,7 @@ const MobileMyLoansPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="bg-gradient-to-r from-[#0D6A51] to-[#064032] text-white rounded-b-3xl shadow-lg">
-        <div className="p-4">
-          <ContextualHeader />
-          
-          <div className="mt-6 pb-6">
-            <h1 className="text-2xl font-bold">Mes demandes de prêt</h1>
-            <p className="text-white/80">Suivez l'état de vos demandes de prêt et leur traitement</p>
-          </div>
-        </div>
+        <MobileHeader title="Mes demandes de prêt" />
       </div>
       
       <div className="p-4 -mt-4">
