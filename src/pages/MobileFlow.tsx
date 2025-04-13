@@ -136,7 +136,16 @@ const MobileFlow = () => {
 
       <MobileFlowRoutes 
         onAction={onAction}
-        account={account}
+        account={{
+          id: account?.id || '1',
+          owner_id: user?.id || '1',
+          balance: account?.balance || 0,
+          currency: account?.currency || 'FCFA',
+          updated_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          status: 'active',
+          type: 'savings'
+        }}
         transactions={transactions}
         transactionsLoading={transactionsLoading}
         toggleMenu={toggleMenu}

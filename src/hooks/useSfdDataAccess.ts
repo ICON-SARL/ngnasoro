@@ -3,13 +3,14 @@ import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
 
-type SfdData = {
+export type SfdData = {
   id: string;
   name: string;
   region?: string;
   code: string;
   logo_url?: string;
   status: 'active' | 'inactive' | string;
+  is_default?: boolean;
 };
 
 export function useSfdDataAccess() {
@@ -282,4 +283,5 @@ export function useSfdDataAccess() {
   };
 }
 
+export { useSfdDataAccess };
 export type { SfdData };
