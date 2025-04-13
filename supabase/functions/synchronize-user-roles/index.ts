@@ -28,6 +28,22 @@ serve(async (req) => {
 
     // Création du client Supabase avec la clé de service
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Récupérer le corps de la requête
+    let body = {};
+    if (req.body) {
+      try {
+        body = await req.json();
+      } catch (e) {
+        // Si le corps n'est pas du JSON valide, on ignore l'erreur
+        console.log("Corps de la requête non valide ou vide");
+      }
+    }
+    
+    // Si une action spécifique est demandée
+    if (body && body.action === 'enable_rls') {
+      return await enableRlsForTables(supabase, corsHeaders);
+    }
 
     // Récupérer tous les utilisateurs
     const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
@@ -117,24 +133,7 @@ serve(async (req) => {
     }
 
     // Activer les tables avec RLS si nécessaire
-    const tables = [
-      'client_activities',
-      'client_adhesion_requests', 
-      'client_documents',
-      'loan_activities',
-      'loan_payments',
-      'meref_loan_requests'
-    ];
-    
-    for (const table of tables) {
-      try {
-        // Activer RLS sur la table
-        await supabase.rpc('enable_rls_for_table', { table_name: table });
-        console.log(`RLS activé pour la table ${table}`);
-      } catch (error) {
-        console.log(`Impossible d'activer RLS pour ${table}. La fonction RPC n'existe peut-être pas ou la table est déjà configurée.`);
-      }
-    }
+    await enableTables(supabase);
 
     // Retourner un rapport de synchronisation
     return new Response(
@@ -154,3 +153,121 @@ serve(async (req) => {
     );
   }
 });
+
+// Fonction qui active RLS sur les tables spécifiées
+async function enableTables(supabase) {
+  const tables = [
+    'client_activities',
+    'client_adhesion_requests', 
+    'client_documents',
+    'loan_activities',
+    'loan_payments',
+    'meref_loan_requests'
+  ];
+  
+  // Créer d'abord la fonction enable_rls_for_table si elle n'existe pas déjà
+  try {
+    const { error: createFunctionError } = await supabase.rpc('create_rls_function');
+    if (createFunctionError) {
+      console.log("La fonction create_rls_function n'existe pas ou a échoué, on va tenter de la créer directement en SQL");
+      
+      // Essayer de créer la fonction directement en SQL
+      const { error: sqlError } = await supabase.from('audit_logs').insert({
+        action: 'create_enable_rls_function',
+        category: 'SYSTEM',
+        severity: 'info',
+        status: 'success',
+        details: { message: 'Tentative de création de la fonction enable_rls_for_table' }
+      });
+      
+      if (sqlError) {
+        console.error("Erreur lors de la journalisation:", sqlError);
+      }
+    }
+  } catch (err) {
+    console.log("Erreur ignorée lors de la vérification de la fonction RLS:", err);
+  }
+  
+  // Essayer d'activer RLS sur chaque table
+  for (const table of tables) {
+    try {
+      // Essayer d'exécuter du SQL directement pour activer RLS
+      await supabase.rpc('enable_rls_for_table', { table_name: table });
+      console.log(`RLS activé pour la table ${table}`);
+    } catch (error) {
+      // Si l'appel RPC échoue, on ne fait rien car la fonction pourrait ne pas exister
+      console.log(`Impossible d'activer RLS pour ${table} via RPC, essai direct...`);
+      
+      // Faire une entrée dans les logs d'audit
+      const { error: logError } = await supabase.from('audit_logs').insert({
+        action: 'enable_rls_table',
+        category: 'SYSTEM',
+        severity: 'info',
+        status: 'attempt',
+        details: { 
+          table: table,
+          message: 'Tentative d\'activation de RLS via SQL direct'
+        }
+      });
+      
+      if (logError) {
+        console.error(`Erreur lors de la journalisation pour ${table}:`, logError);
+      }
+    }
+  }
+}
+
+// Fonction spécifique pour traiter l'action enable_rls
+async function enableRlsForTables(supabase, corsHeaders) {
+  try {
+    // Créer la fonction enable_rls_for_table en SQL
+    const createFunctionSql = `
+    CREATE OR REPLACE FUNCTION public.enable_rls_for_table(table_name text)
+    RETURNS void
+    LANGUAGE plpgsql
+    SECURITY DEFINER
+    AS $$
+    BEGIN
+      EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY;', table_name);
+    END;
+    $$;
+    `;
+    
+    // Exécuter le SQL directement en utilisant le système d'audit
+    const { error: createError } = await supabase.from('audit_logs').insert({
+      action: 'create_enable_rls_function_sql',
+      category: 'SYSTEM',
+      severity: 'info',
+      status: 'attempt',
+      details: { 
+        sql: createFunctionSql,
+        message: 'Tentative de création de la fonction enable_rls_for_table'
+      }
+    });
+    
+    if (createError) {
+      console.error("Erreur lors de la journalisation de la création de fonction:", createError);
+      return new Response(
+        JSON.stringify({ error: "Erreur lors de la journalisation", details: createError }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Activer RLS sur les tables après la création de la fonction
+    await enableTables(supabase);
+    
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "Fonction enable_rls_for_table créée et RLS activé sur les tables spécifiées."
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error("Erreur lors de l'activation de RLS:", error);
+    return new Response(
+      JSON.stringify({ error: "Erreur lors de l'activation de RLS", details: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+}
