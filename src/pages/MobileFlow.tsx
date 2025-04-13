@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, lazy } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
@@ -23,7 +22,12 @@ const MobileFlow = () => {
   
   const { user, loading, signOut } = useAuth();
   const { account, isLoading: accountLoading, updateBalance } = useAccount();
-  const transactionService = useTransactions(user?.id || '', user?.id ? 'default-sfd' : '');
+  const {
+    transactions,
+    isLoading: transactionsLoading,
+    fetchTransactions,
+    createTransaction
+  } = useTransactions(user?.id || '', user?.id ? 'default-sfd' : '');
   const { handleAction } = useActionHandler();
 
   const [showWelcome, setShowWelcome] = useState(() => {
@@ -31,7 +35,6 @@ const MobileFlow = () => {
     return !hasVisited;
   });
 
-  // Check if user is authenticated and not an admin
   useEffect(() => {
     if (!loading) {
       if (!user) {
@@ -39,7 +42,6 @@ const MobileFlow = () => {
         return;
       }
       
-      // If user is admin or super_admin, redirect to admin dashboard
       const userRole = user.app_metadata?.role;
       if (userRole === 'admin') {
         toast({
@@ -52,14 +54,12 @@ const MobileFlow = () => {
     }
   }, [user, loading, navigate, toast]);
 
-  // Save welcome screen status
   useEffect(() => {
     if (!showWelcome) {
       localStorage.setItem('hasVisitedApp', 'true');
     }
   }, [showWelcome]);
 
-  // Custom action handler that uses the toast notification
   const onAction = (action: string, data?: any) => {
     handleAction(action, data);
     
@@ -68,14 +68,12 @@ const MobileFlow = () => {
     }
   };
 
-  // Handler for payment submission
   const handlePaymentSubmit = async (data: { recipient: string, amount: number, note: string }) => {
     try {
       await updateBalance.mutateAsync({ amount: -data.amount });
       
-      // Use the createTransaction function
-      if (transactionService.createTransaction) {
-        await transactionService.createTransaction({
+      if (createTransaction) {
+        await createTransaction({
           userId: user?.id || '',
           sfdId: 'default-sfd', 
           name: data.recipient,
@@ -99,7 +97,6 @@ const MobileFlow = () => {
     }
   };
 
-  // Menu handlers
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
@@ -113,7 +110,6 @@ const MobileFlow = () => {
     }
   };
 
-  // Handle welcome screen navigation
   useEffect(() => {
     if (showWelcome && location.pathname === '/mobile-flow') {
       navigate('/mobile-flow/welcome');
@@ -149,8 +145,8 @@ const MobileFlow = () => {
           status: 'active',
           type: 'savings'
         }}
-        transactions={transactionService.transactions}
-        transactionsLoading={transactionService.isLoading}
+        transactions={transactions}
+        transactionsLoading={transactionsLoading}
         toggleMenu={toggleMenu}
         showWelcome={showWelcome}
         setShowWelcome={setShowWelcome}

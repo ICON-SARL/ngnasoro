@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -40,7 +41,11 @@ export function useSecurePayment({
   
   const effectiveSfdId = selectedSfdId || activeSfdId;
   
-  const transactionService = useTransactions(user?.id, effectiveSfdId);
+  const {
+    makeDeposit, 
+    makeWithdrawal, 
+    makeLoanRepayment
+  } = useTransactions(user?.id, effectiveSfdId);
   
   const handleBackAction = () => {
     if (onBack) {
@@ -83,12 +88,12 @@ export function useSecurePayment({
     try {
       let result;
       
-      if (isWithdrawal && transactionService.makeWithdrawal) {
-        result = await transactionService.makeWithdrawal(transactionAmount, `Retrait via ${paymentMethod}`);
-      } else if (loanId && transactionService.makeLoanRepayment) {
-        result = await transactionService.makeLoanRepayment(loanId, transactionAmount, `Remboursement de prêt via ${paymentMethod}`);
-      } else if (transactionService.makeDeposit) {
-        result = await transactionService.makeDeposit(transactionAmount, `Dépôt via ${paymentMethod}`);
+      if (isWithdrawal && makeWithdrawal) {
+        result = await makeWithdrawal(transactionAmount, `Retrait via ${paymentMethod}`);
+      } else if (loanId && makeLoanRepayment) {
+        result = await makeLoanRepayment(loanId, transactionAmount, `Remboursement de prêt via ${paymentMethod}`);
+      } else if (makeDeposit) {
+        result = await makeDeposit(transactionAmount, `Dépôt via ${paymentMethod}`);
       }
       
       setTimeout(() => setProgress(100), 1500);
