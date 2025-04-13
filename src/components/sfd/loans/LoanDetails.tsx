@@ -11,7 +11,10 @@ import {
   Pencil, 
   User, 
   XCircle,
-  BellRing
+  BellRing,
+  QrCode,
+  Smartphone,
+  ChevronRight
 } from 'lucide-react';
 import {
   Card,
@@ -201,13 +204,72 @@ const LoanDetails: React.FC<LoanDetailsProps> = ({ loan: propLoan, onClose, onAc
         <CardHeader>
           <CardTitle className="flex items-center">
             <CalendarDays className="h-5 w-5 mr-2" />
-            Historique des remboursements
+            Paiements et remboursements
           </CardTitle>
           <CardDescription>
-            Suivi des remboursements effectués et à venir
+            Options de paiement et suivi des remboursements
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2">Options de remboursement</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Permettez à vos clients d'effectuer des remboursements via différentes méthodes de paiement.
+              </p>
+              <div className="space-y-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center justify-between"
+                  onClick={() => navigate(`/sfd-loans/${loanId}/payment/qr-code`)}
+                >
+                  <div className="flex items-center">
+                    <QrCode className="h-4 w-4 mr-2" />
+                    <span>Générer un code QR</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center justify-between"
+                  onClick={() => navigate(`/sfd-loans/${loanId}/payment/mobile-money`)}
+                >
+                  <div className="flex items-center">
+                    <Smartphone className="h-4 w-4 mr-2" />
+                    <span>Paiement Mobile Money</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2">Statut des paiements</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Prochain paiement:</span>
+                  <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                    {loan.next_payment_date 
+                      ? new Date(loan.next_payment_date).toLocaleDateString()
+                      : "Non défini"}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Montant mensuel:</span>
+                  <span className="font-semibold">{formatCurrency(loan.monthly_payment || 0)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Dernier paiement:</span>
+                  <span>
+                    {loan.last_payment_date 
+                      ? new Date(loan.last_payment_date).toLocaleDateString()
+                      : "Aucun"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
           {repaymentHistory && Array.isArray(repaymentHistory) && repaymentHistory.length > 0 ? (
             <Table>
               <TableHeader>

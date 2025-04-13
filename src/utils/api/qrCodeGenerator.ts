@@ -1,108 +1,127 @@
 
-// QR Code Generator API utility
 import { supabase } from '@/integrations/supabase/client';
 
-export interface QRCodeResponse {
+interface QRCodeResponse {
   success: boolean;
   qrData?: string;
   transactionId?: string;
-  expiresAt?: string;
-  error?: string;
+  message?: string;
 }
 
-export interface QRCodeRequest {
-  userId: string;
-  sfdId: string;
-  amount: number;
-  type: 'deposit' | 'withdrawal' | 'loan_payment';
-  loanId?: string;
-  reference?: string;
+interface ScanResponse {
+  success: boolean;
+  message: string;
+  transaction?: any;
+  isWithdrawal?: boolean;
 }
 
-/**
- * Generate a QR code for payment or withdrawal
- */
+// Generate a QR code for a transaction
 export async function generateQRCode(
-  params: QRCodeRequest
+  amount: number,
+  type: 'deposit' | 'withdrawal' | 'loan_payment' = 'deposit',
+  userId: string,
+  reference?: string,
+  loanId?: string
 ): Promise<QRCodeResponse> {
   try {
-    if (!params.userId) {
-      throw new Error('User ID is required');
-    }
-    
-    const { data, error } = await supabase.functions.invoke('mobile-money-verification', {
+    const { data, error } = await supabase.functions.invoke('generate-qr-code', {
       body: {
-        action: 'qrCode',
-        userId: params.userId,
-        amount: params.amount,
-        isWithdrawal: params.type === 'withdrawal',
-        sfdId: params.sfdId,
-        loanId: params.loanId,
-        reference: params.reference
+        userId,
+        amount,
+        type,
+        reference,
+        loanId
       }
     });
     
     if (error) {
       console.error('Error generating QR code:', error);
-      throw error;
-    }
-    
-    if (!data?.success || !data?.qrCode) {
-      throw new Error('Failed to generate QR code');
+      return {
+        success: false,
+        message: error.message || "Impossible de générer le code QR"
+      };
     }
     
     return {
       success: true,
-      qrData: data.qrCode.data || `data:image/png;base64,iVBORw0KGgoAAAANSUhEU...`,
-      transactionId: data.qrCode.code,
-      expiresAt: data.qrCode.expiresAt
+      qrData: data.qrData,
+      transactionId: data.transactionId
     };
   } catch (error: any) {
-    console.error('QR code generation error:', error);
+    console.error('Error generating QR code:', error);
     return {
       success: false,
-      error: error.message || 'Failed to generate QR code'
+      message: error.message || "Une erreur est survenue lors de la génération du code QR"
     };
   }
 }
 
-/**
- * Scan a QR code to process a transaction
- */
+// Scan a QR code to process a transaction
 export async function scanQRCodeForTransaction(
-  qrCode: string,
+  code: string,
   userId: string
-): Promise<{ success: boolean; message: string; transactionId?: string }> {
+): Promise<ScanResponse> {
   try {
-    // In a real implementation, you would parse the QR code and send to the server
-    
-    const { data, error } = await supabase.functions.invoke('process-qr-transaction', {
+    const { data, error } = await supabase.functions.invoke('qr-code-verification', {
       body: {
-        qrCode,
-        userId,
-        timestamp: Date.now()
+        action: 'scan',
+        code,
+        userId
       }
     });
     
-    if (error) {
-      console.error('Error processing QR transaction:', error);
-      throw error;
-    }
-    
-    if (!data?.success) {
-      throw new Error(data?.message || 'Transaction failed');
+    if (error || !data.success) {
+      return {
+        success: false,
+        message: (error?.message || data?.message) || "Code QR invalide ou expiré"
+      };
     }
     
     return {
       success: true,
-      message: data.isWithdrawal ? 'Retrait effectué avec succès' : 'Paiement effectué avec succès',
-      transactionId: data.transactionId
+      message: data.message || "Transaction traitée avec succès",
+      transaction: data.transaction,
+      isWithdrawal: data.isWithdrawal
     };
   } catch (error: any) {
-    console.error('QR transaction error:', error);
+    console.error('Error scanning QR code:', error);
     return {
       success: false,
-      message: error.message || 'Transaction failed'
+      message: error.message || "Une erreur est survenue lors de l'analyse du code QR"
+    };
+  }
+}
+
+// Verify a QR code without processing a transaction
+export async function verifyQRCode(code: string): Promise<{
+  success: boolean;
+  qrData?: any;
+  message?: string;
+}> {
+  try {
+    const { data, error } = await supabase.functions.invoke('qr-code-verification', {
+      body: {
+        code
+      }
+    });
+    
+    if (error) {
+      return {
+        success: false,
+        message: error.message || "Impossible de vérifier le code QR"
+      };
+    }
+    
+    return {
+      success: data.success,
+      qrData: data.qrData,
+      message: data.message
+    };
+  } catch (error: any) {
+    console.error('Error verifying QR code:', error);
+    return {
+      success: false,
+      message: error.message || "Une erreur est survenue lors de la vérification du code QR"
     };
   }
 }

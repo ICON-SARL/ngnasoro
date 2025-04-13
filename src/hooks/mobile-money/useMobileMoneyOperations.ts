@@ -1,24 +1,150 @@
 
 import { useState } from 'react';
-import { MobileMoneyProvider, MobileMoneyOperationsHook } from './types';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { MobileMoneyOperationsHook } from './types';
+import { useQRCodeGeneration } from './useQRCodeGeneration';
 import { useMobileMoneyPayment } from './useMobileMoneyPayment';
 import { useMobileMoneyWithdrawal } from './useMobileMoneyWithdrawal';
 
-// Define available mobile money providers
-const MOBILE_MONEY_PROVIDERS: MobileMoneyProvider[] = [
-  { id: 'orange', name: 'Orange Money' },
-  { id: 'wave', name: 'Wave' },
-  { id: 'moov', name: 'Moov Money' }
-];
-
 export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
-  const { isProcessing: isPaymentProcessing, processPayment } = useMobileMoneyPayment();
-  const { isProcessing: isWithdrawalProcessing, processWithdrawal } = useMobileMoneyWithdrawal();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
+  
+  // Use existing hooks
+  const {
+    qrCodeData,
+    isGenerating: isGeneratingQRCode,
+    generateQRCode,
+    resetQRCode,
+    error: qrCodeError
+  } = useQRCodeGeneration();
+  
+  const {
+    isProcessing: isProcessingPayment,
+    processPayment: processRawPayment,
+    error: paymentError
+  } = useMobileMoneyPayment();
+  
+  const {
+    isProcessing: isProcessingWithdrawal,
+    processWithdrawal: processRawWithdrawal,
+    error: withdrawalError
+  } = useMobileMoneyWithdrawal();
+
+  // Combined error handling
+  useState(() => {
+    if (qrCodeError) setError(qrCodeError);
+    else if (paymentError) setError(paymentError);
+    else if (withdrawalError) setError(withdrawalError);
+    else setError(null);
+  }, [qrCodeError, paymentError, withdrawalError]);
+
+  // Enhanced payment function that can handle loan repayments
+  const processPayment = async (
+    phoneNumber: string,
+    amount: number,
+    provider: string,
+    loanId?: string
+  ): Promise<boolean> => {
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour effectuer cette opération",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    try {
+      // Process the mobile money payment
+      const paymentSuccess = await processRawPayment(phoneNumber, amount, provider);
+      
+      if (paymentSuccess && loanId) {
+        // If payment successful and it's a loan repayment, register the payment
+        try {
+          const { error: repaymentError } = await supabase.functions.invoke('process-repayment', {
+            body: {
+              userId: user.id,
+              loanId: loanId,
+              amount: amount,
+              paymentMethod: 'mobile_money'
+            }
+          });
+          
+          if (repaymentError) throw repaymentError;
+          
+          toast({
+            title: "Remboursement enregistré",
+            description: "Votre remboursement a été enregistré avec succès",
+          });
+        } catch (error: any) {
+          console.error('Error registering loan repayment:', error);
+          toast({
+            title: "Paiement effectué mais erreur d'enregistrement",
+            description: "Le paiement a été effectué mais une erreur est survenue lors de l'enregistrement du remboursement",
+            variant: "destructive",
+          });
+        }
+      }
+      
+      return paymentSuccess;
+    } catch (error: any) {
+      setError(error.message || "Une erreur est survenue lors du traitement du paiement");
+      return false;
+    }
+  };
+
+  // Enhanced withdrawal function with additional logging
+  const processWithdrawal = async (
+    phoneNumber: string,
+    amount: number,
+    provider: string
+  ): Promise<boolean> => {
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour effectuer cette opération",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    try {
+      // Process the withdrawal through mobile money
+      const success = await processRawWithdrawal(phoneNumber, amount, provider);
+      
+      if (success) {
+        // Log the withdrawal in our system
+        await supabase.from('transactions').insert({
+          user_id: user.id,
+          type: 'withdrawal',
+          amount: -amount, // Negative amount for withdrawals
+          status: 'success',
+          payment_method: 'mobile_money',
+          description: `Retrait via ${provider}`,
+          name: 'Retrait Mobile Money'
+        });
+      }
+      
+      return success;
+    } catch (error: any) {
+      setError(error.message || "Une erreur est survenue lors du traitement du retrait");
+      return false;
+    }
+  };
 
   return {
-    isProcessing: isPaymentProcessing || isWithdrawalProcessing,
+    isProcessingPayment,
+    isProcessingWithdrawal,
+    error,
     processPayment,
     processWithdrawal,
-    mobileMoneyProviders: MOBILE_MONEY_PROVIDERS
+    qrCodeData,
+    isGeneratingQRCode,
+    generateQRCode,
+    resetQRCode
   };
 }
