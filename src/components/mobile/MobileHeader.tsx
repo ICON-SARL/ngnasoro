@@ -8,7 +8,7 @@ const MobileHeader = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm">
-              <img src="/lovable-uploads/11c7df4b-bda8-4b49-b653-6ba0e7d3abad.png" alt="N'GNA SÔRÔ! Logo" className="h-12 w-12 object-contain" />
+              <img alt="N'GNA SÔRÔ! Logo" className="h-12 w-12 object-cover" src="/lovable-uploads/90c4efc4-a4a5-4961-a8b7-e5ee8eab2649.png" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white">
