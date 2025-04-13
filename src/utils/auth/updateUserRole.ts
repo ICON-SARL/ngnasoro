@@ -30,5 +30,5 @@ export const updateUserRole = async (userId: string, role: UserRole | string): P
  * Note: This should be called when a new user signs up
  */
 export const setDefaultUserRole = async (userId: string): Promise<boolean> => {
-  return updateUserRole(userId, UserRole.CLIENT);
+  return updateUserRole(userId, UserRole.User);
 };

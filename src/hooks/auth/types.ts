@@ -4,7 +4,8 @@ import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 export enum UserRole {
   User = 'client',
   SfdAdmin = 'sfd_admin',
-  SuperAdmin = 'admin'
+  SuperAdmin = 'admin',
+  CLIENT = 'client'  // Adding CLIENT for backward compatibility
 }
 
 export interface Role {
@@ -16,6 +17,10 @@ export interface Role {
 
 export interface User extends SupabaseUser {
   // Additional properties specific to your application
+  full_name?: string;
+  avatar_url?: string;
+  sfd_id?: string;
+  phone?: string;
 }
 
 export interface AuthContextProps {
@@ -33,4 +38,18 @@ export interface AuthContextProps {
   userRole: UserRole;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
+}
+
+// Adding the missing type definitions for SFD association
+export interface AssociateSfdParams {
+  userId: string;
+  sfdId: string;
+  makeDefault?: boolean;
+  isDefault?: boolean;
+}
+
+export interface AssociateSfdResult {
+  success: boolean;
+  userSfd?: any;
+  error?: string;
 }
