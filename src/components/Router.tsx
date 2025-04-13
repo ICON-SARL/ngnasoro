@@ -15,7 +15,7 @@ import TestAuth from '@/components/auth/TestAuth';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30 * 1000, // 30 secondes
+      staleTime: 30 * 1000, // 30 seconds
       retry: 1,
       refetchOnWindowFocus: false,
     },

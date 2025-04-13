@@ -1,5 +1,4 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -196,7 +195,7 @@ const ClientLoanApplication = () => {
       return;
     }
 
-    const application: LoanApplication = {
+    const newLoanApplication: LoanApplication = {
       sfd_id: sfdId,
       amount: amount,
       duration_months: duration,
@@ -205,7 +204,7 @@ const ClientLoanApplication = () => {
       interest_rate: selectedPlan.interest_rate
     };
     
-    applyForLoan.mutate(application, {
+    applyForLoan.mutate(newLoanApplication, {
       onSuccess: () => {
         setStep(3);
       }
