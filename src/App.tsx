@@ -18,6 +18,9 @@ import AdminAuthUI from '@/components/auth/AdminAuthUI';
 import SfdAuthUI from '@/components/auth/SfdAuthUI';
 import NotFound from '@/pages/NotFound';
 import SplashScreen from '@/components/mobile/SplashScreen';
+import SuperAdminDashboardPage from '@/pages/SuperAdminDashboardPage';
+import SfdManagementPage from '@/pages/SfdManagementPage';
+import ProtectedRoute from '@/components/routes/ProtectedRoute';
 
 export default function App() {
   return (
@@ -38,13 +41,73 @@ export default function App() {
             {/* Splash screen at root level */}
             <Route path="/splash" element={<SplashScreen />} />
             
+            {/* Super Admin (MEREF) Routes */}
+            <Route 
+              path="/super-admin-dashboard" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <SuperAdminDashboardPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/sfd-management" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <SfdManagementPage />
+                </ProtectedRoute>
+              } 
+            />
+            
             {/* SFD Routes */}
-            <Route path="/agency-dashboard" element={<AgencyDashboardPage />} />
-            <Route path="/sfd-loans" element={<SfdLoansPage />} />
-            <Route path="/sfd-clients" element={<SfdClientsPage />} />
-            <Route path="/sfd-transactions" element={<SfdTransactionsPage />} />
-            <Route path="/sfd-subsidy-requests" element={<SfdSubsidyRequestsPage />} />
-            <Route path="/sfd-settings" element={<SfdSettingsPage />} />
+            <Route 
+              path="/agency-dashboard" 
+              element={
+                <ProtectedRoute requireSfdAdmin={true}>
+                  <AgencyDashboardPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/sfd-loans" 
+              element={
+                <ProtectedRoute requireSfdAdmin={true}>
+                  <SfdLoansPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/sfd-clients" 
+              element={
+                <ProtectedRoute requireSfdAdmin={true}>
+                  <SfdClientsPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/sfd-transactions" 
+              element={
+                <ProtectedRoute requireSfdAdmin={true}>
+                  <SfdTransactionsPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/sfd-subsidy-requests" 
+              element={
+                <ProtectedRoute requireSfdAdmin={true}>
+                  <SfdSubsidyRequestsPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/sfd-settings" 
+              element={
+                <ProtectedRoute requireSfdAdmin={true}>
+                  <SfdSettingsPage />
+                </ProtectedRoute>
+              } 
+            />
             
             {/* Mobile Flow (Use existing Router component) */}
             <Route path="/mobile-flow/*" element={<MobileRouter />} />

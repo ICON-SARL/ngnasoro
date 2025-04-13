@@ -34,11 +34,7 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
         description: "Veuillez patienter..."
       });
       
-      const { error } = await signOut();
-      
-      if (error) {
-        throw error;
-      }
+      await signOut();
       
       // Show success toast
       toast({
@@ -46,7 +42,7 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Force une redirection vers la page d'auth et un rechargement complet
+      // Force a full page reload and redirect
       window.location.href = '/admin/auth';
     } catch (error: any) {
       console.error('Logout error:', error);

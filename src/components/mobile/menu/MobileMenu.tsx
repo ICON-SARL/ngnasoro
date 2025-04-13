@@ -1,19 +1,21 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { mobileMenuSections } from '@/config/mobileNavigation';
 import * as Icons from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface MobileMenuProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogout: () => void;
 }
 
-const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen = false, onClose = () => {}, onLogout = () => {} }) => {
+const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen = false, onClose = () => {} }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signOut } = useAuth();
 
   if (!isOpen) return null;
 
@@ -22,13 +24,23 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen = false, onClose = () =>
     onClose();
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
-      onLogout();
+      onClose();
       toast({
         title: "Déconnexion en cours",
         description: "Veuillez patienter..."
       });
+      
+      await signOut();
+      
+      toast({
+        title: "Déconnexion réussie",
+        description: "Vous avez été déconnecté avec succès"
+      });
+      
+      // Force a redirect
+      window.location.href = '/auth';
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
       toast({

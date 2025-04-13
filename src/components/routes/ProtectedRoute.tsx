@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,7 +14,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireAdmin = false,
   requireSfdAdmin = false,
 }) => {
-  const { user, loading, session } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   
   if (loading) {
@@ -25,7 +25,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!user) {
-    // Rediriger vers la page d'authentification appropriée basée sur les exigences
+    // Redirect to appropriate auth page based on requirements
     if (requireAdmin) {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
     } else if (requireSfdAdmin) {
@@ -36,9 +36,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
   
   const userRole = user.app_metadata?.role;
-  console.log("ProtectedRoute - User role:", userRole);
   
-  // Vérifier les permissions basées sur le rôle
+  // Check role-based permissions
   if (requireAdmin && userRole !== 'admin') {
     return <Navigate to="/access-denied" state={{ from: location, requiredRole: 'admin' }} replace />;
   }

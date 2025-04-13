@@ -50,7 +50,15 @@ export const MobileRouter = () => {
         {/* Redirect to mobile flow by default if logged in, otherwise to login */}
         <Route 
           path="/" 
-          element={user ? <Navigate to="/mobile-flow/main" replace /> : <Navigate to="/auth" replace />} 
+          element={
+            user ? 
+              user.app_metadata?.role === 'client' || user.app_metadata?.role === 'user' ? 
+                <Navigate to="/mobile-flow/main" replace /> : 
+                user.app_metadata?.role === 'sfd_admin' ? 
+                  <Navigate to="/agency-dashboard" replace /> : 
+                  <Navigate to="/super-admin-dashboard" replace />
+              : <Navigate to="/auth" replace />
+          } 
         />
         
         {/* Not found route */}

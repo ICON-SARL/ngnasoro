@@ -30,18 +30,14 @@ export function SfdHeader() {
         description: "Veuillez patienter..."
       });
       
-      const { error } = await signOut();
-      
-      if (error) {
-        throw error;
-      }
+      await signOut();
       
       toast({
         title: "Déconnexion réussie",
         description: "Vous avez été déconnecté avec succès"
       });
       
-      // Force une redirection vers la page d'auth et un rechargement complet
+      // Force a full page reload and redirect
       window.location.href = '/sfd/auth';
     } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
