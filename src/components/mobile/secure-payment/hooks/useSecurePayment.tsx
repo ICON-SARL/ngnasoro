@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useTransactions } from '@/hooks/useTransactions';
-import { SfdAccount } from '@/hooks/useSfdAccounts';
+import { SfdClientAccount, SfdAccount } from '@/hooks/sfd/types';
 
 interface UseSecurePaymentProps {
   onBack?: () => void;

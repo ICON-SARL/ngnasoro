@@ -3,10 +3,10 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../useAuth';
 import { fetchSfdLoans } from './fetchSfdLoans';
-import { SfdAccount, SfdLoan } from './types';
+import { SfdAccount, SfdClientAccount, SfdLoan } from './types';
 
 interface SfdAccountResult {
-  activeSfdAccount: SfdAccount | null;
+  activeSfdAccount: SfdClientAccount | null;
   isLoading: boolean;
   isError: boolean;
   refetch: () => void;
@@ -21,7 +21,7 @@ export function useSfdAccount(user: any, activeSfdId: string | null): SfdAccount
       
       // Find the account in the cached accounts data
       const queryClient = useQueryClient();
-      const cachedAccounts = queryClient.getQueryData<SfdAccount[]>(['user-sfds', user.id]);
+      const cachedAccounts = queryClient.getQueryData<SfdClientAccount[]>(['user-sfds', user.id]);
       let activeSfdAccount = cachedAccounts?.find(acc => acc.id === activeSfdId);
       
       // Fetch loans for the active SFD
@@ -57,7 +57,9 @@ export function useSfdAccount(user: any, activeSfdId: string | null): SfdAccount
             currency: 'FCFA',
             isDefault: true,
             isVerified: true,
-            loans: enhancedLoans as SfdLoan[]
+            loans: enhancedLoans as SfdLoan[],
+            sfd_id: activeSfdId, // Add required sfd_id field
+            account_type: 'main'
           };
         }
         

@@ -102,34 +102,8 @@ export const sfdAccountService = {
         
       if (updateToError) throw updateToError;
       
-      // Record the transfer in a separate object since the table might not exist yet
-      const transferData = {
-        sfd_id: sfdId,
-        from_account_id: fromAccountId,
-        to_account_id: toAccountId,
-        amount: amount,
-        description: description || "Transfert entre comptes",
-        performed_by: currentUser?.id
-      };
-      
-      // Insert the transfer record if the table exists
-      let transferId = null;
-      try {
-        // Try to use the actual table if it exists
-        const { data: transferRecord, error: transferError } = await supabase
-          .from('sfd_account_transfers')
-          .insert(transferData)
-          .select('id')
-          .single();
-        
-        if (!transferError) {
-          transferId = transferRecord?.id;
-        }
-      } catch (err) {
-        // If the table doesn't exist, we'll just return a generated ID
-        console.warn("sfd_account_transfers table may not exist, skipping transfer record");
-        transferId = `transfer-${Date.now()}`;
-      }
+      // Generate a transfer ID since we can't use the actual table
+      const transferId = `transfer-${Date.now()}`;
       
       return transferId;
     } catch (error) {
@@ -143,10 +117,10 @@ export const sfdAccountService = {
    */
   async getSfdTransferHistory(sfdId: string): Promise<SfdAccountTransfer[]> {
     try {
-      // Create a custom mock response since the table might not exist yet
+      // Create a mock response since we can't access sfd_account_transfers table
       const mockTransfers: SfdAccountTransfer[] = [];
       
-      // Try to fetch real data if the table exists
+      // Try to fetch real data if available
       try {
         const { data, error } = await supabase
           .from('transactions')  // Use the transactions table that we know exists

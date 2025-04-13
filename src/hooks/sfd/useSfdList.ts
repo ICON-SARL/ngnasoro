@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchUserSfds } from './fetchSfdAccounts';
-import { SfdAccount } from './types';
+import { SfdAccount, SfdClientAccount } from './types';
 import { User } from '@/hooks/useAuth';
 
 export function useSfdList(user: User | null) {
@@ -13,7 +13,7 @@ export function useSfdList(user: User | null) {
       const userSfds = await fetchUserSfds(user.id);
       
       // Transform UserSfd objects into SfdAccount objects
-      const sfdAccounts: SfdAccount[] = userSfds.map(userSfd => ({
+      const sfdAccounts: SfdClientAccount[] = userSfds.map(userSfd => ({
         id: userSfd.sfds.id,
         name: userSfd.sfds.name,
         code: userSfd.sfds.code,
@@ -23,7 +23,9 @@ export function useSfdList(user: User | null) {
         currency: 'FCFA',
         isDefault: userSfd.is_default,
         isVerified: true, // Default is verified
-        status: 'active'
+        status: 'active',
+        sfd_id: userSfd.sfds.id, // Set sfd_id equal to id for compatibility
+        account_type: 'main'
       }));
       
       return sfdAccounts;

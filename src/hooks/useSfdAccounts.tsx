@@ -5,7 +5,7 @@ import { sfdAccountService } from '@/services/sfdAccountService';
 import { SfdAccount as DbSfdAccount, CreateTransferParams, SfdAccountTransfer } from '@/types/sfdAccounts';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { SfdAccount as SfdClientAccount } from '@/hooks/sfd/types';
+import { SfdClientAccount, SfdAccount } from '@/hooks/sfd/types';
 
 export interface SfdLoanPaymentParams {
   loanId: string;
@@ -166,3 +166,4 @@ export function useSfdAccounts(sfdId?: string) {
 
 // Also export the types for components that need them
 export type { SfdAccount as DbSfdAccount, SfdAccountTransfer, CreateTransferParams };
+export { SfdClientAccount, SfdAccount };

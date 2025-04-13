@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { SfdAccount } from '@/hooks/useSfdAccounts';
+import { SfdClientAccount, SfdAccount } from '@/hooks/sfd/types';
 import { SecurityFeatures } from './SecurityFeatures';
 import { ReconciliationSection } from './ReconciliationSection';
 import PaymentDetails from './PaymentDetails';
@@ -15,7 +15,7 @@ interface SecurePaymentContentProps {
   transactionAmount: number;
   progress: number;
   paymentStatus: 'pending' | 'success' | 'failed' | null;
-  selectedSfdAccount?: SfdAccount | null;
+  selectedSfdAccount?: SfdClientAccount | null;
   onAmountChange: (amount: number) => void;
   onScanQRCode: () => void;
   onMobileMoneyPayment?: () => void;

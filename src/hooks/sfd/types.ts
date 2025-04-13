@@ -28,8 +28,8 @@ export interface SyncResult {
   updates?: any;
 }
 
-// Update the SfdAccount interface to be compatible with the one in types/sfdAccounts.ts
-export interface SfdAccount {
+// Define a client-side SfdAccount interface that will be used throughout the application
+export interface SfdClientAccount {
   id: string;
   name: string;
   logoUrl?: string | null;
@@ -50,6 +50,9 @@ export interface SfdAccount {
   created_at?: string;
   updated_at?: string;
 }
+
+// Use SfdClientAccount as the main interface and export SfdAccount as an alias for backward compatibility
+export type SfdAccount = SfdClientAccount;
 
 export interface SfdLoan {
   id: string;
