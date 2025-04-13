@@ -53,18 +53,24 @@ export function useCreateSfdMutation() {
           adminData: adminData ? {...adminData, password: "***"} : null
         }));
         
-        // Setting timeout for the edge function call
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seconds timeout
+        // Setting timeout for the edge function call, but not using signal as it's not supported
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error("La requête a pris trop de temps. Veuillez réessayer plus tard.")), 60000);
+        });
         
         try {
-          // Make the request to the Edge Function with proper auth token
-          const { data, error } = await supabase.functions.invoke('create-sfd-with-admin', {
-            body: requestBody,
-            signal: controller.signal
+          // Make the request to the Edge Function
+          const responsePromise = supabase.functions.invoke('create-sfd-with-admin', {
+            body: requestBody
           });
           
-          clearTimeout(timeoutId);
+          // Race between the request and the timeout
+          const { data, error } = await Promise.race([
+            responsePromise,
+            timeoutPromise.then(() => {
+              throw new Error("La requête a pris trop de temps. Veuillez réessayer plus tard.");
+            })
+          ]) as any;
 
           if (error) {
             console.error("Edge Function invocation error:", error);
@@ -90,9 +96,7 @@ export function useCreateSfdMutation() {
             admin: data.admin
           };
         } catch (fetchError: any) {
-          clearTimeout(timeoutId);
-          
-          if (fetchError.name === 'AbortError') {
+          if (fetchError.message.includes("trop de temps")) {
             throw new Error("La requête a pris trop de temps. Veuillez réessayer plus tard.");
           }
           

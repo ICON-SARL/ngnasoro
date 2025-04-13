@@ -18,7 +18,7 @@ export const SfdManagementContainer = () => {
       toast({
         title: 'Opération précédente interrompue',
         description: 'Une opération de création de SFD précédente a été interrompue. Vous pouvez réessayer.',
-        variant: 'warning',
+        variant: 'destructive', // Changed from 'warning' to 'destructive' since 'warning' is not an allowed variant
       });
     }
   }, []);
