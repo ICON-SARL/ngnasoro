@@ -9,6 +9,7 @@ import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
 import LoanDetailsPage from '@/pages/mobile/LoanDetailsPage';
 import MobileFlowPage from '@/pages/MobileFlowPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from '@/hooks/auth/AuthContext';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -23,21 +24,23 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
-          
-          <Route path="/mobile-flow/main" element={<MobileMainPage />} />
-          <Route path="/mobile-flow/transfer" element={<TransferPage />} />
-          <Route path="/mobile-flow/loans" element={<MobileLoansPage />} />
-          <Route path="/mobile-flow/my-loans" element={<MobileMyLoansPage />} />
-          <Route path="/mobile-flow/loan-details" element={<LoanDetailsPage />} />
-          <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
-          
-          <Route path="*" element={<Navigate to="/mobile-flow/main" replace />} />
-        </Routes>
-        <Toaster />
-      </Router>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
+            
+            <Route path="/mobile-flow/main" element={<MobileMainPage />} />
+            <Route path="/mobile-flow/transfer" element={<TransferPage />} />
+            <Route path="/mobile-flow/loans" element={<MobileLoansPage />} />
+            <Route path="/mobile-flow/my-loans" element={<MobileMyLoansPage />} />
+            <Route path="/mobile-flow/loan-details" element={<LoanDetailsPage />} />
+            <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
+            
+            <Route path="*" element={<Navigate to="/mobile-flow/main" replace />} />
+          </Routes>
+          <Toaster />
+        </Router>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
