@@ -48,7 +48,7 @@ export class BaseTransactionManager {
       if (error) {
         console.error('Error creating transaction:', error);
         
-        // Log the error for audit
+        // Log the error for audit with target_resource added
         await logAuditEvent({
           action: "transaction_creation",
           category: AuditLogCategory.SFD_OPERATIONS,
@@ -56,19 +56,21 @@ export class BaseTransactionManager {
           status: 'failure',
           user_id: this.userId,
           error_message: error.message,
+          target_resource: `sfd:${this.sfdId}:transactions`,
           details: { type, amount, sfd_id: this.sfdId }
         });
         
         return null;
       }
 
-      // Log success for audit
+      // Log success for audit with target_resource added
       await logAuditEvent({
         action: "transaction_creation",
         category: AuditLogCategory.SFD_OPERATIONS,
         severity: AuditLogSeverity.INFO,
         status: 'success',
         user_id: this.userId,
+        target_resource: `sfd:${this.sfdId}:transactions`,
         details: { 
           transaction_id: data.id, 
           type, 

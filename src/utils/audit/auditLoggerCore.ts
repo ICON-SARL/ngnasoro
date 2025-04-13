@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   AuditLogEntry, 
@@ -11,10 +10,47 @@ import {
 } from './auditLoggerTypes';
 import { ensureTargetResource, createAuditLog, adaptAuditLogEvent } from './auditMiddleware';
 
-export async function logAuditEvent(entry: Partial<AuditLogEntry>) {
+// Function overload signatures
+export async function logAuditEvent(entry: Partial<AuditLogEntry>): Promise<boolean>;
+export async function logAuditEvent(
+  category: AuditLogCategory,
+  action: string,
+  details?: any,
+  userId?: string,
+  severity?: AuditLogSeverity,
+  status?: 'success' | 'failure' | 'pending',
+  targetResource?: string
+): Promise<boolean>;
+
+// Implementation that handles both overloads
+export async function logAuditEvent(
+  entryOrCategory: Partial<AuditLogEntry> | AuditLogCategory,
+  actionParam?: string,
+  detailsParam?: any,
+  userIdParam?: string,
+  severityParam: AuditLogSeverity = AuditLogSeverity.INFO,
+  statusParam: 'success' | 'failure' | 'pending' = 'success',
+  targetResourceParam: string = 'system'
+): Promise<boolean> {
   try {
-    // Use our middleware to ensure all required fields are present
-    const auditEntry = createAuditLog(entry);
+    // Determine if this is the object format or individual parameters
+    let auditEntry: AuditLogEntry;
+    
+    if (typeof entryOrCategory === 'object') {
+      // First overload - using object syntax
+      auditEntry = createAuditLog(entryOrCategory);
+    } else {
+      // Second overload - using parameter syntax
+      auditEntry = createAuditLog({
+        category: entryOrCategory,
+        action: actionParam!,
+        details: detailsParam,
+        user_id: userIdParam,
+        severity: severityParam,
+        status: statusParam,
+        target_resource: targetResourceParam
+      });
+    }
     
     // Validate required fields
     if (!auditEntry.action || !auditEntry.category || !auditEntry.severity || !auditEntry.status) {
@@ -50,34 +86,6 @@ export async function logAuditEvent(entry: Partial<AuditLogEntry>) {
     return true;
   } catch (error) {
     console.error('Error logging audit event:', error);
-    return false;
-  }
-}
-
-// Overload for easier backward compatibility
-export async function logAuditEvent(
-  category: AuditLogCategory,
-  action: string,
-  details?: any,
-  userId?: string,
-  severity: AuditLogSeverity = AuditLogSeverity.INFO,
-  status: 'success' | 'failure' | 'pending' = 'success',
-  targetResource: string = 'system'
-) {
-  try {
-    const auditEntry: AuditLogEntry = {
-      user_id: userId || 'anonymous',
-      action,
-      category,
-      severity,
-      status,
-      target_resource: targetResource,
-      details
-    };
-    
-    return logAuditEvent(auditEntry);
-  } catch (error) {
-    console.error('Error in legacy logAuditEvent:', error);
     return false;
   }
 }
@@ -233,7 +241,7 @@ export async function exportAuditLogsToCSV(options?: AuditLogFilterOptions): Pro
     
     // Combine header and rows
     const csvString = [header, ...rows].join('\n');
-    const filename = `audit_logs_${new Date().toISOString().split('T')[0]}.csv`;
+    const filename = `audit_logs_${new Date().toISOString().split('T')[0]}.csv';
     
     return {
       success: true,

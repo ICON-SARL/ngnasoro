@@ -1,4 +1,3 @@
-
 import sfdApiClient from './api/sfdApiClient';
 import { supabase } from '@/integrations/supabase/client';
 import { logAuditEvent } from '@/services/transactionService';
@@ -55,13 +54,14 @@ export async function approveLoanWithTransaction(
     ]);
 
     if (result.success) {
-      // Log successful loan approval
+      // Log successful loan approval with target_resource added
       await logAuditEvent({
         action: "loan_approval",
         category: AuditLogCategory.LOAN_OPERATIONS,
         severity: AuditLogSeverity.INFO,
         status: 'success',
         user_id: approvedBy,
+        target_resource: `loan:${loanId}`,
         details: { 
           loan_id: loanId, 
           client_id: clientId,
@@ -77,13 +77,14 @@ export async function approveLoanWithTransaction(
   } catch (error: any) {
     console.error('Loan approval transaction failed:', error);
     
-    // Log failure
+    // Log failure with target_resource added
     await logAuditEvent({
       action: "loan_approval",
       category: AuditLogCategory.LOAN_OPERATIONS,
       severity: AuditLogSeverity.ERROR,
       status: 'failure',
       user_id: approvedBy,
+      target_resource: `loan:${loanId}`,
       error_message: error.message,
       details: { 
         loan_id: loanId, 
@@ -157,13 +158,14 @@ export async function disburseLoanWithTransaction(
     ]);
 
     if (result.success) {
-      // Log successful loan disbursement
+      // Log successful loan disbursement with target_resource added
       await logAuditEvent({
         action: "loan_disbursement",
         category: AuditLogCategory.LOAN_OPERATIONS,
         severity: AuditLogSeverity.INFO,
         status: 'success',
         user_id: disbursedBy,
+        target_resource: `loan:${loanId}`,
         details: { 
           loan_id: loanId, 
           client_id: clientId,
@@ -179,13 +181,14 @@ export async function disburseLoanWithTransaction(
   } catch (error: any) {
     console.error('Loan disbursement transaction failed:', error);
     
-    // Log failure
+    // Log failure with target_resource added
     await logAuditEvent({
       action: "loan_disbursement",
       category: AuditLogCategory.LOAN_OPERATIONS,
       severity: AuditLogSeverity.ERROR,
       status: 'failure',
       user_id: disbursedBy,
+      target_resource: `loan:${loanId}`,
       error_message: error.message,
       details: { 
         loan_id: loanId, 
@@ -298,13 +301,14 @@ export async function processLoanRepaymentWithTransaction(
     ]);
 
     if (result.success) {
-      // Log successful repayment
+      // Log successful repayment with target_resource added
       await logAuditEvent({
         action: "loan_repayment",
         category: AuditLogCategory.LOAN_OPERATIONS,
         severity: AuditLogSeverity.INFO,
         status: 'success',
         user_id: processedBy,
+        target_resource: `loan:${loanId}:repayment`,
         details: { 
           loan_id: loanId, 
           client_id: clientId,
@@ -330,13 +334,14 @@ export async function processLoanRepaymentWithTransaction(
   } catch (error: any) {
     console.error('Loan repayment transaction failed:', error);
     
-    // Log failure
+    // Log failure with target_resource added
     await logAuditEvent({
       action: "loan_repayment",
       category: AuditLogCategory.LOAN_OPERATIONS,
       severity: AuditLogSeverity.ERROR,
       status: 'failure',
       user_id: processedBy,
+      target_resource: `loan:${loanId}:repayment`,
       error_message: error.message,
       details: { 
         loan_id: loanId, 

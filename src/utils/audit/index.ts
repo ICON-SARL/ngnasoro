@@ -1,8 +1,9 @@
 
 // Export enums directly from auditLoggerTypes
-export { 
-  AuditLogCategory, 
-  AuditLogSeverity,
+export { AuditLogCategory, AuditLogSeverity } from './auditLoggerTypes';
+
+// Export types with the correct syntax for isolatedModules
+export type { 
   AuditLogEntry,
   AuditLogEvent,
   AuditLogFilterOptions, 
@@ -40,3 +41,17 @@ export {
   createTransactionAuditLog,
   createLoanAuditLog
 } from './auditHelpers';
+
+// Add permission failure logging function
+export function logPermissionFailure(userId: string, requiredPermission: string, resource: string) {
+  return logAuditEvent({
+    user_id: userId,
+    action: 'permission_denied',
+    category: AuditLogCategory.SECURITY,
+    severity: AuditLogSeverity.WARNING,
+    status: 'failure',
+    target_resource: resource,
+    details: { required_permission: requiredPermission },
+    error_message: `Access denied: Missing permission (${requiredPermission})`
+  });
+}
