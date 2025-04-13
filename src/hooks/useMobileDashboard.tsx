@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { dashboardApi, DashboardData } from '@/utils/dashboardApi';
@@ -10,6 +10,7 @@ export function useMobileDashboard() {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const refreshInProgress = useRef(false);
   
   const fetchDashboardData = useCallback(async (period: 'day' | 'week' | 'month' | 'year' = 'month') => {
     if (!user?.id) {
@@ -38,24 +39,24 @@ export function useMobileDashboard() {
   }, [user, toast]);
   
   const refreshDashboardData = useCallback(async () => {
-    if (!user?.id) return false;
+    if (!user?.id || refreshInProgress.current) return false;
     
     try {
+      refreshInProgress.current = true;
       const success = await dashboardApi.refreshDashboardData(user.id);
+      
       if (success) {
         await fetchDashboardData();
-        toast({
-          title: 'Dashboard Updated',
-          description: 'Your financial data has been refreshed',
-        });
         return true;
       }
       return false;
     } catch (err) {
       console.error('Error refreshing dashboard data:', err);
       return false;
+    } finally {
+      refreshInProgress.current = false;
     }
-  }, [user, fetchDashboardData, toast]);
+  }, [user, fetchDashboardData]);
   
   // Load dashboard data on component mount
   useEffect(() => {

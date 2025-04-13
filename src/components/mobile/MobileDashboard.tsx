@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useMobileDashboard } from '@/hooks/useMobileDashboard';
 import { Account } from '@/types/transactions';
 import { useToast } from '@/hooks/use-toast';
@@ -11,7 +11,7 @@ interface MobileDashboardProps {
 
 const MobileDashboard: React.FC<MobileDashboardProps> = ({ onTitleChange }) => {
   const { dashboardData, isLoading: dashboardLoading, refreshDashboardData } = useMobileDashboard();
-  const { toast } = useToast();
+  const [hasInitialized, setHasInitialized] = useState(false);
   
   const mockAccount: Account = {
     id: '1',
@@ -30,13 +30,14 @@ const MobileDashboard: React.FC<MobileDashboardProps> = ({ onTitleChange }) => {
       onTitleChange('Tableau de bord');
     }
     
-    // Refresh dashboard data
-    if (refreshDashboardData) {
+    // Only refresh dashboard data once on initial mount
+    if (!hasInitialized && refreshDashboardData) {
+      setHasInitialized(true);
       refreshDashboardData().catch(error => {
         console.error("Error refreshing dashboard data:", error);
       });
     }
-  }, [onTitleChange, refreshDashboardData]);
+  }, [onTitleChange, refreshDashboardData, hasInitialized]);
   
   const handleToggleMenu = () => {
     // Menu toggle functionality would go here

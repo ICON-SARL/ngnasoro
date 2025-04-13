@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import ContextualHeader from '@/components/mobile/ContextualHeader';
@@ -26,18 +26,44 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 }) => {
   const { dashboardData, isLoading: dashboardLoading, refreshDashboardData } = useMobileDashboard();
   const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
   
   useEffect(() => {
     console.log("MainDashboard mounted with account:", account);
-    console.log("MainDashboard transactions:", transactions);
     
-    // Rafraîchir les données du dashboard au montage
-    if (refreshDashboardData) {
-      refreshDashboardData().catch(error => {
-        console.error("Erreur lors du rafraîchissement des données:", error);
-      });
+    // Only refresh data on initial mount, not on re-renders
+    if (!hasInitialized) {
+      setHasInitialized(true);
     }
-  }, [refreshDashboardData]);
+  }, [account, hasInitialized]);
+  
+  const handleRefreshData = async () => {
+    if (isRefreshing) return;
+    
+    try {
+      setIsRefreshing(true);
+      
+      if (refreshDashboardData) {
+        await refreshDashboardData();
+        
+        toast({
+          title: "Dashboard Updated",
+          description: "Your financial data has been refreshed",
+        });
+      }
+    } catch (error) {
+      console.error("Error refreshing dashboard data:", error);
+      
+      toast({
+        title: "Update Failed",
+        description: "Could not refresh your financial data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   
   const displayTransactions = transactions && transactions.length > 0 
     ? transactions 
@@ -66,13 +92,17 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
       </div>
       
       <div className="px-4 py-2">
-        <SFDSavingsOverview account={account} />
+        <SFDSavingsOverview 
+          account={account} 
+          onRefresh={handleRefreshData}
+          isRefreshing={isRefreshing}
+        />
       </div>
       
       <TransactionList 
         transactions={formatTransactionData()}
         isLoading={transactionsLoading || dashboardLoading}
-        onViewAll={() => onAction('Loans')}
+        onViewAll={() => onAction('Transactions')}
         title="Transactions Récentes"
       />
     </div>
