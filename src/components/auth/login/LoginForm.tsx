@@ -16,9 +16,10 @@ import VoiceAssistantService from '@/utils/VoiceAssistantService';
 interface LoginFormProps {
   adminMode?: boolean;
   isSfdAdmin?: boolean;
+  onError?: (errorMessage: string | null) => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = false }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = false, onError }) => {
   const {
     email,
     setEmail,
@@ -33,6 +34,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = f
     emailSent,
     handleLogin
   } = useLoginForm(adminMode, isSfdAdmin);
+  
+  // Pass error message to parent component if onError prop is provided
+  React.useEffect(() => {
+    if (onError && errorMessage !== undefined) {
+      onError(errorMessage);
+    }
+  }, [errorMessage, onError]);
   
   const { language, voiceOverEnabled, toggleVoiceOver, t } = useLocalization();
   const voiceService = VoiceAssistantService.getInstance();
