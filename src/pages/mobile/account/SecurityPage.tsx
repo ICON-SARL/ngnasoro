@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -41,6 +40,7 @@ const SecurityPage = () => {
     newPassword: '',
     confirmPassword: '',
   });
+  const [isLoading, setIsLoading] = useState(false);
   
   // Load security settings
   useEffect(() => {
@@ -48,21 +48,24 @@ const SecurityPage = () => {
       if (!user) return;
       
       try {
-        const { data, error } = await supabase.rpc('get_security_settings', {
-          p_user_id: user.id
+        setIsLoading(true);
+        const { data, error } = await supabase.functions.invoke('user_settings', {
+          body: { action: 'security', method: 'GET' }
         });
         
         if (error) throw error;
         
-        if (data) {
+        if (data?.data) {
           setSecuritySettings({
-            twoFactorAuth: data.two_factor_auth || false,
-            biometricAuth: data.biometric_auth || false,
-            smsAuth: data.sms_auth !== undefined ? data.sms_auth : true,
+            twoFactorAuth: data.data.two_factor_auth || false,
+            biometricAuth: data.data.biometric_auth || false,
+            smsAuth: data.data.sms_auth !== undefined ? data.data.sms_auth : true,
           });
         }
       } catch (error) {
         console.error('Error fetching security settings:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -73,18 +76,22 @@ const SecurityPage = () => {
     if (!user) return;
     
     // Map from camelCase to snake_case for database
-    const mappings: Record<string, string> = {
+    const snakeCaseKeys: Record<keyof SecuritySettings, string> = {
       'twoFactorAuth': 'two_factor_auth',
       'biometricAuth': 'biometric_auth',
       'smsAuth': 'sms_auth'
     };
     
     try {
-      const { error } = await supabase.rpc('upsert_security_settings', {
-        p_user_id: user.id,
-        p_two_factor_auth: key === 'twoFactorAuth' ? value : securitySettings.twoFactorAuth,
-        p_biometric_auth: key === 'biometricAuth' ? value : securitySettings.biometricAuth,
-        p_sms_auth: key === 'smsAuth' ? value : securitySettings.smsAuth
+      setIsLoading(true);
+      const { data, error } = await supabase.functions.invoke('user_settings', {
+        body: {
+          action: 'security',
+          method: 'POST',
+          two_factor_auth: key === 'twoFactorAuth' ? value : securitySettings.twoFactorAuth,
+          biometric_auth: key === 'biometricAuth' ? value : securitySettings.biometricAuth,
+          sms_auth: key === 'smsAuth' ? value : securitySettings.smsAuth
+        }
       });
       
       if (error) throw error;
@@ -102,6 +109,8 @@ const SecurityPage = () => {
         description: 'Impossible de mettre à jour vos paramètres de sécurité',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -116,6 +125,7 @@ const SecurityPage = () => {
     }
     
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.updateUser({
         password: passwordData.newPassword,
       });
@@ -140,6 +150,8 @@ const SecurityPage = () => {
         description: error.message || 'Impossible de modifier votre mot de passe',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -281,7 +293,7 @@ const SecurityPage = () => {
             <Button 
               className="w-full" 
               onClick={handlePasswordChange}
-              disabled={!passwordData.newPassword || !passwordData.confirmPassword}
+              disabled={!passwordData.newPassword || !passwordData.confirmPassword || isLoading}
             >
               Enregistrer
             </Button>

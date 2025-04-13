@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -29,18 +28,23 @@ const NotificationsPage = () => {
   });
   
   const [language, setLanguage] = useState('fr');
+  const [isLoading, setIsLoading] = useState(false);
   
   const saveNotificationSettings = async (key: keyof NotificationSettings, value: boolean) => {
     if (!user) return;
     
     try {
+      setIsLoading(true);
       // Create a new notifications object with the updated value
       const updatedNotifications = { ...notifications, [key]: value };
       
-      const { error } = await supabase.rpc('upsert_user_settings', {
-        p_user_id: user.id,
-        p_notifications: updatedNotifications,
-        p_language: language
+      const { data, error } = await supabase.functions.invoke('user_settings', {
+        body: {
+          action: 'settings',
+          method: 'POST',
+          notifications: updatedNotifications,
+          language: language
+        }
       });
       
       if (error) throw error;
@@ -58,17 +62,23 @@ const NotificationsPage = () => {
         description: 'Impossible de sauvegarder vos préférences',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   
   const saveLanguagePreference = async (value: string) => {
-    if (!user) return;
+    if (!user || !value) return;
     
     try {
-      const { error } = await supabase.rpc('upsert_user_settings', {
-        p_user_id: user.id,
-        p_notifications: notifications,
-        p_language: value
+      setIsLoading(true);
+      const { data, error } = await supabase.functions.invoke('user_settings', {
+        body: {
+          action: 'settings',
+          method: 'POST',
+          notifications: notifications,
+          language: value
+        }
       });
       
       if (error) throw error;
@@ -86,6 +96,8 @@ const NotificationsPage = () => {
         description: 'Impossible de sauvegarder vos préférences de langue',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -95,22 +107,25 @@ const NotificationsPage = () => {
       if (!user) return;
       
       try {
-        const { data, error } = await supabase.rpc('get_user_settings', {
-          p_user_id: user.id
+        setIsLoading(true);
+        const { data, error } = await supabase.functions.invoke('user_settings', {
+          body: { action: 'settings', method: 'GET' }
         });
         
         if (error) throw error;
         
-        if (data) {
-          if (data.notifications) {
-            setNotifications(data.notifications as NotificationSettings);
+        if (data?.data) {
+          if (data.data.notifications) {
+            setNotifications(data.data.notifications as NotificationSettings);
           }
-          if (data.language) {
-            setLanguage(data.language);
+          if (data.data.language) {
+            setLanguage(data.data.language);
           }
         }
       } catch (error) {
         console.error('Error fetching user settings:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
