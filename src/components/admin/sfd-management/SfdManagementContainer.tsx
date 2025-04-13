@@ -6,6 +6,7 @@ import { SfdAdminAddDialog } from './SfdAdminAddDialog';
 import { Button } from '@/components/ui/button';
 import { Building, Plus, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { SfdManagementTable } from './SfdManagementTable';
 
 export const SfdManagementContainer = () => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -20,7 +21,7 @@ export const SfdManagementContainer = () => {
       toast({
         title: 'Opération précédente interrompue',
         description: 'Une opération de création de SFD précédente a été interrompue. Vous pouvez réessayer.',
-        variant: 'destructive', // Changed from 'warning' to 'destructive' since 'warning' is not an allowed variant
+        variant: 'destructive',
       });
     }
   }, []);
@@ -82,6 +83,8 @@ export const SfdManagementContainer = () => {
       </div>
       
       <SfdManagementStats />
+      
+      <SfdManagementTable />
       
       <SfdAddDialog 
         open={addDialogOpen} 
