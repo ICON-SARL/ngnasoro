@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Loan } from '@/types/sfdClients';
 
@@ -44,8 +45,8 @@ export const fetchLoanById = async (loanId: string): Promise<Loan | null> => {
     purpose: data.purpose,
     status: data.status || 'pending',
     created_at: data.created_at,
-    reference: data.reference || '',
-    updated_at: data.updated_at || data.created_at,
+    reference: data.reference ?? '',
+    updated_at: data.updated_at ?? data.created_at,
     subsidy_amount: data.subsidy_amount || 0,
     subsidy_rate: data.subsidy_rate || 0
   };
@@ -94,8 +95,8 @@ export const getSfdLoans = async (): Promise<Loan[]> => {
   return data.map(loan => ({
     ...loan,
     client_name: loan.sfd_clients?.full_name || 'Unknown Client',
-    reference: loan.reference || '',
-    updated_at: loan.updated_at || loan.created_at,
+    reference: loan.reference ?? '',
+    updated_at: loan.updated_at ?? loan.created_at,
     subsidy_amount: loan.subsidy_amount || 0,
     subsidy_rate: loan.subsidy_rate || 0
   })) as Loan[];

@@ -22,3 +22,83 @@ export interface Loan {
   reference?: string;  // Explicitly add the optional reference property
   updated_at?: string;  // Explicitly add the optional updated_at property
 }
+
+export interface SfdClient {
+  id: string;
+  user_id?: string;
+  sfd_id: string;
+  status: string;
+  full_name: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  id_number?: string;
+  id_type?: string;
+  kyc_level?: number;
+  validated_at?: string;
+  validated_by?: string;
+  created_at: string;
+  notes?: string;
+}
+
+export interface SfdLoan {
+  id: string;
+  amount: number;
+  remainingAmount: number;
+  nextDueDate: string;
+  isLate: boolean;
+}
+
+export interface ClientDocument {
+  id: string;
+  client_id: string;
+  document_type: string;
+  document_url: string;
+  uploaded_at: string;
+  verified?: boolean;
+  verified_at?: string;
+  verified_by?: string;
+}
+
+export interface ClientActivity {
+  id: string;
+  client_id: string;
+  activity_type: string;
+  description?: string;
+  performed_at?: string;
+  performed_by?: string;
+}
+
+export interface LoanPayment {
+  id: string;
+  loan_id: string;
+  amount: number;
+  payment_method: string;
+  status: string;
+  payment_date: string;
+  transaction_id?: string;
+  created_at: string;
+}
+
+export interface SfdSubsidy {
+  id: string;
+  sfd_id: string;
+  amount: number;
+  used_amount: number;
+  remaining_amount: number;
+  status: string;
+  allocated_by: string;
+  allocated_at: string;
+  end_date?: string;
+  description?: string;
+}
+
+export interface ClientNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  created_at: string;
+  read: boolean;
+  action_link?: string;
+}
