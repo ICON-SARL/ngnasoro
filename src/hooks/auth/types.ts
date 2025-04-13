@@ -30,7 +30,7 @@ export interface AuthContextProps {
   userRole: UserRole;
   signIn: (email: string, password: string) => Promise<{ error: any; data?: any }>;
   signOut: () => Promise<{ error: any }>;
-  signUp?: (email: string, password: string, metadata?: any) => Promise<{ error: any }>;
+  signUp?: (email: string, password: string, metadata?: any) => Promise<{ error: any; data?: any }>;
   refreshSession: () => Promise<void>;
   isAdmin: boolean;
   isSfdAdmin: boolean;
@@ -47,10 +47,12 @@ export interface AssociateSfdParams {
   userId: string;
   sfdId: string;
   isDefault?: boolean;
+  makeDefault?: boolean;
   role?: string;
 }
 
 export interface AssociateSfdResult {
   success: boolean;
   error?: string;
+  userSfd?: any;
 }

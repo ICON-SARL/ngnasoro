@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 import { logAuditEvent } from '@/utils/audit/auditLogger';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { User, AuthContextProps, UserRole, Role } from './types';
+import { createUserFromSupabaseUser } from './authUtils';
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
@@ -30,7 +32,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         setSession(data.session);
-        setUser(data.session?.user as User || null);
+        if (data.session?.user) {
+          const transformedUser = createUserFromSupabaseUser(data.session.user);
+          setUser(transformedUser);
+        } else {
+          setUser(null);
+        }
         
         // Debug log
         if (data.session?.user) {
@@ -53,7 +60,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        setUser(newSession?.user as User || null);
+        if (newSession?.user) {
+          const transformedUser = createUserFromSupabaseUser(newSession.user);
+          setUser(transformedUser);
+        } else {
+          setUser(null);
+        }
+        
         setSession(newSession);
         setLoading(false);
         
@@ -203,7 +216,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       setSession(data.session);
-      setUser(data.session?.user as User || null);
+      if (data.session?.user) {
+        const transformedUser = createUserFromSupabaseUser(data.session.user);
+        setUser(transformedUser);
+      } else {
+        setUser(null);
+      }
     } catch (error) {
       console.error('Error refreshing session:', error);
     }

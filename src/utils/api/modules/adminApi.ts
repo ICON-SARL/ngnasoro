@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/hooks/auth/types';
 import { AssociateSfdParams, AssociateSfdResult } from '@/hooks/auth/types';
@@ -21,7 +22,7 @@ export const adminApi = {
       
       if (existingAssoc) {
         // Association already exists, update is_default if needed
-        if (params.makeDefault) {
+        if (params.makeDefault || params.isDefault) {
           // First, set all associations to false
           const { error: updateAllError } = await supabase
             .from('user_sfds')
@@ -53,7 +54,7 @@ export const adminApi = {
       }
       
       // Create new association
-      if (params.makeDefault) {
+      if (params.makeDefault || params.isDefault) {
         // First, set all associations to false
         const { error: updateAllError } = await supabase
           .from('user_sfds')
@@ -72,7 +73,7 @@ export const adminApi = {
         .insert({
           user_id: params.userId,
           sfd_id: params.sfdId,
-          is_default: params.makeDefault || false
+          is_default: params.makeDefault || params.isDefault || false
         })
         .select()
         .single();
