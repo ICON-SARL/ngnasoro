@@ -19,6 +19,11 @@ import MobileWithdrawPage from '@/pages/mobile/MobileWithdrawPage';
 import MobileTransactionsPage from '@/pages/mobile/MobileTransactionsPage';
 import MobileAccountSettingsPage from '@/pages/mobile/MobileAccountSettingsPage';
 import MobileFlowPage from '@/pages/MobileFlowPage';
+import AdminLoginPage from '@/pages/AdminLoginPage';
+import ClientLoginPage from '@/pages/ClientLoginPage';
+import AuthRedirectPage from '@/pages/AuthRedirectPage';
+import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
+import UsersManagementPage from '@/pages/UsersManagementPage';
 
 const queryClient = new QueryClient();
 
@@ -28,9 +33,18 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <Routes>
-            {/* Public Routes */}
-            <Route path="/auth" element={<LoginPage />} />
+            {/* Authentication Routes */}
+            <Route path="/login" element={<AuthRedirectPage />} />
+            <Route path="/auth" element={<ClientLoginPage />} />
+            <Route path="/admin/auth" element={<AdminLoginPage />} />
+            <Route path="/sfd/auth" element={<SfdAuthUI />} />
             <Route path="/register" element={<RegisterPage />} />
+            
+            {/* Admin Dashboard Routes */}
+            <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
+            <Route path="/users-management" element={<UsersManagementPage />} />
+            
+            {/* Public Routes */}
             <Route path="/loans" element={<ClientLoansPage />} />
             <Route path="/loans/apply" element={<LoanApplicationPage />} />
             <Route path="/profile" element={<ProfilePage />} />
@@ -49,11 +63,11 @@ function App() {
             <Route path="/mobile-flow/transactions" element={<MobileTransactionsPage />} />
             <Route path="/mobile-flow/account-settings" element={<MobileAccountSettingsPage />} />
             
-            {/* Redirect root to mobile flow */}
-            <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
+            {/* Redirect root to login redirect page */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
             
             {/* Catch-all redirect */}
-            <Route path="*" element={<Navigate to="/mobile-flow/main" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
           <Toaster />
         </AuthProvider>
