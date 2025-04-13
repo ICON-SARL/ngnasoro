@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/hooks/useAuth';
 import { Toaster } from '@/components/ui/toaster';
@@ -18,6 +18,7 @@ import MobileDepositPage from '@/pages/mobile/MobileDepositPage';
 import MobileWithdrawPage from '@/pages/mobile/MobileWithdrawPage';
 import MobileTransactionsPage from '@/pages/mobile/MobileTransactionsPage';
 import MobileAccountSettingsPage from '@/pages/mobile/MobileAccountSettingsPage';
+import MobileFlowPage from '@/pages/MobileFlowPage';
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <Routes>
+            {/* Public Routes */}
             <Route path="/auth" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/loans" element={<ClientLoansPage />} />
@@ -35,6 +37,8 @@ function App() {
             <Route path="/sfd-selector" element={<SfdSelectorPage />} />
             
             {/* Mobile Flow Routes */}
+            <Route path="/mobile-flow" element={<MobileFlowPage />} />
+            <Route path="/mobile-flow/main" element={<MobileFlowPage />} />
             <Route path="/mobile-flow/loans" element={<MobileLoansPage />} />
             <Route path="/mobile-flow/my-loans" element={<MobileMyLoansPage />} />
             <Route path="/mobile-flow/savings" element={<MobileSavingsPage />} />
@@ -43,6 +47,9 @@ function App() {
             <Route path="/mobile-flow/withdraw" element={<MobileWithdrawPage />} />
             <Route path="/mobile-flow/transactions" element={<MobileTransactionsPage />} />
             <Route path="/mobile-flow/account-settings" element={<MobileAccountSettingsPage />} />
+            
+            {/* Redirect root to mobile flow */}
+            <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
           </Routes>
           <Toaster />
         </AuthProvider>
