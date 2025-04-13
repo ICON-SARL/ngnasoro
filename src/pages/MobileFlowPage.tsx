@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import ClientLoanStatus from '@/components/ClientLoanStatus';
 import MobileProfilePage from '@/components/mobile/MobileProfilePage';
+import FundsPage from '@/components/mobile/funds/FundsPage';
 
 const MobileFlowPage = () => {
   const { user } = useAuth();
@@ -49,12 +50,7 @@ const MobileFlowPage = () => {
           />
           <Route 
             path="/savings" 
-            element={
-              <div className="p-4">
-                <h2 className="text-xl font-bold mb-4">Mes fonds</h2>
-                <p>Fonctionnalité en développement</p>
-              </div>
-            }
+            element={<FundsPage />}
           />
           <Route 
             path="/profile/*" 

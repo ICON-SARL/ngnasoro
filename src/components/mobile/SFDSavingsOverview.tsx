@@ -24,12 +24,8 @@ const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({
     console.log("SFDSavingsOverview mounted with account:", account);
   }, [account]);
   
-  const handleDeposit = () => {
-    navigate('/mobile-flow/secure-payment');
-  };
-  
-  const handleWithdrawal = () => {
-    navigate('/mobile-flow/secure-payment?withdrawal=true');
+  const handleNavigateToFunds = () => {
+    navigate('/mobile-flow/savings');
   };
   
   return (
@@ -59,17 +55,10 @@ const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({
         <div className="flex justify-center space-x-3 mt-6">
           <Button 
             className="rounded-full py-2 px-5 flex items-center bg-[#0D6A51]/10 hover:bg-[#0D6A51]/20 text-[#0D6A51] transition-colors shadow-sm"
-            onClick={handleDeposit}
+            onClick={handleNavigateToFunds}
           >
-            <ArrowDown className="h-4 w-4 mr-2" />
-            Dépôt
-          </Button>
-          <Button 
-            className="rounded-full py-2 px-5 flex items-center bg-[#0D6A51]/10 hover:bg-[#0D6A51]/20 text-[#0D6A51] transition-colors shadow-sm"
-            onClick={handleWithdrawal}
-          >
-            <ArrowUp className="h-4 w-4 mr-2" />
-            Retrait
+            <ArrowDownUp className="h-4 w-4 mr-2" />
+            Gérer mes fonds
           </Button>
         </div>
       </CardContent>
