@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CreditCard } from 'lucide-react';
 
 interface TabHeaderProps {
   onBack: () => void;
@@ -10,14 +10,20 @@ interface TabHeaderProps {
 
 const TabHeader: React.FC<TabHeaderProps> = ({ onBack, isWithdrawal = false }) => {
   return (
-    <div className="p-4 flex items-center justify-between border-b">
-      <Button variant="ghost" onClick={onBack} className="p-1">
+    <div className="bg-white border-b p-4 flex items-center gap-3">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={onBack}
+      >
         <ArrowLeft className="h-5 w-5" />
       </Button>
-      <h1 className="text-lg font-bold">
-        {isWithdrawal ? "Retrait de fonds" : "Remboursement de prêt"}
-      </h1>
-      <div className="w-5"></div>
+      <div className="flex items-center gap-2">
+        <CreditCard className="h-5 w-5 text-[#0D6A51]" />
+        <h1 className="text-xl font-semibold">
+          {isWithdrawal ? "Retrait" : "Paiement"}
+        </h1>
+      </div>
     </div>
   );
 };

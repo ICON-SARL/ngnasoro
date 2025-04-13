@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Check, Shield } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Shield, Lock, Check } from 'lucide-react';
 
 interface SecurityFeaturesProps {
   isWithdrawal?: boolean;
@@ -8,54 +9,37 @@ interface SecurityFeaturesProps {
 
 export const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ isWithdrawal = false }) => {
   return (
-    <div className="mt-6 pt-6 border-t border-gray-200">
-      <h3 className="text-sm font-medium mb-4 flex items-center">
-        <Shield className="h-4 w-4 mr-2 text-[#0D6A51]" />
-        {isWithdrawal ? "Sécurité des retraits" : "Sécurité des remboursements"}
-      </h3>
-      
-      <div className="space-y-3">
-        <div className="flex items-start space-x-2">
-          <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-            <Check className="h-3 w-3 text-green-600" />
-          </div>
-          <div>
-            <p className="text-sm font-medium">
-              {isWithdrawal ? "Retrait sécurisé" : "Remboursement sécurisé"}
-            </p>
-            <p className="text-xs text-gray-500">
-              Vos données de paiement sont cryptées avec le niveau de sécurité bancaire
-            </p>
-          </div>
-        </div>
+    <Card className="border-0 shadow-sm">
+      <CardContent className="p-4">
+        <h3 className="font-medium mb-3 flex items-center gap-1.5">
+          <Shield className="h-4 w-4 text-green-600" />
+          Fonctionnalités de sécurité
+        </h3>
         
-        <div className="flex items-start space-x-2">
-          <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-            <Check className="h-3 w-3 text-green-600" />
-          </div>
-          <div>
-            <p className="text-sm font-medium">Confirmation immédiate</p>
-            <p className="text-xs text-gray-500">
-              {isWithdrawal 
-                ? "Votre retrait est enregistré instantanément dans votre compte" 
-                : "Votre remboursement est enregistré instantanément dans votre compte de prêt"
+        <ul className="space-y-2 text-sm">
+          <li className="flex items-start gap-2">
+            <Check className="h-4 w-4 text-green-600 mt-0.5" />
+            <span>
+              Transaction sécurisée avec cryptage de bout en bout
+            </span>
+          </li>
+          <li className="flex items-start gap-2">
+            <Check className="h-4 w-4 text-green-600 mt-0.5" />
+            <span>
+              {isWithdrawal
+                ? "Vérification d'identité multi-facteurs pour les retraits"
+                : "Confirmation de transaction multi-facteurs"
               }
-            </p>
-          </div>
-        </div>
-        
-        <div className="flex items-start space-x-2">
-          <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-            <Check className="h-3 w-3 text-green-600" />
-          </div>
-          <div>
-            <p className="text-sm font-medium">Protection anti-fraude</p>
-            <p className="text-xs text-gray-500">
-              Toutes les transactions sont contrôlées par notre système anti-fraude 24/7
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+            </span>
+          </li>
+          <li className="flex items-start gap-2">
+            <Check className="h-4 w-4 text-green-600 mt-0.5" />
+            <span>
+              Suivi en temps réel des {isWithdrawal ? "retraits" : "paiements"}
+            </span>
+          </li>
+        </ul>
+      </CardContent>
+    </Card>
   );
 };

@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { LucideIcon } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { LucideIcon } from 'lucide-react';
 
 interface PaymentOptionCardProps {
   title: string;
@@ -13,7 +12,7 @@ interface PaymentOptionCardProps {
   onClick: () => void;
 }
 
-const PaymentOptionCard: React.FC<PaymentOptionCardProps> = ({
+export const PaymentOptionCard: React.FC<PaymentOptionCardProps> = ({
   title,
   description,
   icon: Icon,
@@ -22,25 +21,19 @@ const PaymentOptionCard: React.FC<PaymentOptionCardProps> = ({
   onClick
 }) => {
   return (
-    <Card className="border hover:border-teal-500 transition-colors cursor-pointer">
-      <CardContent className="p-4" onClick={onClick}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className={`h-10 w-10 rounded-full ${iconBgClass} flex items-center justify-center mr-3`}>
-              <Icon className={`h-5 w-5 ${iconColorClass}`} />
-            </div>
-            <div>
-              <h4 className="font-medium">{title}</h4>
-              <p className="text-xs text-gray-500">{description}</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" className="text-teal-500">
-            Choisir
-          </Button>
+    <Card 
+      className="border border-gray-200 shadow-sm cursor-pointer hover:border-gray-300 transition-all"
+      onClick={onClick}
+    >
+      <CardContent className="p-4 flex items-center gap-3">
+        <div className={`p-2 rounded-full ${iconBgClass}`}>
+          <Icon className={`h-5 w-5 ${iconColorClass}`} />
+        </div>
+        <div>
+          <h4 className="font-medium mb-0.5">{title}</h4>
+          <p className="text-sm text-gray-500">{description}</p>
         </div>
       </CardContent>
     </Card>
   );
 };
-
-export default PaymentOptionCard;

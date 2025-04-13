@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building, Phone } from 'lucide-react';
-import { SFDAccountTab } from './SFDAccountTab';
+import { Building, Smartphone } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { MobileMoneyTab } from './MobileMoneyTab';
-import { SfdAccount } from '@/hooks/sfd/types';
+import { AgencyTab } from './AgencyTab';
+import { Progress } from '@/components/ui/progress';
 
 interface PaymentMethodTabsProps {
   paymentMethod: string;
@@ -13,50 +14,60 @@ interface PaymentMethodTabsProps {
   onPaymentMethodChange: (value: string) => void;
   handlePayment: () => void;
   isWithdrawal?: boolean;
-  selectedSfdAccount?: SfdAccount | null;
-  syncedAccountsList?: SfdAccount[];
 }
 
-export const PaymentMethodTabs: React.FC<PaymentMethodTabsProps> = ({
-  paymentMethod,
+export const PaymentMethodTabs: React.FC<PaymentMethodTabsProps> = ({ 
+  paymentMethod, 
   balanceStatus,
   paymentStatus,
   onPaymentMethodChange,
   handlePayment,
-  isWithdrawal = false,
-  selectedSfdAccount,
-  syncedAccountsList = []
+  isWithdrawal = false
 }) => {
   return (
-    <Tabs defaultValue={paymentMethod} onValueChange={onPaymentMethodChange} className="w-full">
+    <Tabs value={paymentMethod} onValueChange={onPaymentMethodChange}>
       <TabsList className="grid grid-cols-2 mb-4">
         <TabsTrigger 
           value="sfd" 
-          disabled={balanceStatus === 'insufficient'}
-          className={balanceStatus === 'insufficient' ? 'opacity-50' : ''}
+          className="flex items-center gap-1.5"
+          disabled={paymentStatus === 'pending'}
         >
-          <Building className="h-4 w-4 mr-2" />
-          Compte SFD
+          <Building className="h-4 w-4" />
+          SFD
         </TabsTrigger>
-        <TabsTrigger value="mobile">
-          <Phone className="h-4 w-4 mr-2" />
+        <TabsTrigger 
+          value="mobile" 
+          className="flex items-center gap-1.5"
+          disabled={paymentStatus === 'pending'}
+        >
+          <Smartphone className="h-4 w-4" />
           Mobile Money
         </TabsTrigger>
       </TabsList>
       
-      <TabsContent value="sfd" className="space-y-4">
-        <SFDAccountTab 
-          paymentStatus={paymentStatus} 
+      {paymentStatus === 'pending' && (
+        <div className="space-y-2 my-4">
+          <Progress value={paymentStatus === 'pending' ? 50 : 100} className="h-2" />
+          <p className="text-sm text-center text-gray-600">
+            {isWithdrawal 
+              ? "Traitement de votre retrait..." 
+              : "Traitement de votre paiement..."
+            }
+          </p>
+        </div>
+      )}
+      
+      <TabsContent value="sfd">
+        <AgencyTab 
+          paymentStatus={paymentStatus}
           handlePayment={handlePayment}
           isWithdrawal={isWithdrawal}
-          selectedSfdAccount={selectedSfdAccount}
-          syncedAccountsList={syncedAccountsList}
         />
       </TabsContent>
       
-      <TabsContent value="mobile" className="space-y-4">
+      <TabsContent value="mobile">
         <MobileMoneyTab 
-          paymentStatus={paymentStatus} 
+          paymentStatus={paymentStatus}
           handlePayment={handlePayment}
           isWithdrawal={isWithdrawal}
         />

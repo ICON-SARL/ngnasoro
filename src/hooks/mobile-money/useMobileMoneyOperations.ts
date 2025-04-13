@@ -1,162 +1,143 @@
 
-import { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { MobileMoneyOperationsHook } from './types';
-import { useQRCodeGeneration } from './useQRCodeGeneration';
-import { useMobileMoneyPayment } from './useMobileMoneyPayment';
-import { useMobileMoneyWithdrawal } from './useMobileMoneyWithdrawal';
+import { mobileMoneyApi, MobileMoneyResponse } from '@/utils/mobileMoneyApi';
+
+export interface MobileMoneyOperationsHook {
+  processPayment: (phoneNumber: string, amount: number, provider: string, loanId?: string) => Promise<boolean>;
+  processWithdrawal: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
+  isProcessingPayment: boolean;
+  isProcessingWithdrawal: boolean;
+  error: string | null;
+  mobileMoneyProviders: { id: string; name: string; }[];
+}
 
 export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isProcessingWithdrawal, setIsProcessingWithdrawal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Use existing hooks
-  const {
-    qrCodeData,
-    isGenerating: isGeneratingQRCode,
-    generateQRCode,
-    resetQRCode,
-    error: qrCodeError
-  } = useQRCodeGeneration();
-  
-  const {
-    isProcessing: isProcessingPayment,
-    processPayment: processRawPayment,
-    error: paymentError
-  } = useMobileMoneyPayment();
-  
-  const {
-    isProcessing: isProcessingWithdrawal,
-    processWithdrawal: processRawWithdrawal,
-    error: withdrawalError
-  } = useMobileMoneyWithdrawal();
-
-  // Define mobile money providers
+  // Available mobile money providers
   const mobileMoneyProviders = [
     { id: 'orange', name: 'Orange Money' },
-    { id: 'mtn', name: 'MTN Money' },
+    { id: 'mtn', name: 'MTN Mobile Money' },
     { id: 'moov', name: 'Moov Money' }
   ];
 
-  // Fix the error by using useEffect instead of useState for error handling
-  useEffect(() => {
-    if (qrCodeError) setError(qrCodeError);
-    else if (paymentError) setError(paymentError);
-    else if (withdrawalError) setError(withdrawalError);
-    else setError(null);
-  }, [qrCodeError, paymentError, withdrawalError]);
-
-  // Enhanced payment function that can handle loan repayments
   const processPayment = async (
-    phoneNumber: string,
-    amount: number,
+    phoneNumber: string, 
+    amount: number, 
     provider: string,
     loanId?: string
   ): Promise<boolean> => {
-    if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour effectuer cette opération",
-        variant: "destructive",
-      });
-      return false;
-    }
+    setIsProcessingPayment(true);
+    setError(null);
     
     try {
-      // Process the mobile money payment
-      const paymentSuccess = await processRawPayment(phoneNumber, amount, provider);
-      
-      if (paymentSuccess && loanId) {
-        // If payment successful and it's a loan repayment, register the payment
-        try {
-          const { error: repaymentError } = await supabase.functions.invoke('process-repayment', {
-            body: {
-              userId: user.id,
-              loanId: loanId,
-              amount: amount,
-              paymentMethod: 'mobile_money'
-            }
-          });
+      // First check authorization if this is a loan payment
+      if (loanId) {
+        const { data: userData } = await supabase.auth.getUser();
+        if (!userData.user) {
+          throw new Error('User not authenticated');
+        }
+        
+        // Get active SFD
+        const { data: sfdData } = await supabase
+          .from('user_sfds')
+          .select('sfd_id')
+          .eq('user_id', userData.user.id)
+          .eq('is_default', true)
+          .single();
           
-          if (repaymentError) throw repaymentError;
-          
-          toast({
-            title: "Remboursement enregistré",
-            description: "Votre remboursement a été enregistré avec succès",
-          });
-        } catch (error: any) {
-          console.error('Error registering loan repayment:', error);
-          toast({
-            title: "Paiement effectué mais erreur d'enregistrement",
-            description: "Le paiement a été effectué mais une erreur est survenue lors de l'enregistrement du remboursement",
-            variant: "destructive",
-          });
+        if (!sfdData) {
+          throw new Error('No active SFD found');
+        }
+        
+        // Authorize with the edge function
+        const { data: authData, error: authError } = await supabase.functions.invoke('mobile-money-authorization', {
+          body: {
+            sfdId: sfdData.sfd_id,
+            loanId,
+            action: 'payment',
+            amount
+          }
+        });
+        
+        if (authError || !authData?.authorized) {
+          throw new Error(authData?.message || 'Payment not authorized by SFD');
         }
       }
       
-      return paymentSuccess;
-    } catch (error: any) {
-      setError(error.message || "Une erreur est survenue lors du traitement du paiement");
+      // If we got here, authorization passed or wasn't needed
+      const response = await mobileMoneyApi.initiatePayment(phoneNumber, amount, provider);
+      
+      return response.success;
+    } catch (err: any) {
+      setError(err.message || 'An error occurred processing the payment');
       return false;
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
-  // Enhanced withdrawal function with additional logging
   const processWithdrawal = async (
-    phoneNumber: string,
-    amount: number,
+    phoneNumber: string, 
+    amount: number, 
     provider: string
   ): Promise<boolean> => {
-    if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour effectuer cette opération",
-        variant: "destructive",
-      });
-      return false;
-    }
+    setIsProcessingWithdrawal(true);
+    setError(null);
     
     try {
-      // Process the withdrawal through mobile money
-      const success = await processRawWithdrawal(phoneNumber, amount, provider);
-      
-      if (success) {
-        // Log the withdrawal in our system
-        await supabase.from('transactions').insert({
-          user_id: user.id,
-          type: 'withdrawal',
-          amount: -amount, // Negative amount for withdrawals
-          status: 'success',
-          payment_method: 'mobile_money',
-          description: `Retrait via ${provider}`,
-          name: 'Retrait Mobile Money'
-        });
+      // For withdrawals, we always need authorization
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        throw new Error('User not authenticated');
       }
       
-      return success;
-    } catch (error: any) {
-      setError(error.message || "Une erreur est survenue lors du traitement du retrait");
+      // Get active SFD
+      const { data: sfdData } = await supabase
+        .from('user_sfds')
+        .select('sfd_id')
+        .eq('user_id', userData.user.id)
+        .eq('is_default', true)
+        .single();
+        
+      if (!sfdData) {
+        throw new Error('No active SFD found');
+      }
+      
+      // Authorize with the edge function
+      const { data: authData, error: authError } = await supabase.functions.invoke('mobile-money-authorization', {
+        body: {
+          sfdId: sfdData.sfd_id,
+          action: 'withdrawal',
+          amount
+        }
+      });
+      
+      if (authError || !authData?.authorized) {
+        throw new Error(authData?.message || 'Withdrawal not authorized by SFD');
+      }
+      
+      // If we got here, authorization passed
+      const response = await mobileMoneyApi.initiateWithdrawal(phoneNumber, amount, provider);
+      
+      return response.success;
+    } catch (err: any) {
+      setError(err.message || 'An error occurred processing the withdrawal');
       return false;
+    } finally {
+      setIsProcessingWithdrawal(false);
     }
   };
 
-  // Combined isProcessing property
-  const isProcessing = isProcessingPayment || isProcessingWithdrawal;
-
   return {
+    processPayment,
+    processWithdrawal,
     isProcessingPayment,
     isProcessingWithdrawal,
     error,
-    processPayment,
-    processWithdrawal,
-    qrCodeData,
-    isGeneratingQRCode,
-    generateQRCode,
-    resetQRCode,
-    mobileMoneyProviders,
-    isProcessing
+    mobileMoneyProviders
   };
 }

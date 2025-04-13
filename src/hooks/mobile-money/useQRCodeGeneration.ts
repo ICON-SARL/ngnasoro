@@ -1,89 +1,80 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { QRCodeResponse } from '@/utils/mobileMoneyApi';
 
 export interface QRCodeGenerationHook {
+  generateQRCode: (amount: number, type: 'deposit' | 'withdrawal' | 'loan_payment') => Promise<QRCodeResponse>;
   qrCodeData: string | null;
   isGenerating: boolean;
   error: string | null;
-  generateQRCode: (amount: number, loanId?: string, isWithdrawal?: boolean) => Promise<string | null>;
-  resetQRCode: () => void;
+  transactionId: string | null;
+  expiresAt: string | null;
 }
 
 export function useQRCodeGeneration(): QRCodeGenerationHook {
   const [qrCodeData, setQRCodeData] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-  const { user } = useAuth();
+  const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
 
   const generateQRCode = async (
     amount: number, 
-    loanId?: string,
-    isWithdrawal: boolean = false
-  ): Promise<string | null> => {
-    if (!amount || amount <= 0) {
-      setError("Le montant doit être supérieur à zéro");
-      return null;
-    }
-    
-    if (!user) {
-      setError("Utilisateur non authentifié");
-      return null;
-    }
-    
+    type: 'deposit' | 'withdrawal' | 'loan_payment',
+    loanId?: string
+  ): Promise<QRCodeResponse> => {
     setIsGenerating(true);
     setError(null);
     
     try {
-      // Call the edge function to generate a QR code
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-qr-code', {
         body: {
-          userId: user.id,
-          amount: amount,
-          type: isWithdrawal ? 'withdrawal' : loanId ? 'loan_payment' : 'deposit',
-          reference: loanId ? `loan-${loanId}` : undefined,
-          loanId: loanId
+          userId: userData.user.id,
+          amount,
+          type,
+          loanId
         }
       });
       
       if (error) throw error;
       
-      if (!data || !data.success || !data.qrData) {
-        throw new Error("Échec de génération du code QR");
+      if (data && data.success) {
+        setQRCodeData(data.qrData);
+        setTransactionId(data.transactionId);
+        setExpiresAt(data.expiresAt);
+        
+        return {
+          success: true,
+          qrCodeData: data.qrData,
+          transactionId: data.transactionId,
+          expiration: data.expiresAt
+        };
+      } else {
+        throw new Error(data?.error || 'Failed to generate QR code');
       }
-      
-      setQRCodeData(data.qrData);
-      
-      return data.qrData;
-    } catch (error: any) {
-      console.error('Error generating QR code:', error);
-      setError(error.message || "Erreur lors de la génération du QR code");
-      
-      toast({
-        title: "Erreur",
-        description: error.message || "Impossible de générer le code QR",
-        variant: "destructive",
-      });
-      
-      return null;
+    } catch (err: any) {
+      setError(err.message || 'An error occurred generating the QR code');
+      return {
+        success: false,
+        error: err.message || 'Failed to generate QR code'
+      };
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const resetQRCode = () => {
-    setQRCodeData(null);
-    setError(null);
-  };
-
   return {
+    generateQRCode,
     qrCodeData,
     isGenerating,
     error,
-    generateQRCode,
-    resetQRCode
+    transactionId,
+    expiresAt
   };
 }
