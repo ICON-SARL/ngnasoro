@@ -4,9 +4,10 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth';
 import { Role } from '@/utils/audit/auditPermissions';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
+import { UserRole } from '@/utils/auth/roleTypes';
 
 interface RoleGuardProps {
-  requiredRole: Role;
+  requiredRole: UserRole | string;
   children: React.ReactNode;
 }
 
@@ -35,7 +36,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     // Handle special case where SFD_ADMIN should match sfd_admin role
     const permitted = userRole === requiredRole || 
       (requiredRole === 'sfd_admin' && userRole === 'sfd_admin') ||
-      (requiredRole === Role.SFD_ADMIN && userRole === 'sfd_admin') ||
+      (requiredRole === UserRole.SFD_ADMIN && userRole === 'sfd_admin') ||
       (requiredRole === 'admin' && userRole === 'admin');
     
     setHasAccess(permitted);
