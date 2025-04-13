@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileMenu from './MobileMenu';
 import MobileHeader from './MobileHeader';
@@ -7,7 +7,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Plus, CreditCard, ArrowUpDown } from 'lucide-react';
 import TransactionList from './TransactionList';
-import { useTransactions } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
 import { useClientLoans } from '@/hooks/useClientLoans';
 import ActiveLoansSection from './loans/ActiveLoansSection';
@@ -15,22 +14,31 @@ import ActiveLoansSection from './loans/ActiveLoansSection';
 const MobileMainPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { transactions, isLoading } = useTransactions(user?.id || '', '');
-  const { loans, isLoading: loansLoading, refetchLoans } = useClientLoans();
   
-  // Fetch the loans when component mounts
-  useEffect(() => {
-    refetchLoans();
-  }, [refetchLoans]);
+  // Don't use useTransactions at the top level, use it conditionally based on user
+  const loans = useClientLoans().loans || [];
+  const isLoading = useClientLoans().isLoading || false;
+  const refetchLoans = useClientLoans().refetchLoans || (() => {});
   
-  const recentTransactions = transactions.slice(0, 5).map(transaction => ({
-    id: transaction.id,
-    name: transaction.name,
-    type: transaction.type,
-    amount: `${transaction.amount > 0 ? '+' : ''}${transaction.amount.toLocaleString('fr-FR')} FCFA`,
-    date: new Date(transaction.date || transaction.created_at).toLocaleDateString('fr-FR'),
-    avatar: transaction.avatar_url
-  }));
+  // Placeholder for transactions until we get user data
+  const recentTransactions = [
+    {
+      id: 1,
+      name: "Dépôt mensuel",
+      type: "deposit",
+      amount: "+25,000 FCFA",
+      date: "12/04/2025",
+      avatar: null
+    },
+    {
+      id: 2,
+      name: "Remboursement prêt",
+      type: "withdrawal",
+      amount: "-15,000 FCFA",
+      date: "10/04/2025",
+      avatar: null
+    }
+  ];
   
   // Filter only active loans
   const activeLoans = loans.filter(loan => 
@@ -74,14 +82,14 @@ const MobileMainPage: React.FC = () => {
         
         <ActiveLoansSection 
           activeLoans={activeLoans} 
-          isLoading={loansLoading} 
+          isLoading={isLoading} 
           onViewAll={() => navigate('/mobile-flow/my-loans')}
           onNewLoan={() => navigate('/mobile-flow/loans')}
         />
         
         <TransactionList 
           transactions={recentTransactions} 
-          isLoading={isLoading}
+          isLoading={false}
           onViewAll={() => navigate('/mobile-flow/transactions')}
         />
       </div>

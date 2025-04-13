@@ -2,7 +2,6 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import MobileNavigation from '@/components/MobileNavigation';
 import { useToast } from '@/hooks/use-toast';
 import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
 import ProfilePage from '@/components/mobile/profile/ProfilePage';
@@ -120,8 +119,6 @@ const MobileFlowPage: React.FC = () => {
         {/* Redirection par défaut vers le dashboard principal */}
         <Route path="*" element={<Navigate to="main" replace />} />
       </Routes>
-
-      <MobileNavigation />
     </div>
   );
 };
