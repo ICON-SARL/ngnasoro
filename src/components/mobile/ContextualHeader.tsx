@@ -1,34 +1,25 @@
 
 import React from 'react';
-import { useAuth } from '@/hooks/auth';
-import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+import { Menu } from 'lucide-react';
 
 const ContextualHeader = () => {
-  const { user } = useAuth();
-  const { activeSfdId, sfdData } = useSfdDataAccess();
-  
-  const activeSFD = sfdData.find(sfd => sfd.id === activeSfdId);
-  const activeSFDName = activeSFD?.name || 'SFD Primaire';
-
   return (
-    <div className="flex flex-col py-4">
-      <div className="flex items-center">
-        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mr-3 shadow-md">
-          <img 
-            src="/lovable-uploads/2941965d-fd44-4815-bb4a-2c77549e1380.png" 
-            alt="Logo SFD" 
-            className="h-10 w-10 object-contain"
-          />
-        </div>
+    <div className="bg-[#0D6A51] h-16 flex items-center justify-between px-4">
+      <div className="flex items-center space-x-3">
+        <img 
+          src="/lovable-uploads/a87c8ee8-a80d-41ab-9d88-b4f39fe42d93.png" 
+          alt="N'GNA SÔRÔ! Logo" 
+          className="h-10 w-10 rounded-full"
+        />
         <div>
-          <h1 className="text-2xl font-bold text-white">
-            <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-white">SÔRÔ!</span>
-          </h1>
-          <div className="flex items-center">
-            <span className="text-white/90 text-sm">{activeSFDName}</span>
-          </div>
+          <h1 className="text-white text-lg font-bold">N'GNA SÔRÔ!</h1>
+          <p className="text-yellow-300 text-xs">CVECA-ON</p>
         </div>
       </div>
+      
+      <button className="text-white">
+        <Menu className="h-6 w-6" />
+      </button>
     </div>
   );
 };
