@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -122,7 +123,9 @@ const MobileSavingsPage: React.FC = () => {
             email: user?.email || '',
             phone: user?.user_metadata?.phone || '',
             sfd_id: activeSfdId || '',
-            status: 'pending'
+            status: 'pending',
+            kyc_level: 0,                // Adding missing property
+            created_at: new Date().toISOString()  // Adding missing property
           }}
           balance={selectedAccount?.balance || 0}
           onManageAccount={handleManageAccount}
