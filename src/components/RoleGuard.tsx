@@ -33,15 +33,22 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
       userObject: user
     });
     
+    // Handle mapping between app_metadata roles and database roles
+    // client in app_metadata maps to user in database
+    const getMappedRole = (role: string): string => {
+      return role.toLowerCase() === 'client' ? 'user' : role.toLowerCase();
+    };
+    
     // Handle special case where SFD_ADMIN should match sfd_admin role
     // and convert both to lowercase for comparison
-    const userRoleLower = String(userRole).toLowerCase();
-    const requiredRoleLower = String(requiredRole).toLowerCase();
+    const userRoleLower = getMappedRole(String(userRole));
+    const requiredRoleLower = getMappedRole(String(requiredRole));
     
     const permitted = 
       userRoleLower === requiredRoleLower || 
       (requiredRoleLower === 'sfd_admin' && userRoleLower === 'sfd_admin') ||
-      (requiredRoleLower === 'client' && userRoleLower === 'client') ||
+      (requiredRoleLower === 'user' && userRoleLower === 'user') ||
+      (requiredRoleLower === 'client' && userRoleLower === 'user') ||
       (requiredRoleLower === 'admin' && userRoleLower === 'admin') ||
       // Accept all roles by super admin
       userRoleLower === 'admin';
@@ -60,6 +67,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
         details: {
           required_role: requiredRole,
           user_role: userRole,
+          mapped_user_role: userRoleLower,
           timestamp: new Date().toISOString()
         },
         error_message: `Access denied: Missing role (${requiredRole})`

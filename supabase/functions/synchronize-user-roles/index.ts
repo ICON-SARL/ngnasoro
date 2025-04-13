@@ -48,14 +48,14 @@ serve(async (req) => {
     for (const user of users.users) {
       // Si pas de rôle défini OU si le rôle contient une valeur invalide
       if (!user.app_metadata?.role || !['admin', 'client', 'sfd_admin', 'user'].includes(user.app_metadata.role)) {
-        // Par défaut, attribuer le rôle "client"
-        const role = 'client';
+        // Par défaut, attribuer le rôle "client" à l'app_metadata
+        const metadataRole = 'client';
         
-        console.log(`Mise à jour du rôle pour ${user.email || user.id} vers 'client'`);
+        console.log(`Mise à jour du rôle metadata pour ${user.email || user.id} vers 'client'`);
         
         const { error } = await supabase.auth.admin.updateUserById(
           user.id,
-          { app_metadata: { ...user.app_metadata, role } }
+          { app_metadata: { ...user.app_metadata, role: metadataRole } }
         );
 
         if (error) {
@@ -67,20 +67,23 @@ serve(async (req) => {
         updatedUsers.push({
           id: user.id,
           email: user.email,
-          role
+          role: metadataRole
         });
       } else {
-        console.log(`L'utilisateur ${user.email || user.id} a déjà le rôle: ${user.app_metadata?.role}`);
+        console.log(`L'utilisateur ${user.email || user.id} a déjà le rôle metadata: ${user.app_metadata?.role}`);
       }
     }
 
     // Créer également les entrées dans la table user_roles
     for (const updatedUser of updatedUsers) {
+      // Map client role to user role in the database
+      const dbRole = updatedUser.role === 'client' ? 'user' : updatedUser.role;
+      
       const { error: roleError } = await supabase
         .from('user_roles')
         .upsert({
           user_id: updatedUser.id,
-          role: updatedUser.role,
+          role: dbRole, // Use the correct enum value for the database
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id,role' });
         

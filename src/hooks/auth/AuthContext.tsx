@@ -181,7 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .from('user_roles')
             .insert({
               user_id: data.user.id,
-              role: 'client'
+              role: 'user'
             });
             
           if (roleError) {
