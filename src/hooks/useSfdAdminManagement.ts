@@ -9,14 +9,14 @@ export type { SfdAdmin } from '@/components/admin/hooks/sfd-admin/sfdAdminApiSer
  */
 export function useSfdAdminManagement() {
   const { sfdAdmins, isLoading, error, refetch } = useOriginalSfdAdminManagement();
-  const { addSfdAdmin: addSfdAdminFn, isAdding, error: addError } = useAddSfdAdmin();
+  const { addSfdAdmin, isAdding, error: addError } = useAddSfdAdmin();
   
   return {
     sfdAdmins,
     isLoading,
     error,
     refetch,
-    addSfdAdmin: addSfdAdminFn,
+    addSfdAdmin,
     isAdding,
     addError
   };
