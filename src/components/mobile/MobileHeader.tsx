@@ -25,11 +25,11 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   };
   
   return (
-    <div className="p-4 bg-[#0D6A51] rounded-b-3xl">
+    <div className="p-4 bg-[#0D6A51] rounded-b-3xl shadow-md">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <div className="flex items-center">
-            <div className="bg-white rounded-full p-2 mr-3">
+            <div className="bg-white rounded-full p-2 mr-3 shadow-md">
               <img 
                 src="/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png" 
                 alt="N'GNA SÔRÔ! Logo" 

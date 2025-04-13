@@ -74,9 +74,7 @@ const FundsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-gradient-to-br from-[#0D6A51] to-[#064032] text-white rounded-b-3xl shadow-md relative">
-        <MobileHeader title="Mes fonds" />
-      </div>
+      <MobileHeader title="Mes fonds" />
 
       <div className="px-4 mt-4 space-y-4">
         {isLoading ? (
