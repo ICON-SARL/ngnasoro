@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
 import { useClientLoans } from '@/hooks/useClientLoans';
@@ -86,6 +87,7 @@ const MobileMyLoansPage: React.FC = () => {
     if (tabValue === 'pending') return loan.status === 'pending';
     if (tabValue === 'active') return loan.status === 'approved' || loan.status === 'active';
     if (tabValue === 'completed') return loan.status === 'completed';
+    if (tabValue === 'rejected') return loan.status === 'rejected';
     return true;
   });
   
@@ -101,6 +103,9 @@ const MobileMyLoansPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="bg-gradient-to-r from-[#0D6A51] to-[#064032] text-white rounded-b-3xl shadow-lg">
         <MobileHeader title="Mes demandes de prêt" />
+        <p className="text-white/80 text-sm px-4 pb-8">
+          Suivez l'état de vos demandes de prêt et leur traitement
+        </p>
       </div>
       
       <div className="p-4 -mt-4">
