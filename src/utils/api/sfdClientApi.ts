@@ -123,28 +123,6 @@ export const sfdClientApi = {
     }
   },
   
-  // Update client status
-  async updateClientStatus(clientId: string, status: 'validated' | 'rejected' | 'suspended', notes?: string) {
-    try {
-      const { data, error } = await supabase
-        .from('sfd_clients')
-        .update({
-          status: status,
-          updated_at: new Date().toISOString(),
-          notes: notes
-        })
-        .eq('id', clientId)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      return data as SfdClient;
-    } catch (error) {
-      console.error('Error updating client status:', error);
-      throw error;
-    }
-  },
-  
   // Get client documents
   async getClientDocuments(clientId: string) {
     try {
@@ -167,7 +145,9 @@ export const sfdClientApi = {
       const { data, error } = await supabase
         .from('client_documents')
         .insert({
-          ...document,
+          client_id: document.client_id,
+          document_type: document.document_type,
+          document_url: document.document_url,
           verified: false
         })
         .select()

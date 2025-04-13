@@ -145,7 +145,9 @@ export const sfdClientApi = {
       const { data, error } = await supabase
         .from('client_documents')
         .insert({
-          ...document,
+          client_id: document.client_id,
+          document_type: document.document_type,
+          document_url: document.document_url,
           verified: false
         })
         .select()

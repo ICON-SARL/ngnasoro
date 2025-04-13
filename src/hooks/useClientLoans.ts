@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loan } from '@/types/sfdClients';
+import { Loan, ClientNotification } from '@/types/sfdClients';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,8 +27,8 @@ export function useClientLoans() {
     queryFn: async (): Promise<Loan[]> => {
       if (!user?.id) return [];
       
-      // Pour cette démo, nous allons retourner des données fictives
-      // Dans une implémentation réelle, vous connecteriez cela à votre API
+      // For demo, returning mock data
+      // In a real implementation, you would connect this to your API
       return [
         {
           id: '1',
@@ -74,6 +74,72 @@ export function useClientLoans() {
     enabled: !!user?.id
   });
   
+  // Fetch notifications
+  const notificationsQuery = useQuery({
+    queryKey: ['client-notifications', user?.id],
+    queryFn: async (): Promise<ClientNotification[]> => {
+      if (!user?.id) return [];
+      
+      // For demo, returning mock notifications
+      return [
+        {
+          id: '1',
+          title: 'Prêt approuvé',
+          message: 'Votre demande de prêt a été approuvée',
+          type: 'loan_approved',
+          created_at: '2023-06-05T10:00:00Z',
+          read: false,
+          action_link: '/my-loans'
+        },
+        {
+          id: '2',
+          title: 'Paiement reçu',
+          message: 'Nous avons reçu votre paiement de 5300 FCFA',
+          type: 'payment_received',
+          created_at: '2023-05-15T10:00:00Z',
+          read: true
+        }
+      ];
+    },
+    enabled: !!user?.id
+  });
+  
+  // Mark notification as read
+  const markNotificationAsRead = useMutation({
+    mutationFn: async (notificationId: string) => {
+      if (!user?.id) throw new Error("Utilisateur non authentifié");
+      
+      // Mock implementation - in real app, would call API
+      console.log("Marking notification as read:", notificationId);
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-notifications'] });
+    }
+  });
+  
+  // Upload document helper function
+  const uploadDocument = async (file: File): Promise<string | null> => {
+    if (!user?.id) return null;
+    
+    setIsUploading(true);
+    try {
+      // Simulate upload delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // In a real app, would upload to storage
+      console.log("Uploading document:", file.name);
+      
+      // Return a fake URL for now
+      return `https://example.com/documents/${file.name}`;
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  
   // Apply for a loan
   const applyForLoan = useMutation({
     mutationFn: async (application: LoanApplication) => {
@@ -82,8 +148,8 @@ export function useClientLoans() {
       setIsUploading(true);
       
       try {
-        // Dans une implémentation réelle, vous appelleriez votre API ici
-        // Pour cette démo, nous simulons une attente puis retournons une réponse réussie
+        // In a real implementation, would call your API
+        // For this demo, simulate a delay and return success
         await new Promise(resolve => setTimeout(resolve, 1500));
         
         const newLoan: Loan = {
@@ -124,7 +190,13 @@ export function useClientLoans() {
     loans: loansQuery.data || [],
     isLoading: loansQuery.isLoading,
     isUploading,
+    uploadDocument,
     applyForLoan,
-    refetchLoans: loansQuery.refetch
+    refetchLoans: loansQuery.refetch,
+    // Add notifications related properties
+    notifications: notificationsQuery.data || [],
+    notificationsLoading: notificationsQuery.isLoading,
+    markNotificationAsRead,
+    refetchNotifications: notificationsQuery.refetch
   };
 }

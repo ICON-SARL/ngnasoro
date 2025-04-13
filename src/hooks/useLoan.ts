@@ -21,19 +21,25 @@ export const useLoan = (loanId: string) => {
       }
       
       // Format the loan data with client information
-      // Make sure we're adding all required properties that exist on the Loan type
       const loan: Loan = {
         ...data,
+        // Since client_name is now in our Loan type, we can assign it
         client_name: data.sfd_clients?.full_name || 'Unknown Client',
-        term_months: data.duration_months || 0, // Adding term_months (mapped from duration_months)
-        // Since data.updated_at might not exist, provide a fallback
-        updated_at: data.created_at, 
-        // Ensure all required properties from the Loan type are present with proper typing
-        status: (data.status || 'pending') as Loan['status'],
-        // Since 'reference' doesn't exist in the data, provide a default empty string
-        reference: '',
-        // Do not add 'duration' as it's not in the Loan type
-        // Instead, we can use the existing duration_months which is already in the data
+        // Make sure all required properties are present
+        id: data.id,
+        client_id: data.client_id,
+        sfd_id: data.sfd_id,
+        amount: data.amount,
+        duration_months: data.duration_months,
+        interest_rate: data.interest_rate,
+        monthly_payment: data.monthly_payment,
+        purpose: data.purpose,
+        status: data.status || 'pending',
+        created_at: data.created_at,
+        // Optional reference property
+        reference: data.reference || '',
+        // Fallback for updated_at
+        updated_at: data.updated_at || data.created_at
       };
       
       return loan;
