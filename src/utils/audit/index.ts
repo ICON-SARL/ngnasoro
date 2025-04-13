@@ -6,13 +6,21 @@ export enum AuditLogCategory {
   SECURITY = 'security',
   SYSTEM = 'system',
   FINANCIAL = 'financial',
+  AUTHENTICATION = 'authentication',
+  ADMIN_ACTION = 'admin_action',
+  SFD_OPERATIONS = 'sfd_operations',
+  SUBSIDY_OPERATIONS = 'subsidy_operations',
+  TOKEN_MANAGEMENT = 'token_management',
+  INTEGRATION = 'integration',
+  MONITORING = 'monitoring',
+  LOAN_OPERATIONS = 'loan_operations'
 }
 
 export enum AuditLogSeverity {
   INFO = 'info',
   WARNING = 'warning',
   ERROR = 'error',
-  CRITICAL = 'critical',
+  CRITICAL = 'critical'
 }
 
 export interface AuditLogEntry {
@@ -55,3 +63,21 @@ export const logPermissionFailure = (userId: string, permission: string, resourc
     error_message: `Access denied: Missing permission (${permission})`
   });
 };
+
+// Export types from auditLoggerTypes.ts
+export type { AuditLogEvent, AuditLogFilterOptions, AuditLogResponse, AuditLogExportResult } from './auditLoggerTypes';
+
+// Export functions from auditLoggerCore.ts
+export { 
+  getAuditLogs, 
+  logAuthEvent, 
+  logDataAccess,
+  exportAuditLogsToCSV 
+} from './auditLoggerCore';
+
+// Export functions from auditLoggerExport.ts
+export {
+  exportAuditLogsToPDF,
+  downloadAuditLogsAsCSV,
+  downloadAuditLogsAsPDF
+} from './auditLoggerExport';

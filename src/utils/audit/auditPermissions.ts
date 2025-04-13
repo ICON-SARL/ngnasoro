@@ -3,7 +3,8 @@ export enum Role {
   SUPER_ADMIN = 'admin',
   SFD_ADMIN = 'sfd_admin',
   CLIENT = 'client',
-  USER = 'user'
+  USER = 'user',
+  ADMIN = 'admin'
 }
 
 export type Permission = string;
@@ -31,4 +32,7 @@ export const PERMISSIONS = {
   MANAGE_LOANS: 'manage_loans',
   VIEW_REPORTS: 'view_reports',
   EXPORT_DATA: 'export_data',
+
+  // Audit permissions
+  VIEW_AUDIT_LOGS: 'view_audit_logs',
 };

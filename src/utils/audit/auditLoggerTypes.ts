@@ -13,7 +13,8 @@ export enum AuditLogCategory {
   INTEGRATION = 'integration',
   SECURITY = 'security',
   MONITORING = 'monitoring',
-  LOAN_OPERATIONS = 'loan_operations'
+  LOAN_OPERATIONS = 'loan_operations',
+  LOAN_PROCESSING = 'loan_processing'
 }
 
 export enum AuditLogSeverity {
@@ -29,7 +30,7 @@ export interface AuditLogEvent {
   category: AuditLogCategory;
   severity: AuditLogSeverity;
   status: 'success' | 'failure' | 'pending';
-  target_resource?: string;
+  target_resource: string;
   details?: Record<string, any>;
   error_message?: string;
   ip_address?: string;

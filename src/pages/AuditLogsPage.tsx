@@ -4,11 +4,11 @@ import DetailedAuditLogViewer from '@/components/audit/DetailedAuditLogViewer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield } from 'lucide-react';
 import PermissionGuard from '@/components/PermissionGuard';
-import { Permission } from '@/utils/audit/auditPermissions';
+import { PERMISSIONS } from '@/utils/audit/auditPermissions';
 
 const AuditLogsPage = () => {
   return (
-    <PermissionGuard requiredPermission={Permission.VIEW_AUDIT_LOGS}>
+    <PermissionGuard requiredPermission={PERMISSIONS.VIEW_AUDIT_LOGS}>
       <div className="container mx-auto py-6 space-y-6">
         <h1 className="text-2xl font-bold">Journal d'Audit</h1>
         

@@ -126,7 +126,7 @@ export async function getAuditLogs(options?: AuditLogFilterOptions): Promise<Aud
         category: log.category as AuditLogCategory,
         severity: log.severity as AuditLogSeverity,
         status: log.status as 'success' | 'failure' | 'pending',
-        target_resource: log.target_resource || undefined,
+        target_resource: log.target_resource || '',
         error_message: log.error_message || undefined,
         details: parsedDetails,
         ip_address: log.ip_address || undefined,
