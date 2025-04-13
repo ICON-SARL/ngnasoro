@@ -43,7 +43,19 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Parse request body
-    const { sfdData, createAdmin, adminData } = await req.json();
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (e) {
+      console.error("Error parsing JSON body:", e);
+      return new Response(
+        JSON.stringify({ error: "Format de requête invalide" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { sfdData, createAdmin, adminData } = requestBody;
+    
     console.log("Processing request:", { 
       sfdName: sfdData?.name,
       sfdCode: sfdData?.code,

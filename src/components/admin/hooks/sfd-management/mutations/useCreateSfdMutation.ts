@@ -41,13 +41,18 @@ export function useCreateSfdMutation() {
           throw new Error("Les informations de l'administrateur sont incomplètes");
         }
         
+        // Préparer les données pour la requête
+        const requestBody = {
+          sfdData,
+          createAdmin,
+          adminData: createAdmin && adminData ? adminData : null
+        };
+        
+        console.log("Sending request to edge function:", JSON.stringify(requestBody));
+        
         // Make the request to the Edge Function with proper auth token
         const { data, error } = await supabase.functions.invoke('create-sfd-with-admin', {
-          body: JSON.stringify({
-            sfdData,
-            createAdmin,
-            adminData: createAdmin && adminData ? adminData : null
-          })
+          body: requestBody
         });
 
         if (error) {
@@ -80,6 +85,7 @@ export function useCreateSfdMutation() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      queryClient.invalidateQueries({ queryKey: ['sfd-management-stats'] });
       
       toast({
         title: 'SFD ajoutée',
