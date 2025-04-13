@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +14,7 @@ import TabHeader from './secure-payment/TabHeader';
 import PaymentDetails from './secure-payment/PaymentDetails';
 import SuccessView from './secure-payment/SuccessView';
 import MobileMoneyModal from './loan/MobileMoneyModal';
-import QRCodePaymentDialog from './loan/QRCodePaymentDialog';
+import QRCodeScannerDialog from './secure-payment/QRCodeScannerDialog';
 import { usePaymentProcessor } from './secure-payment/hooks/usePaymentProcessor';
 import { useTransactions } from '@/hooks/useTransactions';
 
@@ -41,15 +40,12 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [progress, setProgress] = useState(0);
   const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
-  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [qrScannerOpen, setQrScannerOpen] = useState(false);
   
-  // Définir les montants de transaction par défaut
   const amount = isWithdrawal ? 25000 : loanId ? 3500 : 10000;
   
-  // Simulate automatic detection of the main SFD account
   useEffect(() => {
     const detectPrimaryAccount = () => {
-      // Simulate an API check for balance
       const randomBalance = Math.random();
       if (randomBalance < 0.3) {
         setBalanceStatus('insufficient');
@@ -91,15 +87,13 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   };
   
   const handlePayment = async () => {
-    if (paymentMethod === 'sfd' && Math.random() > 0.5) {
-      // Simulate QR code payment
-      setQrDialogOpen(true);
+    if (paymentMethod === 'sfd') {
+      setQrScannerOpen(true);
       return;
     }
     
     const method = paymentMethod === 'mobile' ? 'mobile_money' : 'agency_qr';
     
-    // Validate repayment data
     if (!isWithdrawal && !validateRepayment(amount, method)) {
       return;
     }
@@ -107,7 +101,6 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     setPaymentStatus('pending');
     setProgress(0);
     
-    // Simulate payment processing with progress
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
@@ -120,7 +113,6 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
     
     try {
       if (!isWithdrawal && loanId) {
-        // Process loan repayment
         const { data, error } = await supabase.functions.invoke('process-repayment', {
           body: {
             loan_id: loanId || 'LOAN123',
@@ -131,7 +123,6 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
         
         if (error) throw error;
         
-        // Add transaction record if payment successful
         if (data?.success && user) {
           const { error: txError } = await supabase
             .from('transactions')
@@ -147,7 +138,6 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
         }
       }
       
-      // Simulating API response time
       setTimeout(() => {
         clearInterval(interval);
         setProgress(100);
@@ -158,16 +148,15 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
           setPaymentStatus('success');
           setPaymentSuccess(true);
           toast({
-            title: isWithdrawal ? "Retrait réussi" : "Remboursement réussi",
+            title: isWithdrawal ? "Retrait réussi" : "Paiement réussi",
             description: isWithdrawal 
-              ? "Votre retrait a été traité avec succès." 
-              : "Votre remboursement de prêt a été traité avec succès.",
-            variant: "default",
+              ? `Votre retrait de ${amount.toLocaleString()} FCFA a été traité avec succès.` 
+              : `Votre paiement de ${amount.toLocaleString()} FCFA a été traité avec succès.`,
           });
         } else {
           setPaymentStatus('failed');
           toast({
-            title: isWithdrawal ? "Échec du retrait" : "Échec du remboursement",
+            title: isWithdrawal ? "Échec du retrait" : "Échec du paiement",
             description: "Veuillez réessayer ou sélectionner une autre méthode.",
             variant: "destructive",
           });
@@ -182,6 +171,18 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
         variant: "destructive",
       });
     }
+  };
+
+  const handleQRScanSuccess = (transactionData: any) => {
+    setPaymentStatus('success');
+    setPaymentSuccess(true);
+    
+    toast({
+      title: isWithdrawal ? "Retrait réussi" : "Paiement réussi",
+      description: isWithdrawal 
+        ? `Votre retrait de ${amount.toLocaleString()} FCFA a été traité avec succès.` 
+        : `Votre paiement de ${amount.toLocaleString()} FCFA a été traité avec succès.`,
+    });
   };
 
   const handleMobileMoneyPayment = () => {
@@ -206,12 +207,12 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
             <Check className="h-10 w-10 text-green-600" />
           </div>
           <h2 className="text-xl font-bold mb-2">
-            {isWithdrawal ? "Retrait réussi" : "Remboursement réussi"}
+            {isWithdrawal ? "Retrait réussi" : "Paiement réussi"}
           </h2>
           <p className="text-gray-600 mb-6">
             {isWithdrawal 
               ? `Votre retrait de ${amount.toLocaleString()} FCFA a été traité avec succès.` 
-              : `Votre remboursement de ${amount.toLocaleString()} FCFA a été traité avec succès.`
+              : `Votre paiement de ${amount.toLocaleString()} FCFA a été traité avec succès.`
             } Un reçu a été envoyé à votre adresse email.
           </p>
           <div className="w-full bg-gray-100 p-4 rounded-lg mb-6">
@@ -246,7 +247,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
         <div className="p-4 space-y-6">
           <div className="bg-blue-50 p-4 rounded-lg mb-2">
             <h2 className="font-bold mb-1">
-              {isWithdrawal ? "Détails du retrait" : "Détails du remboursement"}
+              {isWithdrawal ? "Détails du retrait" : "Détails du paiement"}
             </h2>
             {isWithdrawal ? (
               <>
@@ -283,7 +284,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
               <p className="text-sm text-center text-gray-600">
                 {isWithdrawal 
                   ? "Traitement de votre retrait..." 
-                  : "Traitement de votre remboursement..."
+                  : "Traitement de votre paiement..."
                 }
               </p>
             </div>
@@ -308,11 +309,11 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
         <MobileMoneyModal onClose={() => setMobileMoneyInitiated(false)} isWithdrawal={isWithdrawal} />
       )}
       
-      <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
-        <DialogTrigger className="hidden">Open QR Dialog</DialogTrigger>
-        <QRCodePaymentDialog 
-          onClose={() => setQrDialogOpen(false)} 
-          amount={amount} 
+      <Dialog open={qrScannerOpen} onOpenChange={setQrScannerOpen}>
+        <DialogTrigger className="hidden">Scan QR Code</DialogTrigger>
+        <QRCodeScannerDialog 
+          onClose={() => setQrScannerOpen(false)} 
+          onSuccess={handleQRScanSuccess}
           isWithdrawal={isWithdrawal} 
         />
       </Dialog>
