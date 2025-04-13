@@ -1,152 +1,133 @@
-import React, { useEffect, useState } from 'react';
-import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+import React, { useState, useEffect } from 'react';
+import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, QrCode } from 'lucide-react';
-import { useQRCodeGeneration } from '@/hooks/mobile-money';
+import { formatCurrency } from '@/utils/formatters';
 
 interface QRCodePaymentDialogProps {
   onClose: () => void;
-  amount?: number;
-  isWithdrawal?: boolean;
-  loanId?: string;
+  onComplete?: () => void;
+  amount: number;
+  isWithdrawal: boolean;
 }
 
 const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ 
   onClose, 
-  amount = 5000,
-  isWithdrawal = false,
-  loanId
+  onComplete,
+  amount, 
+  isWithdrawal 
 }) => {
-  const [expiryTime, setExpiryTime] = useState<Date | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [qrReady, setQrReady] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
   
-  const { 
-    generateQRCode,
-    qrCodeData,
-    isGenerating,
-    error,
-    expiresAt
-  } = useQRCodeGeneration();
+  // Generate QR code URL
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+    JSON.stringify({
+      amount,
+      type: isWithdrawal ? 'withdrawal' : 'payment',
+      reference: `${isWithdrawal ? 'WD' : 'PMT'}-${Date.now()}`,
+      timestamp: new Date().toISOString()
+    })
+  )}`;
   
-  // Generate QR code when component mounts
-  useEffect(() => {
-    const generateCode = async () => {
-      try {
-        const type = isWithdrawal ? 'withdrawal' : loanId ? 'loan_payment' : 'deposit';
-        await generateQRCode(amount, type);
-      } catch (err) {
-        console.error('Error generating QR code:', err);
-      }
-    };
+  const handleConfirm = () => {
+    setIsProcessing(true);
     
-    generateCode();
-  }, [amount, isWithdrawal, loanId]);
-  
-  // Set expiry time when expiresAt changes
-  useEffect(() => {
-    if (expiresAt) {
-      const expiry = new Date(expiresAt);
-      setExpiryTime(expiry);
+    // Simulate processing time
+    setTimeout(() => {
+      setIsProcessing(false);
+      setIsCompleted(true);
       
-      // Calculate initial time left
-      const now = new Date();
-      const initialTimeLeft = Math.max(0, Math.floor((expiry.getTime() - now.getTime()) / 1000));
-      setTimeLeft(initialTimeLeft);
-    }
-  }, [expiresAt]);
-  
-  // Countdown timer
-  useEffect(() => {
-    if (timeLeft <= 0) return;
-    
-    const timerId = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timerId);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    return () => clearInterval(timerId);
-  }, [timeLeft]);
-  
-  // Format time left as mm:ss
-  const formatTimeLeft = () => {
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      // Notify parent component after a short delay
+      setTimeout(() => {
+        if (onComplete) onComplete();
+        onClose();
+      }, 1500);
+    }, 3000);
   };
-  
-  // Animation for QR code appearance
-  useEffect(() => {
-    if (qrCodeData && !qrReady) {
-      const timer = setTimeout(() => {
-        setQrReady(true);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [qrCodeData, qrReady]);
   
   return (
     <DialogContent className="sm:max-w-md">
       <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <QrCode className="h-5 w-5" />
-          Code QR pour {isWithdrawal ? 'Retrait' : loanId ? 'Remboursement' : 'Dépôt'}
+        <DialogTitle className="text-center">
+          {isWithdrawal ? 'Retirer des fonds' : 'Payer via Mobile Money'}
         </DialogTitle>
-        <DialogDescription>
-          Présentez ce code QR à l'agent SFD pour {isWithdrawal ? 'effectuer votre retrait' : loanId ? 'effectuer votre remboursement' : 'effectuer votre dépôt'}
-        </DialogDescription>
       </DialogHeader>
       
-      <div className="flex flex-col items-center justify-center py-4">
-        {isGenerating ? (
-          <div className="flex flex-col items-center justify-center h-60">
-            <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-            <p className="text-sm text-gray-500">Génération du code QR...</p>
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center h-60">
-            <p className="text-red-500 mb-2">Erreur: {error}</p>
-            <Button onClick={() => generateQRCode(amount, isWithdrawal ? 'withdrawal' : 'deposit')}>
-              Réessayer
-            </Button>
-          </div>
-        ) : qrCodeData ? (
-          <div className={`transition-opacity duration-500 ${qrReady ? 'opacity-100' : 'opacity-0'}`}>
-            <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
+      <div className="flex flex-col items-center py-4">
+        {!isCompleted ? (
+          <>
+            <div className="mb-4 bg-gray-50 p-3 rounded-md">
+              <p className="text-sm text-gray-500 mb-1">Montant:</p>
+              <p className="text-2xl font-bold text-[#0D6A51]">{formatCurrency(amount)}</p>
+            </div>
+            
+            <div className="bg-white p-2 border rounded-md mb-4">
               <img 
-                src={`data:image/svg+xml;base64,${qrCodeData}`} 
-                alt="QR Code"
-                className="w-60 h-60" 
+                src={qrCodeUrl} 
+                alt="QR Code de paiement" 
+                className="w-56 h-56 object-contain"
               />
             </div>
             
-            <div className="text-center">
-              <p className="text-lg font-semibold mb-1">
-                {amount.toLocaleString()} FCFA
-              </p>
-              <p className="text-sm text-gray-600 mb-2">
-                Ce code expire dans: <span className="font-medium">{formatTimeLeft()}</span>
-              </p>
-              {timeLeft === 0 && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => generateQRCode(amount, isWithdrawal ? 'withdrawal' : 'deposit')}
-                >
-                  Générer un nouveau code
-                </Button>
-              )}
+            <p className="text-sm text-gray-500 text-center mb-4">
+              {isWithdrawal 
+                ? 'Scannez ce code avec votre application de mobile money pour retirer le montant' 
+                : 'Scannez ce code avec votre application de mobile money pour effectuer le paiement'}
+            </p>
+          </>
+        ) : (
+          <div className="py-8 flex flex-col items-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-10 w-10 text-green-600" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
             </div>
+            <h3 className="text-lg font-medium mb-2">
+              {isWithdrawal ? 'Retrait effectué' : 'Paiement réussi'}
+            </h3>
+            <p className="text-gray-500 text-center">
+              {isWithdrawal 
+                ? 'Le montant a été envoyé à votre compte mobile money.' 
+                : 'Votre paiement a été traité avec succès.'}
+            </p>
           </div>
-        ) : null}
+        )}
       </div>
       
-      <DialogFooter>
-        <Button onClick={onClose}>Fermer</Button>
+      <DialogFooter className="sm:justify-center">
+        {!isCompleted ? (
+          isProcessing ? (
+            <Button disabled className="w-full">
+              <span className="mr-2">
+                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </span>
+              Traitement en cours...
+            </Button>
+          ) : (
+            <div className="flex gap-3 w-full">
+              <Button variant="outline" className="flex-1" onClick={onClose}>
+                Annuler
+              </Button>
+              <Button className="flex-1 bg-[#0D6A51] hover:bg-[#0D6A51]/90" onClick={handleConfirm}>
+                Confirmer
+              </Button>
+            </div>
+          )
+        ) : (
+          <Button className="bg-[#0D6A51] hover:bg-[#0D6A51]/90" onClick={onClose}>
+            Fermer
+          </Button>
+        )}
       </DialogFooter>
     </DialogContent>
   );
