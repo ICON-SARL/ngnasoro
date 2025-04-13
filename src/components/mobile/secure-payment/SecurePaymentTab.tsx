@@ -25,10 +25,11 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   onComplete,
   selectedSfdId
 }) => {
-  const { sfdAccounts, isLoading: accountsLoading } = useSfdAccounts();
+  const { accounts, sfdAccounts, isLoading: accountsLoading } = useSfdAccounts();
   const { activeSfdId } = useAuth();
   
   const effectiveSfdId = selectedSfdId || activeSfdId;
+  // Use sfdAccounts (transformed accounts) instead of the raw accounts data
   const selectedSfdAccount = sfdAccounts.find(acc => acc.id === effectiveSfdId);
   
   const {

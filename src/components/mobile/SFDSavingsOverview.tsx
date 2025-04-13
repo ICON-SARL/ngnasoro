@@ -5,8 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Account } from '@/types/transactions';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+
+interface Account {
+  balance: number;
+  currency: string;
+  isVerified?: boolean;
+  isDefault?: boolean;
+}
 
 interface SFDSavingsOverviewProps {
   account?: Account | null;
@@ -23,7 +29,7 @@ const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({ account }) => {
     console.log("SFDSavingsOverview mounted with account:", account);
     // Vérifier si le compte SFD est validé
     if (account) {
-      setIsAccountVerified(account.isVerified || account.isDefault);
+      setIsAccountVerified(account.isVerified || account.isDefault || false);
     }
     
     // Simuler un chargement

@@ -43,6 +43,12 @@ export interface SfdAccount {
   loans?: SfdLoan[];
   token?: string;
   lastFetched?: Date;
+  // These are for compatibility with the DB SfdAccount type
+  sfd_id?: string;
+  account_type?: string;
+  description?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface SfdLoan {

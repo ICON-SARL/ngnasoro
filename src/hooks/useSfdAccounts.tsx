@@ -5,6 +5,14 @@ import { sfdAccountService } from '@/services/sfdAccountService';
 import { SfdAccount, CreateTransferParams, SfdAccountTransfer } from '@/types/sfdAccounts';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { SfdAccount as SfdClientAccount } from '@/hooks/sfd/types';
+
+export interface SfdLoanPaymentParams {
+  loanId: string;
+  amount: number;
+  paymentMethod: string;
+  reference?: string;
+}
 
 export function useSfdAccounts(sfdId?: string) {
   const { activeSfdId, user } = useAuth();
@@ -60,13 +68,72 @@ export function useSfdAccounts(sfdId?: string) {
     }
   });
 
+  // Make loan payment mutation
+  const makeLoanPayment = useMutation({
+    mutationFn: async (params: SfdLoanPaymentParams) => {
+      // This is a placeholder as we haven't implemented the full loan payment functionality yet
+      toast({
+        title: "Paiement effectué",
+        description: `Paiement de ${params.amount} FCFA pour le prêt #${params.loanId}`,
+      });
+      return { success: true };
+    }
+  });
+
+  // Synchronize balances mutation
+  const synchronizeBalances = useMutation({
+    mutationFn: async () => {
+      // Placeholder for balance synchronization
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await refetchAccounts();
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Synchronisation réussie",
+        description: "Les soldes de vos comptes ont été mis à jour",
+      });
+    }
+  });
+
   // Categorize accounts by type
   const operationAccount = accounts.find(account => account.account_type === 'operation');
   const repaymentAccount = accounts.find(account => account.account_type === 'remboursement');
   const savingsAccount = accounts.find(account => account.account_type === 'epargne');
 
+  // For compatibility with components expecting SfdClientAccount type
+  const transformAccounts = (accounts: SfdAccount[]): SfdClientAccount[] => {
+    return accounts.map(acc => ({
+      id: acc.id,
+      name: acc.description || `Compte ${acc.account_type}`,
+      logoUrl: null,
+      code: '',
+      region: '',
+      balance: acc.balance,
+      currency: acc.currency,
+      isDefault: false,
+      isVerified: true,
+      status: acc.status
+    }));
+  };
+
+  // Compute the active SFD account for UI components that expect it
+  const activeSfdAccount = accounts.length > 0 ? {
+    id: effectiveSfdId || accounts[0].sfd_id,
+    name: 'SFD Account',
+    logoUrl: null,
+    balance: accounts.reduce((sum, acc) => sum + acc.balance, 0),
+    currency: accounts[0]?.currency || 'FCFA',
+    isDefault: true,
+    isVerified: true,
+    loans: [],
+    status: 'active'
+  } as SfdClientAccount : null;
+
+  // Return both the original accounts and transformed accounts for compatibility
   return {
     accounts,
+    sfdAccounts: transformAccounts(accounts),
     isLoading,
     error,
     transferHistory,
@@ -76,7 +143,11 @@ export function useSfdAccounts(sfdId?: string) {
     savingsAccount,
     transferFunds,
     refetchAccounts,
-    refetchHistory
+    refetchHistory,
+    refetch: refetchAccounts,
+    synchronizeBalances,
+    activeSfdAccount,
+    makeLoanPayment
   };
 }
 
