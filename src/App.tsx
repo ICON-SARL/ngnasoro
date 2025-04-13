@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/hooks/useAuth';
 import { LocalizationProvider } from '@/contexts/LocalizationContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Import existing pages
 import SfdLoansPage from '@/pages/SfdLoansPage';
@@ -18,108 +19,113 @@ import AdminAuthUI from '@/components/auth/AdminAuthUI';
 import SfdAuthUI from '@/components/auth/SfdAuthUI';
 import NotFound from '@/pages/NotFound';
 import SplashScreen from '@/components/mobile/SplashScreen';
-import SuperAdminDashboard from '@/pages/SuperAdminDashboard'; // Fixed import path
+import SuperAdminDashboard from '@/pages/SuperAdminDashboard'; 
 import SfdManagementPage from '@/pages/SfdManagementPage';
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
 
+// Create a client
+const queryClient = new QueryClient();
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <Toaster />
-      <AuthProvider>
-        <LocalizationProvider>
-          <Routes>
-            {/* Auth Routes */}
-            <Route path="/auth" element={<ClientAuthUI />} />
-            <Route path="/admin/auth" element={<AdminAuthUI />} />
-            <Route path="/sfd/auth" element={<SfdAuthUI />} />
-            
-            {/* Login routes */}
-            <Route path="/login" element={<ClientAuthUI />} />
-            <Route path="/register" element={<ClientAuthUI />} />
-            
-            {/* Splash screen at root level */}
-            <Route path="/splash" element={<SplashScreen />} />
-            
-            {/* Super Admin (MEREF) Routes */}
-            <Route 
-              path="/super-admin-dashboard" 
-              element={
-                <ProtectedRoute requireAdmin={true}>
-                  <SuperAdminDashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/sfd-management" 
-              element={
-                <ProtectedRoute requireAdmin={true}>
-                  <SfdManagementPage />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* SFD Routes */}
-            <Route 
-              path="/agency-dashboard" 
-              element={
-                <ProtectedRoute requireSfdAdmin={true}>
-                  <AgencyDashboardPage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/sfd-loans" 
-              element={
-                <ProtectedRoute requireSfdAdmin={true}>
-                  <SfdLoansPage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/sfd-clients" 
-              element={
-                <ProtectedRoute requireSfdAdmin={true}>
-                  <SfdClientsPage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/sfd-transactions" 
-              element={
-                <ProtectedRoute requireSfdAdmin={true}>
-                  <SfdTransactionsPage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/sfd-subsidy-requests" 
-              element={
-                <ProtectedRoute requireSfdAdmin={true}>
-                  <SfdSubsidyRequestsPage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/sfd-settings" 
-              element={
-                <ProtectedRoute requireSfdAdmin={true}>
-                  <SfdSettingsPage />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Mobile Flow (Use existing Router component) */}
-            <Route path="/mobile-flow/*" element={<MobileRouter />} />
-            
-            {/* Redirect root to login */}
-            <Route path="/" element={<Navigate to="/auth" replace />} />
-            
-            {/* Not found page */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </LocalizationProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Toaster />
+        <AuthProvider>
+          <LocalizationProvider>
+            <Routes>
+              {/* Auth Routes */}
+              <Route path="/auth" element={<ClientAuthUI />} />
+              <Route path="/admin/auth" element={<AdminAuthUI />} />
+              <Route path="/sfd/auth" element={<SfdAuthUI />} />
+              
+              {/* Login routes */}
+              <Route path="/login" element={<ClientAuthUI />} />
+              <Route path="/register" element={<ClientAuthUI />} />
+              
+              {/* Splash screen at root level */}
+              <Route path="/splash" element={<SplashScreen />} />
+              
+              {/* Super Admin (MEREF) Routes */}
+              <Route 
+                path="/super-admin-dashboard" 
+                element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <SuperAdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/sfd-management" 
+                element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <SfdManagementPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* SFD Routes */}
+              <Route 
+                path="/agency-dashboard" 
+                element={
+                  <ProtectedRoute requireSfdAdmin={true}>
+                    <AgencyDashboardPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/sfd-loans" 
+                element={
+                  <ProtectedRoute requireSfdAdmin={true}>
+                    <SfdLoansPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/sfd-clients" 
+                element={
+                  <ProtectedRoute requireSfdAdmin={true}>
+                    <SfdClientsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/sfd-transactions" 
+                element={
+                  <ProtectedRoute requireSfdAdmin={true}>
+                    <SfdTransactionsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/sfd-subsidy-requests" 
+                element={
+                  <ProtectedRoute requireSfdAdmin={true}>
+                    <SfdSubsidyRequestsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/sfd-settings" 
+                element={
+                  <ProtectedRoute requireSfdAdmin={true}>
+                    <SfdSettingsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Mobile Flow (Use existing Router component) */}
+              <Route path="/mobile-flow/*" element={<MobileRouter />} />
+              
+              {/* Redirect root to login */}
+              <Route path="/" element={<Navigate to="/auth" replace />} />
+              
+              {/* Not found page */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </LocalizationProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
