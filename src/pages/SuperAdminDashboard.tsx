@@ -24,16 +24,15 @@ import { Footer } from '@/components';
 import { FinancialReports } from '@/components/reports/FinancialReports';
 import SfdInspector from '@/components/admin/SfdInspector';
 import { Card, CardContent } from '@/components/ui/card';
+import { MerefDashboard } from '@/components/reports/MerefDashboard';
 
 const SuperAdminDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
   const navigate = useNavigate();
   
-  // Fetch dashboard data
   const { dashboardData, isLoading } = useAdminDashboardData();
   
-  // Set the active tab based on query parameter
   useEffect(() => {
     if (!searchParams.get('tab')) {
       setSearchParams({ tab: 'dashboard' });
@@ -51,11 +50,9 @@ const SuperAdminDashboard = () => {
       <main className="flex-1 container mx-auto p-4 md:p-6">
         <SuperAdminDashboardHeader />
         
-        {/* Accès Rapides - Section améliorée */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-4">Accès Rapides</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Approbation de Crédit */}
             <Card 
               className="hover:shadow-md transition-all cursor-pointer border-gray-200"
               onClick={() => navigate('/credit-approval')}
@@ -71,7 +68,6 @@ const SuperAdminDashboard = () => {
               </CardContent>
             </Card>
             
-            {/* Gestion des SFDs */}
             <Card
               className="hover:shadow-md transition-all cursor-pointer border-gray-200"
               onClick={() => navigate('/sfd-management')}
@@ -87,7 +83,6 @@ const SuperAdminDashboard = () => {
               </CardContent>
             </Card>
             
-            {/* Gestion Administrateurs */}
             <Card
               className="hover:shadow-md transition-all cursor-pointer border-gray-200"
               onClick={() => setSearchParams({ tab: 'admins' })}
@@ -103,7 +98,6 @@ const SuperAdminDashboard = () => {
               </CardContent>
             </Card>
             
-            {/* Journal d'Audit */}
             <Card
               className="hover:shadow-md transition-all cursor-pointer border-gray-200"
               onClick={() => navigate('/audit-logs')}
@@ -121,7 +115,6 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
         
-        {/* Anciens boutons rapides - Masqués */}
         <div className="hidden mb-6 flex flex-wrap gap-2">
           <Button 
             variant="outline" 
@@ -171,7 +164,6 @@ const SuperAdminDashboard = () => {
           <MerefSfdCommunication />
         </div>
         
-        {/* Dashboard Widgets */}
         {activeTab === 'dashboard' && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -214,29 +206,24 @@ const SuperAdminDashboard = () => {
           </>
         )}
         
-        {/* Charts */}
         {activeTab === 'charts' && (
           <DashboardCharts />
         )}
         
-        {/* Financial Reports */}
         {activeTab === 'financial_reports' && (
           <FinancialReports />
         )}
         
-        {/* Reports */}
         {activeTab === 'reports' && (
           <Reports />
         )}
         
-        {/* Admin Management */}
         {activeTab === 'admins' && (
           <div className="space-y-6">
             <AdminManagement />
           </div>
         )}
         
-        {/* SFD Inspector */}
         {activeTab === 'sfd-inspector' && (
           <div className="space-y-6">
             <SfdInspector />

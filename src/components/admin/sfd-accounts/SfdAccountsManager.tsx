@@ -1,330 +1,261 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowDownUp, RefreshCw, BadgeDollarSign } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { Loader2 } from 'lucide-react';
+import { CreateTransferParams } from '@/types/sfdAccounts';
 
-export const SfdAccountsManager: React.FC = () => {
+export const SfdAccountsManager = () => {
+  const { accounts, isLoading, refetch } = useSfdAccounts();
+  const { user } = useAuth();
   const { toast } = useToast();
-  const { 
-    accounts, 
-    isLoading, 
-    transferHistory, 
-    operationAccount, 
-    repaymentAccount, 
-    savingsAccount,
-    transferFunds,
-    refetchAccounts,
-    refetchHistory
-  } = useSfdAccounts();
-
-  const [transferAmount, setTransferAmount] = useState<string>('');
-  const [fromAccount, setFromAccount] = useState<string>('');
-  const [toAccount, setToAccount] = useState<string>('');
+  
+  const [fromAccountId, setFromAccountId] = useState<string>('');
+  const [toAccountId, setToAccountId] = useState<string>('');
+  const [amount, setAmount] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const refreshData = async () => {
-    await Promise.all([refetchAccounts(), refetchHistory()]);
-    toast({
-      title: "Données actualisées",
-      description: "Les informations des comptes SFD ont été mises à jour",
-    });
+  const [isTransferring, setIsTransferring] = useState<boolean>(false);
+  
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('fr-FR') + ' FCFA';
   };
-
+  
   const handleTransfer = async () => {
-    if (!fromAccount || !toAccount) {
+    if (!user || !fromAccountId || !toAccountId || !amount || fromAccountId === toAccountId) {
       toast({
-        title: "Erreur",
-        description: "Veuillez sélectionner les comptes source et destination",
-        variant: "destructive",
+        title: "Erreur de transfert",
+        description: "Veuillez sélectionner des comptes différents et spécifier un montant",
+        variant: "destructive"
       });
       return;
     }
-
-    if (!transferAmount || parseFloat(transferAmount) <= 0) {
+    
+    const transferAmount = parseFloat(amount);
+    if (isNaN(transferAmount) || transferAmount <= 0) {
       toast({
-        title: "Erreur",
+        title: "Montant invalide",
         description: "Veuillez entrer un montant valide",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
-    if (fromAccount === toAccount) {
+    
+    // Find source account to check balance
+    const sourceAccount = accounts?.find(acc => acc.id === fromAccountId);
+    if (sourceAccount && sourceAccount.balance < transferAmount) {
       toast({
-        title: "Erreur",
-        description: "Les comptes source et destination doivent être différents",
-        variant: "destructive",
+        title: "Fonds insuffisants",
+        description: "Le compte source n'a pas assez de fonds pour ce transfert",
+        variant: "destructive"
       });
       return;
     }
-
-    setIsSubmitting(true);
-
+    
     try {
-      await transferFunds.mutateAsync({
-        sfdId: accounts[0]?.sfd_id || '',
-        fromAccountId: fromAccount,
-        toAccountId: toAccount,
-        amount: parseFloat(transferAmount),
-        description: description || "Transfert entre comptes SFD",
+      setIsTransferring(true);
+      
+      // Extract SFD ID from source account
+      const sfdId = sourceAccount?.sfd_id;
+      
+      if (!sfdId) {
+        throw new Error("SFD ID introuvable");
+      }
+      
+      // Create transfer parameters
+      const transferParams: CreateTransferParams = {
+        sfdId,
+        fromAccountId,
+        toAccountId,
+        amount: transferAmount,
+        description: description || "Transfert entre comptes SFD"
+      };
+      
+      // Call Supabase function to process transfer
+      const { data, error } = await supabase.functions.invoke('sfd-account-transfer', {
+        body: transferParams
       });
-
-      setTransferAmount('');
-      setDescription('');
-      setIsTransferDialogOpen(false);
-    } catch (error) {
-      console.error("Transfer error:", error);
+      
+      if (error) throw error;
+      
+      if (data.success) {
+        toast({
+          title: "Transfert réussi",
+          description: `${formatCurrency(transferAmount)} transféré avec succès`,
+        });
+        
+        // Clear form
+        setFromAccountId('');
+        setToAccountId('');
+        setAmount('');
+        setDescription('');
+        
+        // Refresh accounts data
+        refetch();
+      } else {
+        throw new Error(data.message || "Échec du transfert pour une raison inconnue");
+      }
+    } catch (error: any) {
+      console.error('Transfer error:', error);
+      toast({
+        title: "Erreur de transfert",
+        description: error.message || "Une erreur s'est produite lors du transfert",
+        variant: "destructive"
+      });
     } finally {
-      setIsSubmitting(false);
+      setIsTransferring(false);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center p-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Chargement des comptes SFD...</span>
-      </div>
-    );
-  }
-
+  
+  const getAccountTypeLabel = (type: string) => {
+    switch (type) {
+      case 'operation': return 'Opérations';
+      case 'remboursement': return 'Remboursements';
+      case 'epargne': return 'Épargne';
+      default: return type;
+    }
+  };
+  
+  const getSfdById = (sfdId: string) => {
+    const sfdAccount = accounts?.find(account => account.sfd_id === sfdId);
+    return sfdId; // In a real implementation, you would return the SFD name from a map of SFDs
+  };
+  
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Comptes SFD</h2>
-        <Button onClick={refreshData} variant="outline" size="sm" className="gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Actualiser
-        </Button>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        {/* Operation Account Card */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Compte d'Opérations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold mb-1">
-              {operationAccount ? (
-                `${operationAccount.balance.toLocaleString()} ${operationAccount.currency}`
-              ) : "N/A"}
+      <Card>
+        <CardHeader>
+          <CardTitle>Gestion des Comptes SFD</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-lg font-medium mb-4">Liste des Comptes</h3>
+              
+              {isLoading ? (
+                <div className="flex items-center justify-center p-6">
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                  <span>Chargement des comptes...</span>
+                </div>
+              ) : accounts && accounts.length > 0 ? (
+                <div className="border rounded-md overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SFD</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {accounts.map(account => (
+                        <tr key={account.id}>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm">{getSfdById(account.sfd_id)}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm">{getAccountTypeLabel(account.account_type)}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">{formatCurrency(account.balance)}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm">
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              account.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {account.status === 'active' ? 'Actif' : 'Inactif'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center p-4 border rounded-md bg-gray-50">
+                  Aucun compte trouvé
+                </div>
+              )}
             </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Utilisé pour les opérations quotidiennes
-            </p>
-            {operationAccount && (
-              <div className="text-xs text-muted-foreground mt-2">
-                ID: {operationAccount.id.substring(0, 8)}...
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Repayment Account Card */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Compte de Remboursements</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold mb-1">
-              {repaymentAccount ? (
-                `${repaymentAccount.balance.toLocaleString()} ${repaymentAccount.currency}`
-              ) : "N/A"}
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Dédié aux remboursements de prêts
-            </p>
-            {repaymentAccount && (
-              <div className="text-xs text-muted-foreground mt-2">
-                ID: {repaymentAccount.id.substring(0, 8)}...
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Savings Account Card */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Compte d'Épargne</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold mb-1">
-              {savingsAccount ? (
-                `${savingsAccount.balance.toLocaleString()} ${savingsAccount.currency}`
-              ) : "N/A"}
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Réservé pour l'épargne des clients
-            </p>
-            {savingsAccount && (
-              <div className="text-xs text-muted-foreground mt-2">
-                ID: {savingsAccount.id.substring(0, 8)}...
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Transfer Button */}
-      <div className="flex justify-center mt-6">
-        <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2 bg-[#0D6A51] hover:bg-[#0D6A51]/90">
-              <ArrowDownUp className="h-4 w-4" />
-              Transfert entre comptes
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Transfert entre comptes SFD</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label htmlFor="fromAccount">Compte Source</label>
-                <Select value={fromAccount} onValueChange={setFromAccount}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner le compte source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map(account => (
-                      <SelectItem key={account.id} value={account.id}>
-                        {account.account_type === 'operation' ? 'Compte Opérations' : 
-                         account.account_type === 'remboursement' ? 'Compte Remboursements' : 
-                         'Compte Épargne'} - {account.balance.toLocaleString()} {account.currency}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="toAccount">Compte Destination</label>
-                <Select value={toAccount} onValueChange={setToAccount}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner le compte destination" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map(account => (
-                      <SelectItem key={account.id} value={account.id}>
-                        {account.account_type === 'operation' ? 'Compte Opérations' : 
-                         account.account_type === 'remboursement' ? 'Compte Remboursements' : 
-                         'Compte Épargne'} - {account.balance.toLocaleString()} {account.currency}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="amount">Montant</label>
-                <div className="relative">
-                  <BadgeDollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            
+            <div>
+              <h3 className="text-lg font-medium mb-4">Effectuer un Transfert</h3>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fromAccount">Compte Source</Label>
+                  <Select value={fromAccountId} onValueChange={setFromAccountId}>
+                    <SelectTrigger id="fromAccount">
+                      <SelectValue placeholder="Sélectionner le compte source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts?.map(account => (
+                        <SelectItem key={`from-${account.id}`} value={account.id}>
+                          {getSfdById(account.sfd_id)} - {getAccountTypeLabel(account.account_type)} ({formatCurrency(account.balance)})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="toAccount">Compte Destination</Label>
+                  <Select value={toAccountId} onValueChange={setToAccountId}>
+                    <SelectTrigger id="toAccount">
+                      <SelectValue placeholder="Sélectionner le compte destination" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts?.map(account => (
+                        <SelectItem key={`to-${account.id}`} value={account.id}>
+                          {getSfdById(account.sfd_id)} - {getAccountTypeLabel(account.account_type)} ({formatCurrency(account.balance)})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Montant (FCFA)</Label>
                   <Input
                     id="amount"
                     type="number"
-                    placeholder="0.00"
-                    className="pl-10"
-                    value={transferAmount}
-                    onChange={(e) => setTransferAmount(e.target.value)}
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    min="0"
+                    step="1000"
+                    placeholder="Montant à transférer"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="description">Description (optionnel)</label>
-                <Input
-                  id="description"
-                  placeholder="Raison du transfert"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-              </div>
-
-              <Button 
-                className="w-full mt-4 bg-[#0D6A51] hover:bg-[#0D6A51]/90" 
-                onClick={handleTransfer}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Transfert en cours...
-                  </>
-                ) : (
-                  'Effectuer le transfert'
-                )}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Transfer History */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Historique des transferts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {transferHistory.length > 0 ? (
-            <div className="rounded-md border">
-              <div className="grid grid-cols-5 gap-4 p-4 font-medium border-b bg-muted/50">
-                <div>Date</div>
-                <div>De</div>
-                <div>Vers</div>
-                <div>Montant</div>
-                <div>Description</div>
-              </div>
-              <div className="divide-y">
-                {transferHistory.map(transfer => {
-                  const fromAccount = accounts.find(a => a.id === transfer.from_account_id);
-                  const toAccount = accounts.find(a => a.id === transfer.to_account_id);
-                  
-                  return (
-                    <div key={transfer.id} className="grid grid-cols-5 gap-4 p-4 text-sm">
-                      <div>{new Date(transfer.created_at).toLocaleString()}</div>
-                      <div>{fromAccount ? (
-                        fromAccount.account_type === 'operation' ? 'Compte Opérations' : 
-                        fromAccount.account_type === 'remboursement' ? 'Compte Remboursements' : 
-                        'Compte Épargne'
-                      ) : 'Inconnu'}</div>
-                      <div>{toAccount ? (
-                        toAccount.account_type === 'operation' ? 'Compte Opérations' : 
-                        toAccount.account_type === 'remboursement' ? 'Compte Remboursements' : 
-                        'Compte Épargne'
-                      ) : 'Inconnu'}</div>
-                      <div>{transfer.amount.toLocaleString()} FCFA</div>
-                      <div>{transfer.description || '-'}</div>
-                    </div>
-                  );
-                })}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Input
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Description du transfert"
+                  />
+                </div>
+                
+                <Button 
+                  className="w-full" 
+                  onClick={handleTransfer}
+                  disabled={isTransferring || !fromAccountId || !toAccountId || !amount}
+                >
+                  {isTransferring ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Transfert en cours...
+                    </>
+                  ) : (
+                    'Effectuer le Transfert'
+                  )}
+                </Button>
               </div>
             </div>
-          ) : (
-            <div className="text-center p-4 text-muted-foreground">
-              Aucun transfert n'a été effectué entre les comptes SFD.
-            </div>
-          )}
+          </div>
         </CardContent>
       </Card>
     </div>
