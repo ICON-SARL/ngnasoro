@@ -1,30 +1,18 @@
 
-export interface SfdAccountDisplay {
-  id: string;
-  name: string;
-  logoUrl?: string | null;
-  region?: string;
-  code?: string;
-  isDefault?: boolean;
-  balance: number;
-  currency: string;
-  isVerified?: boolean;
-  status?: string;
-}
-
 export interface AvailableSfd {
   id: string;
   name: string;
-  code?: string;
+  code: string;
   region?: string;
-  logo_url?: string;
   status: string;
+  logo_url?: string;
+  description?: string;
 }
 
 export interface SfdClientRequest {
   id: string;
   sfd_id: string;
-  sfd_name?: string;  // Ajout de la propriété manquante
+  sfd_name?: string;
   status: string;
   created_at: string;
 }

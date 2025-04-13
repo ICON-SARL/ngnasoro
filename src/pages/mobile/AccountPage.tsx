@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, User, Bell, Shield, Info, ChevronRight } from 'lucide-react';
+import { ArrowLeft, User, Bell, Shield, Info, ChevronRight, Building } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MobileMenu from '@/components/mobile/MobileMenu';
+import SfdAdhesionSection from '@/components/mobile/account/SfdAdhesionSection';
 
 const AccountPage: React.FC = () => {
   const navigate = useNavigate();
@@ -65,7 +66,10 @@ const AccountPage: React.FC = () => {
           </CardContent>
         </Card>
         
-        <h2 className="text-xl font-semibold mb-4">Paramètres</h2>
+        {/* SFD Adhesion Section */}
+        <SfdAdhesionSection />
+        
+        <h2 className="text-xl font-semibold mb-4 mt-6">Paramètres</h2>
         
         <div className="space-y-4">
           {/* Notifications */}
@@ -91,6 +95,20 @@ const AccountPage: React.FC = () => {
               <div className="ml-4 flex-1">
                 <h3 className="font-medium">Sécurité</h3>
                 <p className="text-sm text-gray-500">Paramètres de sécurité</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </CardContent>
+          </Card>
+          
+          {/* SFD Accounts */}
+          <Card className="border cursor-pointer" onClick={() => navigate('/sfd-setup')}>
+            <CardContent className="p-4 flex items-center">
+              <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                <Building className="h-6 w-6 text-indigo-600" />
+              </div>
+              <div className="ml-4 flex-1">
+                <h3 className="font-medium">Comptes SFD</h3>
+                <p className="text-sm text-gray-500">Gérer vos comptes SFD</p>
               </div>
               <ChevronRight className="h-5 w-5 text-gray-400" />
             </CardContent>
