@@ -29,7 +29,7 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
   setShowWelcome,
   handlePaymentSubmit
 }) => {
-  console.log("Rendering MobileFlowRoutes");
+  console.log("Rendering MobileFlowRoutes with account:", account);
   
   return (
     <Routes>
@@ -59,10 +59,10 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
         <SfdSelectorPage />
       } />
       
-      {/* Default route */}
+      {/* Default route - redirect to main instead of having nested main */}
       <Route index element={<Navigate to="main" replace />} />
       
-      {/* Catch all route */}
+      {/* Catch-all route */}
       <Route path="*" element={<Navigate to="main" replace />} />
     </Routes>
   );

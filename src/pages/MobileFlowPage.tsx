@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -107,16 +106,23 @@ const MobileFlowPage = () => {
     }
   };
   
-  // Vérifier que la route est valide
+  // Fix routing - ensure we redirect to the correct path
   useEffect(() => {
     const path = location.pathname;
     console.log("Current path in MobileFlowPage:", path);
-    if (path === '/mobile-flow' || path === '/mobile-flow/') {
+    
+    // If we're on a nested "main/main" path, redirect to the correct path
+    if (path === '/mobile-flow/main/main' || path === '/mobile-flow/main/') {
+      console.log("Redirecting from nested main path to /mobile-flow/main");
+      navigate('/mobile-flow/main', { replace: true });
+    }
+    // Default redirect if just on /mobile-flow
+    else if (path === '/mobile-flow' || path === '/mobile-flow/') {
       navigate('/mobile-flow/main');
     }
   }, [location.pathname, navigate]);
   
-  // Gérer la redirection depuis le splash screen
+  // Handle splash screen visibility
   useEffect(() => {
     const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
     if (location.pathname !== '/mobile-flow/splash' && !hasSeenSplash) {

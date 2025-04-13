@@ -36,9 +36,10 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/sfd-selector" element={<SfdSelectorPage />} />
             
-            {/* Mobile Flow Routes */}
-            <Route path="/mobile-flow" element={<MobileFlowPage />} />
-            <Route path="/mobile-flow/main" element={<MobileFlowPage />} />
+            {/* Mobile Flow Routes - using /* to capture all nested routes */}
+            <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
+            
+            {/* Individual Mobile Pages */}
             <Route path="/mobile-flow/loans" element={<MobileLoansPage />} />
             <Route path="/mobile-flow/my-loans" element={<MobileMyLoansPage />} />
             <Route path="/mobile-flow/savings" element={<MobileSavingsPage />} />
@@ -50,6 +51,9 @@ function App() {
             
             {/* Redirect root to mobile flow */}
             <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
+            
+            {/* Catch-all redirect */}
+            <Route path="*" element={<Navigate to="/mobile-flow/main" replace />} />
           </Routes>
           <Toaster />
         </AuthProvider>
