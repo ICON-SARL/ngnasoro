@@ -1,39 +1,21 @@
 
-import React, { useState } from 'react';
-import { Building } from 'lucide-react';
+import React from 'react';
+import { ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import SfdListPopup from './SfdListPopup';
+import { useNavigate } from 'react-router-dom';
 
-interface ViewAllSfdsButtonProps {
-  variant?: 'default' | 'outline' | 'secondary';
-  size?: 'default' | 'sm' | 'lg';
-  className?: string;
-}
-
-const ViewAllSfdsButton: React.FC<ViewAllSfdsButtonProps> = ({ 
-  variant = 'default',
-  size = 'default',
-  className = ''
-}) => {
-  const [showSfdList, setShowSfdList] = useState(false);
-
+const ViewAllSfdsButton: React.FC = () => {
+  const navigate = useNavigate();
+  
   return (
-    <>
-      <Button
-        variant={variant}
-        size={size}
-        onClick={() => setShowSfdList(true)}
-        className={`w-full ${className}`}
-      >
-        <Building className="h-4 w-4 mr-2" />
-        Voir les SFDs disponibles
-      </Button>
-
-      <SfdListPopup 
-        isOpen={showSfdList}
-        onClose={() => setShowSfdList(false)}
-      />
-    </>
+    <Button
+      variant="outline"
+      className="w-full flex justify-center items-center py-2"
+      onClick={() => navigate('/mobile-flow/sfds')}
+    >
+      Voir tous mes SFDs
+      <ChevronRight className="h-4 w-4 ml-1" />
+    </Button>
   );
 };
 
