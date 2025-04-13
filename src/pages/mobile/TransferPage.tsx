@@ -20,12 +20,12 @@ export default function TransferPage() {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="p-0 mr-2" 
+            className="p-0 mr-2 text-[#0D6A51]" 
             onClick={handleBack}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">Transfert</h1>
+          <h1 className="text-xl font-bold text-[#0D6A51]">Transfert</h1>
         </div>
         <p className="text-gray-500 text-sm">Envoyez de l'argent facilement</p>
       </div>

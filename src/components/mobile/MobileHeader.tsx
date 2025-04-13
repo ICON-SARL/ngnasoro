@@ -36,7 +36,7 @@ const MobileHeader = () => {
       <div className="mt-3 flex justify-end">
         <div className="w-[180px]">
           <Select value={activeSfdId || ''} onValueChange={handleSfdChange}>
-            <SelectTrigger className="bg-blue-700/80 text-white border-blue-500 text-sm py-1 h-8">
+            <SelectTrigger className="bg-[#0D6A51] text-white border-[#F97316]/20 text-sm py-1 h-8 hover:bg-[#0D6A51]/90">
               <SelectValue placeholder="Choisir une SFD" />
             </SelectTrigger>
             <SelectContent>
@@ -44,8 +44,8 @@ const MobileHeader = () => {
                 <SelectItem key={sfd.id} value={sfd.id} className="text-sm">
                   <div className="flex items-center">
                     <Shield className={`h-3 w-3 mr-1 ${
-                      sfd.id === 'primary-sfd' ? 'text-green-600' : 
-                      sfd.id === 'secondary-sfd' ? 'text-amber-600' : 'text-blue-600'
+                      sfd.id === 'primary-sfd' ? 'text-[#0D6A51]' : 
+                      sfd.id === 'secondary-sfd' ? 'text-[#F97316]' : 'text-blue-600'
                     }`} />
                     {sfd.name}
                   </div>

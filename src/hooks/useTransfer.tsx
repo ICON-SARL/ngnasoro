@@ -24,6 +24,7 @@ export function useTransfer() {
       toast({
         title: 'Transfert réussi',
         description: 'Votre transfert a été effectué avec succès',
+        className: 'border-[#0D6A51] bg-[#0D6A51]/10'
       });
       
       return data;

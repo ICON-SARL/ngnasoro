@@ -8,7 +8,7 @@ const ContextualHeader = () => {
       <div className="flex items-center space-x-3">
         <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
           <img 
-            src="/lovable-uploads/5bea06b7-84d8-474a-8a27-40711aff2092.png" 
+            src="/lovable-uploads/11c7df4b-bda8-4b49-b653-6ba0e7d3abad.png" 
             alt="N'GNA SÔRÔ! Logo" 
             className="h-8 w-8 object-contain"
           />
