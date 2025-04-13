@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -31,14 +30,8 @@ export const LoanWorkflow = () => {
   const fetchLoans = async () => {
     try {
       setLoading(true);
-      const response = await loanService.getSfdLoans();
-      if (Array.isArray(response)) {
-        setLoans(response);
-      } else if (response && 'loans' in response) {
-        setLoans(response.loans as Loan[]);
-      } else {
-        setLoans([]);
-      }
+      const fetchedLoans = await loanService.getSfdLoans();
+      setLoans(fetchedLoans);
     } catch (error) {
       console.error('Error fetching loans:', error);
       toast({
