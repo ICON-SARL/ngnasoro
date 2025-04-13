@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,7 +73,6 @@ export const NewLoanForm: React.FC<LoanFormProps> = ({ onCancel, onSuccess }) =>
     fetchLoanPlans();
   }, []);
 
-  // Effect to update amount and duration based on selected plan
   useEffect(() => {
     if (selectedPlan) {
       setFormData(prev => ({
@@ -99,7 +97,6 @@ export const NewLoanForm: React.FC<LoanFormProps> = ({ onCancel, onSuccess }) =>
         if (error) throw error;
         setClients(data || []);
       } else {
-        // Mock data for demo
         setClients([
           { id: 'client1', full_name: 'Aissatou Diallo' },
           { id: 'client2', full_name: 'Mamadou Sy' },
@@ -132,7 +129,6 @@ export const NewLoanForm: React.FC<LoanFormProps> = ({ onCancel, onSuccess }) =>
         if (error) throw error;
         setLoanPlans(data || []);
       } else {
-        // Mock data for demo
         setLoanPlans([
           {
             id: 'plan1',

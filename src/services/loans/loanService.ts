@@ -2,6 +2,18 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Loan } from '@/types/sfdClients';
 
+export interface CreateLoanInput {
+  client_id: string;
+  sfd_id: string;
+  amount: number;
+  duration_months: number;
+  interest_rate: number;
+  purpose: string;
+  monthly_payment: number;
+  subsidy_amount?: number;
+  subsidy_rate?: number;
+}
+
 /**
  * Fetches a loan by its ID along with client information
  */
@@ -41,4 +53,27 @@ export const fetchLoanById = async (loanId: string): Promise<Loan | null> => {
   };
   
   return loan;
+};
+
+/**
+ * Creates a new loan
+ */
+export const createLoan = async (loanData: CreateLoanInput): Promise<Loan | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('sfd_loans')
+      .insert([loanData])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating loan:', error);
+      return null;
+    }
+    
+    return data as Loan;
+  } catch (error) {
+    console.error('Error creating loan:', error);
+    return null;
+  }
 };

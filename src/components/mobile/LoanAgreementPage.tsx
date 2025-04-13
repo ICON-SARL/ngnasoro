@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Info, Calendar, ChevronDown, ExternalLink, CheckCircle, Shield, Clock, CreditCard, AlertTriangle } from 'lucide-react';
