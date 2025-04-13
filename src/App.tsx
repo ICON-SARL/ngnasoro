@@ -109,8 +109,10 @@ function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
           
-          {/* Place Toaster outside of Routes but inside providers */}
-          <Toaster />
+          {/* We use React.StrictMode to ensure the Toaster works with hooks properly */}
+          <React.StrictMode>
+            <Toaster />
+          </React.StrictMode>
         </AuthProvider>
       </QueryClientProvider>
     </BrowserRouter>

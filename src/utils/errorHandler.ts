@@ -35,6 +35,7 @@ export function handleError(error: unknown): void {
     }
   }
 
+  // Use the imported toast function directly rather than accessing it through useToast
   toast({
     title: "Erreur",
     description: displayMessage,

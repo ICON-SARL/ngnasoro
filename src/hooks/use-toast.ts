@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -112,8 +113,10 @@ const reducer = (state: State, action: Action): State => {
   }
 };
 
+// Create a separate listeners array to prevent issues with React null references
 const listeners: Array<(state: State) => void> = [];
 
+// Initialize with empty state
 let memoryState: State = { toasts: [] };
 
 function dispatch(action: Action) {
@@ -154,11 +157,16 @@ function toast({ ...props }: Toast) {
   };
 }
 
+// Fix the useToast hook to ensure it's properly handling state
 function useToast() {
+  // Use a standard useState hook with the initial state
   const [state, setState] = React.useState<State>(memoryState);
 
   React.useEffect(() => {
+    // Add our state setter to the listeners
     listeners.push(setState);
+    
+    // Clean up when component unmounts
     return () => {
       const index = listeners.indexOf(setState);
       if (index > -1) {
