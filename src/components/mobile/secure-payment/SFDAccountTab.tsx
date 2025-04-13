@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Fingerprint, RotateCw, Shield, Lock } from 'lucide-react';
-import { useSfdAccounts, SfdAccount } from '@/hooks/useSfdAccounts';
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { SfdAccount } from '@/hooks/sfd/types';
 import { useAuth } from '@/hooks/useAuth';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
 
@@ -57,7 +58,14 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
   
   // Display either the pre-selected account or a dropdown
   const displayAccount = selectedSfdAccount || accountsList.find(sfd => sfd.id === selected);
-  const accountName = displayAccount?.name || "Compte SFD";
+  
+  // Get the account name with fallbacks
+  const getAccountName = (account?: SfdAccount | null): string => {
+    if (!account) return "Compte SFD";
+    return account.name || account.description || `Compte ${account.account_type || 'SFD'}`;
+  };
+  
+  const accountName = getAccountName(displayAccount);
   const accountBalance = displayAccount?.balance || 0;
   const formattedBalance = `${formatCurrencyAmount(accountBalance, "")} FCFA`;
   
@@ -78,7 +86,7 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
             <SelectContent>
               {accountsList.map(sfd => (
                 <SelectItem key={sfd.id} value={sfd.id}>
-                  {sfd.name} ({formatCurrencyAmount(sfd.balance, "")} FCFA)
+                  {getAccountName(sfd)} ({formatCurrencyAmount(sfd.balance, "")} FCFA)
                 </SelectItem>
               ))}
             </SelectContent>
@@ -100,7 +108,7 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
             <SelectContent>
               {activeSfdAccount?.loans.map(loan => (
                 <SelectItem key={loan.id} value={loan.id}>
-                  {activeSfdAccount.name} ({Math.floor(loan.remainingAmount / 4).toLocaleString()} FCFA)
+                  {getAccountName(activeSfdAccount)} ({Math.floor(loan.remainingAmount / 4).toLocaleString()} FCFA)
                 </SelectItem>
               ))}
             </SelectContent>

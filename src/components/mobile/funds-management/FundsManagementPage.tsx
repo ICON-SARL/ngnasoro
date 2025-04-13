@@ -25,7 +25,7 @@ const FundsManagementPage = () => {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [selectedSfd, setSelectedSfd] = useState<string>('all');
   
-  const { sfdAccounts, refetch: refetchSfdAccounts } = useSfdAccounts();
+  const { accounts, sfdAccounts, refetch: refetchSfdAccounts } = useSfdAccounts();
   
   const { 
     transactions, 

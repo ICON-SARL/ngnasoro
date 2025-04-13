@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Check, X } from 'lucide-react';
-import { SfdAccount } from '@/hooks/useSfdAccounts';
+import { SfdAccount } from '@/hooks/sfd/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -35,6 +35,12 @@ const PaymentDetails = ({
     }
   };
 
+  // Get account name with fallbacks
+  const getAccountName = (account?: SfdAccount | null): string => {
+    if (!account) return 'Compte SFD';
+    return account.name || account.description || `Compte ${account.account_type || 'SFD'}`;
+  };
+
   return (
     <div className="bg-blue-50 p-4 rounded-lg mb-2">
       <h2 className="font-bold mb-1">
@@ -44,7 +50,7 @@ const PaymentDetails = ({
         <>
           <div className="flex justify-between mb-1">
             <span className="text-gray-600">Compte:</span>
-            <span>{selectedSfdAccount.name || 'Compte SFD'}</span>
+            <span>{getAccountName(selectedSfdAccount)}</span>
           </div>
           <div className="flex justify-between mb-1">
             <span className="text-gray-600">Disponible:</span>

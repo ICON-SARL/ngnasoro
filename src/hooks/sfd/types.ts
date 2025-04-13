@@ -28,7 +28,7 @@ export interface SyncResult {
   updates?: any;
 }
 
-// Add interfaces for SfdAccount, SfdLoan
+// Update the SfdAccount interface to be compatible with the one in types/sfdAccounts.ts
 export interface SfdAccount {
   id: string;
   name: string;
@@ -44,7 +44,7 @@ export interface SfdAccount {
   token?: string;
   lastFetched?: Date;
   // These are for compatibility with the DB SfdAccount type
-  sfd_id?: string;
+  sfd_id: string;     // Making this required for compatibility
   account_type?: string;
   description?: string | null;
   created_at?: string;

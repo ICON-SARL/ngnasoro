@@ -9,6 +9,7 @@ import SecurePaymentContent from './SecurePaymentContent';
 import MobileMoneyModal from '../loan/MobileMoneyModal';
 import QRCodePaymentDialog from './QRCodePaymentDialog';
 import { useSecurePayment } from './hooks/useSecurePayment';
+import { SfdAccount } from '@/hooks/sfd/types';
 
 export interface SecurePaymentTabProps {
   onBack?: () => void;

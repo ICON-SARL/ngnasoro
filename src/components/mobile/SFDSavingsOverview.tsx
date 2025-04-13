@@ -27,12 +27,15 @@ const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({ account }) => {
   
   useEffect(() => {
     console.log("SFDSavingsOverview mounted with account:", account);
-    // Vérifier si le compte SFD est validé
+    // Check if the SFD account is validated
     if (account) {
-      setIsAccountVerified(account.isVerified || account.isDefault || false);
+      // Add default values if properties don't exist
+      const verified = account.isVerified !== undefined ? account.isVerified : true;
+      const isDefault = account.isDefault !== undefined ? account.isDefault : false;
+      setIsAccountVerified(verified || isDefault);
     }
     
-    // Simuler un chargement
+    // Simulate loading
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1000);
@@ -60,7 +63,7 @@ const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({ account }) => {
     );
   }
   
-  // Si aucun compte n'est disponible
+  // If no account is available
   if (!account) {
     return (
       <Card className="border-0 shadow-md bg-white rounded-2xl overflow-hidden">
@@ -82,7 +85,7 @@ const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({ account }) => {
     );
   }
   
-  // Afficher les informations du compte, mais cacher le solde si non validé
+  // Show account information, but hide the balance if not validated
   return (
     <Card className="border-0 shadow-md bg-white rounded-2xl overflow-hidden">
       <CardContent className="p-4">

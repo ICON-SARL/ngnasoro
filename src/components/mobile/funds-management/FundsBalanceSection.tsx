@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
 import { Loader } from '@/components/ui/loader';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { SfdAccount } from '@/hooks/useSfdAccounts';
+import { SfdAccount } from '@/hooks/sfd/types';
 
 interface FundsBalanceSectionProps {
   balance: number;
@@ -49,7 +50,7 @@ const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({
                 <SelectItem value="all">Tous les comptes</SelectItem>
                 {sfdAccounts.map((sfd) => (
                   <SelectItem key={sfd.id} value={sfd.id}>
-                    {sfd.name}
+                    {sfd.name || sfd.description || `Compte ${sfd.account_type || 'SFD'}`}
                   </SelectItem>
                 ))}
               </SelectContent>

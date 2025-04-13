@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { sfdAccountService } from '@/services/sfdAccountService';
-import { SfdAccount, CreateTransferParams, SfdAccountTransfer } from '@/types/sfdAccounts';
+import { SfdAccount as DbSfdAccount, CreateTransferParams, SfdAccountTransfer } from '@/types/sfdAccounts';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { SfdAccount as SfdClientAccount } from '@/hooks/sfd/types';
@@ -102,7 +102,7 @@ export function useSfdAccounts(sfdId?: string) {
   const savingsAccount = accounts.find(account => account.account_type === 'epargne');
 
   // For compatibility with components expecting SfdClientAccount type
-  const transformAccounts = (accounts: SfdAccount[]): SfdClientAccount[] => {
+  const transformAccounts = (accounts: DbSfdAccount[]): SfdClientAccount[] => {
     return accounts.map(acc => ({
       id: acc.id,
       name: acc.description || `Compte ${acc.account_type}`,
@@ -113,9 +113,17 @@ export function useSfdAccounts(sfdId?: string) {
       currency: acc.currency,
       isDefault: false,
       isVerified: true,
-      status: acc.status
+      status: acc.status,
+      sfd_id: acc.sfd_id,  // Include the required fields for compatibility
+      account_type: acc.account_type,
+      description: acc.description,
+      created_at: acc.created_at,
+      updated_at: acc.updated_at
     }));
   };
+
+  // Get transformed accounts as client accounts
+  const sfdAccounts = transformAccounts(accounts);
 
   // Compute the active SFD account for UI components that expect it
   const activeSfdAccount = accounts.length > 0 ? {
@@ -127,13 +135,18 @@ export function useSfdAccounts(sfdId?: string) {
     isDefault: true,
     isVerified: true,
     loans: [],
-    status: 'active'
+    status: 'active',
+    sfd_id: effectiveSfdId || accounts[0].sfd_id,  // Add the required field
+    account_type: '',
+    description: null,
+    created_at: '',
+    updated_at: ''
   } as SfdClientAccount : null;
 
   // Return both the original accounts and transformed accounts for compatibility
   return {
     accounts,
-    sfdAccounts: transformAccounts(accounts),
+    sfdAccounts,
     isLoading,
     error,
     transferHistory,
@@ -152,4 +165,4 @@ export function useSfdAccounts(sfdId?: string) {
 }
 
 // Also export the types for components that need them
-export type { SfdAccount, SfdAccountTransfer, CreateTransferParams };
+export type { SfdAccount as DbSfdAccount, SfdAccountTransfer, CreateTransferParams };
