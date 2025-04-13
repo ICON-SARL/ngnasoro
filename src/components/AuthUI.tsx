@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
@@ -11,9 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserRole } from '@/hooks/auth/types';
 import { useToast } from '@/hooks/use-toast';
 
-const AuthUI = () => {
+interface AuthUIProps {
+  initialMode?: 'default' | 'admin' | 'sfd_admin';
+}
+
+const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
   const [activeTab, setActiveTab] = useState('login');
-  const [authMode, setAuthMode] = useState<'default' | 'admin' | 'sfd_admin'>('default');
+  const [authMode, setAuthMode] = useState<'default' | 'admin' | 'sfd_admin'>(initialMode);
   const { user, userRole, loading, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,7 +63,7 @@ const AuthUI = () => {
     } else if (location.pathname.includes('sfd/auth') || location.search.includes('sfd_admin=true')) {
       setAuthMode('sfd_admin');
     } else {
-      setAuthMode('default');
+      setAuthMode(initialMode);
     }
     
     // Set active tab (login or register)
@@ -69,7 +72,7 @@ const AuthUI = () => {
     } else {
       setActiveTab('login');
     }
-  }, [location.pathname, location.search]);
+  }, [location.pathname, location.search, initialMode]);
   
   if (authSuccess) {
     return (

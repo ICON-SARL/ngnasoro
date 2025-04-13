@@ -15,6 +15,8 @@ import { AuthProvider } from '@/hooks/auth/AuthContext';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import AuthRedirectPage from '@/pages/AuthRedirectPage';
+import AdminLoginPage from '@/pages/AdminLoginPage';
+import ClientLoginPage from '@/pages/ClientLoginPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -39,8 +41,9 @@ function App() {
               <Route path="/auth" element={<LoginPage />} />
               <Route path="/login" element={<AuthRedirectPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="/admin/auth" element={<LoginPage />} />
-              <Route path="/sfd/auth" element={<LoginPage />} />
+              <Route path="/admin/auth" element={<AdminLoginPage />} />
+              <Route path="/sfd/auth" element={<LoginPage isSfdAdmin={true} />} />
+              <Route path="/client/auth" element={<ClientLoginPage />} />
               
               <Route path="/mobile-flow/main" element={<MobileMainPage />} />
               <Route path="/mobile-flow/transfer" element={<TransferPage />} />

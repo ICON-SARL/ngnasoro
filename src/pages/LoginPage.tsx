@@ -1,10 +1,13 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
-import ClientAuthUI from '@/components/auth/ClientAuthUI';
+import AuthUI from '@/components/AuthUI';
 
-const LoginPage: React.FC = () => {
-  return <ClientAuthUI />;
+interface LoginPageProps {
+  isSfdAdmin?: boolean;
+}
+
+const LoginPage: React.FC<LoginPageProps> = ({ isSfdAdmin = false }) => {
+  return <AuthUI initialMode={isSfdAdmin ? 'sfd_admin' : 'default'} />;
 };
 
 export default LoginPage;
