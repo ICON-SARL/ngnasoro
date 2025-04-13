@@ -38,7 +38,7 @@ export function useTransactionsFetch({ activeSfdId, userId, toast }: UseTransact
           ...item,
           // Ensure type is one of the allowed values in Transaction type
           type: (item.type || 'other') as Transaction['type'],
-          // Ensure status is one of the allowed values in Transaction['status']
+          // Ensure status is one of the allowed values in Transaction type
           status: (item.status || 'success') as 'success' | 'pending' | 'failed' | 'flagged',
           sfd_id: activeSfdId
         })) as Transaction[];

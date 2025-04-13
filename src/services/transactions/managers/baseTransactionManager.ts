@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Transaction } from '@/types/transactions';
 import { logAuditEvent } from '@/services/transactionService';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
-import { TransactionParams } from '../interfaces/transactionInterfaces';
+import { TransactionParams } from '../transactionManager';
 
 /**
  * Base class for transaction management

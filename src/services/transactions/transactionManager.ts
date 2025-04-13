@@ -52,6 +52,20 @@ export class TransactionManager extends BaseTransactionManager {
   async makeLoanRepayment(loanId: string, amount: number, description?: string, paymentMethod?: string): Promise<Transaction | null> {
     return this.loanManager.makeLoanRepayment(loanId, amount, description, paymentMethod);
   }
+  
+  /**
+   * Gets account balance
+   */
+  async getAccountBalance(): Promise<number> {
+    return super.getAccountBalance();
+  }
+  
+  /**
+   * Gets transaction history
+   */
+  async getTransactionHistory(limit: number = 10): Promise<Transaction[]> {
+    return super.getTransactionHistory(limit);
+  }
 }
 
 /**
