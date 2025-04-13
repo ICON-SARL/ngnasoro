@@ -29,8 +29,8 @@ export function useMobileDashboard() {
       console.error('Error in useMobileDashboard:', err);
       setError(err.message || 'Failed to load dashboard data');
       toast({
-        title: 'Error',
-        description: 'Failed to load dashboard data',
+        title: 'Erreur',
+        description: 'Impossible de charger les données du tableau de bord',
         variant: 'destructive',
       });
     } finally {

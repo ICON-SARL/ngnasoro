@@ -48,16 +48,16 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
         await refreshDashboardData();
         
         toast({
-          title: "Dashboard Updated",
-          description: "Your financial data has been refreshed",
+          title: "Données actualisées",
+          description: "Vos informations financières ont été mises à jour",
         });
       }
     } catch (error) {
       console.error("Error refreshing dashboard data:", error);
       
       toast({
-        title: "Update Failed",
-        description: "Could not refresh your financial data",
+        title: "Échec de l'actualisation",
+        description: "Impossible de mettre à jour vos données financières",
         variant: "destructive",
       });
     } finally {
@@ -82,9 +82,9 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   
   return (
     <div className="space-y-4 pb-20">
-      <div className="bg-gradient-to-b from-[#0D6A51] to-[#0D6A51]/90 text-white p-4 rounded-b-3xl shadow-md relative">
+      <div className="bg-gradient-to-br from-[#0D6A51] to-[#064032] text-white p-4 rounded-b-3xl shadow-md relative">
         <div className="absolute top-4 right-4">
-          <Button variant="ghost" size="sm" className="text-white p-1 hover:bg-white/10" onClick={toggleMenu}>
+          <Button variant="ghost" size="sm" className="text-white p-1 hover:bg-white/10 rounded-full" onClick={toggleMenu}>
             <Menu className="h-5 w-5" />
           </Button>
         </div>

@@ -8,7 +8,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Building } from 'lucide-react';
 
 const ContextualHeader = () => {
   const { user } = useAuth();
@@ -34,17 +34,19 @@ const ContextualHeader = () => {
           
           <div className="flex items-center mt-1">
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center text-white text-sm bg-white/20 rounded-lg px-3 py-1">
+              <DropdownMenuTrigger className="flex items-center text-white text-sm bg-white/20 rounded-lg px-3 py-1 hover:bg-white/30 transition-colors">
+                <Building className="h-3.5 w-3.5 mr-1.5 opacity-80" />
                 <span>{activeSFDName}</span>
-                <ChevronDown className="ml-1 h-4 w-4" />
+                <ChevronDown className="ml-1 h-4 w-4 opacity-70" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent className="rounded-xl border border-gray-100 shadow-lg p-1 bg-white/95 backdrop-blur-sm">
                 {sfdData.map(sfd => (
                   <DropdownMenuItem 
                     key={sfd.id}
-                    className={`text-sm ${sfd.id === activeSfdId ? 'font-bold' : ''}`}
+                    className={`text-sm rounded-lg my-0.5 px-3 py-2 cursor-pointer ${sfd.id === activeSfdId ? 'font-semibold bg-gray-100' : 'hover:bg-gray-50'}`}
                     onClick={() => setActiveSfdId(sfd.id)}
                   >
+                    <Building className={`h-3.5 w-3.5 mr-2 ${sfd.id === activeSfdId ? 'text-[#0D6A51]' : 'text-gray-500'}`} />
                     {sfd.name}
                   </DropdownMenuItem>
                 ))}
