@@ -1,48 +1,81 @@
 
-import { useAuth } from './useAuth';
-import { useSfdList } from './sfd/useSfdList';
-import { useSfdAccount } from './sfd/useSfdAccount';
-import { useSfdAccountActions } from './sfd/useSfdAccountActions';
+import { useState, useEffect, useCallback } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { sfdAccountService } from '@/services/sfdAccountService';
+import { SfdAccount, CreateTransferParams } from '@/types/sfdAccounts';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
-// Export the SfdAccount type directly
-import { SfdAccount } from './sfd/types';
-export type { SfdAccount };
+export function useSfdAccounts(sfdId?: string) {
+  const { activeSfdId, user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const effectiveSfdId = sfdId || activeSfdId;
 
-export function useSfdAccounts() {
-  const { user, activeSfdId } = useAuth();
-  
-  // Get list of user's SFDs
-  const { sfdAccounts, isLoading: isListLoading, isError: isListError, refetch: refetchList } = useSfdList(user);
-  
-  // Get active SFD details - guard against invalid activeSfdId values
-  const validSfdId = activeSfdId && 
-    activeSfdId !== 'default-sfd' && 
-    activeSfdId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/) ? 
-    activeSfdId : null;
-    
-  const { 
-    activeSfdAccount, 
-    isLoading: isActiveSfdLoading, 
-    isError: isActiveSfdError, 
-    refetch: refetchActive 
-  } = useSfdAccount(user, validSfdId);
-  
-  // Get SFD account actions (sync, payments)
-  const { synchronizeBalances, makeLoanPayment } = useSfdAccountActions(user, validSfdId);
-  
-  // Combined refetch function
-  const refetch = () => {
-    refetchList();
-    refetchActive();
-  };
-  
-  return {
-    sfdAccounts,
-    activeSfdAccount,
-    isLoading: isListLoading || isActiveSfdLoading,
-    isError: isListError || isActiveSfdError,
-    makeLoanPayment,
-    synchronizeBalances,
+  // Get all accounts for the SFD
+  const {
+    data: accounts = [],
+    isLoading,
+    error,
     refetch
+  } = useQuery({
+    queryKey: ['sfd-accounts', effectiveSfdId],
+    queryFn: () => sfdAccountService.getSfdAccounts(effectiveSfdId || ''),
+    enabled: !!effectiveSfdId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Get transfer history
+  const {
+    data: transferHistory = [],
+    isLoading: isLoadingHistory,
+    refetch: refetchHistory
+  } = useQuery({
+    queryKey: ['sfd-transfers', effectiveSfdId],
+    queryFn: () => sfdAccountService.getSfdTransferHistory(effectiveSfdId || ''),
+    enabled: !!effectiveSfdId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Transfer funds between accounts
+  const transferFunds = useMutation({
+    mutationFn: (params: CreateTransferParams) => 
+      sfdAccountService.transferBetweenAccounts(params),
+    onSuccess: () => {
+      // Refresh accounts and transfer history
+      queryClient.invalidateQueries({ queryKey: ['sfd-accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['sfd-transfers'] });
+      
+      toast({
+        title: "Transfert réussi",
+        description: "Le transfert de fonds entre les comptes a été effectué avec succès",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors du transfert",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Categorize accounts by type
+  const operationAccount = accounts.find(account => account.account_type === 'operation');
+  const repaymentAccount = accounts.find(account => account.account_type === 'remboursement');
+  const savingsAccount = accounts.find(account => account.account_type === 'epargne');
+
+  return {
+    accounts,
+    isLoading,
+    error,
+    transferHistory,
+    isLoadingHistory,
+    operationAccount,
+    repaymentAccount,
+    savingsAccount,
+    transferFunds,
+    refetchAccounts: refetch,
+    refetchHistory
   };
 }
