@@ -53,6 +53,10 @@ const Header = () => {
     }
   };
 
+  const handleAction = (action: string, data?: any) => {
+    console.log("Header action:", action, data);
+  };
+
   return (
     <header 
       className={cn(
@@ -137,7 +141,7 @@ const Header = () => {
       {/* Mobile Navigation in Header for Tablet */}
       {isMobileFlowPage && (
         <div className="hidden sm:block md:hidden">
-          <MobileNavigation isHeader={true} className="mt-2" />
+          <MobileNavigation isHeader={true} className="mt-2" onAction={handleAction} />
         </div>
       )}
 
