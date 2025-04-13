@@ -14,6 +14,7 @@ import AccountPage from '@/pages/mobile/AccountPage';
 import NotificationsPage from '@/pages/mobile/account/NotificationsPage';
 import SecurityPage from '@/pages/mobile/account/SecurityPage';
 import AboutPage from '@/pages/mobile/account/AboutPage';
+import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -65,6 +66,7 @@ export const MobileRouter = () => {
       <Route path="/loan-process" element={<LoanProcessPage />} />
       <Route path="/loan-agreement" element={<LoanAgreementPage />} />
       <Route path="/loan-application" element={<MobileLoanApplicationPage />} />
+      <Route path="/sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
       <Route path="*" element={<Navigate to="/main" replace />} />
     </Routes>
   );

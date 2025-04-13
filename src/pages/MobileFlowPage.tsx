@@ -6,6 +6,11 @@ import MobileNavigation from '@/components/MobileNavigation';
 import { useToast } from '@/hooks/use-toast';
 import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
 import ProfilePage from '@/components/mobile/profile/ProfilePage';
+import AccountPage from '@/pages/mobile/AccountPage';
+import NotificationsPage from '@/pages/mobile/account/NotificationsPage';
+import SecurityPage from '@/pages/mobile/account/SecurityPage';
+import AboutPage from '@/pages/mobile/account/AboutPage';
+import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 
 const MobileFlowPage: React.FC = () => {
   const { user, loading } = useAuth();
@@ -105,6 +110,12 @@ const MobileFlowPage: React.FC = () => {
         <Route path="savings" element={<FundsManagementPage />} />
         <Route path="loans" element={<div className="p-4">Prêts (À venir)</div>} />
         <Route path="transactions" element={<div className="p-4">Transactions (À venir)</div>} />
+        
+        <Route path="account" element={<AccountPage />} />
+        <Route path="account/notifications" element={<NotificationsPage />} />
+        <Route path="account/security" element={<SecurityPage />} />
+        <Route path="account/about" element={<AboutPage />} />
+        <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
         
         {/* Redirection par défaut vers le dashboard principal */}
         <Route path="*" element={<Navigate to="main" replace />} />
