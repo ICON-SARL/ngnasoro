@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -25,55 +24,102 @@ import SfdLoginPage from '@/pages/SfdLoginPage'; // Import the SfdLoginPage
 import AuthRedirectPage from '@/pages/AuthRedirectPage';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import UsersManagementPage from '@/pages/UsersManagementPage';
+import { RoleGuard } from '@/components/RoleGuard';
+import { UserRole } from '@/hooks/auth/types';
+import SfdAdminDashboard from '@/components/admin/SfdAdminDashboard';
+import SfdClientsPage from '@/pages/sfd/SfdClientsPage';
+import SfdSubsidyRequestsPage from '@/pages/sfd/SfdSubsidyRequestsPage';
+import SfdLoansPage from '@/pages/sfd/SfdLoansPage';
+import ClientMobileFlowLayout from '@/components/mobile/ClientMobileFlowLayout';
+import AccessDeniedPage from '@/pages/AccessDeniedPage';
+import NotFoundPage from '@/pages/NotFoundPage';
+import AdminSettingsPage from '@/pages/AdminSettingsPage';
+import AuditLogsPage from '@/pages/AuditLogsPage';
+import CreditApprovalPage from '@/pages/CreditApprovalPage';
+import SfdManagementPage from '@/pages/SfdManagementPage';
 
 const queryClient = new QueryClient();
 
 function App() {
+  
+
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Routes>
-            {/* Authentication Routes */}
-            <Route path="/login" element={<AuthRedirectPage />} />
-            <Route path="/auth" element={<ClientLoginPage />} />
-            <Route path="/admin/auth" element={<AdminLoginPage />} />
-            <Route path="/sfd/auth" element={<SfdLoginPage />} /> {/* Use the SfdLoginPage component instead of directly using SfdAuthUI */}
-            <Route path="/register" element={<RegisterPage />} />
-            
-            {/* Admin Dashboard Routes */}
-            <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
-            <Route path="/users-management" element={<UsersManagementPage />} />
-            
-            {/* Public Routes */}
-            <Route path="/loans" element={<ClientLoansPage />} />
-            <Route path="/loans/apply" element={<LoanApplicationPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/sfd-selector" element={<SfdSelectorPage />} />
-            
-            {/* Mobile Flow Routes - using /* to capture all nested routes */}
-            <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
-            
-            {/* Individual Mobile Pages */}
-            <Route path="/mobile-flow/loans" element={<MobileLoansPage />} />
-            <Route path="/mobile-flow/my-loans" element={<MobileMyLoansPage />} />
-            <Route path="/mobile-flow/savings" element={<MobileSavingsPage />} />
-            <Route path="/mobile-flow/loan/:id" element={<MobileLoanDetailsPage />} />
-            <Route path="/mobile-flow/deposit" element={<MobileDepositPage />} />
-            <Route path="/mobile-flow/withdraw" element={<MobileWithdrawPage />} />
-            <Route path="/mobile-flow/transactions" element={<MobileTransactionsPage />} />
-            <Route path="/mobile-flow/account-settings" element={<MobileAccountSettingsPage />} />
-            
-            {/* Redirect root to login redirect page */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            
-            {/* Catch-all redirect */}
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
-          <Toaster />
-        </AuthProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+    <Routes>
+      {/* Pages publiques */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/login" element={<AuthRedirectPage />} />
+      <Route path="/auth" element={<ClientLoginPage />} />
+      <Route path="/admin/auth" element={<AdminLoginPage />} />
+      <Route path="/sfd/auth" element={<SfdLoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      
+      {/* Pages protégées - Admin */}
+      <Route path="/super-admin-dashboard" element={
+        <RoleGuard requiredRole={UserRole.SuperAdmin}>
+          <SuperAdminDashboard />
+        </RoleGuard>
+      } />
+      <Route path="/credit-approval" element={
+        <RoleGuard requiredRole={UserRole.SuperAdmin}>
+          <CreditApprovalPage />
+        </RoleGuard>
+      } />
+      <Route path="/sfd-management" element={
+        <RoleGuard requiredRole={UserRole.SuperAdmin}>
+          <SfdManagementPage />
+        </RoleGuard>
+      } />
+      <Route path="/admin/users" element={
+        <RoleGuard requiredRole={UserRole.SuperAdmin}>
+          <UsersManagementPage />
+        </RoleGuard>
+      } />
+      <Route path="/admin/settings" element={
+        <RoleGuard requiredRole={UserRole.SuperAdmin}>
+          <AdminSettingsPage />
+        </RoleGuard>
+      } />
+      <Route path="/audit-logs" element={
+        <RoleGuard requiredRole={UserRole.SuperAdmin}>
+          <AuditLogsPage />
+        </RoleGuard>
+      } />
+      
+      {/* Pages protégées - SFD Admin */}
+      <Route path="/agency-dashboard" element={
+        <RoleGuard requiredRole={UserRole.SfdAdmin}>
+          <SfdAdminDashboard />
+        </RoleGuard>
+      } />
+      <Route path="/sfd-clients" element={
+        <RoleGuard requiredRole={UserRole.SfdAdmin}>
+          <SfdClientsPage />
+        </RoleGuard>
+      } />
+      <Route path="/sfd-subsidy-requests" element={
+        <RoleGuard requiredRole={UserRole.SfdAdmin}>
+          <SfdSubsidyRequestsPage />
+        </RoleGuard>
+      } />
+      <Route path="/sfd-loans" element={
+        <RoleGuard requiredRole={UserRole.SfdAdmin}>
+          <SfdLoansPage />
+        </RoleGuard>
+      } />
+      
+      {/* Pages protégées - Client */}
+      <Route path="/mobile-flow/*" element={
+        <RoleGuard requiredRole={UserRole.Client}>
+          <ClientMobileFlowLayout />
+        </RoleGuard>
+      } />
+      
+      {/* Page d'accès refusé */}
+      <Route path="/access-denied" element={<AccessDeniedPage />} />
+      
+      {/* Page 404 */}
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   );
 }
 

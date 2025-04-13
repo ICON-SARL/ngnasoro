@@ -11,6 +11,7 @@ import { AdminNotifications } from '@/components/admin/shared/AdminNotifications
 import { MerefSfdCommunication } from '@/components/admin/shared/MerefSfdCommunication';
 import { MerefSubsidyTab } from '@/components/admin/MerefSubsidyTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Footer } from '@/components';
 
 const CreditApprovalPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -74,6 +75,8 @@ const CreditApprovalPage = () => {
           </TabsContent>
         </Tabs>
       </main>
+      
+      <Footer />
     </div>
   );
 };
