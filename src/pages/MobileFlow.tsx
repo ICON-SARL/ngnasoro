@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, lazy } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
@@ -22,7 +23,7 @@ const MobileFlow = () => {
   
   const { user, loading, signOut } = useAuth();
   const { account, isLoading: accountLoading, updateBalance } = useAccount();
-  const { transactions, isLoading: transactionsLoading, createTransaction } = useTransactions(user?.id || '', user?.id ? 'default-sfd' : '');
+  const transactionService = useTransactions(user?.id || '', user?.id ? 'default-sfd' : '');
   const { handleAction } = useActionHandler();
 
   const [showWelcome, setShowWelcome] = useState(() => {
@@ -72,8 +73,9 @@ const MobileFlow = () => {
     try {
       await updateBalance.mutateAsync({ amount: -data.amount });
       
-      if (createTransaction) {
-        await createTransaction.mutateAsync({
+      // Check if createTransaction exists before calling it
+      if (transactionService.createTransaction) {
+        await transactionService.createTransaction({
           userId: user?.id || '',
           sfdId: 'default-sfd', 
           name: data.recipient,
@@ -82,6 +84,8 @@ const MobileFlow = () => {
           paymentMethod: 'sfd_account',
           description: data.note || 'Payment transaction'
         });
+      } else {
+        console.error('createTransaction is not available');
       }
       
       navigate('/mobile-flow/main');
@@ -145,8 +149,8 @@ const MobileFlow = () => {
           status: 'active',
           type: 'savings'
         }}
-        transactions={transactions}
-        transactionsLoading={transactionsLoading}
+        transactions={transactionService.transactions}
+        transactionsLoading={transactionService.isLoading}
         toggleMenu={toggleMenu}
         showWelcome={showWelcome}
         setShowWelcome={setShowWelcome}

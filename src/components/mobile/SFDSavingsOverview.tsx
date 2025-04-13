@@ -57,7 +57,7 @@ const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({
             className="rounded-full py-2 px-5 flex items-center bg-[#0D6A51]/10 hover:bg-[#0D6A51]/20 text-[#0D6A51] transition-colors shadow-sm"
             onClick={handleNavigateToFunds}
           >
-            <ArrowDownUp className="h-4 w-4 mr-2" />
+            <ArrowDown className="h-4 w-4 mr-2" />
             Gérer mes fonds
           </Button>
         </div>

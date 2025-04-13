@@ -4,6 +4,16 @@ export const formatCurrencyAmount = (amount: number): string => {
   return amount.toLocaleString('fr-FR');
 };
 
+export const formatTransactionAmount = (amount: number, type?: string): string => {
+  const formattedAmount = formatCurrencyAmount(Math.abs(amount));
+  
+  if (type === 'deposit' || type === 'loan_disbursement' || amount > 0) {
+    return `+${formattedAmount} FCFA`;
+  } else {
+    return `-${formattedAmount} FCFA`;
+  }
+};
+
 export const convertDatabaseRecordsToTransactions = (data: any[], sfdId: string) => {
   return data.map(record => ({
     ...record,

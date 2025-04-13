@@ -59,7 +59,7 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
   const displayAccount = selectedSfdAccount || accountsList.find(sfd => sfd.id === selected);
   const accountName = displayAccount?.name || "Compte SFD";
   const accountBalance = displayAccount?.balance || 0;
-  const formattedBalance = `${formatCurrencyAmount(accountBalance, "")} FCFA`;
+  const formattedBalance = `${formatCurrencyAmount(accountBalance)} FCFA`;
   
   return (
     <>
@@ -78,7 +78,7 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
             <SelectContent>
               {accountsList.map(sfd => (
                 <SelectItem key={sfd.id} value={sfd.id}>
-                  {sfd.name} ({formatCurrencyAmount(sfd.balance, "")} FCFA)
+                  {sfd.name} ({formatCurrencyAmount(sfd.balance)} FCFA)
                 </SelectItem>
               ))}
             </SelectContent>

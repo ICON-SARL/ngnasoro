@@ -37,11 +37,13 @@ const TransactionsOverview: React.FC = () => {
     if (isAccountVerified) {
       loadBalance();
     }
-  }, [activeSfdId, isAccountVerified]);
+  }, [activeSfdId, isAccountVerified, fetchTransactions]);
 
   const loadBalance = async () => {
-    const currentBalance = await getBalance();
-    setBalance(currentBalance);
+    if (getBalance) {
+      const currentBalance = await getBalance();
+      setBalance(currentBalance);
+    }
   };
 
   const refreshData = async () => {

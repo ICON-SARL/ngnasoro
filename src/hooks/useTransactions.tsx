@@ -21,24 +21,24 @@ export function useTransactions(userId?: string, sfdId?: string) {
     createTransactionManager(effectiveUserId, effectiveSfdId) : null;
 
   // Récupérer les transactions
-  const fetchTransactions = useCallback(async (limit: number = 10) => {
+  const fetchTransactions = useCallback(async () => {
     if (!transactionManager) {
       setError('Utilisateur ou SFD non défini');
-      return;
+      return { transactions: [], error: 'Utilisateur ou SFD non défini' };
     }
 
     setIsLoading(true);
     setError(null);
 
     try {
-      const fetchedTransactions = await transactionManager.getTransactionHistory(limit);
+      const fetchedTransactions = await transactionManager.getTransactionHistory(10);
       setTransactions(fetchedTransactions);
-      return fetchedTransactions;
+      setIsLoading(false);
+      return { transactions: fetchedTransactions, error: null };
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la récupération des transactions');
-      return [];
-    } finally {
       setIsLoading(false);
+      return { transactions: [], error: err };
     }
   }, [transactionManager]);
 
@@ -74,6 +74,7 @@ export function useTransactions(userId?: string, sfdId?: string) {
         });
       }
       
+      setIsLoading(false);
       return transaction;
     } catch (err: any) {
       setError(err.message || 'Erreur lors du dépôt');
@@ -82,9 +83,8 @@ export function useTransactions(userId?: string, sfdId?: string) {
         description: err.message || 'Erreur lors du dépôt',
         variant: 'destructive',
       });
-      return null;
-    } finally {
       setIsLoading(false);
+      return null;
     }
   }, [transactionManager, toast, fetchTransactions]);
 
@@ -120,6 +120,7 @@ export function useTransactions(userId?: string, sfdId?: string) {
         });
       }
       
+      setIsLoading(false);
       return transaction;
     } catch (err: any) {
       setError(err.message || 'Erreur lors du retrait');
@@ -128,9 +129,8 @@ export function useTransactions(userId?: string, sfdId?: string) {
         description: err.message || 'Erreur lors du retrait',
         variant: 'destructive',
       });
-      return null;
-    } finally {
       setIsLoading(false);
+      return null;
     }
   }, [transactionManager, toast, fetchTransactions]);
 
@@ -166,6 +166,7 @@ export function useTransactions(userId?: string, sfdId?: string) {
         });
       }
       
+      setIsLoading(false);
       return transaction;
     } catch (err: any) {
       setError(err.message || 'Erreur lors du remboursement');
@@ -174,14 +175,13 @@ export function useTransactions(userId?: string, sfdId?: string) {
         description: err.message || 'Erreur lors du remboursement',
         variant: 'destructive',
       });
-      return null;
-    } finally {
       setIsLoading(false);
+      return null;
     }
   }, [transactionManager, toast, fetchTransactions]);
 
-  // Récupérer le solde actuel
-  const getBalance = useCallback(async () => {
+  // Get account balance
+  const getBalance = useCallback(async (): Promise<number> => {
     if (!transactionManager) {
       setError('Utilisateur ou SFD non défini');
       return 0;
@@ -195,12 +195,45 @@ export function useTransactions(userId?: string, sfdId?: string) {
     }
   }, [transactionManager]);
 
-  // Charger les transactions au montage du composant
-  useCallback(() => {
-    if (effectiveUserId && effectiveSfdId) {
-      fetchTransactions();
+  // Create transaction (for compatibility with interfaces that expect it)
+  const createTransaction = useCallback(async (options: any) => {
+    if (!transactionManager) {
+      setError('Utilisateur ou SFD non défini');
+      return null;
     }
-  }, [effectiveUserId, effectiveSfdId, fetchTransactions]);
+
+    try {
+      // Map the options to the appropriate method based on type
+      switch (options.type) {
+        case 'deposit':
+          return await makeDeposit(options.amount, options.description, options.paymentMethod);
+        case 'withdrawal':
+          return await makeWithdrawal(Math.abs(options.amount), options.description, options.paymentMethod);
+        case 'loan_repayment':
+          if (!options.referenceId) {
+            throw new Error('Loan ID is required for loan repayments');
+          }
+          return await makeLoanRepayment(options.referenceId, Math.abs(options.amount), options.description, options.paymentMethod);
+        default:
+          throw new Error(`Unsupported transaction type: ${options.type}`);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error creating transaction');
+      toast({
+        title: 'Error',
+        description: err.message || 'Error creating transaction',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  }, [makeDeposit, makeWithdrawal, makeLoanRepayment, toast, transactionManager]);
+
+  // Load transactions on mount - this is commented to avoid infinite loops
+  // useEffect(() => {
+  //   if (effectiveUserId && effectiveSfdId) {
+  //     fetchTransactions();
+  //   }
+  // }, [effectiveUserId, effectiveSfdId, fetchTransactions]);
 
   return {
     isLoading,
@@ -210,6 +243,8 @@ export function useTransactions(userId?: string, sfdId?: string) {
     makeDeposit,
     makeWithdrawal,
     makeLoanRepayment,
-    getBalance
+    getBalance,
+    createTransaction,
+    refetch: fetchTransactions
   };
 }
