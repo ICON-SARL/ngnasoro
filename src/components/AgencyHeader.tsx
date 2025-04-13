@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Building, CreditCard, Users, FileText, LogOut } from 'lucide-react';
+import { Building, CreditCard, Users, FileText, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -114,6 +114,16 @@ export const AgencyHeader = () => {
               >
                 Demandes de Subvention
               </NavLink>
+              <NavLink 
+                to="/sfd-settings" 
+                className={({ isActive }) => 
+                  `text-sm font-medium transition-colors hover:text-[#0D6A51] ${
+                    isActive ? 'text-[#0D6A51]' : 'text-muted-foreground'
+                  }`
+                }
+              >
+                Paramètres
+              </NavLink>
             </nav>
           </div>
           
@@ -146,6 +156,10 @@ export const AgencyHeader = () => {
                 <DropdownMenuItem onClick={() => navigate('/sfd-subsidy-requests')}>
                   <CreditCard className="mr-2 h-4 w-4" />
                   <span>Demandes de subvention</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/sfd-settings')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Paramètres</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>

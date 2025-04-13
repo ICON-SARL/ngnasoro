@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { SfdHeader } from '@/components/sfd/SfdHeader';
-import { Card, CardContent } from '@/components/ui/card';
+import { SfdHeader } from '@/components/SfdHeader';
+import { LoanManagement } from '@/components/sfd/LoanManagement';
 
 const SfdLoansPage: React.FC = () => {
   return (
@@ -9,20 +9,7 @@ const SfdLoansPage: React.FC = () => {
       <SfdHeader />
       
       <main className="container mx-auto p-4 md:p-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold">Gestion des Prêts</h2>
-          <p className="text-muted-foreground">
-            Gérez les prêts accordés aux clients
-          </p>
-        </div>
-        
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-center text-muted-foreground py-8">
-              Fonctionnalité de gestion des prêts en cours de développement
-            </p>
-          </CardContent>
-        </Card>
+        <LoanManagement />
       </main>
     </div>
   );

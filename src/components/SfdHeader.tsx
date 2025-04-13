@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -75,11 +76,9 @@ export function SfdHeader() {
     { name: 'Tableau de bord', icon: <PieChart className="w-4 h-4 mr-2" />, path: '/agency-dashboard' },
     { name: 'Clients', icon: <Users className="w-4 h-4 mr-2" />, path: '/sfd-clients' },
     { name: 'Prêts', icon: <CreditCard className="w-4 h-4 mr-2" />, path: '/sfd-loans' },
-    { name: 'Subventions', icon: <Landmark className="w-4 h-4 mr-2" />, path: '/sfd-subsidies' },
+    { name: 'Subventions', icon: <Landmark className="w-4 h-4 mr-2" />, path: '/sfd-subsidy-requests' },
     { name: 'Paramètres', icon: <Settings className="w-4 h-4 mr-2" />, path: '/sfd-settings' },
   ];
-  
-  console.log('SfdHeader - Active SFD ID:', activeSfdId);
   
   return (
     <header className="sticky top-0 z-40 border-b bg-background">
@@ -157,7 +156,7 @@ export function SfdHeader() {
                 Profile
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/sfd-settings')}>
-                Settings
+                Paramètres
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
