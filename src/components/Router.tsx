@@ -9,6 +9,7 @@ import LoanAgreementPage from '@/components/mobile/LoanAgreementPage';
 import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage';
 import MobileLoansPage from '@/pages/mobile/MobileLoansPage';
 import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
+import TransferPage from '@/pages/mobile/TransferPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -45,7 +46,7 @@ export const MobileRouter = () => {
       <Route path="/" element={<Navigate to="/main" replace />} />
       <Route path="/main" element={<MobileMainPage />} />
       <Route path="/account" element={<PlaceholderPage title="Mon Compte" />} />
-      <Route path="/transfer" element={<PlaceholderPage title="Transfert" />} />
+      <Route path="/transfer" element={<TransferPage />} />
       <Route path="/payment" element={<PlaceholderPage title="Paiement Sécurisé" />} />
       <Route path="/loan-details" element={<MobileLoanDetailsPage />} />
       <Route path="/loans" element={<MobileLoansPage />} />

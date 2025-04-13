@@ -1,0 +1,3 @@
+
+[functions.sfd-transfer]
+verify_jwt = true
