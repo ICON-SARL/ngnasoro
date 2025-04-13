@@ -43,7 +43,9 @@ export {
 } from './auditHelpers';
 
 // Add permission failure logging function
+// The function is now defined after the imports are exported
 export function logPermissionFailure(userId: string, requiredPermission: string, resource: string) {
+  // Now using the imported and exported logAuditEvent, AuditLogCategory, and AuditLogSeverity
   return logAuditEvent({
     user_id: userId,
     action: 'permission_denied',
