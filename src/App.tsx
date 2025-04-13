@@ -12,6 +12,9 @@ import AccountPage from '@/pages/mobile/AccountPage';
 import MobileFlowPage from '@/pages/MobileFlowPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/hooks/auth/AuthContext';
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import AuthRedirectPage from '@/pages/AuthRedirectPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -31,6 +34,13 @@ function App() {
           <Router>
             <Routes>
               <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
+              
+              {/* Authentication Routes */}
+              <Route path="/auth" element={<LoginPage />} />
+              <Route path="/login" element={<AuthRedirectPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/admin/auth" element={<LoginPage />} />
+              <Route path="/sfd/auth" element={<LoginPage />} />
               
               <Route path="/mobile-flow/main" element={<MobileMainPage />} />
               <Route path="/mobile-flow/transfer" element={<TransferPage />} />
