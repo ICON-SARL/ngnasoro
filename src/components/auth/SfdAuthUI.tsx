@@ -6,7 +6,6 @@ import Logo from './Logo';
 import LoginForm from './login/LoginForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
-import DemoAccountsCreator from './DemoAccountsCreator';
 
 const SfdAuthUI = () => {
   const { user, loading, session } = useAuth();
@@ -88,8 +87,6 @@ const SfdAuthUI = () => {
               Changer de type de connexion
             </Link>
           </div>
-          
-          <DemoAccountsCreator />
         </div>
       </div>
     </div>

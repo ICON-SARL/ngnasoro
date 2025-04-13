@@ -3,12 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Logo from './auth/Logo';
-import LoginForm from './auth/LoginForm';
+import LoginForm from './auth/login/LoginForm';
 import RegisterForm from './auth/RegisterForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import DemoAccountsCreator from './auth/DemoAccountsCreator';
 import { UserRole } from '@/hooks/auth/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -180,8 +179,6 @@ const AuthUI = () => {
               </>
             )}
           </div>
-          
-          <DemoAccountsCreator />
         </div>
       </div>
     </div>
