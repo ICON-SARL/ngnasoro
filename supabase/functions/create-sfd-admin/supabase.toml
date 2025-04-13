@@ -1,0 +1,3 @@
+
+[functions.create-sfd-admin]
+verify_jwt = true

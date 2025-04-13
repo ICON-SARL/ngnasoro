@@ -3,11 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { SfdManagementStats } from './SfdManagementStats';
 import { SfdAddDialog } from './SfdAddDialog';
 import { Button } from '@/components/ui/button';
-import { Building, Plus } from 'lucide-react';
+import { Building, Plus, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const SfdManagementContainer = () => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [addAdminDialogOpen, setAddAdminDialogOpen] = useState(false);
   const { toast } = useToast();
   
   // Check for any ongoing operations in sessionStorage
@@ -27,6 +28,10 @@ export const SfdManagementContainer = () => {
     setAddDialogOpen(true);
   };
   
+  const handleOpenAddAdminDialog = () => {
+    setAddAdminDialogOpen(true);
+  };
+  
   const handleDialogChange = (open: boolean) => {
     setAddDialogOpen(open);
     
@@ -39,18 +44,40 @@ export const SfdManagementContainer = () => {
     }
   };
   
+  const handleAdminDialogChange = (open: boolean) => {
+    setAddAdminDialogOpen(open);
+    
+    // If dialog is being opened, store operation state
+    if (open) {
+      sessionStorage.setItem('sfd_admin_creation_in_progress', 'true');
+    } else {
+      // If dialog is being closed, clear operation state
+      sessionStorage.removeItem('sfd_admin_creation_in_progress');
+    }
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium mb-2">Statistiques des SFDs</h3>
-        <Button 
-          onClick={handleOpenAddDialog}
-          className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          <Building className="h-4 w-4" />
-          Ajouter une SFD
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleOpenAddAdminDialog}
+            className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            Ajouter un Admin SFD
+          </Button>
+          
+          <Button 
+            onClick={handleOpenAddDialog}
+            className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            <Building className="h-4 w-4" />
+            Ajouter une SFD
+          </Button>
+        </div>
       </div>
       
       <SfdManagementStats />
@@ -59,6 +86,8 @@ export const SfdManagementContainer = () => {
         open={addDialogOpen} 
         onOpenChange={handleDialogChange} 
       />
+      
+      {/* We'll need to create a SfdAdminAddDialog component next */}
     </div>
   );
 };

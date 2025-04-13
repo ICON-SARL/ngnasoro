@@ -1,0 +1,3 @@
+
+[functions.admin-notification]
+verify_jwt = true
