@@ -1,106 +1,60 @@
-
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/hooks/useAuth';
-import { Toaster } from '@/components/ui/toaster';
-import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
-import ProfilePage from '@/pages/ProfilePage';
-import SfdSelectorPage from '@/pages/SFDSelector';
-import MobileFlowPage from '@/pages/MobileFlowPage';
-import AdminLoginPage from '@/pages/AdminLoginPage';
-import ClientLoginPage from '@/pages/ClientLoginPage';
-import SfdLoginPage from '@/pages/SfdLoginPage';
-import AuthRedirectPage from '@/pages/AuthRedirectPage';
-import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
-import UsersManagementPage from '@/pages/UsersManagementPage';
-import RoleGuard from '@/components/guards/RoleGuard';
-import PermissionGuard from '@/components/guards/PermissionGuard';
-import { UserRole, PERMISSIONS } from '@/utils/auth/roles';
-import SfdLoansPage from '@/pages/SfdLoansPage';
-import AccessDeniedPage from '@/pages/AccessDeniedPage';
-import NotFoundPage from '@/pages/NotFoundPage';
-import AuditLogsPage from '@/pages/AuditLogsPage';
-import SfdManagementPage from '@/pages/SfdManagementPage';
-
-// Create a client
-const queryClient = new QueryClient();
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './hooks/useAuth';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import Dashboard from './pages/Dashboard';
+import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import SFDManagementPage from './pages/admin/SFDManagementPage';
+import ClientManagementPage from './pages/admin/ClientManagementPage';
+import LoanManagementPage from './pages/admin/LoanManagementPage';
+import TransactionManagementPage from './pages/admin/TransactionManagementPage';
+import SubsidyRequestManagementPage from './pages/admin/SubsidyRequestManagementPage';
+import AuditLogPage from './pages/admin/AuditLogPage';
+import MobileDashboardPage from './pages/mobile/MobileDashboardPage';
+import MobileLoginPage from './pages/mobile/MobileLoginPage';
+import MobileRegisterPage from './pages/mobile/MobileRegisterPage';
+import MobileProfilePage from './pages/mobile/MobileProfilePage';
+import MobileSettingsPage from './pages/mobile/MobileSettingsPage';
+import MobileMyLoansPageContainer from './pages/mobile/MobileMyLoansPage';
+import LoanApplicationPage from './pages/mobile/LoanApplicationPage';
+import ClientLoanStatus from './components/ClientLoanStatus';
+import LoanApplicationPageContainer from './pages/LoanApplicationPage';
 
 function App() {
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Routes>
-            {/* Pages publiques */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/login" element={<AuthRedirectPage />} />
-            <Route path="/auth" element={<ClientLoginPage />} />
-            <Route path="/admin/auth" element={<AdminLoginPage />} />
-            <Route path="/sfd/auth" element={<SfdLoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            
-            {/* Routes protégées - Super Admin (MEREF) */}
-            <Route path="/super-admin-dashboard" element={
-              <RoleGuard requiredRole={UserRole.SUPER_ADMIN}>
-                <SuperAdminDashboard />
-              </RoleGuard>
-            } />
-            <Route path="/credit-approval" element={
-              <PermissionGuard requiredPermission={PERMISSIONS.VALIDATE_SFD_FUNDS}>
-                <SfdManagementPage />
-              </PermissionGuard>
-            } />
-            <Route path="/sfd-management" element={
-              <PermissionGuard requiredPermission={PERMISSIONS.MANAGE_SFDS}>
-                <SfdManagementPage />
-              </PermissionGuard>
-            } />
-            <Route path="/admin/users" element={
-              <PermissionGuard requiredPermission={PERMISSIONS.MANAGE_USERS}>
-                <UsersManagementPage />
-              </PermissionGuard>
-            } />
-            <Route path="/audit-logs" element={
-              <RoleGuard requiredRole={UserRole.SUPER_ADMIN}>
-                <AuditLogsPage />
-              </RoleGuard>
-            } />
-            
-            {/* Routes protégées - Admin SFD */}
-            <Route path="/agency-dashboard" element={
-              <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
-                <ProfilePage />
-              </RoleGuard>
-            } />
-            <Route path="/sfd-clients" element={
-              <PermissionGuard requiredPermission={PERMISSIONS.MANAGE_CLIENTS}>
-                <ProfilePage />
-              </PermissionGuard>
-            } />
-            <Route path="/sfd-loans" element={
-              <PermissionGuard requiredPermission={PERMISSIONS.MANAGE_SFD_LOANS}>
-                <SfdLoansPage />
-              </PermissionGuard>
-            } />
-            
-            {/* Routes protégées - Client */}
-            <Route path="/mobile-flow/*" element={
-              <RoleGuard requiredRole={UserRole.CLIENT}>
-                <MobileFlowPage />
-              </RoleGuard>
-            } />
-            
-            {/* Page d'accès refusé et 404 */}
-            <Route path="/access-denied" element={<AccessDeniedPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/auth" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           
-          <Toaster />
-        </AuthProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/sfds" element={<SFDManagementPage />} />
+          <Route path="/admin/clients" element={<ClientManagementPage />} />
+          <Route path="/admin/loans" element={<LoanManagementPage />} />
+          <Route path="/admin/transactions" element={<TransactionManagementPage />} />
+          <Route path="/admin/subsidy-requests" element={<SubsidyRequestManagementPage />} />
+          <Route path="/admin/audit-logs" element={<AuditLogPage />} />
+          
+          {/* Mobile Routes */}
+          <Route path="/mobile-flow/dashboard" element={<MobileDashboardPage />} />
+          <Route path="/mobile-flow/login" element={<MobileLoginPage />} />
+          <Route path="/mobile-flow/register" element={<MobileRegisterPage />} />
+          <Route path="/mobile-flow/profile" element={<MobileProfilePage />} />
+          <Route path="/mobile-flow/settings" element={<MobileSettingsPage />} />
+          <Route path="/mobile-flow/my-loans" element={<MobileMyLoansPageContainer />} />
+          <Route path="/loans/status" element={<ClientLoanStatus />} />
+          <Route path="/loans/apply" element={<LoanApplicationPage />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 
