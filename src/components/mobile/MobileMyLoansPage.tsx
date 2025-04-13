@@ -11,7 +11,7 @@ import { Loan } from '@/types/sfdClients';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import MobileHeader from '@/components/mobile/MobileHeader';
-import { usePermissions } from '@/hooks/usePermissions';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 interface LoanCardProps {
   loan: Loan;
