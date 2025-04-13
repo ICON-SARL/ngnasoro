@@ -20,12 +20,13 @@ const TransactionsOverview: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('recent');
   const { activeSfdAccount } = useSfdAccounts();
   
+  const transactionService = useTransactions(user?.id, activeSfdId);
   const {
     transactions,
     isLoading,
     fetchTransactions,
     getBalance
-  } = useTransactions(user?.id, activeSfdId);
+  } = transactionService;
 
   // Check if the account is verified
   const isAccountVerified = activeSfdAccount ? 

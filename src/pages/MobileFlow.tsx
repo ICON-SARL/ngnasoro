@@ -73,7 +73,7 @@ const MobileFlow = () => {
     try {
       await updateBalance.mutateAsync({ amount: -data.amount });
       
-      // Use the createTransaction function if it exists
+      // Use the createTransaction function
       if (transactionService.createTransaction) {
         await transactionService.createTransaction({
           userId: user?.id || '',

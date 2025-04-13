@@ -195,7 +195,7 @@ export function useTransactions(userId?: string, sfdId?: string) {
     }
   }, [transactionManager]);
 
-  // Create transaction (for compatibility with interfaces that expect it)
+  // Create transaction (generic method for compatibility)
   const createTransaction = useCallback(async (options: any) => {
     if (!transactionManager) {
       setError('Utilisateur ou SFD non défini');
