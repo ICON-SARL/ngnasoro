@@ -5,106 +5,70 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, UserPlus, Ban, CheckCircle, Power, Search } from 'lucide-react';
+import { Eye, UserPlus, Search } from 'lucide-react';
 import { SfdStatusBadge } from '@/components/admin/sfd/SfdStatusBadge';
 import { SfdActionsMenu } from '@/components/admin/sfd/SfdActionsMenu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/utils/formatDate';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-
-interface Sfd {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  status: string;
-  created_at: string;
-  admin_count?: number;
-}
+import { useSfdData } from '@/components/admin/hooks/sfd-management/useSfdData';
 
 export function SfdManagementTable() {
-  const [sfds, setSfds] = useState<Sfd[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { sfds, isLoading, isError } = useSfdData();
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchSfds = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('sfds')
-          .select('*')
-          .order('name');
-
-        if (error) throw error;
-
-        // Count admins for each SFD
-        const sfdsWithAdminCount = await Promise.all(
-          data.map(async (sfd) => {
-            // Get count of SFD admins
-            const { count, error: countError } = await supabase
-              .from('user_sfds')
-              .select('*', { count: 'exact', head: true })
-              .eq('sfd_id', sfd.id);
-
-            if (countError) {
-              console.error('Error counting admins:', countError);
-              return { ...sfd, admin_count: 0 };
-            }
-
-            return { ...sfd, admin_count: count || 0 };
-          })
-        );
-
-        setSfds(sfdsWithAdminCount);
-      } catch (error) {
-        console.error('Error fetching SFDs:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de récupérer la liste des SFDs",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSfds();
-  }, []);
-
   // Filter SFDs based on search term
   const filteredSfds = sfds.filter(sfd => 
-    sfd.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sfd.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (sfd.email && sfd.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (sfd.phone && sfd.phone.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleSuspendSfd = (sfd: Sfd) => {
+  const handleSuspendSfd = (sfd: any) => {
     console.log('Suspend SFD:', sfd.id);
-    // TODO: Implement suspend functionality
+    toast({
+      title: "Action requise",
+      description: "Cette fonctionnalité est en cours d'implémentation.",
+      variant: "default",
+    });
   };
 
-  const handleReactivateSfd = (sfd: Sfd) => {
+  const handleReactivateSfd = (sfd: any) => {
     console.log('Reactivate SFD:', sfd.id);
-    // TODO: Implement reactivate functionality
+    toast({
+      title: "Action requise",
+      description: "Cette fonctionnalité est en cours d'implémentation.",
+      variant: "default",
+    });
   };
 
-  const handleActivateSfd = (sfd: Sfd) => {
+  const handleActivateSfd = (sfd: any) => {
     console.log('Activate SFD:', sfd.id);
-    // TODO: Implement activate functionality
+    toast({
+      title: "Action requise",
+      description: "Cette fonctionnalité est en cours d'implémentation.",
+      variant: "default",
+    });
   };
 
-  const handleViewDetails = (sfd: Sfd) => {
+  const handleViewDetails = (sfd: any) => {
     console.log('View SFD details:', sfd.id);
-    // TODO: Implement view details functionality
+    toast({
+      title: "Action requise",
+      description: "Cette fonctionnalité est en cours d'implémentation.",
+      variant: "default",
+    });
   };
 
-  const handleAddAdmin = (sfd: Sfd) => {
+  const handleAddAdmin = (sfd: any) => {
     console.log('Add admin to SFD:', sfd.id);
-    // TODO: Implement add admin functionality
+    toast({
+      title: "Action requise",
+      description: "Cette fonctionnalité est en cours d'implémentation.",
+      variant: "default",
+    });
   };
 
   if (isLoading) {
@@ -121,6 +85,17 @@ export function SfdManagementTable() {
             <Skeleton className="h-[300px] w-full" />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-8 text-center border rounded-md bg-red-50">
+        <p className="text-red-600">Erreur lors du chargement des SFDs. Veuillez réessayer.</p>
+        <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+          Rafraîchir la page
+        </Button>
       </div>
     );
   }
@@ -163,7 +138,7 @@ export function SfdManagementTable() {
               {filteredSfds.map((sfd) => (
                 <TableRow key={sfd.id}>
                   <TableCell className="font-medium">{sfd.name}</TableCell>
-                  <TableCell>{sfd.email || '-'}</TableCell>
+                  <TableCell>{sfd.contact_email || sfd.email || '-'}</TableCell>
                   <TableCell>{sfd.phone || '-'}</TableCell>
                   <TableCell>
                     <SfdStatusBadge status={sfd.status || 'pending'} />
