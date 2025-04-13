@@ -107,10 +107,10 @@ export const SfdAdminAddDialog: React.FC<SfdAdminAddDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        {(submitError || error) && (
+        {(submitError || (error && typeof error === 'string')) && (
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{submitError || error}</AlertDescription>
+            <AlertDescription>{submitError || (error && typeof error === 'string' ? error : error instanceof Error ? error.message : 'Une erreur est survenue')}</AlertDescription>
           </Alert>
         )}
         

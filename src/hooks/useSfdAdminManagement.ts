@@ -1,5 +1,6 @@
 
 import { useSfdAdminManagement as useOriginalSfdAdminManagement } from '@/components/admin/hooks/sfd-admin/useSfdAdminManagement';
+import { useAddSfdAdmin } from '@/components/admin/hooks/sfd-admin/useAddSfdAdmin';
 export type { SfdAdmin } from '@/components/admin/hooks/sfd-admin/sfdAdminApiService';
 
 /**
@@ -7,11 +8,16 @@ export type { SfdAdmin } from '@/components/admin/hooks/sfd-admin/sfdAdminApiSer
  * This file re-exports from the new location to maintain backward compatibility
  */
 export function useSfdAdminManagement() {
-  const { isLoading, error, addSfdAdmin } = useOriginalSfdAdminManagement();
+  const { sfdAdmins, isLoading, error, refetch } = useOriginalSfdAdminManagement();
+  const { addSfdAdmin: addSfdAdminFn, isAdding, error: addError } = useAddSfdAdmin();
   
   return {
+    sfdAdmins,
     isLoading,
     error,
-    addSfdAdmin
+    refetch,
+    addSfdAdmin: addSfdAdminFn,
+    isAdding,
+    addError
   };
 }
