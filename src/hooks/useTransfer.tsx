@@ -42,20 +42,24 @@ export function useTransfer() {
     queryKey: ['transferHistory', user?.id],
     queryFn: () => user?.id ? transferService.getTransferHistory(user.id) : Promise.resolve([]),
     enabled: !!user?.id,
-    onSuccess: (data) => {
-      setTransferHistory(data);
-    }
   });
+
+  // Update transfer history when data changes
+  if (transferHistoryQuery.data && transferHistoryQuery.data !== transferHistory) {
+    setTransferHistory(transferHistoryQuery.data);
+  }
 
   // Requête pour récupérer les contacts récents
   const recentContactsQuery = useQuery({
     queryKey: ['recentContacts', user?.id],
     queryFn: () => user?.id ? transferService.getRecentContacts(user.id) : Promise.resolve([]),
     enabled: !!user?.id,
-    onSuccess: (data) => {
-      setRecentContacts(data);
-    }
   });
+
+  // Update recent contacts when data changes
+  if (recentContactsQuery.data && recentContactsQuery.data !== recentContacts) {
+    setRecentContacts(recentContactsQuery.data);
+  }
 
   return {
     // État

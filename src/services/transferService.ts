@@ -94,28 +94,25 @@ export const transferService = {
       
       // Si c'est un transfert programmé
       else if (params.scheduledDate) {
-        // Enregistrer le transfert programmé
+        // Instead of trying to use a non-existent table, we'll create a regular transaction 
+        // with a specific status indicating it's scheduled
         const { data, error } = await supabase
-          .from('scheduled_transfers')
+          .from('transactions')
           .insert({
             user_id: user.id,
-            from_account_id: params.fromAccountId,
-            to_account_id: params.toAccountId,
-            recipient_phone: params.recipientPhone,
-            recipient_name: params.recipientName,
+            type: 'scheduled_transfer',
             amount: params.amount,
-            description: params.description,
-            transfer_type: params.transferType,
-            scheduled_date: params.scheduledDate.toISOString(),
-            status: 'pending'
+            name: `Transfert programmé vers ${params.recipientName || params.recipientPhone || 'autre compte'}`,
+            description: params.description || `Transfert programmé pour ${params.scheduledDate.toISOString()}`,
+            payment_method: params.transferType === 'mobile_money' ? 'mobile_money' : 'sfd_account',
+            status: 'pending',
+            reference_id: `scheduled-${new Date().getTime()}`
           })
           .select()
           .single();
           
         if (error) throw error;
-        
-        // Retourner null car la transaction n'est pas encore effectuée
-        return null;
+        return data as Transaction;
       }
       
       throw new Error("Type de transfert non pris en charge");
