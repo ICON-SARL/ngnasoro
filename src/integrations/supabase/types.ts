@@ -720,6 +720,33 @@ export type Database = {
         }
         Relationships: []
       }
+      security_settings: {
+        Row: {
+          biometric_auth: boolean | null
+          created_at: string | null
+          sms_auth: boolean | null
+          two_factor_auth: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          biometric_auth?: boolean | null
+          created_at?: string | null
+          sms_auth?: boolean | null
+          two_factor_auth?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          biometric_auth?: boolean | null
+          created_at?: string | null
+          sms_auth?: boolean | null
+          two_factor_auth?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       sfd_accounts: {
         Row: {
           account_type: string
@@ -1365,6 +1392,30 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string | null
+          language: string | null
+          notifications: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          language?: string | null
+          notifications?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          language?: string | null
+          notifications?: Json | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []

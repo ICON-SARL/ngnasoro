@@ -18,12 +18,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+type SecuritySettings = {
+  twoFactorAuth: boolean;
+  biometricAuth: boolean;
+  smsAuth: boolean;
+};
+
 const SecurityPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   
-  const [securitySettings, setSecuritySettings] = useState({
+  const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
     twoFactorAuth: false,
     biometricAuth: false,
     smsAuth: true,
@@ -42,13 +48,11 @@ const SecurityPage = () => {
       if (!user) return;
       
       try {
-        const { data, error } = await supabase
-          .from('security_settings')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
+        const { data, error } = await supabase.rpc('get_security_settings', {
+          p_user_id: user.id
+        });
         
-        if (error && error.code !== 'PGRST116') throw error;
+        if (error) throw error;
         
         if (data) {
           setSecuritySettings({
@@ -65,21 +69,23 @@ const SecurityPage = () => {
     fetchSecuritySettings();
   }, [user]);
   
-  const updateSecuritySetting = async (key: string, value: boolean) => {
+  const updateSecuritySetting = async (key: keyof SecuritySettings, value: boolean) => {
     if (!user) return;
     
-    // Convert from camelCase to snake_case for database
-    const dbKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    // Map from camelCase to snake_case for database
+    const mappings: Record<string, string> = {
+      'twoFactorAuth': 'two_factor_auth',
+      'biometricAuth': 'biometric_auth',
+      'smsAuth': 'sms_auth'
+    };
     
     try {
-      const { error } = await supabase
-        .from('security_settings')
-        .upsert({
-          user_id: user.id,
-          [dbKey]: value,
-        }, {
-          onConflict: 'user_id'
-        });
+      const { error } = await supabase.rpc('upsert_security_settings', {
+        p_user_id: user.id,
+        p_two_factor_auth: key === 'twoFactorAuth' ? value : securitySettings.twoFactorAuth,
+        p_biometric_auth: key === 'biometricAuth' ? value : securitySettings.biometricAuth,
+        p_sms_auth: key === 'smsAuth' ? value : securitySettings.smsAuth
+      });
       
       if (error) throw error;
       
@@ -143,7 +149,7 @@ const SecurityPage = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => navigate('/mobile-flow/account')}
+          onClick={() => navigate('/account')}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>

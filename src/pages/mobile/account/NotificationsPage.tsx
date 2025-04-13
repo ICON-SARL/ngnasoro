@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -9,12 +9,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
+type NotificationSettings = {
+  push: boolean;
+  email: boolean;
+  sms: boolean;
+  sound: boolean;
+};
+
 const NotificationsPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   
-  const [notifications, setNotifications] = useState({
+  const [notifications, setNotifications] = useState<NotificationSettings>({
     push: true,
     email: false,
     sms: true,
@@ -23,22 +30,22 @@ const NotificationsPage = () => {
   
   const [language, setLanguage] = useState('fr');
   
-  const saveNotificationSettings = async (key: string, value: boolean) => {
+  const saveNotificationSettings = async (key: keyof NotificationSettings, value: boolean) => {
     if (!user) return;
     
     try {
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: user.id,
-          notifications: { ...notifications, [key]: value }
-        }, {
-          onConflict: 'user_id'
-        });
+      // Create a new notifications object with the updated value
+      const updatedNotifications = { ...notifications, [key]: value };
+      
+      const { error } = await supabase.rpc('upsert_user_settings', {
+        p_user_id: user.id,
+        p_notifications: updatedNotifications,
+        p_language: language
+      });
       
       if (error) throw error;
       
-      setNotifications(prev => ({ ...prev, [key]: value }));
+      setNotifications(updatedNotifications);
       
       toast({
         title: 'Paramètres mis à jour',
@@ -58,14 +65,11 @@ const NotificationsPage = () => {
     if (!user) return;
     
     try {
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: user.id,
-          language: value
-        }, {
-          onConflict: 'user_id'
-        });
+      const { error } = await supabase.rpc('upsert_user_settings', {
+        p_user_id: user.id,
+        p_notifications: notifications,
+        p_language: value
+      });
       
       if (error) throw error;
       
@@ -86,22 +90,20 @@ const NotificationsPage = () => {
   };
   
   // Load user settings
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchSettings = async () => {
       if (!user) return;
       
       try {
-        const { data, error } = await supabase
-          .from('user_settings')
-          .select('notifications, language')
-          .eq('user_id', user.id)
-          .single();
+        const { data, error } = await supabase.rpc('get_user_settings', {
+          p_user_id: user.id
+        });
         
-        if (error && error.code !== 'PGRST116') throw error;
+        if (error) throw error;
         
         if (data) {
           if (data.notifications) {
-            setNotifications(prev => ({ ...prev, ...data.notifications }));
+            setNotifications(data.notifications as NotificationSettings);
           }
           if (data.language) {
             setLanguage(data.language);
@@ -121,7 +123,7 @@ const NotificationsPage = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => navigate('/mobile-flow/account')}
+          onClick={() => navigate('/account')}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
