@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader } from '@/components/ui/loader';
 import { formatCurrency } from '@/utils/format';
@@ -12,6 +12,7 @@ interface BalanceDisplayProps {
   isUpdating: boolean;
   refreshBalance: () => void;
   isPending?: boolean;
+  isVerified?: boolean;
 }
 
 const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
@@ -20,7 +21,8 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
   currency,
   isUpdating,
   refreshBalance,
-  isPending = false
+  isPending = false,
+  isVerified = true
 }) => {
   const formattedBalance = formatCurrency(balance, currency);
   
@@ -30,13 +32,25 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
         Solde disponible
       </div>
       
-      <div className="text-2xl font-bold mb-3">
-        {isHidden ? '••••••' : formattedBalance}
-      </div>
+      {isVerified ? (
+        <div className="text-2xl font-bold mb-3">
+          {isHidden ? '••••••' : formattedBalance}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center mb-3 text-center">
+          <Lock className="h-5 w-5 mb-1 text-amber-500" />
+          <div className="text-sm text-amber-600 font-medium">
+            Compte en attente de validation
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            Le solde sera disponible après validation par la SFD
+          </div>
+        </div>
+      )}
       
       <Button
         onClick={refreshBalance}
-        disabled={isUpdating}
+        disabled={isUpdating || !isVerified}
         variant="outline"
         size="sm"
         className="flex items-center gap-2 text-sm"

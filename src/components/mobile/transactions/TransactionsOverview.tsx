@@ -8,8 +8,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
-import { ArrowDown, ArrowUp, Clock, RefreshCw } from 'lucide-react';
+import { ArrowDown, ArrowUp, Clock, RefreshCw, Lock } from 'lucide-react';
 import TransactionList from '../TransactionList';
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 
 const TransactionsOverview: React.FC = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ const TransactionsOverview: React.FC = () => {
   const { toast } = useToast();
   const [balance, setBalance] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<string>('recent');
+  const { activeSfdAccount } = useSfdAccounts();
   
   const {
     transactions,
@@ -25,11 +27,17 @@ const TransactionsOverview: React.FC = () => {
     getBalance
   } = useTransactions(user?.id, activeSfdId);
 
+  // Check if the account is verified
+  const isAccountVerified = activeSfdAccount ? 
+    (activeSfdAccount.isVerified || activeSfdAccount.isDefault) : true;
+
   useEffect(() => {
     // Charger les transactions et le solde lors du montage
     fetchTransactions();
-    loadBalance();
-  }, [activeSfdId]);
+    if (isAccountVerified) {
+      loadBalance();
+    }
+  }, [activeSfdId, isAccountVerified]);
 
   const loadBalance = async () => {
     const currentBalance = await getBalance();
@@ -37,6 +45,8 @@ const TransactionsOverview: React.FC = () => {
   };
 
   const refreshData = async () => {
+    if (!isAccountVerified) return;
+    
     await Promise.all([
       fetchTransactions(),
       loadBalance()
@@ -78,7 +88,8 @@ const TransactionsOverview: React.FC = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-white hover:bg-white/20" 
+              className="text-white hover:bg-white/20"
+              disabled={!isAccountVerified}
               onClick={refreshData}
             >
               <RefreshCw className="h-5 w-5" />
@@ -86,19 +97,33 @@ const TransactionsOverview: React.FC = () => {
           </div>
           
           <div className="text-center py-4">
-            <p className="text-3xl font-bold mb-4">{formatCurrencyAmount(balance)} FCFA</p>
+            {isAccountVerified ? (
+              <p className="text-3xl font-bold mb-4">{formatCurrencyAmount(balance)} FCFA</p>
+            ) : (
+              <div className="flex flex-col items-center mb-4">
+                <Lock className="h-6 w-6 mb-2" />
+                <p className="text-lg font-medium">Compte en attente de validation</p>
+                <p className="text-sm opacity-80 mt-1">Le solde sera disponible après validation par la SFD</p>
+              </div>
+            )}
             
             <div className="flex justify-center space-x-3">
               <Button 
                 onClick={handleMakeDeposit}
-                className="bg-white/20 hover:bg-white/30 text-white rounded-full py-2 px-4 flex items-center"
+                disabled={!isAccountVerified}
+                className={`rounded-full py-2 px-4 flex items-center ${
+                  isAccountVerified ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-white/10 text-white/50 cursor-not-allowed'
+                }`}
               >
                 <ArrowDown className="h-4 w-4 mr-2" />
                 Dépôt
               </Button>
               <Button 
                 onClick={handleMakeWithdrawal}
-                className="bg-white/20 hover:bg-white/30 text-white rounded-full py-2 px-4 flex items-center"
+                disabled={!isAccountVerified}
+                className={`rounded-full py-2 px-4 flex items-center ${
+                  isAccountVerified ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-white/10 text-white/50 cursor-not-allowed'
+                }`}
               >
                 <ArrowUp className="h-4 w-4 mr-2" />
                 Retrait

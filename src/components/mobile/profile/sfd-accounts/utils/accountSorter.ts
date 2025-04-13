@@ -36,3 +36,12 @@ export function sortAccounts(accounts: SfdAccountDisplay[]): SfdAccountDisplay[]
     return a.name.localeCompare(b.name);
   });
 }
+
+/**
+ * Utility function to check if an account should display its balance
+ * based on verification status
+ */
+export function canDisplayBalance(account: SfdAccountDisplay): boolean {
+  // Only show balance for verified accounts or default accounts
+  return account.isVerified || account.isDefault || account.status === 'validated';
+}
