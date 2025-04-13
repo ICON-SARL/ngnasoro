@@ -4,7 +4,7 @@ import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/compon
 import { Button } from '@/components/ui/button';
 import { Loader2, Camera, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { scanQRCodeForTransaction } from '@/utils/api/qrCodeGenerator';
+import { qrCodeApi } from '@/utils/mobileMoneyApi';
 import { useAuth } from '@/hooks/useAuth';
 
 interface QRCodeScannerDialogProps {
@@ -51,7 +51,7 @@ const QRCodeScannerDialog: React.FC<QRCodeScannerDialogProps> = ({
     setScanning(true);
     
     try {
-      const response = await scanQRCodeForTransaction(qrCode, user.id);
+      const response = await qrCodeApi.scanQRCodeForTransaction(qrCode, user.id);
       
       if (response.success) {
         toast({

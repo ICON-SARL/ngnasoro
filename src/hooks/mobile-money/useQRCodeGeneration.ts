@@ -1,18 +1,9 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { QRCodeResponse } from '@/utils/mobileMoneyApi';
+import { QRCodeResponse } from './types';
 
-export interface QRCodeGenerationHook {
-  generateQRCode: (amount: number, type: 'deposit' | 'withdrawal' | 'loan_payment') => Promise<QRCodeResponse>;
-  qrCodeData: string | null;
-  isGenerating: boolean;
-  error: string | null;
-  transactionId: string | null;
-  expiresAt: string | null;
-}
-
-export function useQRCodeGeneration(): QRCodeGenerationHook {
+export function useQRCodeGeneration() {
   const [qrCodeData, setQRCodeData] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +24,13 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
         throw new Error('User not authenticated');
       }
 
-      const { data, error } = await supabase.functions.invoke('generate-qr-code', {
+      const isWithdrawal = type === 'withdrawal';
+
+      const { data, error } = await supabase.functions.invoke('qr-code-verification', {
         body: {
           userId: userData.user.id,
           amount,
-          type,
+          isWithdrawal,
           loanId
         }
       });
@@ -45,13 +38,13 @@ export function useQRCodeGeneration(): QRCodeGenerationHook {
       if (error) throw error;
       
       if (data && data.success) {
-        setQRCodeData(data.qrData);
+        setQRCodeData(data.code);
         setTransactionId(data.transactionId);
         setExpiresAt(data.expiresAt);
         
         return {
           success: true,
-          qrCodeData: data.qrData,
+          qrCodeData: data.code,
           transactionId: data.transactionId,
           expiration: data.expiresAt
         };

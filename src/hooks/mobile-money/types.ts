@@ -1,49 +1,41 @@
 
 export interface MobileMoneyResponse {
   success: boolean;
-  transactionId: string | null;
+  transactionId?: string;
   message?: string;
+  error?: string;
 }
 
 export interface QRCodeResponse {
   success: boolean;
   qrCodeData?: string;
-  expiration?: string;
   transactionId?: string;
+  expiration?: string;
   error?: string;
-}
-
-export interface MobileMoneyOperationsHook {
-  processPayment: (phoneNumber: string, amount: number, provider: string, loanId?: string) => Promise<boolean>;
-  processWithdrawal: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
-  isProcessingPayment: boolean;
-  isProcessingWithdrawal: boolean;
-  error: string | null;
-  mobileMoneyProviders: { id: string; name: string; }[];
 }
 
 export interface MobileMoneyPaymentHook {
   isProcessing: boolean;
   error: string | null;
-  processPayment: (
-    phoneNumber: string,
-    amount: number,
-    provider: string
-  ) => Promise<boolean>;
+  processPayment: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
 }
 
 export interface MobileMoneyWithdrawalHook {
   isProcessing: boolean;
   error: string | null;
-  processWithdrawal: (
-    phoneNumber: string,
-    amount: number,
-    provider: string
-  ) => Promise<boolean>;
+  processWithdrawal: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
+}
+
+export interface MobileMoneyOperationsHook {
+  isProcessingPayment: boolean;
+  isProcessingWithdrawal: boolean;
+  error: string | null;
+  processPayment: (phoneNumber: string, amount: number, provider: string, loanId?: string) => Promise<boolean>;
+  processWithdrawal: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
 }
 
 export interface QRCodeGenerationHook {
-  generateQRCode: (amount: number, type: 'deposit' | 'withdrawal' | 'loan_payment') => Promise<QRCodeResponse>;
+  generateQRCode: (amount: number, type: 'deposit' | 'withdrawal' | 'loan_payment', loanId?: string) => Promise<QRCodeResponse>;
   qrCodeData: string | null;
   isGenerating: boolean;
   error: string | null;
