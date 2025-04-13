@@ -17,6 +17,7 @@ import ClientAuthUI from '@/components/auth/ClientAuthUI';
 import AdminAuthUI from '@/components/auth/AdminAuthUI';
 import SfdAuthUI from '@/components/auth/SfdAuthUI';
 import NotFound from '@/pages/NotFound';
+import SplashScreen from '@/components/mobile/SplashScreen';
 
 export default function App() {
   return (
@@ -33,6 +34,9 @@ export default function App() {
             {/* Login routes */}
             <Route path="/login" element={<ClientAuthUI />} />
             <Route path="/register" element={<ClientAuthUI />} />
+            
+            {/* Splash screen at root level */}
+            <Route path="/splash" element={<SplashScreen />} />
             
             {/* SFD Routes */}
             <Route path="/agency-dashboard" element={<AgencyDashboardPage />} />

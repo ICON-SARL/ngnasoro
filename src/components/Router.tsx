@@ -10,6 +10,7 @@ import NotFound from '@/pages/NotFound';
 import MobileFlowPage from '@/pages/MobileFlowPage';
 import { CapacitorGuide } from '@/components/mobile/CapacitorGuide';
 import TestAuth from '@/components/auth/TestAuth';
+import SplashScreen from '@/components/mobile/SplashScreen';
 
 // Create a client for the mobile router with longer staleTime
 const queryClient = new QueryClient({
@@ -41,6 +42,7 @@ export const MobileRouter = () => {
         <Route path="/login" element={<Navigate to="/auth" replace />} />
         <Route path="/capacitor-guide" element={<CapacitorGuide />} />
         <Route path="/test-auth" element={<TestAuth />} />
+        <Route path="/splash" element={<SplashScreen />} />
         
         {/* Mobile flow routes - Important: These routes are relative to the parent route */}
         <Route path="/*" element={<MobileFlowPage />} />
