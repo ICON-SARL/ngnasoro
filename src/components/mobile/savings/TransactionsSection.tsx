@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Clock } from 'lucide-react';
 import { formatCurrency } from '@/utils/format';
-import { Transaction } from '@/hooks/useTransactions';
+import { Transaction } from '@/types/transactions';
 
 interface TransactionsSectionProps {
   transactions: Transaction[];
