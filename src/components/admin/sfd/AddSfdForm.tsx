@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,16 +14,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { 
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SfdFormValues, sfdFormSchema } from './schemas/sfdFormSchema';
 import { Loader2 } from 'lucide-react';
+import { SfdLogoUploader } from './components/SfdLogoUploader';
+import { storageApi } from '@/utils/api/modules/storageApi';
+import { useToast } from '@/hooks/use-toast';
 
 interface AddSfdFormProps {
   onSuccess?: () => void;
@@ -39,6 +37,9 @@ export function AddSfdForm({ onSuccess, onCancel, onSubmit }: AddSfdFormProps) {
     full_name: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const { toast } = useToast();
 
   const form = useForm<SfdFormValues>({
     resolver: zodResolver(sfdFormSchema),
@@ -50,15 +51,45 @@ export function AddSfdForm({ onSuccess, onCancel, onSubmit }: AddSfdFormProps) {
       contact_email: '',
       phone: '',
       status: 'active',
-      subsidy_balance: 0
+      subsidy_balance: 0,
+      logo_url: null
     }
   });
 
   const handleSubmit = async (data: SfdFormValues) => {
     setIsSubmitting(true);
+    setIsUploading(false);
+    
     try {
-      await onSubmit(data, createAdmin, createAdmin ? adminData : undefined);
+      let updatedData = { ...data };
+      
+      // Upload logo if provided
+      if (logoFile) {
+        setIsUploading(true);
+        try {
+          const fileName = `sfd-logos/${Date.now()}-${logoFile.name.replace(/\s+/g, '-')}`;
+          const uploadResult = await storageApi.uploadFile('sfd-assets', fileName, logoFile);
+          
+          if (uploadResult) {
+            const logoUrl = storageApi.getFileUrl('sfd-assets', fileName);
+            updatedData.logo_url = logoUrl;
+          }
+        } catch (error) {
+          console.error('Erreur lors du téléchargement du logo:', error);
+          toast({
+            title: 'Erreur',
+            description: 'Le téléchargement du logo a échoué. La SFD sera créée sans logo.',
+            variant: 'destructive',
+          });
+        } finally {
+          setIsUploading(false);
+        }
+      }
+      
+      await onSubmit(updatedData, createAdmin, createAdmin ? adminData : undefined);
       if (onSuccess) onSuccess();
+    } catch (error) {
+      console.error('Erreur lors de la création de la SFD:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -69,6 +100,10 @@ export function AddSfdForm({ onSuccess, onCancel, onSubmit }: AddSfdFormProps) {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleLogoChange = (file: File | null) => {
+    setLogoFile(file);
   };
 
   return (
@@ -152,6 +187,14 @@ export function AddSfdForm({ onSuccess, onCancel, onSubmit }: AddSfdFormProps) {
                   </FormItem>
                 )}
               />
+              
+              <div className="col-span-1 md:col-span-2">
+                <SfdLogoUploader 
+                  logoFile={logoFile}
+                  logoUrl={null}
+                  onLogoChange={handleLogoChange}
+                />
+              </div>
               
               <div className="col-span-1 md:col-span-2">
                 <FormField
@@ -267,18 +310,18 @@ export function AddSfdForm({ onSuccess, onCancel, onSubmit }: AddSfdFormProps) {
             type="button" 
             variant="outline" 
             onClick={onCancel}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isUploading}
           >
             Annuler
           </Button>
           <Button 
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isUploading}
           >
-            {isSubmitting ? (
+            {isSubmitting || isUploading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Création en cours...
+                {isUploading ? 'Téléchargement du logo...' : 'Création en cours...'}
               </>
             ) : (
               'Créer la SFD'

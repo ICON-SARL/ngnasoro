@@ -42,10 +42,12 @@ export {
   createLoanAuditLog
 } from './auditHelpers';
 
+// Import required functions and types for the logPermissionFailure function
+import { logAuditEvent } from './auditLoggerCore';
+import { AuditLogCategory, AuditLogSeverity } from './auditLoggerTypes';
+
 // Add permission failure logging function
-// The function should be defined after all the imports are exported
 export function logPermissionFailure(userId: string, requiredPermission: string, resource: string) {
-  // Now using the imported and exported logAuditEvent, AuditLogCategory, and AuditLogSeverity
   return logAuditEvent({
     user_id: userId,
     action: 'permission_denied',
