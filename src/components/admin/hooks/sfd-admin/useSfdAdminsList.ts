@@ -1,6 +1,5 @@
-
 import { useQuery } from '@tanstack/react-query';
-import { getSfdAdmins, SfdAdmin } from './sfdAdminApiService';
+import { getSfdAdmins, getSfdAdminsForSfd, SfdAdmin } from './sfdAdminApiService';
 import { useToast } from '@/hooks/use-toast';
 
 export function useSfdAdminsList(sfdId?: string) {
@@ -19,27 +18,19 @@ export function useSfdAdminsList(sfdId?: string) {
         // Ajouter un délai pour éviter des problèmes de race condition
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Use the getSfdAdmins function for all cases
-        // We'll filter for specific SFD on the client side if sfdId is provided
-        const admins = await getSfdAdmins();
-        
-        // If sfdId is provided, filter the results for that specific SFD
-        const result = sfdId 
-          ? admins.filter(admin => {
-              // We need to check if this admin is associated with the specified SFD
-              // This would typically be done by checking user_sfds table on the server
-              // But for now, we'll return all admins and let the component handle filtering
-              return true; // We'll remove this filtering later when we implement proper backend support
-            })
-          : admins;
+        // If sfdId is provided, use the specific function to get admins for that SFD
+        // Otherwise get all SFD admins
+        const admins = sfdId 
+          ? await getSfdAdminsForSfd(sfdId)
+          : await getSfdAdmins();
         
         // Vérifier que le résultat est bien un tableau (défense contre les erreurs de format)
-        if (!Array.isArray(result)) {
-          console.warn('Résultat inattendu de getSfdAdmins:', result);
+        if (!Array.isArray(admins)) {
+          console.warn('Résultat inattendu de getSfdAdmins:', admins);
           return [];
         }
         
-        return result;
+        return admins;
       } catch (error: any) {
         console.error('Erreur dans useSfdAdminsList:', error);
         toast({
