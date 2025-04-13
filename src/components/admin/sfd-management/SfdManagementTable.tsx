@@ -5,28 +5,40 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, UserPlus, Search } from 'lucide-react';
+import { Eye, UserPlus, Search, FileText, BarChart2 } from 'lucide-react';
 import { SfdStatusBadge } from '@/components/admin/sfd/SfdStatusBadge';
 import { SfdActionsMenu } from '@/components/admin/sfd/SfdActionsMenu';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/utils/formatDate';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSfdData } from '@/components/admin/hooks/sfd-management/useSfdData';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 export function SfdManagementTable() {
   const { sfds, isLoading, isError } = useSfdData();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSfd, setSelectedSfd] = useState(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
   const { toast } = useToast();
 
   // Filter SFDs based on search term
   const filteredSfds = sfds.filter(sfd => 
     sfd.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (sfd.email && sfd.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (sfd.phone && sfd.phone.toLowerCase().includes(searchTerm.toLowerCase()))
+    (sfd.phone && sfd.phone.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (sfd.region && sfd.region.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (sfd.code && sfd.code.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleSuspendSfd = (sfd: any) => {
+  const handleSuspendSfd = (sfd) => {
     console.log('Suspend SFD:', sfd.id);
     toast({
       title: "Action requise",
@@ -35,7 +47,7 @@ export function SfdManagementTable() {
     });
   };
 
-  const handleReactivateSfd = (sfd: any) => {
+  const handleReactivateSfd = (sfd) => {
     console.log('Reactivate SFD:', sfd.id);
     toast({
       title: "Action requise",
@@ -44,7 +56,7 @@ export function SfdManagementTable() {
     });
   };
 
-  const handleActivateSfd = (sfd: any) => {
+  const handleActivateSfd = (sfd) => {
     console.log('Activate SFD:', sfd.id);
     toast({
       title: "Action requise",
@@ -53,16 +65,12 @@ export function SfdManagementTable() {
     });
   };
 
-  const handleViewDetails = (sfd: any) => {
-    console.log('View SFD details:', sfd.id);
-    toast({
-      title: "Action requise",
-      description: "Cette fonctionnalité est en cours d'implémentation.",
-      variant: "default",
-    });
+  const handleViewDetails = (sfd) => {
+    setSelectedSfd(sfd);
+    setShowDetailDialog(true);
   };
 
-  const handleAddAdmin = (sfd: any) => {
+  const handleAddAdmin = (sfd) => {
     console.log('Add admin to SFD:', sfd.id);
     toast({
       title: "Action requise",
@@ -126,6 +134,8 @@ export function SfdManagementTable() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nom</TableHead>
+                <TableHead>Code</TableHead>
+                <TableHead>Région</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Téléphone</TableHead>
                 <TableHead>Statut</TableHead>
@@ -138,6 +148,8 @@ export function SfdManagementTable() {
               {filteredSfds.map((sfd) => (
                 <TableRow key={sfd.id}>
                   <TableCell className="font-medium">{sfd.name}</TableCell>
+                  <TableCell>{sfd.code || '-'}</TableCell>
+                  <TableCell>{sfd.region || '-'}</TableCell>
                   <TableCell>{sfd.contact_email || sfd.email || '-'}</TableCell>
                   <TableCell>{sfd.phone || '-'}</TableCell>
                   <TableCell>
@@ -185,6 +197,103 @@ export function SfdManagementTable() {
           </Table>
         </div>
       )}
+
+      {/* SFD Details Dialog */}
+      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Détails de la SFD</DialogTitle>
+            <DialogDescription>
+              Informations complètes sur l'institution de microfinance
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedSfd && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Informations générales</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">Nom:</span>
+                    <p>{selectedSfd.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">Code:</span>
+                    <p>{selectedSfd.code}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">Région:</span>
+                    <p>{selectedSfd.region || 'Non spécifié'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">Statut:</span>
+                    <p><SfdStatusBadge status={selectedSfd.status} /></p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">Créé le:</span>
+                    <p>{formatDate(selectedSfd.created_at)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Contact</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">Email:</span>
+                    <p>{selectedSfd.contact_email || selectedSfd.email || 'Non spécifié'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">Téléphone:</span>
+                    <p>{selectedSfd.phone || 'Non spécifié'}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="md:col-span-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Statistiques</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-1">
+                      <span className="text-sm font-medium text-muted-foreground">Admins</span>
+                      <p className="text-2xl font-bold">{selectedSfd.admin_count || 0}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-sm font-medium text-muted-foreground">Clients</span>
+                      <p className="text-2xl font-bold">{selectedSfd.client_count || 0}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-sm font-medium text-muted-foreground">Prêts</span>
+                      <p className="text-2xl font-bold">{selectedSfd.loan_count || 0}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-sm font-medium text-muted-foreground">Volume total</span>
+                      <p className="text-2xl font-bold">{selectedSfd.total_loan_amount ? `${(selectedSfd.total_loan_amount / 1000000).toFixed(1)}M` : '0'} FCFA</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="md:col-span-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Description</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedSfd.description || 'Aucune description disponible pour cette SFD.'}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

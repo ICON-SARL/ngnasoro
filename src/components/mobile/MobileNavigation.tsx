@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Banknote, PiggyBank, CreditCard } from 'lucide-react';
+import { Banknote, PiggyBank, CreditCard, User } from 'lucide-react';
 
 interface MobileNavigationProps {
   onAction?: (action: string, data?: any) => void;
@@ -58,6 +58,16 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
           <PiggyBank className="h-5 w-5" />
         </div>
         <span className="text-xs mt-1">Mes fonds</span>
+      </div>
+      
+      <div 
+        className={`flex flex-col items-center ${isActive('/profile') ? 'text-[#0D6A51]' : 'text-gray-500'}`}
+        onClick={() => handleNavigation('/mobile-flow/profile', 'Navigate to Profile')}
+      >
+        <div className={`p-2 rounded-full ${isActive('/profile') ? 'bg-[#0D6A51]/10' : ''}`}>
+          <User className="h-5 w-5" />
+        </div>
+        <span className="text-xs mt-1">Profil</span>
       </div>
     </div>
   );
