@@ -26,9 +26,10 @@ export const useLoan = (loanId: string) => {
         ...data,
         client_name: data.sfd_clients?.full_name || 'Unknown Client',
         term_months: data.duration_months || 0, // Adding term_months (mapped from duration_months)
-        updated_at: data.updated_at || data.created_at, // If updated_at doesn't exist, use created_at
-        // Ensure all required properties from the Loan type are present
-        status: data.status || 'pending',
+        // Since data.updated_at might not exist, provide a fallback
+        updated_at: data.created_at, 
+        // Ensure all required properties from the Loan type are present with proper typing
+        status: (data.status || 'pending') as Loan['status'],
         reference: data.reference || '',
         duration: data.duration_months // For backward compatibility
       };
