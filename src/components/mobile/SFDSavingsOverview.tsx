@@ -16,14 +16,14 @@ const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({ account }) => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { activeSfdAccount } = useSfdAccounts();
+  const { savingsAccount } = useSfdAccounts();
   const [isAccountVerified, setIsAccountVerified] = useState(true);
   
   useEffect(() => {
     console.log("SFDSavingsOverview mounted with account:", account);
     // Vérifier si le compte SFD est validé
-    if (activeSfdAccount) {
-      setIsAccountVerified(activeSfdAccount.isVerified || activeSfdAccount.isDefault);
+    if (account) {
+      setIsAccountVerified(account.isVerified || account.isDefault);
     }
     
     // Simuler un chargement
@@ -32,7 +32,7 @@ const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({ account }) => {
     }, 1000);
     
     return () => clearTimeout(timer);
-  }, [account, activeSfdAccount]);
+  }, [account]);
   
   const goToSelector = () => {
     navigate('/sfd-selector');

@@ -61,17 +61,15 @@ export const sfdAccountService = {
       }
 
       // Call the database function to handle the transfer
-      const { data, error } = await supabase.rpc(
-        'transfer_between_sfd_accounts',
-        {
+      const { data, error } = await supabase
+        .rpc('transfer_between_sfd_accounts', {
           p_sfd_id: sfdId,
           p_from_account_id: fromAccountId,
           p_to_account_id: toAccountId,
           p_amount: amount,
           p_description: description || "Transfert entre comptes",
-          p_performed_by: supabase.auth.getUser().then(({ data }) => data.user?.id || null)
-        }
-      );
+          p_performed_by: (await supabase.auth.getUser()).data.user?.id || null
+        });
 
       if (error) throw error;
       return data as string;

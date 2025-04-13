@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { sfdAccountService } from '@/services/sfdAccountService';
-import { SfdAccount, CreateTransferParams } from '@/types/sfdAccounts';
+import { SfdAccount, CreateTransferParams, SfdAccountTransfer } from '@/types/sfdAccounts';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,7 +17,7 @@ export function useSfdAccounts(sfdId?: string) {
     data: accounts = [],
     isLoading,
     error,
-    refetch
+    refetch: refetchAccounts
   } = useQuery({
     queryKey: ['sfd-accounts', effectiveSfdId],
     queryFn: () => sfdAccountService.getSfdAccounts(effectiveSfdId || ''),
@@ -75,7 +75,10 @@ export function useSfdAccounts(sfdId?: string) {
     repaymentAccount,
     savingsAccount,
     transferFunds,
-    refetchAccounts: refetch,
+    refetchAccounts,
     refetchHistory
   };
 }
+
+// Also export the types for components that need them
+export type { SfdAccount, SfdAccountTransfer, CreateTransferParams };
