@@ -7,7 +7,9 @@ import WelcomeScreen from '@/components/mobile/WelcomeScreen';
 import MobileDashboard from '@/components/mobile/MobileDashboard';
 import MobileProfilePage from '@/components/mobile/MobileProfilePage';
 import FundsPage from '@/components/mobile/funds/FundsPage';
-import ClientLoanStatus from '@/components/ClientLoanStatus';
+import MobileMyLoansPageContainer from './mobile/MobileMyLoansPage';
+import SfdsListPage from './mobile/SfdsListPage';
+import SfdDetailPage from './mobile/SfdDetailPage';
 
 const MobileFlowPage = () => {
   const { user } = useAuth();
@@ -33,7 +35,7 @@ const MobileFlowPage = () => {
           />
           <Route 
             path="/my-loans" 
-            element={<ClientLoanStatus />}
+            element={<MobileMyLoansPageContainer />}
           />
           <Route 
             path="/loans" 
@@ -47,6 +49,14 @@ const MobileFlowPage = () => {
           <Route 
             path="/savings" 
             element={<FundsPage />}
+          />
+          <Route 
+            path="/sfds" 
+            element={<SfdsListPage />}
+          />
+          <Route 
+            path="/sfd/:sfdId" 
+            element={<SfdDetailPage />}
           />
           <Route 
             path="/profile/*" 
