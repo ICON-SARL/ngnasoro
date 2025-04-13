@@ -9,33 +9,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MobileMenu from '@/components/mobile/MobileMenu';
 import SfdAdhesionSection from '@/components/mobile/account/SfdAdhesionSection';
+import LogoutButton from '@/components/LogoutButton';
 
 const AccountPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  
-  const handleLogout = async () => {
-    setIsLoading(true);
-    try {
-      await signOut();
-      toast({
-        title: 'Déconnexion réussie',
-        description: 'Vous avez été déconnecté avec succès',
-      });
-      navigate('/');
-    } catch (error) {
-      console.error('Error during logout:', error);
-      toast({
-        title: 'Erreur de déconnexion',
-        description: 'Une erreur est survenue lors de la déconnexion',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
   
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -128,14 +108,12 @@ const AccountPage: React.FC = () => {
             </CardContent>
           </Card>
           
-          <Button 
+          <LogoutButton 
             variant="destructive" 
             className="w-full mt-6"
-            disabled={isLoading}
-            onClick={handleLogout}
-          >
-            {isLoading ? 'Déconnexion...' : 'Se déconnecter'}
-          </Button>
+            text="Se déconnecter"
+            redirectPath="/auth"
+          />
         </div>
       </div>
       
