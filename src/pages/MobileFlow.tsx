@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccount } from '@/hooks/useAccount';
 import { useTransactions } from '@/hooks/useTransactions';
+import { UserRole } from '@/hooks/auth/types';
 
 // Import refactored components
 import MobileMenu from '@/components/mobile/menu/MobileMenu';
@@ -19,7 +20,7 @@ const MobileFlow = () => {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, userRole } = useAuth();
   
   // Utilisation conditionnelle des hooks pour éviter les erreurs
   const { account, isLoading: accountLoading } = useAccount ? useAccount() : { account: null, isLoading: false };
@@ -42,22 +43,27 @@ const MobileFlow = () => {
         return;
       }
       
-      // If user is admin or super_admin, redirect to admin dashboard
-      const userRole = user.app_metadata?.role;
-      if (userRole === 'admin') {
+      // Get the user role and redirect if needed
+      const role = user.app_metadata?.role;
+      console.log('MobileFlow - Detected user role:', role);
+      
+      // Redirect admins to their proper dashboards
+      if (role === 'admin') {
         toast({
-          title: "Accès refusé",
-          description: "Les administrateurs ne peuvent pas accéder à l'interface mobile.",
-          variant: "destructive",
+          title: "Redirection",
+          description: "Vous êtes connecté en tant qu'administrateur. Redirection vers le tableau de bord admin.",
         });
         navigate('/super-admin-dashboard');
-      } else if (userRole === 'sfd_admin') {
+        return;
+      } 
+      
+      if (role === 'sfd_admin') {
         toast({
-          title: "Accès refusé",
-          description: "Les administrateurs SFD ne peuvent pas accéder à l'interface mobile.",
-          variant: "destructive",
+          title: "Redirection",
+          description: "Vous êtes connecté en tant qu'administrateur SFD. Redirection vers le tableau de bord SFD.",
         });
         navigate('/agency-dashboard');
+        return;
       }
     }
   }, [user, loading, navigate, toast]);

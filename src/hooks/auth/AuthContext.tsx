@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
@@ -34,17 +33,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (data.session?.user) {
           const transformedUser = createUserFromSupabaseUser(data.session.user);
           setUser(transformedUser);
+          
+          console.log('AuthContext - Loaded user data:', {
+            id: transformedUser.id,
+            email: transformedUser.email,
+            role: transformedUser.app_metadata?.role,
+            metadata: transformedUser.app_metadata,
+          });
         } else {
           setUser(null);
-        }
-        
-        if (data.session?.user) {
-          console.log('Loaded user data:', {
-            id: data.session.user.id,
-            email: data.session.user.email,
-            role: data.session.user.app_metadata?.role,
-            metadata: data.session.user.app_metadata,
-          });
         }
       } catch (err) {
         console.error('Error in auth session fetching:', err);
@@ -57,24 +54,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        console.log('Auth state change event:', event);
+        
         if (newSession?.user) {
           const transformedUser = createUserFromSupabaseUser(newSession.user);
           setUser(transformedUser);
+          
+          console.log('Auth state changed - User role:', transformedUser.app_metadata?.role);
         } else {
           setUser(null);
         }
         
         setSession(newSession);
         setLoading(false);
-        
-        if (newSession?.user) {
-          console.log('Auth state changed:', {
-            event,
-            userId: newSession.user.id,
-            role: newSession.user.app_metadata?.role,
-            metadata: newSession.user.app_metadata,
-          });
-        }
         
         if (event === 'SIGNED_IN') {
           await logAuditEvent(
@@ -203,17 +195,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       console.log("SignOut started - clearing localStorage items");
-      // Clear all relevant authentication and session data from localStorage
       localStorage.removeItem('adminLastSeen');
       localStorage.removeItem('sb-xnqysvnychmsockivqhb-auth-token');
       localStorage.removeItem('supabase.auth.token');
       
-      // Log the signOut action attempt
       console.log("Calling supabase.auth.signOut()");
       const result = await supabase.auth.signOut();
       console.log("SignOut result:", result);
       
-      // Clear user and session state regardless of signOut result
       setUser(null);
       setSession(null);
       

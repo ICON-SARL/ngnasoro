@@ -17,6 +17,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import AuthRedirectPage from '@/pages/AuthRedirectPage';
 import AdminLoginPage from '@/pages/AdminLoginPage';
 import ClientLoginPage from '@/pages/ClientLoginPage';
+import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -45,6 +46,11 @@ function App() {
               <Route path="/sfd/auth" element={<LoginPage isSfdAdmin={true} />} />
               <Route path="/client/auth" element={<ClientLoginPage />} />
               
+              {/* Admin Dashboards */}
+              <Route path="/super-admin-dashboard/*" element={<SuperAdminDashboard />} />
+              <Route path="/agency-dashboard/*" element={<Navigate to="/super-admin-dashboard" replace />} />
+              
+              {/* Mobile Routes */}
               <Route path="/mobile-flow/main" element={<MobileMainPage />} />
               <Route path="/mobile-flow/transfer" element={<TransferPage />} />
               <Route path="/mobile-flow/loans" element={<MobileLoansPage />} />

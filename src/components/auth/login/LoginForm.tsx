@@ -39,12 +39,14 @@ const LoginForm: React.FC<LoginFormProps> = ({
           variant: "destructive",
         });
         onError?.(error.message);
+        setIsLoading(false);
         return;
       }
       
       console.log('Login successful, redirecting...');
       
-      // Redirect will be handled by the AuthContext based on user role
+      // Don't redirect here - let the AuthContext handle redirections based on user role
+      // The redirection will be handled by the useEffect in AuthContext or MobileFlow
       
     } catch (err: any) {
       console.error('Unexpected error during login:', err);
@@ -54,7 +56,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
         variant: "destructive",
       });
       onError?.(err.message);
-    } finally {
       setIsLoading(false);
     }
   };
