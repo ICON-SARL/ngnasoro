@@ -1,7 +1,4 @@
 
-// Export enums directly from auditLoggerTypes
-export { AuditLogCategory, AuditLogSeverity } from './auditLoggerTypes';
-
 // Export types with the correct syntax for isolatedModules
 export type { 
   AuditLogEntry,
@@ -11,13 +8,8 @@ export type {
   AuditLogExportResult 
 } from './auditLoggerTypes';
 
-// Export middleware functions
-export { 
-  ensureTargetResource, 
-  createAuditLog, 
-  adaptAuditLogEntry,
-  adaptAuditLogEvent
-} from './auditMiddleware';
+// Export enums directly from auditLoggerTypes
+export { AuditLogCategory, AuditLogSeverity } from './auditLoggerTypes';
 
 // Export functions from auditLoggerCore
 export { 
@@ -27,6 +19,14 @@ export {
   exportAuditLogsToCSV,
   logAuditEvent
 } from './auditLoggerCore';
+
+// Export middleware functions
+export { 
+  ensureTargetResource, 
+  createAuditLog, 
+  adaptAuditLogEntry,
+  adaptAuditLogEvent
+} from './auditMiddleware';
 
 // Export functions from auditLoggerExport
 export {
@@ -43,7 +43,7 @@ export {
 } from './auditHelpers';
 
 // Add permission failure logging function
-// The function is now defined after the imports are exported
+// The function should be defined after all the imports are exported
 export function logPermissionFailure(userId: string, requiredPermission: string, resource: string) {
   // Now using the imported and exported logAuditEvent, AuditLogCategory, and AuditLogSeverity
   return logAuditEvent({
