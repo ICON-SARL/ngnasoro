@@ -24,7 +24,7 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({
   // Generate QR code on mount
   useEffect(() => {
     const generateCode = async () => {
-      await generateQRCode(amount, isWithdrawal ? 'withdrawal' : 'payment');
+      await generateQRCode(amount, isWithdrawal ? 'withdrawal' : 'deposit');
     };
     
     generateCode();

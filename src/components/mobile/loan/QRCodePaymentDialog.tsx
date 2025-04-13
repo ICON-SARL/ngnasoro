@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -35,7 +34,7 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({
     const generateCode = async () => {
       try {
         const type = isWithdrawal ? 'withdrawal' : loanId ? 'loan_payment' : 'deposit';
-        await generateQRCode(amount, type, loanId);
+        await generateQRCode(amount, type);
       } catch (err) {
         console.error('Error generating QR code:', err);
       }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ import ClientAccountState from '@/components/mobile/sfd-savings/ClientAccountSta
 const MobileSavingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, activeSfdId } = useAuth();
-  const { accounts, isLoading, refetchSfdAccounts } = useSfdAccounts();
+  const { accounts, isLoading, refetchAccounts } = useSfdAccounts();
   const { transactions, isLoading: transactionsLoading } = useTransactions(user?.id, activeSfdId);
   
   const [isUpdating, setIsUpdating] = useState(false);
@@ -30,7 +29,7 @@ const MobileSavingsPage: React.FC = () => {
   const handleRefresh = async () => {
     setIsUpdating(true);
     try {
-      await refetchSfdAccounts();
+      await refetchAccounts();
       setTimeout(() => {
         setIsUpdating(false);
       }, 1000);
@@ -67,7 +66,6 @@ const MobileSavingsPage: React.FC = () => {
     );
   }
   
-  // If no account is available
   if (!selectedAccount) {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
@@ -124,15 +122,15 @@ const MobileSavingsPage: React.FC = () => {
             email: user?.email || '',
             phone: user?.user_metadata?.phone || '',
             sfd_id: activeSfdId || '',
-            status: 'active'
+            status: 'pending'
           }}
-          balance={selectedAccount.balance || 0}
+          balance={selectedAccount?.balance || 0}
           onManageAccount={handleManageAccount}
         />
         
         <BalanceDisplay 
           isHidden={isHidden} 
-          balance={selectedAccount.balance || 0}
+          balance={selectedAccount?.balance || 0}
           currency="FCFA"
           isUpdating={isUpdating}
           refreshBalance={handleRefresh}
