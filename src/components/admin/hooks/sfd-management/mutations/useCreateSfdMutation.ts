@@ -48,36 +48,56 @@ export function useCreateSfdMutation() {
           adminData: createAdmin && adminData ? adminData : null
         };
         
-        console.log("Sending request to edge function:", JSON.stringify(requestBody));
+        console.log("Sending request to edge function:", JSON.stringify({
+          ...requestBody,
+          adminData: adminData ? {...adminData, password: "***"} : null
+        }));
         
-        // Make the request to the Edge Function with proper auth token
-        const { data, error } = await supabase.functions.invoke('create-sfd-with-admin', {
-          body: requestBody
-        });
+        // Setting timeout for the edge function call
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seconds timeout
+        
+        try {
+          // Make the request to the Edge Function with proper auth token
+          const { data, error } = await supabase.functions.invoke('create-sfd-with-admin', {
+            body: requestBody,
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
 
-        if (error) {
-          console.error("Edge Function invocation error:", error);
-          throw new Error(`Erreur de communication avec le serveur: ${error.message}`);
+          if (error) {
+            console.error("Edge Function invocation error:", error);
+            throw new Error(`Erreur de communication avec le serveur: ${error.message}`);
+          }
+          
+          console.log("Edge Function response:", data);
+          
+          if (data?.error) {
+            console.error("Edge Function returned error:", data.error);
+            throw new Error(data.error);
+          }
+          
+          if (!data?.sfd) {
+            console.error("Invalid response from Edge Function:", data);
+            throw new Error("Réponse invalide du serveur");
+          }
+          
+          console.log("SFD created successfully:", data.sfd);
+          
+          return {
+            sfd: data.sfd,
+            admin: data.admin
+          };
+        } catch (fetchError: any) {
+          clearTimeout(timeoutId);
+          
+          if (fetchError.name === 'AbortError') {
+            throw new Error("La requête a pris trop de temps. Veuillez réessayer plus tard.");
+          }
+          
+          throw fetchError;
         }
-        
-        console.log("Edge Function response:", data);
-        
-        if (data?.error) {
-          console.error("Edge Function returned error:", data.error);
-          throw new Error(data.error);
-        }
-        
-        if (!data?.sfd) {
-          console.error("Invalid response from Edge Function:", data);
-          throw new Error("Réponse invalide du serveur");
-        }
-        
-        console.log("SFD created successfully:", data.sfd);
-        
-        return {
-          sfd: data.sfd,
-          admin: data.admin
-        };
       } catch (error: any) {
         console.error("Error during SFD creation:", error);
         throw new Error(error.message || "Une erreur est survenue lors de la création de la SFD");
@@ -102,6 +122,7 @@ export function useCreateSfdMutation() {
         description: `${error.message}`,
         variant: 'destructive',
       });
-    }
+    },
+    retry: 0, // Disable automatic retries
   });
 }

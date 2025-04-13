@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SfdManagementStats } from './SfdManagementStats';
 import { SfdAddDialog } from './SfdAddDialog';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,33 @@ export const SfdManagementContainer = () => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const { toast } = useToast();
   
+  // Check for any ongoing operations in sessionStorage
+  useEffect(() => {
+    const ongoingOperation = sessionStorage.getItem('sfd_creation_in_progress');
+    if (ongoingOperation) {
+      sessionStorage.removeItem('sfd_creation_in_progress');
+      toast({
+        title: 'Opération précédente interrompue',
+        description: 'Une opération de création de SFD précédente a été interrompue. Vous pouvez réessayer.',
+        variant: 'warning',
+      });
+    }
+  }, []);
+  
   const handleOpenAddDialog = () => {
     setAddDialogOpen(true);
+  };
+  
+  const handleDialogChange = (open: boolean) => {
+    setAddDialogOpen(open);
+    
+    // If dialog is being opened, store operation state
+    if (open) {
+      sessionStorage.setItem('sfd_creation_in_progress', 'true');
+    } else {
+      // If dialog is being closed, clear operation state
+      sessionStorage.removeItem('sfd_creation_in_progress');
+    }
   };
   
   return (
@@ -32,7 +57,7 @@ export const SfdManagementContainer = () => {
       
       <SfdAddDialog 
         open={addDialogOpen} 
-        onOpenChange={setAddDialogOpen} 
+        onOpenChange={handleDialogChange} 
       />
     </div>
   );
