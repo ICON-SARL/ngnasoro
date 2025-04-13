@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,13 +45,10 @@ export function LoanManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   
-  // Simuler une demande de refresh des statistiques du tableau de bord
-  // quand ce composant est monté via useQueryClient
   React.useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ['sfd-dashboard-stats'] });
   }, [queryClient]);
 
-  // Récupérer les données des prêts depuis Supabase via le hook useSfdLoans
   const { 
     loans, 
     isLoading, 
@@ -64,17 +60,14 @@ export function LoanManagement() {
     refetch
   } = useSfdLoans();
 
-  // Make sure loans is always an array before filtering
   const loansArray = Array.isArray(loans) ? loans : [];
 
-  // Filtrer les prêts selon le terme de recherche
   const filteredLoans = loansArray.filter(loan => 
     loan.purpose?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     loan.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (loan.amount && loan.amount.toString().includes(searchTerm))
   );
 
-  // Filtrer les prêts selon l'onglet actif
   const getFilteredLoansByStatus = () => {
     if (activeTab === 'all') return filteredLoans;
     if (activeTab === 'pending') return filteredLoans.filter(loan => loan.status === 'pending');
@@ -88,25 +81,21 @@ export function LoanManagement() {
 
   const displayedLoans = getFilteredLoansByStatus();
   
-  // Calculer les prêts pour la pagination
   const indexOfLastLoan = currentPage * itemsPerPage;
   const indexOfFirstLoan = indexOfLastLoan - itemsPerPage;
   const currentLoans = displayedLoans.slice(indexOfFirstLoan, indexOfLastLoan);
   const totalPages = Math.ceil(displayedLoans.length / itemsPerPage);
 
-  // Afficher les détails d'un prêt
   const handleViewLoan = (loan: Loan) => {
     setSelectedLoan(loan);
     setIsDetailsDialogOpen(true);
   };
 
-  // Ouvrir le formulaire de remboursement
   const handleOpenRepayment = (loan: Loan) => {
     setSelectedLoan(loan);
     setIsRepaymentDialogOpen(true);
   };
 
-  // Approuver un prêt
   const handleApproveLoan = (loanId: string) => {
     approveLoan.mutate({ loanId }, {
       onSuccess: () => {
@@ -115,7 +104,6 @@ export function LoanManagement() {
     });
   };
 
-  // Rejeter un prêt
   const handleRejectLoan = (loanId: string) => {
     rejectLoan.mutate({ loanId }, {
       onSuccess: () => {
@@ -124,7 +112,6 @@ export function LoanManagement() {
     });
   };
 
-  // Décaisser un prêt
   const handleDisburseLoan = (loanId: string) => {
     disburseLoan.mutate({ loanId }, {
       onSuccess: () => {
@@ -133,7 +120,6 @@ export function LoanManagement() {
     });
   };
 
-  // Obtenir un badge visuel selon le statut du prêt
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -153,13 +139,11 @@ export function LoanManagement() {
     }
   };
 
-  // Formatter un montant en FCFA
   const formatAmount = (amount?: number) => {
     if (!amount) return '0 FCFA';
     return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
   };
 
-  // Calculer la date d'échéance basée sur la date de création et la durée
   const calculateDueDate = (createdAt?: string, durationMonths?: number) => {
     if (!createdAt || !durationMonths) return 'N/A';
     
@@ -168,10 +152,7 @@ export function LoanManagement() {
     return formatDateToLocale(date.toISOString());
   };
 
-  // Calculer le statut de remboursement (fictif pour l'exemple)
   const calculateRepaymentStatus = (loan: Loan) => {
-    // Dans un système réel, vous calculeriez cela à partir des paiements effectués
-    // Pour l'exemple, nous utilisons une valeur aléatoire
     const paymentRatio = Math.random();
     
     if (paymentRatio > 0.9) {
@@ -198,7 +179,6 @@ export function LoanManagement() {
     }
   };
 
-  // Obtenir des actions contextuelles basées sur le statut du prêt
   const getContextualActions = (loan: Loan) => {
     switch (loan.status) {
       case 'pending':
@@ -440,7 +420,6 @@ export function LoanManagement() {
         </CardContent>
       </Card>
 
-      {/* Dialog for creating a new loan */}
       <Dialog open={isNewLoanDialogOpen} onOpenChange={setIsNewLoanDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -456,7 +435,6 @@ export function LoanManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog for loan details */}
       <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -475,7 +453,6 @@ export function LoanManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog for loan repayment */}
       <Dialog open={isRepaymentDialogOpen} onOpenChange={setIsRepaymentDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

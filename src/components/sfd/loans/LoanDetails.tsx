@@ -46,7 +46,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLoan } from '@/hooks/useLoan';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { formatCurrency } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface Repayment {
   id: string;
@@ -55,10 +55,23 @@ interface Repayment {
   status: 'pending' | 'paid' | 'failed';
 }
 
-const LoanDetails: React.FC = () => {
+interface LoanDetailsProps {
+  loan?: any;
+  onClose?: () => void;
+  onAction?: () => void;
+}
+
+const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('fr-FR').format(value) + ' FCFA';
+};
+
+const LoanDetails: React.FC<LoanDetailsProps> = ({ loan: propLoan, onClose, onAction }) => {
   const { loanId } = useParams<{ loanId: string }>();
   const navigate = useNavigate();
-  const { loan, isLoading } = useLoan(loanId as string);
+  
+  const { loan: hookLoan, isLoading } = useLoan(propLoan ? '' : (loanId as string));
+  
+  const loan = propLoan || hookLoan;
 
   const repaymentHistory: Repayment[] = [
     {

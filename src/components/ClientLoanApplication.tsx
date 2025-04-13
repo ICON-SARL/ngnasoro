@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,13 +74,11 @@ const ClientLoanApplication = () => {
 
   useEffect(() => {
     if (selectedPlan) {
-      // Adjust amount and duration to fit within plan limits
       if (amount < selectedPlan.min_amount) setAmount(selectedPlan.min_amount);
       if (amount > selectedPlan.max_amount) setAmount(selectedPlan.max_amount);
       if (duration < selectedPlan.min_duration) setDuration(selectedPlan.min_duration);
       if (duration > selectedPlan.max_duration) setDuration(selectedPlan.max_duration);
       
-      // Calculate loan details
       calculateLoan();
     }
   }, [selectedPlan, amount, duration]);
@@ -96,7 +94,6 @@ const ClientLoanApplication = () => {
       if (error) throw error;
       setLoanPlans(data || []);
       
-      // Select the first plan by default if available
       if (data && data.length > 0) {
         setSelectedPlan(data[0]);
       }
@@ -115,23 +112,21 @@ const ClientLoanApplication = () => {
     
     const interestRate = selectedPlan.interest_rate / 100;
     const monthlyRate = interestRate / 12;
-    const fees = (selectedPlan.fees / 100) * amount; // One-time fees
+    const fees = (selectedPlan.fees / 100) * amount;
     
-    // Calculate monthly payment using loan formula
     const monthlyPayment = (amount * monthlyRate * Math.pow(1 + monthlyRate, duration)) / 
                           (Math.pow(1 + monthlyRate, duration) - 1);
     
     const totalRepayment = (monthlyPayment * duration) + fees;
     const totalInterest = (monthlyPayment * duration) - amount;
     
-    // Generate amortization schedule
     const schedule = [];
     let remainingBalance = amount;
     
     for (let month = 1; month <= duration; month++) {
       const interestPayment = remainingBalance * monthlyRate;
       const principalPayment = monthlyPayment - interestPayment;
-      const feePayment = month === 1 ? fees : 0; // Apply fees only on first payment
+      const feePayment = month === 1 ? fees : 0;
       
       remainingBalance -= principalPayment;
       
@@ -179,7 +174,6 @@ const ClientLoanApplication = () => {
     setFileNames(newFileNames);
     setUploading(false);
     
-    // Clear the input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -201,7 +195,6 @@ const ClientLoanApplication = () => {
       duration_months: duration,
       purpose: purpose,
       supporting_documents: uploadedFiles,
-      interest_rate: selectedPlan.interest_rate
     };
     
     applyForLoan.mutate(newLoanApplication, {
