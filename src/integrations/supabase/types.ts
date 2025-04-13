@@ -720,6 +720,48 @@ export type Database = {
         }
         Relationships: []
       }
+      qr_codes: {
+        Row: {
+          amount: number
+          code: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          is_withdrawal: boolean | null
+          loan_id: string | null
+          status: string | null
+          used_at: string | null
+          used_by: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          code: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          is_withdrawal?: boolean | null
+          loan_id?: string | null
+          status?: string | null
+          used_at?: string | null
+          used_by?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          code?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          is_withdrawal?: boolean | null
+          loan_id?: string | null
+          status?: string | null
+          used_at?: string | null
+          used_by?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       security_settings: {
         Row: {
           biometric_auth: boolean | null
@@ -1313,6 +1355,7 @@ export type Database = {
           id: string
           name: string
           payment_method: string | null
+          provider_reference: string | null
           reference_id: string | null
           sfd_id: string | null
           status: string | null
@@ -1328,6 +1371,7 @@ export type Database = {
           id?: string
           name: string
           payment_method?: string | null
+          provider_reference?: string | null
           reference_id?: string | null
           sfd_id?: string | null
           status?: string | null
@@ -1343,6 +1387,7 @@ export type Database = {
           id?: string
           name?: string
           payment_method?: string | null
+          provider_reference?: string | null
           reference_id?: string | null
           sfd_id?: string | null
           status?: string | null
@@ -1528,6 +1573,10 @@ export type Database = {
       update_subsidy_usage: {
         Args: { p_sfd_id: string; p_amount: number }
         Returns: undefined
+      }
+      verify_qr_code: {
+        Args: { p_code: string }
+        Returns: Json
       }
     }
     Enums: {

@@ -59,7 +59,7 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   // Detect insufficient balance when account changes
   useEffect(() => {
     detectInsufficientBalance(selectedSfdAccount);
-  }, [selectedSfdAccount, transactionAmount]);
+  }, [selectedSfdAccount, transactionAmount, detectInsufficientBalance]);
   
   return (
     <div className="bg-white h-full pb-24">
@@ -87,11 +87,21 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
       )}
       
       {mobileMoneyInitiated && (
-        <MobileMoneyModal onClose={() => setMobileMoneyInitiated(false)} isWithdrawal={isWithdrawal} />
+        <MobileMoneyModal 
+          onClose={() => setMobileMoneyInitiated(false)} 
+          isWithdrawal={isWithdrawal}
+          amount={transactionAmount}
+          loanId={loanId}
+        />
       )}
       
       <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
-        <QRCodePaymentDialog onClose={() => setQrDialogOpen(false)} isWithdrawal={isWithdrawal} />
+        <QRCodePaymentDialog 
+          onClose={() => setQrDialogOpen(false)} 
+          isWithdrawal={isWithdrawal}
+          amount={transactionAmount}
+          loanId={loanId}
+        />
       </Dialog>
     </div>
   );

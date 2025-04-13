@@ -3,32 +3,55 @@ import React, { useState, useEffect } from 'react';
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/utils/formatters';
+import { useQRCodeGeneration } from '@/hooks/mobile-money';
+import { Loader } from '@/components/ui/loader';
 
-interface QRCodePaymentDialogProps {
+export interface QRCodePaymentDialogProps {
   onClose: () => void;
   onComplete?: () => void;
-  amount: number;
+  amount?: number;
   isWithdrawal: boolean;
+  loanId?: string;
 }
 
 const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({ 
   onClose, 
   onComplete,
-  amount, 
-  isWithdrawal 
+  amount = 5000, 
+  isWithdrawal,
+  loanId
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const { generateQRCode, qrCodeData, isGenerating, error } = useQRCodeGeneration();
   
-  // Generate QR code URL
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-    JSON.stringify({
-      amount,
-      type: isWithdrawal ? 'withdrawal' : 'payment',
-      reference: `${isWithdrawal ? 'WD' : 'PMT'}-${Date.now()}`,
-      timestamp: new Date().toISOString()
-    })
-  )}`;
+  useEffect(() => {
+    const generateCode = async () => {
+      setIsProcessing(true);
+      try {
+        const type = isWithdrawal ? 'withdrawal' : loanId ? 'loan_payment' : 'deposit';
+        await generateQRCode(amount, type, loanId);
+      } catch (err) {
+        console.error('Error generating QR code:', err);
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+    
+    generateCode();
+  }, [amount, isWithdrawal, loanId, generateQRCode]);
+  
+  // Generate QR code URL using the qrCodeData from the hook or fallback
+  const qrCodeUrl = qrCodeData 
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeData)}`
+    : `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+        JSON.stringify({
+          amount,
+          type: isWithdrawal ? 'withdrawal' : 'payment',
+          reference: `${isWithdrawal ? 'WD' : 'PMT'}-${Date.now()}`,
+          timestamp: new Date().toISOString()
+        })
+      )}`;
   
   const handleConfirm = () => {
     setIsProcessing(true);
@@ -55,7 +78,14 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({
       </DialogHeader>
       
       <div className="flex flex-col items-center py-4">
-        {!isCompleted ? (
+        {isGenerating || isProcessing ? (
+          <div className="py-10 flex flex-col items-center">
+            <Loader size="lg" className="mb-4" />
+            <p className="text-center text-gray-600">
+              {isGenerating ? 'Génération du code QR...' : 'Traitement en cours...'}
+            </p>
+          </div>
+        ) : !isCompleted ? (
           <>
             <div className="mb-4 bg-gray-50 p-3 rounded-md">
               <p className="text-sm text-gray-500 mb-1">Montant:</p>
@@ -103,7 +133,7 @@ const QRCodePaymentDialog: React.FC<QRCodePaymentDialogProps> = ({
       
       <DialogFooter className="sm:justify-center">
         {!isCompleted ? (
-          isProcessing ? (
+          isProcessing || isGenerating ? (
             <Button disabled className="w-full">
               <span className="mr-2">
                 <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

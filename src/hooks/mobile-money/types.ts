@@ -26,12 +26,18 @@ export interface MobileMoneyWithdrawalHook {
   processWithdrawal: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
 }
 
+export interface MobileMoneyProvider {
+  id: string;
+  name: string;
+}
+
 export interface MobileMoneyOperationsHook {
   isProcessingPayment: boolean;
   isProcessingWithdrawal: boolean;
   error: string | null;
   processPayment: (phoneNumber: string, amount: number, provider: string, loanId?: string) => Promise<boolean>;
   processWithdrawal: (phoneNumber: string, amount: number, provider: string) => Promise<boolean>;
+  mobileMoneyProviders: MobileMoneyProvider[];
 }
 
 export interface QRCodeGenerationHook {

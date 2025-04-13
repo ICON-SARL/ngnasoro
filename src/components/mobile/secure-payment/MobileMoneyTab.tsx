@@ -22,7 +22,7 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
   const { isProcessingPayment, isProcessingWithdrawal, mobileMoneyProviders } = useMobileMoneyOperations();
   
   // Use the existing properties or define fallback values
-  const isProcessing = isProcessingPayment || isProcessingWithdrawal;
+  const isProcessing = isProcessingPayment || isProcessingWithdrawal || paymentStatus === 'pending';
   
   const handleClick = () => {
     if (phoneNumber.trim().length < 8) {
@@ -48,7 +48,7 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
             placeholder="Ex: 07XXXXXXXX"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
-            disabled={paymentStatus === 'pending'}
+            disabled={isProcessing}
           />
         </div>
         
@@ -59,7 +59,7 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
           <Select 
             value={provider} 
             onValueChange={setProvider} 
-            disabled={paymentStatus === 'pending'}
+            disabled={isProcessing}
           >
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner un opérateur" />
@@ -75,9 +75,9 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
         <Button 
           className="w-full bg-yellow-500 hover:bg-yellow-600" 
           onClick={handleClick} 
-          disabled={paymentStatus === 'pending' || phoneNumber.trim().length < 8}
+          disabled={isProcessing || phoneNumber.trim().length < 8}
         >
-          {paymentStatus === 'pending' ? (
+          {isProcessing ? (
             <>
               <Loader size="sm" className="mr-2" />
               {isWithdrawal ? 'Retrait en cours...' : 'Paiement en cours...'}

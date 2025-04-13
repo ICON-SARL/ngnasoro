@@ -133,7 +133,7 @@ export const qrCodeApi = {
       return {
         success: data.success,
         qrCodeData: data.qrData?.code,
-        message: data.message
+        error: data.message && !data.success ? data.message : undefined
       };
     } catch (error: any) {
       console.error('QR code verification error:', error);
