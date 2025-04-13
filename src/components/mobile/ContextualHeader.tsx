@@ -6,8 +6,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-  SelectGroup
+  SelectValue
 } from '@/components/ui/select';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { useToast } from '@/hooks/use-toast';
@@ -43,7 +42,6 @@ const ContextualHeader = () => {
             <h1 className="text-white text-xl font-bold tracking-tight">
               N'GNA <span className="text-[#F97316]">SÔRÔ!</span>
             </h1>
-            <p className="text-yellow-300 text-xs font-medium">CVECA-ON</p>
           </div>
         </div>
         
@@ -57,7 +55,9 @@ const ContextualHeader = () => {
         <Select value={activeSfdId || ''} onValueChange={handleSfdChange}>
           <SelectTrigger className="bg-white/10 text-white border-white/20 hover:bg-white/20 transition-colors pl-3 pr-2 py-1 h-auto rounded-lg">
             <div className="flex justify-between items-center w-full">
-              <SelectValue placeholder="Choisir une SFD" />
+              <SelectValue placeholder="Choisir une SFD">
+                {sfdData.find(sfd => sfd.id === activeSfdId)?.name || 'Sélectionner SFD'}
+              </SelectValue>
               <ChevronDown className="h-4 w-4 ml-1 text-white/70" />
             </div>
           </SelectTrigger>
