@@ -60,7 +60,24 @@ export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
     // Normal path for non-test users
     const { apiClient } = await import('@/utils/apiClient');
     const sfdsList = await apiClient.getUserSfds(userId);
-    return sfdsList;
+    
+    // Ensure the response matches the UserSfd interface
+    const formattedSfds: UserSfd[] = sfdsList.map((sfd: any) => ({
+      id: sfd.id,
+      user_id: userId,
+      sfd_id: sfd.sfds.id,
+      is_default: sfd.is_default,
+      created_at: sfd.created_at || new Date().toISOString(),
+      sfds: {
+        id: sfd.sfds.id,
+        name: sfd.sfds.name,
+        code: sfd.sfds.code,
+        region: sfd.sfds.region,
+        logo_url: sfd.sfds.logo_url
+      }
+    }));
+    
+    return formattedSfds;
   } catch (error) {
     console.error('Error fetching SFDs:', error);
     return [];

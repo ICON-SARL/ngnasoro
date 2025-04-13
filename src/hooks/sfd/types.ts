@@ -38,6 +38,7 @@ export interface SfdAccount {
   isDefault?: boolean;
   isVerified?: boolean;
   status: string;
+  loans?: SfdLoan[]; // Added loans property
 }
 
 export interface SfdLoan {
@@ -49,6 +50,9 @@ export interface SfdLoan {
   next_payment_date?: string;
   interest_rate: number;
   monthly_payment: number;
+  remainingAmount?: number; // Added for components expecting this property
+  nextDueDate?: string; // Added for components expecting this property
+  isLate?: boolean; // Added for components expecting this property
 }
 
 export interface SfdBalanceData {
