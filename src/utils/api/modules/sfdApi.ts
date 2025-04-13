@@ -153,12 +153,6 @@ export const sfdApi = {
         return {
           id: loan.id,
           amount: loan.amount,
-          status: loan.status || 'active',
-          duration_months: loan.duration_months,
-          interest_rate: loan.interest_rate,
-          monthly_payment: loan.monthly_payment,
-          disbursed_at: loan.disbursed_at,
-          next_payment_date: loan.next_payment_date,
           remainingAmount: loan.amount - paidAmount,
           nextDueDate: loan.next_payment_date || new Date().toISOString(),
           isLate: new Date(loan.next_payment_date) < new Date()

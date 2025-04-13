@@ -1,5 +1,4 @@
 
 // Export from the new location for backward compatibility
-export { useTransactions } from './useTransactions.tsx';
-export { useTransactionOperations } from './transactions/useTransactionOperations';
+export { useTransactions } from './transactions';
 export type { TransactionFilters } from '@/services/transactions/types';

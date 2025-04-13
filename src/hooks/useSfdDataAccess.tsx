@@ -1,7 +1,7 @@
 
-import { useSfdDataAccess as useOriginalSfdDataAccess } from './useSfdDataAccess';
+import { useSfdDataAccess as useOriginalSfdDataAccess } from './useSfdDataAccess.ts';
 // Use export type for TypeScript types when isolatedModules is enabled
-export type { SfdData } from './sfd/types';
+export type { SfdData } from './useSfdDataAccess.ts';
 
 export function useSfdDataAccess() {
   const { 
@@ -10,6 +10,7 @@ export function useSfdDataAccess() {
     isLoading, 
     error, 
     setActiveSfd,
+    // Add the missing properties and methods that are causing errors
     setActiveSfdId,
     switchActiveSfd,
     getActiveSfdData,
@@ -22,6 +23,7 @@ export function useSfdDataAccess() {
     isLoading,
     error,
     setActiveSfd,
+    // Export the missing properties and methods
     setActiveSfdId,
     switchActiveSfd,
     getActiveSfdData,

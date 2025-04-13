@@ -5,7 +5,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Wallet, ArrowDown, ArrowUp, Check, Clock, AlertTriangle } from 'lucide-react';
 import { Transaction } from '@/types/transactions';
-import { formatTransactionAmount, formatCurrencyAmount } from '@/utils/transactionUtils';
+import { formatTransactionAmount } from '@/utils/transactionUtils';
 
 interface TransactionCardProps {
   transaction: Transaction;

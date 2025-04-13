@@ -10,9 +10,6 @@ export interface DashboardStats {
   totalUsers: number;
   newUsersThisMonth: number;
   newSubsidiesThisMonth: string;
-  totalAllocatedAmount?: string;
-  totalSubsidies?: string;
-  newSubsidiesAmount?: string;
 }
 
 export const useDashboardStats = () => {

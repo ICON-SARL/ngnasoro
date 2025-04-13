@@ -23,8 +23,8 @@ const TransactionsPage: React.FC = () => {
   } = useTransactions(user?.id, activeSfdId);
   
   useEffect(() => {
-    fetchTransactions();
-  }, [activeSfdId, fetchTransactions]);
+    fetchTransactions(50);
+  }, [activeSfdId]);
   
   const handleViewDetails = (transactionId: string | number) => {
     navigate(`/mobile-flow/transactions/${transactionId}`);
@@ -62,7 +62,7 @@ const TransactionsPage: React.FC = () => {
           <ArrowLeft className="h-6 w-6" />
         </Button>
         <h1 className="text-xl font-semibold">Historique des transactions</h1>
-        <Button variant="ghost" size="icon" onClick={() => fetchTransactions()}>
+        <Button variant="ghost" size="icon" onClick={() => fetchTransactions(50)}>
           <RefreshCw className="h-5 w-5" />
         </Button>
       </div>

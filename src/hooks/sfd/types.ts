@@ -1,12 +1,14 @@
 
+// Add SfdData to the existing file
 export interface SfdData {
   id: string;
   name: string;
-  region?: string;
-  code: string;
   logo_url?: string;
-  status: 'active' | 'inactive' | string;
-  is_default?: boolean;
+  code?: string;
+  region?: string;
+  status: string;
+  balance?: number;
+  currency?: string;
   token?: string;
   lastFetched?: Date;
 }
@@ -26,62 +28,54 @@ export interface SyncResult {
   updates?: any;
 }
 
-// Add missing types that were causing errors
+// Add interfaces for SfdAccount, SfdLoan
 export interface SfdAccount {
   id: string;
   name: string;
-  code: string;
+  logoUrl?: string | null;
+  code?: string;
   region?: string;
-  logoUrl?: string;
   balance: number;
   currency: string;
   isDefault?: boolean;
   isVerified?: boolean;
-  status: string;
-  loans?: SfdLoan[]; // Added loans property
+  status?: string;
+  loans?: SfdLoan[];
+  token?: string;
+  lastFetched?: Date;
 }
 
 export interface SfdLoan {
   id: string;
   amount: number;
-  status: string;
-  duration_months: number;
-  disbursed_at?: string;
-  next_payment_date?: string;
-  interest_rate: number;
-  monthly_payment: number;
-  remainingAmount?: number; // Added for components expecting this property
-  nextDueDate?: string; // Added for components expecting this property
-  isLate?: boolean; // Added for components expecting this property
+  remainingAmount: number;
+  nextDueDate: string;
+  isLate: boolean;
 }
 
-export interface SfdBalanceData {
-  balance: number;
-  currency: string;
-  lastUpdated?: string;
-}
-
+// Add UserSfd interface
 export interface UserSfd {
   id: string;
-  user_id: string;
-  sfd_id: string;
   is_default: boolean;
-  created_at: string;
   sfds: {
     id: string;
     name: string;
-    code: string;
+    code?: string;
     region?: string;
-    logo_url?: string;
+    logo_url?: string | null;
   };
 }
 
+// Add SfdBalanceData interface
+export interface SfdBalanceData {
+  balance: number;
+  currency: string;
+}
+
+// Add LoanPaymentParams interface
 export interface LoanPaymentParams {
-  userId: string;
-  sfdId: string;
   loanId: string;
   amount: number;
-  paymentMethod?: string;
-  description?: string;
+  paymentMethod: string;
   reference?: string;
 }

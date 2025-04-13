@@ -1,14 +1,14 @@
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
-export function useLoginForm(
-  adminMode: boolean = false,
+export const useLoginForm = (
+  adminMode: boolean = false, 
   isSfdAdmin: boolean = false,
-  onError?: (message: string) => void
-) {
+  onError?: (errorMessage: string) => void
+) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -17,85 +17,92 @@ export function useLoginForm(
   const [cooldownActive, setCooldownActive] = useState(false);
   const [cooldownTime, setCooldownTime] = useState(0);
   const [emailSent, setEmailSent] = useState(false);
-  const [loginAttempts, setLoginAttempts] = useState(0);
-  
   const { signIn } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
-  
-  const toggleShowPassword = () => {
-    setShowPassword(!showPassword);
+  const { toast } = useToast();
+
+  const toggleShowPassword = () => setShowPassword(!showPassword);
+
+  const startCooldown = (seconds: number) => {
+    setCooldownActive(true);
+    setCooldownTime(seconds);
+
+    const interval = setInterval(() => {
+      setCooldownTime((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setCooldownActive(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
-  
-  const handleError = (message: string) => {
-    setErrorMessage(message);
-    setIsLoading(false);
-    if (onError) onError(message);
-    
-    // Incrémenter les tentatives échouées
-    setLoginAttempts(prev => prev + 1);
-    
-    // Activer le délai après 3 tentatives échouées
-    if (loginAttempts >= 2) {
-      const cooldownSeconds = Math.min(30, 5 * 2 ** (loginAttempts - 2));
-      setCooldownActive(true);
-      setCooldownTime(cooldownSeconds);
-      
-      const interval = setInterval(() => {
-        setCooldownTime(prev => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            setCooldownActive(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-  };
-  
-  const handleLogin = useCallback(async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     
     if (cooldownActive) return;
     
-    if (!email || !password) {
-      handleError('Veuillez remplir tous les champs');
-      return;
-    }
+    setIsLoading(true);
+    setErrorMessage(null);
     
     try {
-      setIsLoading(true);
-      setErrorMessage(null);
+      const result = await signIn(email, password);
       
-      const { error } = await signIn(email, password);
-      
-      if (error) {
-        console.error('Login error:', error);
+      if (result.error) {
+        console.error('Login error:', result.error);
         
-        // Messages d'erreur personnalisés
-        if (error.message?.includes('Invalid login credentials')) {
-          handleError('Identifiants incorrects. Veuillez vérifier votre email et mot de passe.');
-        } else if (error.message?.includes('Email not confirmed')) {
-          handleError('Votre email n\'a pas été confirmé. Veuillez vérifier votre boîte de réception.');
-        } else {
-          handleError(error.message || 'Erreur de connexion');
+        const errorMsg = result.error.message || "Une erreur s'est produite lors de la connexion.";
+        setErrorMessage(errorMsg);
+        
+        // Pass error to parent component if callback exists
+        if (onError) {
+          onError(errorMsg);
         }
-        return;
+        
+        // If too many requests, start cooldown
+        if (result.error.message && result.error.message.includes('Too many requests')) {
+          startCooldown(30);
+        }
+        
+        // Specific error for admin login
+        if (adminMode && result.error.message && result.error.message.includes('Invalid login')) {
+          setErrorMessage("Accès refusé. Ce compte n'a pas les droits administrateur nécessaires.");
+        }
+      } else if (result.data) {
+        console.log('Login successful:', result.data);
+        
+        // Get user role from metadata
+        const userRole = result.data?.user?.app_metadata?.role;
+        console.log('User role from login:', userRole);
+        
+        toast({
+          title: "Connexion réussie",
+          description: "Vous êtes maintenant connecté.",
+        });
+        
+        // Redirect based on user role
+        if (adminMode && userRole === 'admin') {
+          navigate('/super-admin-dashboard');
+        } else if (isSfdAdmin && userRole === 'sfd_admin') {
+          navigate('/agency-dashboard');
+        } else {
+          navigate('/mobile-flow/main');
+        }
       }
-      
-      // Réinitialiser les tentatives de connexion en cas de succès
-      setLoginAttempts(0);
-      
-      // Pas besoin de redirection ici, elle sera gérée par le composant parent
-      setIsLoading(false);
-      
     } catch (err) {
       console.error('Unexpected login error:', err);
-      handleError('Une erreur inattendue s\'est produite');
+      setErrorMessage("Une erreur inattendue s'est produite. Veuillez réessayer.");
+      
+      if (onError) {
+        onError("Une erreur inattendue s'est produite. Veuillez réessayer.");
+      }
+    } finally {
+      setIsLoading(false);
     }
-  }, [email, password, cooldownActive, signIn]);
-  
+  };
+
   return {
     email,
     setEmail,
@@ -110,4 +117,4 @@ export function useLoginForm(
     emailSent,
     handleLogin
   };
-}
+};

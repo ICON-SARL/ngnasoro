@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { LoanPaymentParams, SfdBalanceData, SyncResult } from './types';
 import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
@@ -104,7 +105,7 @@ export async function processLoanPayment(
         loanId: params.loanId,
         amount: params.amount,
         paymentMethod: params.paymentMethod,
-        reference: params.reference || undefined
+        reference: params.reference
       }
     });
     

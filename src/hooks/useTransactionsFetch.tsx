@@ -33,23 +33,10 @@ export function useTransactionsFetch({ activeSfdId, userId, toast }: UseTransact
       let txData: Transaction[] = [];
       
       if (data && data.length > 0) {
-        // Convert the data to our Transaction type with proper type casting
-        txData = data.map((item: any) => ({
-          ...item,
-          // Ensure type is one of the allowed values in Transaction type
-          type: (item.type || 'other') as Transaction['type'],
-          // Ensure status is one of the allowed values in Transaction type
-          status: (item.status || 'success') as 'success' | 'pending' | 'failed' | 'flagged',
-          sfd_id: activeSfdId
-        })) as Transaction[];
+        // Convert the data to our Transaction type
+        txData = convertDatabaseRecordsToTransactions(data, activeSfdId);
       } else {
-        // Generate mock data with proper typing
-        const mockTx = generateMockTransactions(activeSfdId);
-        txData = mockTx.map(tx => ({
-          ...tx,
-          type: (tx.type || 'other') as Transaction['type'],
-          status: (tx.status || 'success') as 'success' | 'pending' | 'failed' | 'flagged'
-        })) as Transaction[];
+        txData = generateMockTransactions(activeSfdId);
       }
       
       setIsLoading(false);

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Ban, Clock, AlertCircle } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 interface SfdStatusBadgeProps {
   status: string;
@@ -11,31 +11,26 @@ export function SfdStatusBadge({ status }: SfdStatusBadgeProps) {
   switch (status) {
     case 'active':
       return (
-        <Badge variant="outline" className="bg-green-50 text-green-600 hover:bg-green-50">
-          <CheckCircle className="h-3 w-3 mr-1" />
-          Actif
+        <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
+          <CheckCircle className="h-3.5 w-3.5" />
+          Active
         </Badge>
       );
     case 'suspended':
       return (
-        <Badge variant="outline" className="bg-red-50 text-red-600 hover:bg-red-50">
-          <Ban className="h-3 w-3 mr-1" />
-          Suspendu
+        <Badge className="bg-red-100 text-red-800 flex items-center gap-1">
+          <AlertCircle className="h-3.5 w-3.5" />
+          Suspendue
         </Badge>
       );
     case 'pending':
       return (
-        <Badge variant="outline" className="bg-amber-50 text-amber-600 hover:bg-amber-50">
-          <Clock className="h-3 w-3 mr-1" />
+        <Badge className="bg-yellow-100 text-yellow-800 flex items-center gap-1">
+          <Clock className="h-3.5 w-3.5" />
           En attente
         </Badge>
       );
     default:
-      return (
-        <Badge variant="outline" className="bg-gray-50 text-gray-600 hover:bg-gray-50">
-          <AlertCircle className="h-3 w-3 mr-1" />
-          {status}
-        </Badge>
-      );
+      return <Badge>{status}</Badge>;
   }
 }

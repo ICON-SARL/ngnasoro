@@ -1,67 +1,60 @@
 
-import React from 'react';
-import { Menu, Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
+import ContextualHeader from './ContextualHeader';
+import { 
+  Select, 
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Shield } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
-interface MobileHeaderProps {
-  title?: string;
-  showWelcomeText?: boolean;
-}
-
-const MobileHeader: React.FC<MobileHeaderProps> = ({ 
-  title, 
-  showWelcomeText = true 
-}) => {
+const MobileHeader = () => {
   const { toast } = useToast();
-  const { activeSfdId } = useSfdDataAccess();
+  const { activeSfdId, setActiveSfdId, sfdData } = useSfdDataAccess();
   
-  const handleMenuOpen = () => {
-    const event = new CustomEvent('lovable:action', { detail: { action: 'openMenu' } });
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(event);
-    }
+  const handleSfdChange = (value: string) => {
+    setActiveSfdId(value);
+    
+    const selectedSfd = sfdData.find(sfd => sfd.id === value);
+    const sfdName = selectedSfd?.name || 'SFD Inconnue';
+    
+    toast({
+      title: "SFD changée",
+      description: `Vous êtes maintenant connecté à ${sfdName}`,
+    });
   };
   
   return (
-    <div className="p-4 bg-[#0D6A51] rounded-b-3xl shadow-md">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center">
-            <div className="bg-white rounded-full p-2 mr-3 shadow-md">
-              <img 
-                src="/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png" 
-                alt="N'GNA SÔRÔ! Logo" 
-                className="h-12 w-12"
-              />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center">
-                <span className="text-[#FFAB2E] font-bold text-xl">N'GNA</span>
-                <span className="text-white font-bold text-xl ml-1">SÔRÔ!</span>
-              </div>
-              <span className="text-white/70 text-sm">CVECA-ON</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="icon" className="text-white h-10 w-10 rounded-full bg-white/10 hover:bg-white/20">
-            <Bell className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="text-white h-10 w-10 rounded-full bg-white/10 hover:bg-white/20" onClick={handleMenuOpen}>
-            <Menu className="h-5 w-5" />
-          </Button>
+    <div className="p-2">
+      <ContextualHeader />
+      
+      <div className="mt-3 flex justify-end">
+        <div className="w-[180px]">
+          <Select value={activeSfdId || ''} onValueChange={handleSfdChange}>
+            <SelectTrigger className="bg-blue-700/80 text-white border-blue-500 text-sm py-1 h-8">
+              <SelectValue placeholder="Choisir une SFD" />
+            </SelectTrigger>
+            <SelectContent>
+              {sfdData.map(sfd => (
+                <SelectItem key={sfd.id} value={sfd.id} className="text-sm">
+                  <div className="flex items-center">
+                    <Shield className={`h-3 w-3 mr-1 ${
+                      sfd.id === 'primary-sfd' ? 'text-green-600' : 
+                      sfd.id === 'secondary-sfd' ? 'text-amber-600' : 'text-blue-600'
+                    }`} />
+                    {sfd.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
-      
-      {title && showWelcomeText && (
-        <div className="mt-5">
-          <h1 className="text-2xl font-bold text-white">{title}</h1>
-          <p className="text-white/80 text-sm">Bienvenue sur votre espace personnel</p>
-        </div>
-      )}
     </div>
   );
 };

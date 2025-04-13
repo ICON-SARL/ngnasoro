@@ -41,9 +41,9 @@ export function useSecurePayment({
   
   const effectiveSfdId = selectedSfdId || activeSfdId;
   
-  const {
+  const { 
     makeDeposit, 
-    makeWithdrawal, 
+    makeWithdrawal,
     makeLoanRepayment
   } = useTransactions(user?.id, effectiveSfdId);
   
@@ -88,11 +88,11 @@ export function useSecurePayment({
     try {
       let result;
       
-      if (isWithdrawal && makeWithdrawal) {
+      if (isWithdrawal) {
         result = await makeWithdrawal(transactionAmount, `Retrait via ${paymentMethod}`);
-      } else if (loanId && makeLoanRepayment) {
+      } else if (loanId) {
         result = await makeLoanRepayment(loanId, transactionAmount, `Remboursement de prêt via ${paymentMethod}`);
-      } else if (makeDeposit) {
+      } else {
         result = await makeDeposit(transactionAmount, `Dépôt via ${paymentMethod}`);
       }
       

@@ -1,114 +1,110 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ArrowUpRight, ArrowDownLeft, CircleDollarSign } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Building } from 'lucide-react';
 
 interface Transaction {
-  id: string;
+  id: number | string;
   name: string;
   type: string;
   amount: string;
   date: string;
-  avatar?: string;
-  sfdName?: string;
+  avatar: string | null;
+  sfdName?: string; // Added SFD information
 }
 
 interface TransactionListProps {
   transactions: Transaction[];
   isLoading?: boolean;
   onViewAll?: () => void;
-  title?: string;
-  maxItems?: number;
+  title?: string; // Added optional title prop
 }
 
-const TransactionList: React.FC<TransactionListProps> = ({
-  transactions,
-  isLoading = false,
-  onViewAll,
-  title = "Transactions",
-  maxItems = 5
-}) => {
-  const getTransactionIcon = (type: string) => {
-    switch (type) {
-      case 'deposit':
-        return <ArrowDownLeft className="h-4 w-4 text-green-500" />;
-      case 'withdrawal':
-        return <ArrowUpRight className="h-4 w-4 text-red-500" />;
-      default:
-        return <CircleDollarSign className="h-4 w-4 text-blue-500" />;
-    }
-  };
-
-  const getTransactionColor = (type: string) => {
-    switch (type) {
-      case 'deposit':
-        return 'text-green-600';
-      case 'withdrawal':
-        return 'text-red-600';
-      default:
-        return 'text-gray-800';
-    }
-  };
-
-  // Display only the first maxItems transactions
-  const displayTransactions = transactions.slice(0, maxItems);
-
+const TransactionList = ({ transactions, isLoading = false, onViewAll, title = "Transactions Récentes" }: TransactionListProps) => {
   return (
-    <Card className="border-0 shadow-md rounded-2xl overflow-hidden bg-white">
-      <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-semibold text-gray-800">{title}</CardTitle>
-        {onViewAll && (
-          <Button variant="ghost" size="sm" onClick={onViewAll} className="text-[#0D6A51] hover:bg-[#0D6A51]/10 p-0 h-auto">
-            Voir tout <ArrowRight className="h-4 w-4 ml-1" />
-          </Button>
-        )}
-      </CardHeader>
+    <div className="px-4 mt-3 mb-20">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-medium">{title}</h3>
+        <Button 
+          variant="link" 
+          className="text-sm text-lime-600 p-0 h-auto"
+          onClick={onViewAll}
+        >
+          Voir Prêts
+        </Button>
+      </div>
       
-      <CardContent className="p-0">
-        {isLoading ? (
-          <div className="flex justify-center items-center h-32">
-            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-[#0D6A51]"></div>
-          </div>
-        ) : transactions.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <CircleDollarSign className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-            <p className="text-sm">Aucune transaction à afficher</p>
-          </div>
-        ) : (
-          <div>
-            {displayTransactions.map((transaction) => (
-              <div key={transaction.id} className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+      <Card className="border-0 shadow-sm bg-white rounded-2xl overflow-hidden">
+        <CardContent className="p-0">
+          {isLoading ? (
+            // Loading state
+            Array(3).fill(0).map((_, index) => (
+              <div 
+                key={`skeleton-${index}`}
+                className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0"
+              >
                 <div className="flex items-center">
-                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
-                    {transaction.avatar ? (
-                      <img src={transaction.avatar} alt="" className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      <div className="rounded-full p-2 bg-gray-100">
-                        {getTransactionIcon(transaction.type)}
-                      </div>
-                    )}
-                  </div>
+                  <Skeleton className="h-10 w-10 rounded-full mr-3" />
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{transaction.name}</p>
-                    <p className="text-xs text-gray-500">{transaction.date}</p>
+                    <Skeleton className="h-4 w-32 mb-2" />
+                    <Skeleton className="h-3 w-16" />
                   </div>
                 </div>
-                <div className={`text-right ${getTransactionColor(transaction.type)}`}>
-                  <p className="text-sm font-semibold">
-                    {transaction.type === 'deposit' ? '+' : transaction.type === 'withdrawal' ? '-' : ''}
-                    {Math.abs(parseFloat(transaction.amount)).toLocaleString('fr-FR')} FCFA
-                  </p>
-                  {transaction.sfdName && (
-                    <p className="text-xs text-gray-500">{transaction.sfdName}</p>
-                  )}
-                </div>
+                <Skeleton className="h-4 w-16" />
               </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            ))
+          ) : transactions.length > 0 ? (
+            // Transactions list
+            transactions.map((transaction) => (
+              <div 
+                key={transaction.id}
+                className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0"
+              >
+                <div className="flex items-center">
+                  <Avatar className="h-10 w-10 mr-3 bg-lime-100">
+                    {transaction.avatar ? (
+                      <img src={transaction.avatar} alt={transaction.name} />
+                    ) : (
+                      <span className="text-sm font-medium">{transaction.name.charAt(0)}</span>
+                    )}
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{transaction.name}</p>
+                    <div className="flex items-center">
+                      <p className="text-xs text-gray-500 mr-2">{transaction.date}</p>
+                      {transaction.sfdName && (
+                        <Badge variant="outline" className="text-xs px-1 py-0 h-4 flex items-center">
+                          <Building className="h-2 w-2 mr-1" />
+                          {transaction.sfdName}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <p 
+                  className={`font-semibold ${
+                    transaction.amount.startsWith('+') || !transaction.amount.startsWith('-') 
+                      ? 'text-lime-600' 
+                      : 'text-gray-800'
+                  }`}
+                >
+                  {transaction.amount}
+                </p>
+              </div>
+            ))
+          ) : (
+            // Empty state
+            <div className="p-6 text-center text-gray-500">
+              Aucune transaction récente
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

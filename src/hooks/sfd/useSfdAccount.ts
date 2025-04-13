@@ -34,10 +34,6 @@ export function useSfdAccount(user: any, activeSfdId: string | null): SfdAccount
             {
               id: 'loan-1',
               amount: 500000,
-              status: 'active',
-              duration_months: 12,
-              interest_rate: 0.05,
-              monthly_payment: 25000,
               remainingAmount: 300000,
               nextDueDate: '2023-05-15',
               isLate: true
@@ -50,21 +46,19 @@ export function useSfdAccount(user: any, activeSfdId: string | null): SfdAccount
           return {
             ...activeSfdAccount,
             loans: enhancedLoans as SfdLoan[]
-          } as SfdAccount;
+          };
         } else if (user?.email?.includes('test')) {
           // For test accounts, create a sample account
           return {
             id: activeSfdId,
             name: 'Test SFD Account',
-            code: 'TEST',
-            status: 'active',
             logoUrl: null,
             balance: 250000,
             currency: 'FCFA',
             isDefault: true,
             isVerified: true,
             loans: enhancedLoans as SfdLoan[]
-          } as SfdAccount;
+          };
         }
         
         return null;

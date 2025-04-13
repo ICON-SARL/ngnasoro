@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,16 +34,14 @@ const TransactionsOverview: React.FC = () => {
   useEffect(() => {
     // Charger les transactions et le solde lors du montage
     fetchTransactions();
-    if (isAccountVerified && getBalance) {
+    if (isAccountVerified) {
       loadBalance();
     }
-  }, [activeSfdId, isAccountVerified, fetchTransactions, getBalance]);
+  }, [activeSfdId, isAccountVerified]);
 
   const loadBalance = async () => {
-    if (getBalance) {
-      const currentBalance = await getBalance();
-      setBalance(currentBalance);
-    }
+    const currentBalance = await getBalance();
+    setBalance(currentBalance);
   };
 
   const refreshData = async () => {
