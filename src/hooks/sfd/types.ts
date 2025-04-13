@@ -11,6 +11,7 @@ export interface SfdData {
   currency?: string;
   token?: string;
   lastFetched?: Date;
+  is_default?: boolean;
 }
 
 export interface QRCodeRequest {

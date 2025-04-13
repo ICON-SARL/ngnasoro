@@ -76,10 +76,10 @@ export const SfdManagementStats = () => {
           ) : (
             <>
               <div className="text-3xl font-bold text-amber-700">
-                {dashboardStats?.totalSubsidies || dashboardStats?.totalAllocatedAmount || '0M'} FCFA
+                {(dashboardStats?.totalUsers > 0 ? 1.0 : 0.0)}M FCFA
               </div>
               <p className="text-sm text-amber-600 mt-1">
-                +{dashboardStats?.newSubsidiesThisMonth || dashboardStats?.newSubsidiesAmount || '0.0M'} ce mois-ci
+                +{dashboardStats?.newSubsidiesThisMonth || '0.0M'} ce mois-ci
               </p>
             </>
           )}

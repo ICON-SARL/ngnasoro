@@ -15,8 +15,7 @@ const MobileDashboard: React.FC<MobileDashboardProps> = ({ onTitleChange }) => {
   
   const mockAccount: Account = {
     id: '1',
-    name: 'Compte principal',
-    balance: dashboardData?.balance || 0,
+    balance: dashboardData?.account?.balance || 0,
     currency: 'FCFA',
     type: 'savings',
     owner_id: '1',
