@@ -2,10 +2,17 @@
 import React from 'react';
 import { useAuth } from '@/hooks/auth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { ChevronDown } from 'lucide-react';
 
 const ContextualHeader = () => {
   const { user } = useAuth();
-  const { activeSfdId, sfdData } = useSfdDataAccess();
+  const { activeSfdId, sfdData, setActiveSfdId } = useSfdDataAccess();
   
   const activeSFD = sfdData.find(sfd => sfd.id === activeSfdId);
   const activeSFDName = activeSFD?.name || 'SFD Primaire';
@@ -24,8 +31,25 @@ const ContextualHeader = () => {
           <h1 className="text-2xl font-bold text-white">
             <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-white">SÔRÔ!</span>
           </h1>
-          <div className="flex items-center">
-            <span className="text-white/90 text-sm">{activeSFDName}</span>
+          
+          <div className="flex items-center mt-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center text-white text-sm bg-white/20 rounded-lg px-3 py-1">
+                <span>{activeSFDName}</span>
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {sfdData.map(sfd => (
+                  <DropdownMenuItem 
+                    key={sfd.id}
+                    className={`text-sm ${sfd.id === activeSfdId ? 'font-bold' : ''}`}
+                    onClick={() => setActiveSfdId(sfd.id)}
+                  >
+                    {sfd.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

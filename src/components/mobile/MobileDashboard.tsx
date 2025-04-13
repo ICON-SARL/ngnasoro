@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { useMobileDashboard } from '@/hooks/useMobileDashboard';
 import { Account } from '@/types/transactions';
-import { useToast } from '@/hooks/use-toast';
 import { MainDashboard } from './dashboard';
 
 interface MobileDashboardProps {
