@@ -36,9 +36,9 @@ export const useLoan = (loanId: string) => {
         purpose: data.purpose,
         status: data.status || 'pending',
         created_at: data.created_at,
-        // Optional reference property
+        // Optional reference property - check if it exists in data or use an empty string
         reference: data.reference || '',
-        // Fallback for updated_at
+        // Fallback for updated_at - if it doesn't exist, use created_at
         updated_at: data.updated_at || data.created_at
       };
       
