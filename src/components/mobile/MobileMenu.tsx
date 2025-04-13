@@ -23,11 +23,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ onLogout }) => {
         <span className="text-xs mt-1">Prêts</span>
       </Link>
       
-      <Link to="/mobile-flow/transfer" className={`flex flex-col items-center justify-center flex-1 ${isActive('/mobile-flow/transfer') ? 'text-[#0D6A51]' : 'text-gray-500'}`}>
-        <ArrowUpDown className="h-5 w-5" />
-        <span className="text-xs mt-1">Transfert</span>
-      </Link>
-      
       <Link to="/mobile-flow/payment" className={`flex flex-col items-center justify-center flex-1 ${isActive('/mobile-flow/payment') ? 'text-[#0D6A51]' : 'text-gray-500'}`}>
         <Wallet className="h-5 w-5" />
         <span className="text-xs mt-1">Paiement</span>
