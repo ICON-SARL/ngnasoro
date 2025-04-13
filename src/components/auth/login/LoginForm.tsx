@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ErrorDisplay,
   CooldownAlert,
@@ -8,21 +8,17 @@ import {
 import SuccessState from './SuccessState';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Eye, EyeOff, Lock, ShieldAlert } from 'lucide-react';
+import { Mail, Eye, EyeOff, Lock, ShieldAlert, Volume2, VolumeX } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Link } from 'react-router-dom';
+import { useLocalization } from '@/contexts/LocalizationContext';
+import VoiceAssistantService from '@/utils/VoiceAssistantService';
 
 interface LoginFormProps {
   adminMode?: boolean;
   isSfdAdmin?: boolean;
-  onError?: (errorMessage: string) => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ 
-  adminMode = false, 
-  isSfdAdmin = false,
-  onError
-}) => {
+const LoginForm: React.FC<LoginFormProps> = ({ adminMode = false, isSfdAdmin = false }) => {
   const {
     email,
     setEmail,
@@ -36,7 +32,26 @@ const LoginForm: React.FC<LoginFormProps> = ({
     cooldownTime,
     emailSent,
     handleLogin
-  } = useLoginForm(adminMode, isSfdAdmin, onError);
+  } = useLoginForm(adminMode, isSfdAdmin);
+  
+  const { language, voiceOverEnabled, toggleVoiceOver, t } = useLocalization();
+  const voiceService = VoiceAssistantService.getInstance();
+
+  const playWelcomeMessage = () => {
+    const message = isSfdAdmin 
+      ? (language === 'bambara' 
+          ? "I danbe ni cé SFD marabaga baara la" 
+          : "Bienvenue sur la plateforme d'administration SFD")
+      : adminMode 
+          ? (language === 'bambara' 
+              ? "I danbe ni cé MEREF marabaga baara la" 
+              : "Bienvenue sur la plateforme d'administration MEREF")
+          : (language === 'bambara' 
+              ? "I danbe ni cé MEREF-SFD juru kɛbaga baara la" 
+              : "Bienvenue sur la plateforme client MEREF-SFD");
+    
+    voiceService.speakInLanguage(message, language);
+  };
 
   if (emailSent) {
     return <SuccessState email={email} />;
@@ -143,17 +158,17 @@ const LoginForm: React.FC<LoginFormProps> = ({
               </span>
             ) : isSfdAdmin ? "Connexion SFD" : adminMode ? "Connexion Administration" : "Connexion"}
           </button>
+          
+          <button
+            type="button"
+            onClick={playWelcomeMessage}
+            className="mx-auto flex items-center justify-center gap-2 text-primary font-medium"
+          >
+            {voiceOverEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+            <span>Assistant vocal</span>
+          </button>
         </div>
       </form>
-      
-      <div className="flex justify-center pt-4">
-        <Link 
-          to="/login" 
-          className="text-sm text-primary hover:underline"
-        >
-          Changer de type de connexion
-        </Link>
-      </div>
     </div>
   );
 };

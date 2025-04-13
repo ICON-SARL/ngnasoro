@@ -36,10 +36,9 @@ export const useLoan = (loanId: string) => {
         purpose: data.purpose,
         status: data.status || 'pending',
         created_at: data.created_at,
-        // Optional reference property with fallback
-        reference: data.reference || '',
-        // Fallback for updated_at
-        updated_at: data.updated_at || data.created_at
+        // Handle optional properties safely with optional chaining and nullish coalescing
+        reference: data.reference ?? '',
+        updated_at: data.updated_at ?? data.created_at
       };
       
       return loan;

@@ -1,5 +1,6 @@
 
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import VoiceAssistantService from '@/utils/VoiceAssistantService';
 
 type Language = 'french' | 'bambara';
 
@@ -19,14 +20,16 @@ const translations: Record<Language, Record<string, string>> = {
     selfie: "Prenez une photo de vous-même pour la vérification d'identité.",
     processing: "Nous vérifions vos documents. Veuillez patienter...",
     completed: "Vérification terminée. Merci!",
+    invalidCredentials: "Identifiants invalides. Veuillez vérifier vos informations.",
     // Add more translations as needed
   },
   bambara: {
-    welcome: "Bienvenue dans l'assistant de demande de prêt. Appuyez sur commencer pour débuter votre demande.",
+    welcome: "I danbe ni cɛ juru sariya la. A mogoniw digi ka daminɛ.",
     idVerification: "Kounben dɔn: I ka taamasiyen yira. I ka i ɲɛnafan wala i koyra kunnafonisɛbɛn yira.",
     selfie: "I ka i ɲɛfoto ta walasa an ka a dɔn ko i yɛrɛ don.",
     processing: "A bɛ i ka fɛnw sɛgɛsɛgɛ. I sabali dɛ...",
     completed: "I ka dantɛmɛsɛbɛn sɛgɛsɛgɛli banna. I ni ce!",
+    invalidCredentials: "I ka tɔgɔ wala i ka gundo tɛ dɔn. I bɛ sé ka dɔgɔtɔrɔya",
     // Add more translations as needed
   }
 };
@@ -42,6 +45,12 @@ export const LocalizationContext = createContext<LocalizationContextType>({
 export const LocalizationProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguage] = useState<Language>('french');
   const [voiceOverEnabled, setVoiceOverEnabled] = useState(true);
+  const voiceService = VoiceAssistantService.getInstance();
+
+  // Initialize voice service with the current state
+  useEffect(() => {
+    voiceService.toggleVoice(voiceOverEnabled);
+  }, []);
 
   // Translation function
   const t = (key: string): string => {
@@ -50,7 +59,9 @@ export const LocalizationProvider = ({ children }: { children: ReactNode }) => {
 
   // Toggle voice over function
   const toggleVoiceOver = () => {
-    setVoiceOverEnabled(!voiceOverEnabled);
+    const newState = !voiceOverEnabled;
+    setVoiceOverEnabled(newState);
+    voiceService.toggleVoice(newState);
   };
 
   return (

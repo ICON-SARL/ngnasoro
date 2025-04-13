@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalization } from '@/contexts/LocalizationContext';
+import VoiceAssistantService from '@/utils/VoiceAssistantService';
 
 interface VoiceAssistantProps {
   message: string;
@@ -11,13 +11,15 @@ interface VoiceAssistantProps {
   language?: 'bambara' | 'french';
 }
 
-const VoiceAssistant = ({ message, autoPlay = false, language = 'bambara' }: VoiceAssistantProps) => {
-  const { voiceOverEnabled, toggleVoiceOver } = useLocalization();
+const VoiceAssistant = ({ message, autoPlay = false, language: propLanguage }: VoiceAssistantProps) => {
+  const { voiceOverEnabled, toggleVoiceOver, language: contextLanguage } = useLocalization();
   const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const voiceService = VoiceAssistantService.getInstance();
+  const language = propLanguage || contextLanguage;
+  
   const playbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
+  
   useEffect(() => {
     if (autoPlay && voiceOverEnabled && message) {
       playMessage();
@@ -27,21 +29,18 @@ const VoiceAssistant = ({ message, autoPlay = false, language = 'bambara' }: Voi
       if (playbackTimeoutRef.current) {
         clearTimeout(playbackTimeoutRef.current);
       }
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
+      voiceService.stopSpeaking();
     };
-  }, [message, autoPlay, voiceOverEnabled]);
+  }, [message, autoPlay, voiceOverEnabled, language]);
 
   const playMessage = () => {
     if (!message || !voiceOverEnabled) return;
     
-    // In a real implementation, this would use AWS Polly API or another TTS service
-    console.log(`Playing message in ${language}: ${message}`);
     setIsPlaying(true);
     
-    // Simulate audio playback completion
-    const duration = message.length * 80; // Adjust timing based on message length
+    voiceService.speakInLanguage(message, language);
+    
+    const duration = message.length * 80;
     
     if (playbackTimeoutRef.current) {
       clearTimeout(playbackTimeoutRef.current);
@@ -51,7 +50,6 @@ const VoiceAssistant = ({ message, autoPlay = false, language = 'bambara' }: Voi
       setIsPlaying(false);
     }, duration);
     
-    // For testing purposes, show a toast to indicate voice is playing
     toast({
       title: `${language === 'bambara' ? 'Kuma Baara' : 'Audio en cours'}`,
       description: message.substring(0, 70) + (message.length > 70 ? '...' : ''),

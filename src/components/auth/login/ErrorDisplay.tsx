@@ -1,13 +1,16 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AlertCircle } from 'lucide-react';
 import VoiceAssistant from '@/components/VoiceAssistant';
+import { useLocalization } from '@/contexts/LocalizationContext';
 
 interface ErrorDisplayProps {
   message: string | null;
 }
 
 const ErrorDisplay = ({ message }: ErrorDisplayProps) => {
+  const { language } = useLocalization();
+  
   if (!message) return null;
 
   // Simplifier les messages d'erreur pour les rendre plus compréhensibles
@@ -19,6 +22,10 @@ const ErrorDisplay = ({ message }: ErrorDisplayProps) => {
     simplifiedMessage = "Veuillez attendre avant de réessayer.";
   } else if (message.includes('not found')) {
     simplifiedMessage = "Email non trouvé. Vérifiez votre saisie.";
+  } else if (message.includes('invalid credentials') || message.includes('Invalid login credentials')) {
+    simplifiedMessage = language === 'bambara' 
+      ? "I ka tɔgɔ wala i ka gundo tɛ dɔn. I bɛ sé ka dɔgɔtɔrɔya"
+      : "Identifiants invalides. Veuillez vérifier vos informations.";
   }
 
   return (
