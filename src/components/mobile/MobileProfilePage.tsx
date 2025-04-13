@@ -195,7 +195,7 @@ const MobileProfilePage: React.FC = () => {
                       <p className="font-medium">{sfd.name}</p>
                       <p className="text-sm text-muted-foreground">{sfd.code}</p>
                     </div>
-                    {sfd.is_default && (
+                    {sfd.is_default !== undefined && sfd.is_default && (
                       <Badge variant="outline" className="bg-blue-50 text-blue-800">Par défaut</Badge>
                     )}
                   </div>

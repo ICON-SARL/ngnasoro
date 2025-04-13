@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import ContextualHeader from './ContextualHeader';
 import { 
   Select, 
@@ -9,11 +9,14 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Shield } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
-const MobileHeader = () => {
+interface MobileHeaderProps {
+  title?: string;
+}
+
+const MobileHeader: React.FC<MobileHeaderProps> = ({ title }) => {
   const { toast } = useToast();
   const { activeSfdId, setActiveSfdId, sfdData } = useSfdDataAccess();
   
@@ -32,6 +35,8 @@ const MobileHeader = () => {
   return (
     <div className="p-2">
       <ContextualHeader />
+      
+      {title && <h1 className="text-xl font-bold my-2">{title}</h1>}
       
       <div className="mt-3 flex justify-end">
         <div className="w-[180px]">
