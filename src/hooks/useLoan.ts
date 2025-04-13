@@ -21,11 +21,16 @@ export const useLoan = (loanId: string) => {
       }
       
       // Format the loan data with client information
-      // Make sure we're only adding properties that exist on the Loan type
+      // Make sure we're adding all required properties that exist on the Loan type
       const loan: Loan = {
         ...data,
-        client_name: data.sfd_clients?.full_name || 'Unknown Client'
-        // Removed client_email as it's not defined in the Loan type
+        client_name: data.sfd_clients?.full_name || 'Unknown Client',
+        term_months: data.duration_months || 0, // Adding term_months (mapped from duration_months)
+        updated_at: data.updated_at || data.created_at, // If updated_at doesn't exist, use created_at
+        // Ensure all required properties from the Loan type are present
+        status: data.status || 'pending',
+        reference: data.reference || '',
+        duration: data.duration_months // For backward compatibility
       };
       
       return loan;
