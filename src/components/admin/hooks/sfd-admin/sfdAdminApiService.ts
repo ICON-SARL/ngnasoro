@@ -63,6 +63,40 @@ export const getSfdAdmins = async (): Promise<SfdAdmin[]> => {
   }
 };
 
+// Helper function to get SFD admins for a specific SFD
+export const getSfdAdminsForSfd = async (sfdId: string): Promise<SfdAdmin[]> => {
+  try {
+    // First get all the user IDs associated with this SFD
+    const { data: userSfds, error: sfdsError } = await supabase
+      .from('user_sfds')
+      .select('user_id')
+      .eq('sfd_id', sfdId);
+    
+    if (sfdsError) throw sfdsError;
+    
+    if (!userSfds || userSfds.length === 0) {
+      return []; // No users associated with this SFD
+    }
+    
+    // Extract the user IDs
+    const userIds = userSfds.map(record => record.user_id);
+    
+    // Now get admin_users that have the role 'sfd_admin' and are in the list of userIds
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('role', 'sfd_admin')
+      .in('id', userIds);
+      
+    if (error) throw error;
+    
+    return data || [];
+  } catch (err: any) {
+    console.error(`Error fetching SFD admins for SFD ${sfdId}:`, err);
+    throw new Error(`Erreur lors de la récupération des administrateurs SFD: ${err.message}`);
+  }
+};
+
 export const deleteSfdAdmin = async (adminId: string) => {
   try {
     const { data, error } = await supabase.functions.invoke('delete-sfd-admin', {
