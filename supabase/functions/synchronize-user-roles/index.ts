@@ -29,7 +29,7 @@ serve(async (req) => {
     // Création du client Supabase avec la clé de service
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Récupérer tous les utilisateurs sans rôle défini
+    // Récupérer tous les utilisateurs
     const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
 
     if (usersError) {
@@ -46,9 +46,12 @@ serve(async (req) => {
 
     // Parcourir tous les utilisateurs et leur attribuer un rôle par défaut si nécessaire
     for (const user of users.users) {
-      if (!user.app_metadata?.role) {
+      // Si pas de rôle défini OU si le rôle contient une valeur invalide
+      if (!user.app_metadata?.role || !['admin', 'client', 'sfd_admin', 'user'].includes(user.app_metadata.role)) {
         // Par défaut, attribuer le rôle "client"
         const role = 'client';
+        
+        console.log(`Mise à jour du rôle pour ${user.email || user.id} vers 'client'`);
         
         const { error } = await supabase.auth.admin.updateUserById(
           user.id,
@@ -66,6 +69,23 @@ serve(async (req) => {
           email: user.email,
           role
         });
+      } else {
+        console.log(`L'utilisateur ${user.email || user.id} a déjà le rôle: ${user.app_metadata?.role}`);
+      }
+    }
+
+    // Créer également les entrées dans la table user_roles
+    for (const updatedUser of updatedUsers) {
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .upsert({
+          user_id: updatedUser.id,
+          role: updatedUser.role,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id,role' });
+        
+      if (roleError) {
+        console.error(`Erreur lors de la création de l'entrée user_roles pour ${updatedUser.id}:`, roleError);
       }
     }
 

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
-import { UserRole } from '@/utils/auth/roleTypes';
+import { UserRole } from '@/hooks/auth/types';
 
 interface RoleGuardProps {
   requiredRole: UserRole | string;
@@ -11,7 +11,7 @@ interface RoleGuardProps {
 }
 
 const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const location = useLocation();
 
@@ -29,17 +29,22 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     console.log('RoleGuard checking:', { 
       userRole, 
       requiredRole, 
-      userMetadata: user.app_metadata 
+      userMetadata: user.app_metadata,
+      userObject: user
     });
     
     // Handle special case where SFD_ADMIN should match sfd_admin role
+    // and convert both to lowercase for comparison
+    const userRoleLower = String(userRole).toLowerCase();
+    const requiredRoleLower = String(requiredRole).toLowerCase();
+    
     const permitted = 
-      userRole === requiredRole || 
-      (requiredRole === 'sfd_admin' && userRole === 'sfd_admin') ||
-      (requiredRole === UserRole.SFD_ADMIN && userRole === 'sfd_admin') ||
-      (requiredRole === 'client' && userRole === 'client') ||
-      (requiredRole === UserRole.CLIENT && userRole === 'client') ||
-      (requiredRole === 'admin' && userRole === 'admin');
+      userRoleLower === requiredRoleLower || 
+      (requiredRoleLower === 'sfd_admin' && userRoleLower === 'sfd_admin') ||
+      (requiredRoleLower === 'client' && userRoleLower === 'client') ||
+      (requiredRoleLower === 'admin' && userRoleLower === 'admin') ||
+      // Accept all roles by super admin
+      userRoleLower === 'admin';
     
     setHasAccess(permitted);
     
@@ -62,7 +67,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     }
   }, [user, requiredRole, location.pathname]);
 
-  if (hasAccess === null) {
+  if (loading || hasAccess === null) {
     // Still checking permissions
     return <div className="flex justify-center items-center min-h-screen">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

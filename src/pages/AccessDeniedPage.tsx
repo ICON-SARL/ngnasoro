@@ -2,14 +2,22 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Home, ArrowLeft } from 'lucide-react';
+import { ShieldAlert, Home, ArrowLeft, RefreshCw } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const AccessDeniedPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, refreshSession } = useAuth();
   const from = location.state?.from || '/';
   const requiredPermission = location.state?.requiredPermission;
   const requiredRole = location.state?.requiredRole;
+
+  const handleRefreshSession = async () => {
+    await refreshSession();
+    // Rediriger vers la page précédente après le rafraîchissement de la session
+    navigate(from, { replace: true });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
@@ -34,6 +42,15 @@ const AccessDeniedPage = () => {
           )}
         </p>
         
+        {user && (
+          <div className="bg-gray-50 p-4 rounded-md mb-6 text-left">
+            <h3 className="text-sm font-semibold mb-1">Informations utilisateur :</h3>
+            <p className="text-xs text-gray-500">ID: {user.id}</p>
+            <p className="text-xs text-gray-500">Email: {user.email}</p>
+            <p className="text-xs text-gray-500">Rôle actuel: {user.app_metadata?.role || 'Non défini'}</p>
+          </div>
+        )}
+        
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button
             variant="outline"
@@ -42,6 +59,15 @@ const AccessDeniedPage = () => {
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour
+          </Button>
+          
+          <Button
+            variant="outline"
+            className="border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 inline-flex items-center"
+            onClick={handleRefreshSession}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Rafraîchir la session
           </Button>
           
           <Button

@@ -18,7 +18,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const location = useLocation();
   
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Chargement...</div>;
+    return <div className="flex items-center justify-center h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <span className="ml-2">Chargement...</span>
+    </div>;
   }
 
   if (!user) {
@@ -33,14 +36,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
   
   const userRole = user.app_metadata?.role;
+  console.log("ProtectedRoute - User role:", userRole);
   
   // Vérifier les permissions basées sur le rôle
   if (requireAdmin && userRole !== 'admin') {
-    return <Navigate to="/admin/auth" state={{ from: location, error: 'access_denied' }} replace />;
+    return <Navigate to="/access-denied" state={{ from: location, requiredRole: 'admin' }} replace />;
   }
   
   if (requireSfdAdmin && userRole !== 'sfd_admin') {
-    return <Navigate to="/sfd/auth" state={{ from: location, error: 'access_denied' }} replace />;
+    return <Navigate to="/access-denied" state={{ from: location, requiredRole: 'sfd_admin' }} replace />;
   }
 
   return <>{children}</>;

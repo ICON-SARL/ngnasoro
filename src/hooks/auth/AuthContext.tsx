@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
@@ -16,7 +15,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
-  // Computed properties based on user role
   const userRole = user?.app_metadata?.role as UserRole || UserRole.User;
   const isAdmin = userRole === UserRole.SuperAdmin;
   const isSfdAdmin = userRole === UserRole.SfdAdmin;
@@ -39,7 +37,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
         }
         
-        // Debug log
         if (data.session?.user) {
           console.log('Loaded user data:', {
             id: data.session.user.id,
@@ -57,7 +54,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     fetchSession();
 
-    // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         if (newSession?.user) {
@@ -70,7 +66,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(newSession);
         setLoading(false);
         
-        // Debug log for auth state change
         if (newSession?.user) {
           console.log('Auth state changed:', {
             event,
@@ -80,7 +75,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         }
         
-        // Log auth events
         if (event === 'SIGNED_IN') {
           await logAuditEvent(
             AuditLogCategory.AUTHENTICATION,
@@ -114,7 +108,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  // Load and set biometric preference
   useEffect(() => {
     const loadBiometricPreference = async () => {
       try {
@@ -170,13 +163,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password,
         options: {
-          data: metadata || {}
+          data: {
+            ...metadata,
+            role: 'client'
+          }
         }
       });
       
       if (error) {
         console.error('Error signing up:', error);
         return { error };
+      }
+      
+      if (data.user) {
+        try {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: data.user.id,
+              role: 'client'
+            });
+            
+          if (roleError) {
+            console.error('Error creating user_role entry:', roleError);
+          }
+        } catch (roleErr) {
+          console.error('Error creating user role:', roleErr);
+        }
       }
       
       return { error: null, data };
@@ -188,15 +201,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      // Clear any client-side states or cookies
       localStorage.removeItem('adminLastSeen');
       localStorage.removeItem('sb-xnqysvnychmsockivqhb-auth-token');
       localStorage.removeItem('supabase.auth.token');
       
-      // Call Supabase auth signOut method
       const result = await supabase.auth.signOut();
       
-      // Reset the user and session state
       setUser(null);
       setSession(null);
       
