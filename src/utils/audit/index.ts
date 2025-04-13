@@ -1,77 +1,14 @@
 
-export enum AuditLogCategory {
-  DATA_ACCESS = 'data_access',
-  USER_MANAGEMENT = 'user_management',
-  LOAN_PROCESSING = 'loan_processing',
-  SECURITY = 'security',
-  SYSTEM = 'system',
-  FINANCIAL = 'financial',
-  AUTHENTICATION = 'authentication',
-  ADMIN_ACTION = 'admin_action',
-  SFD_OPERATIONS = 'sfd_operations',
-  SUBSIDY_OPERATIONS = 'subsidy_operations',
-  TOKEN_MANAGEMENT = 'token_management',
-  INTEGRATION = 'integration',
-  MONITORING = 'monitoring',
-  LOAN_OPERATIONS = 'loan_operations'
-}
-
-export enum AuditLogSeverity {
-  INFO = 'info',
-  WARNING = 'warning',
-  ERROR = 'error',
-  CRITICAL = 'critical'
-}
-
-export interface AuditLogEntry {
-  user_id: string;
-  action: string;
-  category: AuditLogCategory;
-  severity: AuditLogSeverity;
-  status: 'success' | 'failure';
-  target_resource: string;
-  details?: Record<string, any>;
-  error_message?: string;
-}
-
-export const logAuditEvent = async (logEntry: AuditLogEntry | Omit<AuditLogEntry, 'target_resource'>): Promise<void> => {
-  try {
-    // Make sure target_resource has a default value if not provided
-    const entry = {
-      ...(logEntry as any),
-      target_resource: (logEntry as any).target_resource || 'system'
-    };
-    
-    console.log('Audit log:', entry);
-    // In a real application, this would send the log to the server
-    // await fetch('/api/audit-logs', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(entry),
-    // });
-  } catch (error) {
-    console.error('Failed to log audit event:', error);
-  }
-};
-
-export const logPermissionFailure = (userId: string, permission: string, resource: string): void => {
-  logAuditEvent({
-    user_id: userId,
-    action: 'permission_check_failure',
-    category: AuditLogCategory.SECURITY,
-    severity: AuditLogSeverity.WARNING,
-    status: 'failure',
-    target_resource: resource,
-    details: {
-      required_permission: permission,
-      timestamp: new Date().toISOString()
-    },
-    error_message: `Access denied: Missing permission (${permission})`
-  });
-};
-
-// Export types from auditLoggerTypes.ts
-export type { AuditLogEvent, AuditLogFilterOptions, AuditLogResponse, AuditLogExportResult } from './auditLoggerTypes';
+// Export enums directly from auditLoggerTypes
+export { 
+  AuditLogCategory, 
+  AuditLogSeverity,
+  AuditLogEntry,
+  AuditLogEvent,
+  AuditLogFilterOptions, 
+  AuditLogResponse, 
+  AuditLogExportResult 
+} from './auditLoggerTypes';
 
 // Export middleware functions
 export { 
@@ -81,17 +18,25 @@ export {
   adaptAuditLogEvent
 } from './auditMiddleware';
 
-// Export functions from auditLoggerCore.ts
+// Export functions from auditLoggerCore
 export { 
   getAuditLogs, 
   logAuthEvent, 
   logDataAccess,
-  exportAuditLogsToCSV 
+  exportAuditLogsToCSV,
+  logAuditEvent
 } from './auditLoggerCore';
 
-// Export functions from auditLoggerExport.ts
+// Export functions from auditLoggerExport
 export {
   exportAuditLogsToPDF,
   downloadAuditLogsAsCSV,
   downloadAuditLogsAsPDF
 } from './auditLoggerExport';
+
+// Export helper functions
+export {
+  createAuditLogEvent,
+  createTransactionAuditLog,
+  createLoanAuditLog
+} from './auditHelpers';

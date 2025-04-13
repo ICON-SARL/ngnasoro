@@ -9,7 +9,7 @@ import {
   AuditLogExportResult,
   AuditLogResponse
 } from './auditLoggerTypes';
-import { ensureTargetResource, createAuditLog } from './auditMiddleware';
+import { ensureTargetResource, createAuditLog, adaptAuditLogEvent } from './auditMiddleware';
 
 export async function logAuditEvent(entry: Partial<AuditLogEntry>) {
   try {
@@ -50,6 +50,34 @@ export async function logAuditEvent(entry: Partial<AuditLogEntry>) {
     return true;
   } catch (error) {
     console.error('Error logging audit event:', error);
+    return false;
+  }
+}
+
+// Overload for easier backward compatibility
+export async function logAuditEvent(
+  category: AuditLogCategory,
+  action: string,
+  details?: any,
+  userId?: string,
+  severity: AuditLogSeverity = AuditLogSeverity.INFO,
+  status: 'success' | 'failure' | 'pending' = 'success',
+  targetResource: string = 'system'
+) {
+  try {
+    const auditEntry: AuditLogEntry = {
+      user_id: userId || 'anonymous',
+      action,
+      category,
+      severity,
+      status,
+      target_resource: targetResource,
+      details
+    };
+    
+    return logAuditEvent(auditEntry);
+  } catch (error) {
+    console.error('Error in legacy logAuditEvent:', error);
     return false;
   }
 }
@@ -123,14 +151,15 @@ export async function getAuditLogs(options?: AuditLogFilterOptions): Promise<Aud
           parsedDetails = log.details as Record<string, any>;
         }
       }
-      
-      return {
+
+      // Ensure target_resource is always set
+      const event = {
         user_id: log.user_id || 'anonymous',
         action: log.action,
         category: log.category as AuditLogCategory,
         severity: log.severity as AuditLogSeverity,
         status: log.status as 'success' | 'failure' | 'pending',
-        target_resource: log.target_resource || '',
+        target_resource: log.target_resource || 'system',
         error_message: log.error_message || undefined,
         details: parsedDetails,
         ip_address: log.ip_address || undefined,
@@ -138,6 +167,8 @@ export async function getAuditLogs(options?: AuditLogFilterOptions): Promise<Aud
         created_at: log.created_at || undefined,
         id: log.id
       };
+      
+      return adaptAuditLogEvent(event);
     }) || [];
     
     return { logs: typedLogs };
@@ -151,7 +182,8 @@ export async function getAuditLogs(options?: AuditLogFilterOptions): Promise<Aud
 export async function logAuthEvent(entry: Omit<AuditLogEntry, 'category'>) {
   return logAuditEvent({
     ...entry,
-    category: AuditLogCategory.AUTHENTICATION
+    category: AuditLogCategory.AUTHENTICATION,
+    target_resource: entry.target_resource || 'system'
   });
 }
 
@@ -159,7 +191,8 @@ export async function logAuthEvent(entry: Omit<AuditLogEntry, 'category'>) {
 export async function logDataAccess(entry: Omit<AuditLogEntry, 'category'>) {
   return logAuditEvent({
     ...entry,
-    category: AuditLogCategory.DATA_ACCESS
+    category: AuditLogCategory.DATA_ACCESS,
+    target_resource: entry.target_resource || 'system'
   });
 }
 
