@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Home, ArrowLeft, RefreshCw } from 'lucide-react';
+import { ShieldAlert, Home, ArrowLeft, RefreshCw, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { ActivationPanel } from '@/components/ActivationPanel';
 
 const AccessDeniedPage = () => {
   const location = useLocation();
@@ -12,6 +13,7 @@ const AccessDeniedPage = () => {
   const from = location.state?.from || '/';
   const requiredPermission = location.state?.requiredPermission;
   const requiredRole = location.state?.requiredRole;
+  const [showActivation, setShowActivation] = useState(false);
 
   const handleRefreshSession = async () => {
     await refreshSession();
@@ -51,7 +53,7 @@ const AccessDeniedPage = () => {
           </div>
         )}
         
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
           <Button
             variant="outline"
             className="border-gray-200 inline-flex items-center"
@@ -78,6 +80,23 @@ const AccessDeniedPage = () => {
             Accueil
           </Button>
         </div>
+        
+        {!showActivation ? (
+          <div className="border-t pt-4 mt-4">
+            <Button 
+              variant="outline" 
+              className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 inline-flex items-center"
+              onClick={() => setShowActivation(true)}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Activer les Tables et Rôles
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-6">
+            <ActivationPanel onActivationComplete={handleRefreshSession} />
+          </div>
+        )}
       </div>
     </div>
   );

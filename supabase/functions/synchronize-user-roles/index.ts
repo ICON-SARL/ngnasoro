@@ -42,6 +42,7 @@ serve(async (req) => {
 
     // Compteurs pour les statistiques
     let updatedCount = 0;
+    let userRolesCount = 0;
     const updatedUsers = [];
 
     // Parcourir tous les utilisateurs et leur attribuer un rôle par défaut si nécessaire
@@ -74,21 +75,64 @@ serve(async (req) => {
       }
     }
 
-    // Créer également les entrées dans la table user_roles
-    for (const updatedUser of updatedUsers) {
+    // Créer également les entrées dans la table user_roles pour tous les utilisateurs
+    for (const user of users.users) {
       // Map client role to user role in the database
-      const dbRole = updatedUser.role === 'client' ? 'user' : updatedUser.role;
+      const metadataRole = user.app_metadata?.role || 'client';
+      const dbRole = metadataRole === 'client' ? 'user' : metadataRole;
       
-      const { error: roleError } = await supabase
+      console.log(`Vérification du rôle en base de données pour ${user.email || user.id}: ${dbRole}`);
+      
+      // Vérifier si l'entrée existe déjà
+      const { data: existingRoles, error: checkError } = await supabase
         .from('user_roles')
-        .upsert({
-          user_id: updatedUser.id,
-          role: dbRole, // Use the correct enum value for the database
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id,role' });
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('role', dbRole);
         
-      if (roleError) {
-        console.error(`Erreur lors de la création de l'entrée user_roles pour ${updatedUser.id}:`, roleError);
+      if (checkError) {
+        console.error(`Erreur lors de la vérification des rôles pour l'utilisateur ${user.id}:`, checkError);
+        continue;
+      }
+      
+      // Si l'entrée n'existe pas, la créer
+      if (!existingRoles || existingRoles.length === 0) {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .upsert({
+            user_id: user.id,
+            role: dbRole,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id,role' });
+          
+        if (roleError) {
+          console.error(`Erreur lors de la création de l'entrée user_roles pour ${user.id}:`, roleError);
+        } else {
+          userRolesCount++;
+          console.log(`Rôle ${dbRole} ajouté pour l'utilisateur ${user.email || user.id}`);
+        }
+      } else {
+        console.log(`L'utilisateur ${user.email || user.id} a déjà le rôle ${dbRole} en base de données`);
+      }
+    }
+
+    // Activer les tables avec RLS si nécessaire
+    const tables = [
+      'client_activities',
+      'client_adhesion_requests', 
+      'client_documents',
+      'loan_activities',
+      'loan_payments',
+      'meref_loan_requests'
+    ];
+    
+    for (const table of tables) {
+      try {
+        // Activer RLS sur la table
+        await supabase.rpc('enable_rls_for_table', { table_name: table });
+        console.log(`RLS activé pour la table ${table}`);
+      } catch (error) {
+        console.log(`Impossible d'activer RLS pour ${table}. La fonction RPC n'existe peut-être pas ou la table est déjà configurée.`);
       }
     }
 
@@ -96,7 +140,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Synchronisation des rôles terminée. ${updatedCount} utilisateurs mis à jour.`,
+        message: `Synchronisation terminée. ${updatedCount} utilisateurs et ${userRolesCount} rôles en base de données mis à jour.`,
         updated_users: updatedUsers
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
