@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { SfdManagementStats } from './SfdManagementStats';
 import { SfdAddDialog } from './SfdAddDialog';
+import { SfdAdminAddDialog } from './SfdAdminAddDialog';
 import { Button } from '@/components/ui/button';
 import { Building, Plus, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -87,7 +88,10 @@ export const SfdManagementContainer = () => {
         onOpenChange={handleDialogChange} 
       />
       
-      {/* We'll need to create a SfdAdminAddDialog component next */}
+      <SfdAdminAddDialog
+        open={addAdminDialogOpen}
+        onOpenChange={handleAdminDialogChange}
+      />
     </div>
   );
 };

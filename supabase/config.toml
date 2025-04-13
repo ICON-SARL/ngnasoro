@@ -10,6 +10,9 @@ verify_jwt = true
 verify_jwt = true
 timeout_seconds = 90
 
+[functions.admin-notification]
+verify_jwt = true
+
 [functions.fetch-sfd-admins]
 verify_jwt = true
 

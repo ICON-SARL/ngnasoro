@@ -109,6 +109,20 @@ serve(async (req) => {
       }
     }
 
+    // Check if SFD code already exists
+    const { data: existingSfd, error: existingSfdError } = await supabase
+      .from('sfds')
+      .select('id, code')
+      .eq('code', sfdData.code)
+      .maybeSingle();
+
+    if (existingSfd) {
+      return new Response(
+        JSON.stringify({ error: `Le code SFD '${sfdData.code}' est déjà utilisé` }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Create SFD
     const { data: newSfd, error: sfdError } = await supabase
       .from('sfds')
@@ -155,6 +169,32 @@ serve(async (req) => {
 
     if (statsError) {
       console.warn("Error creating SFD stats:", statsError);
+      // Continue even if stats creation fails
+    }
+
+    // Set initial subsidy balance if provided
+    if (sfdData.subsidy_balance && parseFloat(sfdData.subsidy_balance) > 0) {
+      try {
+        const { error: subsidyError } = await supabase
+          .from('sfd_subsidies')
+          .insert({
+            sfd_id: newSfd.id,
+            amount: parseFloat(sfdData.subsidy_balance),
+            remaining_amount: parseFloat(sfdData.subsidy_balance),
+            used_amount: 0,
+            allocated_by: 'system',
+            status: 'active',
+            description: 'Subvention initiale'
+          });
+          
+        if (subsidyError) {
+          console.warn("Error creating initial subsidy:", subsidyError);
+          // Continue even if subsidy creation fails
+        }
+      } catch (subsidyError) {
+        console.warn("Error creating initial subsidy:", subsidyError);
+        // Continue even if subsidy creation fails
+      }
     }
 
     // Create admin if requested
