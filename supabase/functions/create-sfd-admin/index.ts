@@ -14,6 +14,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Starting create-sfd-admin function')
+    
     // Vérification de l'authentification
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -29,6 +31,7 @@ serve(async (req) => {
     // Vérification d'authentification et d'autorisation (MEREF/admin uniquement)
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
+      console.error('No Authorization header found')
       throw new Error('Authentification requise')
     }
 
@@ -36,8 +39,11 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
     
     if (authError || !user) {
+      console.error('Auth error or no user:', authError)
       throw new Error('Utilisateur non authentifié')
     }
+
+    console.log('Authenticated user:', user.id, 'checking roles...')
 
     // Vérifier que l'utilisateur a le rôle d'admin
     const { data: roles, error: rolesError } = await supabaseClient
@@ -48,19 +54,29 @@ serve(async (req) => {
       .maybeSingle()
 
     if (rolesError) {
+      console.error('Error fetching roles:', rolesError)
       throw new Error(`Erreur lors de la vérification des rôles: ${rolesError.message}`)
     }
 
     if (!roles) {
+      console.error('User does not have admin role:', user.id)
       throw new Error('Vous n\'avez pas les permissions nécessaires (rôle admin requis)')
     }
 
-    // Récupération des données
-    const { adminData } = await req.json()
+    console.log('User has admin role, proceeding...')
 
+    // Récupération des données
+    const requestData = await req.json()
+    const adminData = requestData.adminData
+    
+    console.log('Request payload structure:', Object.keys(requestData))
+    
     if (!adminData || !adminData.email || !adminData.password || !adminData.full_name || !adminData.sfd_id) {
+      console.error('Invalid admin data:', adminData ? Object.keys(adminData) : 'null')
       throw new Error('Données d\'administrateur incomplètes')
     }
+
+    console.log('Creating admin user for SFD:', adminData.sfd_id)
 
     // 1. Créer l'utilisateur dans auth.users
     const { data: authUser, error: createUserError } = await supabaseClient.auth.admin.createUser({
@@ -77,8 +93,11 @@ serve(async (req) => {
     })
 
     if (createUserError || !authUser.user) {
+      console.error('Error creating user:', createUserError)
       throw new Error(`Erreur lors de la création de l'utilisateur: ${createUserError?.message}`)
     }
+
+    console.log('Created auth user:', authUser.user.id)
 
     // 2. Stocker les informations administrateur
     const { error: adminError } = await supabaseClient
@@ -92,6 +111,7 @@ serve(async (req) => {
       })
 
     if (adminError) {
+      console.error('Error inserting admin user record:', adminError)
       // Si erreur, essayer de supprimer l'utilisateur auth créé pour éviter des utilisateurs orphelins
       await supabaseClient.auth.admin.deleteUser(authUser.user.id)
       throw new Error(`Erreur lors de la création de l'enregistrement admin: ${adminError.message}`)
@@ -106,6 +126,7 @@ serve(async (req) => {
       })
 
     if (roleError) {
+      console.error('Error assigning role:', roleError)
       // Nettoyage en cas d'erreur
       await supabaseClient.auth.admin.deleteUser(authUser.user.id)
       throw new Error(`Erreur lors de l'attribution du rôle: ${roleError.message}`)
@@ -121,6 +142,7 @@ serve(async (req) => {
       })
 
     if (sfdAssocError) {
+      console.error('Error associating with SFD:', sfdAssocError)
       // Nettoyage en cas d'erreur
       await supabaseClient.auth.admin.deleteUser(authUser.user.id)
       throw new Error(`Erreur lors de l'association à la SFD: ${sfdAssocError.message}`)
@@ -149,6 +171,8 @@ serve(async (req) => {
       // (Non implémenté dans cette version - nécessiterait un service externe)
       console.log(`Notification should be sent to ${adminData.email}`)
     }
+
+    console.log('Successfully created SFD admin:', authUser.user.id)
 
     return new Response(
       JSON.stringify({

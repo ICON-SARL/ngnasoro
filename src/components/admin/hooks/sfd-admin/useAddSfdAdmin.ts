@@ -22,9 +22,11 @@ export function useAddSfdAdmin() {
       setIsAdding(true);
       setError(null);
       try {
+        console.log('Submitting SFD admin data:', { ...adminData, password: '***' });
         const result = await addSfdAdmin(adminData);
         return result;
       } catch (err: any) {
+        console.error('Error adding SFD admin:', err);
         setError(err.message || 'Une erreur est survenue lors de la création de l\'administrateur');
         throw err;
       } finally {

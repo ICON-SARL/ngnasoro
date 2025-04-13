@@ -1,113 +1,102 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 
 export interface SfdAdmin {
   id: string;
   email: string;
   full_name: string;
   role: string;
-  has_2fa: boolean;
-  created_at: string;
-  last_sign_in_at: string;
+  sfd_id: string;
+  sfd_name?: string;
+  created_at?: string;
+  last_sign_in_at?: string | null;
+  status?: string;
 }
 
-export const addSfdAdmin = async (adminData: {
+/**
+ * Get all SFD admins
+ */
+export async function getSfdAdmins(): Promise<SfdAdmin[]> {
+  try {
+    const response = await edgeFunctionApi.callEdgeFunction('fetch-sfd-admins');
+    
+    if (response?.error) {
+      throw new Error(response.error);
+    }
+    
+    return response?.admins || [];
+  } catch (error: any) {
+    console.error('Error fetching SFD admins:', error);
+    throw new Error(error.message || 'Failed to fetch SFD admins');
+  }
+}
+
+/**
+ * Get SFD admins for a specific SFD
+ */
+export async function getSfdAdminsForSfd(sfdId: string): Promise<SfdAdmin[]> {
+  try {
+    const response = await edgeFunctionApi.callEdgeFunction('fetch-sfd-admins', { sfdId });
+    
+    if (response?.error) {
+      throw new Error(response.error);
+    }
+    
+    return response?.admins || [];
+  } catch (error: any) {
+    console.error(`Error fetching SFD admins for SFD ${sfdId}:`, error);
+    throw new Error(error.message || 'Failed to fetch SFD admins');
+  }
+}
+
+/**
+ * Add a new SFD admin
+ */
+export async function addSfdAdmin(adminData: {
   email: string;
   password: string;
   full_name: string;
   role: string;
   sfd_id: string;
   notify: boolean;
-}) => {
+}): Promise<SfdAdmin> {
   try {
-    console.log('Attempting to create SFD admin with Edge Function');
+    console.log('Creating SFD admin with data:', { ...adminData, password: '***' });
     
-    // Use Edge Function to create admin
-    const { data, error } = await supabase.functions.invoke('create-sfd-admin', {
-      body: {
-        adminData,
-      },
-    });
-
-    if (error) {
-      console.error('Edge function error:', error);
-      throw new Error(`Erreur lors de la création: ${error.message}`);
-    }
-
-    if (data?.error) {
-      console.error('Admin creation error:', data.error);
-      throw new Error(data.error);
-    }
-
-    console.log('SFD admin created successfully:', data);
-    return data;
-  } catch (err: any) {
-    console.error('Error in addSfdAdmin:', err);
-    throw err;
-  }
-};
-
-export const getSfdAdmins = async (): Promise<SfdAdmin[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('admin_users')
-      .select('*')
-      .eq('role', 'sfd_admin');
-      
-    if (error) throw error;
+    const response = await edgeFunctionApi.callEdgeFunction('create-sfd-admin', { adminData });
     
-    return data || [];
-  } catch (err: any) {
-    console.error('Error fetching SFD admins:', err);
-    throw new Error(`Erreur lors de la récupération des administrateurs: ${err.message}`);
-  }
-};
-
-// Helper function to get SFD admins for a specific SFD
-export const getSfdAdminsForSfd = async (sfdId: string): Promise<SfdAdmin[]> => {
-  try {
-    // First get all the user IDs associated with this SFD
-    const { data: userSfds, error: sfdsError } = await supabase
-      .from('user_sfds')
-      .select('user_id')
-      .eq('sfd_id', sfdId);
-    
-    if (sfdsError) throw sfdsError;
-    
-    if (!userSfds || userSfds.length === 0) {
-      return []; // No users associated with this SFD
+    if (response?.error) {
+      throw new Error(response.error);
     }
     
-    // Extract the user IDs
-    const userIds = userSfds.map(record => record.user_id);
+    if (!response?.success) {
+      throw new Error('Failed to create SFD admin');
+    }
     
-    // Now get admin_users that have the role 'sfd_admin' and are in the list of userIds
-    const { data, error } = await supabase
-      .from('admin_users')
-      .select('*')
-      .eq('role', 'sfd_admin')
-      .in('id', userIds);
-      
-    if (error) throw error;
-    
-    return data || [];
-  } catch (err: any) {
-    console.error(`Error fetching SFD admins for SFD ${sfdId}:`, err);
-    throw new Error(`Erreur lors de la récupération des administrateurs SFD: ${err.message}`);
+    return response.admin;
+  } catch (error: any) {
+    console.error('Error creating SFD admin:', error);
+    throw new Error(error.message || 'Failed to create SFD admin');
   }
-};
+}
 
-export const deleteSfdAdmin = async (adminId: string) => {
+/**
+ * Delete an SFD admin
+ */
+export async function deleteSfdAdmin(adminId: string): Promise<void> {
   try {
-    const { data, error } = await supabase.functions.invoke('delete-sfd-admin', {
-      body: { adminId },
-    });
+    const response = await edgeFunctionApi.callEdgeFunction('delete-sfd-admin', { adminId });
     
-    if (error) throw error;
+    if (response?.error) {
+      throw new Error(response.error);
+    }
     
-    return data;
-  } catch (err: any) {
-    console.error('Error deleting SFD admin:', err);
-    throw new Error(`Erreur lors de la suppression: ${err.message}`);
+    if (!response?.success) {
+      throw new Error('Failed to delete SFD admin');
+    }
+  } catch (error: any) {
+    console.error('Error deleting SFD admin:', error);
+    throw new Error(error.message || 'Failed to delete SFD admin');
   }
-};
+}
