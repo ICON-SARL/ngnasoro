@@ -1,6 +1,4 @@
 
-
-
 # This file controls the configuration for the Supabase functions.
 # project_id = "xnqysvnychmsockivqhb"
 
@@ -26,3 +24,15 @@ timeout_seconds = 90
 verify_jwt = true
 timeout_seconds = 60
 
+[functions.get-sfd-balance]
+verify_jwt = true
+
+[functions.process-loan-payment]
+verify_jwt = true
+
+[functions.loan-status-webhooks]
+verify_jwt = true
+
+[functions.api-gateway]
+verify_jwt = true
+timeout_seconds = 60
