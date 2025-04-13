@@ -47,9 +47,9 @@ export const fetchLoanById = async (loanId: string): Promise<Loan | null> => {
     purpose: data.purpose,
     status: data.status || 'pending',
     created_at: data.created_at,
-    // Handle optional properties - these were causing the TypeScript errors
-    reference: data.reference || '', // Add default value if it doesn't exist
-    updated_at: data.updated_at || data.created_at, // Use created_at as fallback
+    // Handle optional properties with default values or undefined
+    reference: data.reference || '',
+    updated_at: data.updated_at || data.created_at,
     subsidy_amount: data.subsidy_amount || 0,
     subsidy_rate: data.subsidy_rate || 0
   };

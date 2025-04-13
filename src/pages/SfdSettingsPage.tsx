@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SfdHeader } from '@/components/SfdHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,9 +7,30 @@ import { Separator } from '@/components/ui/separator';
 import { 
   FileText, Settings, CreditCard, Building, ShieldCheck, Bell, Users
 } from 'lucide-react';
+import LoanPlanDialog from '@/components/sfd/LoanPlanDialog';
 
 const SfdSettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('loan-plans');
+  const [isLoanPlanDialogOpen, setIsLoanPlanDialogOpen] = useState(false);
+  const [planToEdit, setPlanToEdit] = useState(null);
+
+  const handleOpenNewPlanDialog = () => {
+    setPlanToEdit(null);
+    setIsLoanPlanDialogOpen(true);
+  };
+
+  const handleEditPlan = (plan) => {
+    setPlanToEdit(plan);
+    setIsLoanPlanDialogOpen(true);
+  };
+
+  const handleClosePlanDialog = () => {
+    setIsLoanPlanDialogOpen(false);
+  };
+
+  const handlePlanSaved = () => {
+    // Refresh loan plans data
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -85,7 +105,10 @@ const SfdSettingsPage: React.FC = () => {
             <CardContent className="p-6">
               <Tabs value={activeTab} className="w-full">
                 <TabsContent value="loan-plans">
-                  <LoanPlanManagement />
+                  <LoanPlanManagement 
+                    onNewPlan={handleOpenNewPlanDialog}
+                    onEditPlan={handleEditPlan}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="agency-settings">
@@ -157,6 +180,13 @@ const SfdSettingsPage: React.FC = () => {
           </Card>
         </div>
       </main>
+
+      <LoanPlanDialog 
+        isOpen={isLoanPlanDialogOpen}
+        onClose={handleClosePlanDialog}
+        onSaved={handlePlanSaved}
+        planToEdit={planToEdit}
+      />
     </div>
   );
 };
