@@ -141,9 +141,11 @@ const LoanDetails: React.FC<LoanDetailsProps> = ({ loan: propLoan, onClose, onAc
             </Avatar>
             <div className="space-y-1">
               <p className="text-sm font-medium leading-none">{loan.client_name}</p>
-              <p className="text-sm text-muted-foreground">
-                {loan.client_email}
-              </p>
+              {loan.sfd_clients?.email && (
+                <p className="text-sm text-muted-foreground">
+                  {loan.sfd_clients.email}
+                </p>
+              )}
             </div>
           </div>
           <div className="space-y-2">

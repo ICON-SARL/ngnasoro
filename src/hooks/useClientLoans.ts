@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +11,7 @@ export interface LoanApplication {
   duration_months: number;
   purpose: string;
   supporting_documents?: string[];
+  interest_rate?: number;
 }
 
 export function useClientLoans() {
@@ -91,7 +91,7 @@ export function useClientLoans() {
         }
         
         // Calculate monthly payment (simplified formula)
-        const interestRate = 0.055; // 5.5% annual rate
+        const interestRate = application.interest_rate || 0.055; // 5.5% annual rate
         const monthlyRate = interestRate / 12;
         const monthlyPayment = (application.amount * monthlyRate * Math.pow(1 + monthlyRate, application.duration_months)) / 
                                (Math.pow(1 + monthlyRate, application.duration_months) - 1);

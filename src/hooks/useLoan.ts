@@ -21,10 +21,11 @@ export const useLoan = (loanId: string) => {
       }
       
       // Format the loan data with client information
+      // Make sure we're only adding properties that exist on the Loan type
       const loan: Loan = {
         ...data,
-        client_name: data.sfd_clients?.full_name || 'Unknown Client',
-        client_email: data.sfd_clients?.email || ''
+        client_name: data.sfd_clients?.full_name || 'Unknown Client'
+        // Removed client_email as it's not defined in the Loan type
       };
       
       return loan;
