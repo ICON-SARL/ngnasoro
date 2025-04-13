@@ -2,12 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useMobileMoneyPayment } from './useMobileMoneyPayment';
 import { useMobileMoneyWithdrawal } from './useMobileMoneyWithdrawal';
-import type { MobileMoneyOperationsHook } from './types';
-
-interface MobileMoneyProvider {
-  id: string;
-  name: string;
-}
+import type { MobileMoneyOperationsHook, MobileMoneyProvider } from './types';
 
 export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
   const { isProcessing: isProcessingPayment, error: paymentError, processPayment } = useMobileMoneyPayment();
