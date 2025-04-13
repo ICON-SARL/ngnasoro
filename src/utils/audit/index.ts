@@ -34,12 +34,12 @@ export interface AuditLogEntry {
   error_message?: string;
 }
 
-export const logAuditEvent = async (logEntry: AuditLogEntry): Promise<void> => {
+export const logAuditEvent = async (logEntry: AuditLogEntry | Omit<AuditLogEntry, 'target_resource'>): Promise<void> => {
   try {
     // Make sure target_resource has a default value if not provided
     const entry = {
-      ...logEntry,
-      target_resource: logEntry.target_resource || 'system'
+      ...(logEntry as any),
+      target_resource: (logEntry as any).target_resource || 'system'
     };
     
     console.log('Audit log:', entry);
@@ -72,6 +72,14 @@ export const logPermissionFailure = (userId: string, permission: string, resourc
 
 // Export types from auditLoggerTypes.ts
 export type { AuditLogEvent, AuditLogFilterOptions, AuditLogResponse, AuditLogExportResult } from './auditLoggerTypes';
+
+// Export middleware functions
+export { 
+  ensureTargetResource, 
+  createAuditLog, 
+  adaptAuditLogEntry,
+  adaptAuditLogEvent
+} from './auditMiddleware';
 
 // Export functions from auditLoggerCore.ts
 export { 

@@ -32,3 +32,26 @@ export const createAuditLog = (logData: Partial<AuditLogEntry>): AuditLogEntry =
     ...(logData.id && { id: logData.id })
   } as AuditLogEntry;
 };
+
+/**
+ * Adapter function that automatically adds target_resource if missing
+ * This ensures backward compatibility with existing code
+ */
+export const adaptAuditLogEntry = (logEntry: Omit<AuditLogEntry, 'target_resource'> | AuditLogEntry): AuditLogEntry => {
+  const entry = logEntry as Partial<AuditLogEntry>;
+  return {
+    ...entry as AuditLogEntry,
+    target_resource: entry.target_resource || 'system'
+  };
+};
+
+/**
+ * Adapter for AuditLogEvent type
+ */
+export const adaptAuditLogEvent = (logEvent: Omit<AuditLogEvent, 'target_resource'> | AuditLogEvent): AuditLogEvent => {
+  const event = logEvent as Partial<AuditLogEvent>;
+  return {
+    ...event as AuditLogEvent,
+    target_resource: event.target_resource || 'system'
+  };
+};

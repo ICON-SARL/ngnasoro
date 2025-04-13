@@ -1,30 +1,8 @@
 
-// Exporting the enums separately to make sure they're properly exported
-export enum AuditLogCategory {
-  AUTHENTICATION = 'authentication',
-  DATA_ACCESS = 'data_access',
-  ADMIN_ACTION = 'admin_action',
-  SFD_OPERATIONS = 'sfd_operations',
-  SUBSIDY_OPERATIONS = 'subsidy_operations',
-  USER_MANAGEMENT = 'user_management',
-  SYSTEM = 'system',
-  TOKEN_MANAGEMENT = 'token_management',
-  FINANCIAL = 'financial',
-  INTEGRATION = 'integration',
-  SECURITY = 'security',
-  MONITORING = 'monitoring',
-  LOAN_OPERATIONS = 'loan_operations',
-  LOAN_PROCESSING = 'loan_processing'
-}
-
-export enum AuditLogSeverity {
-  INFO = 'info',
-  WARNING = 'warning',
-  ERROR = 'error',
-  CRITICAL = 'critical'
-}
+import { AuditLogCategory, AuditLogSeverity } from './index';
 
 export interface AuditLogEvent {
+  id?: string;
   user_id: string;
   action: string;
   category: AuditLogCategory;
@@ -32,42 +10,38 @@ export interface AuditLogEvent {
   status: 'success' | 'failure' | 'pending';
   target_resource: string;
   details?: Record<string, any>;
+  metadata?: Record<string, any>; // Legacy field, use details instead
   error_message?: string;
   ip_address?: string;
   device_info?: string;
   created_at?: string;
-  id?: string; // Added for compatibility with database responses
 }
 
-// Interface for API response
-export interface AuditLogResponse {
-  logs: AuditLogEvent[];
-  count?: number;
-}
-
-// Interface for filter options
 export interface AuditLogFilterOptions {
-  userId?: string;
   category?: AuditLogCategory | AuditLogCategory[];
   severity?: AuditLogSeverity | AuditLogSeverity[];
   status?: 'success' | 'failure' | 'pending';
-  startDate?: string | Date;
-  endDate?: string | Date;
-  targetResource?: string;
+  startDate?: string;
+  endDate?: string;
+  userId?: string;
+  action?: string;
+  resource?: string;
   limit?: number;
   offset?: number;
+  sortBy?: 'created_at' | 'severity' | 'category';
+  sortOrder?: 'asc' | 'desc';
 }
 
-// Interface for audit log entry for services
-export interface AuditLogEntry extends AuditLogEvent {
-  // This alias ensures backward compatibility
-  metadata?: Record<string, any>; // Alias for details
+export interface AuditLogResponse {
+  logs: AuditLogEvent[];
+  total?: number;
+  page?: number;
+  pageSize?: number;
 }
 
-// Interface for CSV export response
 export interface AuditLogExportResult {
   success: boolean;
-  csvString?: string;
   filename?: string;
+  csvString?: string;
   message?: string;
 }
