@@ -31,56 +31,52 @@ const SfdSettingsPage: React.FC = () => {
             </CardHeader>
             <CardContent className="p-2">
               <nav className="space-y-1">
-                <TabsList className="flex flex-col h-auto bg-transparent space-y-1 p-0">
-                  <TabsTrigger 
-                    value="loan-plans" 
-                    onClick={() => setActiveTab('loan-plans')}
-                    className={`w-full justify-start px-3 ${activeTab === 'loan-plans' ? 'bg-gray-100' : 'bg-transparent'}`}
-                  >
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Plans de Prêt
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="agency-settings" 
-                    onClick={() => setActiveTab('agency-settings')}
-                    className={`w-full justify-start px-3 ${activeTab === 'agency-settings' ? 'bg-gray-100' : 'bg-transparent'}`}
-                  >
-                    <Building className="h-4 w-4 mr-2" />
-                    Paramètres Agence
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="security" 
-                    onClick={() => setActiveTab('security')}
-                    className={`w-full justify-start px-3 ${activeTab === 'security' ? 'bg-gray-100' : 'bg-transparent'}`}
-                  >
-                    <ShieldCheck className="h-4 w-4 mr-2" />
-                    Sécurité
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="notifications" 
-                    onClick={() => setActiveTab('notifications')}
-                    className={`w-full justify-start px-3 ${activeTab === 'notifications' ? 'bg-gray-100' : 'bg-transparent'}`}
-                  >
-                    <Bell className="h-4 w-4 mr-2" />
-                    Notifications
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="users" 
-                    onClick={() => setActiveTab('users')}
-                    className={`w-full justify-start px-3 ${activeTab === 'users' ? 'bg-gray-100' : 'bg-transparent'}`}
-                  >
-                    <Users className="h-4 w-4 mr-2" />
-                    Utilisateurs
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="documents" 
-                    onClick={() => setActiveTab('documents')}
-                    className={`w-full justify-start px-3 ${activeTab === 'documents' ? 'bg-gray-100' : 'bg-transparent'}`}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Documents
-                  </TabsTrigger>
-                </TabsList>
+                <Tabs value={activeTab} onValueChange={setActiveTab} orientation="vertical">
+                  <TabsList className="flex flex-col h-auto bg-transparent space-y-1 p-0">
+                    <TabsTrigger 
+                      value="loan-plans" 
+                      className={`w-full justify-start px-3 ${activeTab === 'loan-plans' ? 'bg-gray-100' : 'bg-transparent'}`}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Plans de Prêt
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="agency-settings" 
+                      className={`w-full justify-start px-3 ${activeTab === 'agency-settings' ? 'bg-gray-100' : 'bg-transparent'}`}
+                    >
+                      <Building className="h-4 w-4 mr-2" />
+                      Paramètres Agence
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="security" 
+                      className={`w-full justify-start px-3 ${activeTab === 'security' ? 'bg-gray-100' : 'bg-transparent'}`}
+                    >
+                      <ShieldCheck className="h-4 w-4 mr-2" />
+                      Sécurité
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="notifications" 
+                      className={`w-full justify-start px-3 ${activeTab === 'notifications' ? 'bg-gray-100' : 'bg-transparent'}`}
+                    >
+                      <Bell className="h-4 w-4 mr-2" />
+                      Notifications
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="users" 
+                      className={`w-full justify-start px-3 ${activeTab === 'users' ? 'bg-gray-100' : 'bg-transparent'}`}
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Utilisateurs
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="documents" 
+                      className={`w-full justify-start px-3 ${activeTab === 'documents' ? 'bg-gray-100' : 'bg-transparent'}`}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Documents
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </nav>
             </CardContent>
           </Card>
@@ -99,7 +95,7 @@ const SfdSettingsPage: React.FC = () => {
                       Configuration des informations de l'agence, coordonnées et règles opérationnelles.
                     </p>
                     <Separator />
-                    <div className="py-8 text-center text-muted-fore>ground">
+                    <div className="py-8 text-center text-muted-foreground">
                       Fonctionnalité en cours de développement
                     </div>
                   </div>
