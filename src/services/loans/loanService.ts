@@ -77,3 +77,145 @@ export const createLoan = async (loanData: CreateLoanInput): Promise<Loan | null
     return null;
   }
 };
+
+/**
+ * Fetches all loans for an SFD
+ */
+export const getSfdLoans = async (): Promise<Loan[]> => {
+  const { data, error } = await supabase
+    .from('sfd_loans')
+    .select('*, sfd_clients(full_name, email)')
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching loans:', error);
+    return [];
+  }
+  
+  return data.map(loan => ({
+    ...loan,
+    client_name: loan.sfd_clients?.full_name || 'Unknown Client'
+  })) as Loan[];
+};
+
+/**
+ * Approves a loan
+ */
+export const approveLoan = async (loanId: string, userId: string): Promise<boolean> => {
+  const { error } = await supabase
+    .from('sfd_loans')
+    .update({ 
+      status: 'approved',
+      approved_by: userId,
+      approved_at: new Date().toISOString()
+    })
+    .eq('id', loanId);
+  
+  if (error) {
+    console.error('Error approving loan:', error);
+    return false;
+  }
+  
+  return true;
+};
+
+/**
+ * Rejects a loan
+ */
+export const rejectLoan = async (loanId: string, userId: string, reason?: string): Promise<boolean> => {
+  const { error } = await supabase
+    .from('sfd_loans')
+    .update({ 
+      status: 'rejected',
+      approved_by: userId,
+      approved_at: new Date().toISOString()
+    })
+    .eq('id', loanId);
+  
+  if (error) {
+    console.error('Error rejecting loan:', error);
+    return false;
+  }
+  
+  return true;
+};
+
+/**
+ * Disburses (activates) a loan
+ */
+export const disburseLoan = async (loanId: string, userId: string): Promise<boolean> => {
+  const { error } = await supabase
+    .from('sfd_loans')
+    .update({ 
+      status: 'active',
+      disbursed_at: new Date().toISOString()
+    })
+    .eq('id', loanId);
+  
+  if (error) {
+    console.error('Error disbursing loan:', error);
+    return false;
+  }
+  
+  return true;
+};
+
+/**
+ * Records a payment for a loan
+ */
+export const recordLoanPayment = async (
+  loanId: string, 
+  amount: number, 
+  paymentMethod: string, 
+  userId: string
+): Promise<boolean> => {
+  const { error } = await supabase
+    .from('loan_payments')
+    .insert({
+      loan_id: loanId,
+      amount,
+      payment_method: paymentMethod,
+      status: 'completed'
+    });
+  
+  if (error) {
+    console.error('Error recording payment:', error);
+    return false;
+  }
+  
+  return true;
+};
+
+/**
+ * Fetches payments for a specific loan
+ */
+export const getLoanPayments = async (loanId: string) => {
+  const { data, error } = await supabase
+    .from('loan_payments')
+    .select('*')
+    .eq('loan_id', loanId)
+    .order('payment_date', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching loan payments:', error);
+    return [];
+  }
+  
+  return data;
+};
+
+/**
+ * Gets loan details by ID
+ */
+export const getLoanById = async (loanId: string): Promise<Loan | null> => {
+  return fetchLoanById(loanId);
+};
+
+/**
+ * Sends a payment reminder
+ */
+export const sendPaymentReminder = async (loanId: string): Promise<boolean> => {
+  console.log(`Sending payment reminder for loan ${loanId}`);
+  // In a real implementation, this would call an API to send an SMS or email
+  return true;
+};

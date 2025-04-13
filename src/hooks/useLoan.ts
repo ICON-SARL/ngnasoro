@@ -1,13 +1,13 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Loan } from '@/types/sfdClients';
-import { fetchLoanById } from '@/services/loans/loanService';
+import { loanService } from '@/utils/sfdLoanApi';
 
 export const useLoan = (loanId: string) => {
   const query = useQuery({
     queryKey: ['loan', loanId],
     queryFn: async (): Promise<Loan | null> => {
-      return fetchLoanById(loanId);
+      return loanService.fetchLoanById(loanId);
     },
     enabled: !!loanId
   });
