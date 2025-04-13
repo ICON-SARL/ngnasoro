@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -45,7 +44,7 @@ const ProfilePage = () => {
         description: "Vous avez été déconnecté avec succès"
       });
       
-      // Force a reload to clear any remaining state
+      // Force une redirection vers la page d'auth et un rechargement complet
       window.location.href = '/auth';
     } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);

@@ -17,7 +17,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 
 export function SfdHeader() {
-  const { user, signOut, activeSfdId } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -30,7 +30,6 @@ export function SfdHeader() {
         description: "Veuillez patienter..."
       });
       
-      // Call signOut method
       const { error } = await signOut();
       
       if (error) {
@@ -42,8 +41,8 @@ export function SfdHeader() {
         description: "Vous avez été déconnecté avec succès"
       });
       
-      // Force a full page reload to clear any remaining state
-      window.location.href = '/auth';
+      // Force une redirection vers la page d'auth et un rechargement complet
+      window.location.href = '/sfd/auth';
     } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
       toast({
@@ -53,7 +52,7 @@ export function SfdHeader() {
       });
     }
   };
-
+  
   const getInitials = (name: string) => {
     return name
       .split(' ')

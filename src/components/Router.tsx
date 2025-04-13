@@ -44,13 +44,13 @@ export const MobileRouter = () => {
         <Route path="/test-auth" element={<TestAuth />} />
         <Route path="/splash" element={<SplashScreen />} />
         
-        {/* Mobile flow routes - Important: These routes are relative to the parent route */}
+        {/* Mobile flow routes */}
         <Route path="/*" element={<MobileFlowPage />} />
         
         {/* Redirect to mobile flow by default if logged in, otherwise to login */}
         <Route 
           path="/" 
-          element={user ? <Navigate to="/mobile-flow/main" replace /> : <Navigate to="/login" replace />} 
+          element={user ? <Navigate to="/mobile-flow/main" replace /> : <Navigate to="/auth" replace />} 
         />
         
         {/* Not found route */}

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/hooks/useAuth';
 import { LocalizationProvider } from '@/contexts/LocalizationContext';
@@ -50,7 +50,7 @@ export default function App() {
             <Route path="/mobile-flow/*" element={<MobileRouter />} />
             
             {/* Redirect root to login */}
-            <Route path="/" element={<ClientAuthUI />} />
+            <Route path="/" element={<Navigate to="/auth" replace />} />
             
             {/* Not found page */}
             <Route path="*" element={<NotFound />} />

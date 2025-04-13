@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -30,6 +29,11 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
   
   const handleLogout = async () => {
     try {
+      toast({
+        title: "Déconnexion en cours",
+        description: "Veuillez patienter..."
+      });
+      
       const { error } = await signOut();
       
       if (error) {
@@ -42,13 +46,8 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Clear any localStorage items
-      localStorage.removeItem('adminLastSeen');
-      localStorage.removeItem('sb-xnqysvnychmsockivqhb-auth-token');
-      localStorage.removeItem('supabase.auth.token');
-      
-      // Force a full page reload to clear any remaining state
-      window.location.href = '/auth';
+      // Force une redirection vers la page d'auth et un rechargement complet
+      window.location.href = '/admin/auth';
     } catch (error: any) {
       console.error('Logout error:', error);
       toast({
@@ -71,7 +70,6 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
     return location.pathname === route;
   };
 
-  // Removed the SFDs, Subventions, and Demandes SFD links
   const navLinks = [
     { name: 'Tableau de bord', icon: <LayoutDashboard className="w-4 h-4 mr-2" />, path: '/super-admin-dashboard' },
     { name: 'Gestion SFD', icon: <PieChart className="w-4 h-4 mr-2" />, path: '/sfd-management' },

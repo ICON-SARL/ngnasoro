@@ -59,10 +59,10 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
         <SfdSelectorPage />
       } />
       
-      {/* Default route - redirect to main instead of having nested main */}
+      {/* Default route - redirect to main dashboard */}
       <Route index element={<Navigate to="main" replace />} />
       
-      {/* Catch-all route */}
+      {/* Catch-all route - fallback to main dashboard */}
       <Route path="*" element={<Navigate to="main" replace />} />
     </Routes>
   );
