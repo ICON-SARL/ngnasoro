@@ -1,14 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, User, Bell, Shield, Info, ChevronRight } from 'lucide-react';
-import MobileHeader from '@/components/mobile/MobileHeader';
-import MobileMenu from '@/components/mobile/MobileMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import MobileMenu from '@/components/mobile/MobileMenu';
 
 const AccountPage: React.FC = () => {
   const navigate = useNavigate();
@@ -39,8 +38,6 @@ const AccountPage: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <MobileHeader />
-      
       <div className="px-4 py-4">
         <div className="flex items-center mb-6">
           <Button variant="ghost" className="p-1" onClick={() => navigate(-1)}>

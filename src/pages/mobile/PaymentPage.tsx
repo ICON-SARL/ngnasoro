@@ -4,11 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, QrCode, Smartphone, CreditCard } from 'lucide-react';
-import MobileHeader from '@/components/mobile/MobileHeader';
-import MobileMenu from '@/components/mobile/MobileMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { useTransactions } from '@/hooks/useTransactions';
 import { formatCurrency } from '@/utils/formatters';
+import MobileMenu from '@/components/mobile/MobileMenu';
 
 const PaymentPage: React.FC = () => {
   const navigate = useNavigate();
@@ -37,8 +36,6 @@ const PaymentPage: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <MobileHeader />
-      
       <div className="px-4 py-4">
         <div className="flex items-center mb-6">
           <Button variant="ghost" className="p-1" onClick={() => navigate(-1)}>
