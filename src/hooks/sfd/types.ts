@@ -79,4 +79,5 @@ export interface LoanPaymentParams {
   amount: number;
   paymentMethod?: string;
   description?: string;
+  reference?: string;
 }
