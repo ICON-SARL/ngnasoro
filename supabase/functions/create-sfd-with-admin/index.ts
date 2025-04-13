@@ -42,15 +42,6 @@ serve(async (req) => {
     // Create Supabase client with service key for admin operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Verify user authentication
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Non autorisé" }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
     // Parse request body
     const { sfdData, createAdmin, adminData } = await req.json();
     console.log("Processing request:", { 
@@ -131,6 +122,7 @@ serve(async (req) => {
         );
       }
       
+      console.error("Error creating SFD:", sfdError);
       return new Response(
         JSON.stringify({ error: `Erreur lors de la création de la SFD: ${sfdError.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

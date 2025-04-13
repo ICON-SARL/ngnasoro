@@ -31,9 +31,15 @@ export function useCreateSfdMutation() {
 
       try {
         console.log("Preparing data for submission:", {
-          sfdData: { ...sfdData, password: adminData ? "********" : undefined },
-          createAdmin
+          sfdData: { ...sfdData },
+          createAdmin,
+          hasAdminData: !!adminData
         });
+        
+        // Vérification que les données de l'administrateur sont correctes si nécessaire
+        if (createAdmin && (!adminData || !adminData.email || !adminData.password || !adminData.full_name)) {
+          throw new Error("Les informations de l'administrateur sont incomplètes");
+        }
         
         // Make the request to the Edge Function with proper auth token
         const { data, error } = await supabase.functions.invoke('create-sfd-with-admin', {

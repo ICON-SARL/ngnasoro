@@ -13,12 +13,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { SfdFormValues, sfdFormSchema } from './schemas/sfdFormSchema';
+import { Loader2 } from 'lucide-react';
 
 interface SfdFormProps {
   defaultValues?: SfdFormValues;
   onSubmit: (data: SfdFormValues) => void;
   onCancel: () => void;
-  isLoading: boolean;
+  isLoading?: boolean;
   formMode: 'create' | 'edit';
   sfdId?: string;
 }
@@ -27,7 +28,7 @@ export function SfdForm({
   defaultValues,
   onSubmit,
   onCancel,
-  isLoading,
+  isLoading = false,
   formMode,
   sfdId
 }: SfdFormProps) {
@@ -50,6 +51,7 @@ export function SfdForm({
   });
 
   const handleSubmit = (data: SfdFormValues) => {
+    console.log("SfdForm: handleSubmit called with", data);
     onSubmit(data);
   };
 
@@ -69,6 +71,7 @@ export function SfdForm({
                     placeholder="Entrez le nom" 
                     {...field} 
                     className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
@@ -88,6 +91,7 @@ export function SfdForm({
                     placeholder="Code unique" 
                     {...field} 
                     className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
@@ -110,6 +114,7 @@ export function SfdForm({
                     {...field} 
                     className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                     value={field.value || ''}
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
@@ -128,6 +133,7 @@ export function SfdForm({
                   <select 
                     {...field}
                     className="h-9 w-full text-sm rounded-md border border-slate-300 focus:border-blue-400 bg-white"
+                    disabled={isLoading}
                   >
                     <option value="active">Actif</option>
                     <option value="pending">En attente</option>
@@ -155,6 +161,7 @@ export function SfdForm({
                     {...field} 
                     className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                     value={field.value || ''}
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
@@ -176,6 +183,7 @@ export function SfdForm({
                     {...field} 
                     className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                     value={field.value || ''}
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
@@ -198,6 +206,7 @@ export function SfdForm({
                     {...field} 
                     className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                     value={field.value || ''}
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
@@ -218,6 +227,7 @@ export function SfdForm({
                     {...field} 
                     className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                     value={field.value || ''}
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
@@ -239,6 +249,7 @@ export function SfdForm({
                   {...field} 
                   className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                   value={field.value || ''}
+                  disabled={isLoading}
                 />
               </FormControl>
               <FormMessage className="text-xs" />
@@ -259,6 +270,7 @@ export function SfdForm({
                   {...field} 
                   className="min-h-24 text-sm rounded-md border-slate-300 focus:border-blue-400"
                   value={field.value || ''}
+                  disabled={isLoading}
                 />
               </FormControl>
               <FormMessage className="text-xs" />
@@ -282,12 +294,20 @@ export function SfdForm({
                     className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                     onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
                     value={field.value || 0}
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
+        )}
+        
+        {isLoading && (
+          <div className="flex items-center justify-center py-2">
+            <Loader2 className="animate-spin h-5 w-5 text-blue-500 mr-2" />
+            <span className="text-sm text-blue-500">Traitement en cours...</span>
+          </div>
         )}
       </form>
     </Form>

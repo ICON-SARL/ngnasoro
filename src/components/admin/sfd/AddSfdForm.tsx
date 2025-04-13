@@ -1,334 +1,228 @@
 
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { 
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { SfdForm } from './SfdForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SfdFormValues, sfdFormSchema } from './schemas/sfdFormSchema';
-import { Loader2 } from 'lucide-react';
-import { SfdLogoUploader } from './components/SfdLogoUploader';
-import { storageApi } from '@/utils/api/modules/storageApi';
-import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { SfdFormValues } from './schemas/sfdFormSchema';
 
-interface AddSfdFormProps {
-  onSuccess?: () => void;
-  onCancel?: () => void;
-  onSubmit: (formData: SfdFormValues, createAdmin: boolean, adminData: any) => void;
+interface AdminFormData {
+  full_name: string;
+  email: string;
+  password: string;
 }
 
-export function AddSfdForm({ onSuccess, onCancel, onSubmit }: AddSfdFormProps) {
-  const [activeTab, setActiveTab] = useState('info');
-  const [createAdmin, setCreateAdmin] = useState(false);
-  const [adminData, setAdminData] = useState({
+interface AddSfdFormProps {
+  onSubmit: (formData: SfdFormValues, createAdmin: boolean, adminData: AdminFormData | null) => void;
+  onCancel: () => void;
+  isSubmitting?: boolean;
+}
+
+export function AddSfdForm({ onSubmit, onCancel, isSubmitting = false }: AddSfdFormProps) {
+  const [activeTab, setActiveTab] = useState<string>('sfd');
+  const [createAdmin, setCreateAdmin] = useState<boolean>(false);
+  const [adminData, setAdminData] = useState<AdminFormData>({
+    full_name: '',
     email: '',
     password: '',
-    full_name: '',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const { toast } = useToast();
-
-  const form = useForm<SfdFormValues>({
-    resolver: zodResolver(sfdFormSchema),
-    defaultValues: {
-      name: '',
-      code: '',
-      region: '',
-      description: '',
-      contact_email: '',
-      phone: '',
-      status: 'active',
-      subsidy_balance: 0,
-      logo_url: null
-    }
-  });
-
-  const handleSubmit = async (data: SfdFormValues) => {
-    setIsSubmitting(true);
-    setIsUploading(false);
-    
-    try {
-      let updatedData = { ...data };
-      
-      // Upload logo if provided
-      if (logoFile) {
-        setIsUploading(true);
-        try {
-          const fileName = `sfd-logos/${Date.now()}-${logoFile.name.replace(/\s+/g, '-')}`;
-          const uploadResult = await storageApi.uploadFile('sfd-assets', fileName, logoFile);
-          
-          if (uploadResult) {
-            const logoUrl = storageApi.getFileUrl('sfd-assets', fileName);
-            updatedData.logo_url = logoUrl;
-          }
-        } catch (error) {
-          console.error('Erreur lors du téléchargement du logo:', error);
-          toast({
-            title: 'Erreur',
-            description: 'Le téléchargement du logo a échoué. La SFD sera créée sans logo.',
-            variant: 'destructive',
-          });
-        } finally {
-          setIsUploading(false);
-        }
-      }
-      
-      await onSubmit(updatedData, createAdmin, createAdmin ? adminData : undefined);
-      if (onSuccess) onSuccess();
-    } catch (error) {
-      console.error('Erreur lors de la création de la SFD:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+  
+  // Pour vérifier si les données administrateur sont valides
+  const isAdminDataValid = () => {
+    if (!createAdmin) return true;
+    return (
+      adminData.full_name.trim() !== '' &&
+      adminData.email.trim() !== '' &&
+      adminData.password.trim().length >= 8
+    );
   };
 
-  const handleAdminDataChange = (field: string, value: string) => {
-    setAdminData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const handleFormSubmit = (formData: SfdFormValues) => {
+    console.log("AddSfdForm: handleFormSubmit", { formData, createAdmin, adminData: createAdmin ? adminData : null });
+    onSubmit(formData, createAdmin, createAdmin ? adminData : null);
   };
 
-  const handleLogoChange = (file: File | null) => {
-    setLogoFile(file);
+  const handleAdminDataChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setAdminData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const toggleCreateAdmin = () => {
+    setCreateAdmin(!createAdmin);
+    if (!createAdmin) {
+      setActiveTab('admin');
+    }
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full">
-            <TabsTrigger value="info" className="flex-1">Informations SFD</TabsTrigger>
-            <TabsTrigger value="admin" className="flex-1">Administrateur</TabsTrigger>
-            <TabsTrigger value="subsidy" className="flex-1">Subvention</TabsTrigger>
-          </TabsList>
+    <div className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-2">
+          <TabsTrigger value="sfd">Informations SFD</TabsTrigger>
+          <TabsTrigger value="admin" disabled={!createAdmin}>Admin SFD</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="sfd" className="space-y-4 pt-4">
+          <SfdForm 
+            onSubmit={handleFormSubmit} 
+            onCancel={onCancel} 
+            isLoading={isSubmitting}
+            formMode="create"
+          />
           
-          <TabsContent value="info" className="space-y-4 pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nom de la SFD</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nom de la SFD" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Code SFD</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Code unique" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="region"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Région</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Région d'activité" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="contact_email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email de contact</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="Email de contact" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Téléphone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Numéro de téléphone" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="col-span-1 md:col-span-2">
-                <SfdLogoUploader 
-                  logoFile={logoFile}
-                  logoUrl={null}
-                  onLogoChange={handleLogoChange}
-                />
-              </div>
-              
-              <div className="col-span-1 md:col-span-2">
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Description de la SFD" 
-                          rows={3} 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="admin" className="space-y-4 pt-4">
-            <div className="bg-muted p-4 rounded-lg mb-4">
-              <div className="flex items-start space-x-3 mb-4">
-                <Checkbox 
-                  id="create-admin" 
-                  checked={createAdmin}
-                  onCheckedChange={(checked) => setCreateAdmin(checked === true)} 
-                />
-                <div>
-                  <label 
-                    htmlFor="create-admin" 
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                  >
-                    Créer un administrateur pour cette SFD
-                  </label>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    L'administrateur aura accès au tableau de bord de la SFD
-                  </p>
-                </div>
-              </div>
-              
-              {createAdmin && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Nom complet</label>
-                      <Input 
-                        value={adminData.full_name}
-                        onChange={(e) => handleAdminDataChange('full_name', e.target.value)}
-                        placeholder="Nom complet de l'administrateur"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Email</label>
-                      <Input 
-                        type="email"
-                        value={adminData.email}
-                        onChange={(e) => handleAdminDataChange('email', e.target.value)}
-                        placeholder="Email de l'administrateur"
-                      />
-                    </div>
-                    
-                    <div className="col-span-1 md:col-span-2 space-y-2">
-                      <label className="text-sm font-medium">Mot de passe</label>
-                      <Input 
-                        type="password"
-                        value={adminData.password}
-                        onChange={(e) => handleAdminDataChange('password', e.target.value)}
-                        placeholder="Mot de passe pour l'administrateur"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        L'administrateur pourra modifier son mot de passe après la première connexion.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="subsidy" className="space-y-4 pt-4">
-            <FormField
-              control={form.control}
-              name="subsidy_balance"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Montant de la subvention initiale (FCFA)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="0" 
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Montant initial de la subvention allouée à cette SFD. 
-                    Laissez 0 si aucune subvention n'est allouée.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <div className="mt-4 flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="createAdmin"
+              checked={createAdmin}
+              onChange={toggleCreateAdmin}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-          </TabsContent>
-        </Tabs>
-        
-        <div className="flex justify-end space-x-2">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onCancel}
-            disabled={isSubmitting || isUploading}
-          >
+            <Label htmlFor="createAdmin">Créer un administrateur pour cette SFD</Label>
+          </div>
+
+          {createAdmin && (
+            <div className="mt-2">
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={() => setActiveTab('admin')}
+              >
+                Configurer l'administrateur →
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="admin" className="space-y-4 pt-4">
+          {createAdmin ? (
+            <>
+              <Alert className="mb-4 bg-blue-50 text-blue-800 border-blue-200">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  Configurez les informations de l'administrateur pour cette SFD
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="admin-name">Nom complet</Label>
+                  <Input
+                    id="admin-name"
+                    name="full_name"
+                    value={adminData.full_name}
+                    onChange={handleAdminDataChange}
+                    placeholder="Nom complet de l'administrateur"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="admin-email">Email</Label>
+                  <Input
+                    id="admin-email"
+                    name="email"
+                    type="email"
+                    value={adminData.email}
+                    onChange={handleAdminDataChange}
+                    placeholder="email@sfd.com"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="admin-password">Mot de passe</Label>
+                  <Input
+                    id="admin-password"
+                    name="password"
+                    type="password"
+                    value={adminData.password}
+                    onChange={handleAdminDataChange}
+                    placeholder="Mot de passe (8 caractères minimum)"
+                  />
+                  {adminData.password && adminData.password.length < 8 && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Le mot de passe doit contenir au moins 8 caractères
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-between mt-6">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setActiveTab('sfd')}
+                >
+                  ← Retour aux informations SFD
+                </Button>
+                <Button 
+                  type="button"
+                  onClick={() => {
+                    const formElement = document.getElementById('sfd-form') as HTMLFormElement;
+                    if (formElement) {
+                      formElement.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                    }
+                  }}
+                  disabled={!isAdminDataValid() || isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Création en cours...
+                    </>
+                  ) : (
+                    'Créer la SFD avec administrateur'
+                  )}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8">
+              <p className="text-center text-muted-foreground mb-4">
+                Vous n'avez pas activé la création d'un administrateur pour cette SFD.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCreateAdmin(true);
+                  setActiveTab('sfd');
+                }}
+              >
+                Activer la création d'un administrateur
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {activeTab === 'sfd' && (
+        <div className="flex justify-end space-x-2 pt-6">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Annuler
           </Button>
           <Button 
-            type="submit"
-            disabled={isSubmitting || isUploading}
+            type="button"
+            onClick={() => {
+              const formElement = document.getElementById('sfd-form') as HTMLFormElement;
+              if (formElement) {
+                formElement.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+              }
+            }}
+            disabled={isSubmitting}
           >
-            {isSubmitting || isUploading ? (
+            {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {isUploading ? 'Téléchargement du logo...' : 'Création en cours...'}
+                Création en cours...
               </>
             ) : (
-              'Créer la SFD'
+              createAdmin ? 'Suivant →' : 'Créer la SFD'
             )}
           </Button>
         </div>
-      </form>
-    </Form>
+      )}
+    </div>
   );
 }
