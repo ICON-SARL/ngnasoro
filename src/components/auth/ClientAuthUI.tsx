@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
@@ -38,14 +37,17 @@ const ClientAuthUI = () => {
       const role = user.app_metadata?.role;
       console.log('User role from metadata:', role);
       
-      // Redirect based on role
-      if (role === 'admin') {
-        navigate('/super-admin-dashboard');
-      } else if (role === 'sfd_admin') {
-        navigate('/agency-dashboard');
-      } else {
-        navigate('/mobile-flow/main');
-      }
+      // Ajouter un petit délai pour s'assurer que les rôles sont correctement chargés
+      setTimeout(() => {
+        // Redirect based on role
+        if (role === 'admin') {
+          navigate('/super-admin-dashboard');
+        } else if (role === 'sfd_admin') {
+          navigate('/agency-dashboard');
+        } else {
+          navigate('/mobile-flow/main');
+        }
+      }, 100);
     }
   }, [user, userRole, loading, navigate, location.pathname]);
   

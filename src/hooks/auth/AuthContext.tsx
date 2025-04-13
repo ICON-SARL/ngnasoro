@@ -20,108 +20,112 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isSfdAdmin = userRole === UserRole.SfdAdmin;
 
   useEffect(() => {
-    const fetchSession = async () => {
+    let isComponentMounted = true;
+    
+    const initAuth = async () => {
       try {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, newSession) => {
+            if (!isComponentMounted) return;
+            
+            if (newSession?.user) {
+              const transformedUser = createUserFromSupabaseUser(newSession.user);
+              setUser(transformedUser);
+              console.log('Auth state changed:', {
+                event,
+                userId: newSession.user.id,
+                role: newSession.user.app_metadata?.role,
+              });
+            } else {
+              setUser(null);
+            }
+            
+            setSession(newSession);
+            if (event !== 'INITIAL_SESSION') {
+              setLoading(false);
+            }
+            
+            if (event === 'SIGNED_IN') {
+              logAuditEvent(
+                AuditLogCategory.AUTHENTICATION,
+                'user_login',
+                {
+                  login_method: 'password',
+                  timestamp: new Date().toISOString(),
+                  user_role: newSession?.user.app_metadata?.role
+                },
+                newSession?.user.id,
+                AuditLogSeverity.INFO,
+                'success'
+              ).catch(console.error);
+            } else if (event === 'SIGNED_OUT') {
+              logAuditEvent(
+                AuditLogCategory.AUTHENTICATION,
+                'user_logout',
+                {
+                  timestamp: new Date().toISOString()
+                },
+                user?.id,
+                AuditLogSeverity.INFO,
+                'success'
+              ).catch(console.error);
+            }
+          }
+        );
+
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error fetching session:', error);
+          if (isComponentMounted) {
+            setLoading(false);
+          }
           return;
         }
         
-        setSession(data.session);
-        if (data.session?.user) {
-          const transformedUser = createUserFromSupabaseUser(data.session.user);
-          setUser(transformedUser);
-        } else {
-          setUser(null);
+        if (isComponentMounted) {
+          setSession(data.session);
+          if (data.session?.user) {
+            const transformedUser = createUserFromSupabaseUser(data.session.user);
+            setUser(transformedUser);
+            console.log('Loaded user data:', {
+              id: data.session.user.id,
+              email: data.session.user.email,
+              role: data.session.user.app_metadata?.role,
+            });
+          }
+          
+          setLoading(false);
         }
         
-        if (data.session?.user) {
-          console.log('Loaded user data:', {
-            id: data.session.user.id,
-            email: data.session.user.email,
-            role: data.session.user.app_metadata?.role,
-            metadata: data.session.user.app_metadata,
-          });
-        }
+        return () => {
+          subscription.unsubscribe();
+        };
       } catch (err) {
-        console.error('Error in auth session fetching:', err);
-      } finally {
-        setLoading(false);
+        console.error('Error in auth initialization:', err);
+        if (isComponentMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        if (newSession?.user) {
-          const transformedUser = createUserFromSupabaseUser(newSession.user);
-          setUser(transformedUser);
-        } else {
-          setUser(null);
-        }
-        
-        setSession(newSession);
-        setLoading(false);
-        
-        if (newSession?.user) {
-          console.log('Auth state changed:', {
-            event,
-            userId: newSession.user.id,
-            role: newSession.user.app_metadata?.role,
-            metadata: newSession.user.app_metadata,
-          });
-        }
-        
-        if (event === 'SIGNED_IN') {
-          await logAuditEvent(
-            AuditLogCategory.AUTHENTICATION,
-            'user_login',
-            {
-              login_method: 'password',
-              timestamp: new Date().toISOString(),
-              user_role: newSession?.user.app_metadata?.role
-            },
-            newSession?.user.id,
-            AuditLogSeverity.INFO,
-            'success'
-          );
-        } else if (event === 'SIGNED_OUT') {
-          await logAuditEvent(
-            AuditLogCategory.AUTHENTICATION,
-            'user_logout',
-            {
-              timestamp: new Date().toISOString()
-            },
-            user?.id,
-            AuditLogSeverity.INFO,
-            'success'
-          );
-        }
-      }
-    );
+    initAuth();
 
     return () => {
-      authListener.subscription.unsubscribe();
+      isComponentMounted = false;
     };
   }, []);
 
   useEffect(() => {
-    const loadBiometricPreference = async () => {
-      try {
-        const storedPreference = localStorage.getItem('biometricEnabled');
-        if (storedPreference !== null) {
-          setBiometricEnabled(storedPreference === 'true');
-        }
-      } catch (error) {
-        console.error('Error loading biometric preference:', error);
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.log('Auth loading state timed out after 5 seconds');
+        setLoading(false);
       }
-    };
-
-    loadBiometricPreference();
-  }, []);
+    }, 5000); // 5 seconds timeout
+    
+    return () => clearTimeout(timeoutId);
+  }, [loading]);
 
   const signIn = async (email: string, password: string) => {
     try {
