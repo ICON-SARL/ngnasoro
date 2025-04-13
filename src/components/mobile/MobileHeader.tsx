@@ -1,6 +1,5 @@
 
-import React, { useState } from 'react';
-import ContextualHeader from './ContextualHeader';
+import React from 'react';
 import { 
   Select, 
   SelectContent,
@@ -8,10 +7,9 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { Shield } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import { Shield, Menu } from 'lucide-react';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+import { useToast } from '@/hooks/use-toast';
 
 const MobileHeader = () => {
   const { toast } = useToast();
@@ -30,20 +28,41 @@ const MobileHeader = () => {
   };
   
   return (
-    <div className="p-2">
-      <ContextualHeader />
-      
-      <div className="mt-3 flex justify-end">
-        <div className="w-[180px]">
+    <div className="bg-white shadow-sm">
+      <div className="bg-[#0D6A51] px-4 py-3 rounded-b-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-md">
+              <img 
+                src="/lovable-uploads/11c7df4b-bda8-4b49-b653-6ba0e7d3abad.png" 
+                alt="N'GNA SÔRÔ! Logo" 
+                className="h-8 w-8 object-contain"
+              />
+            </div>
+            <div>
+              <h1 className="text-white text-xl font-bold tracking-tight">
+                N'GNA <span className="text-[#F97316]">SÔRÔ!</span>
+              </h1>
+              <p className="text-yellow-300 text-xs font-medium">CVECA-ON</p>
+            </div>
+          </div>
+          
+          <button className="text-white p-2 hover:bg-white/10 rounded-full transition-colors">
+            <Menu className="h-6 w-6" />
+          </button>
+        </div>
+        
+        {/* SFD Selector positioned below the logo */}
+        <div className="mt-3">
           <Select value={activeSfdId || ''} onValueChange={handleSfdChange}>
-            <SelectTrigger className="bg-[#0D6A51] text-white border-[#F97316]/20 text-sm py-1 h-8 hover:bg-[#0D6A51]/90">
+            <SelectTrigger className="bg-white/10 text-white border-white/20 hover:bg-white/20 transition-colors">
               <SelectValue placeholder="Choisir une SFD" />
             </SelectTrigger>
             <SelectContent>
               {sfdData.map(sfd => (
-                <SelectItem key={sfd.id} value={sfd.id} className="text-sm">
+                <SelectItem key={sfd.id} value={sfd.id} className="flex items-center">
                   <div className="flex items-center">
-                    <Shield className={`h-3 w-3 mr-1 ${
+                    <Shield className={`h-4 w-4 mr-2 ${
                       sfd.id === 'primary-sfd' ? 'text-[#0D6A51]' : 
                       sfd.id === 'secondary-sfd' ? 'text-[#F97316]' : 'text-blue-600'
                     }`} />
