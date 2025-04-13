@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   AuditLogEntry, 
@@ -241,7 +242,7 @@ export async function exportAuditLogsToCSV(options?: AuditLogFilterOptions): Pro
     
     // Combine header and rows
     const csvString = [header, ...rows].join('\n');
-    const filename = `audit_logs_${new Date().toISOString().split('T')[0]}.csv';
+    const filename = `audit_logs_${new Date().toISOString().split('T')[0]}.csv`;
     
     return {
       success: true,
