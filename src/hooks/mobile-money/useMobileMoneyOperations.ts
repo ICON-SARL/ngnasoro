@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,8 +34,15 @@ export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
     error: withdrawalError
   } = useMobileMoneyWithdrawal();
 
-  // Combined error handling
-  useState(() => {
+  // Define mobile money providers
+  const mobileMoneyProviders = [
+    { id: 'orange', name: 'Orange Money' },
+    { id: 'mtn', name: 'MTN Money' },
+    { id: 'moov', name: 'Moov Money' }
+  ];
+
+  // Fix the error by using useEffect instead of useState for error handling
+  useEffect(() => {
     if (qrCodeError) setError(qrCodeError);
     else if (paymentError) setError(paymentError);
     else if (withdrawalError) setError(withdrawalError);
@@ -136,6 +143,9 @@ export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
     }
   };
 
+  // Combined isProcessing property
+  const isProcessing = isProcessingPayment || isProcessingWithdrawal;
+
   return {
     isProcessingPayment,
     isProcessingWithdrawal,
@@ -145,6 +155,8 @@ export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
     qrCodeData,
     isGeneratingQRCode,
     generateQRCode,
-    resetQRCode
+    resetQRCode,
+    mobileMoneyProviders,
+    isProcessing
   };
 }

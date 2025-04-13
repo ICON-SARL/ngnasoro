@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 interface UsePaymentActionsProps {
   loanId?: string;
   onMobileMoneyPayment: () => void;
-  sfdId?: string;
+  sfdId?: string;  // Added sfdId property
 }
 
 export function usePaymentActions({ loanId, onMobileMoneyPayment, sfdId }: UsePaymentActionsProps) {

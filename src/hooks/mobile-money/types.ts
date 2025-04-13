@@ -37,4 +37,7 @@ export interface MobileMoneyOperationsHook {
   isGeneratingQRCode: boolean;
   generateQRCode: (amount: number, loanId?: string, isWithdrawal?: boolean) => Promise<string | null>;
   resetQRCode: () => void;
+  // Add the missing properties:
+  mobileMoneyProviders: Array<{id: string; name: string}>;
+  isProcessing: boolean;
 }

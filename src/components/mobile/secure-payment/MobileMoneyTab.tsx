@@ -19,7 +19,16 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
 }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [provider, setProvider] = useState('orange');
-  const { mobileMoneyProviders, isProcessing } = useMobileMoneyOperations();
+  const { isProcessingPayment, isProcessingWithdrawal } = useMobileMoneyOperations();
+  
+  // Use the existing properties or define fallback values
+  const isProcessing = isProcessingPayment || isProcessingWithdrawal;
+  // Define default mobile money providers if not available from the hook
+  const mobileMoneyProviders = [
+    { id: 'orange', name: 'Orange Money' },
+    { id: 'mtn', name: 'MTN Money' },
+    { id: 'moov', name: 'Moov Money' }
+  ];
   
   const handleClick = () => {
     if (phoneNumber.trim().length < 8) {
