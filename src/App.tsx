@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -28,8 +27,9 @@ import NotFoundPage from '@/pages/NotFoundPage';
 import AuditLogsPage from '@/pages/AuditLogsPage';
 import CreditApprovalPage from '@/pages/CreditApprovalPage';
 import SfdManagementPage from '@/pages/SfdManagementPage';
+import SfdFundRequestsPage from './pages/SfdFundRequestsPage';
+import AdminMerefFundingPage from './pages/AdminMerefFundingPage';
 
-// Create a client
 const queryClient = new QueryClient();
 
 function App() {
@@ -92,6 +92,16 @@ function App() {
             <Route path="/sfd-loans" element={
               <RoleGuard requiredRole="sfd_admin">
                 <SfdLoansPage />
+              </RoleGuard>
+            } />
+            <Route path="/sfd/fund-requests" element={
+              <RoleGuard requiredRole="sfd_admin">
+                <SfdFundRequestsPage />
+              </RoleGuard>
+            } />
+            <Route path="/admin/fund-requests" element={
+              <RoleGuard requiredRole="admin">
+                <AdminMerefFundingPage />
               </RoleGuard>
             } />
             
