@@ -112,11 +112,17 @@ export function ReportGenerator({ onGenerateReport, className }: ReportGenerator
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-xs">Du</Label>
-              <DatePicker date={fromDate} onDateChange={setFromDate} />
+              <DatePicker 
+                selected={fromDate} 
+                onSelect={setFromDate} 
+              />
             </div>
             <div>
               <Label className="text-xs">Au</Label>
-              <DatePicker date={toDate} onDateChange={setToDate} />
+              <DatePicker 
+                selected={toDate} 
+                onSelect={setToDate} 
+              />
             </div>
           </div>
         </div>
