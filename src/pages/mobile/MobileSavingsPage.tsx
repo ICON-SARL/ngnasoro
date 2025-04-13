@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
 import { useNavigate } from 'react-router-dom';
@@ -18,7 +19,7 @@ const MobileSavingsPage: React.FC = () => {
   const { activeSfdAccount, isLoading: accountsLoading } = useSfdAccounts();
   const { transactions, isLoading: transactionsLoading } = useTransactions(
     user?.id, 
-    activeSfdAccount?.sfd_id
+    activeSfdAccount?.id // Using 'id' instead of 'sfd_id' to match the SfdAccount type
   );
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
