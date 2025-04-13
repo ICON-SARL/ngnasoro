@@ -18,7 +18,7 @@ import AdminAuthUI from '@/components/auth/AdminAuthUI';
 import SfdAuthUI from '@/components/auth/SfdAuthUI';
 import NotFound from '@/pages/NotFound';
 import SplashScreen from '@/components/mobile/SplashScreen';
-import SuperAdminDashboardPage from '@/pages/SuperAdminDashboardPage';
+import SuperAdminDashboard from '@/pages/SuperAdminDashboard'; // Fixed import path
 import SfdManagementPage from '@/pages/SfdManagementPage';
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
 
@@ -46,7 +46,7 @@ export default function App() {
               path="/super-admin-dashboard" 
               element={
                 <ProtectedRoute requireAdmin={true}>
-                  <SuperAdminDashboardPage />
+                  <SuperAdminDashboard />
                 </ProtectedRoute>
               } 
             />

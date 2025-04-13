@@ -10,9 +10,10 @@ import { useAuth } from '@/hooks/useAuth';
 interface MobileMenuProps {
   isOpen: boolean;
   onClose: () => void;
+  onLogout?: () => Promise<void>; // Added onLogout prop
 }
 
-const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen = false, onClose = () => {} }) => {
+const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen = false, onClose = () => {}, onLogout }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signOut } = useAuth();
@@ -32,15 +33,20 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen = false, onClose = () =>
         description: "Veuillez patienter..."
       });
       
-      await signOut();
-      
-      toast({
-        title: "Déconnexion réussie",
-        description: "Vous avez été déconnecté avec succès"
-      });
-      
-      // Force a redirect
-      window.location.href = '/auth';
+      // Use provided onLogout function if available, otherwise use signOut
+      if (onLogout) {
+        await onLogout();
+      } else {
+        await signOut();
+        
+        toast({
+          title: "Déconnexion réussie",
+          description: "Vous avez été déconnecté avec succès"
+        });
+        
+        // Force a redirect
+        window.location.href = '/auth';
+      }
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
       toast({
