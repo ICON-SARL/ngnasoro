@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,7 +22,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const MobileRouter = () => {
+export const MobileRouter = () => {
   const { user, loading } = useAuth();
 
   // If auth is still loading, don't render routes yet
@@ -56,5 +57,3 @@ const MobileRouter = () => {
     </QueryClientProvider>
   );
 };
-
-export default MobileRouter;
