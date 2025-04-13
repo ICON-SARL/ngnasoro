@@ -230,6 +230,10 @@ const SuperAdminDashboard = () => {
           </div>
         )}
         
+        {activeTab === 'meref-dashboard' && (
+          <MerefDashboard />
+        )}
+        
         <DashboardTabs 
           activeTab={activeTab}
           onTabChange={handleTabChange}

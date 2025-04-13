@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker'; // Updated import path
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Calendar, Download, FileDown, FileText, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { DateRange } from 'react-day-picker';
 
 interface ReportGeneratorProps {
   onGenerateReport?: (reportData: any) => void;
@@ -17,8 +18,10 @@ interface ReportGeneratorProps {
 export function ReportGenerator({ onGenerateReport, className }: ReportGeneratorProps) {
   const [reportType, setReportType] = useState('transactions');
   const [format, setFormat] = useState('excel');
-  const [fromDate, setFromDate] = useState<Date | undefined>(new Date());
-  const [toDate, setToDate] = useState<Date | undefined>(new Date());
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date()
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [filters, setFilters] = useState<string[]>([]);
   const { toast } = useToast();
@@ -41,7 +44,7 @@ export function ReportGenerator({ onGenerateReport, className }: ReportGenerator
       const reportData = {
         type: reportType,
         format,
-        dateRange: { from: fromDate, to: toDate },
+        dateRange,
         filters
       };
       
@@ -109,22 +112,10 @@ export function ReportGenerator({ onGenerateReport, className }: ReportGenerator
         
         <div className="space-y-2">
           <Label>Période</Label>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-xs">Du</Label>
-              <DatePicker 
-                selected={fromDate} 
-                onSelect={setFromDate} 
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Au</Label>
-              <DatePicker 
-                selected={toDate} 
-                onSelect={setToDate} 
-              />
-            </div>
-          </div>
+          <DateRangePicker
+            date={dateRange}
+            setDate={setDateRange}
+          />
         </div>
         
         <div>
