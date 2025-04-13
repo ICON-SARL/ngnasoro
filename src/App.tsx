@@ -6,8 +6,6 @@ import { AuthProvider } from '@/hooks/useAuth';
 import { Toaster } from '@/components/ui/toaster';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
-import ClientLoansPage from '@/pages/ClientLoansPage';
-import LoanApplicationPage from '@/pages/LoanApplicationPage';
 import ProfilePage from '@/pages/ProfilePage';
 import SfdSelectorPage from '@/pages/SFDSelector';
 import MobileFlowPage from '@/pages/MobileFlowPage';
@@ -17,16 +15,13 @@ import SfdLoginPage from '@/pages/SfdLoginPage';
 import AuthRedirectPage from '@/pages/AuthRedirectPage';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import UsersManagementPage from '@/pages/UsersManagementPage';
-import RoleGuard from '@/components/RoleGuard';
-import { UserRole } from '@/hooks/auth/types';
-import SfdAdminDashboard from '@/components/admin/SfdAdminDashboard';
-import SfdClientsPage from '@/pages/SfdClientsPage';
-import SfdSubsidyRequestsPage from '@/pages/SfdSubsidyRequestsPage';
+import RoleGuard from '@/components/guards/RoleGuard';
+import PermissionGuard from '@/components/guards/PermissionGuard';
+import { UserRole, PERMISSIONS } from '@/utils/auth/roles';
 import SfdLoansPage from '@/pages/SfdLoansPage';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import AuditLogsPage from '@/pages/AuditLogsPage';
-import CreditApprovalPage from '@/pages/CreditApprovalPage';
 import SfdManagementPage from '@/pages/SfdManagementPage';
 
 // Create a client
@@ -46,70 +41,62 @@ function App() {
             <Route path="/sfd/auth" element={<SfdLoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             
-            {/* Pages protégées - Admin */}
+            {/* Routes protégées - Super Admin (MEREF) */}
             <Route path="/super-admin-dashboard" element={
-              <RoleGuard requiredRole="admin">
+              <RoleGuard requiredRole={UserRole.SUPER_ADMIN}>
                 <SuperAdminDashboard />
               </RoleGuard>
             } />
             <Route path="/credit-approval" element={
-              <RoleGuard requiredRole="admin">
-                <CreditApprovalPage />
-              </RoleGuard>
+              <PermissionGuard requiredPermission={PERMISSIONS.VALIDATE_SFD_FUNDS}>
+                <SfdManagementPage />
+              </PermissionGuard>
             } />
             <Route path="/sfd-management" element={
-              <RoleGuard requiredRole="admin">
+              <PermissionGuard requiredPermission={PERMISSIONS.MANAGE_SFDS}>
                 <SfdManagementPage />
-              </RoleGuard>
+              </PermissionGuard>
             } />
             <Route path="/admin/users" element={
-              <RoleGuard requiredRole="admin">
+              <PermissionGuard requiredPermission={PERMISSIONS.MANAGE_USERS}>
                 <UsersManagementPage />
-              </RoleGuard>
+              </PermissionGuard>
             } />
             <Route path="/audit-logs" element={
-              <RoleGuard requiredRole="admin">
+              <RoleGuard requiredRole={UserRole.SUPER_ADMIN}>
                 <AuditLogsPage />
               </RoleGuard>
             } />
             
-            {/* Pages protégées - SFD Admin */}
+            {/* Routes protégées - Admin SFD */}
             <Route path="/agency-dashboard" element={
-              <RoleGuard requiredRole="sfd_admin">
-                <SfdAdminDashboard />
+              <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
+                <ProfilePage />
               </RoleGuard>
             } />
             <Route path="/sfd-clients" element={
-              <RoleGuard requiredRole="sfd_admin">
-                <SfdClientsPage />
-              </RoleGuard>
-            } />
-            <Route path="/sfd-subsidy-requests" element={
-              <RoleGuard requiredRole="sfd_admin">
-                <SfdSubsidyRequestsPage />
-              </RoleGuard>
+              <PermissionGuard requiredPermission={PERMISSIONS.MANAGE_CLIENTS}>
+                <ProfilePage />
+              </PermissionGuard>
             } />
             <Route path="/sfd-loans" element={
-              <RoleGuard requiredRole="sfd_admin">
+              <PermissionGuard requiredPermission={PERMISSIONS.MANAGE_SFD_LOANS}>
                 <SfdLoansPage />
-              </RoleGuard>
+              </PermissionGuard>
             } />
             
-            {/* Pages protégées - Client */}
+            {/* Routes protégées - Client */}
             <Route path="/mobile-flow/*" element={
-              <RoleGuard requiredRole="client">
+              <RoleGuard requiredRole={UserRole.CLIENT}>
                 <MobileFlowPage />
               </RoleGuard>
             } />
             
-            {/* Page d'accès refusé */}
+            {/* Page d'accès refusé et 404 */}
             <Route path="/access-denied" element={<AccessDeniedPage />} />
-            
-            {/* Page 404 */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
           
-          {/* Place Toaster outside of Routes but inside providers */}
           <Toaster />
         </AuthProvider>
       </QueryClientProvider>

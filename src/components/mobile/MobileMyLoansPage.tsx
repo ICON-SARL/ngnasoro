@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
 import { useClientLoans } from '@/hooks/useClientLoans';
@@ -12,6 +11,7 @@ import { Loan } from '@/types/sfdClients';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import MobileHeader from '@/components/mobile/MobileHeader';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface LoanCardProps {
   loan: Loan;
@@ -81,6 +81,8 @@ const MobileMyLoansPage: React.FC = () => {
   const { loans, isLoading } = useClientLoans();
   const [tabValue, setTabValue] = useState("all");
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
+  const canApplyForLoan = hasPermission('apply_for_loan');
   
   const filteredLoans = loans.filter(loan => {
     if (tabValue === 'all') return true;
@@ -158,13 +160,15 @@ const MobileMyLoansPage: React.FC = () => {
                       <p className="text-sm text-gray-500 mb-6 max-w-xs mx-auto">
                         Vous n'avez pas encore de prêt dans cette catégorie
                       </p>
-                      <Button 
-                        onClick={() => navigate('/loans/apply')}
-                        className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 px-6 py-2 rounded-full flex items-center gap-2 mx-auto"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Faire une demande
-                      </Button>
+                      {canApplyForLoan && (
+                        <Button 
+                          onClick={() => navigate('/loans/apply')}
+                          className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 px-6 py-2 rounded-full flex items-center gap-2 mx-auto"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Faire une demande
+                        </Button>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -180,14 +184,16 @@ const MobileMyLoansPage: React.FC = () => {
         </Card>
       </div>
       
-      <div className="fixed bottom-24 right-4">
-        <Button 
-          onClick={() => navigate('/loans/apply')}
-          className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 h-14 w-14 rounded-full shadow-lg flex items-center justify-center"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
-      </div>
+      {canApplyForLoan && (
+        <div className="fixed bottom-24 right-4">
+          <Button 
+            onClick={() => navigate('/loans/apply')}
+            className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 h-14 w-14 rounded-full shadow-lg flex items-center justify-center"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        </div>
+      )}
       
       <MobileNavigation />
     </div>
