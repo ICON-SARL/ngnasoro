@@ -1,8 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/auth';
-import { Role } from '@/utils/audit/auditPermissions';
+import { useAuth } from '@/hooks/useAuth';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 import { UserRole } from '@/utils/auth/roleTypes';
 
@@ -24,7 +23,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     }
 
     // Get role from user metadata
-    const userRole = user.app_metadata?.role;
+    const userRole = user.app_metadata?.role || 'user'; // Default to 'user' if role is not set
     
     // Debug log
     console.log('RoleGuard checking:', { 
@@ -34,9 +33,12 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     });
     
     // Handle special case where SFD_ADMIN should match sfd_admin role
-    const permitted = userRole === requiredRole || 
+    const permitted = 
+      userRole === requiredRole || 
       (requiredRole === 'sfd_admin' && userRole === 'sfd_admin') ||
       (requiredRole === UserRole.SFD_ADMIN && userRole === 'sfd_admin') ||
+      (requiredRole === 'client' && userRole === 'client') ||
+      (requiredRole === UserRole.CLIENT && userRole === 'client') ||
       (requiredRole === 'admin' && userRole === 'admin');
     
     setHasAccess(permitted);
@@ -70,7 +72,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
 
   if (!user) {
     // User not authenticated, redirect to login
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (!hasAccess) {

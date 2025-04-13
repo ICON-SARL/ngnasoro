@@ -47,56 +47,56 @@ function App() {
             
             {/* Pages protégées - Admin */}
             <Route path="/super-admin-dashboard" element={
-              <RoleGuard requiredRole={UserRole.ADMIN}>
+              <RoleGuard requiredRole="admin">
                 <SuperAdminDashboard />
               </RoleGuard>
             } />
             <Route path="/credit-approval" element={
-              <RoleGuard requiredRole={UserRole.ADMIN}>
+              <RoleGuard requiredRole="admin">
                 <CreditApprovalPage />
               </RoleGuard>
             } />
             <Route path="/sfd-management" element={
-              <RoleGuard requiredRole={UserRole.ADMIN}>
+              <RoleGuard requiredRole="admin">
                 <SfdManagementPage />
               </RoleGuard>
             } />
             <Route path="/admin/users" element={
-              <RoleGuard requiredRole={UserRole.ADMIN}>
+              <RoleGuard requiredRole="admin">
                 <UsersManagementPage />
               </RoleGuard>
             } />
             <Route path="/audit-logs" element={
-              <RoleGuard requiredRole={UserRole.ADMIN}>
+              <RoleGuard requiredRole="admin">
                 <AuditLogsPage />
               </RoleGuard>
             } />
             
             {/* Pages protégées - SFD Admin */}
             <Route path="/agency-dashboard" element={
-              <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
+              <RoleGuard requiredRole="sfd_admin">
                 <SfdAdminDashboard />
               </RoleGuard>
             } />
             <Route path="/sfd-clients" element={
-              <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
+              <RoleGuard requiredRole="sfd_admin">
                 <SfdClientsPage />
               </RoleGuard>
             } />
             <Route path="/sfd-subsidy-requests" element={
-              <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
+              <RoleGuard requiredRole="sfd_admin">
                 <SfdSubsidyRequestsPage />
               </RoleGuard>
             } />
             <Route path="/sfd-loans" element={
-              <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
+              <RoleGuard requiredRole="sfd_admin">
                 <SfdLoansPage />
               </RoleGuard>
             } />
             
             {/* Pages protégées - Client */}
             <Route path="/mobile-flow/*" element={
-              <RoleGuard requiredRole={UserRole.CLIENT}>
+              <RoleGuard requiredRole="client">
                 <MobileFlowPage />
               </RoleGuard>
             } />
