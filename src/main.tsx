@@ -4,6 +4,13 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
+// Declare the type for the window object to include our custom function
+declare global {
+  interface Window {
+    activateSystem: () => Promise<{ success: boolean, data?: any, error?: any }>;
+  }
+}
+
 // Fonction pour faciliter l'activation du système
 window.activateSystem = async () => {
   try {

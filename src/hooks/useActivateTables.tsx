@@ -15,10 +15,11 @@ export function useActivateTables() {
         description: "Synchronisation des rôles utilisateurs...",
       });
 
-      const { data, error } = await supabase.functions.invoke('synchronize-user-roles');
+      // Use the global function we defined in main.tsx
+      const result = await window.activateSystem();
       
-      if (error) {
-        console.error("Erreur lors de la synchronisation:", error);
+      if (!result.success) {
+        console.error("Erreur lors de la synchronisation:", result.error);
         toast({
           title: "Erreur",
           description: "Impossible de synchroniser les rôles utilisateurs",
@@ -27,10 +28,10 @@ export function useActivateTables() {
         return false;
       }
 
-      console.log("Résultat de la synchronisation:", data);
+      console.log("Résultat de la synchronisation:", result.data);
       toast({
         title: "Synchronisation réussie",
-        description: data.message || "Les rôles utilisateurs ont été synchronisés",
+        description: result.data?.message || "Les rôles utilisateurs ont été synchronisés",
       });
       return true;
     } catch (err) {
