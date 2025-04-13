@@ -36,12 +36,18 @@ export interface AuditLogEntry {
 
 export const logAuditEvent = async (logEntry: AuditLogEntry): Promise<void> => {
   try {
-    console.log('Audit log:', logEntry);
+    // Make sure target_resource has a default value if not provided
+    const entry = {
+      ...logEntry,
+      target_resource: logEntry.target_resource || 'system'
+    };
+    
+    console.log('Audit log:', entry);
     // In a real application, this would send the log to the server
     // await fetch('/api/audit-logs', {
     //   method: 'POST',
     //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(logEntry),
+    //   body: JSON.stringify(entry),
     // });
   } catch (error) {
     console.error('Failed to log audit event:', error);

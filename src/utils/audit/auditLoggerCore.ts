@@ -9,26 +9,30 @@ import {
   AuditLogExportResult,
   AuditLogResponse
 } from './auditLoggerTypes';
+import { ensureTargetResource, createAuditLog } from './auditMiddleware';
 
-export async function logAuditEvent(entry: AuditLogEntry) {
+export async function logAuditEvent(entry: Partial<AuditLogEntry>) {
   try {
+    // Use our middleware to ensure all required fields are present
+    const auditEntry = createAuditLog(entry);
+    
     // Validate required fields
-    if (!entry.action || !entry.category || !entry.severity || !entry.status) {
+    if (!auditEntry.action || !auditEntry.category || !auditEntry.severity || !auditEntry.status) {
       throw new Error('Missing required audit log fields');
     }
 
     // Handle metadata as an alias for details
-    const details = entry.details || entry.metadata || null;
+    const details = auditEntry.details || auditEntry.metadata || null;
 
     // Prepare the audit log entry with defaults
-    const auditEntry = {
-      user_id: entry.user_id || 'anonymous', // Make sure we accept 'anonymous' as a value
-      action: entry.action,
-      category: entry.category,
-      severity: entry.severity,
-      status: entry.status,
-      target_resource: entry.target_resource,
-      error_message: entry.error_message,
+    const finalEntry = {
+      user_id: auditEntry.user_id || 'anonymous', // Make sure we accept 'anonymous' as a value
+      action: auditEntry.action,
+      category: auditEntry.category,
+      severity: auditEntry.severity,
+      status: auditEntry.status,
+      target_resource: auditEntry.target_resource,
+      error_message: auditEntry.error_message,
       details: details,
       ip_address: null, // Will be filled by edge functions or server-side
       device_info: null, // Will be filled by edge functions or server-side
@@ -37,7 +41,7 @@ export async function logAuditEvent(entry: AuditLogEntry) {
     // Insert the audit log entry
     const { error } = await supabase
       .from('audit_logs')
-      .insert(auditEntry);
+      .insert(finalEntry);
 
     if (error) {
       throw error;
