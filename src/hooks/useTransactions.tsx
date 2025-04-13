@@ -228,13 +228,6 @@ export function useTransactions(userId?: string, sfdId?: string) {
     }
   }, [makeDeposit, makeWithdrawal, makeLoanRepayment, toast, transactionManager]);
 
-  // Load transactions on mount - this is commented to avoid infinite loops
-  // useEffect(() => {
-  //   if (effectiveUserId && effectiveSfdId) {
-  //     fetchTransactions();
-  //   }
-  // }, [effectiveUserId, effectiveSfdId, fetchTransactions]);
-
   return {
     isLoading,
     error,

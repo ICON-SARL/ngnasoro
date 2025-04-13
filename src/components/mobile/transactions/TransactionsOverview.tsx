@@ -34,10 +34,10 @@ const TransactionsOverview: React.FC = () => {
   useEffect(() => {
     // Charger les transactions et le solde lors du montage
     fetchTransactions();
-    if (isAccountVerified) {
+    if (isAccountVerified && getBalance) {
       loadBalance();
     }
-  }, [activeSfdId, isAccountVerified, fetchTransactions]);
+  }, [activeSfdId, isAccountVerified, fetchTransactions, getBalance]);
 
   const loadBalance = async () => {
     if (getBalance) {

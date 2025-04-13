@@ -39,14 +39,14 @@ export function useTransactionsFetch({ activeSfdId, userId, toast }: UseTransact
           // Ensure type is one of the allowed values in Transaction type
           type: (item.type || 'other') as Transaction['type'],
           sfd_id: activeSfdId
-        })) as Transaction[];
+        }));
       } else {
         // Generate mock data with proper typing
         const mockTx = generateMockTransactions(activeSfdId);
         txData = mockTx.map(tx => ({
           ...tx,
           type: (tx.type || 'other') as Transaction['type']
-        })) as Transaction[];
+        }));
       }
       
       setIsLoading(false);

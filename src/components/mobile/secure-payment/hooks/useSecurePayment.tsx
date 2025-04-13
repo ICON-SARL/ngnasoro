@@ -41,8 +41,11 @@ export function useSecurePayment({
   
   const effectiveSfdId = selectedSfdId || activeSfdId;
   
-  const transactionService = useTransactions(user?.id, effectiveSfdId);
-  const { makeDeposit, makeWithdrawal, makeLoanRepayment } = transactionService;
+  const { 
+    makeDeposit, 
+    makeWithdrawal, 
+    makeLoanRepayment 
+  } = useTransactions(user?.id, effectiveSfdId);
   
   const handleBackAction = () => {
     if (onBack) {
