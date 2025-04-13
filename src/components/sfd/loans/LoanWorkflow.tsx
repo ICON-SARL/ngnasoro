@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Plus, Settings, Calendar, Clock, CheckSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/auth/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { loanService } from '@/utils/sfdLoanApi';
 import LoanConfigDialog from './LoanConfigDialog';
 import NewLoanDialog from './NewLoanDialog';

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -30,15 +31,25 @@ export function SfdHeader() {
         description: "Veuillez patienter..."
       });
       
-      await signOut();
+      console.log("SfdHeader - Initiating signOut");
+      const { error } = await signOut();
       
+      if (error) {
+        console.error("SfdHeader - Error during signOut:", error);
+        throw error;
+      }
+      
+      console.log("SfdHeader - SignOut completed successfully");
       toast({
         title: "Déconnexion réussie",
         description: "Vous avez été déconnecté avec succès"
       });
       
-      // Force a full page reload and redirect
-      window.location.href = '/sfd/auth';
+      // Force a full page reload and redirect to clear any remaining state
+      console.log("SfdHeader - Redirecting to /sfd/auth");
+      setTimeout(() => {
+        window.location.href = '/sfd/auth';
+      }, 100);
     } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
       toast({
@@ -148,7 +159,7 @@ export function SfdHeader() {
                 Paramètres
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem onClick={handleLogout} className="text-red-500">
                 <LogOut className="mr-2 h-4 w-4" />
                 Se déconnecter
               </DropdownMenuItem>
