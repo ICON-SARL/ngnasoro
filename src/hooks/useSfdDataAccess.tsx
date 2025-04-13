@@ -10,7 +10,6 @@ export function useSfdDataAccess() {
     isLoading, 
     error, 
     setActiveSfd,
-    // Add the missing properties and methods that are causing errors
     setActiveSfdId,
     switchActiveSfd,
     getActiveSfdData,
@@ -23,7 +22,6 @@ export function useSfdDataAccess() {
     isLoading,
     error,
     setActiveSfd,
-    // Export the missing properties and methods
     setActiveSfdId,
     switchActiveSfd,
     getActiveSfdData,
