@@ -31,7 +31,8 @@ export const useLoan = (loanId: string) => {
         // Ensure all required properties from the Loan type are present with proper typing
         status: (data.status || 'pending') as Loan['status'],
         reference: data.reference || '',
-        duration: data.duration_months // For backward compatibility
+        // Do not add 'duration' as it's not in the Loan type
+        // Instead, we can use the existing duration_months which is already in the data
       };
       
       return loan;
