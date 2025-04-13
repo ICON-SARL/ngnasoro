@@ -1,30 +1,42 @@
+
 import React, { useState } from 'react';
 import { Menu } from 'lucide-react';
 import SfdSelector from './SfdSelector';
+
 const MobileHeader = () => {
   const [isOpen, setIsOpen] = useState(false);
-  return <div className="bg-white">
-      <div className="bg-[#0D6A51] px-4 py-4 rounded-b-2xl shadow-md">
+  return (
+    <div className="bg-white">
+      <div className="bg-[#0D6A51] px-4 py-3 rounded-b-2xl shadow-md">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm">
-              <img alt="N'GNA SÔRÔ! Logo" src="/lovable-uploads/90c4efc4-a4a5-4961-a8b7-e5ee8eab2649.png" className="h-12 w-12 object-contain" />
+            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm">
+              <img 
+                alt="N'GNA SÔRÔ! Logo" 
+                src="/lovable-uploads/90c4efc4-a4a5-4961-a8b7-e5ee8eab2649.png" 
+                className="h-10 w-10 object-contain" 
+              />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">
+              <h1 className="text-xl font-bold tracking-tight text-white">
                 N'GNA <span className="text-[#fcb040]">SÔRÔ!</span>
               </h1>
             </div>
           </div>
           
-          <button className="text-white p-2 hover:bg-white/10 rounded-full transition-colors" onClick={() => setIsOpen(!isOpen)}>
-            <Menu className="h-6 w-6" />
+          <button 
+            className="text-white p-2 hover:bg-white/10 rounded-full transition-colors" 
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            <Menu className="h-5 w-5" />
           </button>
         </div>
         
-        {/* SFD Selector positioned below the logo */}
+        {/* Compact SFD Selector positioned below the logo */}
         <SfdSelector className="mt-2" />
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default MobileHeader;
