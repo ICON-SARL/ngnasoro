@@ -1,8 +1,8 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { usePaymentProcessor } from './usePaymentProcessor';
 import { useSfdAccounts, SfdLoanPaymentParams } from '@/hooks/useSfdAccounts';
 import { SfdClientAccount } from '@/hooks/sfd/types';
 
@@ -32,7 +32,6 @@ export const useSecurePayment = ({
   const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState<boolean>(false);
   const [qrDialogOpen, setQrDialogOpen] = useState<boolean>(false);
   const [insufficientBalance, setInsufficientBalance] = useState<boolean>(false);
-  const { processPayment } = usePaymentProcessor();
 
   const handleBackAction = () => {
     if (paymentSuccess) {
@@ -51,7 +50,8 @@ export const useSecurePayment = ({
 
     try {
       // Simulate payment processing
-      const paymentResult = await processPayment(transactionAmount);
+      // Instead of using processPayment, we'll implement the logic directly here
+      const paymentResult = await simulatePaymentProcessing(transactionAmount);
 
       if (paymentResult.success) {
         setProgress(100);
@@ -106,7 +106,17 @@ export const useSecurePayment = ({
     } finally {
       setProgress(0);
     }
-  }, [transactionAmount, processPayment, onComplete, toast, loanId, makeLoanPayment]);
+  }, [transactionAmount, loanId, makeLoanPayment, onComplete, toast]);
+
+  // Helper function to simulate payment processing
+  const simulatePaymentProcessing = async (amount: number): Promise<{success: boolean}> => {
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // 80% success rate for simulation purposes
+    const isSuccess = Math.random() > 0.2;
+    return { success: isSuccess };
+  };
 
   const handleMobileMoneyPayment = () => {
     setMobileMoneyInitiated(true);
