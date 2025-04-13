@@ -5,19 +5,25 @@ import { Route, Routes, Navigate } from 'react-router-dom';
 import MobileFlowPage from './pages/MobileFlowPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import ProfilePage from './pages/ProfilePage';
+import AdminLoginPage from './pages/AdminLoginPage';
+import SfdLoginPage from './pages/SfdLoginPage';
+import AuthRedirectPage from './pages/AuthRedirectPage';
 import SfdSetupPage from './pages/SfdSetupPage';
 import SfdSelectorPage from './pages/SfdSelectorPage';
 import SfdManagementPage from './pages/admin/SfdManagementPage';
 import ProtectedRoute from './components/routes/ProtectedRoute';
 import PrivateLayout from './components/layouts/PrivateLayout';
+import NotFound from './pages/NotFound';
 
 const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/auth" element={<LoginPage />} />
+      <Route path="/login" element={<AuthRedirectPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/admin/auth" element={<AdminLoginPage />} />
+      <Route path="/sfd/auth" element={<SfdLoginPage />} />
       <Route path="/sfd-selector" element={<SfdSelectorPage />} />
       
       {/* Protected Routes */}
@@ -33,7 +39,7 @@ const AppRoutes = () => {
       <Route path="/sfd-management" element={<ProtectedRoute><SfdManagementPage /></ProtectedRoute>} />
       
       {/* Fallback Route */}
-      <Route path="*" element={<Navigate to="/mobile-flow" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };

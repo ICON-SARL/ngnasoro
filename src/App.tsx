@@ -1,13 +1,13 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import MobileMyLoansPageContainer from './pages/mobile/MobileMyLoansPage';
-import LoanApplicationPageContainer from './pages/mobile/LoanApplicationPage';
-import ClientLoanStatus from './components/ClientLoanStatus';
+import AdminLoginPage from './pages/AdminLoginPage';
+import SfdLoginPage from './pages/SfdLoginPage';
+import AuthRedirectPage from './pages/AuthRedirectPage';
 import MobileFlowPage from './pages/MobileFlowPage';
 
 // Create a client
@@ -27,19 +27,21 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
+            {/* Auth Routes */}
             <Route path="/auth" element={<LoginPage />} />
+            <Route path="/login" element={<AuthRedirectPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/admin/auth" element={<AdminLoginPage />} />
+            <Route path="/sfd/auth" element={<SfdLoginPage />} />
             
             {/* Mobile Flow Main Route */}
             <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
             
-            {/* Standalone Mobile Routes */}
-            <Route path="/mobile-flow/my-loans" element={<MobileMyLoansPageContainer />} />
-            <Route path="/loans/status" element={<ClientLoanStatus />} />
-            <Route path="/loans/apply" element={<LoanApplicationPageContainer />} />
-            
             {/* Default route */}
-            <Route path="/" element={<LoginPage />} />
+            <Route path="/" element={<Navigate to="/auth" replace />} />
+            
+            {/* Fallback - redirect to auth */}
+            <Route path="*" element={<Navigate to="/auth" replace />} />
           </Routes>
         </Router>
       </AuthProvider>
