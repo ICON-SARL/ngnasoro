@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart2, LayoutDashboard, FileText, Users, Search, PieChart } from 'lucide-react';
+import { BarChart2, LayoutDashboard, FileText, Users, Search, PieChart, RefreshCw } from 'lucide-react';
 
 interface DashboardTabsProps {
   activeTab: string;

@@ -7,3 +7,4 @@ export { RecentApprovals } from './RecentApprovals';
 export { SimplifiedMerefDashboard } from './SimplifiedMerefDashboard';
 export { SubsidySummary } from './SubsidySummary';
 export { PendingSubsidies } from './PendingSubsidies';
+export { SfdAccountTransfers } from './SfdAccountTransfers';
