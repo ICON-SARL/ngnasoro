@@ -16,3 +16,19 @@ export interface SfdClientRequest {
   status: string;
   created_at: string;
 }
+
+/**
+ * Interface representing an SFD account for display purposes
+ */
+export interface SfdAccountDisplay {
+  id: string;
+  name: string;
+  code?: string;
+  region?: string;
+  logoUrl?: string;
+  balance: number;
+  currency: string;
+  isDefault?: boolean;
+  isVerified?: boolean;
+  status?: string;
+}
