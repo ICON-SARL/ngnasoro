@@ -32,8 +32,10 @@ const MobileHeader = () => {
           </button>
         </div>
         
-        {/* Compact SFD Selector positioned below the logo */}
-        <SfdSelector className="mt-2" />
+        {/* SFD Selector added at the bottom */}
+        <div className="mt-2 px-2 pb-2">
+          <SfdSelector />
+        </div>
       </div>
     </div>
   );
