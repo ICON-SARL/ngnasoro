@@ -19,7 +19,7 @@ const MobileMyLoansPage: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-gradient-to-r from-[#0D6A51] to-[#064032] text-white rounded-b-3xl shadow-lg">
+      <div className="bg-gradient-to-r from-[#0D6A51] to-[#064032] text-white shadow-lg">
         <MobileHeader title="Mes demandes de prêt" />
         <p className="text-white/80 text-sm px-4 pb-8">
           Suivez l'état de vos demandes de prêt et leur traitement

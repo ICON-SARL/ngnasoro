@@ -81,7 +81,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   
   return (
     <div className="space-y-4 pb-20">
-      <div className="bg-[#0D6A51] text-white rounded-b-3xl shadow-md relative">
+      <div className="bg-[#0D6A51] text-white shadow-md relative">
         <MobileHeader showWelcomeText={false} />
       </div>
       
