@@ -6,9 +6,10 @@ import { useToast } from '@/hooks/use-toast';
 interface UsePaymentActionsProps {
   loanId?: string;
   onMobileMoneyPayment: () => void;
+  sfdId?: string;  // Added sfdId property
 }
 
-export function usePaymentActions({ loanId, onMobileMoneyPayment }: UsePaymentActionsProps) {
+export function usePaymentActions({ loanId, onMobileMoneyPayment, sfdId }: UsePaymentActionsProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -28,7 +29,8 @@ export function usePaymentActions({ loanId, onMobileMoneyPayment }: UsePaymentAc
       navigate('/mobile-flow/secure-payment', { 
         state: { 
           isRepayment: true, 
-          loanId 
+          loanId,
+          sfdId 
         } 
       });
     } else {
@@ -37,8 +39,17 @@ export function usePaymentActions({ loanId, onMobileMoneyPayment }: UsePaymentAc
     }
   };
 
+  const handleLoanApplication = (sfdId?: string) => {
+    navigate('/mobile-flow/loan-application', {
+      state: {
+        sfdId
+      }
+    });
+  };
+
   return {
     isProcessing,
-    handlePaymentMethod
+    handlePaymentMethod,
+    handleLoanApplication
   };
 }

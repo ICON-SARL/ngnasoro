@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Loan } from '@/types/sfdClients';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -44,7 +43,6 @@ const LoanPaymentOptions: React.FC<LoanPaymentOptionsProps> = ({
   
   const closeQRDialog = () => {
     setQrDialogOpen(false);
-    // If the callback exists, call it to refresh loan data
     if (onPaymentCompleted) {
       onPaymentCompleted();
     }
@@ -52,7 +50,6 @@ const LoanPaymentOptions: React.FC<LoanPaymentOptionsProps> = ({
   
   const closeMobileMoneyDialog = () => {
     setMobileloneyDialogOpen(false);
-    // If the callback exists, call it to refresh loan data
     if (onPaymentCompleted) {
       onPaymentCompleted();
     }
@@ -142,7 +139,6 @@ const LoanPaymentOptions: React.FC<LoanPaymentOptionsProps> = ({
         <TabsContent value="history">
           <div className="bg-white rounded-lg border p-4">
             <h3 className="font-semibold mb-3">Historique des remboursements</h3>
-            {/* Placeholder for payment history - would be replaced with actual data */}
             <div className="space-y-3">
               <div className="flex justify-between items-center border-b pb-2">
                 <div>
