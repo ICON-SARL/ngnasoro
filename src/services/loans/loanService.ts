@@ -47,9 +47,11 @@ export const fetchLoanById = async (loanId: string): Promise<Loan | null> => {
     purpose: data.purpose,
     status: data.status || 'pending',
     created_at: data.created_at,
-    // Handle optional properties safely with optional chaining and nullish coalescing
-    reference: data.reference ?? '',
-    updated_at: data.updated_at ?? data.created_at
+    // Handle optional properties safely - these may not exist in the database response
+    reference: data.reference || '',
+    updated_at: data.updated_at || data.created_at,
+    subsidy_amount: data.subsidy_amount || 0,
+    subsidy_rate: data.subsidy_rate || 0
   };
   
   return loan;
@@ -94,7 +96,12 @@ export const getSfdLoans = async (): Promise<Loan[]> => {
   
   return data.map(loan => ({
     ...loan,
-    client_name: loan.sfd_clients?.full_name || 'Unknown Client'
+    client_name: loan.sfd_clients?.full_name || 'Unknown Client',
+    // Ensure these properties exist even if they're not in the database
+    reference: loan.reference || '',
+    updated_at: loan.updated_at || loan.created_at,
+    subsidy_amount: loan.subsidy_amount || 0,
+    subsidy_rate: loan.subsidy_rate || 0
   })) as Loan[];
 };
 

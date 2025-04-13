@@ -1,21 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { sfdLoanApi } from '@/utils/sfdLoanApi';
+import { loanService } from '@/utils/sfdLoanApi';
 import { useAuth } from '@/hooks/useAuth';
-
-interface Loan {
-  id: string;
-  reference?: string;
-  client_id: string;
-  client_name?: string;
-  amount: number;
-  duration_months: number;
-  interest_rate: number;
-  status: string;
-  subsidy_amount: number;
-  created_at: string;
-}
+import { Loan } from '@/types/sfdClients';
 
 interface LoanFormData {
   client_id: string;
@@ -65,14 +52,15 @@ export function useLoansPage() {
   const fetchLoans = async () => {
     setLoading(true);
     try {
-      const loansData = await sfdLoanApi.getSfdLoans();
+      const loansData = await loanService.getSfdLoans();
       
       // Fix the type issue by only setting the loans array
       if (Array.isArray(loansData)) {
-        setLoans(loansData);
+        // Convert to the local Loan type to avoid type conflicts
+        setLoans(loansData as unknown as Loan[]);
       } else if (loansData && 'loans' in loansData) {
         // If it's a pagination object, just set the loans array
-        setLoans((loansData as LoanPaginationData).loans);
+        setLoans((loansData as LoanPaginationData).loans as unknown as Loan[]);
       } else {
         setLoans([]);
       }
@@ -125,7 +113,7 @@ export function useLoansPage() {
         subsidy_amount: loanForm.subsidy_requested ? parseFloat(loanForm.subsidy_amount) : 0,
       };
       
-      await sfdLoanApi.createLoan(loanData);
+      await loanService.createLoan(loanData);
       
       // If subsidy requested, create a subsidy request
       if (loanForm.subsidy_requested && parseFloat(loanForm.subsidy_amount) > 0) {

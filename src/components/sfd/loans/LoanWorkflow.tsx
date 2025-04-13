@@ -6,7 +6,7 @@ import { FileText, Plus, Settings, Calendar, Clock, CheckSquare } from 'lucide-r
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/auth/AuthContext';
-import { sfdLoanApi } from '@/utils/sfdLoanApi';
+import { loanService } from '@/utils/sfdLoanApi';
 import LoanConfigDialog from './LoanConfigDialog';
 import NewLoanDialog from './NewLoanDialog';
 import LoanDetailsDialog from './LoanDetailsDialog';
@@ -31,11 +31,13 @@ export const LoanWorkflow = () => {
   const fetchLoans = async () => {
     try {
       setLoading(true);
-      const response = await sfdLoanApi.getSfdLoans();
+      const response = await loanService.getSfdLoans();
       if (Array.isArray(response)) {
         setLoans(response);
       } else if (response && 'loans' in response) {
-        setLoans(response.loans);
+        setLoans(response.loans as Loan[]);
+      } else {
+        setLoans([]);
       }
     } catch (error) {
       console.error('Error fetching loans:', error);
