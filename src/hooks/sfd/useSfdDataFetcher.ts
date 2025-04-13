@@ -18,37 +18,53 @@ export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateActio
       setLoading(true);
       setError(null);
       
-      // Fetch SFDs from the database using the user_sfds join table
-      const { data, error } = await supabase
+      console.log('Fetching SFDs for user:', user.id);
+      
+      const { data: userSfds, error: userSfdsError } = await supabase
         .from('user_sfds')
-        .select(`
-          id,
-          is_default,
-          sfds:sfd_id(id, name, code, region, status)
-        `)
+        .select('sfd_id, is_default')
         .eq('user_id', user.id);
         
-      if (error) throw error;
+      if (userSfdsError) {
+        console.error('Error fetching user SFDs:', userSfdsError);
+        throw userSfdsError;
+      }
       
-      if (data) {
-        const sfdList: SfdData[] = data.map(item => ({
-          id: item.sfds.id,
-          name: item.sfds.name,
-          code: item.sfds.code,
-          region: item.sfds.region,
-          status: item.sfds.status || 'active',
-          token: null,
-          lastFetched: null
-        }));
+      if (userSfds && userSfds.length > 0) {
+        const sfdIds = userSfds.map(item => item.sfd_id);
         
-        setSfdData(sfdList);
+        const { data: sfdsData, error: sfdsError } = await supabase
+          .from('sfds')
+          .select('*')
+          .in('id', sfdIds);
+          
+        if (sfdsError) {
+          console.error('Error fetching SFDs details:', sfdsError);
+          throw sfdsError;
+        }
+        
+        if (sfdsData) {
+          // Map SFD data with is_default flag
+          const sfdsWithDefault: SfdData[] = sfdsData.map(sfd => {
+            const userSfd = userSfds.find(us => us.sfd_id === sfd.id);
+            return {
+              ...sfd,
+              is_default: userSfd?.is_default || false
+            } as SfdData;
+          });
+          
+          setSfdData(sfdsWithDefault);
+        }
+      } else {
+        console.log('User has no associated SFDs');
+        setSfdData([]);
       }
     } catch (err: any) {
       console.error('Error fetching SFDs:', err);
       setError(err.message);
       toast({
         title: "Erreur",
-        description: "Impossible de récupérer vos SFDs",
+        description: "Impossible de récupérer les SFDs associées à votre compte",
         variant: "destructive",
       });
     } finally {
