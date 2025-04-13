@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { ArrowRight, Clock, CheckCircle, XCircle, CreditCard, LucideIcon } from 'lucide-react';
+import { ArrowRight, Clock, CheckCircle, XCircle, CreditCard } from 'lucide-react';
 import { Loan } from '@/types/sfdClients';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -39,7 +39,7 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan }) => {
   const createdAt = new Date(loan.created_at);
   
   return (
-    <Card className="mb-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/mobile-flow/loan/${loan.id}`)}>
+    <Card className="mb-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/mobile-flow/loan-details`, { state: { loanId: loan.id } })}>
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-3">
           <div>
@@ -118,7 +118,7 @@ const MobileMyLoansPage: React.FC = () => {
                   Vous n'avez pas encore de prêt dans cette catégorie
                 </p>
                 <Button 
-                  onClick={() => navigate('/loans/apply')}
+                  onClick={() => navigate('/mobile-flow/loan-application')}
                   className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
                 >
                   Faire une demande

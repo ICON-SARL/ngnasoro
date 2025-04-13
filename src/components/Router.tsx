@@ -1,69 +1,33 @@
-
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-// Pages
-import LoginPage from '@/pages/LoginPage';
-import NotFound from '@/pages/NotFound';
-import MobileFlowPage from '@/pages/MobileFlowPage';
-import { CapacitorGuide } from '@/components/mobile/CapacitorGuide';
-import TestAuth from '@/components/auth/TestAuth';
-import SplashScreen from '@/components/mobile/SplashScreen';
-
-// Create a client for the mobile router with longer staleTime
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30 * 1000, // 30 seconds
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+import MobileMainPage from '@/components/mobile/MobileMainPage';
+import MobileAccountPage from '@/components/mobile/MobileAccountPage';
+import MobileTransferPage from '@/components/mobile/MobileTransferPage';
+import MobileSecurePaymentPage from '@/components/mobile/secure-payment/MobileSecurePaymentPage';
+import MobileLoanDetailsPage from '@/components/mobile/LoanDetailsPage';
+import LoanActivityPage from '@/components/mobile/LoanActivityPage';
+import LoanProcessPage from '@/components/mobile/LoanProcessPage';
+import LoanAgreementPage from '@/components/mobile/LoanAgreementPage';
+import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage';
+import MobileLoansPage from '@/pages/mobile/MobileLoansPage';
+import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
 
 export const MobileRouter = () => {
-  const { user, loading } = useAuth();
-
-  // If auth is still loading, don't render routes yet
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<Navigate to="/auth" replace />} />
-        <Route path="/capacitor-guide" element={<CapacitorGuide />} />
-        <Route path="/test-auth" element={<TestAuth />} />
-        <Route path="/splash" element={<SplashScreen />} />
-        
-        {/* Mobile flow routes */}
-        <Route path="/*" element={<MobileFlowPage />} />
-        
-        {/* Redirect to mobile flow by default if logged in, otherwise to login */}
-        <Route 
-          path="/" 
-          element={
-            user ? 
-              user.app_metadata?.role === 'client' || user.app_metadata?.role === 'user' ? 
-                <Navigate to="/mobile-flow/main" replace /> : 
-                user.app_metadata?.role === 'sfd_admin' ? 
-                  <Navigate to="/agency-dashboard" replace /> : 
-                  <Navigate to="/super-admin-dashboard" replace />
-              : <Navigate to="/auth" replace />
-          } 
-        />
-        
-        {/* Not found route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </QueryClientProvider>
+    <Routes>
+      <Route path="/" element={<Navigate to="/main" replace />} />
+      <Route path="/main" element={<MobileMainPage />} />
+      <Route path="/account" element={<MobileAccountPage />} />
+      <Route path="/transfer" element={<MobileTransferPage />} />
+      <Route path="/payment" element={<MobileSecurePaymentPage />} />
+      <Route path="/loan-details" element={<MobileLoanDetailsPage />} />
+      <Route path="/loans" element={<MobileLoansPage />} />
+      <Route path="/my-loans" element={<MobileMyLoansPage />} />
+      <Route path="/loan-activity" element={<LoanActivityPage />} />
+      <Route path="/loan-process" element={<LoanProcessPage />} />
+      <Route path="/loan-agreement" element={<LoanAgreementPage />} />
+      <Route path="/loan-application" element={<MobileLoanApplicationPage />} />
+      <Route path="*" element={<Navigate to="/main" replace />} />
+    </Routes>
   );
 };

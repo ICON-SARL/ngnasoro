@@ -44,31 +44,30 @@ const MobileLoansPage: React.FC = () => {
             title="Demander un prêt"
             description="Faites une demande de prêt auprès d'une SFD"
             icon={<CreditCard className="h-6 w-6" />}
-            onClick={() => navigate('/loans/apply')}
+            onClick={() => navigate('/mobile-flow/loan-application')}
           />
           
           <LoanTypeCard
             title="Prêt subventionné"
             description="Prêt avec taux d'intérêt réduit grâce à une subvention"
             icon={<BadgePercent className="h-6 w-6" />}
-            onClick={() => navigate('/loans/subsidized')}
+            onClick={() => navigate('/mobile-flow/loan-application')}
           />
           
           <LoanTypeCard
             title="Prêt d'équipement"
             description="Financement pour l'achat d'équipements agricoles"
             icon={<Building className="h-6 w-6" />}
-            onClick={() => navigate('/loans/equipment')}
+            onClick={() => navigate('/mobile-flow/loan-application')}
           />
         </div>
         
         <div className="mt-8 mb-4 flex justify-center">
           <Button 
-            onClick={() => navigate('/loans/apply')}
+            onClick={() => navigate('/mobile-flow/my-loans')}
             className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 flex items-center gap-2"
           >
-            <Plus className="h-4 w-4" />
-            Nouvelle demande de prêt
+            Voir mes prêts
           </Button>
         </div>
       </div>
