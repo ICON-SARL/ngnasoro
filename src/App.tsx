@@ -8,6 +8,7 @@ import RegisterPage from './pages/RegisterPage';
 import MobileMyLoansPageContainer from './pages/mobile/MobileMyLoansPage';
 import LoanApplicationPageContainer from './pages/mobile/LoanApplicationPage';
 import ClientLoanStatus from './components/ClientLoanStatus';
+import MobileFlowPage from './pages/MobileFlowPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -29,10 +30,16 @@ function App() {
             <Route path="/auth" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             
-            {/* Mobile Routes */}
+            {/* Mobile Flow Main Route */}
+            <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
+            
+            {/* Standalone Mobile Routes */}
             <Route path="/mobile-flow/my-loans" element={<MobileMyLoansPageContainer />} />
             <Route path="/loans/status" element={<ClientLoanStatus />} />
             <Route path="/loans/apply" element={<LoanApplicationPageContainer />} />
+            
+            {/* Default route */}
+            <Route path="/" element={<LoginPage />} />
           </Routes>
         </Router>
       </AuthProvider>
