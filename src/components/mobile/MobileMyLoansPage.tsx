@@ -11,7 +11,7 @@ import { ArrowRight, Clock, CheckCircle, XCircle, CreditCard, Plus, ScrollText, 
 import { Loan } from '@/types/sfdClients';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import MobileHeader from './MobileHeader';
+import ContextualHeader from './ContextualHeader';
 
 interface LoanCardProps {
   loan: Loan;
@@ -102,9 +102,13 @@ const MobileMyLoansPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="bg-gradient-to-r from-[#0D6A51] to-[#064032] text-white rounded-b-3xl shadow-lg">
-        <MobileHeader title="Mes demandes de prêt" />
-        <div className="px-6 pb-6">
-          <p className="text-white/80">Suivez l'état de vos demandes de prêt et leur traitement</p>
+        <div className="p-4">
+          <ContextualHeader />
+          
+          <div className="mt-6 pb-6">
+            <h1 className="text-2xl font-bold">Mes demandes de prêt</h1>
+            <p className="text-white/80">Suivez l'état de vos demandes de prêt et leur traitement</p>
+          </div>
         </div>
       </div>
       

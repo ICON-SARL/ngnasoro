@@ -1,7 +1,6 @@
 
 import React from 'react';
 import ContextualHeader from './ContextualHeader';
-import { Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 

@@ -83,12 +83,12 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   return (
     <div className="space-y-4 pb-20">
       <div className="bg-gradient-to-br from-[#0D6A51] to-[#064032] text-white p-4 rounded-b-3xl shadow-md relative">
-        <div className="absolute top-4 right-4">
-          <Button variant="ghost" size="sm" className="text-white p-1 hover:bg-white/10 rounded-full" onClick={toggleMenu}>
-            <Menu className="h-5 w-5" />
-          </Button>
-        </div>
         <ContextualHeader />
+        
+        <div className="mt-6">
+          <h1 className="text-2xl font-bold text-white">Tableau de bord</h1>
+          <p className="text-white/80 text-sm">Bienvenue sur votre espace personnel</p>
+        </div>
       </div>
       
       <div className="px-4 py-2">

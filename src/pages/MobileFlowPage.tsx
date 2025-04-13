@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import MobileHeader from '@/components/mobile/MobileHeader';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
 import MobileDashboard from '@/components/mobile/MobileDashboard';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,8 +23,6 @@ const MobileFlowPage = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <MobileHeader title={title} />
-      
       <main className="pb-20">
         <Routes>
           <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
@@ -36,7 +33,7 @@ const MobileFlowPage = () => {
           <Route 
             path="/my-loans" 
             element={
-              <div className="p-4">
+              <div>
                 <ClientLoanStatus />
               </div>
             }
