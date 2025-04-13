@@ -45,9 +45,9 @@ export const fetchLoanById = async (loanId: string): Promise<Loan | null> => {
     purpose: data.purpose,
     status: data.status || 'pending',
     created_at: data.created_at,
-    // Use optional chaining and nullish coalescing for properties that might not exist
-    reference: data.reference || '',
-    updated_at: data.updated_at || data.created_at,
+    // Add missing properties with default values
+    reference: '', // Default empty string since it's not in the database
+    updated_at: data.created_at, // Default to created_at since updated_at is not in the response
     subsidy_amount: data.subsidy_amount || 0,
     subsidy_rate: data.subsidy_rate || 0
   };
@@ -96,9 +96,9 @@ export const getSfdLoans = async (): Promise<Loan[]> => {
   return data.map(loan => ({
     ...loan,
     client_name: loan.sfd_clients?.full_name || 'Unknown Client',
-    // Use optional chaining or provide default values
-    reference: loan.reference || '',
-    updated_at: loan.updated_at || loan.created_at,
+    // Add missing properties with default values
+    reference: '', // Default to empty string
+    updated_at: loan.created_at, // Default to created_at
     subsidy_amount: loan.subsidy_amount || 0,
     subsidy_rate: loan.subsidy_rate || 0
   })) as Loan[];
