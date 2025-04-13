@@ -47,9 +47,9 @@ export const fetchLoanById = async (loanId: string): Promise<Loan | null> => {
     purpose: data.purpose,
     status: data.status || 'pending',
     created_at: data.created_at,
-    // Handle optional properties with default values or undefined
-    reference: data.reference || '',
-    updated_at: data.updated_at || data.created_at,
+    // Handle optional properties with null coalescing or default values
+    reference: data.reference || '',  // Using optional chaining and fallback
+    updated_at: data.updated_at || data.created_at,  // Fallback to created_at
     subsidy_amount: data.subsidy_amount || 0,
     subsidy_rate: data.subsidy_rate || 0
   };
