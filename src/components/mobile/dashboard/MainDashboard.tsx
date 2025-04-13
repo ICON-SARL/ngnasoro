@@ -81,7 +81,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   
   return (
     <div className="space-y-4 pb-20">
-      <div className="bg-gradient-to-br from-[#0D6A51] to-[#064032] text-white rounded-b-3xl shadow-md relative">
+      <div className="bg-[#0D6A51] text-white rounded-b-3xl shadow-md relative">
         <MobileHeader title="Tableau de bord" />
       </div>
       

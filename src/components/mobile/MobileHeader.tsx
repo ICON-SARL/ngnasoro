@@ -24,10 +24,22 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({ title }) => {
     <div className="p-4 bg-[#0D6A51]">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <div className="h-9 w-9 bg-white/20 rounded-md flex items-center justify-center">
-            <span className="text-white font-bold">RM</span>
+          <div className="flex items-center">
+            <div className="bg-white rounded-full p-1.5 mr-2">
+              <img 
+                src="/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png" 
+                alt="N'GNA SÔRÔ! Logo" 
+                className="h-8 w-8"
+              />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <span className="text-[#FFAB2E] font-bold text-lg">N'GNA</span>
+                <span className="text-white font-bold text-lg ml-1">SÔRÔ!</span>
+              </div>
+              <span className="text-white/70 text-xs">CVECA-ON</span>
+            </div>
           </div>
-          <span className="text-white font-medium">RMCR</span>
         </div>
         
         <div className="flex items-center space-x-2">

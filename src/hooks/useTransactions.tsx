@@ -1,243 +1,138 @@
 
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { Transaction } from '@/types/transactions';
-import { createTransactionManager, TransactionParams } from '@/services/transactions/transactionManager';
+import { createTransactionManager } from '@/services/transactions/transactionManager';
+import { useTransactionsFetch } from './useTransactionsFetch';
+import { useToast } from './use-toast';
 
-export function useTransactions(userId?: string, sfdId?: string) {
-  const { user, activeSfdId } = useAuth();
+export function useTransactions(userId: string, sfdId: string) {
+  const [error, setError] = useState('');
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { fetchTransactions, isLoading } = useTransactionsFetch({ 
+    activeSfdId: sfdId, 
+    userId, 
+    toast 
+  });
+  
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-
-  // Utiliser les valeurs depuis le contexte auth si non fournies
-  const effectiveUserId = userId || user?.id;
-  const effectiveSfdId = sfdId || activeSfdId || '';
-
-  // Initialiser le gestionnaire de transactions
-  const transactionManager = effectiveUserId && effectiveSfdId ? 
-    createTransactionManager(effectiveUserId, effectiveSfdId) : null;
-
-  // Récupérer les transactions
-  const fetchTransactions = useCallback(async () => {
-    if (!transactionManager) {
-      setError('Utilisateur ou SFD non défini');
-      return { transactions: [], error: 'Utilisateur ou SFD non défini' };
-    }
-
-    setIsLoading(true);
-    setError(null);
-
+  
+  // Create a transaction manager instance
+  const transactionManager = userId && sfdId ? createTransactionManager(userId, sfdId) : null;
+  
+  // Fetch transactions function
+  const loadTransactions = useCallback(async () => {
     try {
-      const fetchedTransactions = await transactionManager.getTransactionHistory(10);
-      setTransactions(fetchedTransactions);
-      setIsLoading(false);
-      return { transactions: fetchedTransactions, error: null };
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la récupération des transactions');
-      setIsLoading(false);
+      const result = await fetchTransactions();
+      if (result.transactions) {
+        setTransactions(result.transactions);
+      }
+      return result;
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
+      setError('Failed to load transactions');
       return { transactions: [], error: err };
     }
-  }, [transactionManager]);
-
-  // Effectuer un dépôt
+  }, [fetchTransactions]);
+  
+  // Refetch transactions
+  const refetch = useCallback(async () => {
+    return await loadTransactions();
+  }, [loadTransactions]);
+  
+  // Create transaction function
+  const createTransaction = useCallback(async (data: any) => {
+    if (!transactionManager) {
+      console.error('Transaction manager not initialized');
+      return null;
+    }
+    
+    try {
+      const result = await transactionManager.createTransaction(data);
+      await refetch();
+      return result;
+    } catch (err) {
+      console.error('Error creating transaction:', err);
+      return null;
+    }
+  }, [transactionManager, refetch]);
+  
+  // Make deposit function
   const makeDeposit = useCallback(async (amount: number, description?: string, paymentMethod?: string) => {
     if (!transactionManager) {
-      setError('Utilisateur ou SFD non défini');
-      toast({
-        title: 'Erreur',
-        description: 'Impossible d\'effectuer le dépôt: utilisateur ou SFD non défini',
-        variant: 'destructive',
-      });
+      console.error('Transaction manager not initialized');
       return null;
     }
-
-    setIsLoading(true);
-    setError(null);
-
+    
     try {
-      const transaction = await transactionManager.makeDeposit(amount, description, paymentMethod);
-      
-      if (transaction) {
-        toast({
-          title: 'Dépôt réussi',
-          description: `Vous avez déposé ${amount} FCFA dans votre compte`,
-        });
-        await fetchTransactions();
-      } else {
-        toast({
-          title: 'Erreur',
-          description: 'Le dépôt a échoué, veuillez réessayer',
-          variant: 'destructive',
-        });
-      }
-      
-      setIsLoading(false);
-      return transaction;
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors du dépôt');
-      toast({
-        title: 'Erreur',
-        description: err.message || 'Erreur lors du dépôt',
-        variant: 'destructive',
-      });
-      setIsLoading(false);
+      const result = await transactionManager.makeDeposit(amount, description, paymentMethod);
+      await refetch();
+      return result;
+    } catch (err) {
+      console.error('Error making deposit:', err);
       return null;
     }
-  }, [transactionManager, toast, fetchTransactions]);
-
-  // Effectuer un retrait
+  }, [transactionManager, refetch]);
+  
+  // Make withdrawal function
   const makeWithdrawal = useCallback(async (amount: number, description?: string, paymentMethod?: string) => {
     if (!transactionManager) {
-      setError('Utilisateur ou SFD non défini');
-      toast({
-        title: 'Erreur',
-        description: 'Impossible d\'effectuer le retrait: utilisateur ou SFD non défini',
-        variant: 'destructive',
-      });
+      console.error('Transaction manager not initialized');
       return null;
     }
-
-    setIsLoading(true);
-    setError(null);
-
+    
     try {
-      const transaction = await transactionManager.makeWithdrawal(amount, description, paymentMethod);
-      
-      if (transaction) {
-        toast({
-          title: 'Retrait réussi',
-          description: `Vous avez retiré ${amount} FCFA de votre compte`,
-        });
-        await fetchTransactions();
-      } else {
-        toast({
-          title: 'Erreur',
-          description: 'Le retrait a échoué, veuillez réessayer',
-          variant: 'destructive',
-        });
-      }
-      
-      setIsLoading(false);
-      return transaction;
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors du retrait');
-      toast({
-        title: 'Erreur',
-        description: err.message || 'Erreur lors du retrait',
-        variant: 'destructive',
-      });
-      setIsLoading(false);
+      const result = await transactionManager.makeWithdrawal(amount, description, paymentMethod);
+      await refetch();
+      return result;
+    } catch (err) {
+      console.error('Error making withdrawal:', err);
       return null;
     }
-  }, [transactionManager, toast, fetchTransactions]);
-
-  // Effectuer un remboursement de prêt
+  }, [transactionManager, refetch]);
+  
+  // Make loan repayment function
   const makeLoanRepayment = useCallback(async (loanId: string, amount: number, description?: string, paymentMethod?: string) => {
     if (!transactionManager) {
-      setError('Utilisateur ou SFD non défini');
-      toast({
-        title: 'Erreur',
-        description: 'Impossible d\'effectuer le remboursement: utilisateur ou SFD non défini',
-        variant: 'destructive',
-      });
+      console.error('Transaction manager not initialized');
       return null;
     }
-
-    setIsLoading(true);
-    setError(null);
-
+    
     try {
-      const transaction = await transactionManager.makeLoanRepayment(loanId, amount, description, paymentMethod);
-      
-      if (transaction) {
-        toast({
-          title: 'Remboursement réussi',
-          description: `Vous avez remboursé ${amount} FCFA sur votre prêt`,
-        });
-        await fetchTransactions();
-      } else {
-        toast({
-          title: 'Erreur',
-          description: 'Le remboursement a échoué, veuillez réessayer',
-          variant: 'destructive',
-        });
-      }
-      
-      setIsLoading(false);
-      return transaction;
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors du remboursement');
-      toast({
-        title: 'Erreur',
-        description: err.message || 'Erreur lors du remboursement',
-        variant: 'destructive',
-      });
-      setIsLoading(false);
+      const result = await transactionManager.makeLoanRepayment(loanId, amount, description, paymentMethod);
+      await refetch();
+      return result;
+    } catch (err) {
+      console.error('Error making loan repayment:', err);
       return null;
     }
-  }, [transactionManager, toast, fetchTransactions]);
-
-  // Get account balance
-  const getBalance = useCallback(async (): Promise<number> => {
+  }, [transactionManager, refetch]);
+  
+  // Get balance function
+  const getBalance = useCallback(async () => {
     if (!transactionManager) {
-      setError('Utilisateur ou SFD non défini');
+      console.error('Transaction manager not initialized');
       return 0;
     }
-
+    
     try {
       return await transactionManager.getAccountBalance();
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la récupération du solde');
+    } catch (err) {
+      console.error('Error getting balance:', err);
       return 0;
     }
   }, [transactionManager]);
-
-  // Create transaction (generic method for compatibility)
-  const createTransaction = useCallback(async (options: any) => {
-    if (!transactionManager) {
-      setError('Utilisateur ou SFD non défini');
-      return null;
-    }
-
-    try {
-      // Map the options to the appropriate method based on type
-      switch (options.type) {
-        case 'deposit':
-          return await makeDeposit(options.amount, options.description, options.paymentMethod);
-        case 'withdrawal':
-          return await makeWithdrawal(Math.abs(options.amount), options.description, options.paymentMethod);
-        case 'loan_repayment':
-          if (!options.referenceId) {
-            throw new Error('Loan ID is required for loan repayments');
-          }
-          return await makeLoanRepayment(options.referenceId, Math.abs(options.amount), options.description, options.paymentMethod);
-        default:
-          throw new Error(`Unsupported transaction type: ${options.type}`);
-      }
-    } catch (err: any) {
-      setError(err.message || 'Error creating transaction');
-      toast({
-        title: 'Error',
-        description: err.message || 'Error creating transaction',
-        variant: 'destructive',
-      });
-      return null;
-    }
-  }, [makeDeposit, makeWithdrawal, makeLoanRepayment, toast, transactionManager]);
-
+  
   return {
+    transactions,
     isLoading,
     error,
-    transactions,
-    fetchTransactions,
+    fetchTransactions: loadTransactions,
+    refetch,
+    createTransaction,
     makeDeposit,
     makeWithdrawal,
     makeLoanRepayment,
-    getBalance,
-    createTransaction,
-    refetch: fetchTransactions
+    getBalance
   };
 }
