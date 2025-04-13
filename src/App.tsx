@@ -21,6 +21,7 @@ import MobileAccountSettingsPage from '@/pages/mobile/MobileAccountSettingsPage'
 import MobileFlowPage from '@/pages/MobileFlowPage';
 import AdminLoginPage from '@/pages/AdminLoginPage';
 import ClientLoginPage from '@/pages/ClientLoginPage';
+import SfdLoginPage from '@/pages/SfdLoginPage'; // Import the SfdLoginPage
 import AuthRedirectPage from '@/pages/AuthRedirectPage';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import UsersManagementPage from '@/pages/UsersManagementPage';
@@ -37,7 +38,7 @@ function App() {
             <Route path="/login" element={<AuthRedirectPage />} />
             <Route path="/auth" element={<ClientLoginPage />} />
             <Route path="/admin/auth" element={<AdminLoginPage />} />
-            <Route path="/sfd/auth" element={<SfdAuthUI />} />
+            <Route path="/sfd/auth" element={<SfdLoginPage />} /> {/* Use the SfdLoginPage component instead of directly using SfdAuthUI */}
             <Route path="/register" element={<RegisterPage />} />
             
             {/* Admin Dashboard Routes */}
