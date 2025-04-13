@@ -26,6 +26,8 @@ const MobileFlowPage: React.FC = () => {
     // Si l'utilisateur est admin ou sfd_admin, rediriger vers le tableau de bord approprié
     if (!loading && user) {
       const userRole = user.app_metadata?.role;
+      console.log("MobileFlowPage - Detected user role:", userRole);
+      
       if (userRole === 'admin') {
         toast({
           title: "Accès refusé",

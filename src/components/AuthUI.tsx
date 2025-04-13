@@ -46,9 +46,9 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
       console.log('User role from metadata:', role);
       
       // Redirect based on role
-      if (role === UserRole.SuperAdmin) {
+      if (role === UserRole.SuperAdmin || role === 'admin') {
         navigate('/super-admin-dashboard');
-      } else if (role === UserRole.SfdAdmin) {
+      } else if (role === UserRole.SfdAdmin || role === 'sfd_admin') {
         navigate('/agency-dashboard');
       } else {
         navigate('/mobile-flow/main');

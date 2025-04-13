@@ -18,6 +18,7 @@ import AuthRedirectPage from '@/pages/AuthRedirectPage';
 import AdminLoginPage from '@/pages/AdminLoginPage';
 import ClientLoginPage from '@/pages/ClientLoginPage';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
+import AgencyDashboard from '@/pages/AgencyDashboard';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -48,7 +49,7 @@ function App() {
               
               {/* Admin Dashboards */}
               <Route path="/super-admin-dashboard/*" element={<SuperAdminDashboard />} />
-              <Route path="/agency-dashboard/*" element={<Navigate to="/super-admin-dashboard" replace />} />
+              <Route path="/agency-dashboard/*" element={<AgencyDashboard />} />
               
               {/* Mobile Routes */}
               <Route path="/mobile-flow/main" element={<MobileMainPage />} />
