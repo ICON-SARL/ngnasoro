@@ -10,6 +10,10 @@ import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage'
 import MobileLoansPage from '@/pages/mobile/MobileLoansPage';
 import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
 import TransferPage from '@/pages/mobile/TransferPage';
+import AccountPage from '@/pages/mobile/AccountPage';
+import NotificationsPage from '@/pages/mobile/account/NotificationsPage';
+import SecurityPage from '@/pages/mobile/account/SecurityPage';
+import AboutPage from '@/pages/mobile/account/AboutPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -45,7 +49,13 @@ export const MobileRouter = () => {
     <Routes>
       <Route path="/" element={<Navigate to="/main" replace />} />
       <Route path="/main" element={<MobileMainPage />} />
-      <Route path="/account" element={<PlaceholderPage title="Mon Compte" />} />
+      <Route path="/account" element={<AccountPage />} />
+      <Route path="/account/notifications" element={<NotificationsPage />} />
+      <Route path="/account/security" element={<SecurityPage />} />
+      <Route path="/account/about" element={<AboutPage />} />
+      <Route path="/account/terms" element={<PlaceholderPage title="Conditions d'utilisation" />} />
+      <Route path="/account/privacy" element={<PlaceholderPage title="Politique de confidentialité" />} />
+      <Route path="/account/help" element={<PlaceholderPage title="Centre d'aide" />} />
       <Route path="/transfer" element={<TransferPage />} />
       <Route path="/payment" element={<PlaceholderPage title="Paiement Sécurisé" />} />
       <Route path="/loan-details" element={<MobileLoanDetailsPage />} />
