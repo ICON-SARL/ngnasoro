@@ -22,17 +22,33 @@ export const AgencyHeader = () => {
   
   const handleSignOut = async () => {
     try {
-      await signOut();
+      // Notification de début de déconnexion
       toast({
-        title: "Déconnecté",
-        description: "Vous avez été déconnecté avec succès",
+        title: "Déconnexion en cours",
+        description: "Veuillez patienter..."
       });
-      navigate('/login');
-    } catch (error) {
+      
+      // Clear localStorage items first
+      localStorage.removeItem('adminLastSeen');
+      localStorage.removeItem('sb-xnqysvnychmsockivqhb-auth-token');
+      localStorage.removeItem('supabase.auth.token');
+      
+      // Call signOut method
+      await signOut();
+      
       toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la déconnexion",
-        variant: "destructive",
+        title: "Déconnexion réussie",
+        description: "Vous avez été déconnecté avec succès"
+      });
+      
+      // Force a full page reload
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      toast({
+        title: "Erreur de déconnexion",
+        description: "Une erreur s'est produite lors de la déconnexion",
+        variant: "destructive"
       });
     }
   };
