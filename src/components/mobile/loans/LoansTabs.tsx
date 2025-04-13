@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { ScrollText, Clock, CheckCircle, XCircle, FileText } from 'lucide-react';
+import { ScrollText, Clock, CheckCircle, XCircle, FileText, Plus } from 'lucide-react';
 import { Loan } from '@/types/sfdClients';
 import LoanCard from './LoanCard';
 import EmptyLoansState from './EmptyLoansState';
