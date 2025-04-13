@@ -2,14 +2,17 @@
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
 export interface User extends SupabaseUser {
-  // Additional user properties can be added here
+  // Additional user properties
+  full_name?: string;
+  avatar_url?: string;
+  sfd_id?: string;
 }
 
 export enum UserRole {
   SuperAdmin = 'admin',
   Admin = 'admin',
   SfdAdmin = 'sfd_admin',
-  Client = 'client',
+  CLIENT = 'client',
   User = 'user'
 }
 
@@ -25,9 +28,29 @@ export interface AuthContextProps {
   session: Session | null;
   loading: boolean;
   userRole: UserRole;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: any; data?: any }>;
   signOut: () => Promise<{ error: any }>;
+  signUp?: (email: string, password: string, metadata?: any) => Promise<{ error: any }>;
   refreshSession: () => Promise<void>;
   isAdmin: boolean;
   isSfdAdmin: boolean;
+  
+  // Additional properties needed
+  activeSfdId: string | null;
+  setActiveSfdId: (id: string | null) => void;
+  biometricEnabled?: boolean;
+  toggleBiometricAuth?: () => Promise<void>;
+}
+
+// Add AssociateSfdParams type for admin functions
+export interface AssociateSfdParams {
+  userId: string;
+  sfdId: string;
+  isDefault?: boolean;
+  role?: string;
+}
+
+export interface AssociateSfdResult {
+  success: boolean;
+  error?: string;
 }

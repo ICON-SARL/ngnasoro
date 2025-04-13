@@ -1,6 +1,6 @@
-
-import { supabase } from "@/integrations/supabase/client";
-import { AssociateSfdParams, AssociateSfdResult } from "@/hooks/auth/types";
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@/hooks/auth/types';
+import { AssociateSfdParams, AssociateSfdResult } from '@/hooks/auth/types';
 
 export const adminApi = {
   // Associate a user with an SFD

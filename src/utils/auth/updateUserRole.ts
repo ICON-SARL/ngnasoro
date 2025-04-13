@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { UserRole } from './roleTypes';
+import { UserRole } from '@/hooks/auth/types';
 
 /**
  * Updates a user's role in the Supabase auth.users table via the admin API
@@ -30,5 +30,5 @@ export const updateUserRole = async (userId: string, role: UserRole | string): P
  * Note: This should be called when a new user signs up
  */
 export const setDefaultUserRole = async (userId: string): Promise<boolean> => {
-  return updateUserRole(userId, UserRole.Client);
+  return updateUserRole(userId, UserRole.CLIENT);
 };

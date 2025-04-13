@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
@@ -142,10 +141,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: result.data.user.app_metadata?.role,
           metadata: result.data.user.app_metadata,
         });
-        return { data: result.data };
+        return { error: null, data: result.data };
       }
       
-      return result;
+      return { error: null, data: result.data };
     } catch (error) {
       console.error('Error signing in:', error);
       return { error };
@@ -167,7 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
       
-      return { error: null };
+      return { error: null, data };
     } catch (error) {
       console.error('Error signing up:', error);
       return { error };
@@ -220,7 +219,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const value = {
+  const value: AuthContextProps = {
     user,
     session,
     loading,
