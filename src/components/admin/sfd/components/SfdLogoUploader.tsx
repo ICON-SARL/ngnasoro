@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { FormLabel } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { ImageIcon, UploadIcon, X } from 'lucide-react';
-import Image from 'next/image';
 
 interface SfdLogoUploaderProps {
   logoFile: File | null;
