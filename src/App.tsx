@@ -18,7 +18,7 @@ import AuthRedirectPage from '@/pages/AuthRedirectPage';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import UsersManagementPage from '@/pages/UsersManagementPage';
 import RoleGuard from '@/components/RoleGuard';
-import { UserRole } from '@/utils/auth/roleTypes';
+import { UserRole } from '@/hooks/auth/types';
 import SfdAdminDashboard from '@/components/admin/SfdAdminDashboard';
 import SfdClientsPage from '@/pages/SfdClientsPage';
 import SfdSubsidyRequestsPage from '@/pages/SfdSubsidyRequestsPage';
@@ -29,6 +29,7 @@ import AuditLogsPage from '@/pages/AuditLogsPage';
 import CreditApprovalPage from '@/pages/CreditApprovalPage';
 import SfdManagementPage from '@/pages/SfdManagementPage';
 
+// Create a client
 const queryClient = new QueryClient();
 
 function App() {
@@ -107,6 +108,8 @@ function App() {
             {/* Page 404 */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
+          
+          {/* Place Toaster outside of Routes but inside providers */}
           <Toaster />
         </AuthProvider>
       </QueryClientProvider>
