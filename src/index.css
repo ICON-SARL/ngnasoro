@@ -33,7 +33,7 @@
     --input: 214 32% 91%;
     --ring: 222 84% 48%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   .dark {
@@ -100,6 +100,57 @@
     display: inline-block;
   }
   
+  .animated-gradient-border {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  
+  .animated-gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    z-index: -1;
+    background: linear-gradient(90deg, #0D6A51, #33C3F0, #FFAB2E, #0D6A51);
+    background-size: 400% 400%;
+    animation: gradient-animation 8s ease infinite;
+  }
+  
+  @keyframes gradient-animation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  .card-hover {
+    transition: all 0.3s;
+  }
+  
+  .card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .tab-indicator {
+    position: absolute;
+    bottom: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #0D6A51, #33C3F0);
+    transition: all 0.3s;
+  }
+  
+  .fun-button {
+    @apply rounded-full bg-gradient-to-r from-[#0D6A51] to-[#33C3F0] text-white font-medium shadow-md hover:shadow-lg transform transition-all duration-300 hover:scale-105 active:scale-95;
+  }
+  
+  .fun-card {
+    @apply rounded-2xl bg-white border border-gray-100 shadow-md hover:shadow-lg transition-all duration-300;
+  }
+  
+  .fun-badge {
+    @apply rounded-full px-3 py-1 text-xs font-medium border shadow-sm;
+  }
+  
   /* ... keep existing code */
 }
 
@@ -148,6 +199,25 @@ body {
 /* Modern form styles */
 .form-input-icon {
   @apply absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors group-hover:text-primary;
+}
+
+/* Animations */
+@keyframes pulse-soft {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s infinite ease-in-out;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 3s infinite ease-in-out;
 }
 
 /* Password field custom dots */

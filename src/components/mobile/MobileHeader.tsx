@@ -14,12 +14,12 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({ title }) => {
   const { activeSfdId } = useSfdDataAccess();
   
   return (
-    <div className="p-2">
+    <div className="p-4">
       <ContextualHeader />
       
       {title && (
-        <div className="px-2 mt-2">
-          <h1 className="text-xl font-bold text-gray-800">{title}</h1>
+        <div className="px-2 mt-3">
+          <h1 className="text-2xl font-bold text-white">{title}</h1>
         </div>
       )}
     </div>

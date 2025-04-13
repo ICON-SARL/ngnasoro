@@ -8,7 +8,8 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { ChevronDown, Building } from 'lucide-react';
+import { ChevronDown, Building, Bell, Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const ContextualHeader = () => {
   const { user } = useAuth();
@@ -16,9 +17,16 @@ const ContextualHeader = () => {
   
   const activeSFD = sfdData.find(sfd => sfd.id === activeSfdId);
   const activeSFDName = activeSFD?.name || 'SFD Primaire';
+  
+  const handleMenuOpen = () => {
+    const event = new CustomEvent('lovable:action', { detail: { action: 'openMenu' } });
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(event);
+    }
+  };
 
   return (
-    <div className="flex flex-col py-4">
+    <div className="flex items-center justify-between">
       <div className="flex items-center">
         <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mr-3 shadow-md">
           <img 
@@ -28,7 +36,7 @@ const ContextualHeader = () => {
           />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="text-2xl font-bold">
             <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-white">SÔRÔ!</span>
           </h1>
           
@@ -54,6 +62,15 @@ const ContextualHeader = () => {
             </DropdownMenu>
           </div>
         </div>
+      </div>
+      
+      <div className="flex items-center space-x-2">
+        <Button variant="ghost" size="icon" className="text-white h-8 w-8 rounded-full bg-white/10 hover:bg-white/20">
+          <Bell className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="icon" className="text-white h-8 w-8 rounded-full bg-white/10 hover:bg-white/20" onClick={handleMenuOpen}>
+          <Menu className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
