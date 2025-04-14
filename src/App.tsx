@@ -48,7 +48,7 @@ function App() {
         <AuthProvider>
           <Router>
             <Routes>
-              <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
+              <Route path="/" element={<Navigate to="/auth" replace />} />
               
               {/* Authentication Routes */}
               <Route path="/auth" element={<LoginPage />} />
@@ -141,50 +141,66 @@ function App() {
                 </ProtectedRoute>
               } />
               
-              {/* Client/User Routes */}
+              {/* Client/User Routes - Add role checks to prevent admin access */}
               <Route path="/mobile-flow/main" element={
                 <ProtectedRoute>
-                  <MobileMainPage />
+                  <RoleGuard requiredRole={UserRole.Client}>
+                    <MobileMainPage />
+                  </RoleGuard>
                 </ProtectedRoute>
               } />
               <Route path="/mobile-flow/transfer" element={
                 <ProtectedRoute>
-                  <TransferPage />
+                  <RoleGuard requiredRole={UserRole.Client}>
+                    <TransferPage />
+                  </RoleGuard>
                 </ProtectedRoute>
               } />
               <Route path="/mobile-flow/loans" element={
                 <ProtectedRoute>
-                  <MobileLoansPage />
+                  <RoleGuard requiredRole={UserRole.Client}>
+                    <MobileLoansPage />
+                  </RoleGuard>
                 </ProtectedRoute>
               } />
               <Route path="/mobile-flow/my-loans" element={
                 <ProtectedRoute>
-                  <MobileMyLoansPage />
+                  <RoleGuard requiredRole={UserRole.Client}>
+                    <MobileMyLoansPage />
+                  </RoleGuard>
                 </ProtectedRoute>
               } />
               <Route path="/mobile-flow/loan-details" element={
                 <ProtectedRoute>
-                  <LoanDetailsPage />
+                  <RoleGuard requiredRole={UserRole.Client}>
+                    <LoanDetailsPage />
+                  </RoleGuard>
                 </ProtectedRoute>
               } />
               <Route path="/mobile-flow/payment" element={
                 <ProtectedRoute>
-                  <PaymentPage />
+                  <RoleGuard requiredRole={UserRole.Client}>
+                    <PaymentPage />
+                  </RoleGuard>
                 </ProtectedRoute>
               } />
               <Route path="/mobile-flow/account" element={
                 <ProtectedRoute>
-                  <AccountPage />
+                  <RoleGuard requiredRole={UserRole.Client}>
+                    <AccountPage />
+                  </RoleGuard>
                 </ProtectedRoute>
               } />
               <Route path="/mobile-flow/*" element={
                 <ProtectedRoute>
-                  <MobileFlowPage />
+                  <RoleGuard requiredRole={UserRole.Client}>
+                    <MobileFlowPage />
+                  </RoleGuard>
                 </ProtectedRoute>
               } />
               
               {/* Fallback Route */}
-              <Route path="*" element={<Navigate to="/mobile-flow/main" replace />} />
+              <Route path="*" element={<Navigate to="/auth" replace />} />
             </Routes>
             <Toaster />
           </Router>

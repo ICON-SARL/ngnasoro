@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
+import { logAuditEvent } from '@/utils/audit/auditLogger';
+import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { UserRole } from '@/hooks/auth/types';
 import { Loader2 } from 'lucide-react';
 
@@ -34,8 +35,21 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     });
     
     // Super admins have access to everything
-    if (isAdmin) {
+    if (isAdmin && requiredRole === UserRole.SuperAdmin) {
       setHasAccess(true);
+      return;
+    }
+    
+    // Check for specific role restrictions
+    if (requiredRole === UserRole.Client && (isAdmin || isSfdAdmin)) {
+      console.log('Admin/SFD admin cannot access client routes');
+      setHasAccess(false);
+      return;
+    }
+
+    if (requiredRole === UserRole.SfdAdmin && isAdmin) {
+      console.log('Admin cannot access SFD admin routes');
+      setHasAccess(false);
       return;
     }
     
@@ -62,22 +76,22 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     
     // Log access denied attempts
     if (!permitted) {
-      logAuditEvent({
-        user_id: user.id,
-        action: 'role_check_failure',
-        category: AuditLogCategory.DATA_ACCESS,
-        severity: AuditLogSeverity.WARNING,
-        status: 'failure',
-        target_resource: location.pathname,
-        details: {
+      logAuditEvent(
+        AuditLogCategory.DATA_ACCESS,
+        'role_check_failure',
+        {
           required_role: requiredRole,
           user_role: userRole,
           normalized_user_role: normalizedUserRole,
           normalized_required_role: normalizedRequiredRole,
           timestamp: new Date().toISOString()
         },
-        error_message: `Access denied: Missing role (${requiredRole})`
-      }).catch(err => console.error('Error logging audit event:', err));
+        user.id,
+        AuditLogSeverity.WARNING,
+        'failure',
+        location.pathname,
+        `Access denied: Missing role (${requiredRole})`
+      );
     }
   }, [user, requiredRole, location.pathname, userRole, isAdmin, isSfdAdmin, isClient]);
 
@@ -95,7 +109,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     // User not authenticated, redirect to login
     return (
       <Navigate 
-        to="/login" 
+        to="/auth" 
         state={{ from: location.pathname }} 
         replace 
       />

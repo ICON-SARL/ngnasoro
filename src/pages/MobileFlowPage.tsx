@@ -12,45 +12,52 @@ import AboutPage from '@/pages/mobile/account/AboutPage';
 import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 
 const MobileFlowPage: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin, isSfdAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Vérifier si l'utilisateur est authentifié
+  // Vérifier si l'utilisateur est authentifié et rediriger en fonction du rôle
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-      return;
-    }
-    
-    // Si l'utilisateur est admin ou sfd_admin, rediriger vers le tableau de bord approprié
-    if (!loading && user) {
-      const userRole = user.app_metadata?.role;
-      console.log("MobileFlowPage - Detected user role:", userRole);
+    if (!loading) {
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
       
-      if (userRole === 'admin') {
+      // Si l'utilisateur est admin ou sfd_admin, rediriger vers le tableau de bord approprié
+      if (isAdmin) {
         toast({
           title: "Accès refusé",
           description: "Les administrateurs ne peuvent pas accéder à l'interface mobile.",
           variant: "destructive",
         });
         navigate('/super-admin-dashboard');
-      } else if (userRole === 'sfd_admin') {
+        return;
+      } 
+      
+      if (isSfdAdmin) {
         toast({
           title: "Accès refusé",
           description: "Les administrateurs SFD ne peuvent pas accéder à l'interface mobile.",
           variant: "destructive",
         });
         navigate('/agency-dashboard');
+        return;
       }
     }
-  }, [user, loading, navigate, toast]);
+  }, [user, loading, navigate, toast, isAdmin, isSfdAdmin]);
 
   if (loading) {
     return <div className="p-4 flex items-center justify-center h-screen">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       <span className="ml-2">Chargement...</span>
     </div>;
+  }
+
+  // Si nous sommes encore en train de charger la page mais que l'utilisateur est admin ou sfd_admin,
+  // empêcher le rendu du contenu pour éviter les flashs d'interface
+  if (isAdmin || isSfdAdmin) {
+    return null;
   }
 
   return (
