@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SfdHeader } from '@/components/sfd/SfdHeader';
 import { MerefFundRequestForm } from '@/components/sfd/MerefFundRequestForm';
 import { Button } from '@/components/ui/button';
@@ -15,14 +15,41 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, FileText } from 'lucide-react';
+import { Loader2, Plus, FileText, RefreshCw } from 'lucide-react';
 import { formatDateToLocale } from '@/utils/dateUtils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from '@/hooks/use-toast';
 
 const SfdFundRequestsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('list');
   const [selectedRequest, setSelectedRequest] = useState<MerefFundRequest | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { fundRequests, isLoading, refetch } = useMerefFundRequests();
+  
+  // Rafraîchir automatiquement les données au chargement de la page
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+  
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      toast({
+        title: 'Données actualisées',
+        description: 'La liste des demandes a été mise à jour',
+      });
+    } catch (error) {
+      console.error('Erreur lors du rafraîchissement des données:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de rafraîchir les données',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -56,10 +83,25 @@ const SfdFundRequestsPage: React.FC = () => {
             </p>
           </div>
           
-          <Button onClick={() => setActiveTab('new')}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nouvelle Demande
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
+              {isRefreshing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Actualisation...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Actualiser
+                </>
+              )}
+            </Button>
+            <Button onClick={() => setActiveTab('new')}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nouvelle Demande
+            </Button>
+          </div>
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -74,7 +116,7 @@ const SfdFundRequestsPage: React.FC = () => {
                 <CardTitle>Historique des demandes</CardTitle>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
+                {isLoading || isRefreshing ? (
                   <div className="flex justify-center items-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                   </div>

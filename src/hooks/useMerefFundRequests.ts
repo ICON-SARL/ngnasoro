@@ -71,6 +71,10 @@ export function useMerefFundRequests() {
       }
     },
     enabled: !!activeSfdId,
+    // Added for automatic refresh every 15 seconds
+    refetchInterval: 15000,
+    // Added to refresh on window focus
+    refetchOnWindowFocus: true,
   });
 
   // Create fund request mutation
@@ -106,6 +110,11 @@ export function useMerefFundRequests() {
         description: 'Votre demande de financement MEREF a été envoyée avec succès',
       });
       queryClient.invalidateQueries({ queryKey: ['meref-fund-requests', activeSfdId] });
+      
+      // Explicitly refetch the data
+      setTimeout(() => {
+        refetch();
+      }, 1000);
     },
     onError: (error: any) => {
       toast({
@@ -138,6 +147,7 @@ export function useMerefFundRequests() {
         description: 'La demande de financement a été approuvée avec succès',
       });
       queryClient.invalidateQueries({ queryKey: ['meref-fund-requests'] });
+      refetch();
     },
     onError: (error: any) => {
       toast({
@@ -170,6 +180,7 @@ export function useMerefFundRequests() {
         description: 'La demande de financement a été rejetée',
       });
       queryClient.invalidateQueries({ queryKey: ['meref-fund-requests'] });
+      refetch();
     },
     onError: (error: any) => {
       toast({
@@ -201,6 +212,7 @@ export function useMerefFundRequests() {
         description: 'Les fonds ont été transférés avec succès au compte SFD',
       });
       queryClient.invalidateQueries({ queryKey: ['meref-fund-requests'] });
+      refetch();
     },
     onError: (error: any) => {
       toast({

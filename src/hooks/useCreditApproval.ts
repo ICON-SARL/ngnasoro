@@ -60,7 +60,11 @@ export function useCreditApproval() {
   // Use React Query to manage the data fetching
   const { data: applications = [], refetch } = useQuery({
     queryKey: ['credit-applications'],
-    queryFn: fetchCreditApplications
+    queryFn: fetchCreditApplications,
+    // Adding automatic refetch interval
+    refetchInterval: 30000,
+    // Enable refetch on window focus
+    refetchOnWindowFocus: true
   });
 
   // Create a new credit application (for SFD admins)
@@ -103,7 +107,10 @@ export function useCreditApproval() {
         title: 'Demande créée',
         description: 'Votre demande de crédit a été soumise avec succès',
       });
-      refetch();
+      // Force refetch
+      setTimeout(() => {
+        refetch();
+      }, 1000);
     },
     onError: (error: any) => {
       toast({
@@ -169,7 +176,10 @@ export function useCreditApproval() {
         title: 'Crédit approuvé',
         description: 'La demande de crédit a été approuvée avec succès',
       });
-      refetch();
+      // Force refetch
+      setTimeout(() => {
+        refetch();
+      }, 1000);
     },
     onError: (error: any) => {
       toast({
@@ -238,7 +248,10 @@ export function useCreditApproval() {
         title: 'Crédit rejeté',
         description: 'La demande de crédit a été rejetée',
       });
-      refetch();
+      // Force refetch
+      setTimeout(() => {
+        refetch();
+      }, 1000);
     },
     onError: (error: any) => {
       toast({
@@ -249,10 +262,32 @@ export function useCreditApproval() {
     }
   });
 
+  // Manual refresh function
+  const refreshApplications = async () => {
+    setIsLoading(true);
+    try {
+      await refetch();
+      toast({
+        title: 'Données actualisées',
+        description: 'La liste des demandes de crédit a été mise à jour',
+      });
+    } catch (error) {
+      console.error('Error refreshing credit applications:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de rafraîchir les données',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     applications,
     isLoading,
     refetch,
+    refreshApplications,
     createCreditApplication,
     approveCredit,
     rejectCredit
