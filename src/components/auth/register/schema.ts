@@ -1,5 +1,6 @@
 
 import * as z from 'zod';
+import { MALI_PHONE_REGEX, PHONE_FORMAT_MESSAGE } from '@/lib/constants';
 
 export const registerSchema = z.object({
   fullName: z.string()
@@ -8,7 +9,7 @@ export const registerSchema = z.object({
   email: z.string()
     .email({ message: 'Veuillez entrer une adresse email valide' }),
   phoneNumber: z.string()
-    .min(8, { message: 'Le numéro de téléphone doit contenir au moins 8 chiffres' })
+    .regex(MALI_PHONE_REGEX, { message: PHONE_FORMAT_MESSAGE })
     .optional()
     .or(z.literal('')),
   password: z.string()

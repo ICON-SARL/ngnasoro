@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { REGIONS } from '@/components/admin/subsidy/request-create/constants';
+import { MALI_REGIONS } from '@/lib/constants';
 import { UseFormReturn } from 'react-hook-form';
 import { SfdFormValues } from '../schemas/sfdFormSchema';
 
@@ -61,7 +60,7 @@ export function SfdBasicInfoFields({ form }: SfdBasicInfoFieldsProps) {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {REGIONS.map((region) => (
+                  {MALI_REGIONS.map((region) => (
                     <SelectItem key={region} value={region}>{region}</SelectItem>
                   ))}
                 </SelectContent>
