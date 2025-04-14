@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 export function useCreateSfdMutation() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
 
   return useMutation({
     mutationFn: async ({ 
@@ -27,19 +27,23 @@ export function useCreateSfdMutation() {
     }) => {
       console.log("Starting SFD creation process...");
       
-      // Nous permettons la création sans user auth pour ce moment
-      // afin de déboguer le problème
       try {
         console.log("Preparing data for submission:", {
           sfdData: { ...sfdData },
           createAdmin,
           hasAdminData: !!adminData,
-          hasExistingAdmin: !!existingAdminId
+          hasExistingAdmin: !!existingAdminId,
+          user: user ? { id: user.id, role: user.app_metadata?.role } : 'No user'
         });
         
         // Vérification que les données de l'administrateur sont correctes si nécessaire
         if (createAdmin && (!adminData || !adminData.email || !adminData.password || !adminData.full_name)) {
           throw new Error("Les informations de l'administrateur sont incomplètes");
+        }
+        
+        // Verify that we're not trying to use both options at once
+        if (createAdmin && existingAdminId) {
+          throw new Error("Vous ne pouvez pas à la fois créer un nouvel administrateur et associer un existant");
         }
         
         // Préparer les données pour la requête
@@ -55,16 +59,27 @@ export function useCreateSfdMutation() {
           adminData: adminData ? {...adminData, password: "***"} : null
         }));
         
-        // Setting timeout for the edge function call, but not using signal as it's not supported
+        // Setting timeout for the edge function call
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error("La requête a pris trop de temps. Veuillez réessayer plus tard.")), 60000);
         });
         
         try {
+          // Build request options with auth header if user is logged in
+          const options: any = { body: requestBody };
+          
+          // Add authentication token if available
+          if (session?.access_token) {
+            options.headers = {
+              Authorization: `Bearer ${session.access_token}`,
+            };
+            console.log("Added authentication token to request");
+          } else {
+            console.log("No authentication token available");
+          }
+          
           // Make the request to the Edge Function
-          const responsePromise = supabase.functions.invoke('create-sfd-with-admin', {
-            body: requestBody
-          });
+          const responsePromise = supabase.functions.invoke('create-sfd-with-admin', options);
           
           // Race between the request and the timeout
           const { data, error } = await Promise.race([

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
@@ -15,9 +16,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
+  // Compute role properties based on user metadata
   const userRole = user?.app_metadata?.role as UserRole || UserRole.User;
-  const isAdmin = userRole === UserRole.SuperAdmin;
-  const isSfdAdmin = userRole === UserRole.SfdAdmin;
+  const isAdmin = userRole === UserRole.SuperAdmin || userRole === 'admin';
+  const isSfdAdmin = userRole === UserRole.SfdAdmin || userRole === 'sfd_admin';
+  const isClient = userRole === UserRole.Client || userRole === 'client' || userRole === 'user';
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -255,6 +258,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveSfdId,
     isAdmin,
     isSfdAdmin,
+    isClient,
     userRole,
     biometricEnabled,
     toggleBiometricAuth

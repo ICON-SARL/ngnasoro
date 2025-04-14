@@ -36,6 +36,40 @@ serve(async (req: Request) => {
       existingAdminId
     });
 
+    // Verify authorization - the JWT check is temporarily disabled in config.toml
+    // but we'll log the access attempt
+    const authHeader = req.headers.get('Authorization');
+    let userId = 'unknown';
+    
+    if (authHeader) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user }, error } = await supabaseClient.auth.getUser(token);
+        
+        if (!error && user) {
+          userId = user.id;
+          console.log(`Request authenticated from user: ${userId}, role: ${user.app_metadata?.role || 'unknown'}`);
+          
+          // Log the action in audit logs
+          await supabaseClient.from('audit_logs').insert({
+            user_id: userId,
+            action: 'create_sfd',
+            category: 'ADMIN_ACTION',
+            status: 'initiated',
+            severity: 'info',
+            target_resource: 'sfds',
+            details: { sfd_name: sfdData.name }
+          });
+        } else {
+          console.log('Auth token provided but invalid:', error?.message);
+        }
+      } catch (authError) {
+        console.error('Error verifying authentication:', authError);
+      }
+    } else {
+      console.log('No authentication provided for SFD creation');
+    }
+
     // Attempt to use the existing Supabase function for creating SFD with admin if admin is needed
     if (createAdmin && adminData) {
       try {
@@ -47,6 +81,22 @@ serve(async (req: Request) => {
 
         if (error) {
           console.error('Error creating SFD with admin:', error);
+          
+          // Log the failure
+          await supabaseClient.from('audit_logs').insert({
+            user_id: userId,
+            action: 'create_sfd',
+            category: 'ADMIN_ACTION',
+            status: 'failure',
+            severity: 'error',
+            target_resource: 'sfds',
+            details: { 
+              sfd_name: sfdData.name,
+              error: error.message 
+            },
+            error_message: error.message
+          });
+          
           return new Response(
             JSON.stringify({ error: `Erreur lors de la création de la SFD et de l'administrateur: ${error.message}` }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -54,6 +104,22 @@ serve(async (req: Request) => {
         }
 
         console.log('Successfully created SFD with admin:', data);
+        
+        // Log success
+        await supabaseClient.from('audit_logs').insert({
+          user_id: userId,
+          action: 'create_sfd',
+          category: 'ADMIN_ACTION',
+          status: 'success',
+          severity: 'info',
+          target_resource: 'sfds',
+          details: { 
+            sfd_id: data.sfd?.id,
+            sfd_name: data.sfd?.name,
+            admin_id: data.admin?.id
+          }
+        });
+        
         return new Response(
           JSON.stringify(data),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -73,6 +139,22 @@ serve(async (req: Request) => {
 
     if (insertError) {
       console.error('Error inserting SFD:', insertError);
+      
+      // Log failure
+      await supabaseClient.from('audit_logs').insert({
+        user_id: userId,
+        action: 'create_sfd',
+        category: 'ADMIN_ACTION',
+        status: 'failure',
+        severity: 'error',
+        target_resource: 'sfds',
+        details: { 
+          sfd_name: sfdData.name,
+          error: insertError.message 
+        },
+        error_message: insertError.message
+      });
+      
       return new Response(
         JSON.stringify({ error: 'Erreur lors de la création de la SFD', details: insertError }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -130,6 +212,21 @@ serve(async (req: Request) => {
         // Continue anyway, as the SFD is created
       }
     }
+    
+    // Log successful creation
+    await supabaseClient.from('audit_logs').insert({
+      user_id: userId,
+      action: 'create_sfd',
+      category: 'ADMIN_ACTION',
+      status: 'success',
+      severity: 'info',
+      target_resource: 'sfds',
+      details: { 
+        sfd_id: newSfd.id,
+        sfd_name: newSfd.name,
+        admin_id: adminUser?.id || existingAdminId
+      }
+    });
 
     return new Response(
       JSON.stringify({ 

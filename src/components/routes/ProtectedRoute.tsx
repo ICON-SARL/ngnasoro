@@ -2,6 +2,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,14 +15,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireAdmin = false,
   requireSfdAdmin = false,
 }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin, isSfdAdmin } = useAuth();
   const location = useLocation();
   
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      <span className="ml-2">Chargement...</span>
-    </div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-2" />
+        <span>Chargement...</span>
+      </div>
+    );
   }
 
   if (!user) {
@@ -35,14 +38,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   }
   
-  const userRole = user.app_metadata?.role;
-  
   // Check role-based permissions
-  if (requireAdmin && userRole !== 'admin') {
+  if (requireAdmin && !isAdmin) {
     return <Navigate to="/access-denied" state={{ from: location, requiredRole: 'admin' }} replace />;
   }
   
-  if (requireSfdAdmin && userRole !== 'sfd_admin') {
+  if (requireSfdAdmin && !isSfdAdmin) {
     return <Navigate to="/access-denied" state={{ from: location, requiredRole: 'sfd_admin' }} replace />;
   }
 

@@ -27,6 +27,10 @@ import SfdMerefRequestPage from '@/pages/SfdMerefRequestPage';
 import CreditApprovalPage from '@/pages/CreditApprovalPage';
 import SfdManagementPage from '@/pages/SfdManagementPage';
 import AuditLogsPage from '@/pages/AuditLogsPage';
+import ProtectedRoute from '@/components/routes/ProtectedRoute';
+import RoleGuard from '@/components/RoleGuard';
+import { UserRole } from '@/hooks/auth/types';
+import AccessDeniedPage from '@/pages/AccessDeniedPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,35 +50,140 @@ function App() {
             <Routes>
               <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
               
+              {/* Authentication Routes */}
               <Route path="/auth" element={<LoginPage />} />
               <Route path="/login" element={<AuthRedirectPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/admin/auth" element={<AdminLoginPage />} />
               <Route path="/sfd/auth" element={<LoginPage isSfdAdmin={true} />} />
               <Route path="/client/auth" element={<ClientLoginPage />} />
+              <Route path="/access-denied" element={<AccessDeniedPage />} />
               
-              <Route path="/super-admin-dashboard/*" element={<SuperAdminDashboard />} />
-              <Route path="/agency-dashboard/*" element={<AgencyDashboard />} />
+              {/* Admin Routes */}
+              <Route path="/super-admin-dashboard/*" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <RoleGuard requiredRole={UserRole.SuperAdmin}>
+                    <SuperAdminDashboard />
+                  </RoleGuard>
+                </ProtectedRoute>
+              } />
               
-              <Route path="/credit-approval" element={<CreditApprovalPage />} />
-              <Route path="/sfd-management" element={<SfdManagementPage />} />
-              <Route path="/audit-logs" element={<AuditLogsPage />} />
+              <Route path="/sfd-management" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <RoleGuard requiredRole={UserRole.SuperAdmin}>
+                    <SfdManagementPage />
+                  </RoleGuard>
+                </ProtectedRoute>
+              } />
               
-              <Route path="/sfd-loans" element={<SfdLoansPage />} />
-              <Route path="/sfd-clients" element={<ClientsPage />} />
-              <Route path="/sfd-transactions" element={<TransactionsPage />} />
-              <Route path="/sfd-subsidy-requests" element={<SfdSubsidyRequestsPage />} />
-              <Route path="/sfd-meref-request" element={<SfdMerefRequestPage />} />
+              <Route path="/audit-logs" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <RoleGuard requiredRole={UserRole.SuperAdmin}>
+                    <AuditLogsPage />
+                  </RoleGuard>
+                </ProtectedRoute>
+              } />
               
-              <Route path="/mobile-flow/main" element={<MobileMainPage />} />
-              <Route path="/mobile-flow/transfer" element={<TransferPage />} />
-              <Route path="/mobile-flow/loans" element={<MobileLoansPage />} />
-              <Route path="/mobile-flow/my-loans" element={<MobileMyLoansPage />} />
-              <Route path="/mobile-flow/loan-details" element={<LoanDetailsPage />} />
-              <Route path="/mobile-flow/payment" element={<PaymentPage />} />
-              <Route path="/mobile-flow/account" element={<AccountPage />} />
-              <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
+              {/* SFD Admin Routes */}
+              <Route path="/agency-dashboard/*" element={
+                <ProtectedRoute requireSfdAdmin={true}>
+                  <RoleGuard requiredRole={UserRole.SfdAdmin}>
+                    <AgencyDashboard />
+                  </RoleGuard>
+                </ProtectedRoute>
+              } />
               
+              <Route path="/credit-approval" element={
+                <ProtectedRoute requireSfdAdmin={true}>
+                  <RoleGuard requiredRole={UserRole.SfdAdmin}>
+                    <CreditApprovalPage />
+                  </RoleGuard>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/sfd-loans" element={
+                <ProtectedRoute requireSfdAdmin={true}>
+                  <RoleGuard requiredRole={UserRole.SfdAdmin}>
+                    <SfdLoansPage />
+                  </RoleGuard>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/sfd-clients" element={
+                <ProtectedRoute requireSfdAdmin={true}>
+                  <RoleGuard requiredRole={UserRole.SfdAdmin}>
+                    <ClientsPage />
+                  </RoleGuard>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/sfd-transactions" element={
+                <ProtectedRoute requireSfdAdmin={true}>
+                  <RoleGuard requiredRole={UserRole.SfdAdmin}>
+                    <TransactionsPage />
+                  </RoleGuard>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/sfd-subsidy-requests" element={
+                <ProtectedRoute requireSfdAdmin={true}>
+                  <RoleGuard requiredRole={UserRole.SfdAdmin}>
+                    <SfdSubsidyRequestsPage />
+                  </RoleGuard>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/sfd-meref-request" element={
+                <ProtectedRoute requireSfdAdmin={true}>
+                  <RoleGuard requiredRole={UserRole.SfdAdmin}>
+                    <SfdMerefRequestPage />
+                  </RoleGuard>
+                </ProtectedRoute>
+              } />
+              
+              {/* Client/User Routes */}
+              <Route path="/mobile-flow/main" element={
+                <ProtectedRoute>
+                  <MobileMainPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/mobile-flow/transfer" element={
+                <ProtectedRoute>
+                  <TransferPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/mobile-flow/loans" element={
+                <ProtectedRoute>
+                  <MobileLoansPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/mobile-flow/my-loans" element={
+                <ProtectedRoute>
+                  <MobileMyLoansPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/mobile-flow/loan-details" element={
+                <ProtectedRoute>
+                  <LoanDetailsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/mobile-flow/payment" element={
+                <ProtectedRoute>
+                  <PaymentPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/mobile-flow/account" element={
+                <ProtectedRoute>
+                  <AccountPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/mobile-flow/*" element={
+                <ProtectedRoute>
+                  <MobileFlowPage />
+                </ProtectedRoute>
+              } />
+              
+              {/* Fallback Route */}
               <Route path="*" element={<Navigate to="/mobile-flow/main" replace />} />
             </Routes>
             <Toaster />

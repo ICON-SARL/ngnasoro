@@ -4,6 +4,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 import { UserRole } from '@/hooks/auth/types';
+import { Loader2 } from 'lucide-react';
 
 interface RoleGuardProps {
   requiredRole: UserRole | string;
@@ -11,7 +12,7 @@ interface RoleGuardProps {
 }
 
 const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin, isSfdAdmin, isClient, userRole } = useAuth();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const location = useLocation();
 
@@ -22,36 +23,40 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
       return;
     }
 
-    // Get role from user metadata
-    const userRole = user.app_metadata?.role || 'user'; // Default to 'user' if role is not set
-    
-    // Debug log
     console.log('RoleGuard checking:', { 
-      userRole, 
-      requiredRole, 
+      userRole,
+      requiredRole,
+      isAdmin,
+      isSfdAdmin,
+      isClient,
       userMetadata: user.app_metadata,
-      userObject: user
+      path: location.pathname
     });
     
-    // Handle mapping between app_metadata roles and database roles
-    // client in app_metadata maps to user in database
-    const getMappedRole = (role: string): string => {
-      return role.toLowerCase() === 'client' ? 'user' : role.toLowerCase();
+    // Super admins have access to everything
+    if (isAdmin) {
+      setHasAccess(true);
+      return;
+    }
+    
+    // Map string roles to the enum for consistency
+    const normalizeRole = (role: string | UserRole): string => {
+      if (typeof role === 'string') {
+        return role.toLowerCase();
+      }
+      return String(role).toLowerCase();
     };
     
-    // Handle special case where SFD_ADMIN should match sfd_admin role
-    // and convert both to lowercase for comparison
-    const userRoleLower = getMappedRole(String(userRole));
-    const requiredRoleLower = getMappedRole(String(requiredRole));
+    const normalizedRequiredRole = normalizeRole(requiredRole);
+    const normalizedUserRole = normalizeRole(userRole);
     
+    // Check for exact role match or special cases
     const permitted = 
-      userRoleLower === requiredRoleLower || 
-      (requiredRoleLower === 'sfd_admin' && userRoleLower === 'sfd_admin') ||
-      (requiredRoleLower === 'user' && userRoleLower === 'user') ||
-      (requiredRoleLower === 'client' && userRoleLower === 'user') ||
-      (requiredRoleLower === 'admin' && userRoleLower === 'admin') ||
-      // Accept all roles by super admin
-      userRoleLower === 'admin';
+      normalizedUserRole === normalizedRequiredRole ||
+      (normalizedRequiredRole === 'admin' && isAdmin) ||
+      (normalizedRequiredRole === 'sfd_admin' && isSfdAdmin) ||
+      (normalizedRequiredRole === 'user' && isClient) ||
+      (normalizedRequiredRole === 'client' && isClient);
     
     setHasAccess(permitted);
     
@@ -67,25 +72,34 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
         details: {
           required_role: requiredRole,
           user_role: userRole,
-          mapped_user_role: userRoleLower,
+          normalized_user_role: normalizedUserRole,
+          normalized_required_role: normalizedRequiredRole,
           timestamp: new Date().toISOString()
         },
         error_message: `Access denied: Missing role (${requiredRole})`
       }).catch(err => console.error('Error logging audit event:', err));
     }
-  }, [user, requiredRole, location.pathname]);
+  }, [user, requiredRole, location.pathname, userRole, isAdmin, isSfdAdmin, isClient]);
 
   if (loading || hasAccess === null) {
     // Still checking permissions
-    return <div className="flex justify-center items-center min-h-screen">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      <span className="ml-2">Vérification des autorisations...</span>
-    </div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="animate-spin rounded-full h-8 w-8 text-primary mr-2" />
+        <span>Vérification des autorisations...</span>
+      </div>
+    );
   }
 
   if (!user) {
     // User not authenticated, redirect to login
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return (
+      <Navigate 
+        to="/login" 
+        state={{ from: location.pathname }} 
+        replace 
+      />
+    );
   }
 
   if (!hasAccess) {
