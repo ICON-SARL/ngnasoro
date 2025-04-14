@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { SFD } from '@/hooks/useSfdManagement';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SfdDetailProps {
   selectedSfd: SFD;
@@ -19,6 +21,36 @@ interface SfdDetailProps {
 }
 
 export function SfdDetail({ selectedSfd, onEdit }: SfdDetailProps) {
+  // Récupérer les statistiques de la SFD
+  const { data: stats } = useQuery({
+    queryKey: ['sfd-stats', selectedSfd.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sfd_stats')
+        .select('*')
+        .eq('sfd_id', selectedSfd.id)
+        .single();
+        
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Récupérer le nombre de prêts actifs
+  const { data: activeLoans } = useQuery({
+    queryKey: ['active-loans', selectedSfd.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sfd_loans')
+        .select('*', { count: 'exact', head: true })
+        .eq('sfd_id', selectedSfd.id)
+        .eq('status', 'active');
+        
+      if (error) throw error;
+      return data?.length || 0;
+    }
+  });
+
   const statusColors = {
     active: 'bg-green-100 text-green-800',
     inactive: 'bg-gray-100 text-gray-800',
@@ -96,19 +128,19 @@ export function SfdDetail({ selectedSfd, onEdit }: SfdDetailProps) {
           
           <div className="flex items-center">
             <UsersIcon className="h-5 w-5 text-gray-500 mr-2" />
-            <span>{selectedSfd.client_count || 0} clients</span>
+            <span>{stats?.total_clients || 0} clients</span>
           </div>
           
           <div className="flex items-center">
             <Banknote className="h-5 w-5 text-gray-500 mr-2" />
-            <span>{selectedSfd.loan_count || 0} prêts</span>
+            <span>{activeLoans || 0} prêts actifs</span>
           </div>
           
           <div className="flex items-center">
             <div className="h-5 w-5 flex items-center justify-center mr-2">
               <span className="text-xs font-medium">%</span>
             </div>
-            <span>Taux de remboursement: 95%</span>
+            <span>Taux de remboursement: {stats?.repayment_rate || 0}%</span>
           </div>
         </div>
       </div>
