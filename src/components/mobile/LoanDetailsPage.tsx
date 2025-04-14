@@ -6,6 +6,7 @@ import { useLoanPayment } from '@/hooks/useLoanPayment';
 import LoanDetailsHeader from './loan/LoanDetailsHeader';
 import LoanTabsManager from './loan/LoanTabsManager';
 import MobileMoneyModal from './loan/MobileMoneyModal';
+import MobileNavigation from './MobileNavigation';
 import { LoanStatus, LoanDetails } from '@/types/loans';
 
 export interface LoanDetailsPageProps {
@@ -54,7 +55,7 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId: propL
   };
 
   return (
-    <div className="h-full bg-white">
+    <div className="h-full bg-white pb-20">
       <LoanDetailsHeader 
         onBack={handleBackAction} 
         onViewProcess={viewLoanProcess} 
@@ -74,6 +75,11 @@ const LoanDetailsPage: React.FC<LoanDetailsPageProps> = ({ onBack, loanId: propL
       {mobileMoneyInitiated && (
         <MobileMoneyModal onClose={() => setMobileMoneyInitiated(false)} />
       )}
+      
+      {/* Ajout du composant MobileNavigation en bas de la page */}
+      <div className="fixed bottom-0 left-0 right-0">
+        <MobileNavigation />
+      </div>
     </div>
   );
 };

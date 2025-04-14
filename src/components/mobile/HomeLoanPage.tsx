@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,6 +8,7 @@ import HomeLoanHeader from './loan/HomeLoanHeader';
 import TransactionList, { TransactionListItem } from './TransactionList';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
+import MobileNavigation from './MobileNavigation';
 
 const HomeLoanPage = () => {
   const navigate = useNavigate();
@@ -143,6 +143,10 @@ const HomeLoanPage = () => {
           onViewAll={() => navigate('/mobile-flow/loan-activity')}
           title="Transactions Récentes"
         />
+      </div>
+      
+      <div className="fixed bottom-0 left-0 right-0">
+        <MobileNavigation />
       </div>
     </div>
   );

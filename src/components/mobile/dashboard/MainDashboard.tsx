@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   toggleMenu
 }) => {
   return (
-    <div className="pb-16">
+    <div className="pb-20">
       <div className="bg-[#0D6A51] text-white p-4">
         <div className="flex justify-between items-center">
           <h1 className="text-xl font-bold">Tableau de Bord</h1>
@@ -129,8 +130,8 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
         />
       </div>
 
-      {/* Always display the mobile navigation footer */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0">
+      {/* Ensure the mobile navigation footer is visible */}
+      <div className="fixed bottom-0 left-0 right-0 sm:hidden">
         <MobileNavigation />
       </div>
     </div>
