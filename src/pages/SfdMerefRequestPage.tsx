@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { SfdHeader } from '@/components/sfd/SfdHeader';
+import { SfdHeader } from '@/components/SfdHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -48,11 +48,7 @@ const SfdMerefRequestPage: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="new">
-            <Card>
-              <CardContent className="p-6">
-                <MerefFundRequestForm />
-              </CardContent>
-            </Card>
+            <MerefFundRequestForm />
           </TabsContent>
         </Tabs>
       </main>

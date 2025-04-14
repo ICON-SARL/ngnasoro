@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,10 +8,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useMerefFundRequests } from '@/hooks/useMerefFundRequests';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle, Building } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
 const fundRequestSchema = z.object({
   amount: z.number().min(1, "Le montant doit être supérieur à 0"),
@@ -22,9 +24,11 @@ const fundRequestSchema = z.object({
 type FundRequestFormValues = z.infer<typeof fundRequestSchema>;
 
 export function MerefFundRequestForm() {
-  const { user, activeSfdId } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const { createFundRequest, isSubmitting } = useMerefFundRequests();
+  const { activeSfdId, sfdData, isLoading: isSfdLoading } = useSfdDataAccess();
+  const [sfdError, setSfdError] = useState<string | null>(null);
   
   const form = useForm<FundRequestFormValues>({
     resolver: zodResolver(fundRequestSchema),
@@ -34,6 +38,21 @@ export function MerefFundRequestForm() {
       justification: '',
     }
   });
+  
+  // Vérifier si l'utilisateur a une SFD active sélectionnée
+  useEffect(() => {
+    if (!isSfdLoading) {
+      if (!activeSfdId) {
+        if (sfdData.length === 0) {
+          setSfdError("Aucune SFD n'est associée à votre compte. Veuillez contacter l'administrateur.");
+        } else {
+          setSfdError("Aucune SFD active sélectionnée. Veuillez sélectionner une SFD.");
+        }
+      } else {
+        setSfdError(null);
+      }
+    }
+  }, [activeSfdId, sfdData, isSfdLoading]);
   
   const onSubmit = async (data: FundRequestFormValues) => {
     if (!activeSfdId) {
@@ -67,6 +86,67 @@ export function MerefFundRequestForm() {
       });
     }
   };
+  
+  // Afficher un message de chargement pendant que nous vérifions l'état de la SFD
+  if (isSfdLoading) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="mt-2 text-sm text-muted-foreground">Chargement des informations SFD...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // Afficher un message d'erreur si aucune SFD active n'est sélectionnée
+  if (sfdError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Demande de financement MEREF</CardTitle>
+          <CardDescription>
+            Soumettez une demande de fonds auprès du MEREF pour votre institution SFD
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Erreur</AlertTitle>
+            <AlertDescription>{sfdError}</AlertDescription>
+          </Alert>
+          
+          {sfdData.length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm mb-2">Veuillez sélectionner une SFD dans l'en-tête de l'application pour continuer.</p>
+              <div className="p-4 border rounded-md bg-muted/20">
+                <h3 className="text-sm font-medium mb-2">SFDs disponibles :</h3>
+                <ul className="space-y-2">
+                  {sfdData.map(sfd => (
+                    <li key={sfd.id} className="flex items-center gap-2 text-sm">
+                      <Building className="h-4 w-4 text-muted-foreground" />
+                      {sfd.name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </CardContent>
+        <CardFooter>
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={() => window.location.reload()}
+          >
+            Actualiser la page
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  }
   
   return (
     <Card>
