@@ -50,7 +50,7 @@ export function SfdAdminAssociationDialog({
 
   // Charger la liste des administrateurs disponibles
   useEffect(() => {
-    if (open) {
+    if (open && sfdId) {
       fetchAvailableAdmins();
     }
   }, [open, sfdId]);
@@ -62,13 +62,18 @@ export function SfdAdminAssociationDialog({
     setError(null);
     
     try {
-      // Récupérer tous les administrateurs SFD
+      console.log(`Récupération des admins disponibles pour la SFD: ${sfdId}`);
+      
+      // Récupérer tous les administrateurs SFD avec role='sfd_admin'
       const { data: allAdmins, error: adminsError } = await supabase
         .from('admin_users')
         .select('id, full_name, email')
         .eq('role', 'sfd_admin');
       
-      if (adminsError) throw adminsError;
+      if (adminsError) {
+        console.error('Erreur lors de la récupération des administrateurs:', adminsError);
+        throw adminsError;
+      }
       
       // Récupérer les administrateurs déjà associés à cette SFD
       const { data: existingAssocs, error: assocsError } = await supabase
@@ -76,12 +81,19 @@ export function SfdAdminAssociationDialog({
         .select('user_id')
         .eq('sfd_id', sfdId);
       
-      if (assocsError) throw assocsError;
+      if (assocsError) {
+        console.error('Erreur lors de la récupération des associations existantes:', assocsError);
+        throw assocsError;
+      }
+      
+      console.log(`Récupéré ${allAdmins?.length || 0} administrateurs au total`);
+      console.log(`${existingAssocs?.length || 0} associations trouvées pour la SFD ${sfdId}`);
       
       // Filtrer pour ne garder que les administrateurs non associés
       const existingUserIds = existingAssocs?.map(assoc => assoc.user_id) || [];
       const availableAdmins = allAdmins?.filter(admin => !existingUserIds.includes(admin.id)) || [];
       
+      console.log(`${availableAdmins.length} administrateurs disponibles pour association`);
       setAdmins(availableAdmins);
     } catch (err: any) {
       console.error("Erreur lors du chargement des administrateurs:", err);

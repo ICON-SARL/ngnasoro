@@ -1,27 +1,71 @@
 
 import { useState } from 'react';
-import { adminApi } from '@/utils/api/modules/adminApi';
 import { useToast } from '@/hooks/use-toast';
-import { AssociateSfdParams } from '@/hooks/auth/types';
-import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+interface UserSfdAssociation {
+  id: string;
+  user_id: string;
+  sfd_id: string;
+  is_default: boolean;
+  sfds: {
+    id: string;
+    name: string;
+    code: string;
+    region?: string;
+    status: string;
+  };
+}
+
+interface AssociationParams {
+  userId: string;
+  sfdId: string;
+  makeDefault?: boolean;
+}
 
 export function useSfdAssociation() {
   const [isLoading, setIsLoading] = useState(false);
-  const [userSfds, setUserSfds] = useState<any[]>([]);
+  const [userSfds, setUserSfds] = useState<UserSfdAssociation[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
-
+  const queryClient = useQueryClient();
+  
+  // Récupérer les SFD associées à un utilisateur
   const fetchUserSfds = async (userId: string) => {
-    setIsLoading(true);
     try {
-      const associations = await adminApi.getUserSfdAssociations(userId);
-      setUserSfds(associations);
-      return associations;
-    } catch (error) {
-      console.error('Error fetching user SFDs:', error);
+      setIsLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('user_sfds')
+        .select(`
+          id,
+          user_id,
+          sfd_id,
+          is_default,
+          sfds:sfd_id (
+            id,
+            name,
+            code,
+            region,
+            status
+          )
+        `)
+        .eq('user_id', userId);
+        
+      if (error) {
+        throw error;
+      }
+      
+      setUserSfds(data || []);
+      return data;
+    } catch (err: any) {
+      console.error('Erreur lors de la récupération des SFDs:', err);
+      setError(err.message);
       toast({
         title: 'Erreur',
-        description: 'Impossible de récupérer les SFDs associées à cet utilisateur',
+        description: 'Impossible de récupérer les SFDs associées',
         variant: 'destructive',
       });
       return [];
@@ -29,34 +73,57 @@ export function useSfdAssociation() {
       setIsLoading(false);
     }
   };
-
-  const associateWithSfd = async (params: AssociateSfdParams) => {
-    setIsLoading(true);
+  
+  // Associer un utilisateur à une SFD
+  const associateWithSfd = async ({ userId, sfdId, makeDefault = false }: AssociationParams) => {
     try {
-      const result = await adminApi.associateUserWithSfd(params);
+      setIsLoading(true);
+      setError(null);
       
-      if (result.success) {
-        toast({
-          title: 'Association réussie',
-          description: 'L\'utilisateur a été associé à la SFD avec succès',
+      // Si c'est la SFD par défaut, mettre à jour toutes les associations existantes
+      if (makeDefault) {
+        const { error: updateError } = await supabase
+          .from('user_sfds')
+          .update({ is_default: false })
+          .eq('user_id', userId);
+          
+        if (updateError) {
+          console.error('Erreur lors de la mise à jour des SFDs existantes:', updateError);
+          // Continuer quand même
+        }
+      }
+      
+      // Créer la nouvelle association
+      const { error: insertError } = await supabase
+        .from('user_sfds')
+        .insert({
+          user_id: userId,
+          sfd_id: sfdId,
+          is_default: makeDefault
         });
         
-        // Refresh the list of associations
-        await fetchUserSfds(params.userId);
-        return true;
-      } else {
-        toast({
-          title: 'Erreur',
-          description: result.error || 'Impossible d\'associer l\'utilisateur à la SFD',
-          variant: 'destructive',
-        });
-        return false;
+      if (insertError) {
+        throw insertError;
       }
-    } catch (error) {
-      console.error('Error associating user with SFD:', error);
+      
+      // Rafraîchir les données
+      await fetchUserSfds(userId);
+      
+      // Invalider les requêtes pour forcer un rechargement des données
+      queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
+      
+      toast({
+        title: 'Association réussie',
+        description: 'L\'utilisateur a été associé à la SFD avec succès',
+      });
+      
+      return true;
+    } catch (err: any) {
+      console.error('Erreur lors de l\'association:', err);
+      setError(err.message);
       toast({
         title: 'Erreur',
-        description: 'Une erreur est survenue lors de l\'association',
+        description: 'Impossible d\'associer l\'utilisateur à la SFD',
         variant: 'destructive',
       });
       return false;
@@ -64,51 +131,41 @@ export function useSfdAssociation() {
       setIsLoading(false);
     }
   };
-
-  const associateCurrentUserWithSfd = async (sfdId: string, makeDefault: boolean = true) => {
-    if (!user) {
-      toast({
-        title: 'Erreur',
-        description: 'Aucun utilisateur connecté',
-        variant: 'destructive',
-      });
-      return false;
-    }
-
-    return await associateWithSfd({
-      userId: user.id,
-      sfdId,
-      makeDefault
-    });
-  };
-
+  
+  // Supprimer une association
   const removeAssociation = async (userId: string, sfdId: string) => {
-    setIsLoading(true);
     try {
-      const result = await adminApi.removeUserSfdAssociation(userId, sfdId);
+      setIsLoading(true);
+      setError(null);
       
-      if (result.success) {
-        toast({
-          title: 'Association supprimée',
-          description: 'L\'association avec la SFD a été supprimée',
-        });
+      const { error } = await supabase
+        .from('user_sfds')
+        .delete()
+        .eq('user_id', userId)
+        .eq('sfd_id', sfdId);
         
-        // Refresh the list of associations
-        await fetchUserSfds(userId);
-        return true;
-      } else {
-        toast({
-          title: 'Erreur',
-          description: result.error || 'Impossible de supprimer l\'association',
-          variant: 'destructive',
-        });
-        return false;
+      if (error) {
+        throw error;
       }
-    } catch (error) {
-      console.error('Error removing SFD association:', error);
+      
+      // Rafraîchir les données
+      await fetchUserSfds(userId);
+      
+      // Invalider les requêtes pour forcer un rechargement des données
+      queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
+      
+      toast({
+        title: 'Association supprimée',
+        description: 'L\'association a été supprimée avec succès',
+      });
+      
+      return true;
+    } catch (err: any) {
+      console.error('Erreur lors de la suppression de l\'association:', err);
+      setError(err.message);
       toast({
         title: 'Erreur',
-        description: 'Une erreur est survenue lors de la suppression',
+        description: 'Impossible de supprimer l\'association',
         variant: 'destructive',
       });
       return false;
@@ -116,13 +173,13 @@ export function useSfdAssociation() {
       setIsLoading(false);
     }
   };
-
+  
   return {
     isLoading,
     userSfds,
+    error,
     fetchUserSfds,
     associateWithSfd,
-    associateCurrentUserWithSfd,
     removeAssociation
   };
 }
