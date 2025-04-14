@@ -17,7 +17,7 @@ export function useSfdManagement() {
   const [showEditDialog, setShowEditDialog] = useState(false);
 
   // Use the sub-hooks
-  const { sfds, isLoading, isError } = useSfdData();
+  const { sfds, isLoading, isError, refetch } = useSfdData();
   const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, filteredSfds } = useSfdFilters(sfds);
   const { 
     addSfdMutation, 
@@ -36,12 +36,14 @@ export function useSfdManagement() {
 
   const handleEditSfd = (formData: SfdFormValues) => {
     if (selectedSfd) {
+      console.log('Editing SFD:', selectedSfd.id, formData);
       editSfdMutation.mutate({ id: selectedSfd.id, data: formData });
       setShowEditDialog(false);
     }
   };
 
   const handleShowEditDialog = (sfd: Sfd) => {
+    console.log('Setting selected SFD for edit:', sfd);
     setSelectedSfd(sfd);
     setShowEditDialog(true);
   };
@@ -95,6 +97,7 @@ export function useSfdManagement() {
     handleReactivateSfd,
     handleActivateSfd,
     handleExportPdf,
-    handleExportExcel
+    handleExportExcel,
+    refetch
   };
 }

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
@@ -51,23 +51,32 @@ export function SfdEditDialog({
       description: sfd.description || '',
       contact_email: sfd.contact_email || '',
       phone: sfd.phone || '',
-      status: sfd.status
+      status: sfd.status,
+      logo_url: sfd.logo_url || '',
+      legal_document_url: sfd.legal_document_url || '',
     }
   });
 
+  // Reset form when SFD changes
+  useEffect(() => {
+    if (open && sfd) {
+      form.reset({
+        name: sfd.name,
+        code: sfd.code,
+        region: sfd.region || '',
+        description: sfd.description || '',
+        contact_email: sfd.contact_email || '',
+        phone: sfd.phone || '',
+        status: sfd.status,
+        logo_url: sfd.logo_url || '',
+        legal_document_url: sfd.legal_document_url || '',
+      });
+    }
+  }, [open, sfd, form]);
+
   const handleSubmit = (values: SfdFormValues) => {
-    // Remove any fields that are not in the database schema
-    const sanitizedValues = {
-      name: values.name,
-      code: values.code,
-      region: values.region,
-      description: values.description,
-      contact_email: values.contact_email,
-      phone: values.phone,
-      status: values.status
-    };
-    
-    onSubmit(sanitizedValues);
+    console.log('Submit edit form with values:', values);
+    onSubmit(values);
   };
 
   return (
@@ -76,7 +85,7 @@ export function SfdEditDialog({
         <DialogHeader>
           <DialogTitle>Modifier la SFD</DialogTitle>
           <DialogDescription>
-            Modifier les informations de la SFD sélectionnée
+            Modifier les informations de la SFD {sfd.name}
           </DialogDescription>
         </DialogHeader>
 
@@ -119,6 +128,7 @@ export function SfdEditDialog({
                   <Select 
                     onValueChange={field.onChange} 
                     defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -196,6 +206,7 @@ export function SfdEditDialog({
                   <Select 
                     onValueChange={field.onChange} 
                     defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>

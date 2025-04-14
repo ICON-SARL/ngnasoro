@@ -13,14 +13,33 @@ export function useEditSfdMutation() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: SfdFormValues }) => {
-      const { data: updatedData, error } = await supabase
+      console.log('Editing SFD with ID:', id, 'and data:', data);
+      
+      // Extract only fields that should be updated
+      const updateData = {
+        name: data.name,
+        code: data.code,
+        region: data.region,
+        status: data.status,
+        description: data.description,
+        contact_email: data.contact_email,
+        phone: data.phone,
+        logo_url: data.logo_url,
+        legal_document_url: data.legal_document_url
+      };
+      
+      const { error } = await supabase
         .from('sfds')
-        .update(data)
-        .eq('id', id)
-        .select();
+        .update(updateData)
+        .eq('id', id);
 
-      if (error) throw error;
-      return updatedData;
+      if (error) {
+        console.error('Supabase error while updating SFD:', error);
+        throw error;
+      }
+      
+      // Return the updated data directly instead of fetching it again
+      return { id, ...updateData };
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
@@ -40,7 +59,8 @@ export function useEditSfdMutation() {
         });
       }
     },
-    onError: (error, variables) => {
+    onError: (error: any, variables) => {
+      console.error('Error in editSfdMutation:', error);
       toast({
         title: 'Erreur',
         description: `Une erreur est survenue: ${error.message}`,

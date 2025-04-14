@@ -7,8 +7,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, AlertTriangle } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "L'email est invalide" }),
@@ -27,6 +28,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   onError
 }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const { signIn } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -42,9 +44,11 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     try {
       setIsLoading(true);
+      setLoginError(null);
       
       if (onError) onError(''); // Clear previous errors
       
+      console.log('Attempting login with email:', values.email);
       const { error } = await signIn(values.email, values.password);
       
       if (error) {
@@ -63,6 +67,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
           errorMessage = "Problème de connexion réseau. Vérifiez votre connexion internet";
         }
         
+        // Set local error state
+        setLoginError(errorMessage);
+        
         // Display toast notification
         toast({
           title: "Échec de connexion",
@@ -78,6 +85,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
       }
       
       // If we get here, login was successful
+      console.log('Login successful');
       toast({
         title: "Connexion réussie",
         description: "Vous êtes maintenant connecté",
@@ -86,14 +94,17 @@ const LoginForm: React.FC<LoginFormProps> = ({
     } catch (err) {
       console.error('Unexpected error during login:', err);
       
+      const errorMessage = "Une erreur inattendue s'est produite lors de la connexion";
+      setLoginError(errorMessage);
+      
       // Show generic error message
       toast({
         title: "Erreur inattendue",
-        description: "Une erreur s'est produite lors de la connexion",
+        description: errorMessage,
         variant: "destructive",
       });
       
-      if (onError) onError("Une erreur inattendue s'est produite");
+      if (onError) onError(errorMessage);
       
     } finally {
       setIsLoading(false);
@@ -103,6 +114,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-6">
+        {loginError && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{loginError}</AlertDescription>
+          </Alert>
+        )}
+        
         <FormField
           control={form.control}
           name="email"
