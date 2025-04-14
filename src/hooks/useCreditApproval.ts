@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +9,7 @@ export interface CreditApplication {
   reference: string;
   sfd_id: string;
   sfd_name: string;
+  client_name?: string;
   amount: number;
   purpose: string;
   status: 'pending' | 'approved' | 'rejected';
@@ -17,53 +17,44 @@ export interface CreditApplication {
   score: number;
   approval_comments?: string;
   rejection_reason?: string;
-  rejection_comments?: string;
 }
 
 export function useCreditApproval() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const { user, isAdmin, isSfdAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   // Fetch credit applications using the Edge Function
-  const fetchCreditApplications = async (): Promise<CreditApplication[]> => {
-    try {
-      setIsLoading(true);
-      
-      // Use the credit-manager edge function to get applications
-      const sfdId = user?.user_metadata?.sfd_id;
-      const payload = { sfdId, filters: {} };
-      
-      console.log('Fetching credit applications with payload:', payload);
-      console.log('Current user role:', isAdmin ? 'Admin' : isSfdAdmin ? 'SFD Admin' : 'Other');
-      
-      const { data: responseData, error } = await supabase.functions.invoke('credit-manager', {
-        body: { action: 'get_applications', payload }
-      });
-      
-      if (error) {
-        console.error('Error fetching credit applications:', error);
-        return [];
-      }
-      
-      console.log('Credit applications response:', responseData);
-      return responseData?.data || [];
-    } catch (error) {
-      console.error('Error in fetchCreditApplications:', error);
-      return [];
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Use React Query to manage the data fetching
   const { data: applications = [], refetch } = useQuery({
     queryKey: ['credit-applications'],
-    queryFn: fetchCreditApplications,
-    // Adding automatic refetch interval
-    refetchInterval: 30000,
-    // Enable refetch on window focus
+    queryFn: async () => {
+      try {
+        console.log('Fetching credit applications...');
+        
+        const { data: responseData, error } = await supabase.functions.invoke('credit-manager', {
+          body: { 
+            action: 'get_applications'
+          }
+        });
+        
+        if (error) {
+          console.error('Error fetching applications:', error);
+          throw error;
+        }
+        
+        return responseData || [];
+      } catch (error) {
+        console.error('Error in fetchCreditApplications:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de récupérer les demandes de crédit",
+          variant: "destructive",
+        });
+        return [];
+      }
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
     refetchOnWindowFocus: true
   });
 
@@ -76,7 +67,7 @@ export function useCreditApproval() {
       amount: number; 
       purpose: string;
     }) => {
-      if (!user?.user_metadata?.sfd_id && !isSfdAdmin) {
+      if (!user?.user_metadata?.sfd_id && !isAdmin) {
         throw new Error("Vous devez être connecté en tant qu'admin SFD pour créer une demande de crédit");
       }
       
@@ -286,8 +277,7 @@ export function useCreditApproval() {
   return {
     applications,
     isLoading,
-    refetch,
-    refreshApplications,
+    refreshApplications: refetch,
     createCreditApplication,
     approveCredit,
     rejectCredit
