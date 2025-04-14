@@ -47,6 +47,10 @@ export function AuditLogsManager() {
   const [filters, setFilters] = useState<AuditLogFilters>({});
   const { logs, isLoading, isExporting, refetch, exportLogsToCSV } = useAuditLogs(filters);
   
+  const handleRefresh = () => {
+    refetch();
+  };
+  
   const handleExport = async () => {
     try {
       const csvContent = await exportLogsToCSV();
@@ -115,7 +119,7 @@ export function AuditLogsManager() {
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={refetch} disabled={isLoading}>
+              <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Actualiser
               </Button>

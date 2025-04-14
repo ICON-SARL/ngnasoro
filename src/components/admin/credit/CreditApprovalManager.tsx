@@ -264,8 +264,8 @@ export function CreditApprovalManager() {
             <Button variant="outline" onClick={() => setShowApproveDialog(false)}>
               Annuler
             </Button>
-            <Button onClick={handleApprove} disabled={approveCredit.isLoading}>
-              {approveCredit.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={handleApprove} disabled={approveCredit.isPending}>
+              {approveCredit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Confirmer l'approbation
             </Button>
           </DialogFooter>
@@ -330,9 +330,9 @@ export function CreditApprovalManager() {
             <Button 
               variant="destructive" 
               onClick={handleReject} 
-              disabled={rejectCredit.isLoading || !rejectionReason}
+              disabled={rejectCredit.isPending || !rejectionReason}
             >
-              {rejectCredit.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {rejectCredit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Confirmer le rejet
             </Button>
           </DialogFooter>
