@@ -31,15 +31,15 @@ const SfdSelectorPage = () => {
       setIsLoading(true);
       try {
         console.log('Fetching existing SFD client requests');
-        const { data, error } = await supabase
+        const { data: existingReqs, error: requestsError } = await supabase
           .from('sfd_clients')
           .select('sfd_id, status')
           .eq('user_id', user.id);
           
-        if (error) throw error;
+        if (requestsError) throw requestsError;
         
-        setExistingRequests(data || []);
-        console.log(`Found ${data?.length || 0} existing SFD client requests`);
+        setExistingRequests(existingReqs || []);
+        console.log(`Found ${existingReqs?.length || 0} existing SFD client requests`);
       } catch (err) {
         console.error('Error fetching existing requests:', err);
       } finally {
@@ -129,7 +129,7 @@ const SfdSelectorPage = () => {
         <h1 className="text-lg font-medium flex-1 text-center text-[#0D6A51]">
           SFDs Disponibles
         </h1>
-        <div className="w-10"></div> {/* Spacer for center alignment */}
+        <div className="w-10"></div>
       </header>
       
       <main className="flex-1 container mx-auto max-w-md p-4">
