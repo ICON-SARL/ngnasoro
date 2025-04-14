@@ -12,6 +12,10 @@ export interface LoanStatus {
     status: string;
   }[];
   status?: 'pending' | 'approved' | 'disbursed' | 'completed' | 'rejected';
+  progress?: number;
+  lateFees?: number;
+  disbursed?: boolean;
+  withdrawn?: boolean;
 }
 
 export interface LoanDetails {

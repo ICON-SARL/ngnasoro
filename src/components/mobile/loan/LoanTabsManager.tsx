@@ -48,7 +48,7 @@ const LoanTabsManager: React.FC<LoanTabsManagerProps> = ({
       
       <TabsContent value="details">
         <LoanDetailsTab 
-          totalAmount={loanStatus.totalAmount}
+          totalAmount={loanDetails.totalAmount}
           loanType={loanDetails.loanType}
           loanPurpose={loanDetails.loanPurpose}
           disbursalDate={loanDetails.disbursalDate}

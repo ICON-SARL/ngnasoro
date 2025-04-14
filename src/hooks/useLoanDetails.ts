@@ -1,35 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-
-export interface LoanStatus {
-  nextPaymentDue: string;
-  paidAmount: number;
-  totalAmount: number;
-  remainingAmount: number;
-  progress: number;
-  lateFees: number;
-  paymentHistory: Array<{
-    id: number;
-    date: string;
-    amount: number;
-    status: 'paid' | 'pending' | 'late';
-  }>;
-  disbursed: boolean;
-  withdrawn: boolean;
-}
-
-export interface LoanDetails {
-  loanType: string;
-  loanPurpose: string;
-  disbursalDate: string;
-  endDate: string;
-  interestRate: number;
-  status: string;
-  disbursed: boolean;
-  withdrawn: boolean;
-}
+import { LoanStatus, LoanDetails } from '@/types/loans';
 
 export function useLoanDetails(loanId: string | undefined) {
   const { toast } = useToast();
@@ -53,6 +25,7 @@ export function useLoanDetails(loanId: string | undefined) {
   const [loanDetails, setLoanDetails] = useState<LoanDetails>({
     loanType: "Microcrédit",
     loanPurpose: "Achat de matériel",
+    totalAmount: 25.40,
     disbursalDate: "5 janvier 2023",
     endDate: "5 juillet 2023",
     interestRate: 2.5,

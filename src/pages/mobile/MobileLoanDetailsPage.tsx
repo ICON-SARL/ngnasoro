@@ -31,6 +31,7 @@ const MobileLoanDetailsPage: React.FC = () => {
   const loanDetails = {
     loanType: 'Microcrédit',
     loanPurpose: 'Achat de matériel',
+    totalAmount: 500000, // Added totalAmount to match LoanDetails interface
     disbursalDate: '15 avril 2023',
     endDate: '15 octobre 2023',
     interestRate: 5.5,
