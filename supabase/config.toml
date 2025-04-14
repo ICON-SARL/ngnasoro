@@ -60,3 +60,7 @@ import_map = "import_map.json"
 [functions.associate-sfd-admin]
 verify_jwt = true
 import_map = "import_map.json"
+
+[functions.sfd-clients]
+verify_jwt = true
+import_map = "import_map.json"
