@@ -4,6 +4,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export interface MerefFundRequest {
+  id: string;
+  sfd_id: string;
+  amount: number;
+  purpose: string;
+  justification: string;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  created_at: string;
+  approved_at?: string;
+  approved_by?: string;
+  credited_at?: string;
+  comments?: string;
+  requested_by?: string;
+}
+
+interface FundRequestFormData {
   sfdId: string;
   amount: number;
   purpose: string;
@@ -15,7 +30,7 @@ export function useMerefFundRequests() {
   const { toast } = useToast();
   
   // Mock fund requests data for development
-  const mockFundRequests = [
+  const mockFundRequests: MerefFundRequest[] = [
     {
       id: '1',
       sfd_id: 'sfd-123',
@@ -23,7 +38,8 @@ export function useMerefFundRequests() {
       purpose: 'Expansion des services financiers',
       justification: 'Permettre d\'atteindre les zones rurales avec des services financiers de base',
       status: 'pending',
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      requested_by: 'user-123'
     },
     {
       id: '2',
@@ -33,11 +49,13 @@ export function useMerefFundRequests() {
       justification: 'Modernisation des processus pour améliorer l\'efficacité opérationnelle',
       status: 'approved',
       created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      approved_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+      approved_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      approved_by: 'admin-123',
+      requested_by: 'user-456'
     }
   ];
   
-  const createFundRequest = async (request: MerefFundRequest) => {
+  const createFundRequest = async (request: FundRequestFormData) => {
     try {
       setIsSubmitting(true);
       
@@ -99,11 +117,9 @@ export function useMerefFundRequests() {
     return { success: true };
   };
   
-  // Adding the missing properties to the return object
   return {
     createFundRequest,
     isSubmitting,
-    // Add the missing properties
     fundRequests: mockFundRequests,
     isLoading: false,
     refetch: () => Promise.resolve(),
