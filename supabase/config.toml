@@ -1,16 +1,43 @@
 
-# This file controls the behaviour of the Edge Functions runtime.
-# More information can be found here: https://supabase.io/docs/guides/edge-functions/edge-functions-configuration
 project_id = "xnqysvnychmsockivqhb"
 
-[functions.create-sfd-admin]
-verify_jwt = true
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
 
-[functions.create-sfd-with-admin]
-verify_jwt = true
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
 
-[functions.fetch-sfd-admins]
-verify_jwt = true
+[realtime]
+enabled = true
 
-[functions.create-sfd-accounts]
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost"
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+
+[auth.email]
+enabled = true
+
+[auth.sms]
+enabled = true
+
+[auth.phone]
+enabled = true
+
+[functions.delete-sfd-admin]
 verify_jwt = true

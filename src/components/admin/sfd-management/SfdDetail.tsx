@@ -1,120 +1,135 @@
 
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Building, UserPlus } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SfdAdminManager } from '@/components/admin/sfd/SfdAdminManager';
+import { 
+  BuildingIcon, 
+  MapPinIcon, 
+  MailIcon, 
+  PhoneIcon,
+  UsersIcon,
+  BanknotesIcon,
+  PencilIcon
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { SFD } from '@/hooks/useSfdManagement';
 
 interface SfdDetailProps {
-  selectedSfd: any | null;
-  onEdit: (sfd: any) => void;
+  selectedSfd: SFD;
+  onEdit: (sfd: SFD) => void;
 }
 
 export function SfdDetail({ selectedSfd, onEdit }: SfdDetailProps) {
-  const [activeTab, setActiveTab] = useState('list');
+  const statusColors = {
+    active: 'bg-green-100 text-green-800',
+    inactive: 'bg-gray-100 text-gray-800',
+    suspended: 'bg-red-100 text-red-800',
+    pending: 'bg-amber-100 text-amber-800'
+  };
 
-  if (!selectedSfd) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center h-[300px]">
-          <div className="text-center">
-            <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Sélectionnez une SFD pour afficher ses détails</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  const statusLabels = {
+    active: 'Actif',
+    inactive: 'Inactif',
+    suspended: 'Suspendu',
+    pending: 'En attente'
+  };
+  
   return (
-    <Card className="mb-6">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <div className="space-y-1">
-          <CardTitle className="text-xl flex items-center gap-2">
-            {selectedSfd.logo_url && (
-              <img src={selectedSfd.logo_url} alt={selectedSfd.name} className="h-6 w-6 rounded-full" />
+    <div className="space-y-6">
+      <div className="flex justify-between items-start">
+        <div className="flex items-center">
+          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+            {selectedSfd.logo_url ? (
+              <img 
+                src={selectedSfd.logo_url} 
+                alt={selectedSfd.name} 
+                className="h-14 w-14 rounded-full object-cover" 
+              />
+            ) : (
+              <BuildingIcon className="h-8 w-8 text-primary" />
             )}
-            {selectedSfd.name}
-          </CardTitle>
-          <CardDescription>
-            Code: {selectedSfd.code} • Région: {selectedSfd.region || 'Non spécifiée'}
-          </CardDescription>
+          </div>
+          <div>
+            <h2 className="text-xl font-bold">{selectedSfd.name}</h2>
+            <p className="text-sm text-muted-foreground">Code: {selectedSfd.code}</p>
+            <div className="mt-1">
+              <Badge className={statusColors[selectedSfd.status]}>
+                {statusLabels[selectedSfd.status]}
+              </Badge>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => onEdit(selectedSfd)}>
-            Modifier
-          </Button>
+        
+        <Button onClick={() => onEdit(selectedSfd)} variant="outline" size="sm">
+          <PencilIcon className="h-4 w-4 mr-2" />
+          Modifier
+        </Button>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Informations de contact</h3>
+          
+          {selectedSfd.region && (
+            <div className="flex items-center">
+              <MapPinIcon className="h-5 w-5 text-gray-500 mr-2" />
+              <span>{selectedSfd.region}</span>
+            </div>
+          )}
+          
+          {selectedSfd.contact_email && (
+            <div className="flex items-center">
+              <MailIcon className="h-5 w-5 text-gray-500 mr-2" />
+              <span>{selectedSfd.contact_email}</span>
+            </div>
+          )}
+          
+          {selectedSfd.phone && (
+            <div className="flex items-center">
+              <PhoneIcon className="h-5 w-5 text-gray-500 mr-2" />
+              <span>{selectedSfd.phone}</span>
+            </div>
+          )}
         </div>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="list">Informations</TabsTrigger>
-            <TabsTrigger value="admins">
-              <UserPlus className="h-4 w-4 mr-1" />
-              Administrateurs
-            </TabsTrigger>
-            <TabsTrigger value="subsidies">Subventions</TabsTrigger>
-            <TabsTrigger value="clients">Clients</TabsTrigger>
-          </TabsList>
+        
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Statistiques</h3>
           
-          <TabsContent value="list">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Statut</h3>
-                  <p>{selectedSfd.status === 'active' ? 'Actif' : selectedSfd.status === 'pending' ? 'En attente' : 'Inactif'}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Date de création</h3>
-                  <p>{new Date(selectedSfd.created_at).toLocaleDateString()}</p>
-                </div>
-                {selectedSfd.contact_email && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Email de contact</h3>
-                    <p>{selectedSfd.contact_email}</p>
-                  </div>
-                )}
-                {selectedSfd.phone && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Téléphone</h3>
-                    <p>{selectedSfd.phone}</p>
-                  </div>
-                )}
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Dernière mise à jour</h3>
-                  <p>{selectedSfd.updated_at ? new Date(selectedSfd.updated_at).toLocaleDateString() : 'Jamais'}</p>
-                </div>
-                {selectedSfd.description && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
-                    <p>{selectedSfd.description}</p>
-                  </div>
-                )}
-              </div>
+          <div className="flex items-center">
+            <UsersIcon className="h-5 w-5 text-gray-500 mr-2" />
+            <span>{selectedSfd.client_count || 0} clients</span>
+          </div>
+          
+          <div className="flex items-center">
+            <BanknotesIcon className="h-5 w-5 text-gray-500 mr-2" />
+            <span>{selectedSfd.loan_count || 0} prêts</span>
+          </div>
+          
+          <div className="flex items-center">
+            <div className="h-5 w-5 flex items-center justify-center mr-2">
+              <span className="text-xs font-medium">%</span>
             </div>
-          </TabsContent>
-          
-          <TabsContent value="admins">
-            <SfdAdminManager sfdId={selectedSfd.id} sfdName={selectedSfd.name} />
-          </TabsContent>
-          
-          <TabsContent value="subsidies">
-            <div className="text-center p-4 text-muted-foreground">
-              Informations sur les subventions à venir
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="clients">
-            <div className="text-center p-4 text-muted-foreground">
-              Informations sur les clients à venir
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+            <span>Taux de remboursement: 95%</span>
+          </div>
+        </div>
+      </div>
+      
+      {selectedSfd.description && (
+        <div>
+          <h3 className="text-lg font-medium mb-2">Description</h3>
+          <p className="text-gray-700">{selectedSfd.description}</p>
+        </div>
+      )}
+      
+      <div>
+        <h3 className="text-lg font-medium mb-2">Date de création</h3>
+        <p className="text-gray-700">
+          {new Date(selectedSfd.created_at).toLocaleDateString('fr-FR', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          })}
+        </p>
+      </div>
+    </div>
   );
 }

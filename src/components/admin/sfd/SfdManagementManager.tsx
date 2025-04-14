@@ -13,8 +13,14 @@ import { useUpdateSfdMutation } from '../hooks/sfd-management/mutations/useUpdat
 import { useToast } from '@/hooks/use-toast';
 import { Loader } from '@/components/ui/loader';
 import { useSfdData } from '../hooks/sfd-management/useSfdData';
+import { cn } from '@/lib/utils';
 
-export function SfdManagementManager() {
+interface SfdManagementManagerProps {
+  onSelectSfd?: (sfd: Sfd) => void;
+  selectedSfdId?: string;
+}
+
+export function SfdManagementManager({ onSelectSfd, selectedSfdId }: SfdManagementManagerProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -53,6 +59,12 @@ export function SfdManagementManager() {
     sfd.code.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (sfd.region && sfd.region.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+  
+  const handleSfdClick = (sfd: Sfd) => {
+    if (onSelectSfd) {
+      onSelectSfd(sfd);
+    }
+  };
   
   const handleEdit = (sfd: Sfd) => {
     setSelectedSfd(sfd);
@@ -159,9 +171,16 @@ export function SfdManagementManager() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {filteredSfds.map(sfd => (
-                <Card key={sfd.id} className="overflow-hidden border-gray-200">
+                <Card 
+                  key={sfd.id} 
+                  className={cn(
+                    "overflow-hidden border-gray-200 cursor-pointer hover:border-primary/50 transition-colors",
+                    selectedSfdId === sfd.id && "border-primary border-2"
+                  )}
+                  onClick={() => handleSfdClick(sfd)}
+                >
                   <div className={`h-2 w-full ${
                     sfd.status === 'active' ? 'bg-green-500' : 
                     sfd.status === 'pending' ? 'bg-amber-500' :
@@ -190,9 +209,18 @@ export function SfdManagementManager() {
                           <p className="text-sm text-muted-foreground">Code: {sfd.code}</p>
                         </div>
                       </div>
-                      <button className="text-gray-500 hover:text-gray-700">
-                        <MoreHorizontal className="h-5 w-5" />
-                      </button>
+                      <Button
+                        variant="ghost" 
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent card click
+                          handleEdit(sfd);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                        <span className="sr-only">Modifier</span>
+                      </Button>
                     </div>
                     
                     <div className="space-y-3 mb-4">
@@ -230,16 +258,6 @@ export function SfdManagementManager() {
                          sfd.status === 'pending' ? 'En attente' : 
                          'Suspendu'}
                       </Badge>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEdit(sfd)}
-                        >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Modifier
-                        </Button>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>

@@ -48,5 +48,23 @@ export const sfdAdminApiService = {
     }
     
     return data;
+  },
+  
+  deleteSfdAdmin: async (adminId: string): Promise<any> => {
+    // Appeler l'Edge Function pour supprimer l'administrateur SFD
+    const { data, error } = await supabase.functions.invoke('delete-sfd-admin', {
+      body: JSON.stringify({ adminId })
+    });
+    
+    if (error) {
+      console.error('Erreur lors de la suppression de l\'administrateur:', error);
+      throw new Error('Impossible de supprimer l\'administrateur SFD');
+    }
+    
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+    
+    return data;
   }
 };

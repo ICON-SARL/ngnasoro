@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,10 +25,10 @@ export function useSfdManagement() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mock data for SFDs
+  // Mock data for SFDs with proper UUID format
   const mockSfds: SFD[] = [
     {
-      id: "sfd1",
+      id: "123e4567-e89b-12d3-a456-426614174000", // Valid UUID format
       name: "RCPB Ouagadougou",
       code: "RCPB-OUA",
       region: "Centre",
@@ -40,7 +41,7 @@ export function useSfdManagement() {
       loan_count: 380
     },
     {
-      id: "sfd2",
+      id: "223e4567-e89b-12d3-a456-426614174001", // Valid UUID format
       name: "Microcred Abidjan",
       code: "MC-ABJ",
       region: "Lagunes",
@@ -93,7 +94,7 @@ export function useSfdManagement() {
           success: true, 
           sfd: {
             ...sfdData,
-            id: `sfd${Date.now()}`,
+            id: crypto.randomUUID(), // Generate a proper UUID
             status: sfdData.status || 'active',
             created_at: new Date().toISOString(),
             client_count: 0,
