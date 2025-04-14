@@ -44,21 +44,21 @@ const MobileLoansPage: React.FC = () => {
             title="Demander un prêt"
             description="Faites une demande de prêt auprès d'une SFD"
             icon={<CreditCard className="h-6 w-6" />}
-            onClick={() => navigate('/mobile-flow/loan-application')}
+            onClick={() => navigate('/mobile-flow/loan-plans')}
           />
           
           <LoanTypeCard
             title="Prêt subventionné"
             description="Prêt avec taux d'intérêt réduit grâce à une subvention"
             icon={<BadgePercent className="h-6 w-6" />}
-            onClick={() => navigate('/mobile-flow/loan-application')}
+            onClick={() => navigate('/mobile-flow/loan-plans')}
           />
           
           <LoanTypeCard
             title="Prêt d'équipement"
             description="Financement pour l'achat d'équipements agricoles"
             icon={<Building className="h-6 w-6" />}
-            onClick={() => navigate('/mobile-flow/loan-application')}
+            onClick={() => navigate('/mobile-flow/loan-plans')}
           />
         </div>
         

@@ -1,37 +1,54 @@
 
 import React from 'react';
-import { Home, User, Wallet, CreditCard } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
 
-interface MobileMenuProps {
-  onLogout?: () => void;
+export interface MobileMenuProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onNavigate: (newView: string, data?: any) => void;
 }
 
-const MobileMenu: React.FC<MobileMenuProps> = ({ onLogout }) => {
-  const location = useLocation();
-  const isActive = (path: string) => location.pathname === path;
-
+const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, onNavigate }) => {
+  if (!isOpen) return null;
+  
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-2 flex justify-around items-center h-16 z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
-      <Link to="/mobile-flow/main" className={`flex flex-col items-center justify-center flex-1 ${isActive('/mobile-flow/main') ? 'text-[#0D6A51]' : 'text-gray-500'}`}>
-        <Home className={`h-5 w-5 ${isActive('/mobile-flow/main') ? 'text-[#0D6A51]' : 'text-gray-500'}`} />
-        <span className={`text-xs mt-1 ${isActive('/mobile-flow/main') ? 'font-medium' : ''}`}>Accueil</span>
-      </Link>
-      
-      <Link to="/mobile-flow/loans" className={`flex flex-col items-center justify-center flex-1 ${isActive('/mobile-flow/loans') ? 'text-[#0D6A51]' : 'text-gray-500'}`}>
-        <CreditCard className={`h-5 w-5 ${isActive('/mobile-flow/loans') ? 'text-[#0D6A51]' : 'text-gray-500'}`} />
-        <span className={`text-xs mt-1 ${isActive('/mobile-flow/loans') ? 'font-medium' : ''}`}>Prêts</span>
-      </Link>
-      
-      <Link to="/mobile-flow/payment" className={`flex flex-col items-center justify-center flex-1 ${isActive('/mobile-flow/payment') ? 'text-[#0D6A51]' : 'text-gray-500'}`}>
-        <Wallet className={`h-5 w-5 ${isActive('/mobile-flow/payment') ? 'text-[#0D6A51]' : 'text-gray-500'}`} />
-        <span className={`text-xs mt-1 ${isActive('/mobile-flow/payment') ? 'font-medium' : ''}`}>Paiement</span>
-      </Link>
-      
-      <Link to="/mobile-flow/account" className={`flex flex-col items-center justify-center flex-1 ${isActive('/mobile-flow/account') ? 'text-[#0D6A51]' : 'text-gray-500'}`}>
-        <User className={`h-5 w-5 ${isActive('/mobile-flow/account') ? 'text-[#0D6A51]' : 'text-gray-500'}`} />
-        <span className={`text-xs mt-1 ${isActive('/mobile-flow/account') ? 'font-medium' : ''}`}>Compte</span>
-      </Link>
+    <div className="fixed inset-0 z-50 bg-black/80">
+      <div className="bg-white h-full w-3/4 flex flex-col p-4">
+        <button onClick={onClose} className="self-end">
+          X
+        </button>
+        <nav className="flex flex-col space-y-4 mt-8">
+          <button 
+            onClick={() => { onNavigate('/mobile-flow/main'); onClose(); }}
+            className="text-left py-2 border-b"
+          >
+            Accueil
+          </button>
+          <button 
+            onClick={() => { onNavigate('/mobile-flow/loans'); onClose(); }}
+            className="text-left py-2 border-b"
+          >
+            Prêts
+          </button>
+          <button 
+            onClick={() => { onNavigate('/mobile-flow/savings'); onClose(); }}
+            className="text-left py-2 border-b"
+          >
+            Épargne
+          </button>
+          <button 
+            onClick={() => { onNavigate('/mobile-flow/transactions'); onClose(); }}
+            className="text-left py-2 border-b"
+          >
+            Transactions
+          </button>
+          <button 
+            onClick={() => { onNavigate('/mobile-flow/account'); onClose(); }}
+            className="text-left py-2 border-b"
+          >
+            Mon Compte
+          </button>
+        </nav>
+      </div>
     </div>
   );
 };
