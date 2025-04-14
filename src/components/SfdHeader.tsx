@@ -14,10 +14,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { ModeToggle } from '@/components/ModeToggle';
-import { Globe, ChevronDown, LogOut, Menu, Users, CreditCard, PieChart, Settings, Landmark, Bell, Building } from 'lucide-react';
+import { Globe, ChevronDown, LogOut, Menu, Users, CreditCard, PieChart, Settings, Landmark, Bell, Building, BarChart } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import LogoutButton from '@/components/LogoutButton';
 
 export function SfdHeader() {
   const { user, signOut } = useAuth();
@@ -83,6 +84,7 @@ export function SfdHeader() {
     { name: 'Tableau de bord', icon: <PieChart className="w-4 h-4 mr-2" />, path: '/agency-dashboard' },
     { name: 'Clients', icon: <Users className="w-4 h-4 mr-2" />, path: '/sfd-clients' },
     { name: 'Prêts', icon: <CreditCard className="w-4 h-4 mr-2" />, path: '/sfd-loans' },
+    { name: 'Transactions', icon: <BarChart className="w-4 h-4 mr-2" />, path: '/sfd-transactions' },
     { name: 'Subventions', icon: <Landmark className="w-4 h-4 mr-2" />, path: '/sfd-subsidy-requests' },
     { name: 'Paramètres', icon: <Settings className="w-4 h-4 mr-2" />, path: '/sfd-settings' },
   ];
