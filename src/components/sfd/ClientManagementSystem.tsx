@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -7,9 +6,10 @@ import { Loader2, AlertCircle, Info, Users, UserPlus, ClipboardList } from 'luci
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { useNavigate } from 'react-router-dom';
-import ClientsManagement from './ClientsManagement';
+import { ClientsManagement } from './ClientsManagement';
 import { ClientAdhesionRequests } from './ClientAdhesionRequests';
 import { usePermissions } from '@/hooks/auth/usePermissions';
+import { SfdAdminVerification } from '../admin/sfd/SfdAdminVerification';
 
 export function ClientManagementSystem() {
   const { user } = useAuth();
@@ -52,9 +52,8 @@ export function ClientManagementSystem() {
     );
   }
   
-  // Récupérer le nom de la SFD active pour l'afficher
   const activeSfd = sfdData.find(sfd => sfd.id === activeSfdId);
-  
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -65,6 +64,13 @@ export function ClientManagementSystem() {
           </div>
         )}
       </div>
+
+      {activeSfdId && activeSfd && (
+        <SfdAdminVerification 
+          sfdId={activeSfdId} 
+          sfdName={activeSfd.name} 
+        />
+      )}
       
       <Alert variant="default" className="bg-muted">
         <Info className="h-4 w-4" />
