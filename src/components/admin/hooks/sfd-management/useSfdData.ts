@@ -34,6 +34,57 @@ export function useSfdData() {
           abortController.abort();
         }, 15000); // 15 second timeout
         
+        // Try to use the edge function first (bypass RLS issues)
+        try {
+          console.log('Attempting to fetch SFDs using Edge Function...');
+          const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke('fetch-sfds');
+          
+          if (edgeFunctionError) {
+            console.error('Edge Function error:', edgeFunctionError);
+            throw edgeFunctionError;
+          }
+          
+          if (edgeFunctionData) {
+            console.log(`Retrieved ${edgeFunctionData.length} SFDs successfully via Edge Function`);
+            
+            // Convert to properly typed Sfd objects
+            const typedSfds = edgeFunctionData.map(sfd => {
+              const typedSfd: Sfd = {
+                id: sfd.id,
+                name: sfd.name,
+                code: sfd.code,
+                region: sfd.region || undefined,
+                status: (sfd.status as 'active' | 'suspended' | 'pending') || 'pending',
+                logo_url: sfd.logo_url || undefined,
+                contact_email: sfd.contact_email || undefined,
+                phone: sfd.phone || undefined,
+                description: sfd.description || undefined,
+                created_at: sfd.created_at,
+                updated_at: sfd.updated_at || undefined,
+                // Add properties used in UI that aren't in the database query
+                email: sfd.contact_email || undefined,
+                address: undefined,
+                legal_document_url: undefined,
+                subsidy_balance: undefined,
+                suspended_at: undefined,
+                suspension_reason: undefined,
+                client_count: undefined,
+                loan_count: undefined,
+                total_loan_amount: undefined,
+                admin_count: undefined,
+                last_admin_login: undefined
+              };
+              return typedSfd;
+            });
+            
+            // Sort with priority SFDs first
+            return sortPrioritySfds(typedSfds);
+          }
+        } catch (edgeError) {
+          console.warn('Failed to fetch SFDs via Edge Function, falling back to direct query:', edgeError);
+        }
+        
+        // Fallback to direct query if edge function fails
         const { data, error } = await supabase
           .from('sfds')
           .select(`
@@ -114,6 +165,8 @@ export function useSfdData() {
             errorMessage.includes('timeout') ||
             !navigator.onLine) {
           errorMessage = "Problème de connexion au serveur. Veuillez vérifier votre réseau.";
+        } else if (errorMessage.includes('infinite recursion detected')) {
+          errorMessage = "Erreur Supabase: infinite recursion detected in policy for relation \"user_sfds\"";
         }
         
         // Only show toast if we haven't shown a network error yet
