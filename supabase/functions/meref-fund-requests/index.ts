@@ -179,6 +179,158 @@ serve(async (req) => {
       );
     }
     
+    if (action === "transfer" && data.requestId) {
+      // Fetch the request to get details
+      const { data: request, error: fetchError } = await supabase
+        .from("subsidy_requests")
+        .select("*, sfds:sfd_id(id, name)")
+        .eq("id", data.requestId)
+        .single();
+        
+      if (fetchError) {
+        console.error("Error fetching request for transfer:", fetchError);
+        return new Response(
+          JSON.stringify({ error: fetchError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Ensure request is in approved status
+      if (request.status !== "approved") {
+        return new Response(
+          JSON.stringify({ error: "Only approved requests can be processed for transfer" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Check if SFD has an account
+      const { data: sfdAccount, error: accountError } = await supabase
+        .from("sfd_accounts")
+        .select("*")
+        .eq("sfd_id", request.sfd_id)
+        .eq("account_type", "operations")
+        .single();
+        
+      if (accountError && accountError.code !== "PGRST116") { // PGRST116 is "no rows returned"
+        console.error("Error checking SFD account:", accountError);
+        return new Response(
+          JSON.stringify({ error: accountError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Create account if doesn't exist
+      let accountId;
+      if (!sfdAccount) {
+        const { data: newAccount, error: createError } = await supabase
+          .from("sfd_accounts")
+          .insert({
+            sfd_id: request.sfd_id,
+            account_type: "operations",
+            balance: request.amount,
+            currency: "XOF",
+            status: "active",
+            created_by: data.adminId
+          })
+          .select()
+          .single();
+          
+        if (createError) {
+          console.error("Error creating SFD account:", createError);
+          return new Response(
+            JSON.stringify({ error: createError.message }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        
+        accountId = newAccount.id;
+      } else {
+        // Update existing account balance
+        const { error: updateError } = await supabase
+          .from("sfd_accounts")
+          .update({
+            balance: sfdAccount.balance + request.amount
+          })
+          .eq("id", sfdAccount.id);
+          
+        if (updateError) {
+          console.error("Error updating SFD account balance:", updateError);
+          return new Response(
+            JSON.stringify({ error: updateError.message }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        
+        accountId = sfdAccount.id;
+      }
+      
+      // Create transaction record
+      const { error: transactionError } = await supabase
+        .from("transactions")
+        .insert({
+          transaction_type: "credit",
+          amount: request.amount,
+          account_id: accountId,
+          sfd_id: request.sfd_id,
+          status: "completed",
+          description: `Transfert MEREF - ${request.purpose}`,
+          initiated_by: data.adminId,
+          reference: `MEREF-${request.id}`
+        });
+        
+      if (transactionError) {
+        console.error("Error creating transaction record:", transactionError);
+        return new Response(
+          JSON.stringify({ error: transactionError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Update request status to completed
+      const { data: updatedRequest, error: updateError } = await supabase
+        .from("subsidy_requests")
+        .update({
+          status: "completed",
+          credited_at: new Date().toISOString()
+        })
+        .eq("id", data.requestId)
+        .select()
+        .single();
+        
+      if (updateError) {
+        console.error("Error updating request status:", updateError);
+        return new Response(
+          JSON.stringify({ error: updateError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Log the activity
+      await supabase
+        .from("subsidy_request_activities")
+        .insert({
+          request_id: data.requestId,
+          activity_type: "funds_transferred",
+          performed_by: data.adminId,
+          description: "Fonds transférés au compte de la SFD",
+          details: {
+            amount: request.amount,
+            account_id: accountId
+          }
+        });
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Transfert effectué avec succès',
+          request: updatedRequest,
+          amount: request.amount,
+          sfd: request.sfds
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     if (action === "createFundRequest") {
       // Alternative endpoint for creating fund requests
       const { sfdId, fundRequest } = data;
