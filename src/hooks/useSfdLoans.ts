@@ -46,12 +46,8 @@ export function useSfdLoans() {
 
       return loans || [];
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger vos prêts",
-        variant: "destructive",
-      });
+    meta: {
+      errorMessage: "Impossible de charger vos prêts"
     }
   });
 }

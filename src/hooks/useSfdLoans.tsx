@@ -5,7 +5,7 @@ import { sfdLoanApi } from '@/utils/sfdLoanApi';
 import { Loan } from '@/types/sfdClients';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { useCachedSfdData } from '@/hooks/useCachedSfdData';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useSfdLoans() {
   const { user } = useAuth();
@@ -76,7 +76,7 @@ export function useSfdLoans() {
 
   // Approve loan mutation
   const approveLoan = useMutation({
-    mutationFn: (loanId: string) => sfdLoanApi.approveLoan(loanId),
+    mutationFn: (params: { loanId: string }) => sfdLoanApi.approveLoan(params.loanId),
     onSuccess: () => {
       toast({
         title: "Prêt approuvé",
@@ -88,7 +88,7 @@ export function useSfdLoans() {
 
   // Reject loan mutation
   const rejectLoan = useMutation({
-    mutationFn: (loanId: string) => sfdLoanApi.rejectLoan(loanId),
+    mutationFn: (params: { loanId: string }) => sfdLoanApi.rejectLoan(params.loanId),
     onSuccess: () => {
       toast({
         title: "Prêt rejeté",
@@ -100,7 +100,7 @@ export function useSfdLoans() {
 
   // Disburse loan mutation
   const disburseLoan = useMutation({
-    mutationFn: (loanId: string) => sfdLoanApi.disburseLoan(loanId),
+    mutationFn: (params: { loanId: string }) => sfdLoanApi.disburseLoan(params.loanId),
     onSuccess: () => {
       toast({
         title: "Prêt décaissé",
@@ -127,6 +127,7 @@ export function useSfdLoans() {
     data,
     isLoading,
     error,
+    loans: data, // Add loans as an alias of data for backward compatibility
     createLoan,
     approveLoan,
     rejectLoan,
