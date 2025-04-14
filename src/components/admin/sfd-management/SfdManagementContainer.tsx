@@ -4,7 +4,7 @@ import { useSfdManagement } from '../hooks/useSfdManagement';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Plus, RefreshCw, Search } from 'lucide-react';
-import { SfdTable } from '../sfd/SfdTable'; // Update the import path
+import { SfdTable } from '../sfd/SfdTable'; 
 import { SfdDialogs } from './SfdDialogs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
@@ -51,13 +51,13 @@ export function SfdManagementContainer() {
       <Alert variant="destructive" className="mt-4">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Erreur</AlertTitle>
-        <AlertDescription>
-          Une erreur est survenue lors du chargement des SFDs. Veuillez réessayer.
+        <AlertDescription className="space-y-2">
+          <p>Une erreur est survenue lors du chargement des SFDs. Veuillez réessayer.</p>
           <Button 
             onClick={forceRefresh} 
             variant="outline" 
             size="sm" 
-            className="ml-4"
+            className="mt-2"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Réessayer
@@ -68,7 +68,7 @@ export function SfdManagementContainer() {
   }
 
   // Enhance edit SFD to ensure data refresh
-  const handleEditSfdWithRefresh = (formData) => {
+  const handleEditSfdWithRefresh = (formData: any) => {
     handleEditSfd(formData);
     // Add a delayed refresh to ensure updated data is fetched after backend processes
     setTimeout(() => {
@@ -96,8 +96,13 @@ export function SfdManagementContainer() {
             variant="outline" 
             className="flex-shrink-0"
             onClick={forceRefresh}
+            disabled={isLoading}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
             Actualiser
           </Button>
           <Button 

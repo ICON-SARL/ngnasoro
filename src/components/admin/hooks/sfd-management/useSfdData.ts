@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Sfd } from '../../types/sfd-types';
@@ -34,15 +33,20 @@ export function useSfdData() {
           abortController.abort();
         }, 15000); // 15 second timeout
         
-        // Try to use the edge function first (bypass RLS issues)
+        // Always use the edge function first for reliability
         try {
-          console.log('Attempting to fetch SFDs using Edge Function...');
-          const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke('fetch-sfds');
+          console.log('Fetching SFDs using Edge Function...');
+          const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke('fetch-sfds', {
+            body: {}
+          });
           
           if (edgeFunctionError) {
             console.error('Edge Function error:', edgeFunctionError);
             throw edgeFunctionError;
           }
+          
+          // Clear the timeout as the request has completed
+          clearTimeout(timeoutId);
           
           if (edgeFunctionData) {
             console.log(`Retrieved ${edgeFunctionData.length} SFDs successfully via Edge Function`);
@@ -183,8 +187,8 @@ export function useSfdData() {
       }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1, // Only retry once to avoid endless loops
-    retryDelay: attempt => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 10 * 1000), // Backoff exponential with max 10s
+    retry: 2, // Retry twice to improve reliability
+    retryDelay: attempt => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 10 * 1000),
     refetchOnWindowFocus: false,
     refetchOnMount: true,
   });

@@ -1546,6 +1546,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_admin_auth: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_same_user: {
         Args: { user_id: string }
         Returns: boolean
