@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,7 +29,7 @@ export function useSuperAdminManagement() {
   const { toast } = useToast();
   const [loadAttempted, setLoadAttempted] = useState(false);
 
-  const fetchAdmins = async () => {
+  const fetchAdmins = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     setLoadAttempted(true);
@@ -40,7 +40,11 @@ export function useSuperAdminManagement() {
       // Utiliser la fonction Edge pour récupérer les administrateurs
       const { data, error: funcError } = await supabase.functions.invoke('fetch-admin-users', {
         method: 'POST',
-        body: JSON.stringify({ timestamp: Date.now() }), // Ajouter un timestamp pour éviter les caches
+        // Ajouter un timestamp à la requête pour éviter le cache
+        body: JSON.stringify({ 
+          timestamp: Date.now(),
+          forceRefresh: true 
+        }),
       });
       
       if (funcError) {
@@ -58,18 +62,15 @@ export function useSuperAdminManagement() {
       }));
       
       setAdmins(mappedAdmins as AdminUser[]);
-      console.log(`Successfully loaded ${mappedAdmins.length} admin users`);
+      console.log(`Successfully loaded ${mappedAdmins.length} admin users:`, mappedAdmins);
       
     } catch (err: any) {
       console.error('Error fetching admin users:', err);
       setError(err.message || 'Failed to load administrators');
-      
-      // La gestion des données factices est maintenant déplacée dans la composante AdminUsersList
-      // pour une meilleure séparation des préoccupations
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Fonction pour créer un nouvel administrateur
   const createAdmin = async (adminData: AdminCreateData) => {
@@ -177,7 +178,7 @@ export function useSuperAdminManagement() {
     }
   };
 
-  // Définir un temps maximum de chargement (15 secondes)
+  // Définir un temps maximum de chargement (10 secondes)
   useEffect(() => {
     let timer: NodeJS.Timeout;
     
@@ -189,7 +190,7 @@ export function useSuperAdminManagement() {
             setError("Le chargement a pris trop de temps. Veuillez réessayer.");
           }
         }
-      }, 15000);
+      }, 10000);
     }
     
     return () => {
@@ -201,7 +202,7 @@ export function useSuperAdminManagement() {
     if (!loadAttempted) {
       fetchAdmins();
     }
-  }, [loadAttempted]);
+  }, [loadAttempted, fetchAdmins]);
 
   return {
     admins,

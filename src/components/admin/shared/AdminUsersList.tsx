@@ -61,14 +61,16 @@ export function AdminUsersList() {
   const [retryCount, setRetryCount] = useState(0);
   const [showFallbackData, setShowFallbackData] = useState(false);
   
-  // Si le chargement dure plus de 5 secondes, afficher les données de secours
+  // Réduire le temps d'attente avant de montrer les données de secours à 3 secondes
   useEffect(() => {
     let timer: NodeJS.Timeout;
     
     if (isLoading) {
       timer = setTimeout(() => {
         setShowFallbackData(true);
-      }, 5000);
+      }, 3000);
+    } else {
+      setShowFallbackData(false);
     }
     
     return () => {
@@ -103,8 +105,8 @@ export function AdminUsersList() {
     },
     {
       id: '2',
-      email: 'direction@ngnasoro.ml',
-      full_name: 'Directeur SFD',
+      email: 'carriere@icon-sarl.com',
+      full_name: 'Admin Icon SARL',
       role: 'sfd_admin',
       has_2fa: false,
       created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
@@ -166,10 +168,12 @@ export function AdminUsersList() {
   // Déterminer quels administrateurs afficher
   const displayAdmins = () => {
     if (!isLoading && admins && admins.length > 0) {
+      console.log("Affichage des administrateurs réels:", admins);
       return admins;
     }
     
     if (showFallbackData || (!isLoading && (!admins || admins.length === 0))) {
+      console.log("Affichage des données de secours");
       return fallbackAdmins;
     }
     
@@ -183,7 +187,10 @@ export function AdminUsersList() {
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Liste des Administrateurs</h3>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={refetchAdmins} disabled={isLoading}>
+          <Button variant="outline" onClick={() => {
+            setRetryCount(0);
+            refetchAdmins();
+          }} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Actualiser
           </Button>
@@ -216,6 +223,16 @@ export function AdminUsersList() {
           <Info className="h-4 w-4 mr-2" />
           <AlertDescription>
             Affichage des données de démonstration, car le chargement des données réelles prend plus de temps que prévu.
+            <Button 
+              variant="link" 
+              className="p-0 h-auto text-blue-600" 
+              onClick={() => {
+                setRetryCount(0);
+                refetchAdmins();
+              }}
+            >
+              Réessayer de charger les données réelles
+            </Button>
           </AlertDescription>
         </Alert>
       )}
@@ -255,7 +272,7 @@ export function AdminUsersList() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={admin.role === 'admin' ? 'destructive' : 'default'} className="rounded-full">
-                      {admin.role === 'admin' ? 'Super Admin' : 'SFD Admin'}
+                      {admin.role === 'admin' ? 'Super Admin' : admin.role === 'sfd_admin' ? 'SFD Admin' : admin.role}
                     </Badge>
                   </TableCell>
                   <TableCell>

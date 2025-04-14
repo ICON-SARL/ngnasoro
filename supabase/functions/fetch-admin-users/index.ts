@@ -39,10 +39,16 @@ serve(async (req) => {
       throw error;
     }
     
-    console.log(`Successfully fetched ${data?.length || 0} admin users`);
+    // Vérifier et ajouter le champ is_active si nécessaire
+    const adminUsers = data ? data.map(admin => ({
+      ...admin,
+      is_active: admin.is_active !== undefined ? admin.is_active : true
+    })) : [];
     
-    // Si aucune donnée n'est trouvée, retourner des données factices
-    if (!data || data.length === 0) {
+    console.log(`Successfully fetched ${adminUsers.length || 0} admin users`);
+    
+    // Ne retourner les données de démonstration QUE si aucune donnée n'est trouvée
+    if (!adminUsers || adminUsers.length === 0) {
       console.log("No admin users found, returning mock data");
       
       const mockData = [
@@ -58,8 +64,8 @@ serve(async (req) => {
         },
         {
           id: '2',
-          email: 'direction@rcpb.ml',
-          full_name: 'Directeur RCPB',
+          email: 'carriere@icon-sarl.com', // Ajout de votre email
+          full_name: 'Admin Icon SARL',
           role: 'sfd_admin',
           has_2fa: false,
           created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -85,7 +91,7 @@ serve(async (req) => {
     }
     
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify(adminUsers),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
     
@@ -106,8 +112,8 @@ serve(async (req) => {
       },
       {
         id: '2',
-        email: 'direction@ngnasoro.ml',
-        full_name: 'Directeur SFD (Fallback)',
+        email: 'carriere@icon-sarl.com', // Ajout de votre email
+        full_name: 'Admin Icon SARL (Fallback)',
         role: 'sfd_admin',
         has_2fa: false,
         created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
