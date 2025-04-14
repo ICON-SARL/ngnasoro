@@ -1,26 +1,28 @@
 
-import { User as SupabaseUser } from '@supabase/supabase-js';
 import { User } from './types';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
-/**
- * Creates a User object from a Supabase user, ensuring all required properties
- * are properly mapped for our application
- */
 export const createUserFromSupabaseUser = (supabaseUser: SupabaseUser): User => {
-  // Extract metadata
-  const { app_metadata, user_metadata, ...rest } = supabaseUser;
-  
-  // Create our application User
-  const user: User = {
-    ...rest,
-    app_metadata,
-    user_metadata,
-    
-    // Add direct access properties for convenience
-    full_name: user_metadata?.full_name,
-    avatar_url: user_metadata?.avatar_url,
-    sfd_id: app_metadata?.sfd_id
+  return {
+    ...supabaseUser,
+    app_metadata: supabaseUser.app_metadata || { role: 'user' },
+    user_metadata: supabaseUser.user_metadata || {}
   };
-  
-  return user;
+};
+
+export const getRoleFromUser = (user: User | null): string => {
+  if (!user) return 'anonymous';
+  return user.app_metadata?.role || 'user';
+};
+
+export const isAdminRole = (role: string): boolean => {
+  return role === 'admin';
+};
+
+export const isSfdAdminRole = (role: string): boolean => {
+  return role === 'sfd_admin';
+};
+
+export const isClientRole = (role: string): boolean => {
+  return role === 'client' || role === 'user';
 };

@@ -3,12 +3,29 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { sfdApi } from '@/utils/api/modules/sfdApi';
 
+// Define the SfdFormValues interface
+export interface SfdFormValues {
+  name: string;
+  code: string;
+  region?: string;
+  status?: string;
+  contact_email?: string;
+  phone?: string;
+  description?: string;
+  logo_url?: string;
+  admin?: {
+    email: string;
+    password: string;
+    full_name: string;
+  };
+}
+
 export function useAddSfdMutation() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (sfdData: any) => {
+    mutationFn: async (sfdData: SfdFormValues) => {
       try {
         const result = await sfdApi.createSfdWithAdmin(sfdData);
         return result;

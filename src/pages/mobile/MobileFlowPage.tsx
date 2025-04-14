@@ -4,8 +4,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { MobileRouter } from '@/components/Router';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { MobileDrawerMenu } from '@/components/mobile/menu/MobileDrawerMenu';
-import { FloatingMenuButton } from '@/components/mobile/FloatingMenuButton';
+import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
+import FloatingMenuButton from '@/components/mobile/FloatingMenuButton';
 
 const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
