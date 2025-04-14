@@ -1,13 +1,15 @@
 
 import React, { useContext, useEffect, useState, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Session, User } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
+import { User, UserRole } from '@/hooks/auth/types';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<any>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<any>;
   signOut: () => Promise<{ error: any }>;
   refreshSession: () => Promise<void>;
   isAdmin: boolean;
@@ -33,7 +35,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check active auth session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        // Create the user object with extra properties
+        const userWithMeta = {
+          ...session.user,
+          full_name: session.user.user_metadata?.full_name || '',
+          avatar_url: session.user.user_metadata?.avatar_url,
+          sfd_id: session.user.app_metadata?.sfd_id,
+          phone: session.user.phone || session.user.user_metadata?.phone
+        } as User;
+        
+        setUser(userWithMeta);
+      } else {
+        setUser(null);
+      }
       
       // Try to get active SFD from localStorage if it exists
       const storedSfdId = localStorage.getItem('activeSfdId');
@@ -48,7 +64,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, newSession) => {
         setSession(newSession);
-        setUser(newSession?.user ?? null);
+        
+        if (newSession?.user) {
+          // Create the user object with extra properties
+          const userWithMeta = {
+            ...newSession.user,
+            full_name: newSession.user.user_metadata?.full_name || '',
+            avatar_url: newSession.user.user_metadata?.avatar_url,
+            sfd_id: newSession.user.app_metadata?.sfd_id,
+            phone: newSession.user.phone || newSession.user.user_metadata?.phone
+          } as User;
+          
+          setUser(userWithMeta);
+        } else {
+          setUser(null);
+        }
+        
         setLoading(false);
       }
     );
@@ -77,6 +108,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return data;
   };
 
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: metadata || {},
+      },
+    });
+    
+    if (error) throw error;
+    return data;
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     return { error };
@@ -86,7 +130,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     const { data } = await supabase.auth.refreshSession();
     setSession(data.session);
-    setUser(data.session?.user ?? null);
+    
+    if (data.session?.user) {
+      // Create the user object with extra properties
+      const userWithMeta = {
+        ...data.session.user,
+        full_name: data.session.user.user_metadata?.full_name || '',
+        avatar_url: data.session.user.user_metadata?.avatar_url,
+        sfd_id: data.session.user.app_metadata?.sfd_id,
+        phone: data.session.user.phone || data.session.user.user_metadata?.phone
+      } as User;
+      
+      setUser(userWithMeta);
+    } else {
+      setUser(null);
+    }
+    
     setLoading(false);
   };
 
@@ -107,6 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     session,
     loading,
     signIn,
+    signUp,
     signOut,
     refreshSession,
     isAdmin,
@@ -129,3 +189,6 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// Export the User type for components that need it
+export type { User };

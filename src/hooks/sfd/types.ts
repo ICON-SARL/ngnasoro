@@ -62,7 +62,7 @@ export interface SfdLoan {
   isLate: boolean;
 }
 
-// Add UserSfd interface
+// Update UserSfd interface to match what's used in fetchSfdAccounts.ts
 export interface UserSfd {
   id: string;
   is_default: boolean;

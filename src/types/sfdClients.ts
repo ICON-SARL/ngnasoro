@@ -46,6 +46,9 @@ export interface Loan {
   total_paid?: number;
   next_payment_date?: string;
   monthly_payment?: number;
+  reference?: string;
+  client_name?: string;
+  subsidy_amount?: number;
   sfds?: {
     name: string;
     logo_url: string;
@@ -97,4 +100,38 @@ export interface SfdSubsidy {
   allocated_by: string;
   end_date?: string;
   description?: string;
+}
+
+// Add missing ClientDocument type
+export interface ClientDocument {
+  id: string;
+  client_id: string;
+  document_type: string;
+  document_url: string;
+  uploaded_at: string;
+  verified: boolean;
+  verified_at?: string;
+  verified_by?: string;
+}
+
+// Add missing ClientActivity type
+export interface ClientActivity {
+  id: string;
+  client_id: string;
+  activity_type: string;
+  description: string;
+  performed_at: string;
+  performed_by?: string;
+}
+
+// Add missing ClientNotification type
+export interface ClientNotification {
+  id: string;
+  client_id: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  notification_type: string;
+  reference_id?: string;
 }

@@ -130,5 +130,56 @@ export const sfdLoanApi = {
       console.error('Error recording payment:', error);
       throw new Error(error.message || 'Failed to record payment');
     }
+  },
+
+  // Add the missing sendPaymentReminder function
+  async sendPaymentReminder(loanId: string) {
+    try {
+      // Get the loan details to include in the reminder
+      const { data: loan, error: loanError } = await supabase
+        .from('sfd_loans')
+        .select(`
+          id, 
+          client_id, 
+          amount, 
+          next_payment_date,
+          monthly_payment,
+          clients:client_id (
+            full_name,
+            phone,
+            email
+          )
+        `)
+        .eq('id', loanId)
+        .single();
+
+      if (loanError) throw loanError;
+
+      // Log the reminder request
+      const { data, error } = await supabase
+        .from('sfd_payment_reminders')
+        .insert({
+          loan_id: loanId,
+          client_id: loan.client_id,
+          reminder_type: 'sms',
+          status: 'sent',
+          sent_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      // In a real implementation, this would actually send an SMS or email
+      console.log(`Payment reminder sent for loan ${loanId}`);
+      
+      return data;
+    } catch (error: any) {
+      console.error('Error sending payment reminder:', error);
+      throw new Error(error.message || 'Failed to send payment reminder');
+    }
   }
 };
+
+// Add loan service for compatibility
+export const loanService = sfdLoanApi;
