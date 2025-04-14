@@ -1,41 +1,21 @@
 
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getSfdAdmins, SfdAdmin } from './sfdAdminApiService';
-import { useAddSfdAdmin } from './useAddSfdAdmin';
+import { useSfdAdminsList } from './useSfdAdminsList';
+import { SfdAdmin } from './useSfdAdminsList';
+
+export type { SfdAdmin };
 
 export function useSfdAdminManagement() {
-  const { addSfdAdmin, isAdding, error: addError } = useAddSfdAdmin();
+  // Cette fonction sert de point d'entrée pour la gestion des administrateurs SFD
+  // Elle pourra être étendue pour inclure d'autres fonctionnalités au besoin
   
-  // Get list of SFD admins
-  const { 
-    data: sfdAdmins = [], 
-    isLoading, 
-    error, 
-    refetch 
-  } = useQuery({
-    queryKey: ['sfd-admins'],
-    queryFn: async () => {
-      try {
-        console.log('Loading SFD admins via useSfdAdminManagement...');
-        const data = await getSfdAdmins();
-        console.log('Loaded SFD admins:', data);
-        return data;
-      } catch (err) {
-        console.error('Error in useSfdAdminManagement:', err);
-        return [];
-      }
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-
+  // Pour l'instant, on réexporte simplement les données de useSfdAdminsList
+  const { sfdAdmins, isLoading, error, refetch } = useSfdAdminsList('');
+  
   return {
-    sfdAdmins: Array.isArray(sfdAdmins) ? sfdAdmins : [],
+    sfdAdmins,
     isLoading,
     error,
-    refetch,
-    addSfdAdmin,
-    isAdding,
-    addError
+    refetch
   };
 }
