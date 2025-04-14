@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -57,7 +56,6 @@ export function SfdEditDialog({
     }
   });
 
-  // Reset form when SFD changes or dialog opens
   useEffect(() => {
     if (open && sfd) {
       console.log('Resetting form with SFD data:', sfd);
@@ -218,6 +216,7 @@ export function SfdEditDialog({
                       <SelectItem value="active">Actif</SelectItem>
                       <SelectItem value="pending">En attente</SelectItem>
                       <SelectItem value="suspended">Suspendu</SelectItem>
+                      <SelectItem value="inactive">Inactif</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
