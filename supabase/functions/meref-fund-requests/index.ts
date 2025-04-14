@@ -29,11 +29,13 @@ serve(async (req) => {
     // Create Supabase client with service key (admin privileges)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Extract request parameters
-    const { requestId, sfdId, action } = await req.json();
+    // Extract request data
+    const data = await req.json();
+    const { action } = data;
     
     if (action === "list") {
       // Fetch all subsidy requests
+      const sfdId = data.sfdId;
       let query = supabase.from("subsidy_requests").select(`
         id,
         sfd_id,
@@ -62,7 +64,7 @@ serve(async (req) => {
         query = query.eq("sfd_id", sfdId);
       }
       
-      const { data, error } = await query.order("created_at", { ascending: false });
+      const { data: requests, error } = await query.order("created_at", { ascending: false });
       
       if (error) {
         console.error("Error fetching fund requests:", error);
@@ -73,15 +75,15 @@ serve(async (req) => {
       }
       
       return new Response(
-        JSON.stringify(data),
+        JSON.stringify(requests),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
     if (action === "create") {
-      const { data: params } = await req.json();
+      const params = data.fundRequest || data;
       // Create a new subsidy request
-      const { data, error } = await supabase
+      const { data: newRequest, error } = await supabase
         .from("subsidy_requests")
         .insert({
           sfd_id: params.sfdId,
@@ -108,24 +110,24 @@ serve(async (req) => {
       await supabase
         .from("subsidy_request_activities")
         .insert({
-          request_id: data.id,
+          request_id: newRequest.id,
           activity_type: "request_created",
           performed_by: params.userId,
           description: "Demande de financement créée"
         });
       
       return new Response(
-        JSON.stringify(data),
+        JSON.stringify(newRequest),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    if ((action === "approve" || action === "reject") && requestId) {
+    if ((action === "approve" || action === "reject") && data.requestId) {
       // Load the current request to get details
       const { data: request, error: fetchError } = await supabase
         .from("subsidy_requests")
         .select("*")
-        .eq("id", requestId)
+        .eq("id", data.requestId)
         .single();
         
       if (fetchError) {
@@ -137,17 +139,15 @@ serve(async (req) => {
       }
       
       // Process the approval/rejection
-      const { data: userData } = await req.json();
-      
       const { data: updatedRequest, error: updateError } = await supabase
         .from("subsidy_requests")
         .update({
           status: action === "approve" ? "approved" : "rejected",
-          reviewed_by: userData.adminId,
+          reviewed_by: data.adminId,
           reviewed_at: new Date().toISOString(),
-          decision_comments: userData.comments
+          decision_comments: data.comments
         })
-        .eq("id", requestId)
+        .eq("id", data.requestId)
         .select()
         .single();
         
@@ -163,18 +163,62 @@ serve(async (req) => {
       await supabase
         .from("subsidy_request_activities")
         .insert({
-          request_id: requestId,
+          request_id: data.requestId,
           activity_type: action === "approve" ? "request_approved" : "request_rejected",
-          performed_by: userData.adminId,
+          performed_by: data.adminId,
           description: action === "approve" ? "Demande approuvée" : "Demande rejetée",
           details: {
-            comments: userData.comments,
+            comments: data.comments,
             previous_status: request.status
           }
         });
       
       return new Response(
         JSON.stringify(updatedRequest),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    if (action === "createFundRequest") {
+      // Alternative endpoint for creating fund requests
+      const { sfdId, fundRequest } = data;
+      
+      // Create a new subsidy request
+      const { data: newRequest, error } = await supabase
+        .from("subsidy_requests")
+        .insert({
+          sfd_id: sfdId,
+          amount: fundRequest.amount,
+          purpose: fundRequest.purpose,
+          justification: fundRequest.justification,
+          expected_impact: fundRequest.expected_impact || null,
+          region: fundRequest.region || null,
+          priority: fundRequest.priority || "normal",
+          requested_by: fundRequest.userId
+        })
+        .select()
+        .single();
+        
+      if (error) {
+        console.error("Error creating fund request:", error);
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Log the creation activity
+      await supabase
+        .from("subsidy_request_activities")
+        .insert({
+          request_id: newRequest.id,
+          activity_type: "request_created",
+          performed_by: fundRequest.userId,
+          description: "Demande de financement créée"
+        });
+      
+      return new Response(
+        JSON.stringify(newRequest),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -188,7 +232,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Server error:", error);
     return new Response(
-      JSON.stringify({ error: "An unexpected error occurred" }),
+      JSON.stringify({ error: "An unexpected error occurred", details: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

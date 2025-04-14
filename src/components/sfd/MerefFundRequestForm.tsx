@@ -74,11 +74,8 @@ export function MerefFundRequestForm() {
       
       form.reset();
     } catch (error: any) {
-      toast({
-        title: 'Erreur',
-        description: error.message || 'Une erreur est survenue lors de l\'envoi de la demande',
-        variant: 'destructive',
-      });
+      // L'erreur est déjà gérée dans le hook useMerefFundRequests
+      console.error("Erreur lors de la soumission:", error);
     }
   };
   
@@ -191,9 +188,9 @@ export function MerefFundRequestForm() {
           <Button 
             type="submit"
             className="w-full mt-6"
-            disabled={createFundRequest.isPending}
+            disabled={createFundRequest.isPending || isSubmitting}
           >
-            {createFundRequest.isPending ? (
+            {createFundRequest.isPending || isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Soumission en cours...
