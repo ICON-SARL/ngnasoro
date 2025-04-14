@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { adminApi } from '@/utils/api/modules/adminApi';
 import { useToast } from '@/hooks/use-toast';
@@ -44,7 +45,7 @@ export function useSfdAssociation() {
 
   const associateWithSfd = async (params: AssociateSfdParams) => {
     try {
-      const response = await adminApi.associateWithSfd(params);
+      const response = await adminApi.associateUserWithSfd(params);
       return response;
     } catch (error) {
       console.error('Error associating with SFD:', error);
@@ -57,9 +58,9 @@ export function useSfdAssociation() {
     }
   };
 
-  const removeAssociation = async (id: string) => {
+  const removeAssociation = async (userId: string) => {
     try {
-      const response = await adminApi.removeAssociation(id);
+      const response = await adminApi.removeUserSfdAssociation(userId);
       return response;
     } catch (error) {
       console.error('Error removing association:', error);

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useClientLoans } from '@/hooks/useClientLoans';
 import { useAuth } from '@/hooks/useAuth';
-import { loanPlanService } from '@/utils/sfdLoanApi';
+import { sfdLoanApi } from '@/utils/sfdLoanApi';
 import { Loader2 } from 'lucide-react';
 
 const LoanApplicationPage = () => {
@@ -36,7 +37,7 @@ const LoanApplicationPage = () => {
   useEffect(() => {
     const fetchLoanPlans = async () => {
       try {
-        const data = await loanPlanService.fetchAllLoanPlans();
+        const data = await sfdLoanApi.getSfdLoans();
         
         if (data) {
           const transformedPlans = data.map((plan: any) => ({
@@ -92,8 +93,9 @@ const LoanApplicationPage = () => {
     
     try {
       await applyForLoan.mutateAsync({
-        loan_plan_id: formData.loan_plan_id,
+        sfd_id: formData.loan_plan_id,
         amount: Number(formData.amount),
+        duration_months: 12, // Default value
         purpose: formData.purpose,
         supporting_documents: formData.supporting_documents
       });

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { sfdApi } from '@/utils/api/modules/sfdApi'; 
@@ -90,7 +89,8 @@ export function UserSfdAssociations({ userId, userName }: UserSfdAssociationsPro
   
   const handleRemoveAssociation = async (sfdId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette association ?')) {
-      await removeAssociation(userId, sfdId);
+      await removeAssociation(sfdId);
+      fetchUserSfds(userId);
     }
   };
   

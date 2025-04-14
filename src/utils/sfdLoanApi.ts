@@ -219,3 +219,21 @@ export const sfdLoanApi = {
 
 // Add loan service for compatibility
 export const loanService = sfdLoanApi;
+
+// Add loanPlanService for compatibility
+export const loanPlanService = {
+  fetchAllLoanPlans: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sfd_loan_plans')
+        .select('*')
+        .order('name');
+        
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching loan plans:', error);
+      throw new Error('Failed to fetch loan plans');
+    }
+  }
+};

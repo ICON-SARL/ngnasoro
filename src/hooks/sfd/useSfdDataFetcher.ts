@@ -32,11 +32,11 @@ export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateActio
       
       if (data) {
         const sfdList: SfdData[] = data.map(item => ({
-          id: item.sfds.id,
-          name: item.sfds.name,
-          code: item.sfds.code,
-          region: item.sfds.region,
-          status: item.sfds.status || 'active',
+          id: item.sfds?.id || '',
+          name: item.sfds?.name || '',
+          code: item.sfds?.code || '',
+          region: item.sfds?.region || '',
+          status: item.sfds?.status || 'active',
           token: null,
           lastFetched: null
         }));
