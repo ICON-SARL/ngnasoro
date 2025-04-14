@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { 
@@ -9,6 +9,7 @@ import {
   SimplifiedMerefDashboard
 } from '@/components/admin/dashboard';
 import { AdminUsersList } from '@/components/admin/shared/AdminUsersList';
+import { AddAdminDialog } from '@/components/admin/shared/AddAdminDialog';
 import { AdminAccountsManager } from '@/components/admin/roles/AdminAccountsManager';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ const SuperAdminDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
   const navigate = useNavigate();
+  const [isAddAdminDialogOpen, setIsAddAdminDialogOpen] = useState(false);
   
   const { dashboardData, isLoading } = useAdminDashboardData ? useAdminDashboardData() : { dashboardData: null, isLoading: false };
   
@@ -132,7 +134,7 @@ const SuperAdminDashboard = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold">Gestion des Administrateurs</h2>
-              <Button>
+              <Button onClick={() => setIsAddAdminDialogOpen(true)}>
                 <UserPlus className="h-4 w-4 mr-2" />
                 Nouvel Admin
               </Button>
@@ -161,6 +163,12 @@ const SuperAdminDashboard = () => {
         <DashboardTabs 
           activeTab={activeTab}
           onTabChange={handleTabChange}
+        />
+
+        {/* Dialogue pour ajouter un nouvel administrateur */}
+        <AddAdminDialog 
+          open={isAddAdminDialogOpen} 
+          onOpenChange={setIsAddAdminDialogOpen} 
         />
       </main>
       

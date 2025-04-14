@@ -14,10 +14,18 @@ export interface AdminUser {
   is_active: boolean;
 }
 
+export interface AdminCreateData {
+  email: string;
+  full_name: string;
+  password: string;
+  role: string;
+}
+
 export function useSuperAdminManagement() {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
 
   const fetchAdmins = async () => {
@@ -27,7 +35,7 @@ export function useSuperAdminManagement() {
     try {
       console.log('Fetching admin users using the functions API...');
       
-      // Use an Edge Function to bypass RLS policies
+      // Utiliser la fonction Edge pour récupérer les administrateurs
       const { data, error: funcError } = await supabase.functions.invoke('fetch-admin-users', {
         method: 'POST',
       });
@@ -40,8 +48,7 @@ export function useSuperAdminManagement() {
         throw new Error('No data returned from function');
       }
       
-      // Map the API data to our AdminUser interface
-      // Ensure all admins have the is_active property set to true by default
+      // Mapper les données de l'API à notre interface AdminUser
       const mappedAdmins = data.map((admin: any) => ({
         ...admin,
         is_active: admin.is_active !== undefined ? admin.is_active : true
@@ -54,7 +61,7 @@ export function useSuperAdminManagement() {
       console.error('Error fetching admin users:', err);
       setError(err.message || 'Failed to load administrators');
       
-      // Fallback to mock data for demonstration purposes
+      // Données fictives en cas d'erreur (pour démonstration)
       const mockAdmins: AdminUser[] = [
         {
           id: '1',
@@ -75,16 +82,6 @@ export function useSuperAdminManagement() {
           created_at: new Date().toISOString(),
           last_sign_in_at: null,
           is_active: false
-        },
-        {
-          id: '3',
-          email: 'admin@example.com',
-          full_name: 'Admin Test',
-          role: 'admin',
-          has_2fa: true,
-          created_at: new Date().toISOString(),
-          last_sign_in_at: new Date().toISOString(),
-          is_active: true
         }
       ];
       
@@ -100,13 +97,56 @@ export function useSuperAdminManagement() {
     }
   };
 
-  // Function to toggle admin status (active/inactive)
+  // Fonction pour créer un nouvel administrateur
+  const createAdmin = async (adminData: AdminCreateData) => {
+    setIsCreating(true);
+    
+    try {
+      // Appel à la fonction Edge pour créer un administrateur
+      const { data, error: createError } = await supabase.functions.invoke('create-admin-user', {
+        method: 'POST',
+        body: JSON.stringify(adminData)
+      });
+      
+      if (createError) {
+        throw new Error(`Erreur lors de la création: ${createError.message}`);
+      }
+      
+      if (!data || !data.success) {
+        throw new Error(data?.message || 'Échec de la création de l\'administrateur');
+      }
+      
+      toast({
+        title: "Succès",
+        description: `L'administrateur ${adminData.full_name} a été créé avec succès`,
+      });
+      
+      // Actualiser la liste des administrateurs
+      fetchAdmins();
+      
+      return true;
+    } catch (err: any) {
+      console.error('Error creating admin:', err);
+      
+      toast({
+        title: "Erreur",
+        description: err.message || "Une erreur est survenue lors de la création de l'administrateur",
+        variant: "destructive"
+      });
+      
+      return false;
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // Fonction pour activer/désactiver un administrateur
   const toggleAdminStatus = async (adminId: string, active: boolean) => {
     try {
-      // This would normally call a Supabase function to update the admin status
+      // Cette fonction appellerait normalement une fonction Edge pour modifier le statut
       console.log(`Toggling admin status for ${adminId} to ${active ? 'active' : 'inactive'}`);
       
-      // For now, just update it in the local state
+      // Pour l'instant, mettre à jour uniquement dans l'état local
       setAdmins(prevAdmins => 
         prevAdmins.map(admin => 
           admin.id === adminId 
@@ -134,11 +174,15 @@ export function useSuperAdminManagement() {
     }
   };
 
-  // Function to reset admin password
+  // Fonction pour réinitialiser le mot de passe d'un administrateur
   const resetAdminPassword = async (adminEmail: string) => {
     try {
-      // This would normally call Supabase Auth to reset password
-      console.log(`Sending password reset email to ${adminEmail}`);
+      // Appeler la fonction de réinitialisation de mot de passe de Supabase
+      const { error } = await supabase.auth.resetPasswordForEmail(adminEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) throw error;
       
       toast({
         title: "Email envoyé",
@@ -166,8 +210,10 @@ export function useSuperAdminManagement() {
   return {
     admins,
     isLoading,
+    isCreating,
     error,
     refetchAdmins: fetchAdmins,
+    createAdmin,
     toggleAdminStatus,
     resetAdminPassword
   };
