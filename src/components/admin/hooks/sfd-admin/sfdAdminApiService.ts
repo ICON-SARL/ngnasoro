@@ -12,17 +12,26 @@ export interface SfdAdmin {
 
 export const sfdAdminApiService = {
   fetchSfdAdmins: async (sfdId: string): Promise<SfdAdmin[]> => {
-    // Appeler la Edge Function pour récupérer les administrateurs SFD
-    const { data, error } = await supabase.functions.invoke('fetch-sfd-admins', {
-      body: JSON.stringify({ sfdId })
-    });
-    
-    if (error) {
+    try {
+      console.log(`Récupération des administrateurs pour la SFD: ${sfdId}`);
+      
+      // Récupérer directement les administrateurs avec le rôle sfd_admin
+      // Au lieu d'utiliser Edge Function qui semble échouer
+      const { data: admins, error } = await supabase
+        .from('admin_users')
+        .select('id, email, full_name, role, has_2fa, last_sign_in_at')
+        .eq('role', 'sfd_admin');
+      
+      if (error) {
+        console.error('Erreur lors de la récupération des administrateurs:', error);
+        throw new Error(`Erreur lors de la récupération des administrateurs: ${error.message}`);
+      }
+      
+      return admins || [];
+    } catch (error: any) {
       console.error('Erreur lors de la récupération des administrateurs:', error);
       throw new Error('Impossible de récupérer les administrateurs SFD');
     }
-    
-    return data || [];
   },
   
   createSfdAdmin: async (adminData: {

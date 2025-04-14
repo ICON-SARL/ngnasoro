@@ -64,37 +64,52 @@ export function SfdAdminAssociationDialog({
     try {
       console.log(`Récupération des admins disponibles pour la SFD: ${sfdId}`);
       
-      // Récupérer tous les administrateurs SFD avec role='sfd_admin'
+      // Récupérer tous les administrateurs SFD
       const { data: allAdmins, error: adminsError } = await supabase
         .from('admin_users')
         .select('id, full_name, email')
         .eq('role', 'sfd_admin');
       
       if (adminsError) {
-        console.error('Erreur lors de la récupération des administrateurs:', adminsError);
+        // Si la requête directe échoue, essayons une approche alternative
+        if (adminsError.message.includes('recursion detected')) {
+          console.log('Détection de récursion dans la politique, essai d\'une méthode alternative');
+          
+          // Récupérer via la fonction edge (plus sécurisée en cas de problèmes avec les politiques RLS)
+          const { data: edgeData, error: edgeError } = await supabase.functions.invoke('fetch-admin-users');
+          
+          if (edgeError) {
+            throw new Error(`Erreur lors de la récupération via Edge Function: ${edgeError.message}`);
+          }
+          
+          // Filtrer pour ne garder que les admin_sfd
+          const sfdAdmins = edgeData.filter((admin: any) => admin.role === 'sfd_admin');
+          console.log(`Récupéré ${sfdAdmins.length} admins via Edge Function`);
+          
+          // Utiliser ces données
+          const sortedAdmins = [...sfdAdmins].sort((a, b) => 
+            a.full_name.localeCompare(b.full_name));
+          setAdmins(sortedAdmins);
+          setIsLoading(false);
+          return;
+        }
+        
         throw adminsError;
       }
       
-      // Récupérer les administrateurs déjà associés à cette SFD
-      const { data: existingAssocs, error: assocsError } = await supabase
-        .from('user_sfds')
-        .select('user_id')
-        .eq('sfd_id', sfdId);
-      
-      if (assocsError) {
-        console.error('Erreur lors de la récupération des associations existantes:', assocsError);
-        throw assocsError;
+      console.log(`Récupéré ${allAdmins?.length || 0} administrateurs au total`);
+
+      if (!allAdmins || allAdmins.length === 0) {
+        setAdmins([]);
+        setIsLoading(false);
+        return;
       }
       
-      console.log(`Récupéré ${allAdmins?.length || 0} administrateurs au total`);
-      console.log(`${existingAssocs?.length || 0} associations trouvées pour la SFD ${sfdId}`);
+      // Trier les admins par nom
+      const sortedAdmins = [...allAdmins].sort((a, b) => 
+        a.full_name.localeCompare(b.full_name));
       
-      // Filtrer pour ne garder que les administrateurs non associés à cette SFD spécifique
-      const existingUserIds = existingAssocs?.map(assoc => assoc.user_id) || [];
-      const availableAdmins = allAdmins?.filter(admin => !existingUserIds.includes(admin.id)) || [];
-      
-      console.log(`${availableAdmins.length} administrateurs disponibles pour association`);
-      setAdmins(availableAdmins);
+      setAdmins(sortedAdmins);
     } catch (err: any) {
       console.error("Erreur lors du chargement des administrateurs:", err);
       setError("Impossible de charger la liste des administrateurs");
@@ -152,7 +167,8 @@ export function SfdAdminAssociationDialog({
             <Label htmlFor="admin-select">Administrateur</Label>
             {isLoading ? (
               <div className="flex items-center justify-center p-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <span>Chargement des administrateurs...</span>
               </div>
             ) : admins.length > 0 ? (
               <Select 
