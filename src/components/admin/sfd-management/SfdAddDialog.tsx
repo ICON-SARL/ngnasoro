@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -25,18 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAddSfdMutation, SfdFormValues } from '@/components/admin/hooks/sfd-management/mutations/useAddSfdMutation';
-
-// Create our schema with Zod to enforce required fields
-const sfdSchema = z.object({
-  name: z.string().min(1, { message: 'Le nom est requis' }),
-  code: z.string().min(1, { message: 'Le code est requis' }),
-  region: z.string().optional(),
-  status: z.enum(['active', 'pending', 'suspended']).default('active'),
-  logo_url: z.string().optional().nullable(),
-  contact_email: z.string().email({ message: 'Email invalide' }).optional().nullable(),
-  phone: z.string().optional().nullable(),
-  description: z.string().optional().nullable(),
-});
+import { sfdFormSchema } from '@/components/admin/sfd/schemas/sfdFormSchema';
 
 interface SfdAddDialogProps {
   open: boolean;
@@ -47,7 +35,7 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
   const addSfdMutation = useAddSfdMutation();
   
   const form = useForm<SfdFormValues>({
-    resolver: zodResolver(sfdSchema),
+    resolver: zodResolver(sfdFormSchema),
     defaultValues: {
       name: '',
       code: '',
@@ -55,7 +43,12 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
       status: 'active',
       description: '',
       contact_email: '',
+      email: '',
       phone: '',
+      address: '',
+      logo_url: '',
+      legal_document_url: null,
+      subsidy_balance: 0,
     },
   });
   

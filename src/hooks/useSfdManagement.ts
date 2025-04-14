@@ -1,8 +1,9 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { SfdFormValues } from '@/components/admin/hooks/sfd-management/mutations/useAddSfdMutation';
+import { SfdFormValues } from '@/components/admin/sfd/schemas/sfdFormSchema';
 
 export interface SFD {
   id: string;

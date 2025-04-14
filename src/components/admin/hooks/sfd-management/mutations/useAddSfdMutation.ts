@@ -4,22 +4,9 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
+import { SfdFormValues } from '@/components/admin/sfd/schemas/sfdFormSchema';
 
-export interface SfdFormValues {
-  name: string;
-  code: string;
-  region?: string;
-  status?: 'active' | 'pending' | 'suspended';
-  logo_url?: string | null;
-  contact_email?: string | null;
-  phone?: string | null;
-  description?: string | null;
-  // Include other optional fields that might be in the form
-  email?: string | null;
-  address?: string | null;
-  legal_document_url?: string | null;
-  subsidy_balance?: number;
-}
+export { SfdFormValues };
 
 export function useAddSfdMutation() {
   const { toast } = useToast();
