@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation } from '@tanstack/react-query';
 
 export interface MerefFundRequest {
   id: string;
@@ -101,30 +102,102 @@ export function useMerefFundRequests() {
     }
   };
   
-  // Stub functions for the admin features
-  const approveFundRequest = async ({ requestId, comments }: { requestId: string; comments?: string }) => {
-    // Placeholder for approval functionality
-    return { success: true };
+  // Function to fetch fund requests from the database
+  const fetchFundRequests = async (): Promise<MerefFundRequest[]> => {
+    try {
+      // In a real implementation, we would fetch from Supabase
+      // For now, return mock data
+      return mockFundRequests;
+    } catch (error) {
+      console.error('Error fetching fund requests:', error);
+      return [];
+    }
   };
   
-  const rejectFundRequest = async ({ requestId, comments }: { requestId: string; comments?: string }) => {
-    // Placeholder for rejection functionality
-    return { success: true };
-  };
+  // Use React Query to manage the data fetching
+  const { data: fundRequests, isLoading, refetch } = useQuery({
+    queryKey: ['fundRequests'],
+    queryFn: fetchFundRequests,
+    initialData: mockFundRequests
+  });
   
-  const executeFundTransfer = async (requestId: string) => {
-    // Placeholder for fund transfer functionality
-    return { success: true };
-  };
+  // Mutation for approving fund requests
+  const approveFundRequest = useMutation({
+    mutationFn: async ({ requestId, comments }: { requestId: string; comments?: string }) => {
+      // In a real implementation, we would update in Supabase
+      console.log(`Approving request ${requestId} with comments: ${comments}`);
+      return { success: true };
+    },
+    onSuccess: () => {
+      refetch();
+      toast({
+        title: 'Demande approuvée',
+        description: 'La demande de financement a été approuvée avec succès',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Une erreur est survenue lors de l\'approbation',
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  // Mutation for rejecting fund requests
+  const rejectFundRequest = useMutation({
+    mutationFn: async ({ requestId, comments }: { requestId: string; comments?: string }) => {
+      // In a real implementation, we would update in Supabase
+      console.log(`Rejecting request ${requestId} with comments: ${comments}`);
+      return { success: true };
+    },
+    onSuccess: () => {
+      refetch();
+      toast({
+        title: 'Demande rejetée',
+        description: 'La demande de financement a été rejetée',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Une erreur est survenue lors du rejet',
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  // Mutation for executing fund transfers
+  const executeFundTransfer = useMutation({
+    mutationFn: async (requestId: string) => {
+      // In a real implementation, we would update in Supabase
+      console.log(`Executing transfer for request ${requestId}`);
+      return { success: true };
+    },
+    onSuccess: () => {
+      refetch();
+      toast({
+        title: 'Transfert effectué',
+        description: 'Le transfert de fonds a été effectué avec succès',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Une erreur est survenue lors du transfert',
+        variant: 'destructive',
+      });
+    }
+  });
   
   return {
     createFundRequest,
     isSubmitting,
-    fundRequests: mockFundRequests,
-    isLoading: false,
-    refetch: () => Promise.resolve(),
-    approveFundRequest: { mutate: approveFundRequest, isPending: false },
-    rejectFundRequest: { mutate: rejectFundRequest, isPending: false },
-    executeFundTransfer: { mutate: executeFundTransfer, isPending: false }
+    fundRequests: fundRequests || [],
+    isLoading,
+    refetch,
+    approveFundRequest: approveFundRequest,
+    rejectFundRequest: rejectFundRequest,
+    executeFundTransfer: executeFundTransfer
   };
 }
