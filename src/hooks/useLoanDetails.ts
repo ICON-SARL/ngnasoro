@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { LoanStatus, LoanDetails } from '@/types/loans';
+import { fetchLoanDetails } from '@/services/loans/loanDetailsService';
+import { setupLoanRealtimeSubscription } from '@/services/loans/loanRealtimeService';
 
 export function useLoanDetails(loanId: string | undefined) {
   const { toast } = useToast();
@@ -38,7 +39,7 @@ export function useLoanDetails(loanId: string | undefined) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchLoanDetails = async () => {
+  const fetchLoanData = async () => {
     setIsLoading(true);
     setError(null);
     
@@ -48,103 +49,27 @@ export function useLoanDetails(loanId: string | undefined) {
         return;
       }
       
-      const { data, error } = await supabase
-        .from('sfd_loans')
-        .select(`
-          id, 
-          amount, 
-          interest_rate, 
-          duration_months, 
-          monthly_payment,
-          purpose,
-          disbursed_at,
-          status,
-          next_payment_date,
-          last_payment_date,
-          sfd_id,
-          client_id
-        `)
-        .eq('id', loanId)
-        .single();
-        
-      if (error) throw error;
+      const result = await fetchLoanDetails(loanId);
       
-      if (data) {
-        setLoanDetails({
-          loanType: data.purpose.includes('Micro') ? 'Microcrédit' : 'Prêt standard',
-          loanPurpose: data.purpose,
-          totalAmount: data.amount,
-          disbursalDate: new Date(data.disbursed_at || Date.now()).toLocaleDateString('fr-FR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          }),
-          endDate: new Date(new Date(data.disbursed_at || Date.now()).setMonth(
-            new Date(data.disbursed_at || Date.now()).getMonth() + data.duration_months
-          )).toLocaleDateString('fr-FR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          }),
-          interestRate: data.interest_rate,
-          status: data.status,
-          disbursed: !!data.disbursed_at,
-          withdrawn: data.status === 'withdrawn'
+      if (result.error) {
+        setError(result.error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de récupérer les détails du prêt",
+          variant: "destructive",
         });
-        
-        const { data: paymentsData, error: paymentsError } = await supabase
-          .from('loan_payments')
-          .select('*')
-          .eq('loan_id', loanId)
-          .order('payment_date', { ascending: false });
-          
-        if (paymentsError) throw paymentsError;
-        
-        const paidAmount = paymentsData?.reduce((total, payment) => total + payment.amount, 0) || 0;
-        const totalAmount = data.amount + (data.amount * data.interest_rate / 100);
-        const remainingAmount = totalAmount - paidAmount;
-        const progress = Math.min(100, Math.round((paidAmount / totalAmount) * 100));
-        
-        const now = new Date();
-        const nextPaymentDate = data.next_payment_date ? new Date(data.next_payment_date) : null;
-        const lateFees = (nextPaymentDate && nextPaymentDate < now) ? data.monthly_payment * 0.05 : 0;
-        
-        const paymentHistory = paymentsData?.map((payment, index) => {
-          let status: 'paid' | 'pending' | 'late';
-          if (payment.status === 'completed') status = 'paid';
-          else if (payment.status === 'late') status = 'late';
-          else status = 'pending';
-          
-          return {
-            id: index + 1,
-            date: new Date(payment.payment_date).toLocaleDateString('fr-FR', {
-              day: '2-digit',
-              month: 'long',
-              year: 'numeric'
-            }),
-            amount: payment.amount,
-            status
-          };
-        }) || [];
-        
-        setLoanStatus({
-          nextPaymentDue: nextPaymentDate ? nextPaymentDate.toLocaleDateString('fr-FR', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric'
-          }) : 'Non défini',
-          paidAmount,
-          totalAmount,
-          remainingAmount,
-          progress,
-          lateFees,
-          paymentHistory,
-          disbursed: !!data.disbursed_at,
-          withdrawn: data.status === 'withdrawn'
-        });
+        return;
+      }
+      
+      if (result.loanDetails) {
+        setLoanDetails(result.loanDetails);
+      }
+      
+      if (result.loanStatus) {
+        setLoanStatus(result.loanStatus);
       }
     } catch (err: any) {
-      console.error('Erreur lors de la récupération des détails du prêt:', err);
+      console.error('Error in useLoanDetails hook:', err);
       setError(err.message);
       toast({
         title: "Erreur",
@@ -157,40 +82,25 @@ export function useLoanDetails(loanId: string | undefined) {
   };
 
   useEffect(() => {
-    fetchLoanDetails();
+    fetchLoanData();
     
-    const setupRealtimeSubscription = async () => {
-      const channel = supabase
-        .channel('loan-status-changes')
-        .on(
-          'broadcast',
-          { event: 'loan_status_update' },
-          (payload) => {
-            if (payload.payload) {
-              const updatedStatus = payload.payload;
-              setLoanStatus(prevStatus => ({
-                ...prevStatus,
-                ...updatedStatus
-              }));
-              
-              if (updatedStatus.lateFees > 0) {
-                toast({
-                  title: "Frais de retard appliqués",
-                  description: `Des frais de retard de ${updatedStatus.lateFees} FCFA ont été appliqués à votre prêt`,
-                  variant: "destructive",
-                });
-              }
-            }
-          }
-        )
-        .subscribe();
+    // Set up realtime subscription
+    const cleanupSubscription = setupLoanRealtimeSubscription((updatedStatus) => {
+      setLoanStatus(prevStatus => ({
+        ...prevStatus,
+        ...updatedStatus
+      }));
       
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    };
+      if (updatedStatus.lateFees && updatedStatus.lateFees > 0) {
+        toast({
+          title: "Frais de retard appliqués",
+          description: `Des frais de retard de ${updatedStatus.lateFees} FCFA ont été appliqués à votre prêt`,
+          variant: "destructive",
+        });
+      }
+    });
     
-    setupRealtimeSubscription();
+    return cleanupSubscription;
   }, [loanId, toast]);
 
   return {
@@ -198,6 +108,6 @@ export function useLoanDetails(loanId: string | undefined) {
     loanDetails,
     isLoading,
     error,
-    refetch: fetchLoanDetails
+    refetch: fetchLoanData
   };
 }
