@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AgencyHeader } from '@/components/AgencyHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,10 +9,9 @@ import { LoanManagement } from '@/components/sfd/LoanManagement';
 import { Reports } from '@/components/reports';
 import { FinancialReporting } from '@/components/FinancialReporting';
 import { useSfdDashboardStats } from '@/hooks/useSfdDashboardStats';
-import { Loader2, CreditCard, Users, FileText, Landmark } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { SfdDashboardStats } from '@/components/sfd/dashboard/SfdDashboardStats';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 
 const AgencyDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -35,40 +33,6 @@ const AgencyDashboard = () => {
             <h1 className="text-2xl font-bold">Tableau de bord SFD</h1>
             <p className="text-muted-foreground">Gestion de votre SFD et de ses services</p>
           </div>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/sfd-loans')}>
-            <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-              <CreditCard className="h-10 w-10 text-[#0D6A51] mb-3" />
-              <h3 className="font-semibold text-lg">Prêts</h3>
-              <p className="text-sm text-muted-foreground">Gérer les prêts</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/sfd-clients')}>
-            <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-              <Users className="h-10 w-10 text-[#0D6A51] mb-3" />
-              <h3 className="font-semibold text-lg">Clients</h3>
-              <p className="text-sm text-muted-foreground">Gérer les clients</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/sfd-transactions')}>
-            <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-              <FileText className="h-10 w-10 text-[#0D6A51] mb-3" />
-              <h3 className="font-semibold text-lg">Transactions</h3>
-              <p className="text-sm text-muted-foreground">Suivi financier</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/sfd-subsidy-requests')}>
-            <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-              <Landmark className="h-10 w-10 text-[#0D6A51] mb-3" />
-              <h3 className="font-semibold text-lg">Subventions</h3>
-              <p className="text-sm text-muted-foreground">Demandes</p>
-            </CardContent>
-          </Card>
         </div>
         
         <SfdDashboardStats />
