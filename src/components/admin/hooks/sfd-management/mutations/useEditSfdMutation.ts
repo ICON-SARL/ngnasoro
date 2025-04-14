@@ -52,10 +52,15 @@ export function useEditSfdMutation() {
         return { id, ...updateData };
       }
       
+      console.log('SFD updated successfully:', updatedSfd);
       return updatedSfd;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (updatedSfd, variables) => {
+      console.log('Edit mutation succeeded, updated SFD:', updatedSfd);
+      
+      // Invalidate and refetch the data to ensure UI is updated
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      
       toast({
         title: 'SFD modifiée',
         description: 'Les informations de la SFD ont été mises à jour avec succès.',
@@ -67,7 +72,7 @@ export function useEditSfdMutation() {
           action: 'update_sfd',
           category: AuditLogCategory.SFD_OPERATIONS,
           severity: AuditLogSeverity.INFO,
-          details: { sfd_id: variables.id },
+          details: { sfd_id: variables.id, updated_data: variables.data },
           status: 'success',
         });
       }

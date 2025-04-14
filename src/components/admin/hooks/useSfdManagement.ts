@@ -7,8 +7,13 @@ import { useSfdMutations } from './sfd-management/useSfdMutations';
 import { useSfdFilters } from './sfd-management/useSfdFilters';
 import { useSfdExport } from './sfd-management/useSfdExport';
 import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 export function useSfdManagement() {
+  // For direct cache invalidation
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
   // Local state
   const [selectedSfd, setSelectedSfd] = useState<Sfd | null>(null);
   const [showSuspendDialog, setShowSuspendDialog] = useState(false);
@@ -16,9 +21,6 @@ export function useSfdManagement() {
   const [showActivateDialog, setShowActivateDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-
-  // For direct cache invalidation
-  const queryClient = useQueryClient();
 
   // Use the sub-hooks
   const { sfds, isLoading, isError, refetch } = useSfdData();
@@ -34,8 +36,16 @@ export function useSfdManagement() {
 
   // Event handlers
   const handleAddSfd = (formData: SfdFormValues) => {
-    addSfdMutation.mutate(formData);
-    setShowAddDialog(false);
+    addSfdMutation.mutate(formData, {
+      onSuccess: () => {
+        setShowAddDialog(false);
+        // Explicitly refresh data after adding
+        setTimeout(() => {
+          refetch();
+          queryClient.invalidateQueries({ queryKey: ['sfds'] });
+        }, 500);
+      }
+    });
   };
 
   const handleEditSfd = (formData: SfdFormValues) => {
@@ -44,13 +54,20 @@ export function useSfdManagement() {
       editSfdMutation.mutate({ id: selectedSfd.id, data: formData }, {
         onSuccess: () => {
           // Explicitly refresh data after editing
+          setShowEditDialog(false);
+          
+          toast({
+            title: 'SFD mise à jour',
+            description: 'Les modifications ont été enregistrées avec succès.',
+          });
+          
           setTimeout(() => {
+            console.log('Refreshing SFD data after edit');
             refetch();
             queryClient.invalidateQueries({ queryKey: ['sfds'] });
           }, 500);
         }
       });
-      setShowEditDialog(false);
     }
   };
 
@@ -77,6 +94,7 @@ export function useSfdManagement() {
 
   // Force refetch data
   const forceRefresh = () => {
+    console.log('Force refreshing SFD data');
     queryClient.invalidateQueries({ queryKey: ['sfds'] });
     refetch();
   };

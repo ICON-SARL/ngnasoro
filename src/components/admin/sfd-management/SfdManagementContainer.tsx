@@ -8,8 +8,13 @@ import { SfdTable } from '../sfd/SfdTable'; // Update the import path
 import { SfdDialogs } from './SfdDialogs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function SfdManagementContainer() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const {
     filteredSfds,
     isLoading,
@@ -61,6 +66,17 @@ export function SfdManagementContainer() {
       </Alert>
     );
   }
+
+  // Enhance edit SFD to ensure data refresh
+  const handleEditSfdWithRefresh = (formData) => {
+    handleEditSfd(formData);
+    // Add a delayed refresh to ensure updated data is fetched after backend processes
+    setTimeout(() => {
+      console.log('Forcing data refresh after SFD edit');
+      queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      forceRefresh();
+    }, 1000);
+  };
 
   return (
     <div className="space-y-4">
@@ -130,7 +146,7 @@ export function SfdManagementContainer() {
         addSfdMutation={addSfdMutation}
         editSfdMutation={editSfdMutation}
         handleAddSfd={handleAddSfd}
-        handleEditSfd={handleEditSfd}
+        handleEditSfd={handleEditSfdWithRefresh}
       />
     </div>
   );

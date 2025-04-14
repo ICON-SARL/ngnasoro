@@ -88,12 +88,13 @@ export function SfdDialogs({
     }
   };
 
-  // Handler for dialog closing with potential data refresh
+  // Handler for dialog closing with better data refresh
   const handleDialogChange = (setStateFunction: Function, state: boolean) => {
     setStateFunction(state);
     if (!state) {
-      // When dialog closes, refresh data
+      // When dialog closes, refresh data with a delay to ensure DB updates complete
       setTimeout(() => {
+        console.log('Dialog closed, refreshing data...');
         queryClient.invalidateQueries({ queryKey: ['sfds'] });
       }, 500);
     }
