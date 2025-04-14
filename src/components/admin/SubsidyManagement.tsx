@@ -1,5 +1,6 @@
-
 import React, { useState } from 'react';
+import { SfdSubsidy } from '@/hooks/sfd/types';
+import { useSubsidies } from '@/hooks/useSubsidies';
 import { 
   Card, 
   CardContent, 
