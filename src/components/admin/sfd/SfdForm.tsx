@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -44,9 +43,9 @@ export function SfdForm({
       phone: '',
       address: '',
       status: 'active',
-      subsidy_balance: 0,
       logo_url: '',
       legal_document_url: '',
+      ...(formMode === 'create' ? { subsidy_balance: 0 } : {}),
     },
   });
 
@@ -278,7 +277,7 @@ export function SfdForm({
           )}
         />
 
-        {/* Subsidy Balance Field */}
+        {/* Subsidy Balance Field - Only show in create mode */}
         {formMode === 'create' && (
           <FormField
             control={form.control}

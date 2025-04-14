@@ -24,6 +24,7 @@ export const sfdFormSchema = z.object({
   address: z.string().optional(),
   logo_url: z.string().optional(),
   legal_document_url: z.union([z.string(), z.null()]).optional(),
+  subsidy_balance: z.number().optional(),
   
   // Admin fields for creation form only, not for editing existing SFDs
   adminName: z.string().min(2, "Le nom complet est requis").optional(),

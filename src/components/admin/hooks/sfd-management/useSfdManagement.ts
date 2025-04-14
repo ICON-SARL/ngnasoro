@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Sfd } from '../../types/sfd-types';
 import { SfdFormValues } from '@/components/admin/sfd/schemas/sfdFormSchema';
@@ -41,7 +42,8 @@ export function useSfdManagement() {
       address: formData.address,
       logo_url: formData.logo_url,
       legal_document_url: formData.legal_document_url,
-      subsidy_balance: formData.subsidy_balance
+      // Only include subsidy_balance during creation, not for updates
+      ...(formData.subsidy_balance !== undefined && { subsidy_balance: formData.subsidy_balance })
     });
     setShowAddDialog(false);
   };
@@ -62,6 +64,7 @@ export function useSfdManagement() {
           address: formData.address,
           logo_url: formData.logo_url,
           legal_document_url: formData.legal_document_url
+          // Note: We don't include subsidy_balance in edit operations
         }
       });
       setShowEditDialog(false);

@@ -22,6 +22,8 @@ export function useUpdateSfdMutation() {
         contact_email: data.contact_email,
         phone: data.phone,
         status: data.status,
+        // Note: subsidy_balance is not included here as it's not a direct field in the sfds table
+        // It's handled separately in a different table
       };
       
       console.log('Updating SFD with data:', validFields);

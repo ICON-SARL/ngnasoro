@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,7 +17,7 @@ export function useSfdForm({ initialData, onSubmit }: UseSfdFormProps) {
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // We handle subsidy_balance as a calculated field,
+  // Handle subsidy_balance as a calculated field,
   // but keep it in the form for UI display purposes
   const form = useForm<SfdFormValues>({
     resolver: zodResolver(sfdFormSchema),
@@ -34,7 +33,7 @@ export function useSfdForm({ initialData, onSubmit }: UseSfdFormProps) {
       status: (initialData?.status as 'active' | 'pending' | 'suspended') || 'active',
       logo_url: initialData?.logo_url || '',
       legal_document_url: initialData?.legal_document_url || '',
-      subsidy_balance: initialData?.subsidy_balance || 0,
+      subsidy_balance: initialData?.subsidy_balance,
     },
   });
 
