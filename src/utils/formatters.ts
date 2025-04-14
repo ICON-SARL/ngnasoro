@@ -21,15 +21,27 @@ export const formatDate = (dateString: string): string => {
 /**
  * Format currency with proper separators and currency symbol
  */
-export const formatCurrency = (amount: number, currency: string = 'FCFA'): string => {
-  return `${amount.toLocaleString('fr-FR')} ${currency}`;
+export const formatCurrency = (amount: number | string, currency: string = 'FCFA'): string => {
+  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  
+  if (isNaN(numericAmount)) {
+    return `0 ${currency}`;
+  }
+  
+  return `${numericAmount.toLocaleString('fr-FR')} ${currency}`;
 };
 
 /**
  * Format a number for display
  */
-export const formatNumber = (value: number): string => {
-  return value.toLocaleString('fr-FR');
+export const formatNumber = (value: number | string): string => {
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+  
+  if (isNaN(numericValue)) {
+    return '0';
+  }
+  
+  return numericValue.toLocaleString('fr-FR');
 };
 
 /**
@@ -52,4 +64,25 @@ export const formatPhoneNumber = (phoneNumber: string): string => {
   
   // If the format doesn't match, return the original
   return phoneNumber;
+};
+
+/**
+ * Safely convert a value to number
+ */
+export const toNumber = (value: string | number): number => {
+  if (typeof value === 'number') return value;
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
+/**
+ * Format transaction amount with sign and currency
+ */
+export const formatTransactionAmount = (amount: string | number, type: string): string => {
+  const numericAmount = toNumber(amount);
+  
+  const isPositive = type === 'deposit' || type === 'loan_disbursement';
+  const sign = isPositive ? '+' : '-';
+  
+  return `${sign}${Math.abs(numericAmount).toLocaleString('fr-FR')} FCFA`;
 };

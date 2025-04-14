@@ -10,13 +10,14 @@ interface TransactionListProps {
   transactions: Transaction[];
   isLoading: boolean;
   onViewAll: () => void;
+  title?: string;
 }
 
-const TransactionList: React.FC<TransactionListProps> = ({ transactions, isLoading, onViewAll }) => {
+const TransactionList: React.FC<TransactionListProps> = ({ transactions, isLoading, onViewAll, title = "Transactions récentes" }) => {
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        <h2 className="text-lg font-semibold">Transactions récentes</h2>
+        <h2 className="text-lg font-semibold">{title}</h2>
         <Button 
           variant="ghost" 
           className="text-sm text-[#0D6A51] p-0 h-auto font-medium"
@@ -44,9 +45,9 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, isLoadi
                 <li key={transaction.id} className="p-3 flex items-center justify-between">
                   <div className="flex items-center">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      transaction.type === 'deposit' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                      transaction.type === 'deposit' || transaction.type === 'loan_disbursement' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
                     }`}>
-                      {transaction.type === 'deposit' ? (
+                      {transaction.type === 'deposit' || transaction.type === 'loan_disbursement' ? (
                         <ArrowUp className="h-4 w-4" />
                       ) : (
                         <ArrowDown className="h-4 w-4" />
@@ -55,14 +56,16 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, isLoadi
                     <div className="ml-3">
                       <div className="font-medium">{transaction.name}</div>
                       <div className="text-xs text-gray-500">
-                        {formatDate(transaction.date)}
+                        {formatDate(transaction.date || transaction.created_at || '')}
                       </div>
                     </div>
                   </div>
                   <div className={`font-medium ${
-                    transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+                    transaction.type === 'deposit' || transaction.type === 'loan_disbursement' ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {transaction.type === 'deposit' ? '+' : '-'}{transaction.amount}
+                    {typeof transaction.amount === 'string' ? transaction.amount : 
+                     (transaction.type === 'deposit' || transaction.type === 'loan_disbursement' ? '+' : '-') + 
+                     (typeof transaction.amount === 'number' ? transaction.amount.toLocaleString() : transaction.amount)}
                   </div>
                 </li>
               ))}
