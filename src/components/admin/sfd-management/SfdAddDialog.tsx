@@ -1,141 +1,78 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AddSfdForm } from '@/components/admin/sfd/AddSfdForm';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
-import { useCreateSfdMutation } from '@/components/admin/hooks/sfd-management/mutations/useCreateSfdMutation';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useAddSfdMutation } from '@/components/admin/hooks/sfd-management/mutations/useAddSfdMutation';
+
+const sfdSchema = z.object({
+  name: z.string().min(1, { message: 'Le nom est requis' }),
+  code: z.string().min(1, { message: 'Le code est requis' }),
+  region: z.string().optional(),
+  status: z.enum(['active', 'pending', 'suspended']).default('active'),
+  logo_url: z.string().optional().nullable(),
+  contact_email: z.string().email({ message: 'Email invalide' }).optional().nullable(),
+  phone: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+});
+
+type SfdFormValues = z.infer<typeof sfdSchema>;
 
 interface SfdAddDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export const SfdAddDialog: React.FC<SfdAddDialogProps> = ({ 
-  open, 
-  onOpenChange 
-}) => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const createSfdMutation = useCreateSfdMutation();
-  const [error, setError] = useState<string | null>(null);
-  const [isTimedOut, setIsTimedOut] = useState(false);
-  const [timeoutId, setTimeoutId] = useState<number | null>(null);
-
-  // Reset state when dialog opens or closes
-  useEffect(() => {
-    setError(null);
-    setIsTimedOut(false);
-    
-    // Clear any existing timeouts
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      setTimeoutId(null);
-    }
-    
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [open]);
-
-  // Function to cancel creation and show error
-  const handleCancel = () => {
-    if (createSfdMutation.isPending) {
-      createSfdMutation.reset();
-    }
-    setIsTimedOut(false);
-    onOpenChange(false);
-  };
-
-  const handleSubmit = async (formData: any, createAdmin: boolean, adminData: any) => {
-    setError(null);
-    setIsTimedOut(false);
-    
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    
+export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
+  const addSfdMutation = useAddSfdMutation();
+  
+  const form = useForm<SfdFormValues>({
+    resolver: zodResolver(sfdSchema),
+    defaultValues: {
+      name: '',
+      code: '',
+      region: '',
+      status: 'active',
+      description: '',
+      contact_email: '',
+      phone: '',
+    },
+  });
+  
+  const handleSubmit = async (values: SfdFormValues) => {
     try {
-      console.log("SfdAddDialog: handleSubmit called with:", { 
-        formData, 
-        createAdmin, 
-        adminData: adminData ? {...adminData, password: "***"} : null 
-      });
-      
-      // Set a timeout to show a message if creation takes too long
-      const id = window.setTimeout(() => {
-        setIsTimedOut(true);
-      }, 30000); // 30 seconds timeout
-      
-      setTimeoutId(id);
-      
-      await createSfdMutation.mutateAsync({
-        sfdData: formData,
-        createAdmin,
-        adminData: createAdmin ? adminData : undefined
-      });
-      
-      // Clear timeout since operation completed
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        setTimeoutId(null);
-      }
-      
-      // Close the dialog
+      await addSfdMutation.mutateAsync(values);
       onOpenChange(false);
-      
-      toast({
-        title: 'SFD créée avec succès',
-        description: createAdmin 
-          ? `La SFD ${formData.name} a été créée avec un administrateur`
-          : `La SFD ${formData.name} a été créée`,
-      });
-      
-      // Refresh the SFDs list and stats
-      queryClient.invalidateQueries({ queryKey: ['sfds'] });
-      queryClient.invalidateQueries({ queryKey: ['sfd-management-stats'] });
-    } catch (error: any) {
-      // Clear timeout since operation failed
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        setTimeoutId(null);
-      }
-      
-      console.error('Error creating SFD:', error);
-      setError(error.message || "Une erreur s'est produite lors de la création de la SFD");
-      toast({
-        title: 'Erreur',
-        description: `Impossible de créer la SFD: ${error.message}`,
-        variant: 'destructive',
-      });
+      form.reset();
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de la SFD:', error);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
-      // Prevent closing if operation is in progress without confirmation
-      if (createSfdMutation.isPending && open && !newOpen) {
-        const confirmed = window.confirm("La création de la SFD est en cours. Êtes-vous sûr de vouloir annuler ?");
-        if (!confirmed) return;
-        
-        // If confirmed, cancel the operation
-        createSfdMutation.reset();
-      }
-      onOpenChange(newOpen);
-    }}>
-      <DialogContent className="sm:max-w-[800px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Ajouter une nouvelle SFD</DialogTitle>
           <DialogDescription>
@@ -143,38 +80,156 @@ export const SfdAddDialog: React.FC<SfdAddDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        {error && (
+        {addSfdMutation.isError && (
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        {isTimedOut && (
-          <Alert variant="warning" className="mb-4 border-yellow-500 bg-yellow-50">
-            <AlertTriangle className="h-4 w-4 text-yellow-600" />
-            <AlertDescription className="text-yellow-700">
-              La création de la SFD prend plus de temps que prévu. Vous pouvez continuer à attendre ou annuler et réessayer.
-              <div className="mt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleCancel} 
-                  className="mr-2 border-yellow-600 text-yellow-700 hover:bg-yellow-100"
-                >
-                  Annuler
-                </Button>
-              </div>
+            <AlertDescription>
+              {addSfdMutation.error instanceof Error 
+                ? addSfdMutation.error.message 
+                : "Une erreur s'est produite lors de l'ajout de la SFD"}
             </AlertDescription>
           </Alert>
         )}
         
-        <AddSfdForm
-          onSubmit={handleSubmit}
-          onCancel={() => onOpenChange(false)}
-          isSubmitting={createSfdMutation.isPending}
-        />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nom de la SFD</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nom de la SFD" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Code de la SFD</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Code unique" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="region"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Région</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Région d'opération" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Statut</FormLabel>
+                    <FormControl>
+                      <select
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        {...field}
+                      >
+                        <option value="active">Actif</option>
+                        <option value="pending">En attente</option>
+                        <option value="suspended">Suspendu</option>
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="contact_email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email de contact</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="contact@sfd.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Téléphone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="+123 456 789" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Description de la SFD..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                disabled={addSfdMutation.isPending}
+              >
+                Annuler
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={addSfdMutation.isPending}
+              >
+                {addSfdMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Création en cours...
+                  </>
+                ) : (
+                  'Créer la SFD'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
-};
+}

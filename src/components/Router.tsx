@@ -18,6 +18,7 @@ import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import UsersListPage from '@/pages/admin/UsersListPage';
 import UsersManagementPage from '@/pages/UsersManagementPage';
+import SfdManagementPage from '@/pages/admin/SfdManagementPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -73,6 +74,7 @@ export const MobileRouter = () => {
       <Route path="/admin/dashboard" element={<SuperAdminDashboard />} />
       <Route path="/admin/users" element={<UsersListPage />} />
       <Route path="/admin/users/:userId" element={<UsersManagementPage />} />
+      <Route path="/sfd-management" element={<SfdManagementPage />} />
       <Route path="*" element={<Navigate to="/main" replace />} />
     </Routes>
   );
