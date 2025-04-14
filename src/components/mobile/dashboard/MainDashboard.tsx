@@ -8,6 +8,7 @@ import TransactionList from '@/components/mobile/TransactionList';
 import { useMobileDashboard } from '@/hooks/useMobileDashboard';
 import { Account } from '@/types/transactions';
 import { useToast } from '@/hooks/use-toast';
+import { formatTransactionAmount } from '@/utils/transactionUtils';
 
 interface MainDashboardProps {
   onAction: (action: string, data?: any) => void;
@@ -28,10 +29,6 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   const { toast } = useToast();
   
   useEffect(() => {
-    console.log("MainDashboard mounted with account:", account);
-    console.log("MainDashboard transactions:", transactions);
-    
-    // Rafraîchir les données du dashboard au montage
     if (refreshDashboardData) {
       refreshDashboardData().catch(error => {
         console.error("Erreur lors du rafraîchissement des données:", error);
@@ -46,12 +43,32 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   const formatTransactionData = () => {
     return displayTransactions.map(tx => ({
       id: tx.id,
-      name: tx.name || (tx.type === 'deposit' ? 'Dépôt' : tx.type === 'withdrawal' ? 'Retrait' : 'Transaction'),
+      name: tx.name || getTransactionName(tx.type),
       type: tx.type,
-      amount: tx.amount.toString(),
-      date: new Date(tx.date || tx.created_at).toLocaleDateString(),
+      amount: formatTransactionAmount(tx.amount, tx.type),
+      date: formatDate(tx.date || tx.created_at),
       avatar: tx.avatar_url
     }));
+  };
+  
+  const getTransactionName = (type: string): string => {
+    switch (type) {
+      case 'deposit': return 'Dépôt mensuel';
+      case 'withdrawal': return 'Retrait';
+      case 'loan_repayment': return 'Remboursement prêt';
+      case 'loan_disbursement': return 'Décaissement de prêt';
+      case 'transfer': return 'Transfert';
+      default: return 'Transaction';
+    }
+  };
+  
+  const formatDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch (e) {
+      return dateString || '';
+    }
   };
   
   return (

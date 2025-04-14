@@ -5,7 +5,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Building } from 'lucide-react';
+import { Building, ArrowDown, ArrowUp, CreditCard, Banknote, RefreshCcw } from 'lucide-react';
 
 interface Transaction {
   id: number | string;
@@ -14,28 +14,54 @@ interface Transaction {
   amount: string;
   date: string;
   avatar: string | null;
-  sfdName?: string; // Added SFD information
+  sfdName?: string;
 }
 
 interface TransactionListProps {
   transactions: Transaction[];
   isLoading?: boolean;
   onViewAll?: () => void;
-  title?: string; // Added optional title prop
+  title?: string;
 }
 
-const TransactionList = ({ transactions, isLoading = false, onViewAll, title = "Transactions Récentes" }: TransactionListProps) => {
+const TransactionList = ({ 
+  transactions, 
+  isLoading = false, 
+  onViewAll, 
+  title = "Transactions Récentes" 
+}: TransactionListProps) => {
+  
+  const getTransactionIcon = (type: string, amount: string) => {
+    if (type === 'deposit') {
+      return <ArrowDown className="h-5 w-5 text-green-600" />;
+    } else if (type === 'withdrawal') {
+      return <ArrowUp className="h-5 w-5 text-gray-700" />;
+    } else if (type === 'loan_repayment') {
+      return <RefreshCcw className="h-5 w-5 text-orange-600" />;
+    } else if (type === 'loan_disbursement') {
+      return <CreditCard className="h-5 w-5 text-blue-600" />;
+    } else if (type === 'transfer') {
+      return amount.startsWith('+') 
+        ? <ArrowDown className="h-5 w-5 text-green-600" /> 
+        : <ArrowUp className="h-5 w-5 text-gray-700" />;
+    } else {
+      return <Banknote className="h-5 w-5 text-gray-600" />;
+    }
+  };
+  
   return (
     <div className="px-4 mt-3 mb-20">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-medium">{title}</h3>
-        <Button 
-          variant="link" 
-          className="text-sm text-lime-600 p-0 h-auto"
-          onClick={onViewAll}
-        >
-          Voir Prêts
-        </Button>
+        {onViewAll && (
+          <Button 
+            variant="link" 
+            className="text-sm text-lime-600 p-0 h-auto"
+            onClick={onViewAll}
+          >
+            Voir Prêts
+          </Button>
+        )}
       </div>
       
       <Card className="border-0 shadow-sm bg-white rounded-2xl overflow-hidden">
@@ -69,7 +95,9 @@ const TransactionList = ({ transactions, isLoading = false, onViewAll, title = "
                     {transaction.avatar ? (
                       <img src={transaction.avatar} alt={transaction.name} />
                     ) : (
-                      <span className="text-sm font-medium">{transaction.name.charAt(0)}</span>
+                      <div className="h-10 w-10 rounded-full bg-lime-100 flex items-center justify-center">
+                        {getTransactionIcon(transaction.type, transaction.amount)}
+                      </div>
                     )}
                   </Avatar>
                   <div>
