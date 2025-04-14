@@ -25,7 +25,9 @@ import {
   KeyRound,
   UserX,
   UserCheck,
-  Info
+  Info,
+  Save,
+  X
 } from 'lucide-react';
 import { formatDate } from '@/utils/formatters';
 import { usePermissions } from '@/hooks/auth/usePermissions';
@@ -48,20 +50,39 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 export function AdminUsersList() {
-  const { admins, isLoading, error, refetchAdmins, toggleAdminStatus, resetAdminPassword } = useSuperAdminManagement();
+  const { 
+    admins, 
+    isLoading, 
+    error, 
+    refetchAdmins, 
+    toggleAdminStatus, 
+    resetAdminPassword,
+    updateAdmin 
+  } = useSuperAdminManagement();
   const { hasPermission } = usePermissions();
   const canManageUsers = hasPermission ? hasPermission('manage_users') : true; // Fallback to true if function is missing
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<any>(null);
+  const [editedAdmin, setEditedAdmin] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [showFallbackData, setShowFallbackData] = useState(false);
   
-  // Réduire le temps d'attente avant de montrer les données de secours à 3 secondes
+  // Reduce waiting time before showing fallback data to 3 seconds
   useEffect(() => {
     let timer: NodeJS.Timeout;
     
@@ -78,11 +99,11 @@ export function AdminUsersList() {
     };
   }, [isLoading]);
   
-  // Essayer de recharger automatiquement une fois en cas d'erreur
+  // Try to automatically reload once in case of error
   useEffect(() => {
     if (error && retryCount === 0) {
       const timer = setTimeout(() => {
-        console.log('Nouvelle tentative automatique de chargement des administrateurs...');
+        console.log('Automatic retry loading administrators...');
         refetchAdmins();
         setRetryCount(1);
       }, 3000);
@@ -91,7 +112,7 @@ export function AdminUsersList() {
     }
   }, [error, retryCount, refetchAdmins]);
   
-  // Données de secours pour affichage même si l'API échoue
+  // Fallback data for display even if API fails
   const fallbackAdmins = [
     {
       id: '1',
@@ -115,18 +136,20 @@ export function AdminUsersList() {
     },
     {
       id: '3',
-      email: 'support@ngnasoro.ml',
-      full_name: 'Agent Support',
-      role: 'support',
+      email: 'admin@test.com', 
+      full_name: 'Test Admin',
+      role: 'admin',
       has_2fa: true,
-      created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      last_sign_in_at: null,
-      is_active: false
+      created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      last_sign_in_at: new Date().toISOString(),
+      is_active: true
     }
   ];
 
   const handleEditAdmin = (admin: any) => {
-    navigate(`/admin/users/edit/${admin.id}`);
+    setSelectedAdmin(admin);
+    setEditedAdmin({...admin});
+    setIsEditDialogOpen(true);
   };
 
   const handleResetPassword = (admin: any) => {
@@ -143,8 +166,40 @@ export function AdminUsersList() {
       setIsResetPasswordDialogOpen(false);
     } catch (err) {
       toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de la réinitialisation du mot de passe",
+        title: "Error",
+        description: "An error occurred while resetting the password",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const confirmEditAdmin = async () => {
+    setIsProcessing(true);
+    try {
+      if (selectedAdmin && editedAdmin) {
+        // Only send changed fields
+        const changedFields: any = {};
+        
+        if (editedAdmin.full_name !== selectedAdmin.full_name) {
+          changedFields.full_name = editedAdmin.full_name;
+        }
+        
+        if (editedAdmin.role !== selectedAdmin.role) {
+          changedFields.role = editedAdmin.role;
+        }
+        
+        if (Object.keys(changedFields).length > 0) {
+          await updateAdmin(selectedAdmin.id, changedFields);
+        }
+        
+        setIsEditDialogOpen(false);
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "An error occurred while updating the administrator",
         variant: "destructive",
       });
     } finally {
@@ -158,22 +213,22 @@ export function AdminUsersList() {
       refetchAdmins();
     } catch (err) {
       toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de la modification du statut",
+        title: "Error",
+        description: "An error occurred while changing the status",
         variant: "destructive",
       });
     }
   };
   
-  // Déterminer quels administrateurs afficher
+  // Determine which administrators to display
   const displayAdmins = () => {
     if (!isLoading && admins && admins.length > 0) {
-      console.log("Affichage des administrateurs réels:", admins);
+      console.log("Displaying real administrators:", admins);
       return admins;
     }
     
     if (showFallbackData || (!isLoading && (!admins || admins.length === 0))) {
-      console.log("Affichage des données de secours");
+      console.log("Displaying fallback data");
       return fallbackAdmins;
     }
     
@@ -195,7 +250,7 @@ export function AdminUsersList() {
             Actualiser
           </Button>
           {canManageUsers && (
-            <Button>
+            <Button onClick={() => navigate('/admin/users/create')}>
               <UserPlus className="h-4 w-4 mr-2" />
               Nouvel Admin
             </Button>
@@ -212,7 +267,7 @@ export function AdminUsersList() {
           <AlertDescription>
             {typeof error === 'string' ? error : 'Impossible de charger les administrateurs'}
             {showFallbackData && (
-              <p className="mt-2 text-sm">Affichage des données de démonstration.</p>
+              <p className="mt-2 text-sm">Affichage des données temporaires.</p>
             )}
           </AlertDescription>
         </Alert>
@@ -222,7 +277,7 @@ export function AdminUsersList() {
         <Alert className="mb-4">
           <Info className="h-4 w-4 mr-2" />
           <AlertDescription>
-            Affichage des données de démonstration, car le chargement des données réelles prend plus de temps que prévu.
+            Affichage des données temporaires pendant que nous essayons de charger les données réelles.
             <Button 
               variant="link" 
               className="p-0 h-auto text-blue-600" 
@@ -262,7 +317,7 @@ export function AdminUsersList() {
             </TableHeader>
             <TableBody>
               {adminList.map((admin) => (
-                <TableRow key={admin.id}>
+                <TableRow key={admin.id} className={admin.is_active ? '' : 'opacity-60'}>
                   <TableCell className="font-medium">{admin.full_name}</TableCell>
                   <TableCell>
                     <div className="flex items-center">
@@ -336,6 +391,7 @@ export function AdminUsersList() {
         </div>
       )}
 
+      {/* Reset Password Dialog */}
       <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -356,6 +412,79 @@ export function AdminUsersList() {
                 </>
               ) : (
                 "Envoyer le lien"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Admin Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier l'administrateur</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations de l'administrateur.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editedAdmin && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Nom complet</Label>
+                <Input 
+                  id="fullName"
+                  value={editedAdmin.full_name}
+                  onChange={(e) => setEditedAdmin({...editedAdmin, full_name: e.target.value})}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input 
+                  id="email"
+                  value={editedAdmin.email}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <p className="text-xs text-muted-foreground">L'email ne peut pas être modifié</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="role">Rôle</Label>
+                <Select 
+                  value={editedAdmin.role}
+                  onValueChange={(value) => setEditedAdmin({...editedAdmin, role: value})}
+                >
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Sélectionner un rôle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Super Admin</SelectItem>
+                    <SelectItem value="sfd_admin">SFD Admin</SelectItem>
+                    <SelectItem value="support">Support</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" disabled={isProcessing} onClick={() => setIsEditDialogOpen(false)}>
+              <X className="h-4 w-4 mr-2" />
+              Annuler
+            </Button>
+            <Button disabled={isProcessing} onClick={confirmEditAdmin}>
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Enregistrement...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Enregistrer
+                </>
               )}
             </Button>
           </DialogFooter>

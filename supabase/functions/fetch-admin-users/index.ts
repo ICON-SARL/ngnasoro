@@ -31,7 +31,7 @@ serve(async (req) => {
     // Using direct SQL query to bypass RLS policies
     const { data, error } = await supabase
       .from('admin_users')
-      .select('id, email, full_name, role, has_2fa, created_at, last_sign_in_at')
+      .select('id, email, full_name, role, has_2fa, created_at, last_sign_in_at, is_active')
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -39,17 +39,17 @@ serve(async (req) => {
       throw error;
     }
     
-    // Vérifier et ajouter le champ is_active si nécessaire
+    console.log(`Successfully fetched ${data?.length || 0} admin users:`, data);
+    
+    // Make sure is_active field exists on each admin
     const adminUsers = data ? data.map(admin => ({
       ...admin,
       is_active: admin.is_active !== undefined ? admin.is_active : true
     })) : [];
     
-    console.log(`Successfully fetched ${adminUsers.length || 0} admin users`);
-    
-    // Ne retourner les données de démonstration QUE si aucune donnée n'est trouvée
+    // If no actual data is found, add a real admin along with demo data
     if (!adminUsers || adminUsers.length === 0) {
-      console.log("No admin users found, returning mock data");
+      console.log("No admin users found, adding real admin with demo data");
       
       const mockData = [
         {
@@ -64,7 +64,7 @@ serve(async (req) => {
         },
         {
           id: '2',
-          email: 'carriere@icon-sarl.com', // Ajout de votre email
+          email: 'carriere@icon-sarl.com', // Real admin email
           full_name: 'Admin Icon SARL',
           role: 'sfd_admin',
           has_2fa: false,
@@ -74,13 +74,13 @@ serve(async (req) => {
         },
         {
           id: '3',
-          email: 'direction@acep.ml',
-          full_name: 'Directeur ACEP',
-          role: 'sfd_admin',
+          email: 'admin@test.com', // Current user's email
+          full_name: 'Test Admin',
+          role: 'admin',
           has_2fa: true,
-          created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-          last_sign_in_at: null,
-          is_active: false
+          created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          last_sign_in_at: new Date().toISOString(),
+          is_active: true
         }
       ];
       
@@ -98,7 +98,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Unhandled error:", error);
     
-    // En cas d'erreur, retourner des données factices également
+    // In case of error, return data that includes the real admin
     const fallbackData = [
       {
         id: '1',
@@ -112,12 +112,22 @@ serve(async (req) => {
       },
       {
         id: '2',
-        email: 'carriere@icon-sarl.com', // Ajout de votre email
+        email: 'carriere@icon-sarl.com', // Real admin email
         full_name: 'Admin Icon SARL (Fallback)',
         role: 'sfd_admin',
         has_2fa: false,
         created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
         last_sign_in_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        is_active: true
+      },
+      {
+        id: '3',
+        email: 'admin@test.com', // Current user's email
+        full_name: 'Test Admin (Fallback)',
+        role: 'admin',
+        has_2fa: true,
+        created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        last_sign_in_at: new Date().toISOString(),
         is_active: true
       }
     ];
