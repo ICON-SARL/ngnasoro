@@ -32,7 +32,7 @@ export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateActio
       
       if (data) {
         // Properly handle the nested data structure
-        const sfdList: SfdData[] = data.map(item => ({
+        const sfdList: SfdData[] = data.map((item: any) => ({
           id: item.sfds?.id || '',
           name: item.sfds?.name || '',
           code: item.sfds?.code || '',
