@@ -76,7 +76,7 @@ export function useSfdLoans() {
 
   // Approve loan mutation
   const approveLoan = useMutation({
-    mutationFn: (params: { loanId: string }) => sfdLoanApi.approveLoan(params.loanId),
+    mutationFn: (params: { loanId: string }) => sfdLoanApi.approveLoan(params.loanId, user?.id || ''),
     onSuccess: () => {
       toast({
         title: "Prêt approuvé",
@@ -88,7 +88,7 @@ export function useSfdLoans() {
 
   // Reject loan mutation
   const rejectLoan = useMutation({
-    mutationFn: (params: { loanId: string }) => sfdLoanApi.rejectLoan(params.loanId),
+    mutationFn: (params: { loanId: string, reason?: string }) => sfdLoanApi.rejectLoan(params.loanId, user?.id || '', params.reason),
     onSuccess: () => {
       toast({
         title: "Prêt rejeté",
@@ -100,7 +100,7 @@ export function useSfdLoans() {
 
   // Disburse loan mutation
   const disburseLoan = useMutation({
-    mutationFn: (params: { loanId: string }) => sfdLoanApi.disburseLoan(params.loanId),
+    mutationFn: (params: { loanId: string }) => sfdLoanApi.disburseLoan(params.loanId, user?.id || ''),
     onSuccess: () => {
       toast({
         title: "Prêt décaissé",
@@ -113,7 +113,7 @@ export function useSfdLoans() {
   // Record payment mutation
   const recordPayment = useMutation({
     mutationFn: ({ loanId, amount, paymentMethod }: { loanId: string, amount: number, paymentMethod: string }) => 
-      sfdLoanApi.recordLoanPayment(loanId, amount, paymentMethod),
+      sfdLoanApi.recordLoanPayment(loanId, amount, paymentMethod, user?.id || ''),
     onSuccess: () => {
       toast({
         title: "Paiement enregistré",
