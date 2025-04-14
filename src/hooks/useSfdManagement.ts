@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { SfdFormValues } from '@/components/admin/hooks/sfd-management/mutations/useAddSfdMutation';
 
 export interface SFD {
   id: string;
@@ -17,16 +17,6 @@ export interface SFD {
   logo_url?: string;
   client_count: number;
   loan_count: number;
-}
-
-interface SFDFormData {
-  name: string;
-  code: string;
-  region: string;
-  contact_email: string;
-  phone: string;
-  description?: string;
-  logo_url?: string;
 }
 
 export function useSfdManagement() {
@@ -85,7 +75,7 @@ export function useSfdManagement() {
 
   // Create SFD
   const createSfd = useMutation({
-    mutationFn: async (sfdData: SFDFormData) => {
+    mutationFn: async (sfdData: SfdFormValues) => {
       setIsLoading(true);
       try {
         // In a real implementation, we would insert into Supabase
@@ -128,7 +118,7 @@ export function useSfdManagement() {
 
   // Update SFD
   const updateSfd = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<SFDFormData> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<SfdFormValues> }) => {
       setIsLoading(true);
       try {
         // In a real implementation, we would update in Supabase

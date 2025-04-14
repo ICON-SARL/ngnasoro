@@ -24,8 +24,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAddSfdMutation } from '@/components/admin/hooks/sfd-management/mutations/useAddSfdMutation';
+import { useAddSfdMutation, SfdFormValues } from '@/components/admin/hooks/sfd-management/mutations/useAddSfdMutation';
 
+// Create our schema with Zod to enforce required fields
 const sfdSchema = z.object({
   name: z.string().min(1, { message: 'Le nom est requis' }),
   code: z.string().min(1, { message: 'Le code est requis' }),
@@ -36,8 +37,6 @@ const sfdSchema = z.object({
   phone: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
 });
-
-type SfdFormValues = z.infer<typeof sfdSchema>;
 
 interface SfdAddDialogProps {
   open: boolean;

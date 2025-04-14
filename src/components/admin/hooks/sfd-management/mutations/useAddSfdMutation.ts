@@ -14,6 +14,11 @@ export interface SfdFormValues {
   contact_email?: string | null;
   phone?: string | null;
   description?: string | null;
+  // Include other optional fields that might be in the form
+  email?: string | null;
+  address?: string | null;
+  legal_document_url?: string | null;
+  subsidy_balance?: number;
 }
 
 export function useAddSfdMutation() {
