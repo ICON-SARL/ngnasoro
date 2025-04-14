@@ -1,123 +1,189 @@
 
 import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
-interface LoginFormProps {
+const loginSchema = z.object({
+  email: z.string().email({ message: "L'email est invalide" }),
+  password: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères" }),
+});
+
+type LoginFormProps = {
   adminMode?: boolean;
   isSfdAdmin?: boolean;
-  onError?: (errorMessage: string) => void;
-}
+  onError?: (message: string) => void;
+};
 
 const LoginForm: React.FC<LoginFormProps> = ({ 
   adminMode = false, 
   isSfdAdmin = false,
   onError
 }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
+  const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     try {
-      const { error } = await signIn(email, password);
+      setIsLoading(true);
+      
+      if (onError) onError(''); // Clear previous errors
+      
+      const { error } = await signIn(values.email, values.password);
       
       if (error) {
-        console.error('Error during login:', error);
+        console.error('Login error:', error);
+        
+        // Determine user-friendly error message
+        let errorMessage = "Une erreur s'est produite lors de la connexion.";
+        
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = "Email ou mot de passe incorrect";
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = "Veuillez confirmer votre email avant de vous connecter";
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = "Trop de tentatives. Veuillez réessayer plus tard";
+        } else if (error.message.includes('network')) {
+          errorMessage = "Problème de connexion réseau. Vérifiez votre connexion internet";
+        }
+        
+        // Display toast notification
         toast({
-          title: "Erreur de connexion",
-          description: error.message || "Vérifiez vos identifiants et réessayez.",
+          title: "Échec de connexion",
+          description: errorMessage,
           variant: "destructive",
         });
-        onError?.(error.message);
+        
+        // Propagate error to parent if callback provided
+        if (onError) onError(errorMessage);
+        
         setIsLoading(false);
         return;
       }
       
-      console.log('Login successful, redirecting...');
+      // If we get here, login was successful
+      toast({
+        title: "Connexion réussie",
+        description: "Vous êtes maintenant connecté",
+      });
       
-      // Don't redirect here - let the AuthContext handle redirections based on user role
-      // The redirection will be handled by the useEffect in AuthContext or MobileFlow
-      
-    } catch (err: any) {
+    } catch (err) {
       console.error('Unexpected error during login:', err);
+      
+      // Show generic error message
       toast({
         title: "Erreur inattendue",
-        description: "Une erreur s'est produite lors de la connexion. Veuillez réessayer.",
+        description: "Une erreur s'est produite lors de la connexion",
         variant: "destructive",
       });
-      onError?.(err.message);
+      
+      if (onError) onError("Une erreur inattendue s'est produite");
+      
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-6">
-      <div className="space-y-2">
-        <label htmlFor="email" className="text-sm font-medium text-gray-700">
-          Adresse e-mail
-        </label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="votre@email.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className={adminMode ? "border-amber-200 focus:border-amber-400" : 
-                    isSfdAdmin ? "border-blue-200 focus:border-blue-400" :
-                    "border-emerald-200 focus:border-emerald-400"}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-6">
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="exemple@email.com"
+                  type="email"
+                  {...field}
+                  disabled={isLoading}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      
-      <div className="space-y-2">
-        <div className="flex justify-between">
-          <label htmlFor="password" className="text-sm font-medium text-gray-700">
-            Mot de passe
-          </label>
-          <a href="#" className="text-xs text-primary hover:underline">
+        
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Mot de passe</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input
+                    placeholder="••••••••"
+                    type={showPassword ? 'text' : 'password'}
+                    {...field}
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="text-right">
+          <a href="#" className="text-sm text-primary hover:underline">
             Mot de passe oublié?
           </a>
         </div>
-        <Input
-          id="password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className={adminMode ? "border-amber-200 focus:border-amber-400" : 
-                   isSfdAdmin ? "border-blue-200 focus:border-blue-400" :
-                   "border-emerald-200 focus:border-emerald-400"}
-        />
-      </div>
-      
-      <Button 
-        type="submit" 
-        disabled={isLoading}
-        className={`w-full ${adminMode ? "bg-amber-600 hover:bg-amber-700" : 
-                  isSfdAdmin ? "bg-blue-600 hover:bg-blue-700" :
-                  "bg-[#0D6A51] hover:bg-[#0D6A51]/90"}`}
-      >
-        {isLoading ? (
-          <>
-            <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-            Connexion en cours...
-          </>
-        ) : (
-          "Se connecter"
+        
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Connexion...
+            </>
+          ) : (
+            <>Se connecter</>
+          )}
+        </Button>
+        
+        {adminMode && (
+          <div className="mt-4 text-xs text-center text-amber-600">
+            Interface administrateur MEREF avec accès aux fonctionnalités avancées
+          </div>
         )}
-      </Button>
-    </form>
+        
+        {isSfdAdmin && (
+          <div className="mt-4 text-xs text-center text-blue-600">
+            Interface administrateur SFD avec accès à la gestion de votre SFD
+          </div>
+        )}
+      </form>
+    </Form>
   );
 };
 

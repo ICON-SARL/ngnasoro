@@ -1,14 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Logo from './auth/Logo';
 import LoginForm from './auth/login/LoginForm';
 import RegisterForm from './auth/RegisterForm';
-import { Check } from 'lucide-react';
+import { Check, AlertTriangle, RefreshCw } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserRole } from '@/hooks/auth/types';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 interface AuthUIProps {
   initialMode?: 'default' | 'admin' | 'sfd_admin';
@@ -21,7 +23,26 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authTimeout, setAuthTimeout] = useState(false);
   const { toast } = useToast();
+  
+  // Add a timeout to detect when authentication is taking too long
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
+    
+    if (loading) {
+      timeoutId = setTimeout(() => {
+        setAuthTimeout(true);
+      }, 10000); // 10 seconds timeout
+    } else {
+      setAuthTimeout(false);
+    }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [loading]);
   
   useEffect(() => {
     const hash = location.hash;
@@ -74,6 +95,12 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
     }
   }, [location.pathname, location.search, initialMode]);
   
+  const handleRetry = () => {
+    setAuthTimeout(false);
+    setAuthError(null);
+    window.location.reload();
+  };
+  
   if (authSuccess) {
     return (
       <div className="auth-container">
@@ -83,6 +110,27 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
           </div>
           <h1 className="text-3xl font-bold text-green-700 mb-3">Connexion réussie!</h1>
           <p className="mt-2 text-gray-600 text-lg">Vous allez être redirigé vers l'application...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (authTimeout && loading) {
+    return (
+      <div className="auth-container">
+        <div className="max-w-md w-full auth-card p-8 text-center">
+          <div className="h-20 w-20 bg-amber-100 text-amber-600 rounded-full mx-auto flex items-center justify-center mb-6">
+            <AlertTriangle className="h-10 w-10" />
+          </div>
+          <h1 className="text-2xl font-bold text-amber-700 mb-3">Connexion trop longue</h1>
+          <p className="mt-2 text-gray-600 mb-6">La vérification de votre session prend plus de temps que prévu. Vérifiez votre connexion internet et réessayez.</p>
+          <Button 
+            onClick={handleRetry} 
+            className="mx-auto flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Réessayer
+          </Button>
         </div>
       </div>
     );
@@ -136,16 +184,29 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
             </div>
           )}
           
+          {authError && (
+            <div className="p-4 bg-red-50 text-red-800 text-sm">
+              <p className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                {authError}
+              </p>
+            </div>
+          )}
+          
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full grid grid-cols-2">
               <TabsTrigger value="login">Connexion</TabsTrigger>
               <TabsTrigger value="register">Inscription</TabsTrigger>
             </TabsList>
             <TabsContent value="login">
-              <LoginForm adminMode={authMode === 'admin'} isSfdAdmin={authMode === 'sfd_admin'} />
+              <LoginForm 
+                adminMode={authMode === 'admin'} 
+                isSfdAdmin={authMode === 'sfd_admin'} 
+                onError={setAuthError}
+              />
             </TabsContent>
             <TabsContent value="register">
-              <RegisterForm />
+              <RegisterForm onError={setAuthError} />
             </TabsContent>
           </Tabs>
           

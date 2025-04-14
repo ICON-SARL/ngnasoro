@@ -2,6 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
+import { Loader } from '@/components/ui/loader';
 
 interface PrivateLayoutProps {
   children: React.ReactNode;
@@ -13,13 +14,14 @@ const PrivateLayout: React.FC<PrivateLayoutProps> = ({ children }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <Loader size="lg" />
+        <span className="ml-3 text-gray-600">Chargement de votre session...</span>
       </div>
     );
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/auth" replace />;
   }
 
   return (
