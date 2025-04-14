@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,9 +13,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader } from '@/components/ui/loader';
 import { useSfdData } from '../hooks/sfd-management/useSfdData';
 import { cn } from '@/lib/utils';
+import { SFD } from '@/hooks/useSfdManagement';
 
 interface SfdManagementManagerProps {
-  onSelectSfd?: (sfd: Sfd) => void;
+  onSelectSfd?: (sfd: SFD) => void;
   selectedSfdId?: string;
 }
 
@@ -32,7 +32,6 @@ export function SfdManagementManager({ onSelectSfd, selectedSfdId }: SfdManageme
   
   const { sfds = [], isLoading, isError, refetch, error, isRefetching } = useSfdData();
   
-  // Log useful debug information
   useEffect(() => {
     console.log('SFD Management Manager State:', { 
       sfdCount: sfds?.length, 
@@ -43,7 +42,6 @@ export function SfdManagementManager({ onSelectSfd, selectedSfdId }: SfdManageme
     });
   }, [sfds, isLoading, isError, error, isRefetching]);
   
-  // Manual retry mechanism
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
     refetch();
@@ -53,7 +51,6 @@ export function SfdManagementManager({ onSelectSfd, selectedSfdId }: SfdManageme
     });
   };
   
-  // Filter SFDs based on search term
   const filteredSfds = sfds.filter(sfd => 
     sfd.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     sfd.code.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -62,7 +59,21 @@ export function SfdManagementManager({ onSelectSfd, selectedSfdId }: SfdManageme
   
   const handleSfdClick = (sfd: Sfd) => {
     if (onSelectSfd) {
-      onSelectSfd(sfd);
+      const sfdData: SFD = {
+        id: sfd.id,
+        name: sfd.name,
+        code: sfd.code,
+        region: sfd.region || '',
+        status: sfd.status as SFD['status'],
+        contact_email: sfd.contact_email || '',
+        phone: sfd.phone || '',
+        description: sfd.description,
+        created_at: sfd.created_at,
+        logo_url: sfd.logo_url,
+        client_count: sfd.client_count || 0,
+        loan_count: sfd.loan_count || 0
+      };
+      onSelectSfd(sfdData);
     }
   };
   

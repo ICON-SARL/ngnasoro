@@ -52,8 +52,8 @@ export function SfdDetail({ selectedSfd, onEdit }: SfdDetailProps) {
             <h2 className="text-xl font-bold">{selectedSfd.name}</h2>
             <p className="text-sm text-muted-foreground">Code: {selectedSfd.code}</p>
             <div className="mt-1">
-              <Badge className={statusColors[selectedSfd.status]}>
-                {statusLabels[selectedSfd.status]}
+              <Badge className={statusColors[selectedSfd.status as keyof typeof statusColors]}>
+                {statusLabels[selectedSfd.status as keyof typeof statusLabels]}
               </Badge>
             </div>
           </div>

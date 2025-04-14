@@ -10,7 +10,7 @@ export interface SFD {
   name: string;
   code: string;
   region: string;
-  status: 'active' | 'inactive' | 'suspended';
+  status: 'active' | 'inactive' | 'suspended' | 'pending';
   contact_email: string;
   phone: string;
   description?: string;
@@ -40,11 +40,13 @@ export function useSfdManagement() {
           throw error;
         }
 
-        // Add client_count and loan_count with default values
+        // Add client_count and loan_count with default values for each SFD
         return (sfdsData || []).map(sfd => ({
           ...sfd,
           client_count: sfd.client_count || 0,
-          loan_count: sfd.loan_count || 0
+          loan_count: sfd.loan_count || 0,
+          // Ensure status is of the correct type
+          status: (sfd.status || 'active') as SFD['status']
         }));
       } catch (error) {
         console.error('Error fetching SFDs:', error);

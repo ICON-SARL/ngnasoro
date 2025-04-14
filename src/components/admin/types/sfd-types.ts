@@ -4,7 +4,7 @@ export interface Sfd {
   name: string;
   code: string;
   region?: string;
-  status: 'active' | 'suspended' | 'pending';
+  status: 'active' | 'suspended' | 'pending' | 'inactive';
   logo_url?: string;
   contact_email?: string;
   phone?: string;
