@@ -1,205 +1,205 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface AdminData {
+  email: string;
+  password: string;
+  full_name: string;
+  role: string;
+  sfd_id: string;
+  notify: boolean;
 }
 
-serve(async (req) => {
-  // CORS handling
+serve(async (req: Request) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
-
+  
   try {
-    console.log('Starting create-sfd-admin function')
-    
-    // Vérification de l'authentification
-    const supabaseClient = createClient(
+    // Création du client supabase avec le rôle service_role
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
         auth: {
           autoRefreshToken: false,
-          persistSession: false
-        }
+          persistSession: false,
+        },
       }
-    )
-
-    // Vérification d'authentification et d'autorisation (MEREF/admin uniquement)
-    const authHeader = req.headers.get('Authorization')
+    );
+    
+    // Vérifier l'authentification de l'utilisateur
+    const authHeader = req.headers.get('Authorization');
+    
     if (!authHeader) {
-      console.error('No Authorization header found')
-      throw new Error('Authentification requise')
+      return new Response(
+        JSON.stringify({ error: 'Non autorisé: token manquant' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
+    
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
     if (authError || !user) {
-      console.error('Auth error or no user:', authError)
-      throw new Error('Utilisateur non authentifié')
+      return new Response(
+        JSON.stringify({ error: 'Non autorisé: token invalide' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-
-    console.log('Authenticated user:', user.id, 'checking roles...')
-
-    // Vérifier que l'utilisateur a le rôle d'admin
-    const { data: roles, error: rolesError } = await supabaseClient
+    
+    // Vérifier si l'utilisateur est admin
+    const { data: userRoles, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .in('role', ['admin'])
-      .maybeSingle()
-
-    if (rolesError) {
-      console.error('Error fetching roles:', rolesError)
-      throw new Error(`Erreur lors de la vérification des rôles: ${rolesError.message}`)
-    }
-
-    if (!roles) {
-      console.error('User does not have admin role:', user.id)
-      throw new Error('Vous n\'avez pas les permissions nécessaires (rôle admin requis)')
-    }
-
-    console.log('User has admin role, proceeding...')
-
-    // Récupération des données
-    const requestData = await req.json()
-    const adminData = requestData.adminData
+      .eq('role', 'admin')
+      .single();
     
-    console.log('Request payload structure:', Object.keys(requestData))
-    
-    if (!adminData || !adminData.email || !adminData.password || !adminData.full_name || !adminData.sfd_id) {
-      console.error('Invalid admin data:', adminData ? Object.keys(adminData) : 'null')
-      throw new Error('Données d\'administrateur incomplètes')
+    if (roleError || !userRoles) {
+      return new Response(
+        JSON.stringify({ error: 'Non autorisé: droits insuffisants' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-
-    console.log('Creating admin user for SFD:', adminData.sfd_id)
-
+    
+    // Récupérer les données envoyées
+    const { adminData }: { adminData: AdminData } = await req.json();
+    
+    console.log('Creating SFD admin:', { ...adminData, password: '***' });
+    
+    // Vérifier les données obligatoires
+    if (!adminData.email || !adminData.password || !adminData.full_name || !adminData.sfd_id) {
+      return new Response(
+        JSON.stringify({ error: 'Données manquantes pour créer l\'administrateur SFD' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Vérifier si la SFD existe
+    const { data: sfdExists, error: sfdError } = await supabaseAdmin
+      .from('sfds')
+      .select('id, name')
+      .eq('id', adminData.sfd_id)
+      .single();
+    
+    if (sfdError || !sfdExists) {
+      return new Response(
+        JSON.stringify({ error: 'SFD non trouvée' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     // 1. Créer l'utilisateur dans auth.users
-    const { data: authUser, error: createUserError } = await supabaseClient.auth.admin.createUser({
+    const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       email: adminData.email,
       password: adminData.password,
       email_confirm: true,
-      user_metadata: { 
+      user_metadata: {
         full_name: adminData.full_name,
         sfd_id: adminData.sfd_id
       },
       app_metadata: {
         role: 'sfd_admin'
       }
-    })
-
-    if (createUserError || !authUser.user) {
-      console.error('Error creating user:', createUserError)
-      throw new Error(`Erreur lors de la création de l'utilisateur: ${createUserError?.message}`)
+    });
+    
+    if (createUserError || !newUser.user) {
+      return new Response(
+        JSON.stringify({ error: `Erreur lors de la création de l'utilisateur: ${createUserError?.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-
-    console.log('Created auth user:', authUser.user.id)
-
-    // 2. Stocker les informations administrateur
-    const { error: adminError } = await supabaseClient
-      .from('admin_users')
-      .insert({
-        id: authUser.user.id,
-        email: adminData.email,
-        full_name: adminData.full_name,
-        role: 'sfd_admin',
-        has_2fa: false
-      })
-
-    if (adminError) {
-      console.error('Error inserting admin user record:', adminError)
-      // Si erreur, essayer de supprimer l'utilisateur auth créé pour éviter des utilisateurs orphelins
-      await supabaseClient.auth.admin.deleteUser(authUser.user.id)
-      throw new Error(`Erreur lors de la création de l'enregistrement admin: ${adminError.message}`)
-    }
-
-    // 3. Attribuer le rôle sfd_admin
-    const { error: roleError } = await supabaseClient
-      .from('user_roles')
-      .insert({
-        user_id: authUser.user.id,
-        role: 'sfd_admin'
-      })
-
-    if (roleError) {
-      console.error('Error assigning role:', roleError)
-      // Nettoyage en cas d'erreur
-      await supabaseClient.auth.admin.deleteUser(authUser.user.id)
-      throw new Error(`Erreur lors de l'attribution du rôle: ${roleError.message}`)
-    }
-
-    // 4. Associer l'administrateur à la SFD
-    const { error: sfdAssocError } = await supabaseClient
-      .from('user_sfds')
-      .insert({
-        user_id: authUser.user.id,
-        sfd_id: adminData.sfd_id,
-        is_default: true
-      })
-
-    if (sfdAssocError) {
-      console.error('Error associating with SFD:', sfdAssocError)
-      // Nettoyage en cas d'erreur
-      await supabaseClient.auth.admin.deleteUser(authUser.user.id)
-      throw new Error(`Erreur lors de l'association à la SFD: ${sfdAssocError.message}`)
-    }
-
-    // 5. Journaliser l'action pour audit
-    await supabaseClient
-      .from('audit_logs')
-      .insert({
-        user_id: user.id,
-        action: 'create_sfd_admin',
-        category: 'ADMIN_MANAGEMENT',
-        severity: 'info',
-        status: 'success',
-        target_resource: `admin_users/${authUser.user.id}`,
-        details: {
-          created_admin_id: authUser.user.id,
-          created_admin_email: adminData.email,
-          sfd_id: adminData.sfd_id
-        }
-      })
-
-    // 6. Notification à l'administrateur si demandé
-    if (adminData.notify) {
-      // Code pour envoyer un email à l'administrateur avec ses identifiants
-      // (Non implémenté dans cette version - nécessiterait un service externe)
-      console.log(`Notification should be sent to ${adminData.email}`)
-    }
-
-    console.log('Successfully created SFD admin:', authUser.user.id)
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        admin: {
-          id: authUser.user.id,
+    
+    const newAdminId = newUser.user.id;
+    
+    try {
+      // 2. Créer l'entrée dans admin_users
+      await supabaseAdmin
+        .from('admin_users')
+        .insert({
+          id: newAdminId,
           email: adminData.email,
           full_name: adminData.full_name,
-          sfd_id: adminData.sfd_id
-        }
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 201 
+          role: 'sfd_admin',
+          has_2fa: false
+        });
+      
+      // 3. Assigner le rôle SFD_ADMIN
+      await supabaseAdmin
+        .from('user_roles')
+        .insert({
+          user_id: newAdminId,
+          role: 'sfd_admin'
+        });
+      
+      // 4. Créer l'association avec la SFD
+      await supabaseAdmin
+        .from('user_sfds')
+        .insert({
+          user_id: newAdminId,
+          sfd_id: adminData.sfd_id,
+          is_default: true
+        });
+      
+      // 5. Si notification demandée, envoyer un email (à implémenter)
+      if (adminData.notify) {
+        // Code d'envoi d'email à implémenter
+        console.log(`Notification d'email à envoyer pour ${adminData.email}`);
       }
-    )
+      
+      // 6. Enregistrer un audit log
+      await supabaseAdmin
+        .from('audit_logs')
+        .insert({
+          user_id: user.id, // L'administrateur qui a créé cet admin SFD
+          action: 'create_sfd_admin',
+          target_resource: `admin_users/${newAdminId}`,
+          category: 'ADMIN_OPERATIONS',
+          severity: 'INFO',
+          status: 'success',
+          details: {
+            sfd_id: adminData.sfd_id,
+            sfd_name: sfdExists.name,
+            admin_email: adminData.email,
+            admin_name: adminData.full_name
+          }
+        });
+      
+      // Retourner les informations de l'administrateur créé
+      return new Response(
+        JSON.stringify({
+          success: true,
+          admin: {
+            id: newAdminId,
+            email: adminData.email,
+            full_name: adminData.full_name,
+            role: 'sfd_admin',
+            sfd_id: adminData.sfd_id,
+            sfd_name: sfdExists.name
+          }
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (error) {
+      // En cas d'erreur, essayer de supprimer l'utilisateur créé
+      await supabaseAdmin.auth.admin.deleteUser(newAdminId);
+      
+      throw error;
+    }
   } catch (error) {
-    console.error('Error in create-sfd-admin function:', error)
+    console.error('Erreur dans create-sfd-admin:', error);
     
     return new Response(
-      JSON.stringify({
-        error: error.message || 'Une erreur est survenue lors de la création de l\'administrateur SFD'
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400 
-      }
-    )
+      JSON.stringify({ error: `Erreur interne du serveur: ${error.message}` }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
-})
+});
