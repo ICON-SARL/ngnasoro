@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
@@ -41,6 +40,10 @@ interface LoanPlan {
   created_at: string;
   is_subsidized?: boolean;
   subsidy_rate?: number;
+  sfds?: {
+    name: string;
+    logo_url: string;
+  };
 }
 
 interface SFD {
@@ -62,12 +65,11 @@ interface LoanPlansDisplayProps {
   subsidizedOnly?: boolean;
 }
 
+import { useSfdLoanPlans } from '@/hooks/useSfdLoanPlans';
+
 export default function LoanPlansDisplay({ subsidizedOnly = false }: LoanPlansDisplayProps) {
-  const { user } = useAuth();
-  const [loanPlans, setLoanPlans] = useState<LoanPlan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: loanPlans, isLoading } = useSfdLoanPlans();
   const [selectedSfd, setSelectedSfd] = useState<string | null>(null);
-  const [sfdList, setSfdList] = useState<SFD[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<LoanPlan | null>(null);
   const [amount, setAmount] = useState<number>(100000);
   const [duration, setDuration] = useState<number>(12);
@@ -76,6 +78,8 @@ export default function LoanPlansDisplay({ subsidizedOnly = false }: LoanPlansDi
   const [totalInterest, setTotalInterest] = useState<number>(0);
   const [totalRepayment, setTotalRepayment] = useState<number>(0);
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
+  const [sfdList, setSfdList] = useState<SFD[]>([]);
 
   useEffect(() => {
     const fetchUserSfds = async () => {
@@ -97,9 +101,9 @@ export default function LoanPlansDisplay({ subsidizedOnly = false }: LoanPlansDi
         setSfdList(sfds);
         
         // Select first SFD by default
-        if (sfds.length > 0 && !selectedSfd) {
-          setSelectedSfd(sfds[0].id);
-        }
+        // if (sfds.length > 0 && !selectedSfd) {
+        //   setSelectedSfd(sfds[0].id);
+        // }
       } catch (error) {
         console.error('Error fetching user SFDs:', error);
       }
@@ -108,38 +112,13 @@ export default function LoanPlansDisplay({ subsidizedOnly = false }: LoanPlansDi
     fetchUserSfds();
   }, [user]);
 
-  useEffect(() => {
-    const fetchLoanPlans = async () => {
-      if (!selectedSfd) return;
-      
-      setLoading(true);
-      try {
-        // Fetch loan plans for the selected SFD
-        let query = supabase
-          .from('sfd_loan_plans')
-          .select('*')
-          .eq('sfd_id', selectedSfd)
-          .eq('is_active', true);
-          
-        const { data, error } = await query;
-
-        if (error) throw error;
-
-        // Filter for subsidized/standard plans
-        const filteredPlans = subsidizedOnly 
-          ? data.filter(plan => plan.name.toLowerCase().includes('subvention') || plan.description?.toLowerCase().includes('subvention'))
-          : data.filter(plan => !plan.name.toLowerCase().includes('subvention') && !plan.description?.toLowerCase().includes('subvention'));
-          
-        setLoanPlans(filteredPlans || []);
-      } catch (error) {
-        console.error('Error fetching loan plans:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLoanPlans();
-  }, [selectedSfd, subsidizedOnly]);
+  const filteredPlans = loanPlans?.filter(plan => 
+    subsidizedOnly ? 
+      plan.name.toLowerCase().includes('subvention') || 
+      plan.description?.toLowerCase().includes('subvention')
+    : !plan.name.toLowerCase().includes('subvention') && 
+      !plan.description?.toLowerCase().includes('subvention')
+  );
 
   useEffect(() => {
     if (selectedPlan && amount && duration) {
@@ -214,47 +193,25 @@ export default function LoanPlansDisplay({ subsidizedOnly = false }: LoanPlansDi
     setIsOpen(true);
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-3/4" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-32 w-full" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      <div className="flex overflow-x-auto pb-2 -mx-2 px-2">
-        {sfdList.map(sfd => (
-          <button
-            key={sfd.id}
-            onClick={() => setSelectedSfd(sfd.id)}
-            className={`px-4 py-2 mr-2 rounded-full text-sm font-medium whitespace-nowrap ${
-              selectedSfd === sfd.id 
-                ? 'bg-[#0D6A51] text-white' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {sfd.name}
-          </button>
-        ))}
-      </div>
-
-      {loanPlans.length === 0 ? (
-        <div className="text-center py-8 border rounded-lg bg-gray-50">
-          <p className="text-gray-500">Aucun plan de prêt {subsidizedOnly ? 'subventionné' : ''} disponible pour cette SFD</p>
+      {isLoading ? (
+        <div className="space-y-4">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
         </div>
-      ) : (
+      ) : filteredPlans && filteredPlans.length > 0 ? (
         <div className="space-y-3">
-          {loanPlans.map(plan => (
+          {filteredPlans.map(plan => (
             <Card key={plan.id} className="overflow-hidden">
               <div className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <h3 className="font-semibold text-lg">{plan.name}</h3>
                     <p className="text-sm text-gray-600">{plan.description}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {plan.sfds?.name}
+                    </p>
                   </div>
                   <Badge 
                     variant="outline" 
@@ -271,7 +228,9 @@ export default function LoanPlansDisplay({ subsidizedOnly = false }: LoanPlansDi
                     <CreditCard className="h-4 w-4 text-gray-500 mr-2" />
                     <div className="text-sm">
                       <p className="text-gray-500">Montant</p>
-                      <p className="font-medium">{plan.min_amount.toLocaleString()} - {plan.max_amount.toLocaleString()} FCFA</p>
+                      <p className="font-medium">
+                        {plan.min_amount.toLocaleString()} - {plan.max_amount.toLocaleString()} FCFA
+                      </p>
                     </div>
                   </div>
                   
@@ -280,22 +239,6 @@ export default function LoanPlansDisplay({ subsidizedOnly = false }: LoanPlansDi
                     <div className="text-sm">
                       <p className="text-gray-500">Durée</p>
                       <p className="font-medium">{plan.min_duration} - {plan.max_duration} mois</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <Percent className="h-4 w-4 text-gray-500 mr-2" />
-                    <div className="text-sm">
-                      <p className="text-gray-500">Taux d'intérêt</p>
-                      <p className="font-medium">{plan.interest_rate}%</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                    <div className="text-sm">
-                      <p className="text-gray-500">Frais</p>
-                      <p className="font-medium">{plan.fees}%</p>
                     </div>
                   </div>
                 </div>
@@ -309,6 +252,12 @@ export default function LoanPlansDisplay({ subsidizedOnly = false }: LoanPlansDi
               </div>
             </Card>
           ))}
+        </div>
+      ) : (
+        <div className="text-center py-8 border rounded-lg bg-gray-50">
+          <p className="text-gray-500">
+            Aucun plan de prêt {subsidizedOnly ? 'subventionné' : ''} disponible
+          </p>
         </div>
       )}
 

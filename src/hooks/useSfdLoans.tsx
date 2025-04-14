@@ -12,226 +12,125 @@ export function useSfdLoans() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Fetch all loans for the current SFD using cache
-  const { 
-    data: loansData,
-    isLoading,
-    isError,
-    refetch,
-    forceRefresh,
-    clearCache
-  } = useCachedSfdData(
-    user?.id,
-    'sfd-loans',
-    sfdLoanApi.getSfdLoans
-  );
-  
-  // Ensure that loans is always an array
-  const loans = Array.isArray(loansData) 
-    ? loansData 
-    : loansData && 'loans' in loansData 
-      ? loansData.loans 
-      : [];
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['sfd-loans', user?.id],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
 
-  // Create a new loan
+      const { data: clientsData, error: clientsError } = await supabase
+        .from('sfd_clients')
+        .select('id')
+        .eq('user_id', user.id);
+
+      if (clientsError) {
+        throw new Error('Failed to fetch client data');
+      }
+
+      if (!clientsData?.length) {
+        return [];
+      }
+
+      const clientIds = clientsData.map(client => client.id);
+
+      const { data: loans, error: loansError } = await supabase
+        .from('sfd_loans')
+        .select(`
+          *,
+          sfds:sfd_id (
+            name,
+            logo_url
+          )
+        `)
+        .in('client_id', clientIds)
+        .order('created_at', { ascending: false });
+
+      if (loansError) {
+        throw loansError;
+      }
+
+      return loans || [];
+    },
+    meta: {
+      errorMessage: "Impossible de charger vos prêts"
+    }
+  });
+
+  // Create loan mutation
   const createLoan = useMutation({
     mutationFn: sfdLoanApi.createLoan,
     onSuccess: () => {
       toast({
-        title: "Prêt créé avec succès",
-        description: "Le prêt a été créé et est en attente d'approbation",
+        title: "Prêt créé",
+        description: "Le prêt a été créé avec succès",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
-      clearCache(); // Clear the cache to ensure fresh data
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
-        title: "Erreur lors de la création",
-        description: error.message || "Une erreur est survenue",
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de la création du prêt",
         variant: "destructive",
       });
     }
   });
 
-  // Approve a loan
+  // Approve loan mutation
   const approveLoan = useMutation({
-    mutationFn: ({ loanId }: { loanId: string }) => {
-      if (!user?.id) throw new Error("Utilisateur non authentifié");
-      return sfdLoanApi.approveLoan(loanId, user.id);
-    },
+    mutationFn: (loanId: string) => sfdLoanApi.approveLoan(loanId),
     onSuccess: () => {
       toast({
         title: "Prêt approuvé",
         description: "Le prêt a été approuvé avec succès",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
-      clearCache(); // Clear the cache to ensure fresh data
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur d'approbation",
-        description: error.message || "Une erreur est survenue",
-        variant: "destructive",
-      });
     }
   });
 
-  // Reject a loan
+  // Reject loan mutation
   const rejectLoan = useMutation({
-    mutationFn: ({ loanId }: { loanId: string }) => {
-      if (!user?.id) throw new Error("Utilisateur non authentifié");
-      // Ajouter une raison par défaut pour le rejet
-      return sfdLoanApi.rejectLoan(loanId, user.id, "Demande rejetée");
-    },
+    mutationFn: (loanId: string) => sfdLoanApi.rejectLoan(loanId),
     onSuccess: () => {
       toast({
         title: "Prêt rejeté",
         description: "Le prêt a été rejeté",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
-      clearCache(); // Clear the cache to ensure fresh data
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur de rejet",
-        description: error.message || "Une erreur est survenue",
-        variant: "destructive",
-      });
     }
   });
 
-  // Disburse a loan
+  // Disburse loan mutation
   const disburseLoan = useMutation({
-    mutationFn: ({ loanId }: { loanId: string }) => {
-      if (!user?.id) throw new Error("Utilisateur non authentifié");
-      return sfdLoanApi.disburseLoan(loanId, user.id);
-    },
+    mutationFn: (loanId: string) => sfdLoanApi.disburseLoan(loanId),
     onSuccess: () => {
       toast({
         title: "Prêt décaissé",
         description: "Le prêt a été décaissé avec succès",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
-      clearCache(); // Clear the cache to ensure fresh data
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur de décaissement",
-        description: error.message || "Une erreur est survenue",
-        variant: "destructive",
-      });
     }
   });
 
-  // Record a loan payment
+  // Record payment mutation
   const recordPayment = useMutation({
-    mutationFn: ({ loanId, amount, paymentMethod }: { loanId: string, amount: number, paymentMethod: string }) => {
-      if (!user?.id) throw new Error("Utilisateur non authentifié");
-      return sfdLoanApi.recordLoanPayment(loanId, amount, paymentMethod, user.id);
-    },
+    mutationFn: ({ loanId, amount, paymentMethod }: { loanId: string, amount: number, paymentMethod: string }) => 
+      sfdLoanApi.recordLoanPayment(loanId, amount, paymentMethod),
     onSuccess: () => {
       toast({
         title: "Paiement enregistré",
         description: "Le paiement a été enregistré avec succès",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
-      clearCache(); // Clear the cache to ensure fresh data
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur d'enregistrement",
-        description: error.message || "Une erreur est survenue",
-        variant: "destructive",
-      });
     }
   });
-  
-  // Send payment reminder
-  const sendPaymentReminder = useMutation({
-    mutationFn: ({ loanId }: { loanId: string }) => {
-      if (!user?.id) throw new Error("Utilisateur non authentifié");
-      // Use only one argument as expected by the loanNotificationService
-      return sfdLoanApi.sendPaymentReminder(loanId);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Rappel envoyé",
-        description: "Le rappel de paiement a été envoyé au client",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur d'envoi",
-        description: error.message || "Une erreur est survenue lors de l'envoi du rappel",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Confirm loan agreement (OTP confirmation)
-  const confirmLoanAgreement = useMutation({
-    mutationFn: ({ loanId, otpCode }: { loanId: string, otpCode: string }) => {
-      if (!user?.id) throw new Error("Utilisateur non authentifié");
-      // In a real implementation, this would verify the OTP before confirming
-      console.log(`Confirming loan ${loanId} with OTP code ${otpCode}`);
-      // For demo, we'll just approve the loan directly
-      return sfdLoanApi.approveLoan(loanId, user.id);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Prêt confirmé",
-        description: "Votre accord de prêt a été confirmé avec succès",
-      });
-      queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
-      clearCache(); // Clear the cache to ensure fresh data
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur de confirmation",
-        description: error.message || "Une erreur est survenue lors de la confirmation",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Get loan details with cached results
-  const getLoanById = async (loanId: string) => {
-    const cachedLoan = queryClient.getQueryData<Loan>(['loan', loanId]);
-    if (cachedLoan) return cachedLoan;
-    
-    const loan = await sfdLoanApi.getLoanById(loanId);
-    if (loan) {
-      queryClient.setQueryData(['loan', loanId], loan);
-    }
-    return loan;
-  };
-
-  // Get loan payments with cached results
-  const getLoanPayments = async (loanId: string) => {
-    const cachedPayments = queryClient.getQueryData(['loan-payments', loanId]);
-    if (cachedPayments) return cachedPayments;
-    
-    const payments = await sfdLoanApi.getLoanPayments(loanId);
-    if (payments) {
-      queryClient.setQueryData(['loan-payments', loanId], payments);
-    }
-    return payments;
-  };
 
   return {
-    loans,
+    data,
     isLoading,
-    isError,
+    error,
     createLoan,
     approveLoan,
     rejectLoan,
     disburseLoan,
-    recordPayment,
-    sendPaymentReminder,
-    confirmLoanAgreement,
-    getLoanById,
-    getLoanPayments,
-    refetch,
-    forceRefresh
+    recordPayment
   };
 }
