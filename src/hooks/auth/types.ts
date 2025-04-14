@@ -22,6 +22,7 @@ export interface User extends Omit<SupabaseUser, 'app_metadata' | 'user_metadata
     phone?: string;
     [key: string]: any;
   };
+  // For backward compatibility with direct property access
   full_name?: string;
   avatar_url?: string;
   sfd_id?: string;

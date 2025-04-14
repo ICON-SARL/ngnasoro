@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { initializeSupabase } from '@/utils/initSupabase';
 import { registerSchema, RegisterFormValues } from './schema';
 
-export const useRegisterForm = () => {
+export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
   const { signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -107,7 +107,11 @@ export const useRegisterForm = () => {
       };
       
       // Register the user
-      await signUp(data.email, data.password, metadata);
+      const result = await signUp(data.email, data.password, metadata);
+      
+      if (result.error) {
+        throw result.error;
+      }
       
       // Get the session to access the user ID
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -149,6 +153,10 @@ export const useRegisterForm = () => {
         setErrorMessage("Trop de tentatives. Veuillez réessayer dans quelques minutes.");
       } else {
         setErrorMessage(error.message || "Une erreur s'est produite lors de l'inscription. Veuillez réessayer.");
+      }
+      
+      if (onError) {
+        onError(error.message || "Une erreur s'est produite lors de l'inscription. Veuillez réessayer.");
       }
       
       toast({
