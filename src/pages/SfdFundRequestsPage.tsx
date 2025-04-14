@@ -203,21 +203,21 @@ const SfdFundRequestsPage: React.FC = () => {
                   <p className="mt-1 text-sm whitespace-pre-line">{selectedRequest.justification}</p>
                 </div>
                 
-                {selectedRequest.comments && (
+                {selectedRequest.decision_comments && (
                   <div className="border-b pb-2">
                     <span className="text-gray-500">Commentaires MEREF:</span>
-                    <p className="mt-1 text-sm whitespace-pre-line">{selectedRequest.comments}</p>
+                    <p className="mt-1 text-sm whitespace-pre-line">{selectedRequest.decision_comments}</p>
                   </div>
                 )}
                 
-                {selectedRequest.approved_at && (
+                {selectedRequest.reviewed_at && (
                   <div className="flex justify-between border-b pb-2">
                     <span className="text-gray-500">
                       {selectedRequest.status === 'approved' || selectedRequest.status === 'completed' 
                         ? 'Approuvée le:' 
                         : 'Rejetée le:'}
                     </span>
-                    <span>{formatDateToLocale(selectedRequest.approved_at)}</span>
+                    <span>{formatDateToLocale(selectedRequest.reviewed_at)}</span>
                   </div>
                 )}
                 
