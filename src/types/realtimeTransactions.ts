@@ -1,5 +1,5 @@
 
-import { Transaction } from './transactions';
+import { Transaction, TransactionStats } from './transactions';
 
 export interface UseTransactionsFilterProps {
   transactions: Transaction[];

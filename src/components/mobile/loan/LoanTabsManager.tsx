@@ -6,6 +6,7 @@ import LoanDetailsTab from './LoanDetailsTab';
 import LoanRepaymentTab from './LoanRepaymentTab';
 import LoanPlansDisplay from './LoanPlansDisplay';
 import QRCodePaymentDialog from './QRCodePaymentDialog';
+import { LoanStatus, LoanDetails } from '@/types/loans';
 
 interface LoanTabsManagerProps {
   activeTab: string;

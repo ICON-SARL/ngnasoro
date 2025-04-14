@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,7 +8,7 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
 import { ArrowDown, ArrowUp, Clock, RefreshCw, Lock } from 'lucide-react';
-import TransactionList from '../TransactionList';
+import TransactionList, { TransactionListItem } from '../TransactionList';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { Account } from '@/types/transactions';
 
@@ -29,14 +28,11 @@ const TransactionsOverview: React.FC = () => {
     getBalance
   } = useTransactions(user?.id, activeSfdId);
 
-  // Check if the account is verified
   useEffect(() => {
-    // For demonstration purposes, assuming accounts are verified
     setIsAccountVerified(true);
   }, [accounts]);
 
   useEffect(() => {
-    // Charger les transactions et le solde lors du montage
     fetchTransactions();
     if (isAccountVerified) {
       loadBalance();
@@ -80,7 +76,7 @@ const TransactionsOverview: React.FC = () => {
         : `-${formatCurrencyAmount(tx.amount)}`,
       date: new Date(tx.date || tx.created_at).toLocaleDateString(),
       avatar: tx.avatar_url
-    }));
+    })) as TransactionListItem[];
   };
 
   return (

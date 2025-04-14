@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ import FundsHeader from './FundsHeader';
 import FundsBalanceSection from './FundsBalanceSection';
 import TransferOptions from './TransferOptions';
 import AvailableChannels from './AvailableChannels';
-import TransactionList from '../TransactionList';
+import TransactionList, { TransactionListItem } from '../TransactionList';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
 
 const FundsManagementPage = () => {
@@ -115,10 +114,9 @@ const FundsManagementPage = () => {
         : `-${formatCurrencyAmount(tx.amount)}`,
       date: new Date(tx.date || tx.created_at).toLocaleDateString(),
       avatar: tx.avatar_url
-    }));
+    })) as TransactionListItem[];
   };
   
-  // Get the selected SFD account for the payment view
   const selectedSfdAccount = selectedSfd !== 'all' 
     ? sfdAccounts.find(account => account.id === selectedSfd) 
     : undefined;

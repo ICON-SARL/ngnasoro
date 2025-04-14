@@ -1,4 +1,6 @@
 
+import { Transaction } from '@/types/transactions';
+
 /**
  * Format a currency amount with thousands separator
  */
@@ -15,11 +17,11 @@ export const formatCurrencyAmount = (amount: string | number): string => {
 /**
  * Convert database records to Transaction objects
  */
-export const convertDatabaseRecordsToTransactions = (records: any[], sfdId: string) => {
+export const convertDatabaseRecordsToTransactions = (records: any[], sfdId: string): Transaction[] => {
   return records.map(record => ({
     id: record.id,
     type: record.type || 'deposit',
-    amount: record.amount || 0,
+    amount: Number(record.amount || 0),
     name: record.name || 'Transaction',
     date: record.date || record.created_at || new Date().toISOString(),
     status: record.status || 'completed',
@@ -36,7 +38,7 @@ export const convertDatabaseRecordsToTransactions = (records: any[], sfdId: stri
 /**
  * Generate mock transactions for development
  */
-export const generateMockTransactions = (sfdId: string, count = 10) => {
+export const generateMockTransactions = (sfdId: string, count = 10): Transaction[] => {
   const types = ['deposit', 'withdrawal', 'payment', 'transfer', 'loan_disbursement', 'loan_repayment'];
   const statuses = ['completed', 'pending', 'failed'];
   const names = [
@@ -59,7 +61,7 @@ export const generateMockTransactions = (sfdId: string, count = 10) => {
       amount: isPositive ? amountBase : -amountBase,
       name: names[Math.floor(Math.random() * names.length)],
       date: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString(),
-      status: statuses[Math.floor(Math.random() * statuses.length)],
+      status: statuses[Math.floor(Math.random() * statuses.length)] as Transaction['status'],
       description: `Transaction ${type} simulée`,
       sfd_id: sfdId,
       user_id: 'current-user',

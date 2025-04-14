@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { ArrowLeft, RefreshCw, Filter, Search, Calendar } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTransactions } from '@/hooks/useTransactions';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
-import TransactionList from '../TransactionList';
+import TransactionList, { TransactionListItem } from '../TransactionList';
 
 const TransactionsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -52,7 +51,7 @@ const TransactionsPage: React.FC = () => {
         : `-${formatCurrencyAmount(tx.amount)}`,
       date: new Date(tx.date || tx.created_at).toLocaleDateString(),
       avatar: tx.avatar_url
-    }));
+    })) as TransactionListItem[];
   };
   
   return (

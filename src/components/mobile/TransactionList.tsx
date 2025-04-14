@@ -1,12 +1,24 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
-import { Transaction } from '@/types/transactions';
 import { formatDate } from '@/utils/formatters';
 
+// Create a dedicated type for the component to avoid Transaction[] conflicts
+export interface TransactionListItem {
+  id: string | number;
+  name: string;
+  type: string;
+  amount: string | number;
+  date: string;
+  avatar?: string | null;
+  sfdName?: string;
+  created_at?: string;
+}
+
 interface TransactionListProps {
-  transactions: Transaction[];
+  transactions: TransactionListItem[];
   isLoading: boolean;
   onViewAll: () => void;
   title?: string;

@@ -6,7 +6,7 @@ import { Bell, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import HomeLoanHeader from './loan/HomeLoanHeader';
-import TransactionList from './TransactionList';
+import TransactionList, { TransactionListItem } from './TransactionList';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -15,7 +15,7 @@ const HomeLoanPage = () => {
   const { user } = useAuth();
   const { transactions, isLoading } = useTransactions(user?.id || '', user?.id ? 'default-sfd' : '');
   
-  const formattedTransactions = transactions.map(transaction => ({
+  const formattedTransactions: TransactionListItem[] = transactions.map(transaction => ({
     id: transaction.id,
     name: transaction.name,
     type: transaction.type,

@@ -6,7 +6,7 @@ import MobileHeader from './MobileHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Plus, CreditCard, ArrowUpDown } from 'lucide-react';
-import TransactionList from './TransactionList';
+import TransactionList, { TransactionListItem } from './TransactionList';
 import { useAuth } from '@/hooks/useAuth';
 import { useClientLoans } from '@/hooks/useClientLoans';
 import ActiveLoansSection from './loans/ActiveLoansSection';
@@ -22,7 +22,7 @@ const MobileMainPage: React.FC = () => {
   const refetchLoans = useClientLoans().refetchLoans || (() => {});
   
   // Placeholder for transactions until we get user data
-  const recentTransactions = [
+  const recentTransactions: TransactionListItem[] = [
     {
       id: 1,
       name: "Dépôt mensuel",
