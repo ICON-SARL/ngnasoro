@@ -1,49 +1,55 @@
 
 /**
- * Formate une date en chaîne de caractères dans un format localisé
+ * Format a date into a readable string
  */
 export const formatDate = (dateString: string): string => {
-  if (!dateString) return 'Jamais connecté';
+  if (!dateString) return 'N/A';
   
   try {
     const date = new Date(dateString);
-    
-    // Vérifier si la date est valide
-    if (isNaN(date.getTime())) {
-      return 'Date invalide';
-    }
-    
-    // Format: "15 avril 2023, 14:30"
-    return date.toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return new Intl.DateTimeFormat('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(date);
   } catch (error) {
-    console.error('Erreur de formatage de date:', error);
-    return 'Erreur de date';
+    console.error('Error formatting date:', error);
+    return dateString;
   }
 };
 
 /**
- * Formate un montant en devise avec le code de devise par défaut (FCFA)
- * @param amount Le montant à formater
- * @param currency Le code de devise (par défaut 'FCFA')
- * @returns Chaîne formatée
+ * Format currency with proper separators and currency symbol
  */
 export const formatCurrency = (amount: number, currency: string = 'FCFA'): string => {
-  // Format pour le Franc CFA d'Afrique de l'Ouest
-  if (currency === 'FCFA' || currency === 'XOF') {
-    return amount.toLocaleString('fr-FR') + ' ' + currency;
+  return `${amount.toLocaleString('fr-FR')} ${currency}`;
+};
+
+/**
+ * Format a number for display
+ */
+export const formatNumber = (value: number): string => {
+  return value.toLocaleString('fr-FR');
+};
+
+/**
+ * Format a phone number with proper spacing
+ */
+export const formatPhoneNumber = (phoneNumber: string): string => {
+  if (!phoneNumber) return '';
+  
+  // Remove non-numeric characters
+  const cleaned = phoneNumber.replace(/\D/g, '');
+  
+  // Format based on length
+  if (cleaned.length === 8) {
+    return `${cleaned.slice(0, 2)} ${cleaned.slice(2, 4)} ${cleaned.slice(4, 6)} ${cleaned.slice(6, 8)}`;
   }
   
-  // Format pour les autres devises en utilisant Intl.NumberFormat
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  if (cleaned.length === 10) {
+    return `${cleaned.slice(0, 2)} ${cleaned.slice(2, 4)} ${cleaned.slice(4, 6)} ${cleaned.slice(6, 8)} ${cleaned.slice(8, 10)}`;
+  }
+  
+  // If the format doesn't match, return the original
+  return phoneNumber;
 };

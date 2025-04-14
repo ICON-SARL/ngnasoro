@@ -1,134 +1,72 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Avatar } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Building, ArrowDown, ArrowUp, CreditCard, Banknote, RefreshCcw } from 'lucide-react';
-
-interface Transaction {
-  id: number | string;
-  name: string;
-  type: string;
-  amount: string;
-  date: string;
-  avatar: string | null;
-  sfdName?: string;
-}
+import { ArrowRight, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
+import { Transaction } from '@/types/transactions';
+import { formatDate } from '@/utils/formatters';
 
 interface TransactionListProps {
   transactions: Transaction[];
-  isLoading?: boolean;
-  onViewAll?: () => void;
-  title?: string;
+  isLoading: boolean;
+  onViewAll: () => void;
 }
 
-const TransactionList = ({ 
-  transactions, 
-  isLoading = false, 
-  onViewAll, 
-  title = "Transactions Récentes" 
-}: TransactionListProps) => {
-  
-  const getTransactionIcon = (type: string, amount: string) => {
-    if (type === 'deposit') {
-      return <ArrowDown className="h-5 w-5 text-green-600" />;
-    } else if (type === 'withdrawal') {
-      return <ArrowUp className="h-5 w-5 text-gray-700" />;
-    } else if (type === 'loan_repayment') {
-      return <RefreshCcw className="h-5 w-5 text-orange-600" />;
-    } else if (type === 'loan_disbursement') {
-      return <CreditCard className="h-5 w-5 text-blue-600" />;
-    } else if (type === 'transfer') {
-      return amount.startsWith('+') 
-        ? <ArrowDown className="h-5 w-5 text-green-600" /> 
-        : <ArrowUp className="h-5 w-5 text-gray-700" />;
-    } else {
-      return <Banknote className="h-5 w-5 text-gray-600" />;
-    }
-  };
-  
+const TransactionList: React.FC<TransactionListProps> = ({ transactions, isLoading, onViewAll }) => {
   return (
-    <div className="px-4 mt-3 mb-20">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-medium">{title}</h3>
-        {onViewAll && (
-          <Button 
-            variant="link" 
-            className="text-sm text-lime-600 p-0 h-auto"
-            onClick={onViewAll}
-          >
-            Voir Prêts
-          </Button>
-        )}
+    <div>
+      <div className="flex justify-between items-center mb-3">
+        <h2 className="text-lg font-semibold">Transactions récentes</h2>
+        <Button 
+          variant="ghost" 
+          className="text-sm text-[#0D6A51] p-0 h-auto font-medium"
+          onClick={onViewAll}
+        >
+          Voir tout <ArrowRight className="h-4 w-4 ml-1" />
+        </Button>
       </div>
       
-      <Card className="border-0 shadow-sm bg-white rounded-2xl overflow-hidden">
+      <Card className="border-0 shadow-sm">
         <CardContent className="p-0">
           {isLoading ? (
-            // Loading state
-            Array(3).fill(0).map((_, index) => (
-              <div 
-                key={`skeleton-${index}`}
-                className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0"
-              >
-                <div className="flex items-center">
-                  <Skeleton className="h-10 w-10 rounded-full mr-3" />
-                  <div>
-                    <Skeleton className="h-4 w-32 mb-2" />
-                    <Skeleton className="h-3 w-16" />
-                  </div>
-                </div>
-                <Skeleton className="h-4 w-16" />
-              </div>
-            ))
-          ) : transactions.length > 0 ? (
-            // Transactions list
-            transactions.map((transaction) => (
-              <div 
-                key={transaction.id}
-                className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0"
-              >
-                <div className="flex items-center">
-                  <Avatar className="h-10 w-10 mr-3 bg-lime-100">
-                    {transaction.avatar ? (
-                      <img src={transaction.avatar} alt={transaction.name} />
-                    ) : (
-                      <div className="h-10 w-10 rounded-full bg-lime-100 flex items-center justify-center">
-                        {getTransactionIcon(transaction.type, transaction.amount)}
-                      </div>
-                    )}
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{transaction.name}</p>
-                    <div className="flex items-center">
-                      <p className="text-xs text-gray-500 mr-2">{transaction.date}</p>
-                      {transaction.sfdName && (
-                        <Badge variant="outline" className="text-xs px-1 py-0 h-4 flex items-center">
-                          <Building className="h-2 w-2 mr-1" />
-                          {transaction.sfdName}
-                        </Badge>
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-[#0D6A51]" />
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-8">
+              <ArrowDown className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+              <h3 className="font-medium mb-1">Pas de transactions</h3>
+              <p className="text-sm text-gray-500">Vous n'avez pas encore de transactions</p>
+            </div>
+          ) : (
+            <ul className="divide-y">
+              {transactions.slice(0, 5).map((transaction) => (
+                <li key={transaction.id} className="p-3 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      transaction.type === 'deposit' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                    }`}>
+                      {transaction.type === 'deposit' ? (
+                        <ArrowUp className="h-4 w-4" />
+                      ) : (
+                        <ArrowDown className="h-4 w-4" />
                       )}
                     </div>
+                    <div className="ml-3">
+                      <div className="font-medium">{transaction.name}</div>
+                      <div className="text-xs text-gray-500">
+                        {formatDate(transaction.date)}
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <p 
-                  className={`font-semibold ${
-                    transaction.amount.startsWith('+') || !transaction.amount.startsWith('-') 
-                      ? 'text-lime-600' 
-                      : 'text-gray-800'
-                  }`}
-                >
-                  {transaction.amount}
-                </p>
-              </div>
-            ))
-          ) : (
-            // Empty state
-            <div className="p-6 text-center text-gray-500">
-              Aucune transaction récente
-            </div>
+                  <div className={`font-medium ${
+                    transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {transaction.type === 'deposit' ? '+' : '-'}{transaction.amount}
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </CardContent>
       </Card>
