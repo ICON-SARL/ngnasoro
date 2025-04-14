@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +10,7 @@ export interface AdminUser {
   has_2fa: boolean;
   created_at: string;
   last_sign_in_at: string | null;
+  is_active: boolean;
 }
 
 export function useSuperAdminManagement() {
@@ -55,7 +55,8 @@ export function useSuperAdminManagement() {
           role: 'admin',
           has_2fa: true,
           created_at: new Date().toISOString(),
-          last_sign_in_at: new Date().toISOString()
+          last_sign_in_at: new Date().toISOString(),
+          is_active: true
         },
         {
           id: '2',
@@ -64,7 +65,8 @@ export function useSuperAdminManagement() {
           role: 'sfd_admin',
           has_2fa: false,
           created_at: new Date().toISOString(),
-          last_sign_in_at: null
+          last_sign_in_at: null,
+          is_active: false
         }
       ];
       

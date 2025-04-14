@@ -5,7 +5,7 @@
  * @param currency The currency code (e.g., 'FCFA', 'USD', 'EUR')
  * @returns Formatted currency string
  */
-export function formatCurrency(amount: number, currency: string): string {
+export function formatCurrency(amount: number, currency: string = 'FCFA'): string {
   // Format for West African CFA Franc
   if (currency === 'FCFA' || currency === 'XOF') {
     return amount.toLocaleString('fr-FR') + ' ' + currency;
@@ -39,7 +39,7 @@ export function formatDate(date: Date | string): string {
   
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   
-  return dateObj.toLocaleDateString('fr-FR', {
+  return dateObj.toLocaleString('fr-FR', { 
     year: 'numeric',
     month: 'short',
     day: 'numeric',

@@ -26,3 +26,25 @@ export const formatDate = (dateString: string): string => {
     return 'Erreur de date';
   }
 };
+
+/**
+ * Formate un montant en devise avec le code de devise par défaut (FCFA)
+ * @param amount Le montant à formater
+ * @param currency Le code de devise (par défaut 'FCFA')
+ * @returns Chaîne formatée
+ */
+export const formatCurrency = (amount: number, currency: string = 'FCFA'): string => {
+  // Format pour le Franc CFA d'Afrique de l'Ouest
+  if (currency === 'FCFA' || currency === 'XOF') {
+    return amount.toLocaleString('fr-FR') + ' ' + currency;
+  }
+  
+  // Format pour les autres devises en utilisant Intl.NumberFormat
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+

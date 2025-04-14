@@ -3,7 +3,7 @@ import React from 'react';
 import { RefreshCw, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader } from '@/components/ui/loader';
-import { formatCurrency } from '@/utils/format';
+import { formatCurrency } from '@/utils/formatters';
 
 interface BalanceDisplayProps {
   isHidden: boolean;
