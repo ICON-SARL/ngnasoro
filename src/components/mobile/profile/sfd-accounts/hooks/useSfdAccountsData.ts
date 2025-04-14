@@ -15,26 +15,39 @@ export default function useSfdAccountsData(
 
   // Transform SfdData to SfdAccountDisplay
   const transformSfdData = (data: any[]): SfdAccountDisplay[] => {
-    return data.map(sfd => ({
-      id: sfd.id,
-      name: sfd.name,
-      balance: sfd.balance || 0,
-      currency: sfd.currency || 'FCFA',
-      code: sfd.code || '',
-      region: sfd.region || '',
-      logoUrl: sfd.logoUrl || sfd.logo_url || null,
-      isDefault: sfd.isDefault || sfd.is_default || false,
-      isVerified: true
-    }));
+    if (!data || !Array.isArray(data)) {
+      console.log('Invalid SFD data format:', data);
+      return [];
+    }
+    
+    return data.map(sfd => {
+      if (!sfd) return null;
+      
+      return {
+        id: sfd.id || '',
+        name: sfd.name || 'Nom inconnu',
+        balance: typeof sfd.balance === 'number' ? sfd.balance : 0,
+        currency: sfd.currency || 'FCFA',
+        code: sfd.code || '',
+        region: sfd.region || '',
+        logoUrl: sfd.logoUrl || sfd.logo_url || null,
+        isDefault: Boolean(sfd.isDefault || sfd.is_default),
+        isVerified: true
+      };
+    }).filter(Boolean);
   };
 
   // Determine which data source to use
   const displayAccounts = useMemo(() => {
-    if (propsSfdData && propsSfdData.length > 0) {
+    if (propsSfdData && Array.isArray(propsSfdData) && propsSfdData.length > 0) {
       return transformSfdData(propsSfdData);
     }
     
-    return transformSfdData(sfdAccounts);
+    if (sfdAccounts && Array.isArray(sfdAccounts) && sfdAccounts.length > 0) {
+      return transformSfdData(sfdAccounts);
+    }
+    
+    return [];
   }, [propsSfdData, sfdAccounts]);
 
   return {

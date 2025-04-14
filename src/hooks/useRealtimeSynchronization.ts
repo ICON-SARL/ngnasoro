@@ -45,7 +45,7 @@ export function useRealtimeSynchronization() {
       const { data: functionResponse, error: functionError } = await supabase.functions.invoke('synchronize-sfd-accounts', {
         body: {
           userId: user.id,
-          sfdId: activeSfdId || '',
+          sfdId: activeSfdId || null, // Send null instead of empty string
           forceSync: true
         }
       });
@@ -81,7 +81,7 @@ export function useRealtimeSynchronization() {
       // Increment retry count for exponential backoff
       setRetryCount(prev => prev + 1);
       
-      // Report error to admin backend
+      // Report error to admin backend if we have an activeSfdId
       if (activeSfdId) {
         try {
           await adminCommunicationApi.reportSyncError(

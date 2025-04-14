@@ -56,33 +56,38 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
   const pendingSfdName = React.useMemo(() => {
     if (!pendingSfdId) return '';
     
-    const account = sfdAccounts.find(sfd => sfd.id === pendingSfdId);
+    const account = sfdAccounts?.find(sfd => sfd?.id === pendingSfdId);
     return account?.name || '';
   }, [pendingSfdId, sfdAccounts]);
 
   const handleVerificationComplete = async (code: string) => {
-    const success = await completeSwitch(code);
-    
-    if (success) {
-      try {
-        await synchronizeBalances.mutateAsync();
-        await refetch();
-        
-        toast({
-          title: "Synchronisation terminée",
-          description: "Les données de votre nouveau compte SFD ont été synchronisées",
-        });
-      } catch (error) {
-        console.error("Error synchronizing after verification:", error);
-        toast({
-          title: "Erreur de synchronisation",
-          description: "La vérification a réussi mais la synchronisation a échoué. Veuillez rafraîchir la page.",
-          variant: "destructive",
-        });
+    try {
+      const success = await completeSwitch(code);
+      
+      if (success) {
+        try {
+          await synchronizeBalances.mutateAsync();
+          await refetch();
+          
+          toast({
+            title: "Synchronisation terminée",
+            description: "Les données de votre nouveau compte SFD ont été synchronisées",
+          });
+        } catch (error) {
+          console.error("Error synchronizing after verification:", error);
+          toast({
+            title: "Erreur de synchronisation",
+            description: "La vérification a réussi mais la synchronisation a échoué. Veuillez rafraîchir la page.",
+            variant: "destructive",
+          });
+        }
       }
+      
+      return success;
+    } catch (error) {
+      console.error("Error completing switch:", error);
+      return false;
     }
-    
-    return success;
   };
 
   const handleRetrySync = () => {
@@ -91,9 +96,13 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
         if (success) {
           refetch();
         }
+      })
+      .catch(error => {
+        console.error("Error retrying sync:", error);
       });
   };
 
+  // Show a dedicated error state if there's a sync error
   if (syncError) {
     return (
       <ErrorState 
@@ -103,16 +112,35 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
       />
     );
   }
+  
+  // Show loading or empty state as appropriate
+  const showEmptyState = !sfdAccounts || sfdAccounts.length === 0;
 
   return (
     <>
       <div className="space-y-4 mt-4">
-        <AccountsSection 
-          {...props} 
-          sfdData={sfdAccounts}
-          isSyncing={isSyncing}
-          onRefresh={synchronizeWithSfd}
-        />
+        {showEmptyState ? (
+          <div className="text-center p-6 border rounded-lg">
+            <Building className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <h3 className="text-lg font-medium mb-2">Aucun compte SFD</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Vous n'avez pas encore de compte SFD associé à votre profil.
+            </p>
+            <Button 
+              onClick={() => navigate('/sfd-setup')} 
+              className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+            >
+              Ajouter un compte SFD
+            </Button>
+          </div>
+        ) : (
+          <AccountsSection 
+            {...props} 
+            sfdData={sfdAccounts}
+            isSyncing={isSyncing}
+            onRefresh={synchronizeWithSfd}
+          />
+        )}
         
         <div className="mt-4">
           <ViewAllSfdsButton />

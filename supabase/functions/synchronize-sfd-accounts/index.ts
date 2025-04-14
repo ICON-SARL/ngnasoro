@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.31.0'
 
 const corsHeaders = {
@@ -20,8 +21,31 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
     const adminClient = createClient(supabaseUrl, supabaseServiceKey)
     
-    // Get the request body
-    let { userId, sfdId, forceSync } = await req.json()
+    // Get the request body - with better error handling
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error('Error parsing request body:', parseError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Invalid JSON body' 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
+    }
+    
+    let { userId, sfdId, forceSync } = body;
+    
+    // Ensure sfdId is never an empty string - null is better for database queries
+    if (sfdId === '') {
+      console.log('Empty sfdId received, converting to null');
+      sfdId = null;
+    }
     
     // If no userId provided, check auth header
     if (!userId) {
@@ -87,7 +111,7 @@ Deno.serve(async (req) => {
       // Create sample accounts for development
       try {
         // If sfdId is provided and not empty, ensure an account exists for it
-        if (sfdId && sfdId !== '') {
+        if (sfdId) {
           // Check if sfd exists
           const { data: sfd } = await adminClient
             .from('sfds')
@@ -269,7 +293,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // If sfdId is provided, filter to only that SFD
+    // If sfdId is provided (and not null), filter to only that SFD
     if (sfdId) {
       userSfds = userSfds.filter(item => item.sfd_id === sfdId);
     }
