@@ -1,437 +1,184 @@
-
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast'; // Correct import path
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import LoanPlansSelector from './LoanPlansSelector';
-import SfdSelector from './SfdSelector';
-import { LoaderCircle, ArrowLeft } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { useClientLoans } from '@/hooks/useClientLoans';
+import { useAuth } from '@/hooks/useAuth';
+import { loanPlanService } from '@/utils/sfdLoanApi';
+import { Loader2 } from 'lucide-react';
 
-interface SFD {
-  id: string;
-  name: string;
-  is_default: boolean;
-}
-
-interface LoanPlan {
-  id: string;
-  name: string;
-  description: string;
-  min_amount: number;
-  max_amount: number;
-  min_duration: number;
-  max_duration: number;
-  interest_rate: number;
-  fees: number;
-  requirements: string[];
-  sfd_id: string;
-}
-
-const formSchema = z.object({
-  sfdId: z.string({
-    required_error: "Veuillez sélectionner une SFD",
-  }),
-  planId: z.string({
-    required_error: "Veuillez sélectionner un plan de prêt",
-  }),
-  amount: z.coerce.number()
-    .min(10000, "Le montant minimum est de 10,000 FCFA")
-    .max(5000000, "Le montant maximum est de 5,000,000 FCFA"),
-  duration: z.coerce.number()
-    .min(1, "La durée minimum est de 1 mois")
-    .max(60, "La durée maximum est de 60 mois"),
-  purpose: z.string()
-    .min(3, "Veuillez indiquer l'objet du prêt")
-    .max(100, "L'objet du prêt est trop long (max 100 caractères)"),
-  description: z.string()
-    .min(20, "Veuillez donner plus de détails sur votre projet")
-    .max(500, "La description est trop longue (max 500 caractères)"),
-});
-
-const LoanApplicationPage: React.FC = () => {
-  const [sfds, setSfds] = useState<SFD[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<LoanPlan | null>(null);
-  const { user, activeSfdId } = useAuth();
+const LoanApplicationPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
+  const { user } = useAuth();
+  const { applyForLoan, isUploading } = useClientLoans();
   
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      sfdId: location.state?.sfdId || activeSfdId || "",
-      planId: "",
-      amount: 100000,
-      duration: 12,
-      purpose: "",
-      description: "",
-    },
+  const [formData, setFormData] = useState({
+    loan_plan_id: '',
+    amount: '',
+    purpose: '',
+    supporting_documents: [] as string[]
   });
   
+  const [loanPlans, setLoanPlans] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   useEffect(() => {
-    const fetchUserSfds = async () => {
-      if (!user) return;
-      
+    const fetchLoanPlans = async () => {
       try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('user_sfds')
-          .select(`
-            id,
-            is_default,
-            sfd_id,
-            sfds:sfd_id (id, name)
-          `)
-          .eq('user_id', user.id);
-          
-        if (error) throw error;
+        const data = await loanPlanService.fetchAllLoanPlans();
         
-        const transformedData = Array.isArray(data) ? data.map(item => ({
-          id: item.sfd_id,
-          name: item.sfds.name,
-          is_default: item.is_default
-        })) : [];
-        
-        setSfds(transformedData);
-        
-        if (!form.getValues().sfdId && transformedData.length > 0) {
-          const defaultSfd = transformedData.find(sfd => sfd.is_default);
-          if (defaultSfd) {
-            form.setValue('sfdId', defaultSfd.id);
-          } else if (transformedData.length > 0) {
-            form.setValue('sfdId', transformedData[0].id);
-          }
+        if (data) {
+          const transformedPlans = data.map((plan: any) => ({
+            id: plan.id,
+            name: plan.name,
+          }));
+          setLoanPlans(transformedPlans);
         }
       } catch (error) {
-        console.error("Erreur lors du chargement des SFDs:", error);
+        console.error("Error fetching loan plans:", error);
         toast({
           title: "Erreur",
-          description: "Impossible de charger vos comptes SFD",
+          description: "Impossible de charger les plans de prêt",
           variant: "destructive",
         });
-        setSfds([]);
-      } finally {
-        setIsLoading(false);
       }
     };
     
-    fetchUserSfds();
-  }, [user, form, toast, activeSfdId]);
+    fetchLoanPlans();
+  }, []);
   
-  useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      if (name === 'sfdId') {
-        form.setValue('planId', '');
-        setSelectedPlan(null);
-      } else if (name === 'planId' && selectedPlan) {
-        form.trigger(['amount', 'duration']);
-      }
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [form, selectedPlan]);
-  
-  useEffect(() => {
-    if (selectedPlan) {
-      form.reset({
-        ...form.getValues(),
-        amount: Math.max(selectedPlan.min_amount, Math.min(form.getValues().amount, selectedPlan.max_amount)),
-        duration: Math.max(selectedPlan.min_duration, Math.min(form.getValues().duration, selectedPlan.max_duration)),
-      });
-    }
-  }, [selectedPlan, form]);
-  
-  const handlePlanSelect = (plan: LoanPlan) => {
-    setSelectedPlan(plan);
-    form.setValue('planId', plan.id);
-    
-    const currentAmount = form.getValues().amount;
-    const currentDuration = form.getValues().duration;
-    
-    if (currentAmount < plan.min_amount || currentAmount > plan.max_amount) {
-      form.setValue('amount', Math.max(plan.min_amount, Math.min(currentAmount, plan.max_amount)));
-    }
-    
-    if (currentDuration < plan.min_duration || currentDuration > plan.max_duration) {
-      form.setValue('duration', Math.max(plan.min_duration, Math.min(currentDuration, plan.max_duration)));
-    }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
   
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    if (!user) {
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.loan_plan_id) {
       toast({
         title: "Erreur",
-        description: "Vous devez être connecté pour faire une demande de prêt",
+        description: "Veuillez sélectionner un plan de prêt",
         variant: "destructive",
       });
       return;
     }
     
-    setIsLoading(true);
+    if (!formData.amount || isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez entrer un montant valide",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
     
     try {
-      const monthlyInterestRate = (selectedPlan?.interest_rate || 5) / 100 / 12;
-      const monthlyPayment = (data.amount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, data.duration)) / 
-                          (Math.pow(1 + monthlyInterestRate, data.duration) - 1);
-      
-      let clientId;
-      const { data: clientData, error: clientError } = await supabase
-        .from('sfd_clients')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('sfd_id', data.sfdId)
-        .single();
-      
-      if (clientError) {
-        const { data: newClient, error: createClientError } = await supabase
-          .from('sfd_clients')
-          .insert({
-            user_id: user.id,
-            sfd_id: data.sfdId,
-            full_name: user.user_metadata?.full_name || 'Client',
-            email: user.email,
-            status: 'pending',
-            kyc_level: 1
-          })
-          .select()
-          .single();
-          
-        if (createClientError) throw createClientError;
-        clientId = newClient.id;
-      } else {
-        clientId = clientData.id;
-      }
-      
-      const { data: loanData, error: loanError } = await supabase
-        .from('sfd_loans')
-        .insert({
-          client_id: clientId,
-          sfd_id: data.sfdId,
-          amount: data.amount,
-          duration_months: data.duration,
-          interest_rate: selectedPlan?.interest_rate || 5,
-          purpose: data.purpose,
-          monthly_payment: Math.round(monthlyPayment),
-          status: 'pending'
-        })
-        .select()
-        .single();
-        
-      if (loanError) throw loanError;
-      
-      await supabase
-        .from('loan_activities')
-        .insert({
-          loan_id: loanData.id,
-          activity_type: 'loan_created',
-          description: `Demande de prêt de ${data.amount.toLocaleString('fr-FR')} FCFA soumise via l'application mobile`
-        });
+      await applyForLoan.mutateAsync({
+        loan_plan_id: formData.loan_plan_id,
+        amount: Number(formData.amount),
+        purpose: formData.purpose,
+        supporting_documents: formData.supporting_documents
+      });
       
       toast({
         title: "Demande envoyée",
-        description: "Votre demande de prêt a été soumise avec succès",
+        description: "Votre demande de prêt a été envoyée avec succès",
       });
       
-      navigate('/mobile-flow/loan-activity');
-    } catch (error) {
-      console.error("Erreur lors de la soumission de la demande:", error);
+      navigate('/mobile-flow/my-loans');
+    } catch (error: any) {
       toast({
         title: "Erreur",
-        description: "Impossible de soumettre votre demande de prêt",
+        description: error.message || "Une erreur est survenue lors de l'envoi de votre demande",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
-  };
-
-  const navigateToRepayment = () => {
-    navigate('/mobile-flow/secure-payment', { state: { isRepayment: true } });
   };
   
   return (
-    <div className="container px-4 py-6 pb-20">
-      <Button 
-        variant="ghost" 
-        className="mb-4 pl-0" 
-        onClick={() => navigate(-1)}
-      >
-        <ArrowLeft className="mr-2 h-5 w-5" /> Retour
-      </Button>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl text-[#0D6A51]">Demande de prêt</CardTitle>
-          <CardDescription>
-            Remplissez le formulaire ci-dessous pour soumettre votre demande de prêt
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="sfdId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sélectionner une SFD</FormLabel>
-                    <FormControl>
-                      <SfdSelector 
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        sfds={sfds}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {form.getValues().sfdId && (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="planId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Plan de prêt</FormLabel>
-                        <FormControl>
-                          <div>
-                            <input type="hidden" {...field} />
-                            <LoanPlansSelector 
-                              sfdId={form.getValues().sfdId}
-                              onSelectPlan={handlePlanSelect}
-                              selectedPlanId={field.value}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {selectedPlan && (
-                    <>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="amount"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Montant (FCFA)</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  {...field} 
-                                  min={selectedPlan.min_amount}
-                                  max={selectedPlan.max_amount}
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Entre {selectedPlan.min_amount.toLocaleString('fr-FR')} et {selectedPlan.max_amount.toLocaleString('fr-FR')} FCFA
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="duration"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Durée (mois)</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  {...field} 
-                                  min={selectedPlan.min_duration}
-                                  max={selectedPlan.max_duration}
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Entre {selectedPlan.min_duration} et {selectedPlan.max_duration} mois
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <FormField
-                        control={form.control}
-                        name="purpose"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Objet du prêt</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              Par exemple: commerce, agriculture, construction, etc.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="description"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Description du projet</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                {...field}
-                                rows={4}
-                                placeholder="Décrivez votre projet et comment vous comptez utiliser ce prêt..."
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </>
-                  )}
-                </>
+    <Card className="border-0 shadow-sm">
+      <CardContent className="p-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Plan de Prêt</label>
+            <Select
+              value={formData.loan_plan_id}
+              onValueChange={(value) => handleSelectChange('loan_plan_id', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un plan" />
+              </SelectTrigger>
+              <SelectContent>
+                {loanPlans.map((plan) => (
+                  <SelectItem key={plan.id} value={plan.id}>
+                    {plan.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1">Montant (FCFA)</label>
+            <Input
+              type="number"
+              name="amount"
+              value={formData.amount}
+              onChange={handleInputChange}
+              placeholder="Exemple: 50000"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1">Objet du prêt</label>
+            <Textarea
+              name="purpose"
+              value={formData.purpose}
+              onChange={handleInputChange}
+              placeholder="Pourquoi avez-vous besoin de ce prêt?"
+              rows={3}
+            />
+          </div>
+          
+          <div className="pt-4">
+            <Button
+              type="submit"
+              className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+              disabled={isSubmitting || isUploading}
+            >
+              {isSubmitting || isUploading ? (
+                <span className="flex items-center">
+                  <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
+                  Traitement en cours...
+                </span>
+              ) : (
+                "Soumettre la demande"
               )}
-              
-              <Button 
-                type="submit" 
-                className="w-full py-4 text-lg font-semibold bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white shadow-lg"
-                disabled={isLoading || !selectedPlan}
-              >
-                {isLoading && <LoaderCircle className="mr-2 h-5 w-5 animate-spin" />}
-                Soumettre ma demande
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-      
-      {/* Footer for repayment functionality */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex justify-center">
-        <Button 
-          onClick={navigateToRepayment}
-          variant="outline"
-          className="text-[#0D6A51] border-[#0D6A51] hover:bg-[#0D6A51]/10"
-        >
-          Rembours.
-        </Button>
-      </div>
-    </div>
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

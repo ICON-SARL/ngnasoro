@@ -46,7 +46,7 @@ const SfdAdhesionSection: React.FC = () => {
         if (requestsError) throw requestsError;
         
         // Formatter les données des demandes
-        const formattedRequests: SfdClientRequest[] = requests.map(request => ({
+        const formattedRequests: SfdClientRequest[] = requests.map((request: any) => ({
           id: request.id,
           sfd_id: request.sfd_id,
           sfd_name: request.sfds?.name,

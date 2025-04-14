@@ -1,73 +1,82 @@
-
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
+import { adminApi } from '@/utils/api/modules/adminApi';
 import { useToast } from '@/hooks/use-toast';
-import { UserSfdAssociation } from '@/hooks/auth/types';
+import { AssociateSfdParams, UserSfdAssociation } from '@/hooks/auth/types';
 
-export function useSfdAssociation(userId: string | undefined) {
-  const [associations, setAssociations] = useState<UserSfdAssociation[]>([]);
-  const [loading, setLoading] = useState(false);
+export function useSfdAssociation() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [userSfds, setUserSfds] = useState<UserSfdAssociation[]>([]);
   const { toast } = useToast();
 
-  // Fetch user-SFD associations
-  useEffect(() => {
-    if (!userId) return;
-    
-    const fetchAssociations = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('user_sfds')
-          .select(`
-            id,
-            user_id,
-            sfd_id,
-            is_default,
-            sfds:sfd_id (
-              id,
-              name,
-              code,
-              region,
-              status
-            )
-          `)
-          .eq('user_id', userId);
-          
-        if (error) throw error;
-        
-        // Transform data to match the UserSfdAssociation interface
-        const transformedData: UserSfdAssociation[] = (data || []).map((item: any) => ({
-          id: item.id,
-          user_id: item.user_id,
-          sfd_id: item.sfd_id,
-          is_default: item.is_default,
-          sfds: {
-            id: item.sfds.id,
-            name: item.sfds.name,
-            code: item.sfds.code || '',
-            region: item.sfds.region,
-            status: item.sfds.status || 'active'
-          }
-        }));
-        
-        setAssociations(transformedData);
-      } catch (error) {
-        console.error('Error fetching SFD associations:', error);
-        toast({
-          title: 'Erreur',
-          description: 'Impossible de récupérer les associations SFD',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchAssociations();
-  }, [userId, toast]);
+  const fetchUserSfds = async (userId: string) => {
+    setIsLoading(true);
+    try {
+      const associations = await adminApi.getUserSfdAssociations(userId);
+      // Ensure we're transforming the data to match UserSfdAssociation type
+      const transformedAssociations: UserSfdAssociation[] = associations.map((assoc: any) => ({
+        id: assoc.id,
+        user_id: assoc.user_id,
+        sfd_id: assoc.sfd_id,
+        is_default: assoc.is_default,
+        sfds: {
+          id: assoc.sfds.id,
+          name: assoc.sfds.name,
+          code: assoc.sfds.code || '',
+          region: assoc.sfds.region,
+          status: assoc.sfds.status || 'active'
+        }
+      }));
+      
+      setUserSfds(transformedAssociations);
+      return transformedAssociations;
+    } catch (error) {
+      console.error('Error fetching user SFDs:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de récupérer les SFDs associées à cet utilisateur',
+        variant: 'destructive',
+      });
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const associateWithSfd = async (params: AssociateSfdParams) => {
+    try {
+      const response = await adminApi.associateWithSfd(params);
+      return response;
+    } catch (error) {
+      console.error('Error associating with SFD:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'associer à un SFD',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  };
+
+  const removeAssociation = async (id: string) => {
+    try {
+      const response = await adminApi.removeAssociation(id);
+      return response;
+    } catch (error) {
+      console.error('Error removing association:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de supprimer l\'association',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  };
 
   return {
-    associations,
-    loading,
+    isLoading,
+    userSfds,
+    fetchUserSfds,
+    associateWithSfd,
+    removeAssociation
   };
 }

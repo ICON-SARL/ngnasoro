@@ -1,4 +1,3 @@
-
 // Add SfdData to the existing file
 export interface SfdData {
   id: string;

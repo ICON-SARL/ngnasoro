@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ const NewClientPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { activeSfdId } = useSfdDataAccess();
-  const { createClientMutation } = useSfdClients();
+  const { createClient } = useSfdClients(); // Changed from createClientMutation to createClient
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -64,7 +65,7 @@ const NewClientPage = () => {
         return;
       }
       
-      await createClientMutation.mutateAsync({
+      await createClient.mutateAsync({
         full_name: formData.full_name,
         email: formData.email || undefined,
         phone: formData.phone || undefined,

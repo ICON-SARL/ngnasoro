@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CheckCircle, AlertTriangle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { SfdClient } from '@/types/sfdClients';
+import { ArrowLeft, TrendingUp, CreditCard, Plus, ArrowUpDown } from 'lucide-react';
 
 const MobileSavingsPage: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -22,14 +23,12 @@ const MobileSavingsPage: React.FC = () => {
   const [status, setStatus] = useState<'pending' | 'active' | 'inactive'>('pending');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // SFD list (mock data)
   const sfds = [
     { id: 'sfd-1', name: 'Microfinance Bamako' },
     { id: 'sfd-2', name: 'Kafo Jiginew' },
     { id: 'sfd-3', name: 'Nyèsigiso' },
   ];
 
-  // Update any mock data creating SfdClient objects
   const mockClient = {
     id: 'client-1',
     full_name: 'John Doe',
@@ -39,22 +38,21 @@ const MobileSavingsPage: React.FC = () => {
     status: 'pending' as const,
     kyc_level: 1,
     created_at: new Date().toISOString(),
-    user_id: 'user-1', // Added required field
-    updated_at: new Date().toISOString() // Added required field
+    user_id: 'user-1',
+    updated_at: new Date().toISOString()
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate API call
     setTimeout(() => {
       setIsSubmitting(false);
       toast({
         title: "Demande envoyée",
         description: "Votre demande d'adhésion a été envoyée avec succès. Vous recevrez une notification dès qu'elle sera traitée.",
       });
-      router.push('/mobile-flow/loans');
+      navigate('/mobile-flow/loans');
     }, 1500);
   };
 
