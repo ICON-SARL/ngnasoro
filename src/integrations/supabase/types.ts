@@ -218,11 +218,17 @@ export type Database = {
           id: string
           id_number: string | null
           id_type: string | null
+          kyc_status: string | null
+          monthly_income: number | null
           notes: string | null
           phone: string | null
           processed_at: string | null
           processed_by: string | null
+          profession: string | null
+          reference_number: string | null
+          rejection_reason: string | null
           sfd_id: string
+          source_of_income: string | null
           status: string
           user_id: string | null
         }
@@ -234,11 +240,17 @@ export type Database = {
           id?: string
           id_number?: string | null
           id_type?: string | null
+          kyc_status?: string | null
+          monthly_income?: number | null
           notes?: string | null
           phone?: string | null
           processed_at?: string | null
           processed_by?: string | null
+          profession?: string | null
+          reference_number?: string | null
+          rejection_reason?: string | null
           sfd_id: string
+          source_of_income?: string | null
           status?: string
           user_id?: string | null
         }
@@ -250,11 +262,17 @@ export type Database = {
           id?: string
           id_number?: string | null
           id_type?: string | null
+          kyc_status?: string | null
+          monthly_income?: number | null
           notes?: string | null
           phone?: string | null
           processed_at?: string | null
           processed_by?: string | null
+          profession?: string | null
+          reference_number?: string | null
+          rejection_reason?: string | null
           sfd_id?: string
+          source_of_income?: string | null
           status?: string
           user_id?: string | null
         }
