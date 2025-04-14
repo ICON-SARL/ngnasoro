@@ -34,22 +34,34 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
       path: location.pathname
     });
     
-    // Super admins have access to everything
-    if (isAdmin && requiredRole === UserRole.SuperAdmin) {
+    // Super admins have access to everything except specific client routes
+    if (isAdmin) {
+      if (requiredRole === UserRole.Client) {
+        // Admins can't access client-only routes
+        setHasAccess(false);
+        return;
+      }
+      // Admins can access everything else
       setHasAccess(true);
       return;
     }
     
-    // Check for specific role restrictions
-    if (requiredRole === UserRole.Client && (isAdmin || isSfdAdmin)) {
-      console.log('Admin/SFD admin cannot access client routes');
-      setHasAccess(false);
+    // SFD admins can access their specific routes and certain shared routes
+    if (isSfdAdmin && (
+      requiredRole === UserRole.SfdAdmin || 
+      requiredRole === 'sfd_admin'
+    )) {
+      setHasAccess(true);
       return;
     }
-
-    if (requiredRole === UserRole.SfdAdmin && isAdmin) {
-      console.log('Admin cannot access SFD admin routes');
-      setHasAccess(false);
+    
+    // Clients can only access client routes
+    if (isClient && (
+      requiredRole === UserRole.Client || 
+      requiredRole === 'client' || 
+      requiredRole === 'user'
+    )) {
+      setHasAccess(true);
       return;
     }
     
@@ -64,19 +76,13 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     const normalizedRequiredRole = normalizeRole(requiredRole);
     const normalizedUserRole = normalizeRole(userRole);
     
-    // Check for exact role match or special cases
-    const permitted = 
-      normalizedUserRole === normalizedRequiredRole ||
-      (normalizedRequiredRole === 'admin' && isAdmin) ||
-      (normalizedRequiredRole === 'sfd_admin' && isSfdAdmin) ||
-      (normalizedRequiredRole === 'user' && isClient) ||
-      (normalizedRequiredRole === 'client' && isClient);
+    // Check for exact role match
+    const permitted = normalizedUserRole === normalizedRequiredRole;
     
     setHasAccess(permitted);
     
     // Log access denied attempts
     if (!permitted) {
-      // Fix: Update the call to match the expected signature from the auditLogger module
       logAuditEvent(
         AuditLogCategory.DATA_ACCESS,
         'role_check_failure',

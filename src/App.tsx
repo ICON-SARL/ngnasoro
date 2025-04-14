@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -84,19 +83,18 @@ function App() {
                 </ProtectedRoute>
               } />
               
+              {/* Credit Approval page accessible to both Super Admin and SFD Admin */}
+              <Route path="/credit-approval" element={
+                <ProtectedRoute>
+                  <CreditApprovalPage />
+                </ProtectedRoute>
+              } />
+              
               {/* SFD Admin Routes */}
               <Route path="/agency-dashboard/*" element={
                 <ProtectedRoute requireSfdAdmin={true}>
                   <RoleGuard requiredRole={UserRole.SfdAdmin}>
                     <AgencyDashboard />
-                  </RoleGuard>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/credit-approval" element={
-                <ProtectedRoute requireSfdAdmin={true}>
-                  <RoleGuard requiredRole={UserRole.SfdAdmin}>
-                    <CreditApprovalPage />
                   </RoleGuard>
                 </ProtectedRoute>
               } />

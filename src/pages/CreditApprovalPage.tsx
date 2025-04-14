@@ -3,8 +3,11 @@ import React from 'react';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { CreditApprovalManager } from '@/components/admin/credit/CreditApprovalManager';
 import { Footer } from '@/components';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function CreditApprovalPage() {
+  const { isAdmin, isSfdAdmin } = useAuth();
+  
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <SuperAdminHeader />
@@ -13,7 +16,9 @@ export default function CreditApprovalPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Approbation de Crédit</h1>
           <p className="text-muted-foreground">
-            Examiner et approuver les demandes de crédit en attente
+            {isAdmin 
+              ? "Examiner et approuver les demandes de crédit soumises par les SFD" 
+              : "Gérer les demandes de crédit en attente"}
           </p>
         </div>
         
