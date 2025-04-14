@@ -35,6 +35,9 @@ export function useCreditApproval() {
       const sfdId = user?.user_metadata?.sfd_id;
       const payload = { sfdId, filters: {} };
       
+      console.log('Fetching credit applications with payload:', payload);
+      console.log('Current user role:', isAdmin ? 'Admin' : isSfdAdmin ? 'SFD Admin' : 'Other');
+      
       const { data: responseData, error } = await supabase.functions.invoke('credit-manager', {
         body: { action: 'get_applications', payload }
       });
@@ -44,6 +47,7 @@ export function useCreditApproval() {
         return [];
       }
       
+      console.log('Credit applications response:', responseData);
       return responseData?.data || [];
     } catch (error) {
       console.error('Error in fetchCreditApplications:', error);
@@ -74,6 +78,8 @@ export function useCreditApproval() {
       
       const sfdId = user.user_metadata.sfd_id;
       
+      console.log('Creating credit application:', { sfdId, amount, purpose });
+      
       // Use the credit-manager edge function to create a new application
       const { data, error } = await supabase.functions.invoke('credit-manager', {
         body: { 
@@ -88,6 +94,7 @@ export function useCreditApproval() {
       
       if (error) throw error;
       
+      console.log('Credit application created:', data);
       return data;
     },
     onSuccess: () => {
@@ -138,6 +145,8 @@ export function useCreditApproval() {
           
         if (error) throw error;
         
+        console.log('Approving credit application:', { applicationId, comments });
+        
         // Use edge function to update application status
         const { data: updatedApp, error: updateError } = await supabase.functions.invoke('credit-manager', {
           body: { 
@@ -148,6 +157,7 @@ export function useCreditApproval() {
         
         if (updateError) throw updateError;
         
+        console.log('Credit application approved:', updatedApp);
         return updatedApp;
       } finally {
         setIsLoading(false);
@@ -204,6 +214,8 @@ export function useCreditApproval() {
           
         if (error) throw error;
         
+        console.log('Rejecting credit application:', { applicationId, reason, comments });
+        
         // Use edge function to update application status
         const { data: updatedApp, error: updateError } = await supabase.functions.invoke('credit-manager', {
           body: { 
@@ -214,6 +226,7 @@ export function useCreditApproval() {
         
         if (updateError) throw updateError;
         
+        console.log('Credit application rejected:', updatedApp);
         return updatedApp;
       } finally {
         setIsLoading(false);
