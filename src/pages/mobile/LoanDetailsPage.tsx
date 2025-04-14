@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog } from '@/components/ui/dialog';
 import QRCodePaymentDialog from '@/components/mobile/loan/QRCodePaymentDialog';
 import { useToast } from '@/hooks/use-toast';
+import { LoanStatus, LoanDetails } from '@/types/loans';
 
 const LoanDetailsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -105,7 +106,7 @@ const LoanDetailsPage: React.FC = () => {
           
           <TabsContent value="details">
             <LoanDetailsTab 
-              totalAmount={loanStatus.totalAmount}
+              totalAmount={loanDetails.totalAmount}
               loanType={loanDetails.loanType}
               loanPurpose={loanDetails.loanPurpose}
               disbursalDate={loanDetails.disbursalDate}

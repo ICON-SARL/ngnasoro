@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import LoanTabsManager from '@/components/mobile/loan/LoanTabsManager';
 import { useSfdLoans } from '@/hooks/useSfdLoans';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { LoanStatus, LoanDetails } from '@/types/loans';
 
 const MobileLoanDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,7 +15,7 @@ const MobileLoanDetailsPage: React.FC = () => {
   const [showMobileMoneyDialog, setShowMobileMoneyDialog] = useState(false);
   
   // Mock loan data until we fetch the actual loan
-  const loanStatus = {
+  const loanStatus: LoanStatus = {
     nextPaymentDue: '15 juin 2023',
     paidAmount: 150000,
     totalAmount: 500000,
@@ -22,16 +23,16 @@ const MobileLoanDetailsPage: React.FC = () => {
     progress: 30,
     lateFees: 0,
     paymentHistory: [
-      { id: 1, date: '15 mai 2023', amount: 150000, status: 'paid' as 'paid' | 'pending' | 'late' },
+      { id: 1, date: '15 mai 2023', amount: 150000, status: 'paid' },
     ],
     disbursed: true,
     withdrawn: true
   };
   
-  const loanDetails = {
+  const loanDetails: LoanDetails = {
     loanType: 'Microcrédit',
     loanPurpose: 'Achat de matériel',
-    totalAmount: 500000, // Added totalAmount to match LoanDetails interface
+    totalAmount: 500000,
     disbursalDate: '15 avril 2023',
     endDate: '15 octobre 2023',
     interestRate: 5.5,

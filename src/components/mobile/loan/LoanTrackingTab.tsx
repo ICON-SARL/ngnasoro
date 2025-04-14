@@ -3,25 +3,10 @@ import React from 'react';
 import { Progress } from '@/components/ui/progress';
 import { AlertTriangle, Clock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { LoanStatus } from '@/types/loans';
 
 export interface LoanTrackingTabProps {
-  loanStatus: {
-    nextPaymentDue: string;
-    paidAmount: number;
-    totalAmount: number;
-    remainingAmount: number;
-    progress: number;
-    lateFees: number;
-    paymentHistory: Array<{
-      id: number;
-      date: string;
-      amount: number;
-      status: 'paid' | 'pending' | 'late';
-    }>;
-    disbursed: boolean;
-    withdrawn: boolean;
-  };
+  loanStatus: LoanStatus;
 }
 
 const LoanTrackingTab: React.FC<LoanTrackingTabProps> = ({ loanStatus }) => {

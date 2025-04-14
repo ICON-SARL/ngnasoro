@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -72,6 +73,7 @@ export function useLoanDetails(loanId: string | undefined) {
         setLoanDetails({
           loanType: data.purpose.includes('Micro') ? 'Microcrédit' : 'Prêt standard',
           loanPurpose: data.purpose,
+          totalAmount: data.amount,
           disbursalDate: new Date(data.disbursed_at || Date.now()).toLocaleDateString('fr-FR', {
             year: 'numeric',
             month: 'long',

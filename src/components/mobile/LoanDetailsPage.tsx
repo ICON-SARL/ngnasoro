@@ -6,6 +6,7 @@ import { useLoanPayment } from '@/hooks/useLoanPayment';
 import LoanDetailsHeader from './loan/LoanDetailsHeader';
 import LoanTabsManager from './loan/LoanTabsManager';
 import MobileMoneyModal from './loan/MobileMoneyModal';
+import { LoanStatus, LoanDetails } from '@/types/loans';
 
 export interface LoanDetailsPageProps {
   onBack?: () => void;

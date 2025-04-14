@@ -1,8 +1,8 @@
 
 export interface LoanStatus {
   totalAmount: number;
-  paidAmount?: number;
-  remainingAmount?: number;
+  paidAmount: number;
+  remainingAmount: number;
   nextPaymentDue: string;
   dueAmount?: number;
   paymentHistory: {
@@ -12,10 +12,10 @@ export interface LoanStatus {
     status: string;
   }[];
   status?: 'pending' | 'approved' | 'disbursed' | 'completed' | 'rejected';
-  progress?: number;
-  lateFees?: number;
-  disbursed?: boolean;
-  withdrawn?: boolean;
+  progress: number;
+  lateFees: number;
+  disbursed: boolean;
+  withdrawn: boolean;
 }
 
 export interface LoanDetails {
