@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { SfdSubsidy } from '@/hooks/sfd/types';
-import { useSubsidies } from '@/hooks/useSubsidies';
 import { 
   Card, 
   CardContent, 
@@ -51,7 +49,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { useSubsidies } from '@/hooks/useSubsidies';
-import { SfdSubsidy } from '@/types/sfdClients';
+import { SfdSubsidy } from '@/hooks/sfd/types';
 import { Progress } from '@/components/ui/progress';
 import { DatePicker } from '@/components/ui/date-picker';
 

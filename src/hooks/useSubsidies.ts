@@ -1,100 +1,67 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { subsidyApi } from '@/utils/subsidyApi';
-import { SfdSubsidy } from '@/types/sfdClients';
+import { SfdSubsidy } from '@/hooks/sfd/types';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+
+export interface CreateSubsidyParams {
+  sfd_id: string;
+  amount: number;
+  description?: string;
+  end_date?: string;
+}
 
 export function useSubsidies() {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [selectedSubsidy, setSelectedSubsidy] = useState<SfdSubsidy | null>(null);
   
   // Fetch all subsidies
-  const subsidiesQuery = useQuery({
+  const { data: subsidies = [], isLoading, refetch } = useQuery({
     queryKey: ['subsidies'],
-    queryFn: subsidyApi.getAllSubsidies,
-    enabled: !!user
+    queryFn: subsidyApi.getAllSubsidies
   });
   
-  // Fetch all SFDs for the subsidy dropdown
-  const sfdsQuery = useQuery({
+  // Fetch all SFDs for dropdown
+  const { data: sfds = [] } = useQuery({
     queryKey: ['sfds'],
-    queryFn: subsidyApi.getAllSfds,
-    enabled: !!user
+    queryFn: subsidyApi.getAllSfds
   });
   
-  // Create a new subsidy allocation
+  // Create new subsidy
   const createSubsidy = useMutation({
-    mutationFn: (subsidyData: {
-      sfd_id: string;
-      amount: number;
-      description?: string;
-      end_date?: string;
-    }) => {
-      if (!user?.id) throw new Error("Utilisateur non authentifié");
+    mutationFn: async (subsidy: CreateSubsidyParams) => {
+      if (!user) throw new Error('User not authenticated');
+      
       return subsidyApi.createSubsidy({
-        ...subsidyData,
+        ...subsidy,
         allocated_by: user.id
       });
     },
     onSuccess: () => {
-      toast({
-        title: "Subvention allouée",
-        description: "La subvention a été allouée avec succès",
-      });
-      queryClient.invalidateQueries({ queryKey: ['subsidies'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur d'allocation",
-        description: error.message || "Une erreur est survenue",
-        variant: "destructive",
-      });
+      refetch();
     }
   });
-
-  // Revoke a subsidy
+  
+  // Revoke subsidy
   const revokeSubsidy = useMutation({
-    mutationFn: ({ subsidyId, reason }: { subsidyId: string; reason?: string }) => {
-      if (!user?.id) throw new Error("Utilisateur non authentifié");
+    mutationFn: async ({ subsidyId, reason }: { subsidyId: string, reason?: string }) => {
+      if (!user) throw new Error('User not authenticated');
+      
       return subsidyApi.revokeSubsidy(subsidyId, user.id, reason);
     },
     onSuccess: () => {
-      toast({
-        title: "Subvention révoquée",
-        description: "La subvention a été révoquée avec succès",
-      });
-      queryClient.invalidateQueries({ queryKey: ['subsidies'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur de révocation",
-        description: error.message || "Une erreur est survenue",
-        variant: "destructive",
-      });
+      refetch();
     }
   });
-
-  // Get subsidy by ID
-  const getSubsidyById = async (subsidyId: string) => {
-    return subsidyApi.getSubsidyById(subsidyId);
-  };
-
-  // Get subsidy for a specific SFD
-  const getSfdSubsidies = async (sfdId: string) => {
-    return subsidyApi.getSfdSubsidies(sfdId);
-  };
-
+  
   return {
-    subsidies: subsidiesQuery.data || [],
-    sfds: sfdsQuery.data || [],
-    isLoading: subsidiesQuery.isLoading || sfdsQuery.isLoading,
-    isError: subsidiesQuery.isError || sfdsQuery.isError,
+    subsidies,
+    sfds,
+    isLoading,
     createSubsidy,
     revokeSubsidy,
-    getSubsidyById,
-    getSfdSubsidies,
-    refetch: subsidiesQuery.refetch
+    selectedSubsidy,
+    setSelectedSubsidy
   };
 }

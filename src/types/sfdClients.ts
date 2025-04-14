@@ -94,9 +94,10 @@ export interface SfdSubsidy {
   amount: number;
   used_amount: number;
   remaining_amount: number;
-  status: 'active' | 'exhausted' | 'expired';
+  status: 'active' | 'exhausted' | 'expired' | 'revoked' | 'depleted';
   created_at: string;
   allocated_by: string;
+  allocated_at: string;
   end_date?: string;
   description?: string;
 }
@@ -126,12 +127,11 @@ export interface ClientNotification {
   client_id: string;
   title: string;
   message: string;
-  is_read: boolean;  // This is used in the component
-  read: boolean;     // This is added for backward compatibility
+  is_read: boolean;
+  read: boolean;
   created_at: string;
   notification_type: string;
   reference_id?: string;
   action_link?: string;
-  type?: string;     // Added for backward compatibility
+  type?: string;
 }
-
