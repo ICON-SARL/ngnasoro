@@ -3,9 +3,10 @@ import React, { useEffect } from 'react';
 import { useSfdAdminsList } from '../hooks/sfd-admin/useSfdAdminsList';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, UserCog, ShieldAlert, Clock, Check } from 'lucide-react';
+import { Loader2, UserCog, ShieldAlert, Clock, Check, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface SfdAdminListProps {
   sfdId: string;
@@ -18,8 +19,14 @@ export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) 
   
   useEffect(() => {
     // Charger la liste des administrateurs au montage du composant
+    if (sfdId) {
+      refetch();
+    }
+  }, [sfdId, refetch]);
+  
+  const handleRetry = () => {
     refetch();
-  }, [sfdId]);
+  };
   
   if (isLoading) {
     return (
@@ -32,16 +39,30 @@ export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) 
   
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-destructive">
-        <ShieldAlert className="h-8 w-8 mb-2" />
-        <p>Erreur lors du chargement des administrateurs</p>
-        <Button 
-          variant="outline" 
-          className="mt-4"
-          onClick={() => refetch()}
-        >
-          Réessayer
-        </Button>
+      <div className="space-y-4">
+        <Alert variant="destructive" className="mb-4">
+          <ShieldAlert className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            {error instanceof Error ? error.message : 'Erreur lors du chargement des administrateurs'}
+          </AlertDescription>
+        </Alert>
+        
+        <div className="flex flex-col items-center justify-center py-6">
+          <Button 
+            variant="outline" 
+            className="mb-4"
+            onClick={handleRetry}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Réessayer
+          </Button>
+          
+          <Button
+            onClick={onAddAdmin}
+          >
+            Ajouter un administrateur
+          </Button>
+        </div>
       </div>
     );
   }
