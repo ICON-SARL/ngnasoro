@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { ModeToggle } from '@/components/ModeToggle';
-import { PieChart, ChevronDown, Globe, LogOut, Settings, Users, Menu, LayoutDashboard, FileText, Shield } from 'lucide-react';
+import { PieChart, ChevronDown, Globe, LogOut, Settings, Users, Menu, LayoutDashboard, FileText, Shield, UserRound } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -114,6 +115,16 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
         
         <div className="flex items-center gap-3">
           {additionalComponents}
+          
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative text-white hover:bg-white/10"
+            onClick={() => navigate('/admin/users')}
+          >
+            <UserRound className="h-5 w-5" />
+            <span className="sr-only">Utilisateurs</span>
+          </Button>
           
           <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10">
             <Shield className="h-5 w-5" />
