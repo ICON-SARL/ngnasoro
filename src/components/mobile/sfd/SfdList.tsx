@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 interface Sfd {
   id: string;
@@ -13,9 +15,10 @@ interface Sfd {
 
 interface SfdListProps {
   onSelectSfd: (sfdId: string) => void;
+  existingRequests?: {sfd_id: string, status: string}[];
 }
 
-const SfdList: React.FC<SfdListProps> = ({ onSelectSfd }) => {
+const SfdList: React.FC<SfdListProps> = ({ onSelectSfd, existingRequests = [] }) => {
   const [sfds, setSfds] = useState<Sfd[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +27,8 @@ const SfdList: React.FC<SfdListProps> = ({ onSelectSfd }) => {
     const fetchSfds = async () => {
       setIsLoading(true);
       try {
+        console.log('Fetching all active SFDs for SfdList');
+        
         const { data, error } = await supabase
           .from('sfds')
           .select('id, name, region, code, logo_url')
@@ -32,7 +37,31 @@ const SfdList: React.FC<SfdListProps> = ({ onSelectSfd }) => {
           
         if (error) throw error;
         
-        const sortedSfds = sortSfdsWithPriority(data || []);
+        console.log(`Retrieved ${data?.length || 0} active SFDs`);
+        
+        // Add sample SFDs in dev mode if none are found
+        const sfdsList = data || [];
+        if (sfdsList.length === 0 && process.env.NODE_ENV === 'development') {
+          console.log('Adding sample SFDs for development');
+          sfdsList.push(
+            {
+              id: 'sample-sfd-1',
+              name: 'Exemple SFD #1',
+              region: 'Région Test',
+              code: 'ESFD1',
+              logo_url: null
+            },
+            {
+              id: 'sample-sfd-2',
+              name: 'Exemple SFD #2',
+              region: 'Région Test',
+              code: 'ESFD2',
+              logo_url: null
+            }
+          );
+        }
+        
+        const sortedSfds = sortSfdsWithPriority(sfdsList);
         setSfds(sortedSfds);
       } catch (err: any) {
         console.error('Error fetching SFDs:', err);
@@ -49,18 +78,18 @@ const SfdList: React.FC<SfdListProps> = ({ onSelectSfd }) => {
     const prioritySfdNames = ["premier sfd", "deuxieme", "troisieme"];
     
     return [...sfds].sort((a, b) => {
-      const aIsPriority = prioritySfdNames.includes(a.name.toLowerCase());
-      const bIsPriority = prioritySfdNames.includes(b.name.toLowerCase());
+      const aIsPriority = prioritySfdNames.some(name => a.name.toLowerCase().includes(name));
+      const bIsPriority = prioritySfdNames.some(name => b.name.toLowerCase().includes(name));
       
       if (aIsPriority && !bIsPriority) return -1;
       if (!aIsPriority && bIsPriority) return 1;
       
-      if (aIsPriority && bIsPriority) {
-        return prioritySfdNames.indexOf(a.name.toLowerCase()) - prioritySfdNames.indexOf(b.name.toLowerCase());
-      }
-      
       return a.name.localeCompare(b.name);
     });
+  };
+
+  const getSfdRequestStatus = (sfdId: string) => {
+    return existingRequests.find(req => req.sfd_id === sfdId)?.status || null;
   };
 
   if (isLoading) {
@@ -96,35 +125,60 @@ const SfdList: React.FC<SfdListProps> = ({ onSelectSfd }) => {
 
   return (
     <div className="space-y-3">
-      {sfds.map(sfd => (
-        <div 
-          key={sfd.id}
-          className="bg-white rounded-lg border border-gray-200 p-4 hover:border-primary/50 hover:shadow-sm transition-all"
-          onClick={() => onSelectSfd(sfd.id)}
-        >
-          <div className="flex items-center">
-            <div className="h-12 w-12 bg-gray-100 rounded-full flex-shrink-0 flex items-center justify-center mr-3 overflow-hidden">
-              {sfd.logo_url ? (
-                <img 
-                  src={sfd.logo_url} 
-                  alt={sfd.name} 
-                  className="h-full w-full object-cover" 
-                />
+      {sfds.map(sfd => {
+        const status = getSfdRequestStatus(sfd.id);
+        const isRequested = !!status;
+        
+        return (
+          <div 
+            key={sfd.id}
+            className={`bg-white rounded-lg border ${isRequested ? 'border-gray-300 bg-gray-50' : 'border-gray-200 hover:border-primary/50 hover:shadow-sm'} transition-all p-4`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="h-12 w-12 bg-gray-100 rounded-full flex-shrink-0 flex items-center justify-center mr-3 overflow-hidden">
+                  {sfd.logo_url ? (
+                    <img 
+                      src={sfd.logo_url} 
+                      alt={sfd.name} 
+                      className="h-full w-full object-cover" 
+                    />
+                  ) : (
+                    <span className="text-lg font-bold text-gray-500">
+                      {sfd.name.charAt(0)}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-800">{sfd.name}</h3>
+                  <p className="text-sm text-gray-500">
+                    {sfd.region || sfd.code || "Emplacement non spécifié"}
+                  </p>
+                </div>
+              </div>
+              
+              {status ? (
+                <Badge 
+                  className={`${
+                    status === 'validated' ? 'bg-green-100 text-green-800' : 
+                    'bg-amber-100 text-amber-800'
+                  }`}
+                >
+                  {status === 'validated' ? 'Approuvé' : 'En attente'}
+                </Badge>
               ) : (
-                <span className="text-lg font-bold text-gray-500">
-                  {sfd.name.charAt(0)}
-                </span>
+                <Button 
+                  size="sm" 
+                  onClick={() => onSelectSfd(sfd.id)}
+                  className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+                >
+                  Demande
+                </Button>
               )}
             </div>
-            <div>
-              <h3 className="font-medium text-gray-800">{sfd.name}</h3>
-              <p className="text-sm text-gray-500">
-                {sfd.region || sfd.code || "Emplacement non spécifié"}
-              </p>
-            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

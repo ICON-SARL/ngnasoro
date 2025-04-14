@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ChevronRight, Building, FileCheck } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions';
+import { Loader2 } from 'lucide-react';
 
 interface SfdListPopupProps {
   isOpen: boolean;
@@ -37,6 +38,9 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
       setError(null);
 
       try {
+        console.log('Fetching active SFDs for popup display');
+        
+        // Get all SFDs that are active, independent of user associations
         const { data, error } = await supabase
           .from('sfds')
           .select('id, name, region, logo_url')
@@ -45,7 +49,42 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
 
         if (error) throw error;
         
-        const sortedSfds = sortPrioritySfds(data || []);
+        console.log(`Fetched ${data?.length || 0} active SFDs`);
+        
+        // Get user's existing requests to filter out SFDs that already have pending requests
+        const { data: existingRequests, error: requestsError } = await supabase
+          .from('sfd_clients')
+          .select('sfd_id, status')
+          .eq('user_id', user?.id || '')
+          .in('status', ['pending', 'validated']);
+          
+        if (requestsError) {
+          console.error('Error fetching existing requests:', requestsError);
+        }
+        
+        // Filter out SFDs that the user already has pending or validated requests for
+        const existingSfdIds = (existingRequests || []).map(req => req.sfd_id);
+        const availableSfds = data?.filter(sfd => !existingSfdIds.includes(sfd.id)) || [];
+        
+        console.log(`${availableSfds.length} SFDs available after filtering existing requests`);
+        
+        // Always include test SFDs for development
+        if (availableSfds.length === 0 && process.env.NODE_ENV === 'development') {
+          console.log('Adding test SFDs for development');
+          availableSfds.push({
+            id: 'test-sfd-1',
+            name: 'SFD Test 1',
+            region: 'Région Test',
+            logo_url: null
+          }, {
+            id: 'test-sfd-2',
+            name: 'SFD Test 2',
+            region: 'Région Test',
+            logo_url: null
+          });
+        }
+        
+        const sortedSfds = sortPrioritySfds(availableSfds);
         setSfds(sortedSfds);
       } catch (err: any) {
         console.error('Erreur lors du chargement des SFDs:', err);
@@ -56,7 +95,7 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
     };
 
     fetchActiveSfds();
-  }, [isOpen]);
+  }, [isOpen, user?.id]);
 
   const sortPrioritySfds = (sfds: Sfd[]): Sfd[] => {
     const prioritySfdNames = ["premier sfd", "deuxieme", "troisieme"];
@@ -93,12 +132,15 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
           <DialogTitle className="text-center text-xl text-[#0D6A51]">
             SFDs Partenaires MEREF
           </DialogTitle>
+          <DialogDescription className="text-center text-gray-500">
+            Sélectionnez une SFD pour faire une demande d'adhésion
+          </DialogDescription>
         </DialogHeader>
 
         <div className="mt-2">
           {isLoading ? (
             <div className="flex justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-t-2 border-b-2 border-[#0D6A51]"></div>
+              <Loader2 className="h-8 w-8 animate-spin text-[#0D6A51]" />
             </div>
           ) : error ? (
             <div className="text-center py-8 text-red-500">
@@ -113,10 +155,13 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
             </div>
           ) : sfds.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">Aucun SFD actif trouvé.</p>
+              <p className="text-gray-600 mb-2">Aucun SFD disponible pour le moment.</p>
+              <p className="text-sm text-gray-500 mb-6">
+                Consultez la liste complète des SFDs pour faire une demande d'adhésion.
+              </p>
               <Button 
                 variant="outline" 
-                className="mt-4"
+                className="w-full mb-4"
                 onClick={() => navigate('/mobile-flow/sfd-selector')}
               >
                 Voir tous les SFDs

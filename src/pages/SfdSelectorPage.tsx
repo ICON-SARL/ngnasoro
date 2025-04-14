@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, Building } from 'lucide-react';
+import { ArrowLeft, Building, Loader2 } from 'lucide-react';
 import SfdList from '@/components/mobile/sfd/SfdList';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -18,14 +19,36 @@ const SfdSelectorPage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingRequests, setExistingRequests] = useState<{sfd_id: string, status: string}[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const { selectedSfdId } = (location.state as LocationState) || {};
 
   useEffect(() => {
-    if (selectedSfdId) {
-      console.log('Selected SFD ID:', selectedSfdId);
-    }
-  }, [selectedSfdId]);
+    const fetchExistingRequests = async () => {
+      if (!user?.id) return;
+      
+      setIsLoading(true);
+      try {
+        console.log('Fetching existing SFD client requests');
+        const { data, error } = await supabase
+          .from('sfd_clients')
+          .select('sfd_id, status')
+          .eq('user_id', user.id);
+          
+        if (error) throw error;
+        
+        setExistingRequests(data || []);
+        console.log(`Found ${data?.length || 0} existing SFD client requests`);
+      } catch (err) {
+        console.error('Error fetching existing requests:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchExistingRequests();
+  }, [user?.id]);
 
   const handleSendRequest = async (sfdId: string) => {
     if (!user) {
@@ -37,31 +60,26 @@ const SfdSelectorPage = () => {
       return;
     }
 
+    // Check if user already has a request for this SFD
+    const existingRequest = existingRequests.find(req => req.sfd_id === sfdId);
+    if (existingRequest) {
+      if (existingRequest.status === 'validated') {
+        toast({
+          title: "Information",
+          description: "Vous êtes déjà client de cette SFD",
+        });
+      } else {
+        toast({
+          title: "Information",
+          description: "Vous avez déjà une demande en cours pour cette SFD",
+        });
+      }
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
-      const { data: existingClient, error: checkError } = await supabase
-        .from('sfd_clients')
-        .select('id, status')
-        .eq('user_id', user.id)
-        .eq('sfd_id', sfdId)
-        .single();
-      
-      if (existingClient) {
-        if (existingClient.status === 'validated') {
-          toast({
-            title: "Information",
-            description: "Vous êtes déjà client de cette SFD",
-          });
-        } else {
-          toast({
-            title: "Information",
-            description: "Vous avez déjà une demande en cours pour cette SFD",
-          });
-        }
-        return;
-      }
-      
       const { data, error } = await supabase
         .from('sfd_clients')
         .insert({
@@ -79,6 +97,9 @@ const SfdSelectorPage = () => {
         title: "Demande envoyée",
         description: "Votre demande a été envoyée avec succès. Vous serez notifié lorsqu'elle sera traitée.",
       });
+      
+      // Update the local state to prevent duplicate requests
+      setExistingRequests(prev => [...prev, {sfd_id: sfdId, status: 'pending'}]);
       
       navigate('/mobile-flow/profile');
     } catch (error: any) {
@@ -125,7 +146,16 @@ const SfdSelectorPage = () => {
           </div>
         </Card>
         
-        <SfdList onSelectSfd={handleSendRequest} />
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-[#0D6A51]" />
+          </div>
+        ) : (
+          <SfdList 
+            onSelectSfd={handleSendRequest} 
+            existingRequests={existingRequests}
+          />
+        )}
       </main>
     </div>
   );
