@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Info } from 'lucide-react';
 import { 
   Select, 
   SelectContent,
@@ -11,7 +11,6 @@ import {
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { InfoCircle } from 'lucide-react';
 
 interface SfdSelectorProps {
   className?: string;
@@ -56,7 +55,7 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ className, onEmptySfds }) => 
       <div className={className}>
         <div className="bg-white text-amber-700 border-2 border-amber-300 px-3 py-2 h-10 rounded-lg w-full flex items-center justify-between">
           <div className="flex items-center">
-            <InfoCircle className="h-4 w-4 mr-2 text-amber-500" />
+            <Info className="h-4 w-4 mr-2 text-amber-500" />
             <span>Aucune SFD disponible</span>
           </div>
           <Badge variant="outline" className="bg-amber-100 text-amber-800 text-xs">
