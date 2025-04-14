@@ -10,7 +10,7 @@ export interface SfdBalanceResult {
 // SFD API client module
 export const sfdApi = {
   /**
-   * Get the balance for a specific SFD account
+   * GetSfdBalance the balance for a specific SFD account
    */
   getSfdBalance: async (userId: string, sfdId: string): Promise<SfdBalanceData> => {
     try {
@@ -69,7 +69,7 @@ export const sfdApi = {
       const { data, error } = await supabase
         .from('sfds')
         .select('*')
-        .order('name');
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       
@@ -77,6 +77,47 @@ export const sfdApi = {
     } catch (error) {
       console.error('Error fetching SFDs list:', error);
       return [];
+    }
+  },
+  
+  /**
+   * Create a new SFD
+   */
+  createSfd: async (sfdData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('sfds')
+        .insert([sfdData])
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Error creating SFD:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Update an existing SFD
+   */
+  updateSfd: async (id: string, sfdData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('sfds')
+        .update(sfdData)
+        .eq('id', id)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Error updating SFD:', error);
+      throw error;
     }
   },
   

@@ -25,53 +25,27 @@ export function useSfdManagement() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mock data for SFDs with proper UUID format
-  const mockSfds: SFD[] = [
-    {
-      id: "123e4567-e89b-12d3-a456-426614174000", // Valid UUID format
-      name: "RCPB Ouagadougou",
-      code: "RCPB-OUA",
-      region: "Centre",
-      status: "active",
-      contact_email: "contact@rcpb.org",
-      phone: "+226 70123456",
-      description: "Réseau des Caisses Populaires du Burkina - Agence de Ouagadougou",
-      created_at: "2022-01-15T08:30:00Z",
-      client_count: 1250,
-      loan_count: 380
-    },
-    {
-      id: "223e4567-e89b-12d3-a456-426614174001", // Valid UUID format
-      name: "Microcred Abidjan",
-      code: "MC-ABJ",
-      region: "Lagunes",
-      status: "active",
-      contact_email: "info@microcred.ci",
-      phone: "+225 27213456",
-      description: "Institution de microfinance basée à Abidjan",
-      created_at: "2022-03-20T10:15:00Z",
-      client_count: 980,
-      loan_count: 210
-    }
-  ];
-
-  // Fetch SFDs
-  const fetchSfds = async (): Promise<SFD[]> => {
-    try {
-      // In a real implementation, we would fetch from Supabase
-      // For now, return mock data
-      return mockSfds;
-    } catch (error) {
-      console.error('Error fetching SFDs:', error);
-      return [];
-    }
-  };
-
-  // Use React Query to manage the data fetching
+  // Fetch SFDs from Supabase
   const { data: sfds, refetch } = useQuery({
     queryKey: ['sfds'],
-    queryFn: fetchSfds,
-    initialData: mockSfds
+    queryFn: async () => {
+      try {
+        const { data: sfdsData, error } = await supabase
+          .from('sfds')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching SFDs:', error);
+          throw error;
+        }
+
+        return sfdsData || [];
+      } catch (error) {
+        console.error('Error fetching SFDs:', error);
+        return [];
+      }
+    }
   });
 
   // Create SFD
@@ -79,28 +53,25 @@ export function useSfdManagement() {
     mutationFn: async (sfdData: SfdFormValues) => {
       setIsLoading(true);
       try {
-        // In a real implementation, we would insert into Supabase
-        console.log(`Creating SFD with data:`, sfdData);
+        console.log('Creating SFD with data:', sfdData);
         
-        // Ensure required fields are present
-        if (!sfdData.name || !sfdData.code) {
-          throw new Error("Name and code are required fields");
-        }
-        
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        return { 
-          success: true, 
-          sfd: {
-            ...sfdData,
-            id: crypto.randomUUID(), // Generate a proper UUID
+        const { data, error } = await supabase
+          .from('sfds')
+          .insert([{
+            name: sfdData.name,
+            code: sfdData.code,
+            region: sfdData.region,
             status: sfdData.status || 'active',
-            created_at: new Date().toISOString(),
-            client_count: 0,
-            loan_count: 0
-          } 
-        };
+            contact_email: sfdData.contact_email,
+            phone: sfdData.phone,
+            description: sfdData.description,
+            logo_url: sfdData.logo_url
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
       } finally {
         setIsLoading(false);
       }
@@ -127,13 +98,25 @@ export function useSfdManagement() {
     mutationFn: async ({ id, data }: { id: string; data: Partial<SfdFormValues> }) => {
       setIsLoading(true);
       try {
-        // In a real implementation, we would update in Supabase
-        console.log(`Updating SFD ${id} with data:`, data);
-        
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        return { success: true };
+        const { data: updatedSfd, error } = await supabase
+          .from('sfds')
+          .update({
+            name: data.name,
+            code: data.code,
+            region: data.region,
+            status: data.status,
+            contact_email: data.contact_email,
+            phone: data.phone,
+            description: data.description,
+            logo_url: data.logo_url,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return updatedSfd;
       } finally {
         setIsLoading(false);
       }
@@ -160,13 +143,15 @@ export function useSfdManagement() {
     mutationFn: async (id: string) => {
       setIsLoading(true);
       try {
-        // In a real implementation, we would update in Supabase
-        console.log(`Suspending SFD ${id}`);
-        
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        return { success: true };
+        const { data, error } = await supabase
+          .from('sfds')
+          .update({ status: 'suspended', updated_at: new Date().toISOString() })
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
       } finally {
         setIsLoading(false);
       }
@@ -193,13 +178,15 @@ export function useSfdManagement() {
     mutationFn: async (id: string) => {
       setIsLoading(true);
       try {
-        // In a real implementation, we would update in Supabase
-        console.log(`Reactivating SFD ${id}`);
-        
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        return { success: true };
+        const { data, error } = await supabase
+          .from('sfds')
+          .update({ status: 'active', updated_at: new Date().toISOString() })
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
       } finally {
         setIsLoading(false);
       }
