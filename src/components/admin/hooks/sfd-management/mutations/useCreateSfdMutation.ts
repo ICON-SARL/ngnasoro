@@ -91,7 +91,18 @@ export function useCreateSfdMutation() {
 
           if (error) {
             console.error("Edge Function invocation error:", error);
-            throw new Error(`Erreur de communication avec le serveur: ${error.message}`);
+            
+            // Vérifier si l'erreur contient un message du serveur
+            if (typeof error === 'object' && error.message) {
+              if (error.message.includes('non-2xx status')) {
+                // Tenter d'extraire le message d'erreur de la réponse si possible
+                throw new Error(`Erreur de communication avec le serveur: ${error.message}`);
+              } else {
+                throw new Error(error.message);
+              }
+            } else {
+              throw new Error(`Erreur de communication avec le serveur: ${JSON.stringify(error)}`);
+            }
           }
           
           console.log("Edge Function response:", data);
@@ -138,9 +149,19 @@ export function useCreateSfdMutation() {
     onError: (error: any) => {
       console.error("Mutation error:", error);
       
+      // Message d'erreur adapté
+      let errorMessage = error.message || "Une erreur est survenue lors de la création de la SFD";
+      
+      // Simplifier certains messages d'erreur pour l'utilisateur
+      if (errorMessage.includes("duplicate key value")) {
+        errorMessage = "Une SFD avec ce code existe déjà. Veuillez utiliser un code unique.";
+      } else if (errorMessage.includes("non-2xx status")) {
+        errorMessage = "Erreur de communication avec le serveur. Veuillez réessayer plus tard.";
+      }
+      
       toast({
         title: 'Erreur',
-        description: `${error.message}`,
+        description: errorMessage,
         variant: 'destructive',
       });
     },

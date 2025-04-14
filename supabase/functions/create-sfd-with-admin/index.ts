@@ -97,6 +97,27 @@ serve(async (req: Request) => {
       );
     }
     
+    // Vérifier si le code SFD existe déjà
+    const { data: existingSfds, error: existingSfdError } = await supabaseAdmin
+      .from('sfds')
+      .select('id')
+      .eq('code', sfdData.code)
+      .limit(1);
+      
+    if (existingSfdError) {
+      return new Response(
+        JSON.stringify({ error: `Erreur lors de la vérification du code SFD: ${existingSfdError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (existingSfds && existingSfds.length > 0) {
+      return new Response(
+        JSON.stringify({ error: `Le code SFD "${sfdData.code}" existe déjà. Veuillez utiliser un code unique.` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     // Créer la SFD
     const { data: newSfd, error: sfdError } = await supabaseAdmin
       .from('sfds')
@@ -289,7 +310,10 @@ serve(async (req: Request) => {
         sfd: newSfd,
         admin: adminData2
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
+      }
     );
   } catch (error) {
     console.error('Erreur dans create-sfd-with-admin:', error);

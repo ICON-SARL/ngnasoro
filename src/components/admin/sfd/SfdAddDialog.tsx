@@ -63,7 +63,17 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
       form.reset();
       onOpenChange(false);
     } catch (err: any) {
-      setError(err.message || "Une erreur s'est produite lors de la création de la SFD");
+      const errorMessage = err.message || "Une erreur s'est produite lors de la création de la SFD";
+      
+      // Extraire un message plus clair si possible
+      let displayError = errorMessage;
+      if (errorMessage.includes("code SFD") && errorMessage.includes("existe déjà")) {
+        displayError = `Le code "${values.code}" existe déjà. Veuillez utiliser un code unique.`;
+      } else if (errorMessage.includes("non-2xx status")) {
+        displayError = "Erreur de communication avec le serveur. Veuillez réessayer plus tard.";
+      }
+      
+      setError(displayError);
     }
   };
 
@@ -123,6 +133,9 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
                     <FormControl>
                       <Input placeholder="Code unique (ex: RCPB-OUA)" {...field} />
                     </FormControl>
+                    <FormDescription className="text-xs">
+                      Doit être unique pour chaque SFD
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
