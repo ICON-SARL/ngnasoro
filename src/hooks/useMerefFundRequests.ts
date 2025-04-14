@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface MerefFundRequest {
+export interface MerefFundRequest {
   sfdId: string;
   amount: number;
   purpose: string;
@@ -13,6 +13,29 @@ interface MerefFundRequest {
 export function useMerefFundRequests() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  
+  // Mock fund requests data for development
+  const mockFundRequests = [
+    {
+      id: '1',
+      sfd_id: 'sfd-123',
+      amount: 1000000,
+      purpose: 'Expansion des services financiers',
+      justification: 'Permettre d\'atteindre les zones rurales avec des services financiers de base',
+      status: 'pending',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: '2',
+      sfd_id: 'sfd-456',
+      amount: 500000,
+      purpose: 'Digitalisation des services',
+      justification: 'Modernisation des processus pour améliorer l\'efficacité opérationnelle',
+      status: 'approved',
+      created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      approved_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+    }
+  ];
   
   const createFundRequest = async (request: MerefFundRequest) => {
     try {
@@ -60,8 +83,32 @@ export function useMerefFundRequests() {
     }
   };
   
+  // Stub functions for the admin features
+  const approveFundRequest = async ({ requestId, comments }: { requestId: string; comments?: string }) => {
+    // Placeholder for approval functionality
+    return { success: true };
+  };
+  
+  const rejectFundRequest = async ({ requestId, comments }: { requestId: string; comments?: string }) => {
+    // Placeholder for rejection functionality
+    return { success: true };
+  };
+  
+  const executeFundTransfer = async (requestId: string) => {
+    // Placeholder for fund transfer functionality
+    return { success: true };
+  };
+  
+  // Adding the missing properties to the return object
   return {
     createFundRequest,
     isSubmitting,
+    // Add the missing properties
+    fundRequests: mockFundRequests,
+    isLoading: false,
+    refetch: () => Promise.resolve(),
+    approveFundRequest: { mutate: approveFundRequest, isPending: false },
+    rejectFundRequest: { mutate: rejectFundRequest, isPending: false },
+    executeFundTransfer: { mutate: executeFundTransfer, isPending: false }
   };
 }
