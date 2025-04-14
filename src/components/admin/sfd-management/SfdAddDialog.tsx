@@ -23,8 +23,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAddSfdMutation, SfdFormValues } from '../hooks/sfd-management/mutations/useAddSfdMutation';
-import { sfdFormSchema } from '@/components/admin/sfd/schemas/sfdFormSchema';
+import { useAddSfdMutation } from '../hooks/sfd-management/mutations/useAddSfdMutation';
+import { sfdFormSchema, SfdFormValues } from '@/components/admin/sfd/schemas/sfdFormSchema';
 
 interface SfdAddDialogProps {
   open: boolean;

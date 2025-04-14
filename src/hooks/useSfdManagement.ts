@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -82,6 +81,11 @@ export function useSfdManagement() {
         // In a real implementation, we would insert into Supabase
         console.log(`Creating SFD with data:`, sfdData);
         
+        // Ensure required fields are present
+        if (!sfdData.name || !sfdData.code) {
+          throw new Error("Name and code are required fields");
+        }
+        
         // Simulate API call delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
@@ -90,7 +94,7 @@ export function useSfdManagement() {
           sfd: {
             ...sfdData,
             id: `sfd${Date.now()}`,
-            status: 'active',
+            status: sfdData.status || 'active',
             created_at: new Date().toISOString(),
             client_count: 0,
             loan_count: 0

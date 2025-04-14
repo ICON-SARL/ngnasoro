@@ -8,12 +8,15 @@ export const sfdAdminSchema = z.object({
   adminPassword: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères").optional(),
 });
 
+// Define the status enum to be consistent across the application
+const statusEnum = z.enum(["active", "pending", "suspended"]);
+
 // Schéma pour les données de base de la SFD
 export const sfdFormSchema = z.object({
   name: z.string().min(2, "Le nom est requis"),
   code: z.string().min(2, "Le code est requis"),
   region: z.string().optional(),
-  status: z.enum(["active", "pending", "suspended"]).default("active"),
+  status: statusEnum.default("active"),
   description: z.string().optional(),
   contact_email: z.string().email("Email invalide").optional(),
   email: z.string().email("Email invalide").optional(),

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Sfd } from '../../types/sfd-types';
 import { SfdFormValues } from '@/components/admin/sfd/schemas/sfdFormSchema';
@@ -30,13 +29,41 @@ export function useSfdManagement() {
 
   // Event handlers
   const handleAddSfd = (formData: SfdFormValues) => {
-    addSfdMutation.mutate(formData);
+    addSfdMutation.mutate({
+      name: formData.name,
+      code: formData.code,
+      region: formData.region,
+      status: formData.status,
+      description: formData.description,
+      contact_email: formData.contact_email,
+      email: formData.email,
+      phone: formData.phone,
+      address: formData.address,
+      logo_url: formData.logo_url,
+      legal_document_url: formData.legal_document_url,
+      subsidy_balance: formData.subsidy_balance
+    });
     setShowAddDialog(false);
   };
 
   const handleEditSfd = (formData: SfdFormValues) => {
     if (selectedSfd) {
-      editSfdMutation.mutate({ id: selectedSfd.id, data: formData });
+      editSfdMutation.mutate({ 
+        id: selectedSfd.id, 
+        data: {
+          name: formData.name,
+          code: formData.code,
+          region: formData.region,
+          status: formData.status,
+          description: formData.description,
+          contact_email: formData.contact_email,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          logo_url: formData.logo_url,
+          legal_document_url: formData.legal_document_url
+        }
+      });
       setShowEditDialog(false);
     }
   };
