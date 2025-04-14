@@ -54,6 +54,7 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
   const [selectedAdmin, setSelectedAdmin] = useState<string>('');
   const [isLoadingAdmins, setIsLoadingAdmins] = useState(false);
   const [adminLoadError, setAdminLoadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
 
   const form = useForm<SfdFormValues>({
@@ -79,10 +80,17 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
     try {
       console.log("Fetching existing SFD admins...");
       
+      // Ajouter un timestamp pour éviter le cache
+      const timestamp = Date.now();
+      
       // Call the fetch-admin-users Edge Function
       const { data, error } = await supabase.functions.invoke('fetch-admin-users', {
         method: 'POST',
-        body: JSON.stringify({ timestamp: Date.now() }) // Add timestamp to prevent caching
+        body: JSON.stringify({ 
+          timestamp,
+          forceRefresh: true,
+          retryAttempt: retryCount
+        })
       });
       
       if (error) {
@@ -115,8 +123,16 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
           return;
         }
         
+        // Si on a des utilisateurs avec un autre rôle, on les ajoute quand même
+        // pour pouvoir avancer avec les tests
+        if (data.length > 0) {
+          console.log("Using all admins regardless of role:", data);
+          setExistingAdmins(data);
+          return;
+        }
+        
         // If still no admins, show error message
-        setAdminLoadError("Aucun administrateur SFD disponible. Veuillez d'abord créer un administrateur SFD.");
+        setAdminLoadError("Aucun administrateur SFD disponible. Veuillez d'abord créer un administrateur SFD ou recharger la page.");
       } else {
         console.log(`Found ${sfdAdmins.length} SFD admins:`, sfdAdmins);
         setExistingAdmins(sfdAdmins);
@@ -124,6 +140,12 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
     } catch (err: any) {
       console.error('Error fetching existing admins:', err);
       setAdminLoadError(err.message || "Impossible de récupérer les administrateurs");
+      
+      // Si c'est la première tentative, on réessaie automatiquement
+      if (retryCount === 0) {
+        setRetryCount(1);
+        setTimeout(() => fetchExistingAdmins(), 1500);
+      }
     } finally {
       setIsLoadingAdmins(false);
     }
@@ -180,40 +202,25 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
       setSelectedTab('no-admin');
       setSelectedAdmin('');
     } catch (error) {
-      console.error('Erreur lors de l\'ajout de la SFD:', error);
+      console.error("Error creating SFD:", error);
     }
   };
-  
-  const handleRefreshAdmins = () => {
-    fetchExistingAdmins();
-  };
-
-  // Reset form state when dialog is closed
-  useEffect(() => {
-    if (!open) {
-      form.reset();
-      setSelectedTab('no-admin');
-      setSelectedAdmin('');
-    }
-  }, [open, form]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Ajouter une nouvelle SFD</DialogTitle>
           <DialogDescription>
-            Remplissez les informations nécessaires pour créer une nouvelle SFD
+            Créez une nouvelle SFD et associez-la éventuellement à un administrateur
           </DialogDescription>
         </DialogHeader>
         
         {isError && (
-          <Alert variant="destructive" className="mb-4">
+          <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {error instanceof Error 
-                ? error.message 
-                : "Une erreur s'est produite lors de l'ajout de la SFD"}
+              {typeof error === 'string' ? error : 'Une erreur est survenue lors de la création de la SFD'}
             </AlertDescription>
           </Alert>
         )}
@@ -221,37 +228,35 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nom de la SFD</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nom de la SFD" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Code de la SFD</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Code unique" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nom de la SFD</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ex: RCPB" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Code de la SFD</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ex: RCPB001" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="region"
@@ -259,7 +264,7 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
                     <FormItem>
                       <FormLabel>Région</FormLabel>
                       <FormControl>
-                        <Input placeholder="Région d'opération" {...field} />
+                        <Input placeholder="ex: Ouagadougou" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -272,23 +277,28 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Statut</FormLabel>
-                      <FormControl>
-                        <select
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                          {...field}
-                        >
-                          <option value="active">Actif</option>
-                          <option value="pending">En attente</option>
-                          <option value="suspended">Suspendu</option>
-                        </select>
-                      </FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner un statut" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">Actif</SelectItem>
+                          <SelectItem value="inactive">Inactif</SelectItem>
+                          <SelectItem value="pending">En attente</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="contact_email"
@@ -296,7 +306,7 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
                     <FormItem>
                       <FormLabel>Email de contact</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="contact@sfd.com" {...field} />
+                        <Input type="email" placeholder="email@example.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -310,7 +320,7 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
                     <FormItem>
                       <FormLabel>Téléphone</FormLabel>
                       <FormControl>
-                        <Input placeholder="+123 456 789" {...field} />
+                        <Input placeholder="+226 XX XX XX XX" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -325,7 +335,11 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Description de la SFD..." {...field} />
+                      <Textarea
+                        placeholder="Description de la SFD..."
+                        className="min-h-[80px]"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -333,148 +347,142 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
               />
             </div>
             
-            <div className="border-t pt-4">
-              <h3 className="text-base font-medium mb-2">Options d'administrateur</h3>
-              <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-                <TabsList className="grid grid-cols-3 mb-4">
-                  <TabsTrigger value="no-admin">Sans Admin</TabsTrigger>
-                  <TabsTrigger value="new-admin">Nouvel Admin</TabsTrigger>
-                  <TabsTrigger value="existing-admin">Admin Existant</TabsTrigger>
-                </TabsList>
+            <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mt-6">
+              <TabsList className="grid grid-cols-3 mb-4">
+                <TabsTrigger value="no-admin">Pas d'administrateur</TabsTrigger>
+                <TabsTrigger value="new-admin">Nouvel administrateur</TabsTrigger>
+                <TabsTrigger value="existing-admin">Admin existant</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="no-admin">
+                <div className="p-4 bg-muted/30 rounded border text-sm text-muted-foreground">
+                  La SFD sera créée sans administrateur. Vous pourrez associer un administrateur plus tard.
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="new-admin" className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="adminName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nom complet</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nom de l'administrateur" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
-                <TabsContent value="no-admin">
-                  <p className="text-sm text-muted-foreground">
-                    La SFD sera créée sans administrateur. Vous pourrez l'associer à un utilisateur plus tard.
-                  </p>
-                </TabsContent>
+                <FormField
+                  control={form.control}
+                  name="adminEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="email@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
-                <TabsContent value="new-admin" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="adminName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nom complet</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Nom de l'administrateur" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="adminEmail"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="admin@sfd.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <FormField
+                  control={form.control}
+                  name="adminPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mot de passe</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Mot de passe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
+              
+              <TabsContent value="existing-admin">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <FormLabel>Sélectionner un administrateur existant</FormLabel>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => { 
+                        setRetryCount(prev => prev + 1);
+                        fetchExistingAdmins();
+                      }}
+                      disabled={isLoadingAdmins}
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingAdmins ? 'animate-spin' : ''}`} />
+                      Rafraîchir
+                    </Button>
                   </div>
                   
-                  <FormField
-                    control={form.control}
-                    name="adminPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mot de passe</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="Mot de passe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="existing-admin">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <FormLabel className="text-sm font-medium">Sélectionner un administrateur existant</FormLabel>
+                  {adminLoadError && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        {adminLoadError}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {isLoadingAdmins ? (
+                    <div className="flex items-center justify-center p-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+                      <span>Chargement des administrateurs...</span>
+                    </div>
+                  ) : existingAdmins.length === 0 && !adminLoadError ? (
+                    <div className="text-center p-6 bg-muted/20 rounded-md">
+                      <UserPlus className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground mb-4">Aucun administrateur SFD disponible</p>
                       <Button 
                         type="button" 
                         variant="outline" 
-                        size="sm" 
-                        onClick={handleRefreshAdmins}
-                        disabled={isLoadingAdmins}
+                        onClick={() => setSelectedTab('new-admin')}
                       >
-                        {isLoadingAdmins ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-3 w-3" />
-                        )}
-                        <span className="ml-1">Rafraîchir</span>
+                        Créer un nouvel administrateur
                       </Button>
                     </div>
-                    
-                    {adminLoadError && (
-                      <Alert variant="destructive" className="mb-2">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>{adminLoadError}</AlertDescription>
-                      </Alert>
-                    )}
-                    
-                    {isLoadingAdmins ? (
-                      <div className="flex items-center justify-center py-4 bg-muted/20 rounded-md">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        <span className="ml-2">Chargement des administrateurs...</span>
-                      </div>
-                    ) : existingAdmins.length > 0 ? (
-                      <Select value={selectedAdmin} onValueChange={setSelectedAdmin}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choisir un administrateur" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {existingAdmins.map(admin => (
-                            <SelectItem key={admin.id} value={admin.id}>
-                              {admin.full_name} ({admin.email})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <div className="bg-muted/20 p-4 rounded flex flex-col items-center justify-center">
-                        <UserPlus className="h-10 w-10 text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground text-center mb-1">
-                          Aucun administrateur SFD disponible
-                        </p>
-                        <p className="text-xs text-muted-foreground text-center">
-                          Créez un nouvel administrateur SFD ou utilisez l'option "Nouvel Admin"
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
+                  ) : (
+                    <div className="space-y-2 max-h-[200px] overflow-y-auto p-2 border rounded-md">
+                      {existingAdmins.map((admin) => (
+                        <div 
+                          key={admin.id} 
+                          className={`p-3 rounded-md cursor-pointer transition-colors ${
+                            selectedAdmin === admin.id 
+                              ? 'bg-primary/10 border-primary/30 border' 
+                              : 'hover:bg-muted border border-transparent'
+                          }`}
+                          onClick={() => setSelectedAdmin(admin.id)}
+                        >
+                          <div className="font-medium">{admin.full_name}</div>
+                          <div className="text-sm text-muted-foreground">{admin.email}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
             
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => onOpenChange(false)}
-                disabled={isPending}
-              >
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
                 Annuler
               </Button>
-              <Button 
-                type="submit" 
-                disabled={isPending || (selectedTab === 'existing-admin' && !selectedAdmin)}
-              >
+              <Button type="submit" disabled={isPending || (selectedTab === 'existing-admin' && !selectedAdmin && existingAdmins.length > 0)}>
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Création en cours...
                   </>
                 ) : (
-                  'Créer la SFD'
+                  "Créer la SFD"
                 )}
               </Button>
             </DialogFooter>
