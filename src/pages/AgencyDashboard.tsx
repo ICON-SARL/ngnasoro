@@ -10,15 +10,20 @@ import { ClientManagement } from '@/components/sfd/ClientManagement';
 import { LoanManagement } from '@/components/sfd/LoanManagement';
 import { Reports } from '@/components/reports';
 import { FinancialReporting } from '@/components/FinancialReporting';
-import { useSfdDashboardStats } from '@/hooks/useSfdDashboardStats';
-import { Loader2 } from 'lucide-react';
+import { useClientAdhesions } from '@/hooks/useClientAdhesions';
+import { Loader2, ClipboardList, RefreshCw } from 'lucide-react';
 import { SfdDashboardStats } from '@/components/sfd/dashboard/SfdDashboardStats';
-import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/components/ui/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { formatDate } from '@/utils/formatters';
 
 const AgencyDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { data: dashboardStats, isLoading } = useSfdDashboardStats();
-  const navigate = useNavigate();
+  const { adhesionRequests, isLoadingAdhesionRequests, refetchAdhesionRequests } = useClientAdhesions();
+  const { toast } = useToast();
+
+  const pendingAdhesions = adhesionRequests.filter(req => req.status === 'pending');
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -33,6 +38,68 @@ const AgencyDashboard = () => {
         </div>
         
         <SfdDashboardStats />
+        
+        {pendingAdhesions.length > 0 && (
+          <Card className="mt-6">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-yellow-600" />
+                  <CardTitle className="text-lg">Demandes d'adhésion en attente</CardTitle>
+                  <Badge variant="outline" className="ml-2">{pendingAdhesions.length}</Badge>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => refetchAdhesionRequests()}
+                  className="h-8"
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Actualiser
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingAdhesionRequests ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nom complet</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Date de demande</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingAdhesions.map((request) => (
+                      <TableRow key={request.id}>
+                        <TableCell className="font-medium">{request.full_name}</TableCell>
+                        <TableCell>
+                          {request.email && <div className="text-sm">{request.email}</div>}
+                          {request.phone && <div className="text-sm">{request.phone}</div>}
+                        </TableCell>
+                        <TableCell>{formatDate(request.created_at)}</TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setActiveTab('clients')}
+                          >
+                            Voir les détails
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
           <div className="border-b">
