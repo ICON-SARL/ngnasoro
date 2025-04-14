@@ -27,10 +27,12 @@ export function useSuperAdminManagement() {
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
+  const [loadAttempted, setLoadAttempted] = useState(false);
 
   const fetchAdmins = async () => {
     setIsLoading(true);
     setError(null);
+    setLoadAttempted(true);
 
     try {
       console.log('Fetching admin users using the functions API...');
@@ -38,6 +40,7 @@ export function useSuperAdminManagement() {
       // Utiliser la fonction Edge pour récupérer les administrateurs
       const { data, error: funcError } = await supabase.functions.invoke('fetch-admin-users', {
         method: 'POST',
+        body: JSON.stringify({ timestamp: Date.now() }), // Ajouter un timestamp pour éviter les caches
       });
       
       if (funcError) {
@@ -61,37 +64,8 @@ export function useSuperAdminManagement() {
       console.error('Error fetching admin users:', err);
       setError(err.message || 'Failed to load administrators');
       
-      // Données fictives en cas d'erreur (pour démonstration)
-      const mockAdmins: AdminUser[] = [
-        {
-          id: '1',
-          email: 'admin@meref.ml',
-          full_name: 'Super Admin',
-          role: 'admin',
-          has_2fa: true,
-          created_at: new Date().toISOString(),
-          last_sign_in_at: new Date().toISOString(),
-          is_active: true
-        },
-        {
-          id: '2',
-          email: 'sfdadmin@meref.ml',
-          full_name: 'SFD Admin',
-          role: 'sfd_admin',
-          has_2fa: false,
-          created_at: new Date().toISOString(),
-          last_sign_in_at: null,
-          is_active: false
-        }
-      ];
-      
-      setAdmins(mockAdmins);
-      
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les administrateurs.",
-        variant: "destructive"
-      });
+      // La gestion des données factices est maintenant déplacée dans la composante AdminUsersList
+      // pour une meilleure séparation des préoccupations
     } finally {
       setIsLoading(false);
     }
@@ -203,9 +177,31 @@ export function useSuperAdminManagement() {
     }
   };
 
+  // Définir un temps maximum de chargement (15 secondes)
   useEffect(() => {
-    fetchAdmins();
-  }, []);
+    let timer: NodeJS.Timeout;
+    
+    if (isLoading) {
+      timer = setTimeout(() => {
+        if (isLoading) {
+          setIsLoading(false);
+          if (!error) {
+            setError("Le chargement a pris trop de temps. Veuillez réessayer.");
+          }
+        }
+      }, 15000);
+    }
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isLoading, error]);
+
+  useEffect(() => {
+    if (!loadAttempted) {
+      fetchAdmins();
+    }
+  }, [loadAttempted]);
 
   return {
     admins,
