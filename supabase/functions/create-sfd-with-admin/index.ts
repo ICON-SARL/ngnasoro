@@ -28,11 +28,12 @@ serve(async (req: Request) => {
     );
 
     // Get and validate the data sent
-    const { sfdData, createAdmin, adminData } = await req.json();
+    const { sfdData, createAdmin, adminData, existingAdminId } = await req.json();
     console.log('Received request to create SFD with admin:', { 
       sfdData, 
       createAdmin, 
-      adminData: adminData ? { ...adminData, password: '***' } : null 
+      adminData: adminData ? { ...adminData, password: '***' } : null,
+      existingAdminId
     });
 
     // Attempt to use the existing Supabase function for creating SFD with admin if admin is needed
@@ -63,7 +64,6 @@ serve(async (req: Request) => {
       }
     }
 
-    // If we're just creating an SFD without admin or the db function failed
     // Insert the new SFD
     const { data: newSfd, error: insertError } = await supabaseClient
       .from('sfds')
@@ -91,11 +91,51 @@ serve(async (req: Request) => {
         repayment_rate: 0,
       });
 
+    // If we're associating an existing admin
+    let adminUser = null;
+    if (existingAdminId) {
+      try {
+        console.log('Associating existing admin', existingAdminId, 'with SFD', newSfd.id);
+        
+        // Create association in user_sfds table
+        const { data: association, error: associationError } = await supabaseClient
+          .from('user_sfds')
+          .insert({
+            user_id: existingAdminId,
+            sfd_id: newSfd.id,
+            is_default: true
+          })
+          .select()
+          .single();
+          
+        if (associationError) {
+          console.error('Error creating user-sfd association:', associationError);
+          // Continue anyway, as the SFD is created
+        }
+        
+        // Get admin details to return
+        const { data: admin, error: adminError } = await supabaseClient
+          .from('admin_users')
+          .select('*')
+          .eq('id', existingAdminId)
+          .single();
+          
+        if (!adminError && admin) {
+          adminUser = admin;
+        }
+        
+        console.log('Admin association created:', association);
+      } catch (associationError) {
+        console.error('Error in admin association process:', associationError);
+        // Continue anyway, as the SFD is created
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true,
         sfd: newSfd,
-        admin: null
+        admin: adminUser
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

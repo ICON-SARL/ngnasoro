@@ -13,7 +13,8 @@ export function useCreateSfdMutation() {
     mutationFn: async ({ 
       sfdData, 
       createAdmin, 
-      adminData 
+      adminData,
+      existingAdminId
     }: { 
       sfdData: any; 
       createAdmin: boolean;
@@ -21,7 +22,8 @@ export function useCreateSfdMutation() {
         email: string;
         password: string;
         full_name: string;
-      }
+      };
+      existingAdminId?: string;
     }) => {
       console.log("Starting SFD creation process...");
       
@@ -33,7 +35,8 @@ export function useCreateSfdMutation() {
         console.log("Preparing data for submission:", {
           sfdData: { ...sfdData },
           createAdmin,
-          hasAdminData: !!adminData
+          hasAdminData: !!adminData,
+          hasExistingAdmin: !!existingAdminId
         });
         
         // Vérification que les données de l'administrateur sont correctes si nécessaire
@@ -45,7 +48,8 @@ export function useCreateSfdMutation() {
         const requestBody = {
           sfdData,
           createAdmin,
-          adminData: createAdmin && adminData ? adminData : null
+          adminData: createAdmin && adminData ? adminData : null,
+          existingAdminId: existingAdminId || null
         };
         
         console.log("Sending request to edge function:", JSON.stringify({
