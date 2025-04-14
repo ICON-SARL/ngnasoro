@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -23,6 +24,9 @@ import ClientsPage from '@/pages/ClientsPage';
 import TransactionsPage from '@/pages/TransactionsPage';
 import SfdLoansPage from '@/pages/SfdLoansPage';
 import SfdMerefRequestPage from '@/pages/SfdMerefRequestPage';
+import CreditApprovalPage from '@/pages/CreditApprovalPage';
+import SfdManagementPage from '@/pages/SfdManagementPage';
+import AuditLogsPage from '@/pages/AuditLogsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +55,10 @@ function App() {
               
               <Route path="/super-admin-dashboard/*" element={<SuperAdminDashboard />} />
               <Route path="/agency-dashboard/*" element={<AgencyDashboard />} />
+              
+              <Route path="/credit-approval" element={<CreditApprovalPage />} />
+              <Route path="/sfd-management" element={<SfdManagementPage />} />
+              <Route path="/audit-logs" element={<AuditLogsPage />} />
               
               <Route path="/sfd-loans" element={<SfdLoansPage />} />
               <Route path="/sfd-clients" element={<ClientsPage />} />

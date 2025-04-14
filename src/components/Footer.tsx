@@ -1,22 +1,19 @@
 
 import React from 'react';
-import { Heart } from 'lucide-react';
 
-const Footer = () => {
+export function Footer() {
   return (
-    <footer className="py-4 px-6 border-t border-gray-100 mt-auto bg-white/50 backdrop-blur-sm">
-      <div className="container mx-auto flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-        <div>
-          <p className="text-center md:text-left">
-            © {new Date().getFullYear()} MEREF-SFD. Tous droits réservés
-          </p>
-        </div>
-        <div className="mt-2 md:mt-0 flex items-center gap-1">
-          Fait avec <Heart className="h-3 w-3 text-red-400" /> pour les SFDs du pays
+    <footer className="border-t py-6 md:py-0">
+      <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
+        <p className="text-sm text-muted-foreground text-center md:text-left">
+          © {new Date().getFullYear()} MEREF. Tous droits réservés.
+        </p>
+        <div className="flex gap-4 text-sm text-muted-foreground">
+          <a href="#" className="hover:underline">Confidentialité</a>
+          <a href="#" className="hover:underline">Termes d'utilisation</a>
+          <a href="#" className="hover:underline">Contact</a>
         </div>
       </div>
     </footer>
   );
-};
-
-export default Footer;
+}

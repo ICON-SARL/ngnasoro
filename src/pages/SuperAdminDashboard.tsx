@@ -8,6 +8,8 @@ import {
   DashboardTabs,
   SimplifiedMerefDashboard
 } from '@/components/admin/dashboard';
+import { AdminUsersList } from '@/components/admin/shared/AdminUsersList';
+import { AdminAccountsManager } from '@/components/admin/roles/AdminAccountsManager';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 import { Button } from '@/components/ui/button';
 import { FileText, Building, Users, Shield } from 'lucide-react';
@@ -24,6 +26,16 @@ const SuperAdminDashboard = () => {
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value });
   };
+  
+  const handleCardClick = (path: string) => {
+    if (path.startsWith('tab:')) {
+      // Handle internal tab navigation
+      setSearchParams({ tab: path.substring(4) });
+    } else {
+      // Handle external page navigation
+      navigate(path);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -37,7 +49,7 @@ const SuperAdminDashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card 
               className="hover:shadow-md transition-all cursor-pointer border-gray-200"
-              onClick={() => navigate('/credit-approval')}
+              onClick={() => handleCardClick('/credit-approval')}
             >
               <CardContent className="p-6 flex items-center gap-4">
                 <div className="h-12 w-12 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center">
@@ -52,7 +64,7 @@ const SuperAdminDashboard = () => {
             
             <Card
               className="hover:shadow-md transition-all cursor-pointer border-gray-200"
-              onClick={() => navigate('/sfd-management')}
+              onClick={() => handleCardClick('/sfd-management')}
             >
               <CardContent className="p-6 flex items-center gap-4">
                 <div className="h-12 w-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
@@ -67,7 +79,7 @@ const SuperAdminDashboard = () => {
             
             <Card
               className="hover:shadow-md transition-all cursor-pointer border-gray-200"
-              onClick={() => setSearchParams({ tab: 'admins' })}
+              onClick={() => handleCardClick('tab:admins')}
             >
               <CardContent className="p-6 flex items-center gap-4">
                 <div className="h-12 w-12 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
@@ -82,7 +94,7 @@ const SuperAdminDashboard = () => {
             
             <Card
               className="hover:shadow-md transition-all cursor-pointer border-gray-200"
-              onClick={() => navigate('/audit-logs')}
+              onClick={() => handleCardClick('/audit-logs')}
             >
               <CardContent className="p-6 flex items-center gap-4">
                 <div className="h-12 w-12 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center">
@@ -114,6 +126,21 @@ const SuperAdminDashboard = () => {
               />
             </div>
           </>
+        )}
+        
+        {activeTab === 'admins' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-semibold">Gestion des Administrateurs</h2>
+            <AdminAccountsManager />
+          </div>
+        )}
+        
+        {activeTab === 'users' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-semibold">Utilisateurs</h2>
+            <p className="text-muted-foreground">Liste de tous les utilisateurs de la plateforme</p>
+            <AdminUsersList />
+          </div>
         )}
         
         <DashboardTabs 
