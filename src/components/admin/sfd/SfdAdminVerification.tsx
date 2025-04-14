@@ -48,7 +48,7 @@ export function SfdAdminVerification({ sfdId, sfdName }: SfdAdminVerificationPro
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Erreur</AlertTitle>
             <AlertDescription>
-              Impossible de vérifier les associations : {error}
+              Impossible de vérifier les associations : {error.message || String(error)}
             </AlertDescription>
           </Alert>
         ) : hasAdmins ? (

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -6,7 +7,7 @@ import { Loader2, AlertCircle, Info, Users, UserPlus, ClipboardList } from 'luci
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { useNavigate } from 'react-router-dom';
-import { ClientsManagement } from './ClientsManagement';
+import ClientsManagement from './ClientsManagement';
 import { ClientAdhesionRequests } from './ClientAdhesionRequests';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { SfdAdminVerification } from '../admin/sfd/SfdAdminVerification';
