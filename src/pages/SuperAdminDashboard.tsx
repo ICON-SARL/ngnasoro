@@ -113,17 +113,7 @@ const SuperAdminDashboard = () => {
           <>
             <SimplifiedMerefDashboard />
             <div className="mt-6">
-              <DashboardWidgets 
-                stats={dashboardData?.stats || {
-                  activeSfds: 0,
-                  newSfdsThisMonth: 0,
-                  admins: 0,
-                  newAdminsThisMonth: 0,
-                  totalUsers: 0,
-                  newUsersThisMonth: 0,
-                }} 
-                isLoading={isLoading} 
-              />
+              <DashboardWidgets />
             </div>
             
             <div className="mt-6">
