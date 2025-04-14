@@ -40,14 +40,24 @@ export function useSfdManagement() {
           throw error;
         }
 
-        // Add client_count and loan_count with default values for each SFD
-        return (sfdsData || []).map(sfd => ({
-          ...sfd,
-          client_count: sfd.client_count || 0,
-          loan_count: sfd.loan_count || 0,
-          // Ensure status is of the correct type
-          status: (sfd.status || 'active') as SFD['status']
-        }));
+        // Convert raw database data to SFD objects with proper types and default values
+        return (sfdsData || []).map(sfd => {
+          const typedSfd: SFD = {
+            id: sfd.id,
+            name: sfd.name,
+            code: sfd.code,
+            region: sfd.region || '',
+            status: (sfd.status as SFD['status']) || 'active',
+            contact_email: sfd.contact_email || '',
+            phone: sfd.phone || '',
+            description: sfd.description || undefined,
+            created_at: sfd.created_at,
+            logo_url: sfd.logo_url || undefined,
+            client_count: 0, // Default value
+            loan_count: 0     // Default value
+          };
+          return typedSfd;
+        });
       } catch (error) {
         console.error('Error fetching SFDs:', error);
         return [];

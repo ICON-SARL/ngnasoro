@@ -9,7 +9,7 @@ export const sfdAdminSchema = z.object({
 });
 
 // Define the status enum to be consistent across the application
-const statusEnum = z.enum(["active", "pending", "suspended"]);
+const statusEnum = z.enum(["active", "pending", "suspended", "inactive"]);
 
 // Schéma pour les données de base de la SFD
 export const sfdFormSchema = z.object({
