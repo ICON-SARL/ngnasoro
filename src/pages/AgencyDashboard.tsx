@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { AgencyHeader } from '@/components/AgencyHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';  // Re-added Button import
+import { Button } from '@/components/ui/button';
 import { SfdUserManagement } from '@/components/sfd/SfdUserManagement';
 import { SfdRoleManager } from '@/components/sfd/roles'; 
 import { ClientManagement } from '@/components/sfd/ClientManagement';
@@ -19,11 +19,6 @@ const AgencyDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { data: dashboardStats, isLoading } = useSfdDashboardStats();
   const navigate = useNavigate();
-
-  // Format currency function
-  const formatCurrency = (amount: number) => {
-    return amount.toLocaleString('fr-FR') + ' FCFA';
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -58,71 +53,7 @@ const AgencyDashboard = () => {
                   <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
                   <p>Chargement des statistiques...</p>
                 </div>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle>Clients</CardTitle>
-                      <CardDescription>Résumé de vos clients</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{dashboardStats?.clients.total || 0}</div>
-                      <p className="text-xs text-muted-foreground">
-                        +{dashboardStats?.clients.percentageChange || 0}% depuis le mois dernier
-                      </p>
-                      <Button 
-                        variant="link" 
-                        className="p-0 mt-2 text-[#0D6A51]"
-                        onClick={() => navigate('/sfd-clients')}
-                      >
-                        Voir tous les clients
-                      </Button>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle>Prêts actifs</CardTitle>
-                      <CardDescription>Prêts en cours</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{dashboardStats?.loans.active || 0}</div>
-                      <p className="text-xs text-muted-foreground">
-                        Total: {formatCurrency(dashboardStats?.loans.totalAmount || 0)}
-                      </p>
-                      <Button 
-                        variant="link" 
-                        className="p-0 mt-2 text-[#0D6A51]"
-                        onClick={() => navigate('/sfd-loans')}
-                      >
-                        Gérer les prêts
-                      </Button>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle>Remboursements</CardTitle>
-                      <CardDescription>Ce mois-ci</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {formatCurrency(dashboardStats?.repayments.currentMonth || 0)}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {dashboardStats?.repayments.repaymentRate || 0}% taux de remboursement
-                      </p>
-                      <Button 
-                        variant="link" 
-                        className="p-0 mt-2 text-[#0D6A51]"
-                        onClick={() => navigate('/sfd-transactions')}
-                      >
-                        Voir les transactions
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+              ) : null}
             </TabsContent>
             
             <TabsContent value="clients">
