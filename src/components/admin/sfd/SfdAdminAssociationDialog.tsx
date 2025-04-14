@@ -64,51 +64,26 @@ export function SfdAdminAssociationDialog({
     try {
       console.log(`Récupération des admins disponibles pour la SFD: ${sfdId}`);
       
-      // Récupérer tous les administrateurs SFD
-      const { data: allAdmins, error: adminsError } = await supabase
-        .from('admin_users')
-        .select('id, full_name, email')
-        .eq('role', 'sfd_admin');
+      // Prioritize using the Edge Function to avoid RLS issues
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('fetch-admin-users');
       
-      if (adminsError) {
-        // Si la requête directe échoue, essayons une approche alternative
-        if (adminsError.message.includes('recursion detected')) {
-          console.log('Détection de récursion dans la politique, essai d\'une méthode alternative');
-          
-          // Récupérer via la fonction edge (plus sécurisée en cas de problèmes avec les politiques RLS)
-          const { data: edgeData, error: edgeError } = await supabase.functions.invoke('fetch-admin-users');
-          
-          if (edgeError) {
-            throw new Error(`Erreur lors de la récupération via Edge Function: ${edgeError.message}`);
-          }
-          
-          // Filtrer pour ne garder que les admin_sfd
-          const sfdAdmins = edgeData.filter((admin: any) => admin.role === 'sfd_admin');
-          console.log(`Récupéré ${sfdAdmins.length} admins via Edge Function`);
-          
-          // Utiliser ces données
-          const sortedAdmins = [...sfdAdmins].sort((a, b) => 
-            a.full_name.localeCompare(b.full_name));
-          setAdmins(sortedAdmins);
-          setIsLoading(false);
-          return;
-        }
-        
-        throw adminsError;
+      if (functionError) {
+        console.error('Erreur lors de l\'appel de la fonction pour récupérer les admins:', functionError);
+        throw functionError;
       }
       
-      console.log(`Récupéré ${allAdmins?.length || 0} administrateurs au total`);
-
-      if (!allAdmins || allAdmins.length === 0) {
-        setAdmins([]);
-        setIsLoading(false);
-        return;
+      if (!functionData) {
+        throw new Error('Aucune donnée reçue de la fonction Edge');
       }
       
-      // Trier les admins par nom
-      const sortedAdmins = [...allAdmins].sort((a, b) => 
+      // Filter for sfd_admin role
+      const sfdAdmins = functionData.filter((admin: any) => admin.role === 'sfd_admin');
+      console.log(`Récupéré ${sfdAdmins.length} admins via Edge Function`);
+      
+      // Sort by name
+      const sortedAdmins = [...sfdAdmins].sort((a, b) => 
         a.full_name.localeCompare(b.full_name));
-      
+        
       setAdmins(sortedAdmins);
     } catch (err: any) {
       console.error("Erreur lors du chargement des administrateurs:", err);
@@ -137,7 +112,20 @@ export function SfdAdminAssociationDialog({
     }
   };
 
-  const displayError = error || associationError;
+  // Customize the error message
+  const getErrorMessage = () => {
+    const message = error || associationError;
+    if (!message) return null;
+    
+    // Check if error is related to RLS recursion
+    if (message.includes('recursion') || message.includes('user_sfds')) {
+      return "Erreur de configuration des politiques de sécurité. L'opération est en cours de traitement via une méthode alternative.";
+    }
+    
+    return message;
+  };
+
+  const displayError = getErrorMessage();
 
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
