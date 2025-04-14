@@ -1,127 +1,90 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Building } from 'lucide-react';
-import { useAvailableSfds } from '@/hooks/sfd/useAvailableSfds';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import React, { useState, useEffect } from 'react';
+import { ChevronDown, Info } from 'lucide-react';
+import { 
+  Select, 
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
-const SfdSelector = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [selectedSfd, setSelectedSfd] = useState<string | null>(null);
+interface SfdSelectorProps {
+  className?: string;
+  onEmptySfds?: () => void;
+}
 
-  // Fetch user's adhesion requests
-  const { data: adhesionRequests, isLoading: isLoadingAdhesions } = useQuery({
-    queryKey: ['adhesion-requests', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('client_adhesion_requests')
-        .select('*')
-        .eq('user_id', user.id);
-        
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user
-  });
-
-  const hasApprovedAdhesions = adhesionRequests?.some(
-    request => request.status === 'approved'
-  );
-
-  const { availableSfds, isLoading: isLoadingSfds } = useAvailableSfds(user?.id || '');
-
-  const isLoading = isLoadingAdhesions || isLoadingSfds;
-
-  const handleGoBack = () => {
-    navigate(-1);
+const SfdSelector: React.FC<SfdSelectorProps> = ({ className, onEmptySfds }) => {
+  const { toast } = useToast();
+  const { activeSfdId, setActiveSfdId, sfdData, isLoading } = useSfdDataAccess();
+  
+  useEffect(() => {
+    if (!isLoading && sfdData.length === 0 && onEmptySfds) {
+      onEmptySfds();
+    }
+  }, [sfdData, isLoading, onEmptySfds]);
+  
+  const handleSfdChange = (value: string) => {
+    setActiveSfdId(value);
+    
+    const selectedSfd = sfdData.find(sfd => sfd.id === value);
+    const sfdName = selectedSfd?.name || 'SFD Inconnue';
+    
+    toast({
+      title: "SFD changée",
+      description: `Vous êtes maintenant connecté à ${sfdName}`,
+    });
   };
-
+  
   if (isLoading) {
     return (
-      <div className="container max-w-md mx-auto p-4">
-        <Button variant="ghost" onClick={handleGoBack} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" /> Retour
-        </Button>
-        <Card>
-          <CardContent className="p-8 flex justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </CardContent>
-        </Card>
+      <div className={className}>
+        <div className="bg-white text-gray-400 border-2 border-gray-300 px-3 py-2 h-10 rounded-lg w-full flex items-center justify-between">
+          <div>Chargement des SFDs...</div>
+          <div className="h-4 w-4 rounded-full border-2 border-gray-300 border-t-transparent animate-spin"></div>
+        </div>
       </div>
     );
   }
-
-  if (!hasApprovedAdhesions) {
+  
+  if (sfdData.length === 0) {
     return (
-      <div className="container max-w-md mx-auto p-4">
-        <Button variant="ghost" onClick={handleGoBack} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" /> Retour
-        </Button>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl text-center">SFDs non disponibles</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Alert>
-              <AlertTitle>Adhésion requise</AlertTitle>
-              <AlertDescription className="mt-2">
-                Vous devez d'abord adhérer à une SFD avant de pouvoir accéder à ses services. 
-                Pour adhérer à une SFD, rendez-vous dans la section "Adhésion".
-              </AlertDescription>
-            </Alert>
-            <div className="mt-4 flex justify-center">
-              <Button 
-                onClick={() => navigate('/mobile-flow/sfd-adhesion')}
-                className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-              >
-                Faire une demande d'adhésion
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className={className}>
+        <div className="bg-white text-amber-700 border-2 border-amber-300 px-3 py-2 h-10 rounded-lg w-full flex items-center justify-between">
+          <div className="flex items-center">
+            <Info className="h-4 w-4 mr-2 text-amber-500" />
+            <span>Aucune SFD disponible</span>
+          </div>
+          <Badge variant="outline" className="bg-amber-100 text-amber-800 text-xs">
+            Adhésion requise
+          </Badge>
+        </div>
       </div>
     );
   }
-
-  // Show SFDs only if user has approved adhesions
+  
   return (
-    <div className="container max-w-md mx-auto p-4">
-      <Button variant="ghost" onClick={handleGoBack} className="mb-4">
-        <ArrowLeft className="h-4 w-4 mr-2" /> Retour
-      </Button>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl text-center">Sélectionner une SFD</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {availableSfds.map(sfd => (
-              <div 
-                key={sfd.id}
-                className="p-4 border rounded-lg cursor-pointer hover:border-primary"
-                onClick={() => navigate(`/mobile-flow/sfd/${sfd.id}`)}
-              >
-                <div className="flex items-center">
-                  <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                    <Building className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium">{sfd.name}</h3>
-                    <p className="text-sm text-muted-foreground">{sfd.region || sfd.code}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
+    <div className={className}>
+      <Select value={activeSfdId || ''} onValueChange={handleSfdChange}>
+        <SelectTrigger className="bg-white text-[#0D6A51] border-2 border-[#0D6A51] px-3 py-2 h-10 rounded-lg w-full">
+          <div className="flex justify-between items-center w-full">
+            <SelectValue placeholder="Sélectionner SFD">
+              {sfdData.find(sfd => sfd.id === activeSfdId)?.name || 'Sélectionner SFD'}
+            </SelectValue>
+            <ChevronDown className="h-4 w-4 ml-2 text-[#0D6A51]" />
           </div>
-        </CardContent>
-      </Card>
+        </SelectTrigger>
+        <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+          {sfdData.map(sfd => (
+            <SelectItem key={sfd.id} value={sfd.id} className="text-sm">
+              {sfd.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 };
