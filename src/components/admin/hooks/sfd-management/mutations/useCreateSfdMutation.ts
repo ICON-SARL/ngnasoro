@@ -66,7 +66,10 @@ export function useCreateSfdMutation() {
         
         try {
           // Build request options with auth header if user is logged in
-          const options: any = { body: requestBody };
+          const options: any = { 
+            body: requestBody,
+            headers: {}
+          };
           
           // Add authentication token if available
           if (session?.access_token) {
@@ -82,24 +85,21 @@ export function useCreateSfdMutation() {
           const responsePromise = supabase.functions.invoke('create-sfd-with-admin', options);
           
           // Race between the request and the timeout
-          const { data, error } = await Promise.race([
+          const response = await Promise.race([
             responsePromise,
             timeoutPromise.then(() => {
               throw new Error("La requête a pris trop de temps. Veuillez réessayer plus tard.");
             })
           ]) as any;
 
+          const { data, error } = response;
+          
           if (error) {
             console.error("Edge Function invocation error:", error);
             
-            // Vérifier si l'erreur contient un message du serveur
+            // Analyse plus détaillée de l'erreur
             if (typeof error === 'object' && error.message) {
-              if (error.message.includes('non-2xx status')) {
-                // Tenter d'extraire le message d'erreur de la réponse si possible
-                throw new Error(`Erreur de communication avec le serveur: ${error.message}`);
-              } else {
-                throw new Error(error.message);
-              }
+              throw new Error(error.message);
             } else {
               throw new Error(`Erreur de communication avec le serveur: ${JSON.stringify(error)}`);
             }
@@ -124,15 +124,29 @@ export function useCreateSfdMutation() {
             admin: data.admin
           };
         } catch (fetchError: any) {
-          if (fetchError.message.includes("trop de temps")) {
+          console.error("Fetch error details:", fetchError);
+          
+          // Vérifier si l'erreur est liée au temps d'exécution
+          if (fetchError.message && fetchError.message.includes("trop de temps")) {
             throw new Error("La requête a pris trop de temps. Veuillez réessayer plus tard.");
+          }
+          
+          // Gérer les erreurs de statut HTTP
+          if (fetchError.status) {
+            if (fetchError.status === 400) {
+              const errorBody = await fetchError.json();
+              if (errorBody?.error) {
+                throw new Error(errorBody.error);
+              }
+            }
+            throw new Error(`Erreur du serveur (${fetchError.status}): Veuillez réessayer plus tard.`);
           }
           
           throw fetchError;
         }
       } catch (error: any) {
         console.error("Error during SFD creation:", error);
-        throw new Error(error.message || "Une erreur est survenue lors de la création de la SFD");
+        throw error;
       }
     },
     onSuccess: (data) => {
@@ -153,9 +167,9 @@ export function useCreateSfdMutation() {
       let errorMessage = error.message || "Une erreur est survenue lors de la création de la SFD";
       
       // Simplifier certains messages d'erreur pour l'utilisateur
-      if (errorMessage.includes("duplicate key value")) {
+      if (errorMessage.includes("duplicate key value") || errorMessage.includes("existe déjà")) {
         errorMessage = "Une SFD avec ce code existe déjà. Veuillez utiliser un code unique.";
-      } else if (errorMessage.includes("non-2xx status")) {
+      } else if (errorMessage.includes("non-2xx status") || errorMessage.includes("communication avec le serveur")) {
         errorMessage = "Erreur de communication avec le serveur. Veuillez réessayer plus tard.";
       }
       

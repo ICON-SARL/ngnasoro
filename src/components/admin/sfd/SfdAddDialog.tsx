@@ -54,6 +54,8 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
     setError(null);
     
     try {
+      console.log("Submitting SFD form with values:", values);
+      
       await createSfdMutation.mutateAsync({
         sfdData: values,
         createAdmin: false,
@@ -63,13 +65,15 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
       form.reset();
       onOpenChange(false);
     } catch (err: any) {
+      console.error("SFD creation error:", err);
+      
       const errorMessage = err.message || "Une erreur s'est produite lors de la création de la SFD";
       
       // Extraire un message plus clair si possible
       let displayError = errorMessage;
       if (errorMessage.includes("code SFD") && errorMessage.includes("existe déjà")) {
         displayError = `Le code "${values.code}" existe déjà. Veuillez utiliser un code unique.`;
-      } else if (errorMessage.includes("non-2xx status")) {
+      } else if (errorMessage.includes("non-2xx status") || errorMessage.includes("communication avec le serveur")) {
         displayError = "Erreur de communication avec le serveur. Veuillez réessayer plus tard.";
       }
       

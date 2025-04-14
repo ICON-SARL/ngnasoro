@@ -59,12 +59,22 @@ serve(async (req: Request) => {
     }
     
     // Récupérer les données de la requête
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: 'Format JSON invalide' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     const { 
       sfdData, 
       createAdmin = false, 
       adminData = null,
       existingAdminId = null 
-    } = await req.json();
+    } = requestBody;
     
     console.log('Creating SFD with data:', {
       sfdData,
@@ -105,6 +115,7 @@ serve(async (req: Request) => {
       .limit(1);
       
     if (existingSfdError) {
+      console.error('Erreur lors de la vérification du code SFD:', existingSfdError);
       return new Response(
         JSON.stringify({ error: `Erreur lors de la vérification du code SFD: ${existingSfdError.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -112,6 +123,7 @@ serve(async (req: Request) => {
     }
     
     if (existingSfds && existingSfds.length > 0) {
+      console.log(`Le code SFD "${sfdData.code}" existe déjà`);
       return new Response(
         JSON.stringify({ error: `Le code SFD "${sfdData.code}" existe déjà. Veuillez utiliser un code unique.` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -135,13 +147,15 @@ serve(async (req: Request) => {
       .single();
     
     if (sfdError || !newSfd) {
+      console.error('Erreur lors de la création de la SFD:', sfdError);
       return new Response(
-        JSON.stringify({ error: `Erreur lors de la création de la SFD: ${sfdError?.message}` }),
+        JSON.stringify({ error: `Erreur lors de la création de la SFD: ${sfdError?.message || 'Erreur inconnue'}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
     const sfdId = newSfd.id;
+    console.log(`SFD créée avec succès, ID: ${sfdId}`);
     
     // Créer des statistiques pour la SFD
     const { error: statsError } = await supabaseAdmin
@@ -180,8 +194,9 @@ serve(async (req: Request) => {
         // Erreur critique - rollback en supprimant la SFD
         await supabaseAdmin.from('sfds').delete().eq('id', sfdId);
         
+        console.error('Erreur lors de la création de l\'administrateur:', createUserError);
         return new Response(
-          JSON.stringify({ error: `Erreur lors de la création de l'administrateur: ${createUserError?.message}` }),
+          JSON.stringify({ error: `Erreur lors de la création de l'administrateur: ${createUserError?.message || 'Erreur inconnue'}` }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -229,6 +244,7 @@ serve(async (req: Request) => {
         await supabaseAdmin.auth.admin.deleteUser(newAdminId);
         await supabaseAdmin.from('sfds').delete().eq('id', sfdId);
         
+        console.error('Erreur lors de la configuration de l\'administrateur:', error);
         throw error;
       }
     } else if (existingAdminId) {
@@ -244,6 +260,7 @@ serve(async (req: Request) => {
         // Erreur critique - rollback en supprimant la SFD
         await supabaseAdmin.from('sfds').delete().eq('id', sfdId);
         
+        console.error('Administrateur SFD existant non trouvé ou rôle incorrect:', adminCheckError);
         return new Response(
           JSON.stringify({ error: 'Administrateur SFD existant non trouvé ou rôle incorrect' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -263,6 +280,7 @@ serve(async (req: Request) => {
         // Erreur critique - rollback en supprimant la SFD
         await supabaseAdmin.from('sfds').delete().eq('id', sfdId);
         
+        console.error('Erreur lors de l\'association de l\'administrateur existant:', assocError);
         return new Response(
           JSON.stringify({ error: `Erreur lors de l'association de l'administrateur existant: ${assocError.message}` }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -302,6 +320,8 @@ serve(async (req: Request) => {
           }
         });
     }
+    
+    console.log('SFD creation process completed successfully');
     
     // Retourner les informations de la SFD et de l'administrateur
     return new Response(
