@@ -8,7 +8,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<any>;
-  signOut: () => Promise<void>;
+  signOut: () => Promise<{ error: any }>;
   refreshSession: () => Promise<void>;
   isAdmin: boolean;
   isSfdAdmin: boolean;
@@ -16,6 +16,8 @@ interface AuthContextType {
   userRole: string;
   activeSfdId: string | null;
   setActiveSfdId: (sfdId: string | null) => void;
+  biometricEnabled?: boolean;
+  toggleBiometricAuth?: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
+  const [biometricEnabled, setBiometricEnabled] = useState<boolean>(false);
 
   useEffect(() => {
     // Check active auth session
@@ -75,8 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    setActiveSfdId(null);
-    return supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    return { error };
   };
 
   const refreshSession = async () => {
@@ -85,6 +88,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSession(data.session);
     setUser(data.session?.user ?? null);
     setLoading(false);
+  };
+
+  const toggleBiometricAuth = async () => {
+    setBiometricEnabled(!biometricEnabled);
+    // In a real app, you would add biometric enrollment/validation logic here
+    return Promise.resolve();
   };
 
   // Determine user role
@@ -105,7 +114,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isClient,
     userRole,
     activeSfdId,
-    setActiveSfdId
+    setActiveSfdId,
+    biometricEnabled,
+    toggleBiometricAuth
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
