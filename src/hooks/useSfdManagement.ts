@@ -53,8 +53,9 @@ export function useSfdManagement() {
             description: sfd.description || undefined,
             created_at: sfd.created_at,
             logo_url: sfd.logo_url || undefined,
-            client_count: sfd.client_count || 0, // Default value
-            loan_count: sfd.loan_count || 0     // Default value
+            // These fields aren't directly in the database, so we set default values
+            client_count: 0,
+            loan_count: 0
           };
           return typedSfd;
         });
