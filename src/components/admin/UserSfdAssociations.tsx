@@ -89,7 +89,7 @@ export function UserSfdAssociations({ userId, userName }: UserSfdAssociationsPro
   
   const handleRemoveAssociation = async (sfdId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette association ?')) {
-      await removeAssociation(sfdId);
+      await removeAssociation(userId, sfdId);
       fetchUserSfds(userId);
     }
   };

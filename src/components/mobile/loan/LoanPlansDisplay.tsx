@@ -94,8 +94,8 @@ export default function LoanPlansDisplay({ subsidizedOnly = false }: LoanPlansDi
         if (error) throw error;
 
         const sfds = userSfds.map(item => ({
-          id: item.sfds.id,
-          name: item.sfds.name
+          id: item.sfds?.id,
+          name: item.sfds?.name
         }));
 
         setSfdList(sfds);
