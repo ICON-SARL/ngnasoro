@@ -31,6 +31,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
   const { toast } = useToast();
   const { sfdAccounts, refetch, synchronizeBalances } = useSfdAccounts();
   const { synchronizeWithSfd, isSyncing, syncError, retryCount } = useRealtimeSynchronization();
+  const navigate = useNavigate(); // Add the useNavigate hook here
   
   useEffect(() => {
     let isMounted = true;
