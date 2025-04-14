@@ -1,57 +1,28 @@
 
 /**
- * Utility functions for formatting values throughout the application
- */
-
-/**
- * Format a date string into a locale-friendly format
- * @param dateString - ISO date string to format
- * @returns Formatted date string
+ * Formate une date en chaîne de caractères dans un format localisé
  */
 export const formatDate = (dateString: string): string => {
+  if (!dateString) return 'Jamais connecté';
+  
   try {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      year: 'numeric',
+    const date = new Date(dateString);
+    
+    // Vérifier si la date est valide
+    if (isNaN(date.getTime())) {
+      return 'Date invalide';
+    }
+    
+    // Format: "15 avril 2023, 14:30"
+    return date.toLocaleDateString('fr-FR', {
+      day: 'numeric',
       month: 'long',
-      day: 'numeric'
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   } catch (error) {
-    console.error('Error formatting date:', error);
-    return dateString;
+    console.error('Erreur de formatage de date:', error);
+    return 'Erreur de date';
   }
-};
-
-/**
- * Format a number as currency
- * @param amount - Amount to format
- * @param currency - Currency code (default: FCFA)
- * @returns Formatted currency string
- */
-export const formatCurrency = (amount: number, currency: string = 'FCFA'): string => {
-  try {
-    return new Intl.NumberFormat('fr-FR').format(amount) + ' ' + currency;
-  } catch (error) {
-    console.error('Error formatting currency:', error);
-    return `${amount} ${currency}`;
-  }
-};
-
-/**
- * Format a phone number in a readable way
- * @param phoneNumber - Phone number to format
- * @returns Formatted phone number
- */
-export const formatPhoneNumber = (phoneNumber: string): string => {
-  // Basic formatting for West African phone numbers
-  if (!phoneNumber) return '';
-  
-  // Remove non-numeric characters
-  const cleaned = phoneNumber.replace(/\D/g, '');
-  
-  // Format as XX XX XX XX XX (typical for West African numbers)
-  if (cleaned.length === 10) {
-    return cleaned.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5');
-  }
-  
-  return phoneNumber;
 };

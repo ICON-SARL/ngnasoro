@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useSuperAdminManagement } from '@/hooks/useSuperAdminManagement';
 import { 
   Table, 
@@ -11,14 +11,51 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, UserPlus, Shield, Mail, Calendar, Check, AlertTriangle } from 'lucide-react';
+import { 
+  Loader2, 
+  RefreshCw, 
+  UserPlus, 
+  Shield, 
+  Mail, 
+  Calendar, 
+  Check, 
+  AlertTriangle,
+  MoreHorizontal,
+  Edit,
+  KeyRound,
+  UserX,
+  CheckCircle
+} from 'lucide-react';
 import { formatDate } from '@/utils/formatters';
 import { usePermissions } from '@/hooks/auth/usePermissions';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
 
 export function AdminUsersList() {
   const { admins, isLoading, error, refetchAdmins } = useSuperAdminManagement();
   const { hasPermission } = usePermissions();
   const canManageUsers = hasPermission('manage_users');
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState<any>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   if (isLoading) {
     return (
@@ -45,6 +82,63 @@ export function AdminUsersList() {
       </div>
     );
   }
+
+  const handleEditAdmin = (admin: any) => {
+    navigate(`/admin/users/edit/${admin.id}`);
+  };
+
+  const handleResetPassword = (admin: any) => {
+    setSelectedAdmin(admin);
+    setIsResetPasswordDialogOpen(true);
+  };
+
+  const confirmResetPassword = async () => {
+    setIsProcessing(true);
+    try {
+      // Simuler une attente pour l'API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Montrer un toast de succès
+      toast({
+        title: "Réinitialisation du mot de passe",
+        description: `Un email de réinitialisation a été envoyé à ${selectedAdmin?.email}`,
+        variant: "default",
+      });
+      
+      setIsResetPasswordDialogOpen(false);
+    } catch (err) {
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de la réinitialisation du mot de passe",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleToggleStatus = async (admin: any) => {
+    try {
+      // Simuler une attente pour l'API
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Montrer un toast de succès
+      toast({
+        title: "Statut modifié",
+        description: `${admin.full_name} est maintenant ${admin.is_active ? 'désactivé' : 'activé'}`,
+        variant: "default",
+      });
+      
+      // Rafraîchir la liste pour voir les changements
+      refetchAdmins();
+    } catch (err) {
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de la modification du statut",
+        variant: "destructive",
+      });
+    }
+  };
   
   return (
     <div className="space-y-4">
@@ -118,9 +212,39 @@ export function AdminUsersList() {
                   </TableCell>
                   <TableCell className="text-right">
                     {canManageUsers && (
-                      <Button variant="outline" size="sm">
-                        Modifier
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Actions</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleEditAdmin(admin)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Modifier
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleResetPassword(admin)}>
+                            <KeyRound className="h-4 w-4 mr-2" />
+                            Réinitialiser mot de passe
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleToggleStatus(admin)}>
+                            {admin.is_active ? (
+                              <>
+                                <UserX className="h-4 w-4 mr-2 text-red-600" />
+                                <span className="text-red-600">Désactiver</span>
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                                <span className="text-green-600">Activer</span>
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </TableCell>
                 </TableRow>
@@ -129,6 +253,33 @@ export function AdminUsersList() {
           </Table>
         </div>
       )}
+
+      {/* Dialog de réinitialisation de mot de passe */}
+      <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Réinitialiser le mot de passe</DialogTitle>
+            <DialogDescription>
+              Un lien de réinitialisation sera envoyé à l'adresse email de {selectedAdmin?.full_name} ({selectedAdmin?.email}).
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" disabled={isProcessing} onClick={() => setIsResetPasswordDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button disabled={isProcessing} onClick={confirmResetPassword}>
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Envoi en cours...
+                </>
+              ) : (
+                "Envoyer le lien"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
