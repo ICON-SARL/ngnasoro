@@ -1,7 +1,9 @@
 
 import React from 'react';
 
-interface MainDashboardProps {}
+export interface MainDashboardProps {
+  // Add any existing props
+}
 
 const MainDashboard: React.FC<MainDashboardProps> = () => {
   return (

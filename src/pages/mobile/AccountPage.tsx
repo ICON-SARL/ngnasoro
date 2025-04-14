@@ -16,6 +16,20 @@ const AccountPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  const handleMenuToggle = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleMenuClose = () => {
+    setIsMenuOpen(false);
+  };
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    handleMenuClose();
+  };
   
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -25,6 +39,9 @@ const AccountPage: React.FC = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-xl font-semibold ml-2">Mon Compte</h1>
+          <Button variant="ghost" className="ml-auto" onClick={handleMenuToggle}>
+            <User className="h-5 w-5" />
+          </Button>
         </div>
         
         {/* Profile Card */}
@@ -117,7 +134,11 @@ const AccountPage: React.FC = () => {
         </div>
       </div>
       
-      <MobileMenu />
+      <MobileMenu 
+        isOpen={isMenuOpen}
+        onClose={handleMenuClose}
+        onNavigate={handleNavigate}
+      />
     </div>
   );
 };

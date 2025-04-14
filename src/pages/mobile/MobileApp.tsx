@@ -7,7 +7,7 @@ import {
   MainDashboard, 
   HomeLoanPage, 
   MobileSavingsPage, 
-  MobileTransactionsPage, 
+  MobileTransactionsPage,
   LoanAgreementPage, 
   LoanDetailsPage, 
   LoanActivityPage, 
@@ -36,7 +36,7 @@ const MobileApp = () => {
   
   const { user, activeSfdId } = useAuth();
   const { transactions, isLoading: transactionsLoading } = useTransactions(
-    user?.id, 
+    user?.id || '', 
     activeSfdId || 'default-sfd'
   );
   

@@ -17,7 +17,7 @@ import SfdSelectorPage from './sfd/SfdSelectorPage';
 import MobileSavingsPage from './savings/MobileSavingsPage';
 import MobileTransactionsPage from './transactions/TransactionsPage';
 import HomeLoanPage from './loan/HomeLoanPage';
-import MainDashboard from './MainDashboard';
+import MainDashboard from './dashboard/MainDashboard';
 
 export {
   MobileMainPage,

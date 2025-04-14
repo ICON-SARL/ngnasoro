@@ -15,6 +15,20 @@ const PaymentPage: React.FC = () => {
   const [balance, setBalance] = useState<number>(0);
   const { getBalance } = useTransactions(user?.id || '', '');
   const [isLoading, setIsLoading] = useState(true);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  const handleMenuToggle = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleMenuClose = () => {
+    setIsMenuOpen(false);
+  };
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    handleMenuClose();
+  };
   
   useEffect(() => {
     const fetchBalance = async () => {
@@ -42,6 +56,9 @@ const PaymentPage: React.FC = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-xl font-semibold ml-2">Paiement</h1>
+          <Button variant="ghost" className="ml-auto" onClick={handleMenuToggle}>
+            <QrCode className="h-5 w-5" />
+          </Button>
         </div>
         
         <Card className="mb-6 bg-[#0D6A51] text-white">
@@ -106,7 +123,11 @@ const PaymentPage: React.FC = () => {
         </div>
       </div>
       
-      <MobileMenu />
+      <MobileMenu 
+        isOpen={isMenuOpen}
+        onClose={handleMenuClose}
+        onNavigate={handleNavigate}
+      />
     </div>
   );
 };

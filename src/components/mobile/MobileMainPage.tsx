@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileMenu from './MobileMenu';
 import MobileHeader from './MobileHeader';
@@ -14,6 +14,7 @@ import ActiveLoansSection from './loans/ActiveLoansSection';
 const MobileMainPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   // Don't use useTransactions at the top level, use it conditionally based on user
   const loans = useClientLoans().loans || [];
@@ -44,6 +45,19 @@ const MobileMainPage: React.FC = () => {
   const activeLoans = loans.filter(loan => 
     loan.status === 'active' || loan.status === 'approved' || loan.status === 'disbursed'
   );
+
+  const handleMenuToggle = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleMenuClose = () => {
+    setIsMenuOpen(false);
+  };
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    handleMenuClose();
+  };
   
   return (
     <div className="pb-16">
@@ -94,7 +108,11 @@ const MobileMainPage: React.FC = () => {
         />
       </div>
       
-      <MobileMenu />
+      <MobileMenu 
+        isOpen={isMenuOpen}
+        onClose={handleMenuClose}
+        onNavigate={handleNavigate}
+      />
     </div>
   );
 };
