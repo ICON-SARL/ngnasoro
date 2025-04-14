@@ -98,7 +98,7 @@ export interface SfdSubsidy {
   status: 'active' | 'exhausted' | 'expired';
   created_at: string;
   allocated_by: string;
-  allocated_at: string; // Added this field to fix the error
+  allocated_at: string; // Adding this field which was missing
   end_date?: string;
   description?: string;
 }
