@@ -47,4 +47,3 @@ export const formatCurrency = (amount: number, currency: string = 'FCFA'): strin
     maximumFractionDigits: 0,
   }).format(amount);
 };
-

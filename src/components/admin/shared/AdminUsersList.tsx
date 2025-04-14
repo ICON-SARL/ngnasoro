@@ -24,7 +24,7 @@ import {
   Edit,
   KeyRound,
   UserX,
-  CheckCircle
+  UserCheck
 } from 'lucide-react';
 import { formatDate } from '@/utils/formatters';
 import { usePermissions } from '@/hooks/auth/usePermissions';
@@ -48,7 +48,7 @@ import {
 } from '@/components/ui/dialog';
 
 export function AdminUsersList() {
-  const { admins, isLoading, error, refetchAdmins } = useSuperAdminManagement();
+  const { admins, isLoading, error, refetchAdmins, toggleAdminStatus, resetAdminPassword } = useSuperAdminManagement();
   const { hasPermission } = usePermissions();
   const canManageUsers = hasPermission('manage_users');
   const navigate = useNavigate();
@@ -95,16 +95,9 @@ export function AdminUsersList() {
   const confirmResetPassword = async () => {
     setIsProcessing(true);
     try {
-      // Simuler une attente pour l'API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Montrer un toast de succès
-      toast({
-        title: "Réinitialisation du mot de passe",
-        description: `Un email de réinitialisation a été envoyé à ${selectedAdmin?.email}`,
-        variant: "default",
-      });
-      
+      if (selectedAdmin) {
+        await resetAdminPassword(selectedAdmin.email);
+      }
       setIsResetPasswordDialogOpen(false);
     } catch (err) {
       toast({
@@ -119,17 +112,7 @@ export function AdminUsersList() {
 
   const handleToggleStatus = async (admin: any) => {
     try {
-      // Simuler une attente pour l'API
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Montrer un toast de succès
-      toast({
-        title: "Statut modifié",
-        description: `${admin.full_name} est maintenant ${admin.is_active ? 'désactivé' : 'activé'}`,
-        variant: "default",
-      });
-      
-      // Rafraîchir la liste pour voir les changements
+      await toggleAdminStatus(admin.id, !admin.is_active);
       refetchAdmins();
     } catch (err) {
       toast({
@@ -187,7 +170,7 @@ export function AdminUsersList() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={admin.role === 'admin' ? 'destructive' : 'default'}>
+                    <Badge variant={admin.role === 'admin' ? 'destructive' : 'default'} className="rounded-full">
                       {admin.role === 'admin' ? 'Super Admin' : 'SFD Admin'}
                     </Badge>
                   </TableCell>
@@ -211,41 +194,39 @@ export function AdminUsersList() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {canManageUsers && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Actions</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleEditAdmin(admin)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Modifier
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleResetPassword(admin)}>
-                            <KeyRound className="h-4 w-4 mr-2" />
-                            Réinitialiser mot de passe
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleToggleStatus(admin)}>
-                            {admin.is_active ? (
-                              <>
-                                <UserX className="h-4 w-4 mr-2 text-red-600" />
-                                <span className="text-red-600">Désactiver</span>
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                                <span className="text-green-600">Activer</span>
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Actions</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleEditAdmin(admin)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Modifier
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleResetPassword(admin)}>
+                          <KeyRound className="h-4 w-4 mr-2" />
+                          Réinitialiser mot de passe
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleToggleStatus(admin)}>
+                          {admin.is_active ? (
+                            <>
+                              <UserX className="h-4 w-4 mr-2 text-red-600" />
+                              <span className="text-red-600">Désactiver</span>
+                            </>
+                          ) : (
+                            <>
+                              <UserCheck className="h-4 w-4 mr-2 text-green-600" />
+                              <span className="text-green-600">Activer</span>
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
