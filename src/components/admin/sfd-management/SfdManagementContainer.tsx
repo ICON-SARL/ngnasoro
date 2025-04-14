@@ -4,7 +4,7 @@ import { useSfdManagement } from '../hooks/useSfdManagement';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Plus, RefreshCw, Search } from 'lucide-react';
-import { SfdTable } from './SfdTable';
+import { SfdTable } from '../sfd/SfdTable'; // Update the import path
 import { SfdDialogs } from './SfdDialogs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
