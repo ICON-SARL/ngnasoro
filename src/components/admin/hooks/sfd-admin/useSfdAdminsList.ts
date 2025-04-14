@@ -57,7 +57,7 @@ export function useSfdAdminsList(sfdId: string) {
         return admins || [];
       } catch (error: any) {
         console.error('Erreur lors de la récupération des administrateurs:', error);
-        throw new Error(error.message || 'Impossible de récupérer les administrateurs SFD');
+        throw new Error('Impossible de récupérer les administrateurs SFD');
       }
     },
     enabled: !!sfdId,

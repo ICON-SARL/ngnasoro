@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useSfdAdminsList } from '../hooks/sfd-admin/useSfdAdminsList';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, Mail, UserCog, ShieldAlert, Clock, Check } from 'lucide-react';
+import { Loader2, UserCog, ShieldAlert, Clock, Check } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -78,36 +78,25 @@ export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) 
                 <div>
                   <h3 className="font-medium">{admin.full_name}</h3>
                   <div className="flex items-center text-sm text-muted-foreground">
-                    <Mail className="h-3 w-3 mr-1" />
-                    {admin.email}
+                    <Clock className="h-3 w-3 mr-1" />
+                    {admin.last_sign_in_at ? (
+                      formatDistanceToNow(new Date(admin.last_sign_in_at), { 
+                        addSuffix: true,
+                        locale: fr
+                      })
+                    ) : (
+                      'Jamais connecté'
+                    )}
                   </div>
                 </div>
               </div>
             </div>
             
             <div className="flex flex-col md:flex-row gap-2 items-start md:items-center">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-green-50 text-green-700">
-                  <Check className="h-3 w-3 mr-1" />
-                  Actif
-                </Badge>
-                
-                {admin.last_sign_in_at ? (
-                  <Badge variant="outline" className="gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span className="whitespace-nowrap">
-                      {formatDistanceToNow(new Date(admin.last_sign_in_at), { 
-                        addSuffix: true,
-                        locale: fr
-                      })}
-                    </span>
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700">
-                    Jamais connecté
-                  </Badge>
-                )}
-              </div>
+              <Badge variant="outline" className="bg-green-50 text-green-700">
+                <Check className="h-3 w-3 mr-1" />
+                Actif
+              </Badge>
             </div>
           </div>
         ))}
