@@ -3,34 +3,38 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useClientLoans } from '@/hooks/useClientLoans';
+import { useSfdLoans } from '@/hooks/useSfdLoans';
 import MobileNavigation from '@/components/MobileNavigation';
 import { ArrowLeft, FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const MobileMyLoansPage: React.FC = () => {
   const navigate = useNavigate();
-  const { loans, isLoading } = useClientLoans();
-  
-  const getStatusColor = (status: string) => {
+  const { data: loans, isLoading } = useSfdLoans();
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-500';
-      case 'pending': return 'bg-yellow-500';
-      case 'completed': return 'bg-blue-500';
-      default: return 'bg-gray-500';
+      case 'active':
+        return <Badge className="bg-green-100 text-green-800">Actif</Badge>;
+      case 'completed':
+        return <Badge className="bg-blue-100 text-blue-800">Remboursé</Badge>;
+      case 'pending':
+        return <Badge className="bg-amber-100 text-amber-800">En attente</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active': return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'pending': return <Clock className="h-5 w-5 text-yellow-500" />;
-      case 'completed': return <FileText className="h-5 w-5 text-blue-500" />;
-      default: return <XCircle className="h-5 w-5 text-gray-500" />;
-    }
-  };
-  
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50">
       <div className="bg-white p-4 shadow-sm">
         <div className="flex items-center">
           <Button 
@@ -47,13 +51,29 @@ const MobileMyLoansPage: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       <div className="p-4">
         {isLoading ? (
-          <div className="flex justify-center py-10">
+          <div className="flex justify-center py-8">
             <div className="animate-spin h-8 w-8 border-4 border-[#0D6A51] border-t-transparent rounded-full"></div>
           </div>
-        ) : loans && loans.length > 0 ? (
+        ) : !loans?.length ? (
+          <div className="text-center py-8">
+            <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
+              <FileText className="h-6 w-6 text-gray-400" />
+            </div>
+            <h3 className="mt-4 text-lg font-medium">Aucun prêt trouvé</h3>
+            <p className="mt-2 text-sm text-gray-500">
+              Vous n'avez pas encore de prêt actif ou de demande en cours.
+            </p>
+            <Button 
+              onClick={() => navigate('/mobile-flow/loan-application')}
+              className="mt-4 bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+            >
+              Demander un prêt
+            </Button>
+          </div>
+        ) : (
           <div className="space-y-4">
             {loans.map((loan) => (
               <Card key={loan.id} className="p-4">
@@ -61,36 +81,28 @@ const MobileMyLoansPage: React.FC = () => {
                   <div>
                     <h3 className="font-medium">{loan.purpose}</h3>
                     <p className="text-sm text-gray-500">
-                      {new Date(loan.created_at).toLocaleDateString('fr-FR')}
+                      {loan.sfds?.name || 'SFD'} - {formatDate(loan.created_at)}
                     </p>
                   </div>
-                  <div className="flex items-center">
-                    {getStatusIcon(loan.status)}
-                    <span className={`ml-1 text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(loan.status)} text-white`}>
-                      {loan.status === 'active' ? 'Actif' : 
-                       loan.status === 'pending' ? 'En attente' : 
-                       loan.status === 'completed' ? 'Remboursé' : loan.status}
-                    </span>
-                  </div>
+                  {getStatusBadge(loan.status)}
                 </div>
-                
-                <div className="mt-2 grid grid-cols-2 gap-2">
+
+                <div className="mt-4 grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-gray-500">Montant</p>
+                    <p className="text-sm text-gray-500">Montant</p>
                     <p className="font-medium">{loan.amount.toLocaleString('fr-FR')} FCFA</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Durée</p>
+                    <p className="text-sm text-gray-500">Durée</p>
                     <p className="font-medium">{loan.duration_months} mois</p>
                   </div>
                 </div>
-                
+
                 <div className="mt-4">
                   <Button 
                     variant="outline" 
-                    size="sm" 
                     className="w-full"
-                    onClick={() => navigate('/mobile-flow/loan-details', { state: { loanId: loan.id } })}
+                    onClick={() => navigate(`/mobile-flow/loan-details/${loan.id}`)}
                   >
                     Voir les détails
                   </Button>
@@ -98,23 +110,9 @@ const MobileMyLoansPage: React.FC = () => {
               </Card>
             ))}
           </div>
-        ) : (
-          <div className="bg-white rounded-lg p-6 text-center shadow-sm">
-            <div className="flex justify-center mb-4">
-              <FileText className="h-12 w-12 text-gray-300" />
-            </div>
-            <h2 className="text-lg font-medium mb-2">Aucun prêt trouvé</h2>
-            <p className="text-gray-500 mb-4">Vous n'avez pas encore demandé de prêt.</p>
-            <Button 
-              onClick={() => navigate('/mobile-flow/loan-application')}
-              className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-            >
-              Demander un prêt
-            </Button>
-          </div>
         )}
       </div>
-      
+
       <MobileNavigation />
     </div>
   );
