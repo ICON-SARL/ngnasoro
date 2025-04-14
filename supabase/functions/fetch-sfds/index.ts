@@ -30,7 +30,15 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Extraire les paramètres de la requête
-    const { userId, sfdId, action } = await req.json();
+    let requestData;
+    try {
+      requestData = await req.json();
+    } catch (e) {
+      // If we can't parse JSON, use empty object
+      requestData = {};
+    }
+    
+    const { userId, sfdId, action } = requestData;
     
     // Si l'action est de définir une SFD par défaut
     if (action === 'setDefault' && userId && sfdId) {
@@ -102,16 +110,34 @@ serve(async (req) => {
         is_default: item.is_default
       }));
       
-      // Si aucun SFD n'est trouvée mais que l'utilisateur est de test, créer des SFDs de test
-      if (sfds.length === 0 && (userId.includes('test') || userId === 'client@test.com')) {
-        console.log('No SFDs found, but user is a test user. Adding test SFDs.');
+      // If no SFDs found but user is a test user or sfds array is empty, create test SFDs
+      if (sfds.length === 0 && (userId.includes('test') || userId === 'client@test.com' || sfds.length === 0)) {
+        console.log('No SFDs found, adding test SFDs');
         
+        // Try to find RMCR or any active SFD in the database
+        const { data: allSfds } = await supabase
+          .from('sfds')
+          .select('id, name, code, region, status, logo_url')
+          .eq('status', 'active');
+          
+        if (allSfds && allSfds.length > 0) {
+          console.log(`Found ${allSfds.length} active SFDs to use as fallback`);
+          return new Response(
+            JSON.stringify(allSfds.map(sfd => ({
+              ...sfd,
+              is_default: sfd.name.toLowerCase().includes('rmcr')
+            }))),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        // If still no SFDs, provide test data
         return new Response(
           JSON.stringify([
             {
               id: 'test-sfd1',
-              name: 'Premier SFD (Test)',
-              code: 'P',
+              name: 'RMCR (Test)',
+              code: 'RMCR',
               region: 'Centre',
               status: 'active',
               logo_url: null,
@@ -163,7 +189,7 @@ serve(async (req) => {
     }
     
     // Sinon, récupérer toutes les SFDs (pour les admin)
-    console.log("Fetching all SFDs");
+    console.log("Fetching all active SFDs");
     
     const { data: sfds, error } = await supabase
       .from('sfds')
@@ -180,6 +206,7 @@ serve(async (req) => {
         created_at,
         updated_at
       `)
+      .eq('status', 'active')
       .order('name');
       
     if (error) {
@@ -190,20 +217,20 @@ serve(async (req) => {
       );
     }
     
-    // Si aucun SFD n'est trouvée mais que nous sommes en environnement de dev, créer des SFDs de test
-    if ((sfds?.length || 0) === 0) {
-      console.log('No SFDs found, adding test SFDs');
+    // Si aucun SFD active n'est trouvée, creer des SFDs de test
+    if (!sfds || sfds.length === 0) {
+      console.log('No active SFDs found, adding test SFDs');
       
       return new Response(
         JSON.stringify([
           {
             id: 'test-sfd1',
-            name: 'Premier SFD',
-            code: 'P',
+            name: 'RMCR',
+            code: 'RMCR',
             region: 'Centre',
             status: 'active',
             logo_url: null,
-            contact_email: 'contact@premiersfd.test',
+            contact_email: 'contact@rmcr.test',
             phone: '123456789',
             description: 'SFD de test pour le développement',
             created_at: new Date().toISOString(),

@@ -16,12 +16,14 @@ interface Sfd {
 interface SfdListProps {
   onSelectSfd: (sfdId: string) => void;
   existingRequests?: {sfd_id: string, status: string}[];
+  isSubmitting?: boolean;
 }
 
-const SfdList: React.FC<SfdListProps> = ({ onSelectSfd, existingRequests = [] }) => {
+const SfdList: React.FC<SfdListProps> = ({ onSelectSfd, existingRequests = [], isSubmitting = false }) => {
   const [sfds, setSfds] = useState<Sfd[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [submittingSfdId, setSubmittingSfdId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSfds = async () => {
@@ -39,7 +41,7 @@ const SfdList: React.FC<SfdListProps> = ({ onSelectSfd, existingRequests = [] })
         
         console.log(`Retrieved ${data?.length || 0} active SFDs`);
         
-        // Add sample SFDs in dev mode if none are found
+        // If no SFDs found in production, add fake data in development mode
         const sfdsList = data || [];
         if (sfdsList.length === 0 && process.env.NODE_ENV === 'development') {
           console.log('Adding sample SFDs for development');
@@ -75,12 +77,21 @@ const SfdList: React.FC<SfdListProps> = ({ onSelectSfd, existingRequests = [] })
   }, []);
 
   const sortSfdsWithPriority = (sfds: Sfd[]): Sfd[] => {
-    const prioritySfdNames = ["premier sfd", "deuxieme", "troisieme"];
+    // Prioritize RMCR if present, then other priority SFDs
+    const prioritySfdNames = ["rmcr", "premier sfd", "deuxieme", "troisieme"];
     
     return [...sfds].sort((a, b) => {
-      const aIsPriority = prioritySfdNames.some(name => a.name.toLowerCase().includes(name));
-      const bIsPriority = prioritySfdNames.some(name => b.name.toLowerCase().includes(name));
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
       
+      const aIsPriority = prioritySfdNames.some(name => aName.includes(name));
+      const bIsPriority = prioritySfdNames.some(name => bName.includes(name));
+      
+      // RMCR is always first
+      if (aName.includes('rmcr') && !bName.includes('rmcr')) return -1;
+      if (!aName.includes('rmcr') && bName.includes('rmcr')) return 1;
+      
+      // Then prioritize other SFDs
       if (aIsPriority && !bIsPriority) return -1;
       if (!aIsPriority && bIsPriority) return 1;
       
@@ -90,6 +101,11 @@ const SfdList: React.FC<SfdListProps> = ({ onSelectSfd, existingRequests = [] })
 
   const getSfdRequestStatus = (sfdId: string) => {
     return existingRequests.find(req => req.sfd_id === sfdId)?.status || null;
+  };
+  
+  const handleSfdSelect = (sfdId: string) => {
+    setSubmittingSfdId(sfdId);
+    onSelectSfd(sfdId);
   };
 
   if (isLoading) {
@@ -119,6 +135,9 @@ const SfdList: React.FC<SfdListProps> = ({ onSelectSfd, existingRequests = [] })
     return (
       <div className="py-8 text-center">
         <p className="text-gray-500">Aucun SFD disponible pour le moment.</p>
+        <p className="text-sm text-gray-400 mt-2">
+          Si vous êtes administrateur, assurez-vous que des SFDs sont activées dans le système.
+        </p>
       </div>
     );
   }
@@ -128,6 +147,7 @@ const SfdList: React.FC<SfdListProps> = ({ onSelectSfd, existingRequests = [] })
       {sfds.map(sfd => {
         const status = getSfdRequestStatus(sfd.id);
         const isRequested = !!status;
+        const isSubmittingThis = isSubmitting && submittingSfdId === sfd.id;
         
         return (
           <div 
@@ -169,9 +189,13 @@ const SfdList: React.FC<SfdListProps> = ({ onSelectSfd, existingRequests = [] })
               ) : (
                 <Button 
                   size="sm" 
-                  onClick={() => onSelectSfd(sfd.id)}
+                  onClick={() => handleSfdSelect(sfd.id)}
                   className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+                  disabled={isSubmitting}
                 >
+                  {isSubmittingThis ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                  ) : null}
                   Demande
                 </Button>
               )}

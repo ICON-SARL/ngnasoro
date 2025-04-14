@@ -154,6 +154,7 @@ const SfdSelectorPage = () => {
           <SfdList 
             onSelectSfd={handleSendRequest} 
             existingRequests={existingRequests}
+            isSubmitting={isSubmitting}
           />
         )}
       </main>
