@@ -41,7 +41,7 @@ serve(async (req) => {
 
     console.log(`Fetching administrators for SFD: ${sfdId}`);
     
-    // First get the user_ids associated with this SFD from user_sfds
+    // First get the user_ids associated with this SFD from user_sfds using the service role to bypass RLS
     const { data: userSfds, error: userSfdsError } = await supabase
       .from('user_sfds')
       .select('user_id')

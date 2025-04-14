@@ -37,13 +37,19 @@ export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) 
     );
   }
   
+  // Custom error message for the infinite recursion issue
   if (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Erreur lors du chargement des administrateurs';
+    const isRecursionError = errorMessage.includes('recursion') || errorMessage.includes('user_sfds');
+    
     return (
       <div className="space-y-4">
         <Alert variant="destructive" className="mb-4">
           <ShieldAlert className="h-4 w-4 mr-2" />
           <AlertDescription>
-            {error instanceof Error ? error.message : 'Erreur lors du chargement des administrateurs'}
+            {isRecursionError 
+              ? "Erreur de configuration des politiques de sécurité. Contactez l'administrateur système." 
+              : errorMessage}
           </AlertDescription>
         </Alert>
         

@@ -23,7 +23,8 @@ export function useSfdAdminsList(sfdId: string) {
           return [];
         }
         
-        // Use the Edge Function to fetch administrators, bypassing RLS issues
+        // Always use the Edge Function to fetch administrators, to bypass RLS issues
+        console.log('Utilisation de la fonction Edge pour contourner les problèmes de RLS');
         const { data, error } = await supabase.functions.invoke('fetch-sfd-admins', {
           body: { sfdId }
         });
