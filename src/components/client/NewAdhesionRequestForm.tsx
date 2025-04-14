@@ -54,12 +54,37 @@ export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestF
 
   const onSubmit = async (data: FormData) => {
     try {
+      if (!user) {
+        toast({
+          title: 'Erreur',
+          description: 'Vous devez être connecté pour soumettre une demande.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Assurez-vous que full_name n'est pas vide
+      if (!data.full_name) {
+        toast({
+          title: 'Erreur',
+          description: 'Le nom complet est obligatoire.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('client_adhesion_requests')
         .insert({
-          ...data,
+          full_name: data.full_name,
+          profession: data.profession,
+          monthly_income: parseFloat(data.monthly_income), // Convertir en nombre
+          source_of_income: data.source_of_income,
+          phone: data.phone,
+          email: data.email,
+          address: data.address,
           sfd_id: sfdId,
-          user_id: user?.id,
+          user_id: user.id,
           status: 'pending',
           kyc_status: 'pending',
         });
