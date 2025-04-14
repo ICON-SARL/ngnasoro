@@ -38,7 +38,7 @@ export function formatTransaction(record: any): Transaction {
   return {
     id: record.id,
     type: ensureValidType(record.type),
-    amount: record.amount,
+    amount: Number(record.amount),
     status: mapStatus(record.status || 'completed'),
     description: record.description,
     metadata: record.metadata,

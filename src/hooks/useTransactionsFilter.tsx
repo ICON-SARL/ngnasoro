@@ -12,13 +12,14 @@ export function useTransactionsFilter({ transactions }: UseTransactionsFilterPro
     
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(tx => 
-        (tx.description && tx.description.toLowerCase().includes(term)) ||
-        safeIdToString(tx.id).toLowerCase().includes(term) ||
-        tx.type.toLowerCase().includes(term) ||
-        (tx.payment_method && tx.payment_method.toLowerCase().includes(term)) ||
-        (tx.name && tx.name.toLowerCase().includes(term))
-      );
+      filtered = filtered.filter(tx => {
+        const id = typeof tx.id === 'number' ? tx.id.toString() : tx.id;
+        return (tx.description && tx.description.toLowerCase().includes(term)) ||
+          id.toLowerCase().includes(term) ||
+          tx.type.toLowerCase().includes(term) ||
+          (tx.payment_method && tx.payment_method.toLowerCase().includes(term)) ||
+          (tx.name && tx.name.toLowerCase().includes(term));
+      });
     }
     
     if (status) {
