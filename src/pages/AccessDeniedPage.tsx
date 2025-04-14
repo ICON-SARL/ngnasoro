@@ -46,7 +46,7 @@ const AccessDeniedPage = () => {
         <div className="border-t border-b border-gray-200 py-4 my-4">
           <div className="text-sm text-gray-600">
             <p className="mb-2">
-              <strong>Ressource demandée :</strong> {fromPath}
+              <strong>Ressource demandée :</strong> {String(fromPath)}
             </p>
             {requiredRole && (
               <p className="mb-2">
