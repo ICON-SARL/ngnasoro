@@ -33,22 +33,29 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileCheck, FileX, Filter, Search } from 'lucide-react';
+import { Loader2, FileCheck, FileX, Filter, Search, PlusCircle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/useAuth';
 
 export function CreditApprovalManager() {
-  const { applications, isLoading, approveCredit, rejectCredit } = useCreditApproval();
+  const { applications, isLoading, approveCredit, rejectCredit, createCreditApplication } = useCreditApproval();
   const [selectedApplication, setSelectedApplication] = useState<CreditApplication | null>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [comments, setComments] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const { isAdmin, isSfdAdmin } = useAuth();
+  
+  // Nouveaux états pour le formulaire de création
+  const [newAmount, setNewAmount] = useState<string>('');
+  const [newPurpose, setNewPurpose] = useState<string>('');
 
   const handleApprove = async () => {
     if (!selectedApplication) return;
@@ -76,6 +83,24 @@ export function CreditApprovalManager() {
     setComments('');
     setRejectionReason('');
     setSelectedApplication(null);
+  };
+  
+  const handleCreate = async () => {
+    if (!newAmount || !newPurpose) return;
+    
+    const amount = parseFloat(newAmount);
+    if (isNaN(amount) || amount <= 0) {
+      return;
+    }
+    
+    await createCreditApplication.mutateAsync({
+      amount,
+      purpose: newPurpose
+    });
+    
+    setShowCreateDialog(false);
+    setNewAmount('');
+    setNewPurpose('');
   };
   
   // Filter applications based on search term and status filter
@@ -122,13 +147,27 @@ export function CreditApprovalManager() {
             </SelectContent>
           </Select>
         </div>
+        
+        {/* Bouton de création pour les admins SFD */}
+        {isSfdAdmin && (
+          <Button 
+            onClick={() => setShowCreateDialog(true)}
+            className="flex items-center gap-2"
+          >
+            <PlusCircle className="h-4 w-4" />
+            Nouvelle demande
+          </Button>
+        )}
       </div>
       
       <Card>
         <CardHeader>
           <CardTitle>Demandes de Crédit</CardTitle>
           <CardDescription>
-            Examinez et approuvez les demandes de crédit des SFDs
+            {isAdmin 
+              ? "Examinez et approuvez les demandes de crédit des SFDs" 
+              : "Gérez vos demandes de crédit"
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -139,7 +178,12 @@ export function CreditApprovalManager() {
             </div>
           ) : filteredApplications.length === 0 ? (
             <div className="text-center p-8 bg-muted/20 rounded-md">
-              <p className="text-muted-foreground">Aucune demande trouvée</p>
+              <p className="text-muted-foreground">
+                {isSfdAdmin 
+                  ? "Aucune demande trouvée. Créez une nouvelle demande de crédit avec le bouton ci-dessus." 
+                  : "Aucune demande trouvée"
+                }
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -189,7 +233,7 @@ export function CreditApprovalManager() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        {application.status === 'pending' && (
+                        {application.status === 'pending' && isAdmin && (
                           <div className="flex justify-end gap-2">
                             <Button
                               onClick={() => {
@@ -334,6 +378,60 @@ export function CreditApprovalManager() {
             >
               {rejectCredit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Confirmer le rejet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Create Dialog pour les admins SFD */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouvelle demande de crédit</DialogTitle>
+            <DialogDescription>
+              Créez une nouvelle demande de crédit pour votre SFD.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="amount" className="text-sm font-medium">
+                Montant (FCFA) <span className="text-red-500">*</span>
+              </label>
+              <Input
+                id="amount"
+                type="number"
+                placeholder="Ex: 5000000"
+                value={newAmount}
+                onChange={(e) => setNewAmount(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="purpose" className="text-sm font-medium">
+                Objet de la demande <span className="text-red-500">*</span>
+              </label>
+              <Textarea
+                id="purpose"
+                placeholder="Décrivez l'objectif de cette demande de crédit..."
+                value={newPurpose}
+                onChange={(e) => setNewPurpose(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleCreate} 
+              disabled={createCreditApplication.isPending || !newAmount || !newPurpose}
+            >
+              {createCreditApplication.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Soumettre la demande
             </Button>
           </DialogFooter>
         </DialogContent>

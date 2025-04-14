@@ -1,5 +1,4 @@
 
-project_id = "6419ce7a-c12b-4202-935f-2f82ad556905"
-
-[functions.create-sfd-with-admin]
-verify_jwt = false
+[functions]
+[functions.credit-manager]
+verify_jwt = true
