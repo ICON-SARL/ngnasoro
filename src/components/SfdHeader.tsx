@@ -12,16 +12,23 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { ModeToggle } from '@/components/ModeToggle';
-import { Globe, ChevronDown, LogOut, Menu, Users, CreditCard, PieChart, Settings, Landmark, Bell } from 'lucide-react';
+import { Globe, ChevronDown, LogOut, Menu, Users, CreditCard, PieChart, Settings, Landmark, Bell, Building } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 export function SfdHeader() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { activeSfdId, sfdData } = useSfdDataAccess();
+  
+  // Trouver les informations de la SFD active
+  const activeSfd = sfdData.find(sfd => sfd.id === activeSfdId);
+  const sfdName = activeSfd?.name || 'SFD non sélectionnée';
   
   const handleLogout = async () => {
     try {
@@ -89,6 +96,12 @@ export function SfdHeader() {
             <span className="font-semibold hidden md:block">N'GNA SÔRÔ SFD</span>
           </Link>
           
+          {/* Affichage du nom de la SFD active */}
+          <Badge variant="outline" className="bg-primary/10 text-primary flex items-center gap-1 px-3 py-1 hidden md:flex">
+            <Building className="h-3.5 w-3.5 mr-1" />
+            {sfdName}
+          </Badge>
+          
           <div className="hidden md:flex gap-1">
             {navLinks.map(link => (
               <Button 
@@ -107,6 +120,12 @@ export function SfdHeader() {
         </div>
         
         <div className="flex items-center gap-3">
+          {/* Badge SFD pour mobile */}
+          <Badge variant="outline" className="bg-primary/10 text-primary px-2 py-1 md:hidden">
+            <Building className="h-3 w-3 mr-1" />
+            {sfdName.length > 10 ? `${sfdName.substring(0, 10)}...` : sfdName}
+          </Badge>
+          
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-4 w-4" />
             <span className="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-destructive"></span>
@@ -149,6 +168,11 @@ export function SfdHeader() {
                   <p className="text-xs leading-none text-muted-foreground">
                     {user?.email || 'sfd@example.com'}
                   </p>
+                  {activeSfd && (
+                    <p className="text-xs font-medium mt-1 text-primary">
+                      SFD: {sfdName}
+                    </p>
+                  )}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
