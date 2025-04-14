@@ -26,53 +26,27 @@ export function useCreditApproval() {
   const [isLoading, setIsLoading] = useState(false);
   const { user, isAdmin, isSfdAdmin } = useAuth();
 
-  // Fetch credit applications from Supabase
+  // Fetch credit applications using the Edge Function
   const fetchCreditApplications = async (): Promise<CreditApplication[]> => {
     try {
       setIsLoading(true);
       
-      // Différentes requêtes basées sur le rôle d'utilisateur
-      let query = supabase.from('credit_applications').select(`
-        id,
-        reference,
-        sfd_id,
-        sfds:sfd_id (name),
-        amount,
-        purpose,
-        status,
-        created_at,
-        score,
-        approval_comments,
-        rejection_reason,
-        rejection_comments
-      `);
+      // Use the credit-manager edge function to get applications
+      const sfdId = user?.user_metadata?.sfd_id;
+      const payload = { sfdId, filters: {} };
       
-      // Si c'est un admin SFD, filtre par son SFD
-      if (isSfdAdmin && !isAdmin && user?.user_metadata?.sfd_id) {
-        query = query.eq('sfd_id', user.user_metadata.sfd_id);
+      const { data: responseData, error } = await supabase.functions.invoke('credit-manager', {
+        body: { action: 'get_applications', payload }
+      });
+      
+      if (error) {
+        console.error('Error fetching credit applications:', error);
+        return [];
       }
       
-      const { data, error } = await query.order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      // Formater les données
-      return (data || []).map(item => ({
-        id: item.id,
-        reference: item.reference,
-        sfd_id: item.sfd_id,
-        sfd_name: item.sfds?.name || 'SFD inconnu',
-        amount: item.amount,
-        purpose: item.purpose,
-        status: item.status,
-        created_at: item.created_at,
-        score: item.score,
-        approval_comments: item.approval_comments,
-        rejection_reason: item.rejection_reason,
-        rejection_comments: item.rejection_comments
-      }));
+      return responseData?.data || [];
     } catch (error) {
-      console.error('Erreur lors de la récupération des demandes de crédit:', error);
+      console.error('Error in fetchCreditApplications:', error);
       return [];
     } finally {
       setIsLoading(false);
@@ -89,12 +63,10 @@ export function useCreditApproval() {
   const createCreditApplication = useMutation({
     mutationFn: async ({ 
       amount, 
-      purpose,
-      score 
+      purpose
     }: { 
       amount: number; 
       purpose: string;
-      score?: number; 
     }) => {
       if (!user?.user_metadata?.sfd_id && !isSfdAdmin) {
         throw new Error("Vous devez être connecté en tant qu'admin SFD pour créer une demande de crédit");
@@ -102,53 +74,19 @@ export function useCreditApproval() {
       
       const sfdId = user.user_metadata.sfd_id;
       
-      // Generate reference
-      const date = new Date();
-      const year = date.getFullYear();
-      
-      // Get count of existing applications for this year to generate sequence number
-      const { count, error: countError } = await supabase
-        .from('credit_applications')
-        .select('*', { count: 'exact', head: true })
-        .like('reference', `CREDIT-${year}-%`);
-        
-      if (countError) throw countError;
-      
-      const sequence = String(count ? count + 1 : 1).padStart(3, '0');
-      const reference = `CREDIT-${year}-${sequence}`;
-      
-      // Calculate score if not provided (simplified example)
-      const calculatedScore = score || Math.floor(Math.random() * 40) + 60; // Random score between 60-99
-      
-      const { data, error } = await supabase
-        .from('credit_applications')
-        .insert({
-          reference,
-          sfd_id: sfdId,
-          amount,
-          purpose,
-          status: 'pending',
-          score: calculatedScore
-        })
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      // Create audit log
-      await supabase.from('audit_logs').insert({
-        user_id: user.id,
-        action: 'create_credit_application',
-        category: 'credit_management',
-        status: 'success',
-        target_resource: `credit_applications/${data.id}`,
-        details: {
-          reference,
-          amount,
-          purpose
-        },
-        severity: 'info'
+      // Use the credit-manager edge function to create a new application
+      const { data, error } = await supabase.functions.invoke('credit-manager', {
+        body: { 
+          action: 'create_application', 
+          payload: { 
+            sfdId, 
+            amount, 
+            purpose 
+          } 
+        }
       });
+      
+      if (error) throw error;
       
       return data;
     },
@@ -185,33 +123,32 @@ export function useCreditApproval() {
       setIsLoading(true);
       try {
         const { data, error } = await supabase
-          .from('credit_applications')
-          .update({
-            status: 'approved',
-            approval_comments: comments,
-            approved_at: new Date().toISOString(),
-            approved_by: user?.id
-          })
-          .eq('id', applicationId)
-          .select()
-          .single();
+          .from('audit_logs')
+          .insert({
+            user_id: user?.id,
+            action: 'approve_credit_application',
+            category: 'credit_management',
+            status: 'success',
+            target_resource: `credit_applications/${applicationId}`,
+            details: {
+              comments
+            },
+            severity: 'info'
+          });
           
         if (error) throw error;
         
-        // Create audit log
-        await supabase.from('audit_logs').insert({
-          user_id: user?.id,
-          action: 'approve_credit_application',
-          category: 'credit_management',
-          status: 'success',
-          target_resource: `credit_applications/${applicationId}`,
-          details: {
-            comments
-          },
-          severity: 'info'
+        // Use edge function to update application status
+        const { data: updatedApp, error: updateError } = await supabase.functions.invoke('credit-manager', {
+          body: { 
+            action: 'approve_application', 
+            payload: { applicationId, comments } 
+          }
         });
         
-        return data;
+        if (updateError) throw updateError;
+        
+        return updatedApp;
       } finally {
         setIsLoading(false);
       }
@@ -251,35 +188,33 @@ export function useCreditApproval() {
       setIsLoading(true);
       try {
         const { data, error } = await supabase
-          .from('credit_applications')
-          .update({
-            status: 'rejected',
-            rejection_reason: reason,
-            rejection_comments: comments,
-            rejected_at: new Date().toISOString(),
-            rejected_by: user?.id
-          })
-          .eq('id', applicationId)
-          .select()
-          .single();
+          .from('audit_logs')
+          .insert({
+            user_id: user?.id,
+            action: 'reject_credit_application',
+            category: 'credit_management',
+            status: 'success',
+            target_resource: `credit_applications/${applicationId}`,
+            details: {
+              reason,
+              comments
+            },
+            severity: 'warning'
+          });
           
         if (error) throw error;
         
-        // Create audit log
-        await supabase.from('audit_logs').insert({
-          user_id: user?.id,
-          action: 'reject_credit_application',
-          category: 'credit_management',
-          status: 'success',
-          target_resource: `credit_applications/${applicationId}`,
-          details: {
-            reason,
-            comments
-          },
-          severity: 'warning'
+        // Use edge function to update application status
+        const { data: updatedApp, error: updateError } = await supabase.functions.invoke('credit-manager', {
+          body: { 
+            action: 'reject_application', 
+            payload: { applicationId, reason, comments } 
+          }
         });
         
-        return data;
+        if (updateError) throw updateError;
+        
+        return updatedApp;
       } finally {
         setIsLoading(false);
       }

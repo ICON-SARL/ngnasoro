@@ -126,7 +126,7 @@ serve(async (req) => {
           
         if (error) {
           return new Response(
-            JSON.stringify({ error: "Failed to create application" }),
+            JSON.stringify({ error: "Failed to create application", details: error.message }),
             {
               status: 500,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -195,7 +195,7 @@ serve(async (req) => {
         
         if (error) {
           return new Response(
-            JSON.stringify({ error: "Failed to fetch applications" }),
+            JSON.stringify({ error: "Failed to fetch applications", details: error.message }),
             {
               status: 500,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -221,6 +221,121 @@ serve(async (req) => {
         
         return new Response(
           JSON.stringify({ success: true, data: formattedData }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+      
+      case "approve_application": {
+        const { applicationId, comments } = payload;
+        
+        if (!applicationId) {
+          return new Response(
+            JSON.stringify({ error: "Application ID is required" }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+        
+        // Get user info
+        const { data: userData, error: userError } = await supabaseClient.auth.getUser();
+        if (userError || !userData.user) {
+          return new Response(
+            JSON.stringify({ error: "User authentication failed" }),
+            {
+              status: 401,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+        
+        // Update application status
+        const { data, error } = await supabaseClient
+          .from("credit_applications")
+          .update({
+            status: "approved",
+            approval_comments: comments,
+            approved_at: new Date().toISOString(),
+            approved_by: userData.user.id
+          })
+          .eq("id", applicationId)
+          .select()
+          .single();
+          
+        if (error) {
+          return new Response(
+            JSON.stringify({ error: "Failed to approve application", details: error.message }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+        
+        return new Response(
+          JSON.stringify({ success: true, data }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+      
+      case "reject_application": {
+        const { applicationId, reason, comments } = payload;
+        
+        if (!applicationId || !reason) {
+          return new Response(
+            JSON.stringify({ error: "Application ID and reason are required" }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+        
+        // Get user info
+        const { data: userData, error: userError } = await supabaseClient.auth.getUser();
+        if (userError || !userData.user) {
+          return new Response(
+            JSON.stringify({ error: "User authentication failed" }),
+            {
+              status: 401,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+        
+        // Update application status
+        const { data, error } = await supabaseClient
+          .from("credit_applications")
+          .update({
+            status: "rejected",
+            rejection_reason: reason,
+            rejection_comments: comments,
+            rejected_at: new Date().toISOString(),
+            rejected_by: userData.user.id
+          })
+          .eq("id", applicationId)
+          .select()
+          .single();
+          
+        if (error) {
+          return new Response(
+            JSON.stringify({ error: "Failed to reject application", details: error.message }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+        
+        return new Response(
+          JSON.stringify({ success: true, data }),
           {
             status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
