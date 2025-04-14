@@ -102,10 +102,13 @@ export function SfdManagementContainer() {
       ) : (
         <SfdTable
           sfds={filteredSfds}
-          onShowEditDialog={handleShowEditDialog}
-          onSuspendSfd={handleSuspendSfd}
-          onReactivateSfd={handleReactivateSfd}
-          onActivateSfd={handleActivateSfd}
+          isLoading={false}
+          isError={false}
+          onEdit={handleShowEditDialog}
+          onSuspend={handleSuspendSfd}
+          onReactivate={handleReactivateSfd} 
+          onActivate={handleActivateSfd}
+          onViewDetails={(sfd) => console.log('View details for', sfd.name)}
         />
       )}
 
