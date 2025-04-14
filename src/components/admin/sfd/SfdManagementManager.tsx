@@ -3,15 +3,22 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Building, User, MapPin, Mail, Phone, MoreHorizontal, RefreshCw } from 'lucide-react';
+import { Plus, Search, Building, User, MapPin, Mail, Phone, MoreHorizontal, RefreshCw, Edit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { SfdAddDialog } from '@/components/admin/sfd/SfdAddDialog';
+import { SfdEditDialog } from '@/components/admin/sfd/SfdEditDialog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Sfd } from '../types/sfd-types';
+import { useUpdateSfdMutation } from '../hooks/sfd-management/mutations/useUpdateSfdMutation';
 
 export function SfdManagementManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedSfd, setSelectedSfd] = useState<Sfd | null>(null);
+  
+  const updateSfdMutation = useUpdateSfdMutation();
   
   const { data: sfds = [], isLoading, refetch } = useQuery({
     queryKey: ['sfds'],
@@ -25,7 +32,7 @@ export function SfdManagementManager() {
         throw error;
       }
       
-      return data;
+      return data as Sfd[];
     }
   });
   
@@ -35,6 +42,21 @@ export function SfdManagementManager() {
     sfd.code.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (sfd.region && sfd.region.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+  
+  const handleEdit = (sfd: Sfd) => {
+    setSelectedSfd(sfd);
+    setEditDialogOpen(true);
+  };
+  
+  const handleUpdateSfd = (formData: any) => {
+    if (selectedSfd) {
+      updateSfdMutation.mutate({ 
+        id: selectedSfd.id, 
+        data: formData 
+      });
+      setEditDialogOpen(false);
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -133,9 +155,16 @@ export function SfdManagementManager() {
                       <Badge variant={sfd.status === 'active' ? 'default' : 'destructive'}>
                         {sfd.status === 'active' ? 'Actif' : 'Inactif'}
                       </Badge>
-                      <Button variant="outline" size="sm">
-                        Gérer
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEdit(sfd)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Modifier
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -149,6 +178,16 @@ export function SfdManagementManager() {
         open={addDialogOpen} 
         onOpenChange={setAddDialogOpen} 
       />
+      
+      {selectedSfd && (
+        <SfdEditDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          sfd={selectedSfd}
+          onSubmit={handleUpdateSfd}
+          isLoading={updateSfdMutation.isPending}
+        />
+      )}
     </div>
   );
 }
