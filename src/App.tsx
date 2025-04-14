@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -23,8 +22,8 @@ import SfdSubsidyRequestsPage from '@/pages/SfdSubsidyRequestsPage';
 import ClientsPage from '@/pages/ClientsPage';
 import TransactionsPage from '@/pages/TransactionsPage';
 import SfdLoansPage from '@/pages/SfdLoansPage';
+import SfdMerefRequestPage from '@/pages/SfdMerefRequestPage';
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -43,7 +42,6 @@ function App() {
             <Routes>
               <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
               
-              {/* Authentication Routes */}
               <Route path="/auth" element={<LoginPage />} />
               <Route path="/login" element={<AuthRedirectPage />} />
               <Route path="/register" element={<RegisterPage />} />
@@ -51,17 +49,15 @@ function App() {
               <Route path="/sfd/auth" element={<LoginPage isSfdAdmin={true} />} />
               <Route path="/client/auth" element={<ClientLoginPage />} />
               
-              {/* Admin Dashboards */}
               <Route path="/super-admin-dashboard/*" element={<SuperAdminDashboard />} />
               <Route path="/agency-dashboard/*" element={<AgencyDashboard />} />
               
-              {/* SFD Management Pages */}
               <Route path="/sfd-loans" element={<SfdLoansPage />} />
               <Route path="/sfd-clients" element={<ClientsPage />} />
               <Route path="/sfd-transactions" element={<TransactionsPage />} />
               <Route path="/sfd-subsidy-requests" element={<SfdSubsidyRequestsPage />} />
+              <Route path="/sfd-meref-request" element={<SfdMerefRequestPage />} />
               
-              {/* Mobile Routes */}
               <Route path="/mobile-flow/main" element={<MobileMainPage />} />
               <Route path="/mobile-flow/transfer" element={<TransferPage />} />
               <Route path="/mobile-flow/loans" element={<MobileLoansPage />} />
