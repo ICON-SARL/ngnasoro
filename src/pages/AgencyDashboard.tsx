@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AgencyHeader } from '@/components/AgencyHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -113,12 +114,7 @@ const AgencyDashboard = () => {
           
           <div className="mt-4">
             <TabsContent value="dashboard">
-              {isLoading ? (
-                <div className="flex justify-center items-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
-                  <p>Chargement des statistiques...</p>
-                </div>
-              ) : null}
+              {/* Removed the reference to isLoading here */}
             </TabsContent>
             
             <TabsContent value="clients">
