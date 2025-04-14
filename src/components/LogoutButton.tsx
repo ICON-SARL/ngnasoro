@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -26,13 +26,21 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
+    if (isLoggingOut) return; // Prevent multiple clicks
+    
     try {
+      setIsLoggingOut(true);
+      
       toast({
         title: "Déconnexion en cours",
         description: "Veuillez patienter..."
       });
+      
+      // Force immediate UI update to show loading state
+      await new Promise(resolve => setTimeout(resolve, 0));
       
       const { error } = await signOut();
       
@@ -45,12 +53,11 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
         description: "Vous avez été déconnecté avec succès"
       });
       
-      // Force a complete page reload to clear all state
-      setTimeout(() => {
-        window.location.href = redirectPath;
-      }, 100);
+      // Redirect immediately instead of waiting
+      window.location.href = redirectPath;
     } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
+      setIsLoggingOut(false);
       toast({
         title: "Erreur de déconnexion",
         description: error.message || "Une erreur s'est produite lors de la déconnexion",
@@ -65,8 +72,13 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
       size={size}
       onClick={handleLogout}
       className={`${className} ${variant === 'destructive' ? 'text-white' : 'text-red-500'}`}
+      disabled={isLoggingOut}
     >
-      <LogOut className="h-4 w-4 mr-2" />
+      {isLoggingOut ? (
+        <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin mr-2" />
+      ) : (
+        <LogOut className="h-4 w-4 mr-2" />
+      )}
       {!iconOnly && text}
     </Button>
   );

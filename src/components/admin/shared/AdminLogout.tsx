@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,32 +20,38 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signOut } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
+    if (isLoggingOut) return; // Prevent multiple clicks
+    
     try {
-      // Notification de début de déconnexion
+      setIsLoggingOut(true);
+      
       toast({
         title: "Déconnexion en cours",
         description: "Veuillez patienter..."
       });
       
-      // Use the signOut method from the auth context
+      // Force immediate UI update to show loading state
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
       const { error } = await signOut();
       
       if (error) {
         throw error;
       }
       
-      // Show success toast
       toast({
         title: "Déconnexion réussie",
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Force a full page reload to clear any remaining state
+      // Force a full page reload to clear any remaining state - do this immediately
       window.location.href = '/auth';
     } catch (error: any) {
       console.error('Logout error:', error);
+      setIsLoggingOut(false);
       toast({
         title: "Erreur de déconnexion",
         description: error.message || "Une erreur s'est produite lors de la déconnexion",
@@ -60,8 +66,13 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
       size={size}
       onClick={handleLogout}
       className={`${className} text-white hover:text-white hover:bg-primary-foreground/10`}
+      disabled={isLoggingOut}
     >
-      <LogOut className="h-4 w-4" />
+      {isLoggingOut ? (
+        <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin" />
+      ) : (
+        <LogOut className="h-4 w-4" />
+      )}
     </Button>
   );
 };

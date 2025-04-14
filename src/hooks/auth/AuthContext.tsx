@@ -15,10 +15,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
-  // Compute role properties based on user metadata
   const userRole = user?.app_metadata?.role as UserRole || UserRole.User;
   
-  // Fix the role comparison by comparing string values not enum types
   const isAdmin = userRole === 'admin';
   const isSfdAdmin = userRole === 'sfd_admin';
   const isClient = userRole === 'client' || userRole === 'user';
@@ -95,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             user?.id,
             AuditLogSeverity.INFO,
             'success'
-          );
+          ).catch(err => console.error('Error logging audit event:', err));
         }
       }
     );
@@ -199,6 +197,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       console.log("SignOut started - clearing localStorage items");
+      
+      setUser(null);
+      setSession(null);
+      
       localStorage.removeItem('adminLastSeen');
       localStorage.removeItem('sb-xnqysvnychmsockivqhb-auth-token');
       localStorage.removeItem('supabase.auth.token');
@@ -207,8 +209,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await supabase.auth.signOut();
       console.log("SignOut result:", result);
       
-      setUser(null);
-      setSession(null);
+      logAuditEvent(
+        AuditLogCategory.AUTHENTICATION,
+        'user_logout',
+        {
+          timestamp: new Date().toISOString()
+        },
+        null,
+        AuditLogSeverity.INFO,
+        'success'
+      ).catch(err => console.error('Error logging audit event:', err));
       
       return { error: result.error };
     } catch (error) {
