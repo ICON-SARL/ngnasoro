@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useCreditApproval, CreditApplication } from '@/hooks/useCreditApproval';
 import { 
@@ -40,6 +39,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
+import { useLoanDisbursement } from '@/hooks/useLoanDisbursement';
 
 export function CreditApprovalManager() {
   const { applications, isLoading, approveCredit, rejectCredit, createCreditApplication } = useCreditApproval();
@@ -57,6 +57,11 @@ export function CreditApprovalManager() {
   const [newAmount, setNewAmount] = useState<string>('');
   const [newPurpose, setNewPurpose] = useState<string>('');
 
+  const { disburseLoan, isProcessing } = useLoanDisbursement();
+  const [showDisbursementDialog, setShowDisbursementDialog] = useState(false);
+  const [disbursementMethod, setDisbursementMethod] = useState<'bank_transfer' | 'cash' | 'mobile_money'>('bank_transfer');
+  const [disbursementNotes, setDisbursementNotes] = useState('');
+  
   const handleApprove = async () => {
     if (!selectedApplication) return;
     
@@ -101,6 +106,21 @@ export function CreditApprovalManager() {
     setShowCreateDialog(false);
     setNewAmount('');
     setNewPurpose('');
+  };
+
+  const handleDisburseLoan = async () => {
+    if (!selectedApplication) return;
+    
+    await disburseLoan.mutateAsync({
+      loanId: selectedApplication.id,
+      amount: selectedApplication.amount,
+      method: disbursementMethod,
+      notes: disbursementNotes
+    });
+    
+    setShowDisbursementDialog(false);
+    setDisbursementNotes('');
+    setSelectedApplication(null);
   };
   
   // Filter applications based on search term and status filter
@@ -260,6 +280,19 @@ export function CreditApprovalManager() {
                               Rejeter
                             </Button>
                           </div>
+                        )}
+                        {application.status === 'approved' && isAdmin && (
+                          <Button
+                            onClick={() => {
+                              setSelectedApplication(application);
+                              setShowDisbursementDialog(true);
+                            }}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <FileCheck className="h-4 w-4 mr-1" />
+                            Décaisser
+                          </Button>
                         )}
                       </TableCell>
                     </TableRow>
@@ -432,6 +465,66 @@ export function CreditApprovalManager() {
             >
               {createCreditApplication.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Soumettre la demande
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Disbursement Dialog */}
+      <Dialog open={showDisbursementDialog} onOpenChange={setShowDisbursementDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Décaisser le prêt</DialogTitle>
+            <DialogDescription>
+              Vous êtes sur le point de décaisser le prêt {selectedApplication?.reference}.
+              Veuillez sélectionner la méthode de décaissement.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Méthode de décaissement
+              </label>
+              <Select
+                value={disbursementMethod}
+                onValueChange={(value: 'bank_transfer' | 'cash' | 'mobile_money') => 
+                  setDisbursementMethod(value)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir une méthode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bank_transfer">Virement bancaire</SelectItem>
+                  <SelectItem value="cash">Espèces</SelectItem>
+                  <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Notes (facultatif)
+              </label>
+              <Textarea
+                value={disbursementNotes}
+                onChange={(e) => setDisbursementNotes(e.target.value)}
+                placeholder="Ajouter des notes sur le décaissement..."
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDisbursementDialog(false)}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleDisburseLoan} 
+              disabled={isProcessing}
+            >
+              {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirmer le décaissement
             </Button>
           </DialogFooter>
         </DialogContent>

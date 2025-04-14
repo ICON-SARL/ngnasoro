@@ -344,6 +344,53 @@ export type Database = {
           },
         ]
       }
+      loan_disbursements: {
+        Row: {
+          amount: number
+          created_at: string | null
+          disbursed_at: string | null
+          disbursed_by: string | null
+          disbursement_method: string
+          id: string
+          loan_id: string
+          notes: string | null
+          reference_number: string | null
+          status: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          disbursed_at?: string | null
+          disbursed_by?: string | null
+          disbursement_method: string
+          id?: string
+          loan_id: string
+          notes?: string | null
+          reference_number?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          disbursed_at?: string | null
+          disbursed_by?: string | null
+          disbursement_method?: string
+          id?: string
+          loan_id?: string
+          notes?: string | null
+          reference_number?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_disbursements_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loan_payments: {
         Row: {
           amount: number
@@ -959,6 +1006,9 @@ export type Database = {
           client_id: string
           created_at: string
           disbursed_at: string | null
+          disbursement_date: string | null
+          disbursement_reference: string | null
+          disbursement_status: string | null
           duration_months: number
           id: string
           interest_rate: number
@@ -978,6 +1028,9 @@ export type Database = {
           client_id: string
           created_at?: string
           disbursed_at?: string | null
+          disbursement_date?: string | null
+          disbursement_reference?: string | null
+          disbursement_status?: string | null
           duration_months: number
           id?: string
           interest_rate: number
@@ -997,6 +1050,9 @@ export type Database = {
           client_id?: string
           created_at?: string
           disbursed_at?: string | null
+          disbursement_date?: string | null
+          disbursement_reference?: string | null
+          disbursement_status?: string | null
           duration_months?: number
           id?: string
           interest_rate?: number
