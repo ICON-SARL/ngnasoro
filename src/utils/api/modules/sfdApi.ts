@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { SfdBalanceData, SfdData, SfdLoan } from '@/hooks/sfd/types';
 
@@ -77,6 +78,46 @@ export const sfdApi = {
     } catch (error) {
       console.error('Error fetching SFDs list:', error);
       return [];
+    }
+  },
+  
+  /**
+   * Get SFD statistics
+   */
+  getSfdStats: async (sfdId: string) => {
+    try {
+      // First try to get stats from sfd_stats table
+      const { data: statsData, error: statsError } = await supabase
+        .from('sfd_stats')
+        .select('*')
+        .eq('sfd_id', sfdId)
+        .single();
+        
+      if (!statsError && statsData) {
+        return statsData;
+      }
+      
+      // If no stats found, calculate them from clients and loans
+      const { data: clientsData, error: clientsError } = await supabase
+        .from('sfd_clients')
+        .select('count')
+        .eq('sfd_id', sfdId);
+        
+      const { data: loansData, error: loansError } = await supabase
+        .from('sfd_loans')
+        .select('count')
+        .eq('sfd_id', sfdId);
+      
+      return {
+        client_count: clientsError ? 0 : (clientsData?.[0]?.count || 0),
+        loan_count: loansError ? 0 : (loansData?.[0]?.count || 0),
+      };
+    } catch (error) {
+      console.error('Error fetching SFD stats:', error);
+      return { 
+        client_count: 0, 
+        loan_count: 0 
+      };
     }
   },
   

@@ -40,7 +40,12 @@ export function useSfdManagement() {
           throw error;
         }
 
-        return sfdsData || [];
+        // Add client_count and loan_count with default values
+        return (sfdsData || []).map(sfd => ({
+          ...sfd,
+          client_count: sfd.client_count || 0,
+          loan_count: sfd.loan_count || 0
+        }));
       } catch (error) {
         console.error('Error fetching SFDs:', error);
         return [];
