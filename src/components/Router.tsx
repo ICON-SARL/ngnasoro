@@ -19,6 +19,8 @@ import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import UsersListPage from '@/pages/admin/UsersListPage';
 import UsersManagementPage from '@/pages/UsersManagementPage';
 import SfdManagementPage from '@/pages/admin/SfdManagementPage';
+import MainDashboard from '@/components/mobile/dashboard/MainDashboard';
+import HomeLoanPage from '@/components/mobile/HomeLoanPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,7 +31,7 @@ export const MobileRouter = () => {
   // Simple placeholder for routes that don't have components yet
   const PlaceholderPage = ({ title }: { title: string }) => {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
+      <div className="min-h-screen bg-gray-50 p-4 pb-20">
         <div className="bg-white p-4 shadow-sm mb-4">
           <h1 className="text-xl font-bold">{title}</h1>
           <p className="text-gray-500 text-sm">Cette fonctionnalité est en cours de développement</p>
@@ -53,7 +55,7 @@ export const MobileRouter = () => {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/main" replace />} />
-      <Route path="/main" element={<MobileMainPage />} />
+      <Route path="/main" element={<MainDashboard />} />
       <Route path="/account" element={<AccountPage />} />
       <Route path="/account/notifications" element={<NotificationsPage />} />
       <Route path="/account/security" element={<SecurityPage />} />
@@ -63,19 +65,36 @@ export const MobileRouter = () => {
       <Route path="/account/help" element={<PlaceholderPage title="Centre d'aide" />} />
       <Route path="/transfer" element={<TransferPage />} />
       <Route path="/payment" element={<PlaceholderPage title="Paiement Sécurisé" />} />
-      <Route path="/loan-details" element={<MobileLoanDetailsPage />} />
-      <Route path="/loans" element={<MobileLoansPage />} />
+      <Route path="/loans" element={<HomeLoanPage />} />
+      <Route path="/loan-details/:loanId?" element={<MobileLoanDetailsPage />} />
       <Route path="/my-loans" element={<MobileMyLoansPage />} />
       <Route path="/loan-activity" element={<LoanActivityPage />} />
-      <Route path="/loan-process" element={<LoanProcessPage />} />
+      <Route path="/loan-process/:loanId?" element={<LoanProcessPage />} />
       <Route path="/loan-agreement" element={<LoanAgreementPage />} />
       <Route path="/loan-application" element={<MobileLoanApplicationPage />} />
       <Route path="/sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
+      
+      {/* Pages de navigation du menu */}
+      <Route path="/secure-payment" element={<PlaceholderPage title="Paiement Sécurisé" />} />
+      <Route path="/schedule-transfer" element={<PlaceholderPage title="Transferts Programmés" />} />
+      <Route path="/multi-sfd" element={<PlaceholderPage title="Gestion Multi-SFD" />} />
+      <Route path="/secure-layer" element={<PlaceholderPage title="Sécurité Avancée" />} />
+      <Route path="/funds-management" element={<PlaceholderPage title="Gestion des Fonds" />} />
+      <Route path="/late-payments" element={<PlaceholderPage title="Alertes Retards" />} />
+      <Route path="/contact-advisor" element={<PlaceholderPage title="Contacter un Conseiller" />} />
+      <Route path="/faq" element={<PlaceholderPage title="FAQ et Assistance" />} />
+      <Route path="/search" element={<PlaceholderPage title="Rechercher" />} />
+      
+      {/* Routes administrateur */}
       <Route path="/admin/dashboard" element={<SuperAdminDashboard />} />
       <Route path="/admin/users" element={<UsersListPage />} />
       <Route path="/admin/users/:userId" element={<UsersManagementPage />} />
       <Route path="/sfd-management" element={<SfdManagementPage />} />
+      
+      {/* Redirection par défaut */}
       <Route path="*" element={<Navigate to="/main" replace />} />
     </Routes>
   );
 };
+
+export default MobileRouter;

@@ -1,12 +1,12 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Plus, CreditCard, ArrowUpDown, Wallet, LineChart } from 'lucide-react';
+import { ArrowRight, Plus, CreditCard, ArrowUpDown, Wallet, LineChart, Menu } from 'lucide-react';
 import { Account } from '@/types/transactions';
 import { Transaction } from '@/types/transactions';
 import TransactionList from '../TransactionList';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
+import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
 
 export interface MainDashboardProps {
   onAction?: (newView: string, data?: any) => void;
@@ -23,13 +23,23 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   transactionsLoading = false,
   toggleMenu
 }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  
+  const handleOpenMenu = () => {
+    setMenuOpen(true);
+  };
+
+  const handleCloseMenu = () => {
+    setMenuOpen(false);
+  };
+
   return (
     <div className="pb-20">
       <div className="bg-[#0D6A51] text-white p-4">
         <div className="flex justify-between items-center">
           <h1 className="text-xl font-bold">Tableau de Bord</h1>
-          <Button variant="ghost" className="text-white" onClick={toggleMenu}>
-            <LineChart className="h-5 w-5" />
+          <Button variant="ghost" className="text-white" onClick={handleOpenMenu}>
+            <Menu className="h-5 w-5" />
           </Button>
         </div>
         
@@ -130,8 +140,12 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
         />
       </div>
 
-      {/* Ensure the mobile navigation footer is visible */}
-      <div className="fixed bottom-0 left-0 right-0 sm:hidden">
+      <MobileDrawerMenu 
+        isOpen={menuOpen}
+        onClose={handleCloseMenu}
+      />
+
+      <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden">
         <MobileNavigation />
       </div>
     </div>
