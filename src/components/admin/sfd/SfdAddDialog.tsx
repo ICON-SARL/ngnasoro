@@ -28,13 +28,13 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, UserPlus, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useCreateSfdMutation } from '@/components/admin/hooks/sfd-management/mutations/useCreateSfdMutation';
 import { sfdFormSchema, SfdFormValues } from './schemas/sfdFormSchema';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface SfdAddDialogProps {
   open: boolean;
@@ -53,6 +53,8 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
   const [existingAdmins, setExistingAdmins] = useState<ExistingAdmin[]>([]);
   const [selectedAdmin, setSelectedAdmin] = useState<string>('');
   const [isLoadingAdmins, setIsLoadingAdmins] = useState(false);
+  const [adminLoadError, setAdminLoadError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const form = useForm<SfdFormValues>({
     resolver: zodResolver(sfdFormSchema),
@@ -73,16 +75,55 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
 
   const fetchExistingAdmins = async () => {
     setIsLoadingAdmins(true);
+    setAdminLoadError(null);
     try {
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('id, email, full_name')
-        .eq('role', 'sfd_admin');
+      console.log("Fetching existing SFD admins...");
+      
+      // Call the fetch-admin-users Edge Function
+      const { data, error } = await supabase.functions.invoke('fetch-admin-users', {
+        method: 'POST',
+        body: JSON.stringify({ timestamp: Date.now() }) // Add timestamp to prevent caching
+      });
+      
+      if (error) {
+        console.error("Error calling fetch-admin-users:", error);
+        throw new Error(`Erreur lors de la récupération des administrateurs: ${error.message}`);
+      }
+      
+      if (!data || !Array.isArray(data)) {
+        console.error("Invalid response format:", data);
+        throw new Error("Format de réponse invalide");
+      }
+      
+      // Filter to only include sfd_admin role
+      const sfdAdmins = data.filter(admin => admin.role === 'sfd_admin');
+      
+      if (sfdAdmins.length === 0) {
+        console.warn("No SFD admins found in the response");
         
-      if (error) throw error;
-      setExistingAdmins(data || []);
-    } catch (err) {
+        // Attempt to get from admin_users table directly as fallback
+        const { data: adminUsers, error: adminError } = await supabase
+          .from('admin_users')
+          .select('id, email, full_name')
+          .eq('role', 'sfd_admin');
+          
+        if (adminError) {
+          console.error("Error fetching from admin_users:", adminError);
+        } else if (adminUsers && adminUsers.length > 0) {
+          console.log(`Found ${adminUsers.length} admins in admin_users table`);
+          setExistingAdmins(adminUsers);
+          return;
+        }
+        
+        // If still no admins, show error message
+        setAdminLoadError("Aucun administrateur SFD disponible. Veuillez d'abord créer un administrateur SFD.");
+      } else {
+        console.log(`Found ${sfdAdmins.length} SFD admins:`, sfdAdmins);
+        setExistingAdmins(sfdAdmins);
+      }
+    } catch (err: any) {
       console.error('Error fetching existing admins:', err);
+      setAdminLoadError(err.message || "Impossible de récupérer les administrateurs");
     } finally {
       setIsLoadingAdmins(false);
     }
@@ -121,6 +162,12 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
         existingAdminId = selectedAdmin;
       }
       
+      console.log("Submitting SFD creation request:", {
+        createAdmin,
+        hasAdminData: !!adminData,
+        existingAdminId
+      });
+      
       await mutateAsync({ 
         sfdData, 
         createAdmin, 
@@ -135,6 +182,10 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
     } catch (error) {
       console.error('Erreur lors de l\'ajout de la SFD:', error);
     }
+  };
+  
+  const handleRefreshAdmins = () => {
+    fetchExistingAdmins();
   };
 
   // Reset form state when dialog is closed
@@ -345,31 +396,60 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
                 
                 <TabsContent value="existing-admin">
                   <div className="space-y-4">
-                    <FormItem>
-                      <FormLabel>Sélectionner un administrateur existant</FormLabel>
+                    <div className="flex justify-between items-center mb-2">
+                      <FormLabel className="text-sm font-medium">Sélectionner un administrateur existant</FormLabel>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleRefreshAdmins}
+                        disabled={isLoadingAdmins}
+                      >
+                        {isLoadingAdmins ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-3 w-3" />
+                        )}
+                        <span className="ml-1">Rafraîchir</span>
+                      </Button>
+                    </div>
+                    
+                    {adminLoadError && (
+                      <Alert variant="destructive" className="mb-2">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{adminLoadError}</AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {isLoadingAdmins ? (
+                      <div className="flex items-center justify-center py-4 bg-muted/20 rounded-md">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <span className="ml-2">Chargement des administrateurs...</span>
+                      </div>
+                    ) : existingAdmins.length > 0 ? (
                       <Select value={selectedAdmin} onValueChange={setSelectedAdmin}>
                         <SelectTrigger>
                           <SelectValue placeholder="Choisir un administrateur" />
                         </SelectTrigger>
                         <SelectContent>
-                          {isLoadingAdmins ? (
-                            <div className="flex items-center justify-center p-2">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            </div>
-                          ) : existingAdmins.length > 0 ? (
-                            existingAdmins.map(admin => (
-                              <SelectItem key={admin.id} value={admin.id}>
-                                {admin.full_name} ({admin.email})
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <div className="text-sm text-muted-foreground p-2">
-                              Aucun administrateur SFD disponible
-                            </div>
-                          )}
+                          {existingAdmins.map(admin => (
+                            <SelectItem key={admin.id} value={admin.id}>
+                              {admin.full_name} ({admin.email})
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                    </FormItem>
+                    ) : (
+                      <div className="bg-muted/20 p-4 rounded flex flex-col items-center justify-center">
+                        <UserPlus className="h-10 w-10 text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground text-center mb-1">
+                          Aucun administrateur SFD disponible
+                        </p>
+                        <p className="text-xs text-muted-foreground text-center">
+                          Créez un nouvel administrateur SFD ou utilisez l'option "Nouvel Admin"
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>
