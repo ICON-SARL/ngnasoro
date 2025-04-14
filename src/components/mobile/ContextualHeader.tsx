@@ -23,7 +23,6 @@ const ContextualHeader = () => {
             </div>
           </div>
           
-          {/* SFD Selector positioned below the logo */}
           <SfdSelector className="mt-2" />
         </div>
         
