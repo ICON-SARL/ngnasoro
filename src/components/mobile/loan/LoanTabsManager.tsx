@@ -1,13 +1,11 @@
 
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Dialog } from '@/components/ui/dialog';
 import LoanTrackingTab from './LoanTrackingTab';
 import LoanDetailsTab from './LoanDetailsTab';
 import LoanRepaymentTab from './LoanRepaymentTab';
 import LoanPlansDisplay from './LoanPlansDisplay';
 import QRCodePaymentDialog from './QRCodePaymentDialog';
-import { LoanStatus, LoanDetails } from '@/hooks/useLoanDetails';
 
 interface LoanTabsManagerProps {
   activeTab: string;
@@ -63,19 +61,12 @@ const LoanTabsManager: React.FC<LoanTabsManagerProps> = ({
       </TabsContent>
 
       <TabsContent value="repayment">
-        <Dialog>
-          <LoanRepaymentTab 
-            nextPaymentDue={loanStatus.nextPaymentDue}
-            paymentHistory={loanStatus.paymentHistory}
-            onMobileMoneyPayment={onMobileMoneyPayment}
-            loanId={loanId}
-          />
-          <QRCodePaymentDialog 
-            onClose={() => {}} 
-            amount={loanStatus.remainingAmount} 
-            isWithdrawal={false} 
-          />
-        </Dialog>
+        <LoanRepaymentTab 
+          nextPaymentDue={loanStatus.nextPaymentDue}
+          paymentHistory={loanStatus.paymentHistory}
+          onMobileMoneyPayment={onMobileMoneyPayment}
+          loanId={loanId}
+        />
       </TabsContent>
       
       <TabsContent value="plans">

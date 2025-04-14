@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Building, Smartphone } from 'lucide-react';
-import { DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { 
   NextPaymentCard, 
   PaymentOptionCard, 
@@ -53,16 +53,18 @@ const LoanRepaymentTab = ({
           onClick={() => handlePaymentMethod('mobile')}
         />
         
-        <DialogTrigger asChild>
-          <PaymentOptionCard
-            title="Paiement en agence SFD"
-            description="Générez un QR code à présenter en agence"
-            icon={Building}
-            iconBgClass="bg-blue-100"
-            iconColorClass="text-blue-600"
-            onClick={() => handlePaymentMethod('agency')}
-          />
-        </DialogTrigger>
+        <Dialog>
+          <DialogTrigger asChild>
+            <PaymentOptionCard
+              title="Paiement en agence SFD"
+              description="Générez un QR code à présenter en agence"
+              icon={Building}
+              iconBgClass="bg-blue-100"
+              iconColorClass="text-blue-600"
+              onClick={() => handlePaymentMethod('agency')}
+            />
+          </DialogTrigger>
+        </Dialog>
         
         <PaymentHistoryCard paymentHistory={paymentHistory} />
       </div>
