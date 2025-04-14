@@ -148,7 +148,7 @@ export function AuditLogsManager() {
                     <SelectValue placeholder="Catégorie" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Toutes les catégories</SelectItem>
+                    <SelectItem value="all">Toutes les catégories</SelectItem>
                     <SelectItem value="AUTHENTICATION">Authentification</SelectItem>
                     <SelectItem value="DATA_ACCESS">Accès aux données</SelectItem>
                     <SelectItem value="ADMINISTRATION">Administration</SelectItem>
@@ -167,7 +167,7 @@ export function AuditLogsManager() {
                     <SelectValue placeholder="Sévérité" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Toutes les sévérités</SelectItem>
+                    <SelectItem value="all">Toutes les sévérités</SelectItem>
                     <SelectItem value="INFO">Info</SelectItem>
                     <SelectItem value="WARNING">Avertissement</SelectItem>
                     <SelectItem value="ERROR">Erreur</SelectItem>
@@ -185,7 +185,7 @@ export function AuditLogsManager() {
                     <SelectValue placeholder="Statut" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tous les statuts</SelectItem>
+                    <SelectItem value="all">Tous les statuts</SelectItem>
                     <SelectItem value="success">Succès</SelectItem>
                     <SelectItem value="failure">Échec</SelectItem>
                     <SelectItem value="pending">En cours</SelectItem>
@@ -317,3 +317,4 @@ export function AuditLogsManager() {
     </div>
   );
 }
+

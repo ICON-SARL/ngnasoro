@@ -46,7 +46,7 @@ export function AuditLogFilters({
               <SelectValue placeholder="Toutes les catégories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Toutes les catégories</SelectItem>
+              <SelectItem value="all">Toutes les catégories</SelectItem>
               <SelectItem value="sfd_operations">Opérations SFD</SelectItem>
               <SelectItem value="user_management">Gestion Utilisateurs</SelectItem>
               <SelectItem value="data_access">Accès aux données</SelectItem>
@@ -65,7 +65,7 @@ export function AuditLogFilters({
               <SelectValue placeholder="Toutes les sévérités" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Toutes les sévérités</SelectItem>
+              <SelectItem value="all">Toutes les sévérités</SelectItem>
               <SelectItem value="info">Info</SelectItem>
               <SelectItem value="warning">Avertissement</SelectItem>
               <SelectItem value="error">Erreur</SelectItem>
@@ -113,3 +113,4 @@ export function AuditLogFilters({
     </div>
   );
 }
+

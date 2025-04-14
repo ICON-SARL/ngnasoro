@@ -74,7 +74,7 @@ export function AuditLogFilters({
                 <SelectValue placeholder="Toutes" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Toutes les catégories</SelectItem>
+                <SelectItem value="all">Toutes les catégories</SelectItem>
                 {Object.values(AuditLogCategory).map(category => (
                   <SelectItem key={category} value={category}>{category}</SelectItem>
                 ))}
@@ -92,7 +92,7 @@ export function AuditLogFilters({
                 <SelectValue placeholder="Toutes" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Toutes les sévérités</SelectItem>
+                <SelectItem value="all">Toutes les sévérités</SelectItem>
                 {Object.values(AuditLogSeverity).map(severity => (
                   <SelectItem key={severity} value={severity}>{severity}</SelectItem>
                 ))}
@@ -110,7 +110,7 @@ export function AuditLogFilters({
                 <SelectValue placeholder="Tous" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les statuts</SelectItem>
+                <SelectItem value="all">Tous les statuts</SelectItem>
                 <SelectItem value="success">Succès</SelectItem>
                 <SelectItem value="failure">Échec</SelectItem>
               </SelectContent>
@@ -146,3 +146,4 @@ export function AuditLogFilters({
     </Card>
   );
 }
+

@@ -194,7 +194,7 @@ export const AuditLogs = () => {
                   <SelectValue placeholder="Toutes les catégories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Toutes les catégories</SelectItem>
+                  <SelectItem value="all">Toutes les catégories</SelectItem>
                   {Object.values(AuditLogCategory).map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
@@ -212,7 +212,7 @@ export const AuditLogs = () => {
                   <SelectValue placeholder="Toutes les sévérités" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Toutes les sévérités</SelectItem>
+                  <SelectItem value="all">Toutes les sévérités</SelectItem>
                   {Object.values(AuditLogSeverity).map(sev => (
                     <SelectItem key={sev} value={sev}>{sev}</SelectItem>
                   ))}
@@ -230,7 +230,7 @@ export const AuditLogs = () => {
                   <SelectValue placeholder="Tous les statuts" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les statuts</SelectItem>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
                   <SelectItem value="success">Succès</SelectItem>
                   <SelectItem value="failure">Échec</SelectItem>
                   <SelectItem value="pending">En attente</SelectItem>
@@ -377,3 +377,4 @@ export const AuditLogs = () => {
     </div>
   );
 };
+
