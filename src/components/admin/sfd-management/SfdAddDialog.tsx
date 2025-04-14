@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAddSfdMutation, SfdFormValues } from '@/components/admin/hooks/sfd-management/mutations/useAddSfdMutation';
+import { useAddSfdMutation, SfdFormValues } from '../hooks/sfd-management/mutations/useAddSfdMutation';
 import { sfdFormSchema } from '@/components/admin/sfd/schemas/sfdFormSchema';
 
 interface SfdAddDialogProps {
@@ -47,7 +47,7 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
       phone: '',
       address: '',
       logo_url: '',
-      legal_document_url: null,
+      legal_document_url: '',
       subsidy_balance: 0,
     },
   });

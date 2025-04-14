@@ -6,7 +6,8 @@ export const createUserFromSupabaseUser = (supabaseUser: SupabaseUser): User => 
   return {
     ...supabaseUser,
     app_metadata: supabaseUser.app_metadata || { role: 'user' },
-    user_metadata: supabaseUser.user_metadata || {}
+    user_metadata: supabaseUser.user_metadata || {},
+    full_name: supabaseUser.user_metadata?.full_name || ''
   };
 };
 

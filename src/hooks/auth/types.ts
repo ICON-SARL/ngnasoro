@@ -18,6 +18,7 @@ export interface User extends SupabaseUser {
     full_name?: string;
     [key: string]: any;
   };
+  full_name?: string; // Adding direct property for compatibility
 }
 
 export type Role = 'admin' | 'sfd_admin' | 'client' | 'user';
