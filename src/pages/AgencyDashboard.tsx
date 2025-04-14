@@ -1,19 +1,17 @@
-
 import React, { useState } from 'react';
 import { AgencyHeader } from '@/components/AgencyHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SfdUserManagement } from '@/components/sfd/SfdUserManagement';
 import { SfdRoleManager } from '@/components/sfd/roles'; 
 import { ClientManagement } from '@/components/sfd/ClientManagement';
 import { LoanManagement } from '@/components/sfd/LoanManagement';
 import { Reports } from '@/components/reports';
-import { FinancialReporting } from '@/components/FinancialReporting';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 import { Loader2, ClipboardList, RefreshCw } from 'lucide-react';
 import { SfdDashboardStats } from '@/components/sfd/dashboard/SfdDashboardStats';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatDate } from '@/utils/formatters';
