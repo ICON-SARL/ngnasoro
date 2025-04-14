@@ -18,37 +18,28 @@ export default function useSfdAccountsData(
     return data.map(sfd => ({
       id: sfd.id,
       name: sfd.name,
-      balance: 0, // Default values since SfdData doesn't include these
-      currency: 'FCFA',
+      balance: sfd.balance || 0,
+      currency: sfd.currency || 'FCFA',
+      code: sfd.code || '',
+      region: sfd.region || '',
+      logoUrl: sfd.logoUrl || sfd.logo_url || null,
+      isDefault: sfd.isDefault || sfd.is_default || false,
+      isVerified: true
     }));
   };
 
-  // Transform sfdAccounts to SfdAccountDisplay
-  const transformSfdAccounts = (): SfdAccountDisplay[] => {
-    return sfdAccounts.map(acc => ({
-      id: acc.id,
-      name: acc.name,
-      logoUrl: acc.logoUrl,
-      region: acc.region,
-      code: acc.code,
-      isDefault: acc.isDefault,
-      balance: acc.balance,
-      currency: acc.currency,
-      isVerified: true // Ensure all accounts are shown as verified
-    }));
-  };
-
-  // Transform the data to our common format
-  const displayAccounts: SfdAccountDisplay[] = useMemo(() => {
-    return propsSfdData 
-      ? transformSfdData(propsSfdData)
-      : transformSfdAccounts();
+  // Determine which data source to use
+  const displayAccounts = useMemo(() => {
+    if (propsSfdData && propsSfdData.length > 0) {
+      return transformSfdData(propsSfdData);
+    }
+    
+    return transformSfdData(sfdAccounts);
   }, [propsSfdData, sfdAccounts]);
 
   return {
-    sfdAccounts,
-    effectiveActiveSfdId,
     displayAccounts,
+    effectiveActiveSfdId,
     isLoading,
     refetch
   };

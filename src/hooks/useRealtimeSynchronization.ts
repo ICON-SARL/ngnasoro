@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,11 +43,11 @@ export function useRealtimeSynchronization() {
       
       // Direct call to the supabase functions API for more control
       const { data: functionResponse, error: functionError } = await supabase.functions.invoke('synchronize-sfd-accounts', {
-        body: JSON.stringify({
+        body: {
           userId: user.id,
-          sfdId: activeSfdId,
+          sfdId: activeSfdId || '',
           forceSync: true
-        })
+        }
       });
       
       if (functionError) {
@@ -82,14 +83,17 @@ export function useRealtimeSynchronization() {
       
       // Report error to admin backend
       if (activeSfdId) {
-        adminCommunicationApi.reportSyncError(
-          user.id, 
-          activeSfdId, 
-          error.message || "Unknown synchronization error", 
-          error.stack
-        ).catch(() => {
+        try {
+          await adminCommunicationApi.reportSyncError(
+            user.id, 
+            activeSfdId, 
+            error.message || "Unknown synchronization error", 
+            error.stack
+          );
+        } catch (reportError) {
           // Silent failure for error reporting
-        });
+          console.error("Failed to report error:", reportError);
+        }
       }
       
       // Show a more user-friendly error message based on retry count
