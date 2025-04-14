@@ -1,11 +1,30 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { MainDashboard, HomeLoanPage, MobileSavingsPage, MobileTransactionsPage, LoanAgreementPage, LoanDetailsPage, LoanRepaymentPage, LoanActivityPage, AccountPage, SettingsPage, HelpPage, AboutPage, TermsPage, PrivacyPage, SecurePaymentPage, LoanPlansPage, LoanProcessPage, SfdSelectorPage } from '@/components/mobile';
-import { MobileMenu } from '@/components/mobile/MobileMenu';
+import { 
+  MainDashboard, 
+  HomeLoanPage, 
+  MobileSavingsPage, 
+  MobileTransactionsPage, 
+  LoanAgreementPage, 
+  LoanDetailsPage, 
+  LoanActivityPage, 
+  AccountPage, 
+  SettingsPage, 
+  HelpPage, 
+  AboutPage, 
+  TermsPage, 
+  PrivacyPage, 
+  SecurePaymentPage, 
+  LoanPlansPage, 
+  SfdSelectorPage 
+} from '@/components/mobile';
+import MobileMenu from '@/components/mobile/MobileMenu';
 import { Account } from '@/types/transactions';
 import { apiClient } from '@/utils/apiClient';
+import { useTransactions } from '@/hooks/transactions';
 
 const MobileApp = () => {
   const [view, setView] = useState('Home');
@@ -94,7 +113,7 @@ const MobileApp = () => {
       case 'LoanDetails':
         return <LoanDetailsPage />;
       case 'Payment':
-        return <LoanRepaymentPage />;
+        return <SecurePaymentPage />;
       case 'LoanActivity':
         return <LoanActivityPage />;
       case 'Account':
@@ -114,7 +133,7 @@ const MobileApp = () => {
       case 'LoanPlans':
         return <LoanPlansPage />;
       case 'Loan Process':
-        return <LoanProcessPage />;
+        return <LoanPlansPage />;
       case 'SFDSelector':
         return <SfdSelectorPage />;
       default:
