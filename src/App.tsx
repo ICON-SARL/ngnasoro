@@ -19,6 +19,10 @@ import AdminLoginPage from '@/pages/AdminLoginPage';
 import ClientLoginPage from '@/pages/ClientLoginPage';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import AgencyDashboard from '@/pages/AgencyDashboard';
+import SfdSubsidyRequestsPage from '@/pages/SfdSubsidyRequestsPage';
+import ClientsPage from '@/pages/ClientsPage';
+import TransactionsPage from '@/pages/TransactionsPage';
+import SfdLoansPage from '@/pages/SfdLoansPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -50,6 +54,12 @@ function App() {
               {/* Admin Dashboards */}
               <Route path="/super-admin-dashboard/*" element={<SuperAdminDashboard />} />
               <Route path="/agency-dashboard/*" element={<AgencyDashboard />} />
+              
+              {/* SFD Management Pages */}
+              <Route path="/sfd-loans" element={<SfdLoansPage />} />
+              <Route path="/sfd-clients" element={<ClientsPage />} />
+              <Route path="/sfd-transactions" element={<TransactionsPage />} />
+              <Route path="/sfd-subsidy-requests" element={<SfdSubsidyRequestsPage />} />
               
               {/* Mobile Routes */}
               <Route path="/mobile-flow/main" element={<MobileMainPage />} />

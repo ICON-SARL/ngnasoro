@@ -10,11 +10,15 @@ import { LoanManagement } from '@/components/sfd/LoanManagement';
 import { Reports } from '@/components/reports';
 import { FinancialReporting } from '@/components/FinancialReporting';
 import { useSfdDashboardStats } from '@/hooks/useSfdDashboardStats';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CreditCard, Users, FileText, Landmark } from 'lucide-react';
+import { SfdDashboardStats } from '@/components/sfd/dashboard/SfdDashboardStats';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 const AgencyDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { data: dashboardStats, isLoading } = useSfdDashboardStats();
+  const navigate = useNavigate();
 
   // Format currency function
   const formatCurrency = (amount: number) => {
@@ -33,7 +37,43 @@ const AgencyDashboard = () => {
           </div>
         </div>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <Card className="hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/sfd-loans')}>
+            <CardContent className="p-6 flex flex-col items-center justify-center text-center">
+              <CreditCard className="h-10 w-10 text-[#0D6A51] mb-3" />
+              <h3 className="font-semibold text-lg">Prêts</h3>
+              <p className="text-sm text-muted-foreground">Gérer les prêts</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/sfd-clients')}>
+            <CardContent className="p-6 flex flex-col items-center justify-center text-center">
+              <Users className="h-10 w-10 text-[#0D6A51] mb-3" />
+              <h3 className="font-semibold text-lg">Clients</h3>
+              <p className="text-sm text-muted-foreground">Gérer les clients</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/sfd-transactions')}>
+            <CardContent className="p-6 flex flex-col items-center justify-center text-center">
+              <FileText className="h-10 w-10 text-[#0D6A51] mb-3" />
+              <h3 className="font-semibold text-lg">Transactions</h3>
+              <p className="text-sm text-muted-foreground">Suivi financier</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/sfd-subsidy-requests')}>
+            <CardContent className="p-6 flex flex-col items-center justify-center text-center">
+              <Landmark className="h-10 w-10 text-[#0D6A51] mb-3" />
+              <h3 className="font-semibold text-lg">Subventions</h3>
+              <p className="text-sm text-muted-foreground">Demandes</p>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <SfdDashboardStats />
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
           <div className="border-b">
             <TabsList className="mx-4">
               <TabsTrigger value="dashboard">Tableau de bord</TabsTrigger>
@@ -64,6 +104,13 @@ const AgencyDashboard = () => {
                       <p className="text-xs text-muted-foreground">
                         +{dashboardStats?.clients.percentageChange || 0}% depuis le mois dernier
                       </p>
+                      <Button 
+                        variant="link" 
+                        className="p-0 mt-2 text-[#0D6A51]"
+                        onClick={() => navigate('/sfd-clients')}
+                      >
+                        Voir tous les clients
+                      </Button>
                     </CardContent>
                   </Card>
                   
@@ -77,6 +124,13 @@ const AgencyDashboard = () => {
                       <p className="text-xs text-muted-foreground">
                         Total: {formatCurrency(dashboardStats?.loans.totalAmount || 0)}
                       </p>
+                      <Button 
+                        variant="link" 
+                        className="p-0 mt-2 text-[#0D6A51]"
+                        onClick={() => navigate('/sfd-loans')}
+                      >
+                        Gérer les prêts
+                      </Button>
                     </CardContent>
                   </Card>
                   
@@ -92,6 +146,13 @@ const AgencyDashboard = () => {
                       <p className="text-xs text-muted-foreground">
                         {dashboardStats?.repayments.repaymentRate || 0}% taux de remboursement
                       </p>
+                      <Button 
+                        variant="link" 
+                        className="p-0 mt-2 text-[#0D6A51]"
+                        onClick={() => navigate('/sfd-transactions')}
+                      >
+                        Voir les transactions
+                      </Button>
                     </CardContent>
                   </Card>
                 </div>

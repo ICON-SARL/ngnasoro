@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Building, CreditCard, Users, FileText, LogOut, Settings } from 'lucide-react';
+import { Building, CreditCard, Users, FileText, LogOut, Settings, Landmark } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -152,8 +152,20 @@ export const AgencyHeader = () => {
                   <Building className="mr-2 h-4 w-4" />
                   <span>Tableau de bord</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/sfd-subsidy-requests')}>
+                <DropdownMenuItem onClick={() => navigate('/sfd-loans')}>
                   <CreditCard className="mr-2 h-4 w-4" />
+                  <span>Prêts</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/sfd-clients')}>
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Clients</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/sfd-transactions')}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  <span>Transactions</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/sfd-subsidy-requests')}>
+                  <Landmark className="mr-2 h-4 w-4" />
                   <span>Demandes de subvention</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/sfd-settings')}>

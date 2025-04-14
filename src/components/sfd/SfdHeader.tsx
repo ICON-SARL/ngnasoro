@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -58,9 +59,10 @@ export function SfdHeader() {
 
   const navLinks = [
     { name: 'Tableau de bord', icon: <PieChart className="w-4 h-4 mr-2" />, path: '/agency-dashboard' },
-    { name: 'Clients', icon: <Users className="w-4 h-4 mr-2" />, path: '/sfd-clients' },
     { name: 'Prêts', icon: <CreditCard className="w-4 h-4 mr-2" />, path: '/sfd-loans' },
-    { name: 'Subventions', icon: <Landmark className="w-4 h-4 mr-2" />, path: '/sfd-subsidies' },
+    { name: 'Clients', icon: <Users className="w-4 h-4 mr-2" />, path: '/sfd-clients' },
+    { name: 'Transactions', icon: <PieChart className="w-4 h-4 mr-2" />, path: '/sfd-transactions' },
+    { name: 'Demandes de Subvention', icon: <Landmark className="w-4 h-4 mr-2" />, path: '/sfd-subsidy-requests' },
     { name: 'Paramètres', icon: <Settings className="w-4 h-4 mr-2" />, path: '/sfd-settings' },
   ];
   
