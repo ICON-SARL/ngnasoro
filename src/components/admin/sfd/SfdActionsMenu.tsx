@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Eye, MoreHorizontal, Pencil, XCircle, Check, Power } from 'lucide-react';
+import { Eye, MoreHorizontal, Pencil, XCircle, Check, Power, Key } from 'lucide-react';
 import { Sfd } from '../types/sfd-types';
 
 interface SfdActionsMenuProps {
@@ -19,6 +19,7 @@ interface SfdActionsMenuProps {
   onActivate: (sfd: Sfd) => void;
   onEdit: (sfd: Sfd) => void;
   onViewDetails?: (sfd: Sfd) => void;
+  onResetPassword?: (sfd: Sfd) => void;
 }
 
 export function SfdActionsMenu({ 
@@ -27,7 +28,8 @@ export function SfdActionsMenu({
   onReactivate, 
   onActivate,
   onEdit,
-  onViewDetails 
+  onViewDetails,
+  onResetPassword
 }: SfdActionsMenuProps) {
   return (
     <DropdownMenu>
@@ -53,13 +55,20 @@ export function SfdActionsMenu({
           <span>Modifier</span>
         </DropdownMenuItem>
         
+        {onResetPassword && (
+          <DropdownMenuItem onClick={() => onResetPassword(sfd)}>
+            <Key className="mr-2 h-4 w-4" />
+            <span>Réinitialiser mot de passe</span>
+          </DropdownMenuItem>
+        )}
+        
         {(!sfd.status || sfd.status === 'active') ? (
           <DropdownMenuItem 
             onClick={() => onSuspend(sfd)}
             className="text-red-600 hover:text-red-700"
           >
             <XCircle className="mr-2 h-4 w-4" />
-            <span>Suspendre</span>
+            <span>Désactiver</span>
           </DropdownMenuItem>
         ) : sfd.status === 'suspended' ? (
           <DropdownMenuItem 
