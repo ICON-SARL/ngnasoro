@@ -41,3 +41,6 @@ enabled = true
 
 [functions.delete-sfd-admin]
 verify_jwt = true
+
+[functions.fetch-sfds]
+verify_jwt = true
