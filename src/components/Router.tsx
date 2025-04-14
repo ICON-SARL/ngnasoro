@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import MobileMainPage from '@/components/mobile/MobileMainPage';
@@ -15,6 +14,9 @@ import NotificationsPage from '@/pages/mobile/account/NotificationsPage';
 import SecurityPage from '@/pages/mobile/account/SecurityPage';
 import AboutPage from '@/pages/mobile/account/AboutPage';
 import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import UsersListPage from '@/pages/admin/UsersListPage';
+import UserDetailsPage from '@/pages/admin/UserDetailsPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -67,6 +69,9 @@ export const MobileRouter = () => {
       <Route path="/loan-agreement" element={<LoanAgreementPage />} />
       <Route path="/loan-application" element={<MobileLoanApplicationPage />} />
       <Route path="/sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      <Route path="/admin/users" element={<UsersListPage />} />
+      <Route path="/admin/users/:userId" element={<UserDetailsPage />} />
       <Route path="*" element={<Navigate to="/main" replace />} />
     </Routes>
   );

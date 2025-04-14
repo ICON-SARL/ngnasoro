@@ -12,7 +12,7 @@ import { AdminUsersList } from '@/components/admin/shared/AdminUsersList';
 import { AdminAccountsManager } from '@/components/admin/roles/AdminAccountsManager';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 import { Button } from '@/components/ui/button';
-import { FileText, Building, Users, Shield } from 'lucide-react';
+import { FileText, Building, Users, Shield, UserPlus } from 'lucide-react';
 import { Footer } from '@/components';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -94,15 +94,15 @@ const SuperAdminDashboard = () => {
             
             <Card
               className="hover:shadow-md transition-all cursor-pointer border-gray-200"
-              onClick={() => handleCardClick('/audit-logs')}
+              onClick={() => handleCardClick('/admin/users')}
             >
               <CardContent className="p-6 flex items-center gap-4">
                 <div className="h-12 w-12 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center">
-                  <Shield size={24} />
+                  <Users size={24} />
                 </div>
                 <div>
-                  <h3 className="font-medium text-lg">Journal d'Audit</h3>
-                  <p className="text-sm text-muted-foreground">Historique des actions</p>
+                  <h3 className="font-medium text-lg">Utilisateurs</h3>
+                  <p className="text-sm text-muted-foreground">Gestion des utilisateurs</p>
                 </div>
               </CardContent>
             </Card>
@@ -130,16 +130,31 @@ const SuperAdminDashboard = () => {
         
         {activeTab === 'admins' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-semibold">Gestion des Administrateurs</h2>
-            <AdminAccountsManager />
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-semibold">Gestion des Administrateurs</h2>
+              <Button>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Nouvel Admin
+              </Button>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
+              <AdminUsersList />
+            </div>
           </div>
         )}
         
         {activeTab === 'users' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-semibold">Utilisateurs</h2>
-            <p className="text-muted-foreground">Liste de tous les utilisateurs de la plateforme</p>
-            <AdminUsersList />
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-semibold">Utilisateurs</h2>
+              <Button>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Nouvel Utilisateur
+              </Button>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
+              <AdminUsersList />
+            </div>
           </div>
         )}
         

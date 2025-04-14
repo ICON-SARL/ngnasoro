@@ -75,6 +75,16 @@ export function useSuperAdminManagement() {
           created_at: new Date().toISOString(),
           last_sign_in_at: null,
           is_active: false
+        },
+        {
+          id: '3',
+          email: 'admin@example.com',
+          full_name: 'Admin Test',
+          role: 'admin',
+          has_2fa: true,
+          created_at: new Date().toISOString(),
+          last_sign_in_at: new Date().toISOString(),
+          is_active: true
         }
       ];
       
