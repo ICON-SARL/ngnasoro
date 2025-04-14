@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { adminApi } from '@/utils/api/modules/adminApi';
 import { useToast } from '@/hooks/use-toast';
 import { AssociateSfdParams } from '@/hooks/auth/types';
+import { useAuth } from '@/hooks/useAuth';
 
 export function useSfdAssociation() {
   const [isLoading, setIsLoading] = useState(false);
   const [userSfds, setUserSfds] = useState<any[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const fetchUserSfds = async (userId: string) => {
     setIsLoading(true);
@@ -63,6 +65,23 @@ export function useSfdAssociation() {
     }
   };
 
+  const associateCurrentUserWithSfd = async (sfdId: string, makeDefault: boolean = true) => {
+    if (!user) {
+      toast({
+        title: 'Erreur',
+        description: 'Aucun utilisateur connecté',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    return await associateWithSfd({
+      userId: user.id,
+      sfdId,
+      makeDefault
+    });
+  };
+
   const removeAssociation = async (userId: string, sfdId: string) => {
     setIsLoading(true);
     try {
@@ -103,6 +122,7 @@ export function useSfdAssociation() {
     userSfds,
     fetchUserSfds,
     associateWithSfd,
+    associateCurrentUserWithSfd,
     removeAssociation
   };
 }
