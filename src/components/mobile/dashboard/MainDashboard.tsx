@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -130,8 +129,8 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
         />
       </div>
 
-      {/* Add the Mobile Navigation Footer */}
-      <div className="sm:hidden">
+      {/* Always display the mobile navigation footer */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0">
         <MobileNavigation />
       </div>
     </div>
