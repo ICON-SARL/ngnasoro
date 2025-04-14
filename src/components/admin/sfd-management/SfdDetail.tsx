@@ -7,7 +7,7 @@ import {
   MailIcon, 
   PhoneIcon,
   UsersIcon,
-  BanknotesIcon,
+  Banknote,
   PencilIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -100,7 +100,7 @@ export function SfdDetail({ selectedSfd, onEdit }: SfdDetailProps) {
           </div>
           
           <div className="flex items-center">
-            <BanknotesIcon className="h-5 w-5 text-gray-500 mr-2" />
+            <Banknote className="h-5 w-5 text-gray-500 mr-2" />
             <span>{selectedSfd.loan_count || 0} prêts</span>
           </div>
           

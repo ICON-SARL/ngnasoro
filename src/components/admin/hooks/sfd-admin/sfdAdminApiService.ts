@@ -68,3 +68,6 @@ export const sfdAdminApiService = {
     return data;
   }
 };
+
+// Export the individual functions for direct import
+export const { fetchSfdAdmins, createSfdAdmin, deleteSfdAdmin } = sfdAdminApiService;
