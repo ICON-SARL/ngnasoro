@@ -2,13 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { useAddSfdAdmin } from '@/components/admin/hooks/sfd-admin/useAddSfdAdmin';
+import { useAddSfdAdmin } from '@/hooks/useAddSfdAdmin';
 import { AddSfdAdminDialog } from '@/components/admin/sfd/AddSfdAdminDialog';
 import { SfdAdminList } from '@/components/admin/sfd/SfdAdminList';
-import { Plus, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { Plus, Loader2, RefreshCw, UserCog, AlertCircle } from 'lucide-react';
 import { useSfdAdminsList } from '../hooks/sfd-admin/useSfdAdminsList';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { SfdAdminAssociationDialog } from './SfdAdminAssociationDialog';
 
 interface SfdAdminManagerProps {
   sfdId: string;

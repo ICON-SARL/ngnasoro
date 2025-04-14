@@ -1,22 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
-import { useSfdAdminsList } from '@/components/admin/hooks/sfd-admin/useSfdAdminsList';
-import { useDeleteSfdAdmin } from '@/components/admin/hooks/sfd-admin/useDeleteSfdAdmin';
-import { 
-  Table, TableHeader, TableRow, TableHead, 
-  TableBody, TableCell 
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { 
-  Trash2, RefreshCw, UserPlus, AlertCircle,
-  Mail, Shield, Calendar, ExternalLink
-} from 'lucide-react';
+import React, { useEffect } from 'react';
+import { useSfdAdminsList } from '../hooks/sfd-admin/useSfdAdminsList';
 import { Badge } from '@/components/ui/badge';
-import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { formatDate } from '@/utils/formatters';
-import { SfdAdmin } from '../hooks/sfd-admin/sfdAdminApiService';
+import { Button } from '@/components/ui/button';
+import { Loader2, Mail, UserCog, ShieldAlert, Clock, Check } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface SfdAdminListProps {
   sfdId: string;
@@ -25,188 +14,104 @@ interface SfdAdminListProps {
 }
 
 export function SfdAdminList({ sfdId, sfdName, onAddAdmin }: SfdAdminListProps) {
-  const [selectedAdminId, setSelectedAdminId] = useState<string | null>(null);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
+  const { sfdAdmins, isLoading, error, refetch } = useSfdAdminsList(sfdId);
   
-  const { 
-    sfdAdmins, 
-    isLoading, 
-    error, 
-    refetch 
-  } = useSfdAdminsList(sfdId);
-  
-  const { 
-    deleteSfdAdmin, 
-    isDeleting, 
-    error: deleteError 
-  } = useDeleteSfdAdmin();
-
-  // Effet pour retenter automatiquement le chargement en cas d'erreur
   useEffect(() => {
-    if (error && retryCount < 2) {
-      const timer = setTimeout(() => {
-        console.log(`Nouvelle tentative de chargement (${retryCount + 1}/2)...`);
-        refetch();
-        setRetryCount(prev => prev + 1);
-      }, 3000); // Attendre 3 secondes avant de réessayer
-      
-      return () => clearTimeout(timer);
-    }
-  }, [error, retryCount, refetch]);
-
-  const handleDeleteConfirm = async () => {
-    if (selectedAdminId) {
-      await deleteSfdAdmin(selectedAdminId);
-      setIsConfirmOpen(false);
-      setSelectedAdminId(null);
-      refetch();
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setIsConfirmOpen(false);
-    setSelectedAdminId(null);
-  };
-
-  const promptDelete = (adminId: string) => {
-    setSelectedAdminId(adminId);
-    setIsConfirmOpen(true);
-  };
-
-  const handleRetry = () => {
-    setRetryCount(0);
+    // Charger la liste des administrateurs au montage du composant
     refetch();
-  };
-
-  // Si une erreur persiste après plusieurs tentatives, afficher l'erreur
-  if (error && retryCount >= 2) {
+  }, [sfdId]);
+  
+  if (isLoading) {
     return (
-      <Alert variant="destructive" className="mb-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Erreur de chargement</AlertTitle>
-        <AlertDescription>
-          Impossible de charger les administrateurs SFD. {error.toString()}
-          <div className="mt-2">
-            <Button variant="outline" size="sm" onClick={handleRetry}>
-              <RefreshCw className="h-4 w-4 mr-2" /> Réessayer
-            </Button>
-          </div>
-        </AlertDescription>
-      </Alert>
+      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin mb-2" />
+        <p>Chargement des administrateurs...</p>
+      </div>
     );
   }
-
-  // Afficher un état de chargement
-  if (isLoading && !sfdAdmins.length) {
+  
+  if (error) {
     return (
-      <div className="space-y-3">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="flex items-center space-x-4">
-            <Skeleton className="h-12 w-12 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-[250px]" />
-              <Skeleton className="h-4 w-[200px]" />
+      <div className="flex flex-col items-center justify-center py-8 text-destructive">
+        <ShieldAlert className="h-8 w-8 mb-2" />
+        <p>Erreur lors du chargement des administrateurs</p>
+        <Button 
+          variant="outline" 
+          className="mt-4"
+          onClick={() => refetch()}
+        >
+          Réessayer
+        </Button>
+      </div>
+    );
+  }
+  
+  if (!sfdAdmins || sfdAdmins.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 border-2 border-dashed rounded-lg">
+        <UserCog className="h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-medium mb-2">Aucun administrateur</h3>
+        <p className="text-muted-foreground text-center mb-6 max-w-md">
+          Cette SFD n'a pas encore d'administrateurs. Les administrateurs SFD peuvent gérer les clients,
+          les prêts et les opérations pour {sfdName}.
+        </p>
+        <Button onClick={onAddAdmin}>
+          Ajouter un administrateur
+        </Button>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4">
+        {sfdAdmins.map((admin) => (
+          <div 
+            key={admin.id}
+            className="p-4 border rounded-lg bg-card flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+          >
+            <div className="flex-1">
+              <div className="flex items-center">
+                <div className="mr-2 bg-primary/10 p-2 rounded-full">
+                  <UserCog className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">{admin.full_name}</h3>
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Mail className="h-3 w-3 mr-1" />
+                    {admin.email}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-col md:flex-row gap-2 items-start md:items-center">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-green-50 text-green-700">
+                  <Check className="h-3 w-3 mr-1" />
+                  Actif
+                </Badge>
+                
+                {admin.last_sign_in_at ? (
+                  <Badge variant="outline" className="gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span className="whitespace-nowrap">
+                      {formatDistanceToNow(new Date(admin.last_sign_in_at), { 
+                        addSuffix: true,
+                        locale: fr
+                      })}
+                    </span>
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-amber-50 text-amber-700">
+                    Jamais connecté
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         ))}
       </div>
-    );
-  }
-
-  return (
-    <div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[250px]">Nom</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Rôle</TableHead>
-              <TableHead>Dernière connexion</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {!isLoading && sfdAdmins.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-3 py-4">
-                    <Shield className="h-10 w-10 text-gray-300" />
-                    <div className="text-center">
-                      <p className="text-sm text-gray-500">Aucun administrateur pour {sfdName}</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-2" 
-                        onClick={onAddAdmin}
-                      >
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Ajouter un administrateur
-                      </Button>
-                    </div>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              sfdAdmins.map((admin: SfdAdmin) => (
-                <TableRow key={admin.id}>
-                  <TableCell className="font-medium">{admin.full_name}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <Mail className="h-4 w-4 mr-2 text-gray-500" />
-                      {admin.email}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                      Administrateur SFD
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      {admin.last_sign_in_at 
-                        ? formatDate(admin.last_sign_in_at)
-                        : 'Jamais connecté'}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(`/admin/users/detail/${admin.id}`, '_blank')}
-                        title="Voir les détails"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => promptDelete(admin.id)}
-                        disabled={isDeleting}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      <ConfirmationDialog
-        open={isConfirmOpen}
-        onOpenChange={setIsConfirmOpen}
-        title="Supprimer l'administrateur"
-        description="Êtes-vous sûr de vouloir supprimer cet administrateur ? Cette action est irréversible."
-        onConfirm={handleDeleteConfirm}
-        onCancel={handleDeleteCancel}
-        isLoading={isDeleting}
-      />
     </div>
   );
 }
