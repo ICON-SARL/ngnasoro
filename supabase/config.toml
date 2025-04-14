@@ -64,3 +64,7 @@ import_map = "import_map.json"
 [functions.sfd-clients]
 verify_jwt = true
 import_map = "import_map.json"
+
+[functions.meref-fund-requests]
+verify_jwt = true
+import_map = "import_map.json"

@@ -16,7 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
 const fundRequestSchema = z.object({
-  amount: z.number().min(1, "Le montant doit être supérieur à 0"),
+  amount: z.coerce.number().min(1, "Le montant doit être supérieur à 0"),
   purpose: z.string().min(5, "L'objet doit contenir au moins 5 caractères"),
   justification: z.string().min(20, "La justification doit contenir au moins 20 caractères"),
 });
@@ -39,7 +39,7 @@ export function MerefFundRequestForm() {
     }
   });
   
-  // Vérifier si l'utilisateur a une SFD active sélectionnée
+  // Check if user has an active SFD
   useEffect(() => {
     if (!isSfdLoading) {
       if (!activeSfdId) {
@@ -65,16 +65,11 @@ export function MerefFundRequestForm() {
     }
     
     try {
-      await createFundRequest({
+      await createFundRequest.mutateAsync({
         sfdId: activeSfdId,
         amount: data.amount,
         purpose: data.purpose,
         justification: data.justification,
-      });
-      
-      toast({
-        title: 'Demande envoyée',
-        description: 'Votre demande de fonds a été envoyée avec succès au MEREF',
       });
       
       form.reset();
@@ -87,7 +82,7 @@ export function MerefFundRequestForm() {
     }
   };
   
-  // Afficher un message de chargement pendant que nous vérifions l'état de la SFD
+  // Show loading message while checking SFD state
   if (isSfdLoading) {
     return (
       <Card>
@@ -101,7 +96,7 @@ export function MerefFundRequestForm() {
     );
   }
   
-  // Afficher un message d'erreur si aucune SFD active n'est sélectionnée
+  // Show error message if no active SFD is selected
   if (sfdError) {
     return (
       <Card>
@@ -158,49 +153,50 @@ export function MerefFundRequestForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="amount">Montant demandé (FCFA) *</Label>
             <Input
               id="amount"
               type="number"
               {...form.register('amount', { valueAsNumber: true })}
-              placeholder="Entrez le montant"
             />
             {form.formState.errors.amount && (
-              <p className="text-sm text-red-500">{form.formState.errors.amount.message}</p>
+              <p className="text-sm text-red-500 mt-1">{form.formState.errors.amount.message}</p>
             )}
           </div>
           
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="purpose">Objet de la demande *</Label>
             <Input
               id="purpose"
               {...form.register('purpose')}
-              placeholder="Objectif de ce financement"
             />
             {form.formState.errors.purpose && (
-              <p className="text-sm text-red-500">{form.formState.errors.purpose.message}</p>
+              <p className="text-sm text-red-500 mt-1">{form.formState.errors.purpose.message}</p>
             )}
           </div>
           
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="justification">Justification détaillée *</Label>
             <Textarea
               id="justification"
+              rows={5}
               {...form.register('justification')}
-              placeholder="Décrivez en détail pourquoi vous avez besoin de ce financement"
-              rows={4}
             />
             {form.formState.errors.justification && (
-              <p className="text-sm text-red-500">{form.formState.errors.justification.message}</p>
+              <p className="text-sm text-red-500 mt-1">{form.formState.errors.justification.message}</p>
             )}
           </div>
           
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? (
+          <Button 
+            type="submit"
+            className="w-full mt-6"
+            disabled={createFundRequest.isPending}
+          >
+            {createFundRequest.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Envoi en cours...
+                Soumission en cours...
               </>
             ) : (
               "Soumettre la demande"
