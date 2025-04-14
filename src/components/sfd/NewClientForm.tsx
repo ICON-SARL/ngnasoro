@@ -77,7 +77,9 @@ export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
         address: data.address || undefined,
         id_type: data.idType || undefined,
         id_number: data.idNumber || undefined,
-        notes: data.notes || undefined
+        notes: data.notes || undefined,
+        user_id: '', // Added to satisfy type requirements
+        updated_at: new Date().toISOString() // Added to satisfy type requirements
       });
       
       form.reset();

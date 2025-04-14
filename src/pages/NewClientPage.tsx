@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,8 +16,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 const NewClientPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { activeSfdId } = useSfdDataAccess(); // Use the data access hook instead
-  const { createClient } = useSfdClients();
+  const { activeSfdId } = useSfdDataAccess();
+  const { createClientMutation } = useSfdClients();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -31,7 +30,8 @@ const NewClientPage = () => {
     notes: ''
   });
   
-  // Redirect if no active SFD is selected
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     if (!activeSfdId) {
       toast({
@@ -64,14 +64,16 @@ const NewClientPage = () => {
         return;
       }
       
-      await createClient.mutateAsync({
+      await createClientMutation.mutateAsync({
         full_name: formData.full_name,
         email: formData.email || undefined,
         phone: formData.phone || undefined,
         address: formData.address || undefined,
         id_type: formData.id_type || undefined,
         id_number: formData.id_number || undefined,
-        notes: formData.notes || undefined
+        notes: formData.notes || undefined,
+        user_id: '',
+        updated_at: new Date().toISOString()
       });
       
       navigate('/mobile-flow/clients');
@@ -85,7 +87,6 @@ const NewClientPage = () => {
     }
   };
   
-  // Display a warning if no SFD ID is available
   if (!activeSfdId) {
     return (
       <div className="container mx-auto py-4 px-4 max-w-md">
@@ -114,7 +115,6 @@ const NewClientPage = () => {
     );
   }
   
-  // Original form rendering
   return (
     <div className="container mx-auto py-4 px-4 max-w-md">
       <Button 
@@ -229,9 +229,9 @@ const NewClientPage = () => {
             <Button 
               type="submit"
               className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-              disabled={createClient.isPending}
+              disabled={isSubmitting}
             >
-              {createClient.isPending ? (
+              {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Création en cours...

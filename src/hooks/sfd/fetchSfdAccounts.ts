@@ -1,59 +1,45 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import { UserSfd } from './types';
 
-/**
- * Fetches SFD accounts associated with a user
- */
 export async function fetchUserSfds(userId: string): Promise<UserSfd[]> {
-  if (!userId) return [];
-  
   try {
-    // Check if this is a test user by email domain or test in userId
-    if (userId.includes('test') || userId === 'client@test.com') {
-      // Return predefined SFDs for test accounts
-      return [
-        {
-          id: 'test-sfd1',
-          is_default: false,
-          sfds: {
-            id: 'premier-sfd-id',
-            name: 'Premier SFD',
-            code: 'P',
-            region: 'Centre',
-            logo_url: null
-          }
-        },
-        {
-          id: 'test-sfd2',
-          is_default: true,
-          sfds: {
-            id: 'deuxieme-sfd-id',
-            name: 'Deuxième SFD',
-            code: 'D',
-            region: 'Nord',
-            logo_url: null
-          }
-        },
-        {
-          id: 'test-sfd3',
-          is_default: false,
-          sfds: {
-            id: 'troisieme-sfd-id',
-            name: 'Troisième SFD',
-            code: 'T',
-            region: 'Sud',
-            logo_url: null
-          }
-        }
-      ];
+    const { data, error } = await supabase
+      .from('user_sfds')
+      .select(`
+        id,
+        is_default,
+        sfds:sfd_id (
+          id, 
+          name, 
+          code,
+          region,
+          logo_url
+        )
+      `)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching SFDs:', error);
+      throw error;
     }
-    
-    // Normal path for non-test users
-    const { apiClient } = await import('@/utils/apiClient');
-    const sfdsList = await apiClient.getUserSfds(userId);
-    return sfdsList;
+
+    // Transform the data to match the UserSfd interface
+    const userSfds: UserSfd[] = (data || []).map((item: any) => ({
+      id: item.id,
+      is_default: item.is_default,
+      sfds: {
+        id: item.sfds.id,
+        name: item.sfds.name,
+        code: item.sfds.code,
+        region: item.sfds.region,
+        logo_url: item.sfds.logo_url
+      }
+    }));
+
+    return userSfds;
   } catch (error) {
-    console.error('Error fetching SFDs:', error);
+    console.error('Error in fetchUserSfds:', error);
     return [];
   }
 }

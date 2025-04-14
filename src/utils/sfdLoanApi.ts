@@ -132,7 +132,7 @@ export const sfdLoanApi = {
     }
   },
 
-  // Add the missing sendPaymentReminder function
+  // Send payment reminder
   async sendPaymentReminder(loanId: string) {
     try {
       // Get the loan details to include in the reminder
@@ -177,6 +177,42 @@ export const sfdLoanApi = {
     } catch (error: any) {
       console.error('Error sending payment reminder:', error);
       throw new Error(error.message || 'Failed to send payment reminder');
+    }
+  },
+
+  // Get all SFD loans
+  async getSfdLoans() {
+    try {
+      const { data, error } = await supabase
+        .from('sfd_loans')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error: any) {
+      console.error('Error fetching loans:', error);
+      throw new Error(error.message || 'Failed to fetch loans');
+    }
+  },
+
+  // Fetch a single loan by ID
+  async fetchLoanById(loanId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('sfd_loans')
+        .select(`
+          *,
+          clients:client_id (full_name, email, phone)
+        `)
+        .eq('id', loanId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      console.error('Error fetching loan:', error);
+      throw new Error(error.message || 'Failed to fetch loan details');
     }
   }
 };

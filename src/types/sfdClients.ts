@@ -1,4 +1,3 @@
-
 export interface SfdClient {
   id: string;
   user_id: string;
@@ -102,7 +101,6 @@ export interface SfdSubsidy {
   description?: string;
 }
 
-// Add missing ClientDocument type
 export interface ClientDocument {
   id: string;
   client_id: string;
@@ -114,7 +112,6 @@ export interface ClientDocument {
   verified_by?: string;
 }
 
-// Add missing ClientActivity type
 export interface ClientActivity {
   id: string;
   client_id: string;
@@ -124,14 +121,17 @@ export interface ClientActivity {
   performed_by?: string;
 }
 
-// Add missing ClientNotification type
 export interface ClientNotification {
   id: string;
   client_id: string;
   title: string;
   message: string;
-  is_read: boolean;
+  is_read: boolean;  // This is used in the component
+  read: boolean;     // This is added for backward compatibility
   created_at: string;
   notification_type: string;
   reference_id?: string;
+  action_link?: string;
+  type?: string;     // Added for backward compatibility
 }
+

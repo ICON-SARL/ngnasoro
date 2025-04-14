@@ -88,3 +88,18 @@ export interface LoanPaymentParams {
   paymentMethod: string;
   reference?: string;
 }
+
+// Add SfdSubsidy interface with allocated_at field
+export interface SfdSubsidy {
+  id: string;
+  sfd_id: string;
+  amount: number;
+  used_amount: number;
+  remaining_amount: number;
+  status: 'active' | 'exhausted' | 'expired';
+  created_at: string;
+  allocated_by: string;
+  allocated_at: string; // Added this field to fix the error
+  end_date?: string;
+  description?: string;
+}

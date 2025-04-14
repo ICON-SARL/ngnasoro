@@ -41,22 +41,25 @@ export function useClientLoans() {
         
         // If we have real data, use it
         if (data && data.length > 0) {
-          return data as Loan[];
+          return data as unknown as Loan[];
         }
         
-        // Otherwise, return mockups for demo purposes
+        // Otherwise, return mockups for demo purposes with all required fields
         return [
           {
             id: '1',
             client_id: user.id,
             sfd_id: 'sfd1',
+            loan_plan_id: 'plan1',
             amount: 25400,
             duration_months: 6,
             interest_rate: 5,
+            fees: 0,
             monthly_payment: 4400,
             purpose: 'Microfinance Bamako',
             status: 'active',
             created_at: '2023-06-05T10:00:00Z',
+            created_by: user.id,
             disbursed_at: '2023-06-10T10:00:00Z',
             next_payment_date: '2023-07-10T10:00:00Z'
           },
@@ -64,43 +67,52 @@ export function useClientLoans() {
             id: '2',
             client_id: user.id,
             sfd_id: 'sfd2',
+            loan_plan_id: 'plan2',
             amount: 15500,
             duration_months: 3,
             interest_rate: 4,
+            fees: 0,
             monthly_payment: 5300,
             purpose: 'Fonds de roulement',
             status: 'completed',
             created_at: '2023-05-10T10:00:00Z',
+            created_by: user.id,
             disbursed_at: '2023-05-15T10:00:00Z'
           },
           {
             id: '3',
             client_id: user.id,
             sfd_id: 'sfd3',
+            loan_plan_id: 'plan3',
             amount: 5800,
             duration_months: 2,
             interest_rate: 3.5,
+            fees: 0,
             monthly_payment: 2950,
             purpose: 'Achat de semences',
             status: 'pending',
-            created_at: '2023-07-01T10:00:00Z'
+            created_at: '2023-07-01T10:00:00Z',
+            created_by: user.id
           }
         ];
       } catch (error) {
         console.error('Error in loansQuery:', error);
-        // Return mock data on error for demo purposes
+        // Return mock data on error for demo purposes with all required fields
         return [
           {
             id: '1',
             client_id: user.id,
             sfd_id: 'sfd1',
+            loan_plan_id: 'plan1',
             amount: 25400,
             duration_months: 6,
             interest_rate: 5,
+            fees: 0,
             monthly_payment: 4400,
             purpose: 'Microfinance Bamako',
             status: 'active',
             created_at: '2023-06-05T10:00:00Z',
+            created_by: user.id,
             disbursed_at: '2023-06-10T10:00:00Z',
             next_payment_date: '2023-07-10T10:00:00Z'
           }
@@ -123,20 +135,26 @@ export function useClientLoans() {
         return [
           {
             id: '1',
+            client_id: user?.id || '',
             title: 'Prêt approuvé',
             message: 'Votre demande de prêt a été approuvée',
-            type: 'loan_approved',
+            notification_type: 'loan_approved',
             created_at: '2023-06-05T10:00:00Z',
+            is_read: false,
             read: false,
-            action_link: '/my-loans'
+            action_link: '/my-loans',
+            type: 'loan_approved' // For backward compatibility
           },
           {
             id: '2',
+            client_id: user?.id || '',
             title: 'Paiement reçu',
             message: 'Nous avons reçu votre paiement de 5300 FCFA',
-            type: 'payment_received',
+            notification_type: 'payment_received',
             created_at: '2023-05-15T10:00:00Z',
-            read: true
+            is_read: true,
+            read: true,
+            type: 'payment_received' // For backward compatibility
           }
         ];
       } catch (error) {
