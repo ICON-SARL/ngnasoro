@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Transaction } from '@/types/transactions';
 import { transactionService } from '@/services/transactions/transactionService';
 import { transactionStatisticsService } from '@/services/transactions/transactionStatisticsService';
+import { safeIdToString } from '@/utils/transactionUtils';
 
 export const TransactionMonitoring = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -275,8 +276,8 @@ export const TransactionMonitoring = () => {
             ) : (
               filteredTransactions.map((tx) => (
                 <TableRow key={tx.id} className={tx.status === 'flagged' ? 'bg-red-50' : ''}>
-                  <TableCell className="font-medium">{tx.id.substring(0, 8).toUpperCase()}</TableCell>
-                  <TableCell>{formatDate(tx.created_at)}</TableCell>
+                  <TableCell className="font-medium">{safeIdToString(tx.id).substring(0, 8).toUpperCase()}</TableCell>
+                  <TableCell>{formatDate(tx.created_at || tx.date)}</TableCell>
                   <TableCell>
                     {tx.type === 'deposit' ? 'Versement' : 
                      tx.type === 'withdrawal' ? 'Retrait' : 
@@ -286,7 +287,7 @@ export const TransactionMonitoring = () => {
                      tx.type === 'loan_repayment' ? 'Remboursement' : 
                      tx.type}
                   </TableCell>
-                  <TableCell>{formatCurrency(tx.amount)}</TableCell>
+                  <TableCell>{formatCurrency(Number(tx.amount))}</TableCell>
                   <TableCell>{tx.name || 'Client inconnu'}</TableCell>
                   <TableCell>{tx.metadata?.agency || 'SFD Principale'}</TableCell>
                   <TableCell>

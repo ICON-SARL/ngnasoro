@@ -49,7 +49,7 @@ export const generateMockTransactions = (sfdId: string, count = 10) => {
   ];
   
   return Array.from({ length: count }).map((_, index) => {
-    const type = types[Math.floor(Math.random() * types.length)];
+    const type = types[Math.floor(Math.random() * types.length)] as Transaction['type'];
     const isPositive = type === 'deposit' || type === 'loan_disbursement';
     const amountBase = Math.floor(Math.random() * 100000) + 5000;
     
@@ -84,4 +84,14 @@ export const formatTransactionAmount = (amount: string | number, type: string): 
   const sign = isPositive ? '+' : '-';
   
   return `${sign}${Math.abs(numericAmount).toLocaleString('fr-FR')} FCFA`;
+};
+
+/**
+ * Safely convert ID to string
+ */
+export const safeIdToString = (id: string | number): string => {
+  if (typeof id === 'number') {
+    return id.toString();
+  }
+  return id;
 };

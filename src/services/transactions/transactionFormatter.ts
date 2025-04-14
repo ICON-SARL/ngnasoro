@@ -37,8 +37,6 @@ export function formatTransaction(record: any): Transaction {
 
   return {
     id: record.id,
-    user_id: record.user_id,
-    sfd_id: record.sfd_id,
     type: ensureValidType(record.type),
     amount: record.amount,
     status: mapStatus(record.status || 'completed'),
@@ -47,9 +45,10 @@ export function formatTransaction(record: any): Transaction {
     payment_method: record.payment_method,
     reference_id: record.reference_id,
     created_at: record.created_at || record.date,
-    updated_at: record.updated_at,
     date: record.date,
     name: record.name,
-    avatar_url: record.avatar_url
+    avatar_url: record.avatar_url,
+    user_id: record.user_id,
+    sfd_id: record.sfd_id
   };
 }

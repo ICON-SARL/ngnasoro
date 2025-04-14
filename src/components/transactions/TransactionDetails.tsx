@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sheet';
 import { Transaction } from '@/types/transactions';
 import { Button } from '@/components/ui/button';
-import { formatTransactionAmount, formatCurrencyAmount } from '@/utils/transactionUtils';
+import { formatTransactionAmount, formatCurrencyAmount, safeIdToString } from '@/utils/transactionUtils';
 import { Badge } from '@/components/ui/badge';
 import { 
   Check, 
@@ -102,7 +102,7 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
                 <Calendar className="h-4 w-4 mr-2 text-gray-500" />
                 <span className="text-gray-600">Date</span>
               </div>
-              <span className="font-medium">{formatDate(transaction.date || transaction.created_at)}</span>
+              <span className="font-medium">{formatDate(transaction.date || transaction.created_at || '')}</span>
             </div>
             
             <div className="flex justify-between items-center pb-2 border-b border-gray-100">
@@ -118,7 +118,7 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
                 <Hash className="h-4 w-4 mr-2 text-gray-500" />
                 <span className="text-gray-600">Référence</span>
               </div>
-              <span className="font-medium">{transaction.reference_id || transaction.id.substring(0, 8)}</span>
+              <span className="font-medium">{transaction.reference_id || safeIdToString(transaction.id).substring(0, 8)}</span>
             </div>
             
             <div className="flex justify-between items-center pb-2 border-b border-gray-100">

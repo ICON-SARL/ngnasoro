@@ -14,6 +14,8 @@ export interface Transaction {
   avatar_url?: string;
   payment_method?: string;
   created_at?: string;
+  user_id?: string;
+  sfd_id?: string;
   metadata?: {
     agency?: string;
     [key: string]: any;
@@ -39,4 +41,11 @@ export interface TransactionFilters {
   search?: string;
   minAmount?: number;
   maxAmount?: number;
+}
+
+export interface TransactionStats {
+  totalAmount: number;
+  incomeAmount: number;
+  expenseAmount: number;
+  count: number;
 }

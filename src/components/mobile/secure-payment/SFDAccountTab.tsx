@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,10 +32,8 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
   const { sfdAccounts, activeSfdAccount, isLoading } = useSfdAccounts();
   const { activeSfdId } = useAuth();
   
-  // Use the syncedAccountsList if provided, otherwise fall back to sfdAccounts
   const accountsList = syncedAccountsList.length > 0 ? syncedAccountsList : sfdAccounts;
   
-  // Initialize with selected account or activeSfdId when component mounts
   useEffect(() => {
     if (selectedSfdAccount) {
       setSelected(selectedSfdAccount.id);
@@ -56,10 +53,8 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
     );
   }
   
-  // Display either the pre-selected account or a dropdown
   const displayAccount = selectedSfdAccount || accountsList.find(sfd => sfd.id === selected);
   
-  // Get the account name with fallbacks
   const getAccountName = (account?: SfdAccount | null): string => {
     if (!account) return "Compte SFD";
     return account.name || account.description || `Compte ${account.account_type || 'SFD'}`;
@@ -67,7 +62,7 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
   
   const accountName = getAccountName(displayAccount);
   const accountBalance = displayAccount?.balance || 0;
-  const formattedBalance = `${formatCurrencyAmount(accountBalance, "")} FCFA`;
+  const formattedBalance = `${formatCurrencyAmount(accountBalance)} FCFA`;
   
   return (
     <>
@@ -86,7 +81,7 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
             <SelectContent>
               {accountsList.map(sfd => (
                 <SelectItem key={sfd.id} value={sfd.id}>
-                  {getAccountName(sfd)} ({formatCurrencyAmount(sfd.balance, "")} FCFA)
+                  {getAccountName(sfd)} ({formatCurrencyAmount(sfd.balance)} FCFA)
                 </SelectItem>
               ))}
             </SelectContent>

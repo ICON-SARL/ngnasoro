@@ -60,34 +60,20 @@ const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({
         
         {/* Balance Display */}
         {isRefreshing ? (
-          <LoadingOverlay />
+          <div className="py-4 flex items-center justify-center">
+            <Loader size="lg" className="text-white" />
+          </div>
         ) : (
           <div className="text-center">
             <h1 className="text-5xl font-bold tracking-tight mt-2">
-              {formatCurrencyAmount(balance, "")}
+              {formatCurrencyAmount(balance)}
             </h1>
-            <p className="text-lg mt-1">FCFA</p>
+            <p className="text-sm opacity-60 mt-1">FCFA</p>
           </div>
-        )}
-        
-        {selectedSfd === 'all' ? (
-          <p className="text-sm mt-3 opacity-70 text-center">
-            Solde consolidé de vos comptes SFD
-          </p>
-        ) : (
-          <p className="text-sm mt-3 opacity-70 text-center">
-            Solde de votre compte {selectedSfdName}
-          </p>
         )}
       </div>
     </div>
   );
 };
-
-const LoadingOverlay = () => (
-  <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 rounded-2xl">
-    <Loader size="md" />
-  </div>
-);
 
 export default FundsBalanceSection;
