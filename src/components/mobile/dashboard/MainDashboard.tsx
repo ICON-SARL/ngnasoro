@@ -6,6 +6,7 @@ import { ArrowRight, Plus, CreditCard, ArrowUpDown, Wallet, LineChart } from 'lu
 import { Account } from '@/types/transactions';
 import { Transaction } from '@/types/transactions';
 import TransactionList from '../TransactionList';
+import MobileNavigation from '@/components/mobile/MobileNavigation';
 
 export interface MainDashboardProps {
   onAction?: (newView: string, data?: any) => void;
@@ -127,6 +128,11 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
           isLoading={transactionsLoading || false}
           onViewAll={() => onAction && onAction('Transactions')}
         />
+      </div>
+
+      {/* Add the Mobile Navigation Footer */}
+      <div className="sm:hidden">
+        <MobileNavigation />
       </div>
     </div>
   );
