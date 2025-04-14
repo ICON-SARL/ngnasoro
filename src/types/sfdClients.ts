@@ -1,72 +1,65 @@
 
+export interface SfdClient {
+  id: string;
+  user_id: string;
+  sfd_id: string;
+  client_number: string;
+  status: 'active' | 'inactive' | 'pending' | 'rejected';
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Loan {
   id: string;
   client_id: string;
   sfd_id: string;
+  loan_plan_id: string;
   amount: number;
-  duration_months: number;
+  term: number;
   interest_rate: number;
-  monthly_payment: number;
+  fees: number;
   purpose: string;
-  status: string;
+  status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'paid' | 'defaulted';
+  created_at: string;
+  created_by: string;
   approved_at?: string;
   approved_by?: string;
+  rejected_at?: string;
+  rejected_by?: string;
+  rejection_reason?: string;
   disbursed_at?: string;
+  disbursed_by?: string;
+  disbursement_status?: string;
+  disbursement_date?: string;
+  disbursement_reference?: string;
+  total_paid?: number;
   next_payment_date?: string;
-  last_payment_date?: string;
-  created_at: string;
-  subsidy_amount?: number;
-  subsidy_rate?: number;
-  // Adding missing properties
-  client_name?: string;
-  reference?: string;  // Explicitly add the optional reference property
-  updated_at?: string;  // Explicitly add the optional updated_at property
+  sfds?: {
+    name: string;
+    logo_url: string;
+  };
 }
 
-export interface SfdClient {
+export interface LoanPlan {
   id: string;
-  user_id?: string;
   sfd_id: string;
-  status: string;
-  full_name: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  id_number?: string;
-  id_type?: string;
-  kyc_level?: number;
-  validated_at?: string;
-  validated_by?: string;
+  name: string;
+  description: string;
+  min_amount: number;
+  max_amount: number;
+  min_duration: number;
+  max_duration: number;
+  interest_rate: number;
+  fees: number;
+  requirements: string[];
+  is_active: boolean;
   created_at: string;
-  notes?: string;
-}
-
-export interface SfdLoan {
-  id: string;
-  amount: number;
-  remainingAmount: number;
-  nextDueDate: string;
-  isLate: boolean;
-}
-
-export interface ClientDocument {
-  id: string;
-  client_id: string;
-  document_type: string;
-  document_url: string;
-  uploaded_at: string;
-  verified?: boolean;
-  verified_at?: string;
-  verified_by?: string;
-}
-
-export interface ClientActivity {
-  id: string;
-  client_id: string;
-  activity_type: string;
-  description?: string;
-  performed_at?: string;
-  performed_by?: string;
+  is_subsidized?: boolean;
+  subsidy_rate?: number;
+  sfds?: {
+    name: string;
+    logo_url: string;
+  };
 }
 
 export interface LoanPayment {
@@ -74,31 +67,9 @@ export interface LoanPayment {
   loan_id: string;
   amount: number;
   payment_method: string;
-  status: string;
   payment_date: string;
-  transaction_id?: string;
+  recorded_by: string;
+  status: 'pending' | 'completed' | 'failed';
+  reference: string;
   created_at: string;
-}
-
-export interface SfdSubsidy {
-  id: string;
-  sfd_id: string;
-  amount: number;
-  used_amount: number;
-  remaining_amount: number;
-  status: string;
-  allocated_by: string;
-  allocated_at: string;
-  end_date?: string;
-  description?: string;
-}
-
-export interface ClientNotification {
-  id: string;
-  title: string;
-  message: string;
-  type: string;
-  created_at: string;
-  read: boolean;
-  action_link?: string;
 }

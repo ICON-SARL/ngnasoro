@@ -57,7 +57,7 @@ export function useSfdLoans() {
 
   // Create loan mutation
   const createLoan = useMutation({
-    mutationFn: (loanData: any) => sfdLoanApi.createLoan(loanData),
+    mutationFn: (loanData: any) => sfdLoanApi.createLoan(loanData, user?.id || ''),
     onSuccess: () => {
       toast({
         title: "Prêt créé",
