@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -31,8 +30,8 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
   const { toast } = useToast();
   const { sfdAccounts, refetch, synchronizeBalances } = useSfdAccounts();
   const { synchronizeWithSfd, isSyncing, syncError, retryCount } = useRealtimeSynchronization();
-  const navigate = useNavigate(); // Add the useNavigate hook here
-  
+  const navigate = useNavigate();
+
   useEffect(() => {
     let isMounted = true;
     
@@ -103,7 +102,6 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
       });
   };
 
-  // Show a dedicated error state if there's a sync error
   if (syncError) {
     return (
       <ErrorState 
@@ -114,7 +112,6 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
     );
   }
   
-  // Show loading or empty state as appropriate
   const showEmptyState = !sfdAccounts || sfdAccounts.length === 0;
 
   return (
