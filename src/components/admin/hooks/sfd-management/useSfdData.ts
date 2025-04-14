@@ -3,61 +3,70 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Sfd } from '../../types/sfd-types';
 import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from 'react';
 
 export function useSfdData() {
   const { toast } = useToast();
+  const [hasShownNetworkError, setHasShownNetworkError] = useState(false);
+
+  // Reset the network error flag when component unmounts
+  useEffect(() => {
+    return () => setHasShownNetworkError(false);
+  }, []);
 
   const { 
     data: sfds, 
     isLoading, 
     isError,
     error,
-    refetch
+    refetch,
+    isRefetching,
+    isFetching
   } = useQuery({
     queryKey: ['sfds'],
     queryFn: async (): Promise<Sfd[]> => {
       try {
         console.log('Fetching SFDs...');
         
-        // Fetch with timeout to avoid hanging indefinitely
-        const fetchWithTimeout = async () => {
-          const { data, error } = await supabase
-            .from('sfds')
-            .select(`
-              id,
-              name,
-              code,
-              region,
-              status,
-              logo_url,
-              contact_email,
-              phone,
-              description,
-              created_at,
-              updated_at
-            `)
-            .order('name');
-            
-          if (error) {
-            console.error('Error fetching SFDs:', error);
-            throw new Error(`Erreur lors de la récupération des SFDs: ${error.message}`);
-          }
+        // Create an AbortController to manage timeout
+        const abortController = new AbortController();
+        const timeoutId = setTimeout(() => {
+          abortController.abort();
+        }, 15000); // 15 second timeout
+        
+        const { data, error } = await supabase
+          .from('sfds')
+          .select(`
+            id,
+            name,
+            code,
+            region,
+            status,
+            logo_url,
+            contact_email,
+            phone,
+            description,
+            created_at,
+            updated_at
+          `)
+          .order('name')
+          .abortSignal(abortController.signal);
           
-          return data || [];
-        };
+        // Clear the timeout as the request has completed
+        clearTimeout(timeoutId);
         
-        // Enforce a 10-second timeout
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout: La requête a pris trop de temps')), 10000);
-        });
+        if (error) {
+          console.error('Supabase error fetching SFDs:', error);
+          throw new Error(`Erreur Supabase: ${error.message}`);
+        }
         
-        // Race between the fetch and the timeout
-        const data = await Promise.race([
-          fetchWithTimeout(),
-          timeoutPromise
-        ]) as any[];
+        // Check for no data
+        if (!data || data.length === 0) {
+          console.log('No SFDs found in the database');
+          return [];
+        }
         
-        console.log(`Retrieved ${data?.length || 0} SFDs successfully`);
+        console.log(`Retrieved ${data.length} SFDs successfully`);
         
         // Convert to properly typed Sfd objects
         const typedSfds = data.map(sfd => {
@@ -92,12 +101,12 @@ export function useSfdData() {
         // Sort with priority SFDs first
         return sortPrioritySfds(typedSfds);
       } catch (error: any) {
-        console.error('Unhandled error in fetchSfds:', error);
+        console.error('Error in fetchSfds:', error);
         
-        // Formatter un message d'erreur plus convivial
+        // Format a more user-friendly error message
         let errorMessage = error.message || "Erreur inconnue";
         
-        if (errorMessage.includes('Timeout')) {
+        if (error.name === 'AbortError' || errorMessage.includes('Timeout')) {
           errorMessage = "La requête a pris trop de temps. Veuillez réessayer.";
         } else if (errorMessage.includes('Failed to fetch') || 
             errorMessage.includes('NetworkError') || 
@@ -107,20 +116,24 @@ export function useSfdData() {
           errorMessage = "Problème de connexion au serveur. Veuillez vérifier votre réseau.";
         }
         
-        // Afficher une toast pour informer l'utilisateur
-        toast({
-          title: "Erreur de chargement",
-          description: `Impossible de charger les SFDs: ${errorMessage}`,
-          variant: "destructive",
-        });
+        // Only show toast if we haven't shown a network error yet
+        if (!hasShownNetworkError) {
+          toast({
+            title: "Erreur de chargement",
+            description: `Impossible de charger les SFDs: ${errorMessage}`,
+            variant: "destructive",
+          });
+          setHasShownNetworkError(true);
+        }
         
-        throw error;
+        throw new Error(errorMessage);
       }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 2, // Nombre de tentatives réduit
-    retryDelay: attempt => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 30 * 1000), // Backoff exponentiel
+    retry: 1, // Only retry once to avoid endless loops
+    retryDelay: attempt => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 10 * 1000), // Backoff exponential with max 10s
     refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
   
   // Function to prioritize certain SFDs
@@ -144,7 +157,8 @@ export function useSfdData() {
 
   return {
     sfds: sfds || [], // Ensure we always return an array
-    isLoading,
+    isLoading: isLoading || isFetching,
+    isRefetching,
     isError,
     error,
     refetch

@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 
 interface LoaderProps extends React.HTMLAttributes<HTMLDivElement> {
   size?: 'sm' | 'md' | 'lg';
+  className?: string;
 }
 
 export const Loader: React.FC<LoaderProps> = ({
@@ -15,7 +16,7 @@ export const Loader: React.FC<LoaderProps> = ({
   const sizeClasses = {
     sm: 'h-4 w-4',
     md: 'h-6 w-6',
-    lg: 'h-8 w-8',
+    lg: 'h-10 w-10',
   };
 
   return (

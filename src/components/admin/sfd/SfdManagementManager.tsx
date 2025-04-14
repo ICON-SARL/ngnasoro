@@ -8,12 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { SfdAddDialog } from '@/components/admin/sfd/SfdAddDialog';
 import { SfdEditDialog } from '@/components/admin/sfd/SfdEditDialog';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Sfd } from '../types/sfd-types';
 import { useUpdateSfdMutation } from '../hooks/sfd-management/mutations/useUpdateSfdMutation';
 import { useToast } from '@/hooks/use-toast';
 import { Loader } from '@/components/ui/loader';
+import { useSfdData } from '../hooks/sfd-management/useSfdData';
 
 export function SfdManagementManager() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,52 +24,18 @@ export function SfdManagementManager() {
   
   const updateSfdMutation = useUpdateSfdMutation();
   
-  const { data: sfds = [], isLoading, refetch, error, isError } = useQuery({
-    queryKey: ['sfds'],
-    queryFn: async () => {
-      try {
-        console.log('Fetching SFDs from Supabase...');
-        
-        // Add timeout to prevent indefinite waiting
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
-        const { data, error } = await supabase
-          .from('sfds')
-          .select('*')
-          .order('name')
-          .abortSignal(controller.signal);
-        
-        clearTimeout(timeoutId);
-        
-        if (error) {
-          console.error('Supabase error:', error);
-          throw error;
-        }
-        
-        console.log('SFDs fetched successfully:', data);
-        return data as Sfd[];
-      } catch (err: any) {
-        console.error('Error fetching SFDs:', err);
-        
-        let errorMessage = "Impossible de charger les SFDs.";
-        if (err.name === 'AbortError') {
-          errorMessage = "La requête a pris trop de temps. Veuillez réessayer.";
-        } else if (!navigator.onLine) {
-          errorMessage = "Vous êtes hors ligne. Veuillez vérifier votre connexion Internet.";
-        }
-        
-        toast({
-          title: "Erreur de chargement",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        throw err;
-      }
-    },
-    retry: 1,
-    retryDelay: 1000,
-  });
+  const { sfds = [], isLoading, isError, refetch, error, isRefetching } = useSfdData();
+  
+  // Log useful debug information
+  useEffect(() => {
+    console.log('SFD Management Manager State:', { 
+      sfdCount: sfds?.length, 
+      isLoading, 
+      isError, 
+      isRefetching, 
+      error: error instanceof Error ? error.message : error,
+    });
+  }, [sfds, isLoading, isError, error, isRefetching]);
   
   // Manual retry mechanism
   const handleRetry = () => {
@@ -81,17 +46,6 @@ export function SfdManagementManager() {
       description: "Récupération des données en cours...",
     });
   };
-  
-  // Log data for debugging
-  useEffect(() => {
-    console.log('SFDs data state:', { 
-      isLoading, 
-      isError, 
-      error, 
-      sfdsCount: sfds?.length, 
-      sfds: sfds && sfds.length > 0 ? sfds.slice(0, 2) : [] 
-    });
-  }, [isLoading, isError, error, sfds]);
   
   // Filter SFDs based on search term
   const filteredSfds = sfds.filter(sfd => 
@@ -133,9 +87,9 @@ export function SfdManagementManager() {
             variant="outline" 
             className="flex-1 sm:flex-auto"
             onClick={() => refetch()}
-            disabled={isLoading}
+            disabled={isLoading || isRefetching}
           >
-            {isLoading ? (
+            {isRefetching ? (
               <Loader size="sm" className="mr-2" />
             ) : (
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -158,7 +112,7 @@ export function SfdManagementManager() {
           <CardDescription>Gérez les SFDs qui utilisent la plateforme N'GNA SÔRÔ!</CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isLoading && !isError ? (
             <div className="flex flex-col items-center justify-center p-12">
               <Loader size="lg" className="mb-4" />
               <p className="text-muted-foreground">Chargement des SFDs en cours...</p>
@@ -172,12 +126,6 @@ export function SfdManagementManager() {
               <p className="text-red-700 mb-4">
                 {error instanceof Error ? error.message : "Une erreur est survenue. Veuillez réessayer."}
               </p>
-              <Alert variant="destructive" className="mb-4">
-                <AlertTitle>Détails de l'erreur</AlertTitle>
-                <AlertDescription className="text-xs max-h-20 overflow-auto">
-                  {JSON.stringify(error, null, 2)}
-                </AlertDescription>
-              </Alert>
               <Button 
                 variant="outline" 
                 className="mb-2"
