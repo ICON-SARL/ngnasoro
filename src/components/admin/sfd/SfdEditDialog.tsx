@@ -6,7 +6,8 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogFooter
+  DialogFooter,
+  DialogDescription 
 } from '@/components/ui/dialog';
 import { SfdFormValues, sfdFormSchema } from './schemas/sfdFormSchema';
 import { useForm } from 'react-hook-form';
@@ -55,7 +56,18 @@ export function SfdEditDialog({
   });
 
   const handleSubmit = (values: SfdFormValues) => {
-    onSubmit(values);
+    // Remove any fields that are not in the database schema
+    const sanitizedValues = {
+      name: values.name,
+      code: values.code,
+      region: values.region,
+      description: values.description,
+      contact_email: values.contact_email,
+      phone: values.phone,
+      status: values.status
+    };
+    
+    onSubmit(sanitizedValues);
   };
 
   return (
@@ -63,6 +75,9 @@ export function SfdEditDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Modifier la SFD</DialogTitle>
+          <DialogDescription>
+            Modifier les informations de la SFD sélectionnée
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -116,6 +131,9 @@ export function SfdEditDialog({
                       <SelectItem value="Sud">Sud</SelectItem>
                       <SelectItem value="Est">Est</SelectItem>
                       <SelectItem value="Ouest">Ouest</SelectItem>
+                      <SelectItem value="Mali">Mali</SelectItem>
+                      <SelectItem value="Burkina Faso">Burkina Faso</SelectItem>
+                      <SelectItem value="Thiès">Thiès</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

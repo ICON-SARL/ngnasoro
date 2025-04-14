@@ -13,14 +13,32 @@ export function useUpdateSfdMutation() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<SfdFormValues> }) => {
+      // Extract only fields that exist in the sfds table
+      const validFields = {
+        name: data.name,
+        code: data.code,
+        region: data.region,
+        description: data.description,
+        contact_email: data.contact_email,
+        phone: data.phone,
+        status: data.status,
+      };
+      
+      console.log('Updating SFD with data:', validFields);
+      
       const { data: updatedSfd, error } = await supabase
         .from('sfds')
-        .update(data)
+        .update(validFields)
         .eq('id', id)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating SFD:', error);
+        throw error;
+      }
+      
+      console.log('SFD updated successfully:', updatedSfd);
       return updatedSfd;
     },
     onSuccess: (_, variables) => {
@@ -42,6 +60,7 @@ export function useUpdateSfdMutation() {
       }
     },
     onError: (error: any) => {
+      console.error('Error in updateSfdMutation:', error);
       toast({
         title: 'Erreur',
         description: error.message || 'Une erreur est survenue lors de la modification',
