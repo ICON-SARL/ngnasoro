@@ -11,30 +11,48 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Sfd } from '../types/sfd-types';
 import { useUpdateSfdMutation } from '../hooks/sfd-management/mutations/useUpdateSfdMutation';
+import { useToast } from '@/hooks/use-toast';
 
 export function SfdManagementManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedSfd, setSelectedSfd] = useState<Sfd | null>(null);
+  const { toast } = useToast();
   
   const updateSfdMutation = useUpdateSfdMutation();
   
-  const { data: sfds = [], isLoading, refetch } = useQuery({
+  const { data: sfds = [], isLoading, refetch, error } = useQuery({
     queryKey: ['sfds'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sfds')
-        .select('*')
-        .order('name');
-      
-      if (error) {
-        throw error;
+      try {
+        console.log('Fetching SFDs from Supabase...');
+        const { data, error } = await supabase
+          .from('sfds')
+          .select('*')
+          .order('name');
+        
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+        
+        console.log('SFDs fetched successfully:', data);
+        return data as Sfd[];
+      } catch (err) {
+        console.error('Error fetching SFDs:', err);
+        toast({
+          title: "Erreur de chargement",
+          description: "Impossible de charger les SFDs. Veuillez réessayer.",
+          variant: "destructive",
+        });
+        throw err;
       }
-      
-      return data as Sfd[];
     }
   });
+  
+  // Log data for debugging
+  console.log('SFDs data state:', { isLoading, error, sfdsCount: sfds?.length, sfds });
   
   // Filter SFDs based on search term
   const filteredSfds = sfds.filter(sfd => 
@@ -99,6 +117,19 @@ export function SfdManagementManager() {
           {isLoading ? (
             <div className="flex justify-center p-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center p-8 bg-red-50 rounded-md">
+              <Building className="h-12 w-12 text-red-500 mx-auto mb-2" />
+              <p className="text-red-600">Erreur lors du chargement des SFDs</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => refetch()}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Réessayer
+              </Button>
             </div>
           ) : filteredSfds.length === 0 ? (
             <div className="text-center p-8 bg-muted/20 rounded-md">
