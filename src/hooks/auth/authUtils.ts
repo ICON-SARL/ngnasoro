@@ -7,7 +7,11 @@ export const createUserFromSupabaseUser = (supabaseUser: SupabaseUser): User => 
     ...supabaseUser,
     app_metadata: supabaseUser.app_metadata || { role: 'user' },
     user_metadata: supabaseUser.user_metadata || {},
-    full_name: supabaseUser.user_metadata?.full_name || ''
+    // Map common properties for easier access
+    full_name: supabaseUser.user_metadata?.full_name || '',
+    avatar_url: supabaseUser.user_metadata?.avatar_url,
+    sfd_id: supabaseUser.app_metadata?.sfd_id,
+    phone: supabaseUser.phone || supabaseUser.user_metadata?.phone
   };
 };
 

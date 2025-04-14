@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -75,7 +74,7 @@ const NewLoanDialog = ({ isOpen, onClose, onLoanCreated }: NewLoanDialogProps) =
       
       const loanData = {
         client_id: data.client_id,
-        sfd_id: user?.sfd_id,
+        sfd_id: user?.sfd_id || user?.app_metadata?.sfd_id,
         amount: parseFloat(data.amount),
         duration_months: parseInt(data.duration_months),
         interest_rate: parseFloat(data.interest_rate),

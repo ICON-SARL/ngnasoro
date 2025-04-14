@@ -31,7 +31,7 @@ const ProfilePage = () => {
             <CardContent className="space-y-6">
               <div className="flex justify-center mb-6">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={user?.avatar_url} alt={user?.full_name || 'User'} />
+                  <AvatarImage src={user?.user_metadata?.avatar_url || user?.avatar_url} alt={user?.full_name || 'User'} />
                   <AvatarFallback className="bg-primary text-white text-xl">
                     {user?.full_name?.charAt(0) || 'U'}
                   </AvatarFallback>
@@ -93,7 +93,7 @@ const ProfilePage = () => {
                       </div>
                       <Input 
                         id="sfd" 
-                        value={"SFD ID: " + (user?.sfd_id || 'Non assigné')}
+                        value={"SFD ID: " + (user?.sfd_id || user?.app_metadata?.sfd_id || 'Non assigné')}
                         readOnly
                         className="rounded-l-none focus-visible:ring-0"
                       />

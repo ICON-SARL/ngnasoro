@@ -9,16 +9,23 @@ export enum UserRole {
   User = 'user'
 }
 
-export interface User extends SupabaseUser {
+// This extends SupabaseUser while making fields compatible
+export interface User extends Omit<SupabaseUser, 'app_metadata' | 'user_metadata'> {
   app_metadata?: {
     role?: string;
+    sfd_id?: string;
     [key: string]: any;
   };
   user_metadata?: {
     full_name?: string;
+    avatar_url?: string;
+    phone?: string;
     [key: string]: any;
   };
-  full_name?: string; // Adding direct property for compatibility
+  full_name?: string;
+  avatar_url?: string;
+  sfd_id?: string;
+  phone?: string;
 }
 
 export type Role = 'admin' | 'sfd_admin' | 'client' | 'user';
@@ -39,4 +46,18 @@ export interface AuthContextProps {
   userRole: UserRole | string;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
+}
+
+// Add the missing AssociateSfdParams and related types
+export interface AssociateSfdParams {
+  userId: string;
+  sfdId: string;
+  makeDefault?: boolean;
+  isDefault?: boolean;
+}
+
+export interface AssociateSfdResult {
+  success: boolean;
+  error?: string;
+  userSfd?: any;
 }

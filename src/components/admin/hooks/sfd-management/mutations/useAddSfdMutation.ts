@@ -4,7 +4,8 @@ import { useToast } from '@/hooks/use-toast';
 import { sfdApi } from '@/utils/api/modules/sfdApi';
 import { SfdFormValues } from '@/components/admin/sfd/schemas/sfdFormSchema';
 
-export { SfdFormValues };
+// Use export type for re-exporting types with isolatedModules enabled
+export type { SfdFormValues };
 
 export function useAddSfdMutation() {
   const { toast } = useToast();
