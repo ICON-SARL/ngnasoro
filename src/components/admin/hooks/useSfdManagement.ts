@@ -6,6 +6,7 @@ import { useSfdData } from './sfd-management/useSfdData';
 import { useSfdMutations } from './sfd-management/useSfdMutations';
 import { useSfdFilters } from './sfd-management/useSfdFilters';
 import { useSfdExport } from './sfd-management/useSfdExport';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function useSfdManagement() {
   // Local state
@@ -15,6 +16,9 @@ export function useSfdManagement() {
   const [showActivateDialog, setShowActivateDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+
+  // For direct cache invalidation
+  const queryClient = useQueryClient();
 
   // Use the sub-hooks
   const { sfds, isLoading, isError, refetch } = useSfdData();
@@ -37,7 +41,15 @@ export function useSfdManagement() {
   const handleEditSfd = (formData: SfdFormValues) => {
     if (selectedSfd) {
       console.log('Editing SFD:', selectedSfd.id, formData);
-      editSfdMutation.mutate({ id: selectedSfd.id, data: formData });
+      editSfdMutation.mutate({ id: selectedSfd.id, data: formData }, {
+        onSuccess: () => {
+          // Explicitly refresh data after editing
+          setTimeout(() => {
+            refetch();
+            queryClient.invalidateQueries({ queryKey: ['sfds'] });
+          }, 500);
+        }
+      });
       setShowEditDialog(false);
     }
   };
@@ -61,6 +73,12 @@ export function useSfdManagement() {
   const handleActivateSfd = (sfd: Sfd) => {
     setSelectedSfd(sfd);
     setShowActivateDialog(true);
+  };
+
+  // Force refetch data
+  const forceRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['sfds'] });
+    refetch();
   };
 
   return {
@@ -98,6 +116,7 @@ export function useSfdManagement() {
     handleActivateSfd,
     handleExportPdf,
     handleExportExcel,
-    refetch
+    refetch,
+    forceRefresh
   };
 }

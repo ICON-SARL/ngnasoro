@@ -22,22 +22,32 @@ export function useUpdateSfdMutation() {
         contact_email: data.contact_email,
         phone: data.phone,
         status: data.status,
-        // Note: subsidy_balance is not included here as it's not a direct field in the sfds table
-        // It's handled separately in a different table
       };
       
       console.log('Updating SFD with data:', validFields);
       
-      const { data: updatedSfd, error } = await supabase
+      // Update without trying to return the updated record in the same call
+      const { error } = await supabase
         .from('sfds')
         .update(validFields)
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
 
       if (error) {
         console.error('Error updating SFD:', error);
         throw error;
+      }
+      
+      // After successful update, fetch the updated record
+      const { data: updatedSfd, error: fetchError } = await supabase
+        .from('sfds')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (fetchError) {
+        console.error('Error fetching updated SFD:', fetchError);
+        // Return the update data anyway since the update was successful
+        return { id, ...validFields };
       }
       
       console.log('SFD updated successfully:', updatedSfd);

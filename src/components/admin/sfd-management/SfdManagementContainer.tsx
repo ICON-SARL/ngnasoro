@@ -1,97 +1,134 @@
 
-import React, { useState, useEffect } from 'react';
-import { SfdManagementStats } from './SfdManagementStats';
-import { SfdAddDialog } from './SfdAddDialog';
-import { SfdAdminAddDialog } from './SfdAdminAddDialog';
+import React from 'react';
+import { useSfdManagement } from '../hooks/useSfdManagement';
 import { Button } from '@/components/ui/button';
-import { Building, Plus, UserPlus } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Loader2, Plus, RefreshCw, Search } from 'lucide-react';
+import { SfdTable } from './SfdTable';
+import { SfdDialogs } from './SfdDialogs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
-export const SfdManagementContainer = () => {
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [addAdminDialogOpen, setAddAdminDialogOpen] = useState(false);
-  const { toast } = useToast();
-  
-  // Check for any ongoing operations in sessionStorage
-  useEffect(() => {
-    const ongoingOperation = sessionStorage.getItem('sfd_creation_in_progress');
-    if (ongoingOperation) {
-      sessionStorage.removeItem('sfd_creation_in_progress');
-      toast({
-        title: 'Opération précédente interrompue',
-        description: 'Une opération de création de SFD précédente a été interrompue. Vous pouvez réessayer.',
-        variant: 'destructive', // Changed from 'warning' to 'destructive' since 'warning' is not an allowed variant
-      });
-    }
-  }, []);
-  
-  const handleOpenAddDialog = () => {
-    setAddDialogOpen(true);
-  };
-  
-  const handleOpenAddAdminDialog = () => {
-    setAddAdminDialogOpen(true);
-  };
-  
-  const handleDialogChange = (open: boolean) => {
-    setAddDialogOpen(open);
-    
-    // If dialog is being opened, store operation state
-    if (open) {
-      sessionStorage.setItem('sfd_creation_in_progress', 'true');
-    } else {
-      // If dialog is being closed, clear operation state
-      sessionStorage.removeItem('sfd_creation_in_progress');
-    }
-  };
-  
-  const handleAdminDialogChange = (open: boolean) => {
-    setAddAdminDialogOpen(open);
-    
-    // If dialog is being opened, store operation state
-    if (open) {
-      sessionStorage.setItem('sfd_admin_creation_in_progress', 'true');
-    } else {
-      // If dialog is being closed, clear operation state
-      sessionStorage.removeItem('sfd_admin_creation_in_progress');
-    }
-  };
-  
+export function SfdManagementContainer() {
+  const {
+    filteredSfds,
+    isLoading,
+    isError,
+    searchTerm,
+    setSearchTerm,
+    selectedSfd,
+    handleShowEditDialog,
+    handleSuspendSfd,
+    handleReactivateSfd,
+    handleActivateSfd,
+    showSuspendDialog,
+    setShowSuspendDialog,
+    showReactivateDialog,
+    setShowReactivateDialog,
+    showActivateDialog,
+    setShowActivateDialog,
+    showAddDialog,
+    setShowAddDialog,
+    showEditDialog,
+    setShowEditDialog,
+    suspendSfdMutation,
+    reactivateSfdMutation,
+    activateSfdMutation,
+    addSfdMutation,
+    editSfdMutation,
+    handleAddSfd,
+    handleEditSfd,
+    forceRefresh
+  } = useSfdManagement();
+
+  if (isError) {
+    return (
+      <Alert variant="destructive" className="mt-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Erreur</AlertTitle>
+        <AlertDescription>
+          Une erreur est survenue lors du chargement des SFDs. Veuillez réessayer.
+          <Button 
+            onClick={forceRefresh} 
+            variant="outline" 
+            size="sm" 
+            className="ml-4"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Réessayer
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium mb-2">Statistiques des SFDs</h3>
+    <div className="space-y-4">
+      <div className="flex flex-col md:flex-row justify-between gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Rechercher par nom, code ou région..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
         <div className="flex gap-2">
           <Button 
-            onClick={handleOpenAddAdminDialog}
-            className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
+            variant="outline" 
+            className="flex-shrink-0"
+            onClick={forceRefresh}
           >
-            <UserPlus className="h-4 w-4" />
-            Ajouter un Admin SFD
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Actualiser
           </Button>
-          
           <Button 
-            onClick={handleOpenAddDialog}
-            className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 flex items-center gap-2"
+            className="flex-shrink-0" 
+            onClick={() => setShowAddDialog(true)}
           >
-            <Plus className="h-4 w-4" />
-            <Building className="h-4 w-4" />
+            <Plus className="h-4 w-4 mr-2" />
             Ajouter une SFD
           </Button>
         </div>
       </div>
-      
-      <SfdManagementStats />
-      
-      <SfdAddDialog 
-        open={addDialogOpen} 
-        onOpenChange={handleDialogChange} 
-      />
-      
-      <SfdAdminAddDialog
-        open={addAdminDialogOpen}
-        onOpenChange={handleAdminDialogChange}
+
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+          <p className="text-muted-foreground">Chargement des SFDs...</p>
+        </div>
+      ) : (
+        <SfdTable
+          sfds={filteredSfds}
+          onShowEditDialog={handleShowEditDialog}
+          onSuspendSfd={handleSuspendSfd}
+          onReactivateSfd={handleReactivateSfd}
+          onActivateSfd={handleActivateSfd}
+        />
+      )}
+
+      <SfdDialogs
+        showSuspendDialog={showSuspendDialog}
+        setShowSuspendDialog={setShowSuspendDialog}
+        showReactivateDialog={showReactivateDialog}
+        setShowReactivateDialog={setShowReactivateDialog}
+        showActivateDialog={showActivateDialog}
+        setShowActivateDialog={setShowActivateDialog}
+        showAddDialog={showAddDialog}
+        setShowAddDialog={setShowAddDialog}
+        showEditDialog={showEditDialog}
+        setShowEditDialog={setShowEditDialog}
+        selectedSfd={selectedSfd}
+        suspendSfdMutation={suspendSfdMutation}
+        reactivateSfdMutation={reactivateSfdMutation}
+        activateSfdMutation={activateSfdMutation}
+        addSfdMutation={addSfdMutation}
+        editSfdMutation={editSfdMutation}
+        handleAddSfd={handleAddSfd}
+        handleEditSfd={handleEditSfd}
       />
     </div>
   );
-};
+}

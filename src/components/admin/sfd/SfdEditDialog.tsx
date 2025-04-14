@@ -45,29 +45,30 @@ export function SfdEditDialog({
   const form = useForm<SfdFormValues>({
     resolver: zodResolver(sfdFormSchema),
     defaultValues: {
-      name: sfd.name,
-      code: sfd.code,
-      region: sfd.region || '',
-      description: sfd.description || '',
-      contact_email: sfd.contact_email || '',
-      phone: sfd.phone || '',
-      status: sfd.status,
-      logo_url: sfd.logo_url || '',
-      legal_document_url: sfd.legal_document_url || '',
+      name: '',
+      code: '',
+      region: '',
+      description: '',
+      contact_email: '',
+      phone: '',
+      status: 'active',
+      logo_url: '',
+      legal_document_url: '',
     }
   });
 
-  // Reset form when SFD changes
+  // Reset form when SFD changes or dialog opens
   useEffect(() => {
     if (open && sfd) {
+      console.log('Resetting form with SFD data:', sfd);
       form.reset({
-        name: sfd.name,
-        code: sfd.code,
+        name: sfd.name || '',
+        code: sfd.code || '',
         region: sfd.region || '',
         description: sfd.description || '',
         contact_email: sfd.contact_email || '',
         phone: sfd.phone || '',
-        status: sfd.status,
+        status: sfd.status || 'active',
         logo_url: sfd.logo_url || '',
         legal_document_url: sfd.legal_document_url || '',
       });

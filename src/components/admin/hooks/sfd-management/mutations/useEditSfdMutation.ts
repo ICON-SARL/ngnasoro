@@ -28,6 +28,7 @@ export function useEditSfdMutation() {
         legal_document_url: data.legal_document_url
       };
       
+      // Update without trying to return the updated record in the same call
       const { error } = await supabase
         .from('sfds')
         .update(updateData)
@@ -38,8 +39,20 @@ export function useEditSfdMutation() {
         throw error;
       }
       
-      // Return the updated data directly instead of fetching it again
-      return { id, ...updateData };
+      // After successful update, fetch the updated record
+      const { data: updatedSfd, error: fetchError } = await supabase
+        .from('sfds')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (fetchError) {
+        console.error('Error fetching updated SFD:', fetchError);
+        // We'll return the update data anyway since the update was successful
+        return { id, ...updateData };
+      }
+      
+      return updatedSfd;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
