@@ -89,7 +89,7 @@ export function SfdAdminAssociationDialog({
       console.log(`Récupéré ${allAdmins?.length || 0} administrateurs au total`);
       console.log(`${existingAssocs?.length || 0} associations trouvées pour la SFD ${sfdId}`);
       
-      // Filtrer pour ne garder que les administrateurs non associés
+      // Filtrer pour ne garder que les administrateurs non associés à cette SFD spécifique
       const existingUserIds = existingAssocs?.map(assoc => assoc.user_id) || [];
       const availableAdmins = allAdmins?.filter(admin => !existingUserIds.includes(admin.id)) || [];
       

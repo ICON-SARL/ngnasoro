@@ -80,6 +80,49 @@ export function useSfdAssociation() {
       setIsLoading(true);
       setError(null);
       
+      // Vérifier si l'association existe déjà
+      const { data: existingAssoc, error: checkError } = await supabase
+        .from('user_sfds')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('sfd_id', sfdId)
+        .single();
+        
+      if (existingAssoc) {
+        // Si l'association existe déjà, mettre à jour uniquement le statut par défaut si nécessaire
+        if (makeDefault) {
+          // D'abord, mettre à jour les autres associations pour cet utilisateur
+          const { error: updateError } = await supabase
+            .from('user_sfds')
+            .update({ is_default: false })
+            .eq('user_id', userId);
+            
+          if (updateError) {
+            console.error('Erreur lors de la mise à jour des SFDs existantes:', updateError);
+          }
+          
+          // Ensuite, définir cette association comme par défaut
+          const { error: setDefaultError } = await supabase
+            .from('user_sfds')
+            .update({ is_default: true })
+            .eq('id', existingAssoc.id);
+            
+          if (setDefaultError) {
+            throw setDefaultError;
+          }
+        }
+        
+        toast({
+          title: 'Association existante',
+          description: `L'utilisateur est déjà associé à cette SFD.${makeDefault ? ' Définie comme SFD par défaut.' : ''}`,
+        });
+        
+        await fetchUserSfds(userId);
+        queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
+        
+        return true;
+      }
+      
       // Si c'est la SFD par défaut, mettre à jour toutes les associations existantes
       if (makeDefault) {
         const { error: updateError } = await supabase
@@ -89,7 +132,6 @@ export function useSfdAssociation() {
           
         if (updateError) {
           console.error('Erreur lors de la mise à jour des SFDs existantes:', updateError);
-          // Continuer quand même
         }
       }
       
@@ -138,6 +180,19 @@ export function useSfdAssociation() {
       setIsLoading(true);
       setError(null);
       
+      // Vérifier si c'est une association par défaut
+      const { data: association, error: checkError } = await supabase
+        .from('user_sfds')
+        .select('is_default')
+        .eq('user_id', userId)
+        .eq('sfd_id', sfdId)
+        .single();
+        
+      if (checkError) {
+        throw checkError;
+      }
+      
+      // Supprimer l'association
       const { error } = await supabase
         .from('user_sfds')
         .delete()
@@ -146,6 +201,23 @@ export function useSfdAssociation() {
         
       if (error) {
         throw error;
+      }
+      
+      // Si c'était une association par défaut, définir une autre comme par défaut
+      if (association && association.is_default) {
+        const { data: otherAssocs, error: getError } = await supabase
+          .from('user_sfds')
+          .select('id')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: true })
+          .limit(1);
+          
+        if (!getError && otherAssocs && otherAssocs.length > 0) {
+          await supabase
+            .from('user_sfds')
+            .update({ is_default: true })
+            .eq('id', otherAssocs[0].id);
+        }
       }
       
       // Rafraîchir les données

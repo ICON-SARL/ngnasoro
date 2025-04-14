@@ -42,7 +42,51 @@ export function useAssociateSfdAdmin() {
         throw new Error("SFD non trouvée");
       }
       
-      // 3. Si makeDefault est true, mettre à jour les autres associations pour cet admin
+      // 3. Vérifier si l'association existe déjà
+      const { data: existingAssoc, error: checkError } = await supabase
+        .from('user_sfds')
+        .select('id')
+        .eq('user_id', adminId)
+        .eq('sfd_id', sfdId)
+        .single();
+        
+      if (existingAssoc) {
+        // Si l'association existe déjà, mettre à jour uniquement le statut par défaut si nécessaire
+        if (makeDefault) {
+          // D'abord, mettre à jour les autres associations pour cet admin
+          const { error: updateError } = await supabase
+            .from('user_sfds')
+            .update({ is_default: false })
+            .eq('user_id', adminId);
+            
+          if (updateError) {
+            console.error("Erreur lors de la mise à jour des associations existantes:", updateError);
+          }
+          
+          // Ensuite, définir cette association comme par défaut
+          const { error: setDefaultError } = await supabase
+            .from('user_sfds')
+            .update({ is_default: true })
+            .eq('id', existingAssoc.id);
+            
+          if (setDefaultError) {
+            throw new Error(`Erreur lors de la mise à jour du statut par défaut: ${setDefaultError.message}`);
+          }
+        }
+        
+        toast({
+          title: 'Association existante',
+          description: `L'administrateur est déjà associé à cette SFD. ${makeDefault ? 'Définie comme SFD par défaut.' : ''}`
+        });
+        
+        queryClient.invalidateQueries({ queryKey: ['sfd-admins'] });
+        queryClient.invalidateQueries({ queryKey: ['sfds'] });
+        queryClient.invalidateQueries({ queryKey: ['user-sfds'] });
+        
+        return true;
+      }
+      
+      // 4. Si makeDefault est true, mettre à jour les autres associations pour cet admin
       if (makeDefault) {
         const { error: updateError } = await supabase
           .from('user_sfds')
@@ -55,7 +99,7 @@ export function useAssociateSfdAdmin() {
         }
       }
       
-      // 4. Créer l'association
+      // 5. Créer l'association
       const { data, error: insertError } = await supabase
         .from('user_sfds')
         .insert({
