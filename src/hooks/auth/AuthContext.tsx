@@ -18,7 +18,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Compute role properties based on user metadata
   const userRole = user?.app_metadata?.role as UserRole || UserRole.User;
-  const isAdmin = userRole === UserRole.SuperAdmin || userRole === 'admin';
+  
+  // Fix the role comparison by comparing string values
+  const isAdmin = userRole === UserRole.Admin || userRole === UserRole.SuperAdmin || userRole === 'admin';
   const isSfdAdmin = userRole === UserRole.SfdAdmin || userRole === 'sfd_admin';
   const isClient = userRole === UserRole.Client || userRole === 'client' || userRole === 'user';
 

@@ -11,9 +11,10 @@ export enum UserRole {
 
 export type Role = UserRole | string;
 
-export interface User extends SupabaseUser {
+export interface User extends Omit<SupabaseUser, 'app_metadata'> {
   app_metadata?: {
     role?: UserRole | string;
+    sfd_id?: string;
     [key: string]: any;
   };
   user_metadata?: {
@@ -22,8 +23,12 @@ export interface User extends SupabaseUser {
     last_name?: string;
     phone?: string;
     profile_completed?: boolean;
+    avatar_url?: string;
     [key: string]: any;
   };
+  full_name?: string; // Direct property for easier access
+  avatar_url?: string; // Direct property for easier access
+  sfd_id?: string; // Direct property for easier access
 }
 
 export interface AuthContextProps {
@@ -42,4 +47,18 @@ export interface AuthContextProps {
   userRole: UserRole | string;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
+}
+
+// Add missing interface for SFD association
+export interface AssociateSfdParams {
+  userId: string;
+  sfdId: string;
+  makeDefault?: boolean;
+  isDefault?: boolean;
+}
+
+export interface AssociateSfdResult {
+  success: boolean;
+  userSfd?: any;
+  error?: string;
 }

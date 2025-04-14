@@ -10,6 +10,6 @@ export const getSfdId = (user: User | null): string | undefined => {
   
   // Check all possible locations of sfd_id
   return user.sfd_id || 
-         (user.user_metadata?.sfd_id as string) || 
-         (user.app_metadata?.sfd_id as string);
+         (user.app_metadata?.sfd_id as string) || 
+         (user.user_metadata?.sfd_id as string);
 };
