@@ -19,38 +19,48 @@ export function useSfdData() {
       try {
         console.log('Fetching SFDs...');
         
-        // Simuler un délai pour les tests en environnement de développement
-        if (process.env.NODE_ENV === 'development') {
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-
-        // Utiliser la méthode directe sans timeout complexe
-        const { data, error } = await supabase
-          .from('sfds')
-          .select(`
-            id,
-            name,
-            code,
-            region,
-            status,
-            logo_url,
-            contact_email,
-            phone,
-            description,
-            created_at,
-            updated_at
-          `)
-          .order('name');
+        // Fetch with timeout to avoid hanging indefinitely
+        const fetchWithTimeout = async () => {
+          const { data, error } = await supabase
+            .from('sfds')
+            .select(`
+              id,
+              name,
+              code,
+              region,
+              status,
+              logo_url,
+              contact_email,
+              phone,
+              description,
+              created_at,
+              updated_at
+            `)
+            .order('name');
+            
+          if (error) {
+            console.error('Error fetching SFDs:', error);
+            throw new Error(`Erreur lors de la récupération des SFDs: ${error.message}`);
+          }
           
-        if (error) {
-          console.error('Error fetching SFDs:', error);
-          throw new Error(`Erreur lors de la récupération des SFDs: ${error.message}`);
-        }
-
+          return data || [];
+        };
+        
+        // Enforce a 10-second timeout
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout: La requête a pris trop de temps')), 10000);
+        });
+        
+        // Race between the fetch and the timeout
+        const data = await Promise.race([
+          fetchWithTimeout(),
+          timeoutPromise
+        ]) as any[];
+        
         console.log(`Retrieved ${data?.length || 0} SFDs successfully`);
         
-        // Convert to properly typed Sfd objects and sort priority SFDs
-        const typedSfds = (data || []).map(sfd => {
+        // Convert to properly typed Sfd objects
+        const typedSfds = data.map(sfd => {
           const typedSfd: Sfd = {
             id: sfd.id,
             name: sfd.name,
@@ -87,7 +97,9 @@ export function useSfdData() {
         // Formatter un message d'erreur plus convivial
         let errorMessage = error.message || "Erreur inconnue";
         
-        if (errorMessage.includes('Failed to fetch') || 
+        if (errorMessage.includes('Timeout')) {
+          errorMessage = "La requête a pris trop de temps. Veuillez réessayer.";
+        } else if (errorMessage.includes('Failed to fetch') || 
             errorMessage.includes('NetworkError') || 
             errorMessage.includes('net::ERR_') || 
             errorMessage.includes('timeout') ||
@@ -102,16 +114,13 @@ export function useSfdData() {
           variant: "destructive",
         });
         
-        // Renvoyer un tableau vide pour éviter les erreurs d'affichage
-        return [];
+        throw error;
       }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 3, // Nombre de tentatives
+    retry: 2, // Nombre de tentatives réduit
     retryDelay: attempt => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 30 * 1000), // Backoff exponentiel
     refetchOnWindowFocus: false,
-    // Ajouter un fallback pour éviter les erreurs infinies
-    placeholderData: []
   });
   
   // Function to prioritize certain SFDs
@@ -134,7 +143,7 @@ export function useSfdData() {
   };
 
   return {
-    sfds: sfds || [],
+    sfds: sfds || [], // Ensure we always return an array
     isLoading,
     isError,
     error,

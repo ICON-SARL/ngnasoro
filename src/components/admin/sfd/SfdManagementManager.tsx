@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Building, User, MapPin, Mail, Phone, MoreHorizontal, RefreshCw, Edit } from 'lucide-react';
+import { Plus, Search, Building, User, MapPin, Mail, Phone, MoreHorizontal, RefreshCw, Edit, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { SfdAddDialog } from '@/components/admin/sfd/SfdAddDialog';
 import { SfdEditDialog } from '@/components/admin/sfd/SfdEditDialog';
 import { useQuery } from '@tanstack/react-query';
@@ -12,25 +13,35 @@ import { supabase } from '@/integrations/supabase/client';
 import { Sfd } from '../types/sfd-types';
 import { useUpdateSfdMutation } from '../hooks/sfd-management/mutations/useUpdateSfdMutation';
 import { useToast } from '@/hooks/use-toast';
+import { Loader } from '@/components/ui/loader';
 
 export function SfdManagementManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedSfd, setSelectedSfd] = useState<Sfd | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
   
   const updateSfdMutation = useUpdateSfdMutation();
   
-  const { data: sfds = [], isLoading, refetch, error } = useQuery({
+  const { data: sfds = [], isLoading, refetch, error, isError } = useQuery({
     queryKey: ['sfds'],
     queryFn: async () => {
       try {
         console.log('Fetching SFDs from Supabase...');
+        
+        // Add timeout to prevent indefinite waiting
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
         const { data, error } = await supabase
           .from('sfds')
           .select('*')
-          .order('name');
+          .order('name')
+          .abortSignal(controller.signal);
+        
+        clearTimeout(timeoutId);
         
         if (error) {
           console.error('Supabase error:', error);
@@ -39,20 +50,48 @@ export function SfdManagementManager() {
         
         console.log('SFDs fetched successfully:', data);
         return data as Sfd[];
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching SFDs:', err);
+        
+        let errorMessage = "Impossible de charger les SFDs.";
+        if (err.name === 'AbortError') {
+          errorMessage = "La requête a pris trop de temps. Veuillez réessayer.";
+        } else if (!navigator.onLine) {
+          errorMessage = "Vous êtes hors ligne. Veuillez vérifier votre connexion Internet.";
+        }
+        
         toast({
           title: "Erreur de chargement",
-          description: "Impossible de charger les SFDs. Veuillez réessayer.",
+          description: errorMessage,
           variant: "destructive",
         });
         throw err;
       }
-    }
+    },
+    retry: 1,
+    retryDelay: 1000,
   });
   
+  // Manual retry mechanism
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    refetch();
+    toast({
+      title: "Nouvelle tentative",
+      description: "Récupération des données en cours...",
+    });
+  };
+  
   // Log data for debugging
-  console.log('SFDs data state:', { isLoading, error, sfdsCount: sfds?.length, sfds });
+  useEffect(() => {
+    console.log('SFDs data state:', { 
+      isLoading, 
+      isError, 
+      error, 
+      sfdsCount: sfds?.length, 
+      sfds: sfds && sfds.length > 0 ? sfds.slice(0, 2) : [] 
+    });
+  }, [isLoading, isError, error, sfds]);
   
   // Filter SFDs based on search term
   const filteredSfds = sfds.filter(sfd => 
@@ -94,8 +133,13 @@ export function SfdManagementManager() {
             variant="outline" 
             className="flex-1 sm:flex-auto"
             onClick={() => refetch()}
+            disabled={isLoading}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            {isLoading ? (
+              <Loader size="sm" className="mr-2" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
             Actualiser
           </Button>
           <Button 
@@ -115,37 +159,83 @@ export function SfdManagementManager() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="flex flex-col items-center justify-center p-12">
+              <Loader size="lg" className="mb-4" />
+              <p className="text-muted-foreground">Chargement des SFDs en cours...</p>
             </div>
-          ) : error ? (
+          ) : isError ? (
             <div className="text-center p-8 bg-red-50 rounded-md">
-              <Building className="h-12 w-12 text-red-500 mx-auto mb-2" />
-              <p className="text-red-600">Erreur lors du chargement des SFDs</p>
+              <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-red-800 mb-2">
+                Erreur lors du chargement des SFDs
+              </h3>
+              <p className="text-red-700 mb-4">
+                {error instanceof Error ? error.message : "Une erreur est survenue. Veuillez réessayer."}
+              </p>
+              <Alert variant="destructive" className="mb-4">
+                <AlertTitle>Détails de l'erreur</AlertTitle>
+                <AlertDescription className="text-xs max-h-20 overflow-auto">
+                  {JSON.stringify(error, null, 2)}
+                </AlertDescription>
+              </Alert>
               <Button 
                 variant="outline" 
-                className="mt-4"
-                onClick={() => refetch()}
+                className="mb-2"
+                onClick={handleRetry}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Réessayer
+                Réessayer ({retryCount})
               </Button>
+              <p className="text-xs text-muted-foreground mt-4">
+                Si le problème persiste, veuillez contacter le support technique.
+              </p>
             </div>
           ) : filteredSfds.length === 0 ? (
             <div className="text-center p-8 bg-muted/20 rounded-md">
               <Building className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
               <p className="text-muted-foreground">Aucun SFD trouvé</p>
+              {sfds.length > 0 && searchTerm && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Essayez de modifier votre recherche
+                </p>
+              )}
+              {sfds.length === 0 && !searchTerm && (
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => setAddDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ajouter votre première SFD
+                </Button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredSfds.map(sfd => (
                 <Card key={sfd.id} className="overflow-hidden border-gray-200">
-                  <div className={`h-2 w-full ${sfd.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`} />
+                  <div className={`h-2 w-full ${
+                    sfd.status === 'active' ? 'bg-green-500' : 
+                    sfd.status === 'pending' ? 'bg-amber-500' :
+                    'bg-red-500'
+                  }`} />
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center">
                         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mr-3">
-                          <Building className="h-6 w-6 text-primary" />
+                          {sfd.logo_url ? (
+                            <img 
+                              src={sfd.logo_url} 
+                              alt={sfd.name} 
+                              className="h-10 w-10 rounded-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"></path><path d="M3 9V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"></path></svg>';
+                              }}
+                            />
+                          ) : (
+                            <Building className="h-6 w-6 text-primary" />
+                          )}
                         </div>
                         <div>
                           <h3 className="font-medium text-lg">{sfd.name}</h3>
@@ -178,13 +268,19 @@ export function SfdManagementManager() {
                       )}
                       <div className="flex items-center text-sm">
                         <User className="h-4 w-4 text-gray-500 mr-2" />
-                        <span>0 clients</span>
+                        <span>{sfd.client_count || 0} clients</span>
                       </div>
                     </div>
                     
                     <div className="flex justify-between items-center">
-                      <Badge variant={sfd.status === 'active' ? 'default' : 'destructive'}>
-                        {sfd.status === 'active' ? 'Actif' : 'Inactif'}
+                      <Badge variant={
+                        sfd.status === 'active' ? 'default' : 
+                        sfd.status === 'pending' ? 'outline' : 
+                        'destructive'
+                      }>
+                        {sfd.status === 'active' ? 'Actif' : 
+                         sfd.status === 'pending' ? 'En attente' : 
+                         'Suspendu'}
                       </Badge>
                       <div className="flex gap-2">
                         <Button 
