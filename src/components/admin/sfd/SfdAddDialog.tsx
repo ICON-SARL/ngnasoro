@@ -33,7 +33,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useCreateSfdMutation } from '@/components/admin/hooks/sfd-management/mutations/useCreateSfdMutation';
-import { sfdFormSchema } from './schemas/sfdFormSchema';
+import { sfdFormSchema, SfdFormValues } from './schemas/sfdFormSchema';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SfdAddDialogProps {
@@ -54,7 +54,7 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
   const [selectedAdmin, setSelectedAdmin] = useState<string>('');
   const [isLoadingAdmins, setIsLoadingAdmins] = useState(false);
 
-  const form = useForm({
+  const form = useForm<SfdFormValues>({
     resolver: zodResolver(sfdFormSchema),
     defaultValues: {
       name: '',
@@ -94,7 +94,7 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
     }
   }, [open, selectedTab]);
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: SfdFormValues) => {
     try {
       const sfdData = {
         name: values.name,
@@ -113,9 +113,9 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
       if (selectedTab === 'new-admin') {
         createAdmin = true;
         adminData = {
-          email: values.adminEmail,
-          password: values.adminPassword,
-          full_name: values.adminName
+          email: values.adminEmail || '',
+          password: values.adminPassword || '',
+          full_name: values.adminName || ''
         };
       } else if (selectedTab === 'existing-admin' && selectedAdmin) {
         existingAdminId = selectedAdmin;

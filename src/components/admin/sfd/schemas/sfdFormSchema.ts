@@ -1,25 +1,32 @@
 
-import * as z from 'zod';
+import { z } from 'zod';
 
-// Schéma de validation pour le formulaire SFD
-export const sfdFormSchema = z.object({
-  name: z.string().min(2, {
-    message: "Le nom doit contenir au moins 2 caractères",
-  }),
-  code: z.string().min(2, {
-    message: "Le code doit contenir au moins 2 caractères",
-  }),
-  region: z.string().optional(),
-  description: z.string().optional(),
-  status: z.enum(['active', 'pending', 'suspended']).default('active'),
-  contact_email: z.string().email({ message: "Email invalide" }).optional().or(z.literal('')),
-  email: z.string().email({ message: "Email invalide" }).optional().or(z.literal('')),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  subsidy_balance: z.number().nonnegative().default(0),
-  logo_url: z.string().optional().nullable(),
-  legal_document_url: z.string().optional().nullable(),
+// Schéma pour les données de l'administrateur SFD
+export const sfdAdminSchema = z.object({
+  adminName: z.string().min(2, "Le nom complet est requis").optional(),
+  adminEmail: z.string().email("Email invalide").optional(),
+  adminPassword: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères").optional(),
 });
 
-// Type pour les valeurs du formulaire SFD
+// Schéma pour les données de base de la SFD
+export const sfdFormSchema = z.object({
+  name: z.string().min(2, "Le nom est requis"),
+  code: z.string().min(2, "Le code est requis"),
+  region: z.string().optional(),
+  status: z.enum(["active", "pending", "suspended"]).default("active"),
+  description: z.string().optional(),
+  contact_email: z.string().email("Email invalide").optional(),
+  email: z.string().email("Email invalide").optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  logo_url: z.string().optional(),
+  legal_document_url: z.union([z.string(), z.null()]).optional(),
+  subsidy_balance: z.number().default(0),
+  
+  // Admin fields for the form
+  adminName: z.string().min(2, "Le nom complet est requis").optional(),
+  adminEmail: z.string().email("Email invalide").optional(),
+  adminPassword: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères").optional(),
+});
+
 export type SfdFormValues = z.infer<typeof sfdFormSchema>;
