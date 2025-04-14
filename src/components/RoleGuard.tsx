@@ -76,23 +76,21 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     
     // Log access denied attempts
     if (!permitted) {
-      // Fix: Update this call to match the expected number of arguments
-      logAuditEvent({
-        category: AuditLogCategory.DATA_ACCESS,
-        action: 'role_check_failure',
-        details: {
+      // Fix: Update the call to match the expected signature from the auditLogger module
+      logAuditEvent(
+        AuditLogCategory.DATA_ACCESS,
+        'role_check_failure',
+        {
           required_role: requiredRole,
           user_role: userRole,
           normalized_user_role: normalizedUserRole,
           normalized_required_role: normalizedRequiredRole,
           timestamp: new Date().toISOString()
         },
-        user_id: user.id,
-        severity: AuditLogSeverity.WARNING,
-        status: 'failure',
-        resource: location.pathname,
-        message: `Access denied: Missing role (${requiredRole})`
-      });
+        user.id,
+        AuditLogSeverity.WARNING,
+        'failure'
+      );
     }
   }, [user, requiredRole, location.pathname, userRole, isAdmin, isSfdAdmin, isClient]);
 
