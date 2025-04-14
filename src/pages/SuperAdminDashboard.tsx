@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
@@ -16,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, Building, Users, Shield, UserPlus } from 'lucide-react';
 import { Footer } from '@/components';
 import { Card, CardContent } from '@/components/ui/card';
+import { AccountCleanup } from '@/components/admin/AccountCleanup';
 
 const SuperAdminDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -31,10 +31,8 @@ const SuperAdminDashboard = () => {
   
   const handleCardClick = (path: string) => {
     if (path.startsWith('tab:')) {
-      // Handle internal tab navigation
       setSearchParams({ tab: path.substring(4) });
     } else {
-      // Handle external page navigation
       navigate(path);
     }
   };
@@ -127,6 +125,13 @@ const SuperAdminDashboard = () => {
                 isLoading={isLoading} 
               />
             </div>
+            
+            <div className="mt-6">
+              <h2 className="text-lg font-semibold mb-4">Opérations de maintenance</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <AccountCleanup />
+              </div>
+            </div>
           </>
         )}
         
@@ -165,7 +170,6 @@ const SuperAdminDashboard = () => {
           onTabChange={handleTabChange}
         />
 
-        {/* Dialogue pour ajouter un nouvel administrateur */}
         <AddAdminDialog 
           open={isAddAdminDialogOpen} 
           onOpenChange={setIsAddAdminDialogOpen} 
