@@ -31,7 +31,7 @@ serve(async (req) => {
     
     // Extraire les paramètres de la requête
     const body = await req.json();
-    const { action, sfdId, clientId, validatedBy } = body;
+    const { action, sfdId, clientId, validatedBy, clientData } = body;
     
     // Traiter selon l'action demandée
     if (action === "getClients" && sfdId) {
@@ -53,6 +53,43 @@ serve(async (req) => {
       
       return new Response(
         JSON.stringify(data || []),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    if (action === "createClient" && sfdId && clientData) {
+      console.log(`Création d'un nouveau client pour la SFD: ${sfdId}`);
+      
+      const { data, error } = await supabase
+        .from("sfd_clients")
+        .insert({
+          ...clientData,
+          sfd_id: sfdId,
+          status: "pending",
+          kyc_level: 0
+        })
+        .select()
+        .single();
+        
+      if (error) {
+        console.error("Erreur lors de la création du client:", error);
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Créer une activité client pour tracer cette création
+      await supabase
+        .from("client_activities")
+        .insert({
+          client_id: data.id,
+          activity_type: "client_creation",
+          description: "Nouveau client créé"
+        });
+      
+      return new Response(
+        JSON.stringify(data),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

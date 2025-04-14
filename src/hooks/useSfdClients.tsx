@@ -60,6 +60,38 @@ export function useSfdClients() {
     (client.phone && client.phone.includes(searchTerm))
   );
 
+  // Create client mutation
+  const createClient = useMutation({
+    mutationFn: async (clientData: Omit<SfdClient, 'id' | 'created_at' | 'status' | 'kyc_level'>) => {
+      if (!activeSfdId) throw new Error('No active SFD ID');
+      
+      const { data, error } = await supabase.functions.invoke('sfd-clients', {
+        body: {
+          action: 'createClient',
+          sfdId: activeSfdId,
+          clientData
+        }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Client créé',
+        description: 'Le nouveau client a été créé avec succès',
+      });
+      queryClient.invalidateQueries({ queryKey: ['sfd-clients', activeSfdId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: `Impossible de créer le client: ${error.message}`,
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Validation d'un client
   const validateClient = useMutation({
     mutationFn: async ({ clientId }: { clientId: string }) => {
@@ -159,6 +191,8 @@ export function useSfdClients() {
     error,
     searchTerm,
     setSearchTerm,
+    activeSfdId,  // Add this to expose the activeSfdId
+    createClient, // Add this to expose the createClient mutation
     validateClient,
     rejectClient,
     deleteClient
