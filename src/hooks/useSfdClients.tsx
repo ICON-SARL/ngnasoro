@@ -62,7 +62,7 @@ export function useSfdClients() {
 
   // Create client mutation
   const createClient = useMutation({
-    mutationFn: async (clientData: Omit<SfdClient, 'id' | 'created_at' | 'status' | 'kyc_level'>) => {
+    mutationFn: async (clientData: Omit<SfdClient, 'id' | 'created_at' | 'status' | 'kyc_level' | 'sfd_id'>) => {
       if (!activeSfdId) throw new Error('No active SFD ID');
       
       const { data, error } = await supabase.functions.invoke('sfd-clients', {
@@ -191,8 +191,8 @@ export function useSfdClients() {
     error,
     searchTerm,
     setSearchTerm,
-    activeSfdId,  // Add this to expose the activeSfdId
-    createClient, // Add this to expose the createClient mutation
+    activeSfdId,
+    createClient,
     validateClient,
     rejectClient,
     deleteClient

@@ -72,12 +72,12 @@ export const NewClientForm = ({ onSuccess }: NewClientFormProps) => {
       
       await createClient.mutateAsync({
         full_name: data.fullName,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
-        id_type: data.idType,
-        id_number: data.idNumber,
-        notes: data.notes,
+        email: data.email || undefined,
+        phone: data.phone || undefined,
+        address: data.address || undefined,
+        id_type: data.idType || undefined,
+        id_number: data.idNumber || undefined,
+        notes: data.notes || undefined
       });
       
       form.reset();
