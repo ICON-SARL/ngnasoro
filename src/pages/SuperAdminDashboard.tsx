@@ -12,6 +12,7 @@ import { AdminUsersList } from '@/components/admin/shared/AdminUsersList';
 import { AddAdminDialog } from '@/components/admin/shared/AddAdminDialog';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Building, Users, Shield, UserPlus } from 'lucide-react';
 import { Footer } from '@/components';
 
