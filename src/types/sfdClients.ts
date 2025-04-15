@@ -112,3 +112,12 @@ export interface CreateLoanInput {
   subsidy_amount?: number;
   subsidy_rate?: number;
 }
+
+export interface LoanApplication {
+  sfd_id: string;
+  amount: number;
+  duration_months: number;
+  interest_rate?: number;
+  purpose: string;
+  supporting_documents?: string[];
+}
