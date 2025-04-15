@@ -32,19 +32,19 @@ export const exportService = {
     }
   },
 
-  private exportToExcel<T>(data: T[], config: ExportConfig): void {
+  exportToExcel<T>(data: T[], config: ExportConfig): void {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(data);
     XLSX.utils.book_append_sheet(wb, ws, config.title || 'Export');
     XLSX.writeFile(wb, `${config.fileName}.xlsx`);
   },
 
-  private exportToCsv<T>(data: T[], config: ExportConfig): void {
+  exportToCsv<T>(data: T[], config: ExportConfig): void {
     const ws = XLSX.utils.json_to_sheet(data);
     XLSX.writeFile({ Sheets: { data: ws }, SheetNames: ['data'] }, `${config.fileName}.csv`);
   },
 
-  private exportToPdf<T>(data: T[], config: ExportConfig): void {
+  exportToPdf<T>(data: T[], config: ExportConfig): void {
     const doc = new jsPDF();
 
     if (config.title) {
@@ -69,7 +69,7 @@ export const exportService = {
     doc.save(`${config.fileName}.pdf`);
   },
 
-  private exportToJson<T>(data: T[], config: ExportConfig): void {
+  exportToJson<T>(data: T[], config: ExportConfig): void {
     const jsonString = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = window.URL.createObjectURL(blob);
@@ -88,11 +88,18 @@ export const exportService = {
   ): Promise<any[]> {
     const { startDate, endDate, filters } = options || {};
     
-    let query = supabase.from(type);
+    // Use a type assertion to tell TypeScript that this is a valid table
+    // We need to do this because the type parameter is dynamic
+    let query = supabase.from(type as any);
 
     if (startDate && endDate) {
-      query = query.gte('created_at', startDate)
+      // We need to add select() first to get the proper builder type
+      query = query.select('*')
+                  .gte('created_at', startDate)
                   .lte('created_at', endDate);
+    } else {
+      // Make sure to call select() if not filtering by date
+      query = query.select('*');
     }
 
     // Add any additional filters
@@ -104,9 +111,9 @@ export const exportService = {
       });
     }
 
-    const { data, error } = await query.select();
+    const { data, error } = await query;
     
     if (error) throw error;
-    return data;
+    return data || [];
   }
 };
