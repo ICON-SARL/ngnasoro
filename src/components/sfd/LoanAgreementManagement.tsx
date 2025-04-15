@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   CheckCircle, 
@@ -37,7 +36,6 @@ const LoanAgreementManagement = () => {
   const [actionType, setActionType] = useState<'approve' | 'reject' | 'disburse' | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Filter loans based on search and status
   const filterLoans = (status: 'pending' | 'approved' | 'active' | 'all') => {
     return loans.filter(loan => {
       const matchesSearch = 
@@ -57,14 +55,12 @@ const LoanAgreementManagement = () => {
   const approvedLoans = filterLoans('approved');
   const activeLoans = filterLoans('active');
   
-  // Handle loan action selection
   const handleAction = (loan: Loan, action: 'approve' | 'reject' | 'disburse') => {
     setSelectedLoan(loan);
     setActionType(action);
     setShowDialog(true);
   };
   
-  // Process the selected action
   const processAction = async () => {
     if (!selectedLoan || !actionType) return;
     
@@ -72,11 +68,11 @@ const LoanAgreementManagement = () => {
     
     try {
       if (actionType === 'approve') {
-        await approveLoan.mutateAsync({ loanId: selectedLoan.id });
+        await approveLoan.mutateAsync(selectedLoan.id);
       } else if (actionType === 'reject') {
-        await rejectLoan.mutateAsync({ loanId: selectedLoan.id });
+        await rejectLoan.mutateAsync(selectedLoan.id);
       } else if (actionType === 'disburse') {
-        await disburseLoan.mutateAsync({ loanId: selectedLoan.id });
+        await disburseLoan.mutateAsync(selectedLoan.id);
       }
       setShowDialog(false);
     } catch (error) {
@@ -91,12 +87,10 @@ const LoanAgreementManagement = () => {
     }
   };
   
-  // Format currency
   const formatCurrency = (amount: number) => {
     return amount.toLocaleString('fr-FR') + ' FCFA';
   };
   
-  // Render loan status badge
   const renderStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -112,7 +106,6 @@ const LoanAgreementManagement = () => {
     }
   };
   
-  // Render a loan card
   const renderLoanCard = (loan: Loan) => {
     return (
       <Card key={loan.id} className="mb-4 hover:shadow-md transition-shadow">
@@ -145,7 +138,6 @@ const LoanAgreementManagement = () => {
             </div>
           </div>
           
-          {/* Action buttons based on status */}
           <div className="flex flex-wrap gap-2 mt-4">
             {loan.status === 'pending' && (
               <>
@@ -210,7 +202,6 @@ const LoanAgreementManagement = () => {
         </p>
       </div>
       
-      {/* Search and filter */}
       <div className="flex mb-6 gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -238,7 +229,6 @@ const LoanAgreementManagement = () => {
         </DropdownMenu>
       </div>
       
-      {/* Tabs for different loan statuses */}
       <Tabs defaultValue="pending">
         <TabsList className="mb-4">
           <TabsTrigger value="pending">
@@ -311,7 +301,6 @@ const LoanAgreementManagement = () => {
         </TabsContent>
       </Tabs>
       
-      {/* Confirmation dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
