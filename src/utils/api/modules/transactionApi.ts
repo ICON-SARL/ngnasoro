@@ -173,6 +173,8 @@ export const transactionApi = {
 
       if (getError) throw getError;
 
+      const disputeData = existingDispute as unknown as TransactionDispute;
+
       const { data, error } = await supabase
         .from('transaction_disputes' as any)
         .update({
@@ -191,12 +193,12 @@ export const transactionApi = {
         await supabase
           .from('transactions')
           .update({ status: 'reversed' })
-          .eq('id', existingDispute.transaction_id);
+          .eq('id', disputeData.transaction_id);
 
         await supabase.functions.invoke('process-transaction-reversal', {
           body: { 
             disputeId,
-            transactionId: existingDispute.transaction_id
+            transactionId: disputeData.transaction_id
           }
         });
       }
