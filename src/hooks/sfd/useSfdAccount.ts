@@ -53,13 +53,20 @@ export function useSfdAccount(user: any, activeSfdId: string | null): SfdAccount
             id: activeSfdId,
             name: 'Test SFD Account',
             logoUrl: null,
+            logo_url: null,
+            code: '',
+            region: '',
             balance: 250000,
             currency: 'FCFA',
             isDefault: true,
             isVerified: true,
+            status: 'active',
             loans: enhancedLoans as SfdLoan[],
-            sfd_id: activeSfdId, // Add required sfd_id field
-            account_type: 'main'
+            sfd_id: activeSfdId,
+            account_type: 'main',
+            description: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           };
         }
         

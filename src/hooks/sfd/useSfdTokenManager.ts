@@ -32,12 +32,16 @@ export function useSfdTokenManager(sfdData: SfdData[], setSfdData: React.Dispatc
   // Refresh a token if needed
   const refreshTokenIfNeeded = useCallback(async (userId: string, sfdId: string): Promise<string | null> => {
     const sfd = sfdData.find(s => s.id === sfdId);
-    if (!sfd || !sfd.token) {
+    if (!sfd) {
       return generateTokenForSfd(userId, sfdId);
     }
     
     try {
       // Check if token needs refresh
+      if (!sfd.token) {
+        return generateTokenForSfd(userId, sfdId);
+      }
+      
       const needsRefresh = await shouldRefreshSfdToken(sfd.token);
       
       if (needsRefresh) {

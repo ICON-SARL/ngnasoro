@@ -72,9 +72,14 @@ export interface LoanPaymentParams {
 export interface SfdData {
   id: string;
   name: string;
+  code?: string;
+  region?: string;
+  status?: string;
+  token?: string | null;
+  lastFetched?: Date | null;
   accounts?: SfdAccount[];
   loans?: SfdLoan[];
   balance?: number;
-  code?: string;
-  region?: string;
+  logo_url?: string | null;
+  is_default?: boolean;
 }

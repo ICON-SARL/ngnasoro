@@ -1,6 +1,6 @@
 
 import { createBrowserRouter } from 'react-router-dom';
-import AuthenticationPage from '@/pages/AuthenticationPage';
+import LoginPage from '@/pages/LoginPage';
 import LoanApplicationPage from '@/pages/LoanApplicationPage';
 import ClientLoansPage from '@/pages/ClientLoansPage';
 import MainDashboard from '@/components/mobile/MainDashboard';
@@ -14,11 +14,11 @@ import { mobileRoutes } from './mobile.routes';
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <AuthenticationPage />,
+    element: <LoginPage />,
   },
   {
     path: '/auth',
-    element: <AuthenticationPage />,
+    element: <LoginPage />,
   },
   {
     path: '/loans/apply',
