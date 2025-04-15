@@ -11,9 +11,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, requiredRoles }: ProtectedRouteProps) => {
-  const { user, isLoading, userRole } = useAuth();
+  const { user, loading, userRole } = useAuth();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600 mr-2" />
