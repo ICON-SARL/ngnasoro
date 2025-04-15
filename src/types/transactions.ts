@@ -1,4 +1,3 @@
-
 export interface Transaction {
   id: number | string;
   name: string;
@@ -33,6 +32,19 @@ export interface Account {
   status?: 'active' | 'inactive' | 'frozen';
 }
 
+export interface TransactionDispute {
+  id: string;
+  transaction_id: string;
+  reason: string;
+  description: string;
+  evidence_urls?: string[];
+  status: 'pending' | 'resolved' | 'rejected';
+  created_at: string;
+  resolved_at?: string;
+  resolved_by?: string;
+  resolution_notes?: string;
+}
+
 export interface TransactionFilters {
   period?: 'today' | 'week' | 'month' | 'year' | 'all';
   type?: 'all' | 'deposit' | 'withdrawal' | 'transfer' | 'payment' | 'loan_repayment' | 'loan_disbursement' | 'other';
@@ -41,6 +53,8 @@ export interface TransactionFilters {
   search?: string;
   minAmount?: number;
   maxAmount?: number;
+  page?: number;
+  limit?: number;
 }
 
 export interface TransactionStats {
