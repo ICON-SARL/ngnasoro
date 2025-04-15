@@ -48,7 +48,7 @@ export const SfdAdminAddDialog: React.FC<SfdAdminAddDialogProps> = ({
   onOpenChange 
 }) => {
   const { sfds, isLoading: isLoadingSfds } = useSfdData();
-  const { addSfdAdmin, isLoading, error } = useSfdAdminManagement();
+  const { createSfdAdmin, isLoading } = useSfdAdminManagement();
   const [submitError, setSubmitError] = useState<string | null>(null);
   
   const form = useForm<FormValues>({
@@ -66,18 +66,15 @@ export const SfdAdminAddDialog: React.FC<SfdAdminAddDialogProps> = ({
     setSubmitError(null);
     
     try {
-      await addSfdAdmin({
-        email: values.email,
-        password: values.password,
-        full_name: values.full_name,
-        role: 'sfd_admin',
-        sfd_id: values.sfd_id,
-        notify: values.notify,
-      });
+      const success = await createSfdAdmin(values.email, values.sfd_id);
       
-      // Reset form and close dialog on success
-      form.reset();
-      onOpenChange(false);
+      if (success) {
+        // Reset form and close dialog on success
+        form.reset();
+        onOpenChange(false);
+      } else {
+        setSubmitError("Une erreur s'est produite lors de la création de l'administrateur");
+      }
     } catch (error: any) {
       setSubmitError(error.message || "Une erreur s'est produite lors de la création de l'administrateur");
     }
@@ -107,16 +104,10 @@ export const SfdAdminAddDialog: React.FC<SfdAdminAddDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        {(submitError || error) && (
+        {submitError && (
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {submitError || (typeof error === 'string' 
-                ? error 
-                : error && 'message' in error 
-                  ? (error as Error).message 
-                  : 'Une erreur est survenue')}
-            </AlertDescription>
+            <AlertDescription>{submitError}</AlertDescription>
           </Alert>
         )}
         
@@ -240,4 +231,3 @@ export const SfdAdminAddDialog: React.FC<SfdAdminAddDialogProps> = ({
     </Dialog>
   );
 };
-

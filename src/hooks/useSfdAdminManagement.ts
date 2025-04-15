@@ -6,17 +6,28 @@ import { useRolesSynchronization } from './useRolesSynchronization';
 
 export function useSfdAdminManagement() {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { synchronizeRoles } = useRolesSynchronization();
 
   const createSfdAdmin = async (email: string, sfdId: string) => {
     setIsLoading(true);
+    setError(null);
+    
     try {
-      const { data, error } = await supabase.functions.invoke('create-sfd-admin', {
+      const { data, error: apiError } = await supabase.functions.invoke('create-sfd-admin', {
         body: { email, sfdId }
       });
 
-      if (error) throw error;
+      if (apiError) {
+        setError(apiError.message);
+        throw apiError;
+      }
+
+      if (data?.error) {
+        setError(data.error);
+        throw new Error(data.error);
+      }
 
       // Synchronize roles after creating admin
       await synchronizeRoles();
@@ -27,13 +38,18 @@ export function useSfdAdminManagement() {
       });
       
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating SFD admin:', err);
+      
+      const errorMessage = err.message || "Impossible de créer l'administrateur SFD";
+      setError(errorMessage);
+      
       toast({
         title: "Erreur",
-        description: "Impossible de créer l'administrateur SFD",
+        description: errorMessage,
         variant: "destructive"
       });
+      
       return false;
     } finally {
       setIsLoading(false);
@@ -42,6 +58,7 @@ export function useSfdAdminManagement() {
 
   return {
     isLoading,
+    error,
     createSfdAdmin
   };
 }
