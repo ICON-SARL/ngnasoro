@@ -39,7 +39,11 @@ export function SfdAccountsManager() {
   const handleRefreshAccounts = async () => {
     setIsRefreshing(true);
     try {
-      await synchronizeBalances.mutate();
+      await synchronizeBalances.mutate(undefined, {
+        onSettled: () => {
+          setIsRefreshing(false);
+        }
+      });
       await refetchAccounts();
       toast({
         title: "Synchronisation terminée",
@@ -52,7 +56,6 @@ export function SfdAccountsManager() {
         description: "Une erreur est survenue lors de la mise à jour des comptes",
         variant: "destructive",
       });
-    } finally {
       setIsRefreshing(false);
     }
   };
