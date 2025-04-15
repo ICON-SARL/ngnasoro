@@ -83,7 +83,7 @@ const RegisterFormFields: React.FC<RegisterFormFieldsProps> = ({ form }) => {
                 <Input
                   id="phone-reg"
                   type="tel"
-                  placeholder="+223 00 00 00 00"
+                  placeholder="+223 70 00 00 00"
                   className="pl-10"
                   {...field}
                 />

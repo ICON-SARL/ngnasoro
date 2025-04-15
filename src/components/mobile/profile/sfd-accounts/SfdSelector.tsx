@@ -165,7 +165,7 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ userId, onRequestSent }) => {
                     <Input
                       id="phoneNumber"
                       type="tel"
-                      placeholder="+223 00 00 00 00"
+                      placeholder="+223 7X XX XX XX"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                     />

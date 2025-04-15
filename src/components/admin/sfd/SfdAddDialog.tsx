@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -183,7 +182,7 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
                 <FormItem>
                   <FormLabel>Téléphone</FormLabel>
                   <FormControl>
-                    <Input placeholder="+226 XXXXXXXX" {...field} />
+                    <Input placeholder="+223 7X XX XX XX" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

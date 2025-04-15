@@ -201,7 +201,7 @@ export function SfdForm({
                 <FormLabel className="text-sm text-slate-700">Téléphone</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder="+123 456 789" 
+                    placeholder="+223 7X XX XX XX" 
                     {...field} 
                     className="h-9 text-sm rounded-md border-slate-300 focus:border-blue-400"
                     value={field.value || ''}

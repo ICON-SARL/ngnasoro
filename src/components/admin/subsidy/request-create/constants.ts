@@ -1,3 +1,4 @@
+
 export const MALI_REGIONS = [
   'Bamako',
   'Gao',

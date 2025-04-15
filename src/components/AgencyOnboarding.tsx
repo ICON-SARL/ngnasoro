@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -165,7 +164,7 @@ export const AgencyOnboarding = () => {
                     <FormItem>
                       <FormLabel>Téléphone</FormLabel>
                       <FormControl>
-                        <Input placeholder="+223 00 00 00 00" {...field} />
+                        <Input placeholder="+223 70 00 00 00" {...field} />
                       </FormControl>
                     </FormItem>
                   )}
