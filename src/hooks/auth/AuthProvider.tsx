@@ -67,6 +67,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: newSession.user.app_metadata?.role,
             metadata: newSession.user.app_metadata,
           });
+        } else {
+          console.log('Auth state changed: User signed out');
         }
         
         // Log auth events
@@ -84,16 +86,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             'success'
           );
         } else if (event === 'SIGNED_OUT') {
-          await logAuditEvent(
-            AuditLogCategory.AUTHENTICATION,
-            'user_logout',
-            {
-              timestamp: new Date().toISOString()
-            },
-            user?.id,
-            AuditLogSeverity.INFO,
-            'success'
-          );
+          // Only log if we have a user ID from before the signout
+          const userId = user?.id;
+          if (userId) {
+            await logAuditEvent(
+              AuditLogCategory.AUTHENTICATION,
+              'user_logout',
+              {
+                timestamp: new Date().toISOString()
+              },
+              userId,
+              AuditLogSeverity.INFO,
+              'success'
+            );
+          }
         }
       }
     );
@@ -137,10 +143,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      console.log('AuthProvider - Signing out user');
+      const userId = user?.id; // Capture user ID before signout
+      
+      // Call Supabase signOut method
       const result = await supabase.auth.signOut();
+      
+      if (result.error) {
+        console.error('Error during signOut:', result.error);
+      } else {
+        console.log('AuthProvider - SignOut successful');
+        // Clear local state immediately to avoid UI inconsistencies
+        setUser(null);
+        setSession(null);
+      }
+      
       return result;
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Exception during signOut:', error);
       return { error };
     }
   };

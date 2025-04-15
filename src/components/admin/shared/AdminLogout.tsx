@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +16,6 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
   size = 'sm',
   className = ''
 }) => {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { signOut } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -47,7 +45,7 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Force a full page reload to clear any remaining state - do this immediately
+      // Force a full page reload to clear any remaining state
       window.location.href = '/auth';
     } catch (error: any) {
       console.error('Logout error:', error);

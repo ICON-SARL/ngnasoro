@@ -39,9 +39,6 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
         description: "Veuillez patienter..."
       });
       
-      // Force immediate UI update to show loading state
-      await new Promise(resolve => setTimeout(resolve, 0));
-      
       const { error } = await signOut();
       
       if (error) {
@@ -53,7 +50,7 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
         description: "Vous avez été déconnecté avec succès"
       });
       
-      // Redirect immediately instead of waiting
+      // Force a full page reload to clear any remaining state
       window.location.href = redirectPath;
     } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
