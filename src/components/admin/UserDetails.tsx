@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserSfdAssociations } from './UserSfdAssociations';
 import { Badge } from '@/components/ui/badge';
-import { UserIcon, Mail, Calendar, Shield } from 'lucide-react';
+import { UserIcon, Mail, Calendar, Shield, Building } from 'lucide-react';
 
 interface UserDetailsProps {
   userId: string;
@@ -32,6 +32,9 @@ export function UserDetails({ userId, userData }: UserDetailsProps) {
     );
   }
 
+  // Extract SFD information if available
+  const userSfd = userData.sfds?.length > 0 ? userData.sfds[0] : null;
+
   return (
     <div className="space-y-6">
       <Card>
@@ -56,6 +59,14 @@ export function UserDetails({ userId, userData }: UserDetailsProps) {
                       ? 'Admin SFD'
                       : 'Utilisateur'}
                   </Badge>
+                  
+                  {/* Display SFD information if available */}
+                  {userSfd && (
+                    <Badge variant="outline" className="bg-primary/10 text-primary">
+                      <Building className="h-3 w-3 mr-1" />
+                      SFD: {userSfd.name}
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>

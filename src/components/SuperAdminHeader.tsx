@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,11 +11,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { ModeToggle } from '@/components/ModeToggle';
-import { PieChart, ChevronDown, Globe, LogOut, Settings, Users, Menu, LayoutDashboard, FileText, Shield, UserRound } from 'lucide-react';
+import { PieChart, ChevronDown, Globe, LogOut, Settings, Users, Menu, LayoutDashboard, FileText, Shield, UserRound, Building } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 interface SuperAdminHeaderProps {
   additionalComponents?: React.ReactNode;
@@ -27,6 +28,9 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { activeSfdId, sfdData } = useSfdDataAccess();
+  
+  const activeSfd = sfdData.find(sfd => sfd.id === activeSfdId);
   
   const handleLogout = async () => {
     try {
@@ -37,13 +41,11 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
       
       await signOut();
       
-      // Show success toast
       toast({
         title: "Déconnexion réussie",
         description: "Vous avez été déconnecté avec succès",
       });
       
-      // Force a full page reload and redirect
       window.location.href = '/admin/auth';
     } catch (error: any) {
       console.error('Logout error:', error);
@@ -56,6 +58,7 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
   };
 
   const getInitials = (name: string) => {
+    if (!name) return 'AD';
     return name
       .split(' ')
       .map(n => n[0])
@@ -90,6 +93,13 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
             </div>
           </Link>
           
+          {activeSfd && (
+            <Badge variant="outline" className="bg-white/10 text-white hidden md:flex items-center">
+              <Building className="h-3.5 w-3.5 mr-1" />
+              {activeSfd.name}
+            </Badge>
+          )}
+          
           <div className="hidden md:flex gap-1">
             {navLinks.map(link => (
               <Button 
@@ -115,6 +125,13 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
         
         <div className="flex items-center gap-3">
           {additionalComponents}
+          
+          {activeSfd && (
+            <Badge variant="outline" className="bg-white/10 text-white md:hidden">
+              <Building className="h-3 w-3 mr-1" />
+              SFD
+            </Badge>
+          )}
           
           <Button 
             variant="ghost" 
@@ -171,6 +188,11 @@ export function SuperAdminHeader({ additionalComponents }: SuperAdminHeaderProps
                   <p className="text-xs leading-none text-muted-foreground">
                     {user?.email || 'admin@example.com'}
                   </p>
+                  {activeSfd && (
+                    <p className="text-xs font-medium mt-1 text-primary">
+                      SFD: {activeSfd.name}
+                    </p>
+                  )}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
