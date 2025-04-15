@@ -1,116 +1,238 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Sfd } from '../types/sfd-types';
+
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { SfdFormValues } from '@/components/admin/sfd/schemas/sfdFormSchema';
 
-// Define and export the SFD interface that's used by components
 export interface SFD {
   id: string;
   name: string;
   code: string;
-  region?: string;  // Changed from 'region: string' to 'region?: string' to make it optional
-  status: 'active' | 'pending' | 'suspended' | 'inactive';
-  contact_email?: string;
-  phone?: string;
+  region: string;
+  status: 'active' | 'inactive' | 'suspended' | 'pending';
+  contact_email: string;
+  phone: string;
   description?: string;
-  logo_url?: string | null;
-  legal_document_url?: string | null;
   created_at: string;
-  updated_at?: string;
-  client_count?: number;
-  loan_count?: number;
+  logo_url?: string;
+  client_count: number;
+  loan_count: number;
 }
 
 export function useSfdManagement() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSfd, setSelectedSfd] = useState<Sfd | null>(null);
-  const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch all SFDs
-  const { 
-    data: sfds = [], 
-    isLoading, 
-    isError,
-    refetch 
-  } = useQuery({
+  // Fetch SFDs from Supabase
+  const { data: sfds, refetch } = useQuery({
     queryKey: ['sfds'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sfds')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Sfd[];
+      try {
+        const { data: sfdsData, error } = await supabase
+          .from('sfds')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching SFDs:', error);
+          throw error;
+        }
+
+        // Convert raw database data to SFD objects with proper types and default values
+        return (sfdsData || []).map(sfd => {
+          const typedSfd: SFD = {
+            id: sfd.id,
+            name: sfd.name,
+            code: sfd.code,
+            region: sfd.region || '',
+            status: (sfd.status as SFD['status']) || 'active',
+            contact_email: sfd.contact_email || '',
+            phone: sfd.phone || '',
+            description: sfd.description || undefined,
+            created_at: sfd.created_at,
+            logo_url: sfd.logo_url || undefined,
+            // These fields aren't directly in the database, so we set default values
+            client_count: 0,
+            loan_count: 0
+          };
+          return typedSfd;
+        });
+      } catch (error) {
+        console.error('Error fetching SFDs:', error);
+        return [];
+      }
     }
   });
 
-  // Filter SFDs based on search term
-  const filteredSfds = sfds.filter(sfd => 
-    sfd.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    sfd.code?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (sfd.region && sfd.region.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Create SFD
+  const createSfd = useMutation({
+    mutationFn: async (sfdData: SfdFormValues) => {
+      setIsLoading(true);
+      try {
+        console.log('Creating SFD with data:', sfdData);
+        
+        const { data, error } = await supabase
+          .from('sfds')
+          .insert([{
+            name: sfdData.name,
+            code: sfdData.code,
+            region: sfdData.region,
+            status: sfdData.status || 'active',
+            contact_email: sfdData.contact_email,
+            phone: sfdData.phone,
+            description: sfdData.description,
+            logo_url: sfdData.logo_url
+          }])
+          .select()
+          .single();
 
-  // Activate SFD mutation
-  const activateSfdMutation = useMutation({
-    mutationFn: async (sfdId: string) => {
-      console.log(`Attempting to activate SFD with ID: ${sfdId}`);
-      
-      const { data, error } = await supabase
-        .from('sfds')
-        .update({ status: 'active' })
-        .eq('id', sfdId)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error activating SFD:', error);
-        throw error;
+        if (error) throw error;
+        return data;
+      } finally {
+        setIsLoading(false);
       }
-
-      console.log('SFD activation successful:', data);
-      return data;
     },
     onSuccess: () => {
-      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
-      queryClient.invalidateQueries({ queryKey: ['active-sfds'] });
-      
       toast({
-        title: "SFD Activée",
-        description: "La SFD a été activée avec succès",
+        title: 'SFD créée',
+        description: 'La SFD a été créée avec succès',
       });
+      refetch();
     },
     onError: (error: any) => {
-      console.error('Activation failed:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible d'activer la SFD",
-        variant: "destructive"
+        title: 'Erreur',
+        description: error.message || "Une erreur est survenue lors de la création",
+        variant: 'destructive',
       });
     }
   });
 
-  const handleActivateSfd = useCallback(async (sfdId: string) => {
-    try {
-      await activateSfdMutation.mutateAsync(sfdId);
-    } catch (error) {
-      console.error('Error in handleActivateSfd:', error);
+  // Update SFD
+  const updateSfd = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<SfdFormValues> }) => {
+      setIsLoading(true);
+      try {
+        const { data: updatedSfd, error } = await supabase
+          .from('sfds')
+          .update({
+            name: data.name,
+            code: data.code,
+            region: data.region,
+            status: data.status,
+            contact_email: data.contact_email,
+            phone: data.phone,
+            description: data.description,
+            logo_url: data.logo_url,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return updatedSfd;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      toast({
+        title: 'SFD mise à jour',
+        description: 'La SFD a été mise à jour avec succès',
+      });
+      refetch();
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: error.message || "Une erreur est survenue lors de la mise à jour",
+        variant: 'destructive',
+      });
     }
-  }, [activateSfdMutation]);
+  });
+
+  // Suspend SFD
+  const suspendSfd = useMutation({
+    mutationFn: async (id: string) => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('sfds')
+          .update({ status: 'suspended', updated_at: new Date().toISOString() })
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      toast({
+        title: 'SFD suspendue',
+        description: 'La SFD a été suspendue avec succès',
+      });
+      refetch();
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: error.message || "Une erreur est survenue lors de la suspension",
+        variant: 'destructive',
+      });
+    }
+  });
+
+  // Reactivate SFD
+  const reactivateSfd = useMutation({
+    mutationFn: async (id: string) => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('sfds')
+          .update({ status: 'active', updated_at: new Date().toISOString() })
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      toast({
+        title: 'SFD réactivée',
+        description: 'La SFD a été réactivée avec succès',
+      });
+      refetch();
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: error.message || "Une erreur est survenue lors de la réactivation",
+        variant: 'destructive',
+      });
+    }
+  });
 
   return {
-    sfds,
-    filteredSfds,
+    sfds: sfds || [],
     isLoading,
-    isError,
-    searchTerm,
-    setSearchTerm,
-    handleActivateSfd,
-    activateSfdMutation,
-    refetch
+    refetch,
+    createSfd,
+    updateSfd,
+    suspendSfd,
+    reactivateSfd
   };
 }
