@@ -10,13 +10,10 @@ import {
 } from '@/components/admin/dashboard';
 import { AdminUsersList } from '@/components/admin/shared/AdminUsersList';
 import { AddAdminDialog } from '@/components/admin/shared/AddAdminDialog';
-import { AdminAccountsManager } from '@/components/admin/roles/AdminAccountsManager';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 import { Button } from '@/components/ui/button';
 import { FileText, Building, Users, Shield, UserPlus } from 'lucide-react';
 import { Footer } from '@/components';
-import { Card, CardContent } from '@/components/ui/card';
-import { AccountCleanup } from '@/components/admin/AccountCleanup';
 
 const SuperAdminDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -45,7 +42,6 @@ const SuperAdminDashboard = () => {
       <main className="flex-1 container mx-auto p-4 md:p-6">
         <SuperAdminDashboardHeader />
         
-        {/* Afficher l'alerte de statut SFD */}
         <SfdStatusAlert />
         
         <div className="mb-8">
@@ -118,13 +114,6 @@ const SuperAdminDashboard = () => {
             <SimplifiedMerefDashboard />
             <div className="mt-6">
               <DashboardWidgets />
-            </div>
-            
-            <div className="mt-6">
-              <h2 className="text-lg font-semibold mb-4">Opérations de maintenance</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <AccountCleanup />
-              </div>
             </div>
           </>
         )}
