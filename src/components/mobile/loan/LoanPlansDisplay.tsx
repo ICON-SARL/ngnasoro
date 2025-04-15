@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -61,7 +62,7 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
         
         if (error) throw error;
         
-        // Transform the data to ensure it conforms to LoanPlan interface
+        // Transform to ensure all properties are correctly typed
         const typedPlans: LoanPlan[] = data?.map(plan => ({
           ...plan,
           is_published: Boolean(plan.is_published)

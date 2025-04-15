@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -40,7 +39,6 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
 
       if (error) throw error;
       
-      // Transform to ensure all LoanPlan properties are correctly typed
       const typedPlans: LoanPlan[] = data?.map(plan => ({
         ...plan,
         is_published: Boolean(plan.is_published)
@@ -87,7 +85,6 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
   const publishPlan = async (plan: LoanPlan) => {
     setIsPublishing(plan.id);
     try {
-      // Update the is_published field with a type-safe update object
       const updateData: Partial<LoanPlan> = { is_published: true };
       
       const { error } = await supabase
