@@ -36,7 +36,34 @@ export function useSfdSettings(sfdId: string) {
         .single();
 
       if (error) throw error;
-      return data?.settings as SfdSettings;
+      
+      // Safely convert data.settings to SfdSettings type
+      const settingsData = data?.settings as Record<string, any>;
+      if (!settingsData) {
+        throw new Error("Settings data not found");
+      }
+      
+      // Parse JSON data into our strongly typed interface
+      return {
+        loan_settings: {
+          min_loan_amount: Number(settingsData.loan_settings?.min_loan_amount || 10000),
+          max_loan_amount: Number(settingsData.loan_settings?.max_loan_amount || 5000000),
+          default_interest_rate: Number(settingsData.loan_settings?.default_interest_rate || 5),
+          late_payment_fee: Number(settingsData.loan_settings?.late_payment_fee || 2)
+        },
+        transaction_settings: {
+          daily_withdrawal_limit: Number(settingsData.transaction_settings?.daily_withdrawal_limit || 1000000),
+          requires_2fa: Boolean(settingsData.transaction_settings?.requires_2fa ?? true),
+          notification_enabled: Boolean(settingsData.transaction_settings?.notification_enabled ?? true)
+        },
+        security_settings: {
+          password_expiry_days: Number(settingsData.security_settings?.password_expiry_days || 90),
+          session_timeout_minutes: Number(settingsData.security_settings?.session_timeout_minutes || 30),
+          ip_whitelist: Array.isArray(settingsData.security_settings?.ip_whitelist) 
+            ? settingsData.security_settings.ip_whitelist 
+            : []
+        }
+      } as SfdSettings;
     }
   });
 
@@ -44,7 +71,7 @@ export function useSfdSettings(sfdId: string) {
     mutationFn: async (newSettings: SfdSettings) => {
       const { data, error } = await supabase
         .from('sfds')
-        .update({ settings: newSettings })
+        .update({ settings: newSettings as any })
         .eq('id', sfdId)
         .select('settings')
         .single();

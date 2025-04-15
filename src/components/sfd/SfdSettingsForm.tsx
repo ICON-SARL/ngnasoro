@@ -38,7 +38,6 @@ const settingsSchema = z.object({
   })
 });
 
-// This ensures the schema matches the SfdSettings type
 type FormValues = z.infer<typeof settingsSchema>;
 
 interface SfdSettingsFormProps {
@@ -48,26 +47,28 @@ interface SfdSettingsFormProps {
 export function SfdSettingsForm({ sfdId }: SfdSettingsFormProps) {
   const { settings, isLoading, updateSettings } = useSfdSettings(sfdId);
   
+  const defaultValues: FormValues = {
+    loan_settings: {
+      min_loan_amount: 10000,
+      max_loan_amount: 5000000,
+      default_interest_rate: 5,
+      late_payment_fee: 2
+    },
+    transaction_settings: {
+      daily_withdrawal_limit: 1000000,
+      requires_2fa: true,
+      notification_enabled: true
+    },
+    security_settings: {
+      password_expiry_days: 90,
+      session_timeout_minutes: 30,
+      ip_whitelist: []
+    }
+  };
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: settings || {
-      loan_settings: {
-        min_loan_amount: 10000,
-        max_loan_amount: 5000000,
-        default_interest_rate: 5,
-        late_payment_fee: 2
-      },
-      transaction_settings: {
-        daily_withdrawal_limit: 1000000,
-        requires_2fa: true,
-        notification_enabled: true
-      },
-      security_settings: {
-        password_expiry_days: 90,
-        session_timeout_minutes: 30,
-        ip_whitelist: []
-      }
-    }
+    defaultValues: settings || defaultValues
   });
 
   // Update form values when settings are loaded
@@ -78,7 +79,7 @@ export function SfdSettingsForm({ sfdId }: SfdSettingsFormProps) {
   }, [settings, form]);
 
   const onSubmit = async (data: FormValues) => {
-    updateSettings.mutate(data as SfdSettings);
+    updateSettings.mutate(data);
   };
 
   if (isLoading) {
@@ -104,6 +105,7 @@ export function SfdSettingsForm({ sfdId }: SfdSettingsFormProps) {
                       type="number" 
                       {...field} 
                       onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -121,6 +123,7 @@ export function SfdSettingsForm({ sfdId }: SfdSettingsFormProps) {
                       type="number" 
                       {...field} 
                       onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -139,6 +142,7 @@ export function SfdSettingsForm({ sfdId }: SfdSettingsFormProps) {
                       step="0.1" 
                       {...field} 
                       onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -157,6 +161,7 @@ export function SfdSettingsForm({ sfdId }: SfdSettingsFormProps) {
                       step="0.1" 
                       {...field} 
                       onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -182,6 +187,7 @@ export function SfdSettingsForm({ sfdId }: SfdSettingsFormProps) {
                       type="number" 
                       {...field} 
                       onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -241,6 +247,7 @@ export function SfdSettingsForm({ sfdId }: SfdSettingsFormProps) {
                       type="number" 
                       {...field} 
                       onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -258,6 +265,7 @@ export function SfdSettingsForm({ sfdId }: SfdSettingsFormProps) {
                       type="number" 
                       {...field} 
                       onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />

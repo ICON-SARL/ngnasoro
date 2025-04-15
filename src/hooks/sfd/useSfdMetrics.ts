@@ -42,7 +42,37 @@ export function useSfdMetrics(sfdId: string) {
         .single();
 
       if (error) throw error;
-      return data?.metrics as SfdMetrics;
+      
+      // Safely convert data.metrics to SfdMetrics type
+      const metricsData = data?.metrics as Record<string, any>;
+      if (!metricsData) {
+        throw new Error("Metrics data not found");
+      }
+      
+      // Parse JSON data into our strongly typed interface
+      return {
+        loan_metrics: {
+          total_loans: Number(metricsData.loan_metrics?.total_loans || 0),
+          active_loans: Number(metricsData.loan_metrics?.active_loans || 0),
+          default_rate: Number(metricsData.loan_metrics?.default_rate || 0),
+          average_loan_amount: Number(metricsData.loan_metrics?.average_loan_amount || 0)
+        },
+        client_metrics: {
+          total_clients: Number(metricsData.client_metrics?.total_clients || 0),
+          active_clients: Number(metricsData.client_metrics?.active_clients || 0),
+          new_clients: Number(metricsData.client_metrics?.new_clients || 0)
+        },
+        financial_metrics: {
+          total_deposits: Number(metricsData.financial_metrics?.total_deposits || 0),
+          total_withdrawals: Number(metricsData.financial_metrics?.total_withdrawals || 0),
+          net_portfolio: Number(metricsData.financial_metrics?.net_portfolio || 0)
+        },
+        operational_metrics: {
+          transaction_success_rate: Number(metricsData.operational_metrics?.transaction_success_rate || 100),
+          average_processing_time: Number(metricsData.operational_metrics?.average_processing_time || 0),
+          support_tickets: Number(metricsData.operational_metrics?.support_tickets || 0)
+        }
+      } as SfdMetrics;
     }
   });
 
