@@ -18,13 +18,17 @@ export function useReports() {
   } = useQuery({
     queryKey: ['reportDefinitions'],
     queryFn: reportService.getReportDefinitions,
-    onError: (error) => {
-      console.error('Error fetching report definitions:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de récupérer les définitions de rapport',
-        variant: 'destructive',
-      });
+    meta: {
+      onSettled: (data, error) => {
+        if (error) {
+          console.error('Error fetching report definitions:', error);
+          toast({
+            title: 'Erreur',
+            description: 'Impossible de récupérer les définitions de rapport',
+            variant: 'destructive',
+          });
+        }
+      }
     }
   });
 
@@ -36,13 +40,17 @@ export function useReports() {
   } = useQuery({
     queryKey: ['userReports'],
     queryFn: reportService.getUserReports,
-    onError: (error) => {
-      console.error('Error fetching user reports:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de récupérer vos rapports',
-        variant: 'destructive',
-      });
+    meta: {
+      onSettled: (data, error) => {
+        if (error) {
+          console.error('Error fetching user reports:', error);
+          toast({
+            title: 'Erreur',
+            description: 'Impossible de récupérer vos rapports',
+            variant: 'destructive',
+          });
+        }
+      }
     }
   });
 

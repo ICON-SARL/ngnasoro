@@ -25,12 +25,21 @@ export const reportService = {
   },
 
   async generateReport(request: ReportRequest): Promise<GeneratedReport> {
+    // Prepare parameters for JSON serialization by converting dates to ISO strings
+    const serializedParameters = {
+      ...request.parameters,
+      date_range: request.parameters.date_range ? {
+        from: request.parameters.date_range.from ? new Date(request.parameters.date_range.from).toISOString() : undefined,
+        to: request.parameters.date_range.to ? new Date(request.parameters.date_range.to).toISOString() : undefined
+      } : undefined,
+    };
+
     // First, create a record of the report generation request
     const { data: report, error: insertError } = await supabase
       .from('generated_reports')
       .insert({
         definition_id: request.definition_id,
-        parameters: request.parameters,
+        parameters: serializedParameters,
         format: request.parameters.format,
         status: 'pending'
       })
@@ -45,7 +54,7 @@ export const reportService = {
         body: {
           report_id: report.id,
           definition_id: request.definition_id,
-          parameters: request.parameters
+          parameters: serializedParameters
         }
       });
 

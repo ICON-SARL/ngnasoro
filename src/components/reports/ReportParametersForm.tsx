@@ -9,7 +9,7 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { ReportDefinition, ReportFormat, ReportParameters } from '@/types/report';
@@ -59,7 +59,7 @@ export function ReportParametersForm({
             <Label htmlFor="date-range">
               Période {isDateRangeRequired && <span className="text-destructive">*</span>}
             </Label>
-            <DateRangePicker
+            <DatePickerWithRange
               date={dateRange}
               setDate={setDateRange}
             />
