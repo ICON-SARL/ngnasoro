@@ -3,15 +3,16 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { transactionApi } from '@/utils/api/modules/transactionApi';
 import { useToast } from './use-toast';
+import { Transaction, TransactionDispute } from '@/types/transactions';
 
 export function useTransactionDisputes() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedDispute, setSelectedDispute] = useState<string | null>(null);
 
-  // Query disputes
+  // Query disputed transactions
   const {
-    data: disputes,
+    data: disputedTransactions,
     isLoading,
     error
   } = useQuery({
@@ -59,7 +60,7 @@ export function useTransactionDisputes() {
   });
 
   return {
-    disputes,
+    disputedTransactions,
     isLoading,
     error,
     selectedDispute,

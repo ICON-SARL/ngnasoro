@@ -1433,6 +1433,53 @@ export type Database = {
           },
         ]
       }
+      transaction_disputes: {
+        Row: {
+          created_at: string
+          description: string
+          evidence_urls: string[] | null
+          id: string
+          reason: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          transaction_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          evidence_urls?: string[] | null
+          id?: string
+          reason: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          transaction_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          evidence_urls?: string[] | null
+          id?: string
+          reason?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_disputes_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transaction_types: {
         Row: {
           code: string
