@@ -15,7 +15,7 @@ const AnonymousOnlyGuard: React.FC<AnonymousOnlyGuardProps> = ({ children }) => 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-2" />
+        <Loader2 className="animate-spin h-8 w-8 border-b-2 border-primary mr-2" />
         <span>Chargement...</span>
       </div>
     );
