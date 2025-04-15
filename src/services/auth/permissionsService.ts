@@ -43,7 +43,7 @@ export const permissionsService = {
       // Check if any role has the required permission
       return userRoles.some(({ role }) => {
         // Convert role string to key for permissions mapping
-        const roleKey = role as string;
+        const roleKey = role as keyof typeof PERMISSIONS;
         // Get permissions for this role from our predefined PERMISSIONS mapping
         const rolePermissions = PERMISSIONS[roleKey] || [];
         return rolePermissions.includes(permission);
@@ -67,11 +67,11 @@ export const permissionsService = {
       }
       
       // Find a role that has this permission
-      let roleWithPermission: string | null = null;
+      let roleWithPermission: keyof typeof PERMISSIONS | null = null;
       
       for (const [role, permissions] of Object.entries(PERMISSIONS)) {
         if (permissions.includes(permission)) {
-          roleWithPermission = role;
+          roleWithPermission = role as keyof typeof PERMISSIONS;
           break;
         }
       }
@@ -206,7 +206,7 @@ export const permissionsService = {
       
       // Combine role-based permissions
       const allPermissions = userRoles.flatMap(({ role }) => {
-        const roleKey = role as string;
+        const roleKey = role as keyof typeof PERMISSIONS;
         return PERMISSIONS[roleKey] || [];
       });
       
