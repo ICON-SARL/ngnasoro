@@ -39,7 +39,7 @@ jest.mock('@/integrations/supabase/client', () => ({
           error: null
         }))
       }))
-    }),
+    })),
     functions: {
       invoke: jest.fn(() => ({
         data: {
