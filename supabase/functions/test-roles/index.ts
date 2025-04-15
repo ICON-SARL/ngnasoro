@@ -1,4 +1,5 @@
 
+// Adding real-time permission checking functionality to the test-roles edge function
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -24,7 +25,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Parse request body
-    const { action, role, email, password, fullName, sfdId } = await req.json();
+    const requestBody = await req.json();
+    const { action, role, email, password, fullName, sfdId, userId, permission } = requestBody;
     
     if (!action) {
       return new Response(
@@ -194,6 +196,69 @@ serve(async (req) => {
           role,
           permissions: rolePermissions,
           source: 'database'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // NEW: Test real-time permission checking
+    if (action === 'check_permission') {
+      if (!userId || !permission) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required userId or permission parameter' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Use the database function to check permission in real-time
+      const { data, error } = await supabase.rpc('check_real_time_permission', {
+        user_id: userId,
+        permission_name: permission
+      });
+      
+      if (error) {
+        console.error('Error checking permission:', error);
+        
+        // Fallback: Check permission using role-based logic
+        const { data: userRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .single();
+        
+        if (!userRole) {
+          return new Response(
+            JSON.stringify({ 
+              success: false,
+              error: 'User role not found'
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        // Get permissions for this role
+        const { data: permissions } = await supabase.rpc('get_role_permissions', {
+          role_name: userRole.role
+        });
+        
+        const hasPermission = permissions && permissions.includes(permission);
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            permission,
+            has_permission: hasPermission,
+            source: 'fallback_check',
+            checked_at: new Date().toISOString()
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          ...data
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

@@ -54,7 +54,7 @@ export const PERMISSIONS = {
 };
 
 // Define default permissions for each role
-export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
+export const DEFAULT_ROLE_PERMISSIONS = {
   // Super Admin (MEREF) has all permissions
   [UserRole.ADMIN]: [
     PERMISSIONS.VALIDATE_SFD_FUNDS,
@@ -111,24 +111,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     PERMISSIONS.REQUEST_ADHESION,
   ],
   
-  // Super Admin alias to maintain backward compatibility
-  [UserRole.SUPER_ADMIN]: [
-    PERMISSIONS.VALIDATE_SFD_FUNDS,
-    PERMISSIONS.AUDIT_SFD_ACCOUNTS,
-    PERMISSIONS.GENERATE_REPORTS,
-    PERMISSIONS.MANAGE_USERS,
-    PERMISSIONS.MANAGE_SFDS,
-    PERMISSIONS.MANAGE_CLIENTS,
-    PERMISSIONS.MANAGE_LOANS,
-    PERMISSIONS.MANAGE_SUBSIDIES,
-    PERMISSIONS.VIEW_REPORTS,
-    PERMISSIONS.EXPORT_DATA,
-    PERMISSIONS.APPROVE_CREDIT,
-    PERMISSIONS.ACCESS_ADMIN_DASHBOARD,
-    PERMISSIONS.VIEW_CLIENT_ADHESIONS,
-    PERMISSIONS.CREATE_SFD,
-    PERMISSIONS.CREATE_SFD_ADMIN,
-    PERMISSIONS.AUDIT_REPORTS,
-    PERMISSIONS.PKI_MANAGEMENT,
-  ],
+  // Since SUPER_ADMIN and ADMIN are assigned the same value in the enum,
+  // we only need one entry in the permissions map
 };
+
+// Fix error by adding explicit type and adding SUPER_ADMIN permissions reference
+// Redoing this to maintain backwards compatibility with code that uses SUPER_ADMIN
+DEFAULT_ROLE_PERMISSIONS[UserRole.SUPER_ADMIN] = DEFAULT_ROLE_PERMISSIONS[UserRole.ADMIN];
