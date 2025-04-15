@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { AuthProvider } from '@/hooks/auth/AuthContext';
 import AuthenticationGuard from '@/components/AuthenticationGuard';
 import AnonymousOnlyGuard from '@/components/AnonymousOnlyGuard';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -131,9 +132,11 @@ const router = createBrowserRouter([
 
 function App() {
   return (
-    <ErrorBoundary>
-      <RouterProvider router={router} />
-    </ErrorBoundary>
+    <AuthProvider>
+      <ErrorBoundary>
+        <RouterProvider router={router} />
+      </ErrorBoundary>
+    </AuthProvider>
   );
 }
 
