@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Loan, CreateLoanInput } from '@/types/sfdClients';
 import { logAuditEvent } from '@/utils/audit';
@@ -259,5 +258,47 @@ export const disburseLoan = async (loanId: string, userId: string): Promise<bool
   } catch (error) {
     console.error('Error in loan disbursement process:', error);
     return false;
+  }
+};
+
+export const loanService = {
+  
+
+  /**
+   * Check loan payment status and send reminders if needed
+   */
+  async checkLoanPaymentStatus(loanId: string): Promise<boolean> {
+    try {
+      await supabase.functions.invoke('loan-reminders', {
+        body: { loanId }
+      });
+      return true;
+    } catch (error) {
+      console.error('Error checking loan payment status:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Schedule automatic payment reminder
+   */
+  async schedulePaymentReminder(loanId: string, reminderDate: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('admin_notifications')
+        .insert({
+          type: 'payment_reminder_scheduled',
+          recipient_id: auth.uid(),
+          title: 'Rappel de paiement programmé',
+          message: `Un rappel a été programmé pour le ${new Date(reminderDate).toLocaleDateString()}`,
+          action_link: `/loans/${loanId}`
+        });
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error scheduling payment reminder:', error);
+      return false;
+    }
   }
 };

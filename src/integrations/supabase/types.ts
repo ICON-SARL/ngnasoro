@@ -1665,6 +1665,14 @@ export type Database = {
         Args: { user_id: string; role: Database["public"]["Enums"]["app_role"] }
         Returns: undefined
       }
+      calculate_next_payment_date: {
+        Args: { p_loan_id: string; p_current_date?: string }
+        Returns: string
+      }
+      check_overdue_loans: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       create_admin_user: {
         Args: {
           admin_id: string
