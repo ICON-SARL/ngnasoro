@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -15,6 +14,7 @@ import RoleGuard from '@/components/RoleGuard';
 import AnonymousOnlyGuard from '@/components/AnonymousOnlyGuard';
 import { UserRole } from '@/utils/auth/roleTypes';
 import SfdManagementPage from '@/pages/admin/SfdManagementPage';
+import AgencyManagementPage from '@/pages/admin/AgencyManagementPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -116,6 +116,16 @@ function App() {
                     }
                   />
                   
+                  {/* Add the new agency management route */}
+                  <Route
+                    path="/agency-management"
+                    element={
+                      <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
+                        <AgencyManagementPage />
+                      </RoleGuard>
+                    }
+                  />
+                  
                   {/* Catch-all route - Redirect to appropriate auth page */}
                   <Route
                     path="*"
@@ -135,4 +145,3 @@ function App() {
 }
 
 export default App;
-
