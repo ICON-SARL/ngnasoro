@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useCurrentSfd } from '@/hooks/useCurrentSfd';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -51,8 +52,13 @@ export default function AgencyManagementPage() {
   const { user, userRole } = useAuth();
   const isLoading = sfdLoading || statsLoading;
 
-  console.log("AgencyManagementPage - User:", user?.id);
-  console.log("AgencyManagementPage - User role:", userRole);
+  console.log("AgencyManagementPage - Data loading state:", {
+    sfdLoading,
+    statsLoading,
+    sfdId: sfd?.id,
+    userRole,
+    userId: user?.id
+  });
 
   if (isLoading) {
     return (
