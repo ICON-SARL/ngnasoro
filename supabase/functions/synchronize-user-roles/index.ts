@@ -46,14 +46,14 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single();
 
-    if (roleError || !userData || !(userData.role === 'admin' || userData.role === 'super_admin')) {
+    if (roleError || !userData || !(userData.role === 'admin' || userData.role === 'sfd_admin')) {
       return new Response(
         JSON.stringify({ error: 'Forbidden', message: 'User not authorized to perform this action' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
       );
     }
 
-    // Step 1: Synchronize SFD admin roles to Auth metadata
+    // Synchronize SFD admin roles to Auth metadata
     console.log('Synchronizing SFD administrators with Auth metadata...');
     
     // Get all SFD administrators
@@ -78,24 +78,16 @@ serve(async (req) => {
       }
     }
 
-    // Step 2: Synchronize user_roles table with sfd_user_roles
-    console.log('Synchronizing user_roles table with sfd_user_roles...');
-    
-    // Add audit log entry for the synchronization
-    const { error: auditError } = await supabaseClient
+    // Audit log
+    await supabaseClient
       .from('audit_logs')
       .insert({
         user_id: user.id,
         action: 'roles_synchronized',
         category: 'ADMIN_ACTION',
         severity: 'INFO',
-        status: 'success',
-        details: { timestamp: new Date().toISOString() }
+        status: 'success'
       });
-    
-    if (auditError) {
-      console.error('Failed to log audit entry:', auditError);
-    }
 
     return new Response(
       JSON.stringify({ 
