@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { handleError } from "@/utils/errorHandler";
 import { Transaction, TransactionDispute, TransactionFilters } from "@/types/transactions";
@@ -111,7 +112,7 @@ export const transactionApi = {
       if (txError) throw txError;
 
       const { data, error } = await supabase
-        .from('transaction_disputes' as any)
+        .from('transaction_disputes')
         .insert({
           transaction_id: transactionId,
           reason,
@@ -120,7 +121,7 @@ export const transactionApi = {
           status: 'pending'
         })
         .select()
-        .single();
+        .single() as { data: TransactionDispute | null, error: any };
 
       if (error) throw error;
 
@@ -138,12 +139,12 @@ export const transactionApi = {
           status: 'success',
           details: {
             transaction_id: transactionId,
-            dispute_id: data.id,
+            dispute_id: data?.id,
             reason
           }
         });
 
-      return data as unknown as TransactionDispute;
+      return data;
     } catch (error) {
       handleError(error);
       return null;
@@ -166,17 +167,16 @@ export const transactionApi = {
   }): Promise<TransactionDispute | null> {
     try {
       const { data: existingDispute, error: getError } = await supabase
-        .from('transaction_disputes' as any)
+        .from('transaction_disputes')
         .select('*')
         .eq('id', disputeId)
-        .single();
+        .single() as { data: TransactionDispute | null, error: any };
 
       if (getError) throw getError;
-
-      const disputeData = existingDispute as unknown as TransactionDispute;
+      if (!existingDispute) return null;
 
       const { data, error } = await supabase
-        .from('transaction_disputes' as any)
+        .from('transaction_disputes')
         .update({
           status: resolution === 'accepted' ? 'resolved' : 'rejected',
           resolution_notes: notes,
@@ -185,7 +185,7 @@ export const transactionApi = {
         })
         .eq('id', disputeId)
         .select()
-        .single();
+        .single() as { data: TransactionDispute | null, error: any };
 
       if (error) throw error;
 
@@ -193,12 +193,12 @@ export const transactionApi = {
         await supabase
           .from('transactions')
           .update({ status: 'reversed' })
-          .eq('id', disputeData.transaction_id);
+          .eq('id', existingDispute.transaction_id);
 
         await supabase.functions.invoke('process-transaction-reversal', {
           body: { 
             disputeId,
-            transactionId: disputeData.transaction_id
+            transactionId: existingDispute.transaction_id
           }
         });
       }
@@ -217,7 +217,7 @@ export const transactionApi = {
           }
         });
 
-      return data as unknown as TransactionDispute;
+      return data;
     } catch (error) {
       handleError(error);
       return null;
