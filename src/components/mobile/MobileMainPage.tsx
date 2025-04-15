@@ -1,47 +1,26 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileMenu from './MobileMenu';
 import MobileHeader from './MobileHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Plus, CreditCard, ArrowUpDown } from 'lucide-react';
+import { ArrowRight, Plus, CreditCard, ArrowUpDown, Wallet } from 'lucide-react';
 import TransactionList, { TransactionListItem } from './TransactionList';
 import { useAuth } from '@/hooks/useAuth';
 import { useClientLoans } from '@/hooks/useClientLoans';
+import { useTransactions } from '@/hooks/useTransactions';
 import ActiveLoansSection from './loans/ActiveLoansSection';
+import { formatCurrencyAmount } from '@/utils/transactionUtils';
 
 const MobileMainPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
-  // Don't use useTransactions at the top level, use it conditionally based on user
-  const loans = useClientLoans().loans || [];
-  const isLoading = useClientLoans().isLoading || false;
-  const refetchLoans = useClientLoans().refetchLoans || (() => {});
+  const { loans, isLoading: loansLoading, refetchLoans } = useClientLoans();
   
-  // Placeholder for transactions until we get user data
-  const recentTransactions: TransactionListItem[] = [
-    {
-      id: 1,
-      name: "Dépôt mensuel",
-      type: "deposit",
-      amount: "+25,000 FCFA",
-      date: "12/04/2025",
-      avatar: null
-    },
-    {
-      id: 2,
-      name: "Remboursement prêt",
-      type: "withdrawal",
-      amount: "-15,000 FCFA",
-      date: "10/04/2025",
-      avatar: null
-    }
-  ];
+  const { transactions, isLoading: transactionsLoading, fetchTransactions } = useTransactions(user?.id);
   
-  // Filter only active loans
   const activeLoans = loans.filter(loan => 
     loan.status === 'active' || loan.status === 'approved' || loan.status === 'disbursed'
   );
@@ -58,6 +37,18 @@ const MobileMainPage: React.FC = () => {
     navigate(path);
     handleMenuClose();
   };
+
+  const formattedTransactions: TransactionListItem[] = transactions.slice(0, 5).map(tx => ({
+    id: tx.id,
+    name: tx.name || (tx.type === 'deposit' ? 'Dépôt' : tx.type === 'withdrawal' ? 'Retrait' : 'Transaction'),
+    type: tx.type,
+    amount: tx.type === 'deposit' || tx.type === 'loan_disbursement' 
+      ? `+${formatCurrencyAmount(tx.amount)}` 
+      : `-${formatCurrencyAmount(Math.abs(tx.amount))}`,
+    date: new Date(tx.date || tx.created_at).toLocaleDateString('fr-FR'),
+    avatar: tx.avatar_url,
+    sfdName: tx.sfd_name
+  }));
   
   return (
     <div className="pb-16">
@@ -96,14 +87,14 @@ const MobileMainPage: React.FC = () => {
         
         <ActiveLoansSection 
           activeLoans={activeLoans} 
-          isLoading={isLoading} 
+          isLoading={loansLoading} 
           onViewAll={() => navigate('/mobile-flow/my-loans')}
           onNewLoan={() => navigate('/mobile-flow/loans')}
         />
         
         <TransactionList 
-          transactions={recentTransactions} 
-          isLoading={false}
+          transactions={formattedTransactions}
+          isLoading={transactionsLoading}
           onViewAll={() => navigate('/mobile-flow/transactions')}
         />
       </div>
