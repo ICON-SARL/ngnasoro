@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -82,11 +83,11 @@ export const MultiSFDAccounts = () => {
                       onClick={() => setSwitchToSFD(acc.id)}
                     >
                       <Avatar className="h-10 w-10 mr-3">
-                        <img src={acc.logoUrl || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={acc.name} />
+                        <img src={acc.logo_url || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={acc.name} />
                       </Avatar>
                       <div>
                         <p className="font-medium">{acc.name}</p>
-                        <p className="text-sm text-muted-foreground">Solde: {acc.balance.toLocaleString()} {acc.currency}</p>
+                        <p className="text-sm text-muted-foreground">Solde: {acc.balance?.toLocaleString() || 0} {acc.currency || 'FCFA'}</p>
                       </div>
                     </div>
                   ))}
@@ -114,7 +115,7 @@ export const MultiSFDAccounts = () => {
             <CardHeader className="pb-2">
               <div className="flex items-center">
                 <Avatar className="h-8 w-8 mr-2">
-                  <img src={account.logoUrl || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={account.name} />
+                  <img src={account.logo_url || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={account.name} />
                 </Avatar>
                 <CardTitle className="text-base">{account.name}</CardTitle>
               </div>
@@ -123,7 +124,7 @@ export const MultiSFDAccounts = () => {
               <div className="space-y-2">
                 <div>
                   <p className="text-sm text-muted-foreground">Solde disponible</p>
-                  <p className="text-xl font-bold">{account.balance.toLocaleString()} {account.currency}</p>
+                  <p className="text-xl font-bold">{account.balance?.toLocaleString() || 0} {account.currency || 'FCFA'}</p>
                 </div>
                 <div className="flex items-center text-sm">
                   <CreditCard className="h-4 w-4 mr-1 text-muted-foreground" />
@@ -146,7 +147,7 @@ export const MultiSFDAccounts = () => {
             <div className="flex justify-between items-center">
               <div className="flex items-center">
                 <Avatar className="h-8 w-8 mr-2">
-                  <img src={activeSfdAccount.logoUrl || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={activeSfdAccount.name} />
+                  <img src={activeSfdAccount.logo_url || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={activeSfdAccount.name} />
                 </Avatar>
                 <CardTitle>{activeSfdAccount.name}</CardTitle>
               </div>
@@ -173,7 +174,7 @@ export const MultiSFDAccounts = () => {
               <TabsContent value="balance">
                 <div className="p-6 text-center">
                   <h3 className="text-sm text-muted-foreground">Solde total</h3>
-                  <p className="text-3xl font-bold my-2">{activeSfdAccount.balance.toLocaleString()} {activeSfdAccount.currency}</p>
+                  <p className="text-3xl font-bold my-2">{activeSfdAccount.balance?.toLocaleString() || 0} {activeSfdAccount.currency || 'FCFA'}</p>
                   <div className="flex justify-center gap-2 mt-4">
                     <Button>Dépôt</Button>
                     <Button variant="outline">Retrait</Button>
@@ -183,46 +184,46 @@ export const MultiSFDAccounts = () => {
               
               <TabsContent value="loans">
                 <div className="space-y-4">
-                  {activeSfdAccount.loans && activeSfdAccount.loans.map(loan => (
-                    <div key={loan.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium">Prêt #{loan.id}</h3>
-                        {loan.isLate ? (
-                          <Badge variant="destructive">Échéance proche</Badge>
-                        ) : (
-                          <Badge variant="outline">En cours</Badge>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Montant initial</span>
-                          <span>{loan.amount.toLocaleString()} {activeSfdAccount.currency}</span>
+                  {activeSfdAccount.loans && activeSfdAccount.loans.length > 0 ? (
+                    activeSfdAccount.loans.map(loan => (
+                      <div key={loan.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-medium">Prêt #{loan.id}</h3>
+                          {loan.isLate ? (
+                            <Badge variant="destructive">Échéance proche</Badge>
+                          ) : (
+                            <Badge variant="outline">En cours</Badge>
+                          )}
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Reste à payer</span>
-                          <span className="font-medium">{loan.remainingAmount.toLocaleString()} {activeSfdAccount.currency}</span>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Montant initial</span>
+                            <span>{loan.amount.toLocaleString()} {activeSfdAccount.currency || 'FCFA'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Reste à payer</span>
+                            <span className="font-medium">{loan.remainingAmount.toLocaleString()} {activeSfdAccount.currency || 'FCFA'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Prochaine échéance</span>
+                            <span className={loan.isLate ? "text-red-600 font-medium" : ""}>{loan.nextDueDate}</span>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Prochaine échéance</span>
-                          <span className={loan.isLate ? "text-red-600 font-medium" : ""}>{loan.nextDueDate}</span>
+                        <div className="mt-4">
+                          <Button 
+                            className="w-full"
+                            onClick={() => makeLoanPayment.mutate({ 
+                              loanId: loan.id, 
+                              amount: loan.remainingAmount / 4,
+                              paymentMethod: 'app'
+                            })}
+                          >
+                            Effectuer un paiement
+                          </Button>
                         </div>
                       </div>
-                      <div className="mt-4">
-                        <Button 
-                          className="w-full"
-                          onClick={() => makeLoanPayment.mutate({ 
-                            loanId: loan.id, 
-                            amount: loan.remainingAmount / 4,
-                            paymentMethod: 'app'
-                          })}
-                        >
-                          Effectuer un paiement
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {(!activeSfdAccount.loans || activeSfdAccount.loans.length === 0) && (
+                    ))
+                  ) : (
                     <div className="text-center p-6 border rounded-lg">
                       <Database className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                       <p className="text-gray-500">Aucun prêt actif pour ce compte</p>
@@ -258,7 +259,7 @@ export const MultiSFDAccounts = () => {
                         <p className="text-sm text-muted-foreground">{tx.date}</p>
                       </div>
                       <span className={tx.type === 'credit' ? 'text-green-600' : 'text-red-600'}>
-                        {tx.type === 'credit' ? '+' : '-'}{tx.amount.toLocaleString()} {activeSfdAccount.currency}
+                        {tx.type === 'credit' ? '+' : '-'}{tx.amount.toLocaleString()} {activeSfdAccount.currency || 'FCFA'}
                       </span>
                     </div>
                   ))}
