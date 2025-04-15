@@ -18,6 +18,7 @@ export const PERMISSIONS = {
   CREATE_SFD: 'create_sfd',
   CREATE_SFD_ADMIN: 'create_sfd_admin',
   AUDIT_REPORTS: 'audit_reports',
+  PKI_MANAGEMENT: 'pki_management',
   
   // SFD Admin permissions
   VALIDATE_CLIENT_ACCOUNTS: 'validate_client_accounts',
@@ -32,9 +33,13 @@ export const PERMISSIONS = {
   
   // Client permissions
   ACCESS_SAVINGS: 'access_savings',
+  DEPOSIT_SAVINGS: 'deposit_savings',
+  WITHDRAW_SAVINGS: 'withdraw_savings',
   USE_MOBILE_MONEY: 'use_mobile_money',
   VIEW_LOAN_HISTORY: 'view_loan_history',
   REQUEST_ADHESION: 'request_adhesion',
+  REQUEST_LOAN: 'request_loan',
+  REPAY_LOAN: 'repay_loan',
   
   // Shared/Common permissions
   MANAGE_CLIENTS: 'manage_clients',
@@ -68,6 +73,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     PERMISSIONS.CREATE_SFD,
     PERMISSIONS.CREATE_SFD_ADMIN,
     PERMISSIONS.AUDIT_REPORTS,
+    PERMISSIONS.PKI_MANAGEMENT,
   ],
   
   // SFD Admin permissions
@@ -90,15 +96,39 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   // Client permissions
   [UserRole.CLIENT]: [
     PERMISSIONS.ACCESS_SAVINGS,
+    PERMISSIONS.DEPOSIT_SAVINGS,
+    PERMISSIONS.WITHDRAW_SAVINGS,
     PERMISSIONS.USE_MOBILE_MONEY,
     PERMISSIONS.VIEW_LOAN_HISTORY,
     PERMISSIONS.ACCESS_CLIENT_DASHBOARD,
     PERMISSIONS.REQUEST_ADHESION,
+    PERMISSIONS.REQUEST_LOAN,
+    PERMISSIONS.REPAY_LOAN,
   ],
   
   // Basic user permissions (minimal)
   [UserRole.USER]: [
     PERMISSIONS.REQUEST_ADHESION,
   ],
+  
+  // Super Admin alias to maintain backward compatibility
+  [UserRole.SUPER_ADMIN]: [
+    PERMISSIONS.VALIDATE_SFD_FUNDS,
+    PERMISSIONS.AUDIT_SFD_ACCOUNTS,
+    PERMISSIONS.GENERATE_REPORTS,
+    PERMISSIONS.MANAGE_USERS,
+    PERMISSIONS.MANAGE_SFDS,
+    PERMISSIONS.MANAGE_CLIENTS,
+    PERMISSIONS.MANAGE_LOANS,
+    PERMISSIONS.MANAGE_SUBSIDIES,
+    PERMISSIONS.VIEW_REPORTS,
+    PERMISSIONS.EXPORT_DATA,
+    PERMISSIONS.APPROVE_CREDIT,
+    PERMISSIONS.ACCESS_ADMIN_DASHBOARD,
+    PERMISSIONS.VIEW_CLIENT_ADHESIONS,
+    PERMISSIONS.CREATE_SFD,
+    PERMISSIONS.CREATE_SFD_ADMIN,
+    PERMISSIONS.AUDIT_REPORTS,
+    PERMISSIONS.PKI_MANAGEMENT,
+  ],
 };
-

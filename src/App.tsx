@@ -31,6 +31,7 @@ import RoleGuard from '@/components/RoleGuard';
 import { UserRole } from '@/hooks/auth/types';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import SfdAdhesionRequestsPage from '@/pages/SfdAdhesionRequestsPage';
+import RoleTestingPage from '@/pages/RoleTestingPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -202,6 +203,15 @@ function App() {
                 <ProtectedRoute>
                   <RoleGuard requiredRole={UserRole.Client}>
                     <MobileFlowPage />
+                  </RoleGuard>
+                </ProtectedRoute>
+              } />
+              
+              {/* New role testing route */}
+              <Route path="/role-testing" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <RoleGuard requiredRole={UserRole.SuperAdmin}>
+                    <RoleTestingPage />
                   </RoleGuard>
                 </ProtectedRoute>
               } />
