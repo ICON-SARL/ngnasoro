@@ -1,15 +1,19 @@
 
 import React from 'react';
 import { useCurrentSfd } from '@/hooks/useCurrentSfd';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SfdHeader } from '@/components/sfd/SfdHeader';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Users, CreditCard, FileText, Settings, Building2, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSfdStats } from '@/hooks/useSfdStats';
+import { SfdDashboard } from '@/components/sfd/SfdDashboard';
 
 export default function AgencyManagementPage() {
-  const { data: sfd, isLoading } = useCurrentSfd();
+  const { data: sfd, isLoading: sfdLoading } = useCurrentSfd();
+  const { data: stats, isLoading: statsLoading } = useSfdStats(sfd?.id);
   const { user, userRole } = useAuth();
+  const isLoading = sfdLoading || statsLoading;
 
   console.log("AgencyManagementPage - User:", user?.id);
   console.log("AgencyManagementPage - User role:", userRole);
@@ -48,9 +52,52 @@ export default function AgencyManagementPage() {
           </p>
         </div>
 
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Crédits Approuvés</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.approvedCreditsCount || 0}</div>
+              <div className="flex items-center text-xs text-green-500 mt-2">
+                <ArrowUpRight className="h-4 w-4 mr-1" />
+                <span>+{stats?.approvedCreditsAmount?.toLocaleString() || 0} FCFA ce mois</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Clients Actifs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.activeClientsCount || 0}</div>
+              <div className="flex items-center text-xs text-green-500 mt-2">
+                <ArrowUpRight className="h-4 w-4 mr-1" />
+                <span>{stats?.pendingClientsCount || 0} en attente</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Solde Subventions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.subsidyBalance?.toLocaleString() || 0} FCFA</div>
+              <div className="flex items-center text-xs text-muted-foreground mt-2">
+                <FileText className="h-4 w-4 mr-1" />
+                <span>Balance courante</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <Tabs defaultValue="info" className="space-y-4">
           <TabsList>
             <TabsTrigger value="info">Informations</TabsTrigger>
+            <TabsTrigger value="dashboard">Tableau de bord</TabsTrigger>
             <TabsTrigger value="settings">Paramètres</TabsTrigger>
             <TabsTrigger value="admins">Administrateurs</TabsTrigger>
           </TabsList>
@@ -91,13 +138,67 @@ export default function AgencyManagementPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="dashboard">
+            <SfdDashboard />
+          </TabsContent>
+
           <TabsContent value="settings">
             <Card>
               <CardHeader>
                 <CardTitle>Paramètres de la SFD</CardTitle>
+                <CardDescription>
+                  Configuration des paramètres opérationnels de votre SFD
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p>Les paramètres seront disponibles prochainement.</p>
+              <CardContent className="space-y-4">
+                {/* Settings from sfd.settings */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Paramètres des prêts</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div>
+                        <p className="text-sm font-medium">Montant maximum du prêt</p>
+                        <p className="text-sm text-muted-foreground">
+                          {sfd.settings?.loan_settings?.max_loan_amount?.toLocaleString() || 0} FCFA
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Montant minimum du prêt</p>
+                        <p className="text-sm text-muted-foreground">
+                          {sfd.settings?.loan_settings?.min_loan_amount?.toLocaleString() || 0} FCFA
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Taux d'intérêt par défaut</p>
+                        <p className="text-sm text-muted-foreground">
+                          {sfd.settings?.loan_settings?.default_interest_rate || 0}%
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Paramètres de sécurité</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div>
+                        <p className="text-sm font-medium">Expiration du mot de passe</p>
+                        <p className="text-sm text-muted-foreground">
+                          {sfd.settings?.security_settings?.password_expiry_days || 90} jours
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Timeout de session</p>
+                        <p className="text-sm text-muted-foreground">
+                          {sfd.settings?.security_settings?.session_timeout_minutes || 30} minutes
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -106,6 +207,9 @@ export default function AgencyManagementPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Administrateurs de la SFD</CardTitle>
+                <CardDescription>
+                  Gérez les administrateurs qui ont accès à votre SFD
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <p>La gestion des administrateurs sera disponible prochainement.</p>
