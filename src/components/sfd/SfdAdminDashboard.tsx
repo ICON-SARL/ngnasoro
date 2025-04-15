@@ -6,6 +6,7 @@ import { SfdAccountsOverview } from './accounts/SfdAccountsOverview';
 import { SfdLoansOverview } from './loans/SfdLoansOverview';
 import { ClientManagementSystem } from './ClientManagementSystem';
 import { useAuth } from '@/hooks/useAuth';
+import { SfdAdminManagement } from '@/components/admin/sfd/SfdAdminManagement';
 
 const SfdAdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -26,11 +27,12 @@ const SfdAdminDashboard: React.FC = () => {
         onValueChange={setActiveTab} 
         className="space-y-4"
       >
-        <TabsList className="grid md:grid-cols-4 grid-cols-2 w-full">
+        <TabsList className="grid md:grid-cols-5 grid-cols-2 w-full">
           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
           <TabsTrigger value="clients">Clients</TabsTrigger>
           <TabsTrigger value="accounts">Comptes SFD</TabsTrigger>
           <TabsTrigger value="loans">Prêts</TabsTrigger>
+          <TabsTrigger value="admins">Administrateurs</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-6">
@@ -47,6 +49,10 @@ const SfdAdminDashboard: React.FC = () => {
         
         <TabsContent value="loans" className="space-y-6">
           <SfdLoansOverview />
+        </TabsContent>
+
+        <TabsContent value="admins" className="space-y-6">
+          <SfdAdminManagement />
         </TabsContent>
       </Tabs>
     </div>
