@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,33 +11,6 @@ import { useNavigate } from 'react-router-dom';
 
 const MultiSFDDashboard = () => {
   const navigate = useNavigate();
-  
-  const mockAccounts = [
-    {
-      id: 'sfd1',
-      name: 'RMCR Mali',
-      code: 'RMCR-001',
-      region: 'Bamako',
-      logo_url: null,
-      status: 'active',
-      isVerified: true,
-      isDefault: true,
-      balance: 250000,
-      currency: 'FCFA'
-    },
-    {
-      id: 'sfd2',
-      name: 'NYESIGISO',
-      code: 'NYSG-002',
-      region: 'Ségou',
-      logo_url: null,
-      status: 'active',
-      isVerified: true,
-      isDefault: false,
-      balance: 175000,
-      currency: 'FCFA'
-    }
-  ];
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -157,7 +131,7 @@ const MultiSFDDashboard = () => {
           </TabsList>
           
           <TabsContent value="accounts">
-            <MultiSFDAccounts accounts={mockAccounts} />
+            <MultiSFDAccounts />
           </TabsContent>
           
           <TabsContent value="loans">

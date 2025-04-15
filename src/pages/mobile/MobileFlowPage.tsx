@@ -7,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
 import FloatingMenuButton from '@/components/mobile/FloatingMenuButton';
-import { UserRole } from '@/hooks/auth/types';
 
 const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
@@ -16,9 +15,9 @@ const MobileFlowPage: React.FC = () => {
   const [showWelcome, setShowWelcome] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   
-  const { user, loading, signOut, isAdmin, isSfdAdmin } = useAuth();
+  const { user, loading, signOut } = useAuth();
 
-  // Check if user is authenticated and has correct role
+  // Check if user is authenticated
   useEffect(() => {
     if (!loading) {
       if (!user) {
@@ -31,9 +30,10 @@ const MobileFlowPage: React.FC = () => {
         return;
       }
       
-      // Redirect admin users to their appropriate dashboards
-      if (isAdmin) {
-        console.log("MobileFlowPage - Redirecting admin to admin dashboard");
+      // Get the user role and redirect if needed
+      const role = user.app_metadata?.role;
+      
+      if (role === 'admin') {
         toast({
           title: "Redirection",
           description: "Vous êtes connecté en tant qu'administrateur.",
@@ -42,8 +42,7 @@ const MobileFlowPage: React.FC = () => {
         return;
       } 
       
-      if (isSfdAdmin) {
-        console.log("MobileFlowPage - Redirecting SFD admin to SFD dashboard");
+      if (role === 'sfd_admin') {
         toast({
           title: "Redirection",
           description: "Vous êtes connecté en tant qu'administrateur SFD.",
@@ -52,7 +51,7 @@ const MobileFlowPage: React.FC = () => {
         return;
       }
     }
-  }, [user, loading, navigate, toast, isAdmin, isSfdAdmin]);
+  }, [user, loading, navigate, toast]);
 
   // Handle logout
   const handleLogout = async () => {
