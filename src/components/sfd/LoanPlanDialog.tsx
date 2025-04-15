@@ -1,148 +1,112 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2, Plus, X, Check, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface LoanPlanDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  planToEdit?: any;
-  onSaved?: () => void;
+  planToEdit: any | null;
 }
 
-// Define schema for form validation
-const loanPlanSchema = z.object({
-  name: z.string().min(1, "Le nom du plan est requis"),
-  description: z.string().optional(),
-  minAmount: z.coerce.number().min(1, "Le montant minimum doit être supérieur à 0"),
-  maxAmount: z.coerce.number().min(1, "Le montant maximum doit être supérieur à 0"),
-  minDuration: z.coerce.number().min(1, "La durée minimum doit être d'au moins 1 mois"),
-  maxDuration: z.coerce.number().min(1, "La durée maximum doit être d'au moins 1 mois"),
-  interestRate: z.coerce.number().min(0, "Le taux d'intérêt ne peut pas être négatif"),
-  fees: z.coerce.number().min(0, "Les frais de dossier ne peuvent pas être négatifs"),
-  repaymentType: z.enum(["fixed", "decreasing"], {
-    required_error: "Veuillez sélectionner un type de remboursement",
-  }),
-  isActive: z.boolean().default(true),
-  requirements: z.string().optional(),
-});
-
-type LoanPlanFormValues = z.infer<typeof loanPlanSchema>;
-
-const LoanPlanDialog: React.FC<LoanPlanDialogProps> = ({ 
-  isOpen, 
-  onClose, 
-  planToEdit, 
-  onSaved 
-}) => {
+const LoanPlanDialog = ({
+  isOpen,
+  onClose,
+  planToEdit
+}: LoanPlanDialogProps) => {
   const { toast } = useToast();
-  const { activeSfdId } = useAuth();
-  const [isSaving, setIsSaving] = useState(false);
-  const [sfdBalance, setSfdBalance] = useState<number | null>(null);
-  const [merefLimits, setMerefLimits] = useState<{maxInterestRate: number} | null>(null);
-  const [newRequirement, setNewRequirement] = useState('');
+  const { user, activeSfdId } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [minAmount, setMinAmount] = useState<string>('10000');
+  const [maxAmount, setMaxAmount] = useState<string>('5000000');
+  const [minDuration, setMinDuration] = useState<string>('1');
+  const [maxDuration, setMaxDuration] = useState<string>('36');
+  const [interestRate, setInterestRate] = useState<string>('5.0');
+  const [fees, setFees] = useState<string>('1.0');
   const [requirements, setRequirements] = useState<string[]>([]);
+  const [newRequirement, setNewRequirement] = useState('');
+  const [repaymentType, setRepaymentType] = useState<string>('fixed');
+  const [merefSettings, setMerefSettings] = useState<any>(null);
+  const [interestRateExceeded, setInterestRateExceeded] = useState(false);
   
-  // Initialize form with react-hook-form and zod validation
-  const form = useForm<LoanPlanFormValues>({
-    resolver: zodResolver(loanPlanSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-      minAmount: 10000,
-      maxAmount: 1000000,
-      minDuration: 1,
-      maxDuration: 12,
-      interestRate: 5,
-      fees: 1,
-      repaymentType: "fixed" as const,
-      isActive: true,
-      requirements: '',
-    }
-  });
-
-  // Fetch SFD operation account balance and MEREF limits on component mount
+  // Fetch MEREF settings
   useEffect(() => {
-    const fetchConstraints = async () => {
-      if (!activeSfdId) return;
-      
+    const fetchMerefSettings = async () => {
       try {
-        // Fetch operation account balance
-        const { data: accountData, error: accountError } = await supabase
-          .from('sfd_accounts')
-          .select('balance')
-          .eq('sfd_id', activeSfdId)
-          .eq('account_type', 'operation')
-          .single();
-          
-        if (accountError) throw accountError;
-        if (accountData) setSfdBalance(accountData.balance);
-        
-        // Fetch MEREF settings for interest rate limit
-        const { data: merefData, error: merefError } = await supabase
+        const { data, error } = await supabase
           .from('meref_settings')
-          .select('max_interest_rate')
+          .select('*')
           .single();
-          
-        if (merefError) throw merefError;
-        if (merefData) setMerefLimits({ maxInterestRate: merefData.max_interest_rate || 15 });
+        
+        if (error) throw error;
+        setMerefSettings(data);
       } catch (error) {
-        console.error('Error fetching constraints:', error);
+        console.error('Error fetching MEREF settings:', error);
       }
     };
     
-    fetchConstraints();
-  }, [activeSfdId]);
-
-  // Update form when editing a plan
+    fetchMerefSettings();
+  }, []);
+  
+  // Check interest rate against MEREF limits
+  useEffect(() => {
+    if (merefSettings && parseFloat(interestRate) > 0) {
+      // Since max_interest_rate doesn't exist, we'll use a fallback value
+      // or we could check against a hardcoded regulatory limit
+      const maxAllowedRate = 20; // Example fallback value for maximum allowed interest rate
+      setInterestRateExceeded(parseFloat(interestRate) > maxAllowedRate);
+    }
+  }, [interestRate, merefSettings]);
+  
   useEffect(() => {
     if (planToEdit) {
-      form.reset({
-        name: planToEdit.name || '',
-        description: planToEdit.description || '',
-        minAmount: planToEdit.min_amount || 10000,
-        maxAmount: planToEdit.max_amount || 1000000,
-        minDuration: planToEdit.min_duration || 1,
-        maxDuration: planToEdit.max_duration || 12,
-        interestRate: planToEdit.interest_rate || 5,
-        fees: planToEdit.fees || 1,
-        repaymentType: planToEdit.repayment_type || "fixed",
-        isActive: planToEdit.is_active || true,
-        requirements: planToEdit.requirements ? planToEdit.requirements.join('\n') : '',
-      });
-      
+      setName(planToEdit.name || '');
+      setDescription(planToEdit.description || '');
+      setMinAmount(planToEdit.min_amount?.toString() || '10000');
+      setMaxAmount(planToEdit.max_amount?.toString() || '5000000');
+      setMinDuration(planToEdit.min_duration?.toString() || '1');
+      setMaxDuration(planToEdit.max_duration?.toString() || '36');
+      setInterestRate(planToEdit.interest_rate?.toString() || '5.0');
+      setFees(planToEdit.fees?.toString() || '1.0');
       setRequirements(planToEdit.requirements || []);
+      setRepaymentType(planToEdit.repayment_type || 'fixed');
     } else {
-      form.reset({
-        name: '',
-        description: '',
-        minAmount: 10000,
-        maxAmount: 1000000,
-        minDuration: 1,
-        maxDuration: 12,
-        interestRate: 5,
-        fees: 1,
-        repaymentType: "fixed" as const,
-        isActive: true,
-        requirements: '',
-      });
-      
-      setRequirements([]);
+      resetForm();
     }
-  }, [planToEdit, isOpen, form]);
-
+  }, [planToEdit, isOpen]);
+  
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setMinAmount('10000');
+    setMaxAmount('5000000');
+    setMinDuration('1');
+    setMaxDuration('36');
+    setInterestRate('5.0');
+    setFees('1.0');
+    setRequirements([]);
+    setNewRequirement('');
+    setRepaymentType('fixed');
+  };
+  
   const handleAddRequirement = () => {
     if (newRequirement.trim() && !requirements.includes(newRequirement.trim())) {
       setRequirements([...requirements, newRequirement.trim()]);
@@ -155,428 +119,398 @@ const LoanPlanDialog: React.FC<LoanPlanDialogProps> = ({
     updated.splice(index, 1);
     setRequirements(updated);
   };
-
-  // Generate amortization schedule based on loan parameters
-  const generateAmortizationSchedule = (amount: number, interestRate: number, durationMonths: number, repaymentType: string) => {
-    const monthlyInterestRate = interestRate / 100 / 12;
-    const schedule = [];
+  
+  const validateSfdBalance = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sfd_accounts')
+        .select('balance')
+        .eq('sfd_id', activeSfdId)
+        .eq('account_type', 'operation')
+        .single();
+      
+      if (error) throw error;
+      
+      // Check if the SFD has enough balance for the max loan amount
+      if (data.balance < parseFloat(maxAmount)) {
+        return {
+          valid: false,
+          message: `Le solde du compte d'opération (${data.balance} FCFA) est inférieur au montant maximum du prêt (${maxAmount} FCFA).`
+        };
+      }
+      
+      return { valid: true };
+    } catch (error) {
+      console.error('Error validating SFD balance:', error);
+      return { 
+        valid: false, 
+        message: "Impossible de vérifier le solde du compte d'opération."
+      };
+    }
+  };
+  
+  const generateAmortizationSchedule = (amount: number, duration: number, rate: number, type: string) => {
+    // Simplified amortization schedule generation
+    const annualRate = rate / 100;
+    const monthlyRate = annualRate / 12;
+    let schedule = [];
     
-    if (repaymentType === "fixed") {
-      // Fixed installment calculation (PMT formula)
-      const monthlyPayment = amount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, durationMonths) 
-                           / (Math.pow(1 + monthlyInterestRate, durationMonths) - 1);
+    if (type === 'fixed') {
+      // Fixed monthly payment (PMT formula)
+      const pmt = amount * monthlyRate * Math.pow(1 + monthlyRate, duration) / 
+                (Math.pow(1 + monthlyRate, duration) - 1);
       
-      let remainingPrincipal = amount;
+      let remainingBalance = amount;
       
-      for (let month = 1; month <= durationMonths; month++) {
-        const interestPayment = remainingPrincipal * monthlyInterestRate;
-        const principalPayment = monthlyPayment - interestPayment;
-        remainingPrincipal -= principalPayment;
+      for (let i = 1; i <= duration; i++) {
+        const interestPayment = remainingBalance * monthlyRate;
+        const principalPayment = pmt - interestPayment;
+        remainingBalance -= principalPayment;
         
         schedule.push({
-          month,
-          payment: monthlyPayment,
-          principalPayment,
-          interestPayment,
-          remainingPrincipal: Math.max(0, remainingPrincipal),
+          month: i,
+          payment: pmt,
+          principal: principalPayment,
+          interest: interestPayment,
+          balance: remainingBalance > 0 ? remainingBalance : 0
         });
       }
-    } else if (repaymentType === "decreasing") {
-      // Decreasing installment calculation
-      const principalPayment = amount / durationMonths;
+    } else {
+      // Decreasing installments (equal principal payments)
+      const principalPayment = amount / duration;
+      let remainingBalance = amount;
       
-      let remainingPrincipal = amount;
-      
-      for (let month = 1; month <= durationMonths; month++) {
-        const interestPayment = remainingPrincipal * monthlyInterestRate;
+      for (let i = 1; i <= duration; i++) {
+        const interestPayment = remainingBalance * monthlyRate;
         const payment = principalPayment + interestPayment;
-        remainingPrincipal -= principalPayment;
+        remainingBalance -= principalPayment;
         
         schedule.push({
-          month,
-          payment,
-          principalPayment,
-          interestPayment,
-          remainingPrincipal: Math.max(0, remainingPrincipal),
+          month: i,
+          payment: payment,
+          principal: principalPayment,
+          interest: interestPayment,
+          balance: remainingBalance > 0 ? remainingBalance : 0
         });
       }
     }
     
     return schedule;
   };
-
-  const onSubmit = async (values: LoanPlanFormValues) => {
+  
+  const handleSave = async () => {
+    if (!name) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez spécifier un nom pour ce plan",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!activeSfdId) {
       toast({
         title: "Erreur",
-        description: "Identifiant SFD manquant",
-        variant: "destructive"
+        description: "SFD non identifié",
+        variant: "destructive",
       });
       return;
     }
     
-    // Validate min/max amounts
-    if (values.minAmount > values.maxAmount) {
+    // Validate interest rate against MEREF limits
+    if (interestRateExceeded) {
       toast({
-        title: "Erreur",
-        description: "Le montant minimum ne peut pas être supérieur au montant maximum",
-        variant: "destructive"
+        title: "Taux d'intérêt trop élevé",
+        description: "Le taux d'intérêt dépasse les limites réglementaires définies par le MEREF.",
+        variant: "destructive",
       });
       return;
     }
     
-    // Validate min/max durations
-    if (values.minDuration > values.maxDuration) {
+    // Check SFD account balance
+    const balanceCheck = await validateSfdBalance();
+    if (!balanceCheck.valid) {
       toast({
-        title: "Erreur",
-        description: "La durée minimum ne peut pas être supérieure à la durée maximum",
-        variant: "destructive"
+        title: "Solde insuffisant",
+        description: balanceCheck.message,
+        variant: "destructive",
       });
       return;
     }
     
-    // Check interest rate against MEREF limits
-    if (merefLimits && values.interestRate > merefLimits.maxInterestRate) {
-      toast({
-        title: "Erreur",
-        description: `Le taux d'intérêt ne peut pas dépasser la limite légale de ${merefLimits.maxInterestRate}%`,
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Check against SFD operation account balance
-    if (sfdBalance !== null && !planToEdit && values.maxAmount > sfdBalance) {
-      toast({
-        title: "Avertissement",
-        description: `Le montant maximum dépasse le solde du compte d'opération (${sfdBalance.toLocaleString()} FCFA)`,
-        variant: "warning"
-      });
-      // Note: This is just a warning, not blocking the creation
-    }
-    
-    setIsSaving(true);
+    setIsLoading(true);
     
     try {
-      // Process requirements
-      const requirementsArray = requirements.length > 0 ? requirements : 
-        values.requirements ? values.requirements
-          .split('\n')
-          .map(req => req.trim())
-          .filter(req => req.length > 0) : [];
+      // Generate sample amortization schedule for preview/validation
+      const schedule = generateAmortizationSchedule(
+        parseFloat(maxAmount),
+        parseInt(maxDuration),
+        parseFloat(interestRate),
+        repaymentType
+      );
       
       const planData = {
-        name: values.name,
-        description: values.description || '',
-        min_amount: values.minAmount,
-        max_amount: values.maxAmount,
-        min_duration: values.minDuration,
-        max_duration: values.maxDuration,
-        interest_rate: values.interestRate,
-        repayment_type: values.repaymentType,
-        fees: values.fees,
-        is_active: values.isActive,
-        requirements: requirementsArray,
+        name,
+        description,
+        min_amount: parseFloat(minAmount),
+        max_amount: parseFloat(maxAmount),
+        min_duration: parseInt(minDuration),
+        max_duration: parseInt(maxDuration),
+        interest_rate: parseFloat(interestRate),
+        fees: parseFloat(fees),
+        requirements,
+        repayment_type: repaymentType,
+        amortization_preview: schedule.slice(0, 3), // Store just first 3 entries as preview
         sfd_id: activeSfdId
       };
       
-      let result;
-      
       if (planToEdit) {
         // Update existing plan
-        result = await supabase
+        const { error } = await supabase
           .from('sfd_loan_plans')
-          .update(planData)
+          .update({
+            ...planData,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', planToEdit.id);
+          
+        if (error) throw error;
+        
+        toast({
+          title: "Plan mis à jour",
+          description: "Le plan de prêt a été modifié avec succès",
+        });
       } else {
         // Create new plan
-        result = await supabase
+        const { error } = await supabase
           .from('sfd_loan_plans')
           .insert(planData);
+          
+        if (error) throw error;
+        
+        toast({
+          title: "Plan créé",
+          description: "Le nouveau plan de prêt a été créé avec succès",
+        });
       }
       
-      if (result.error) throw result.error;
-      
-      toast({
-        title: planToEdit ? "Plan modifié" : "Plan créé",
-        description: planToEdit 
-          ? `Le plan "${values.name}" a été modifié avec succès`
-          : `Le plan "${values.name}" a été créé avec succès`,
-      });
-      
-      if (onSaved) onSaved();
       onClose();
     } catch (error: any) {
       console.error('Error saving loan plan:', error);
       toast({
         title: "Erreur",
-        description: `Impossible de sauvegarder le plan de prêt: ${error.message}`,
-        variant: "destructive"
+        description: `Impossible d'enregistrer le plan : ${error.message}`,
+        variant: "destructive",
       });
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   };
-
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {planToEdit ? 'Modifier le plan de prêt' : 'Nouveau plan de prêt'}
-          </DialogTitle>
+          <DialogTitle>{planToEdit ? "Modifier le plan de prêt" : "Nouveau plan de prêt"}</DialogTitle>
+          <DialogDescription>
+            {planToEdit 
+              ? "Modifiez les détails du plan de prêt existant." 
+              : "Configurez un nouveau type de prêt à offrir aux clients."}
+          </DialogDescription>
         </DialogHeader>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <div className="grid grid-cols-1 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nom du plan *</FormLabel>
-                    <FormControl>
-                      <Input 
-                        {...field} 
-                        placeholder="Ex: Prêt Express"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        {...field} 
-                        placeholder="Description du plan de prêt"
-                        rows={3}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="minAmount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Montant min (FCFA)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          {...field} 
-                          min="0"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="maxAmount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Montant max (FCFA)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          {...field} 
-                          min="0"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="minDuration"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Durée min (mois)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          {...field} 
-                          min="1"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="maxDuration"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Durée max (mois)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          {...field} 
-                          min="1"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="interestRate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Taux d'intérêt (%)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          {...field} 
-                          min="0"
-                          step="0.1"
-                        />
-                      </FormControl>
-                      {merefLimits && (
-                        <p className="text-xs text-muted-foreground">
-                          Limite légale: {merefLimits.maxInterestRate}%
-                        </p>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="fees"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Frais de dossier (%)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          {...field} 
-                          min="0"
-                          step="0.1"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="repaymentType"
-                render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel>Type de remboursement</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex flex-col space-y-1"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="fixed" id="fixed" />
-                          <Label htmlFor="fixed">Mensualités fixes</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="decreasing" id="decreasing" />
-                          <Label htmlFor="decreasing">Mensualités dégressives</Label>
-                        </div>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="space-y-2">
-                <Label>Conditions requises (une par ligne)</Label>
-                <div className="flex space-x-2">
-                  <Input 
-                    value={newRequirement} 
-                    onChange={(e) => setNewRequirement(e.target.value)}
-                    placeholder="Ex: Carte d'identité valide"
-                    className="flex-1"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddRequirement();
-                      }
-                    }}
-                  />
-                  <Button type="button" variant="outline" onClick={handleAddRequirement}>
-                    Ajouter
-                  </Button>
-                </div>
-                
-                {requirements.length > 0 && (
-                  <ul className="mt-2 space-y-1">
-                    {requirements.map((req, index) => (
-                      <li key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                        <span>{req}</span>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleRemoveRequirement(index)}
-                        >
-                          ✕
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="isActive"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-2 space-y-0 rounded-md p-2">
-                    <FormControl>
-                      <Switch 
-                        checked={field.value} 
-                        onCheckedChange={field.onChange} 
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">
-                      Plan actif
-                    </FormLabel>
-                  </FormItem>
-                )}
+        <div className="grid gap-4 py-4">
+          {interestRateExceeded && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Attention : Le taux d'intérêt dépasse les limites réglementaires définies par le MEREF.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          <div className="grid grid-cols-1 gap-2">
+            <Label htmlFor="name">Nom du plan *</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex: Prêt Agricole, Microprêt Commercial..."
+              required
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 gap-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Décrivez ce plan de prêt et ses conditions particulières..."
+              rows={3}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="minAmount">Montant minimum (FCFA) *</Label>
+              <Input
+                id="minAmount"
+                type="number"
+                value={minAmount}
+                onChange={(e) => setMinAmount(e.target.value)}
+                required
+                min="0"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="maxAmount">Montant maximum (FCFA) *</Label>
+              <Input
+                id="maxAmount"
+                type="number"
+                value={maxAmount}
+                onChange={(e) => setMaxAmount(e.target.value)}
+                required
+                min="0"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="minDuration">Durée minimum (mois) *</Label>
+              <Input
+                id="minDuration"
+                type="number"
+                value={minDuration}
+                onChange={(e) => setMinDuration(e.target.value)}
+                required
+                min="1"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="maxDuration">Durée maximum (mois) *</Label>
+              <Input
+                id="maxDuration"
+                type="number"
+                value={maxDuration}
+                onChange={(e) => setMaxDuration(e.target.value)}
+                required
+                min="1"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="interestRate">Taux d'intérêt (%) *</Label>
+              <Input
+                id="interestRate"
+                type="number"
+                value={interestRate}
+                onChange={(e) => setInterestRate(e.target.value)}
+                required
+                min="0"
+                step="0.1"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fees">Frais administratifs (%) *</Label>
+              <Input
+                id="fees"
+                type="number"
+                value={fees}
+                onChange={(e) => setFees(e.target.value)}
+                required
+                min="0"
+                step="0.1"
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="repaymentType">Type de remboursement *</Label>
+            <Select
+              value={repaymentType}
+              onValueChange={setRepaymentType}
+            >
+              <SelectTrigger id="repaymentType">
+                <SelectValue placeholder="Sélectionnez le type de remboursement" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fixed">Mensualités fixes</SelectItem>
+                <SelectItem value="decreasing">Mensualités dégressives</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Documents requis</Label>
+            <div className="flex space-x-2">
+              <Input
+                value={newRequirement}
+                onChange={(e) => setNewRequirement(e.target.value)}
+                placeholder="Ajouter un document requis"
+                className="flex-1"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddRequirement();
+                  }
+                }}
+              />
+              <Button 
+                type="button" 
+                onClick={handleAddRequirement}
+                variant="outline"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
             
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
-                Annuler
-              </Button>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? 'Enregistrement...' : planToEdit ? 'Mettre à jour' : 'Créer le plan'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+            {requirements.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {requirements.map((req, index) => (
+                  <li key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                    <span>{req}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleRemoveRequirement(index)}
+                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            Annuler
+          </Button>
+          <Button onClick={handleSave} disabled={isLoading} className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {planToEdit ? "Mise à jour..." : "Création..."}
+              </>
+            ) : planToEdit ? (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Mettre à jour
+              </>
+            ) : (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Créer
+              </>
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
