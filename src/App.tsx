@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -8,6 +9,7 @@ import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
 import LoanDetailsPage from '@/pages/mobile/LoanDetailsPage';
 import PaymentPage from '@/pages/mobile/PaymentPage';
 import AccountPage from '@/pages/mobile/AccountPage';
+import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 import MobileFlowPage from '@/pages/MobileFlowPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/hooks/auth/AuthContext';

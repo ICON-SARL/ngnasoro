@@ -2,15 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-
-export interface ClientAdhesionRequest {
-  id: string;
-  sfd_id: string;
-  sfd_name?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  created_at: string;
-  notes?: string;
-}
+import { ClientAdhesionRequest } from '@/types/adhesionTypes';
 
 export const useClientAdhesions = () => {
   const { user } = useAuth();
@@ -30,7 +22,7 @@ export const useClientAdhesions = () => {
     try {
       const { data, error } = await supabase
         .from('sfd_clients')
-        .select('id, sfd_id, status, created_at, notes, sfds(name)')
+        .select('id, sfd_id, status, created_at, notes, full_name, email, phone, address, sfds(name)')
         .eq('user_id', user.id);
       
       if (error) throw error;
@@ -41,7 +33,12 @@ export const useClientAdhesions = () => {
         sfd_name: item.sfds?.name,
         status: item.status as 'pending' | 'approved' | 'rejected',
         created_at: item.created_at,
-        notes: item.notes
+        notes: item.notes,
+        full_name: item.full_name,
+        email: item.email,
+        phone: item.phone,
+        address: item.address,
+        user_id: user.id
       }));
       
       setUserAdhesionRequests(formattedData);
@@ -63,7 +60,7 @@ export const useClientAdhesions = () => {
     try {
       const { data, error } = await supabase
         .from('sfd_clients')
-        .select('id, sfd_id, status, created_at, notes, user_id')
+        .select('id, sfd_id, status, created_at, notes, user_id, full_name, email, phone, address')
         
       if (error) throw error;
       
@@ -73,7 +70,11 @@ export const useClientAdhesions = () => {
         user_id: item.user_id,
         status: item.status as 'pending' | 'approved' | 'rejected',
         created_at: item.created_at,
-        notes: item.notes
+        notes: item.notes,
+        full_name: item.full_name,
+        email: item.email,
+        phone: item.phone,
+        address: item.address
       }));
       
       setAdhesionRequests(formattedData);
@@ -116,6 +117,9 @@ export const useClientAdhesions = () => {
             email: formData.email || user.email || '',
             phone: formData.phone || '',
             address: formData.address || '',
+            profession: formData.profession || '',
+            monthly_income: formData.monthly_income || '',
+            source_of_income: formData.source_of_income || '',
           }
         ])
         .select();
