@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   AlertDialog,
@@ -152,6 +153,7 @@ export function SfdDialogs({
             onSubmit={handleAddSfd}
             isLoading={addSfdMutation.isLoading}
             onCancel={() => setShowAddDialog(false)}
+            formMode="create"
           />
         </DialogContent>
       </Dialog>
@@ -163,10 +165,11 @@ export function SfdDialogs({
             <DialogTitle>Modifier la SFD</DialogTitle>
           </DialogHeader>
           <SfdForm
-            sfd={selectedSfd}
+            defaultValues={selectedSfd}
             onSubmit={handleEditSfd}
             isLoading={editSfdMutation.isLoading}
             onCancel={() => setShowEditDialog(false)}
+            formMode="edit"
           />
         </DialogContent>
       </Dialog>
