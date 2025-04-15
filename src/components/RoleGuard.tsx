@@ -21,7 +21,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
       return;
     }
 
-    // Get role from user metadata
+    // Récupérer le rôle de user.app_metadata
     const userRole = user.app_metadata?.role;
     
     console.log('RoleGuard checking:', { 
@@ -31,20 +31,20 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
       path: location.pathname
     });
     
-    // Admin has access to everything except client routes
+    // L'admin a accès à tout sauf les routes client
     if (userRole === 'admin' && requiredRole !== UserRole.CLIENT) {
       setHasAccess(true);
       return;
     }
     
-    // Handle equivalence between 'user' and 'client' roles
+    // Gérer l'équivalence entre les rôles 'user' et 'client'
     if ((userRole === 'user' && requiredRole === UserRole.CLIENT) || 
         (userRole === 'client' && requiredRole === UserRole.USER)) {
       setHasAccess(true);
       return;
     }
     
-    // Direct role comparison
+    // Comparaison directe de rôle
     setHasAccess(userRole === requiredRole);
     
   }, [user, requiredRole, location.pathname]);
@@ -59,7 +59,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
   }
 
   if (!user) {
-    // Redirect to appropriate auth page based on required role
+    // Rediriger vers la page d'authentification appropriée selon le rôle requis
     if (requiredRole === UserRole.SUPER_ADMIN || requiredRole === 'admin') {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
     } else if (requiredRole === UserRole.SFD_ADMIN || requiredRole === 'sfd_admin') {

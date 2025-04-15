@@ -21,22 +21,25 @@ const AnonymousOnlyGuard: React.FC<AnonymousOnlyGuardProps> = ({ children }) => 
     );
   }
   
-  // If user is authenticated, redirect to the appropriate dashboard based on role
+  // Si user est authentifié, rediriger vers le tableau de bord approprié
   if (user) {
-    // Get role from user.app_metadata
+    // Récupérer le rôle depuis user.app_metadata
     const role = user.app_metadata?.role;
+    
+    console.log('AnonymousOnlyGuard - User role:', role);
+    console.log('AnonymousOnlyGuard - User metadata:', user.app_metadata);
     
     if (role === 'admin') {
       return <Navigate to="/super-admin-dashboard" state={{ from: location }} replace />;
     } else if (role === 'sfd_admin') {
       return <Navigate to="/agency-dashboard" state={{ from: location }} replace />;
     } else {
-      // Default for regular users
+      // Défaut pour les utilisateurs réguliers
       return <Navigate to="/mobile-flow/main" state={{ from: location }} replace />;
     }
   }
   
-  // If user is not authenticated, render the children (login/register forms)
+  // Si user n'est pas authentifié, afficher les enfants (formulaires login/register)
   return <>{children}</>;
 };
 
