@@ -9,6 +9,43 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSfdStats } from '@/hooks/useSfdStats';
 import { SfdDashboard } from '@/components/sfd/SfdDashboard';
 
+// Define a type for the SFD settings structure
+interface SfdSettings {
+  loan_settings?: {
+    max_loan_amount?: number;
+    min_loan_amount?: number;
+    default_interest_rate?: number;
+    late_payment_fee?: number;
+  };
+  security_settings?: {
+    password_expiry_days?: number;
+    session_timeout_minutes?: number;
+    ip_whitelist?: string[];
+  };
+  transaction_settings?: {
+    daily_withdrawal_limit?: number;
+    requires_2fa?: boolean;
+    notification_enabled?: boolean;
+  };
+}
+
+// Extend the Sfd type to include the settings property
+interface ExtendedSfd {
+  id: string;
+  name: string;
+  code: string;
+  region?: string;
+  status: 'pending' | 'active' | 'suspended' | 'inactive';
+  logo_url?: string | null;
+  contact_email?: string;
+  phone?: string;
+  legal_document_url?: string | null;
+  description?: string;
+  created_at: string;
+  updated_at?: string;
+  settings?: SfdSettings;
+}
+
 export default function AgencyManagementPage() {
   const { data: sfd, isLoading: sfdLoading } = useCurrentSfd();
   const { data: stats, isLoading: statsLoading } = useSfdStats(sfd?.id);
@@ -40,13 +77,17 @@ export default function AgencyManagementPage() {
     );
   }
 
+  // Cast the sfd to our extended type with properly typed settings
+  const typedSfd = sfd as unknown as ExtendedSfd;
+  const settings = typedSfd.settings || {};
+
   return (
     <div className="min-h-screen bg-gray-50">
       <SfdHeader />
       
       <main className="container mx-auto py-6 px-4">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Gestion de {sfd.name}</h1>
+          <h1 className="text-2xl font-bold">Gestion de {typedSfd.name}</h1>
           <p className="text-muted-foreground">
             Configuration et paramètres de votre SFD
           </p>
@@ -110,28 +151,28 @@ export default function AgencyManagementPage() {
               <CardContent className="space-y-4">
                 <div>
                   <p className="font-medium">Nom</p>
-                  <p className="text-muted-foreground">{sfd.name}</p>
+                  <p className="text-muted-foreground">{typedSfd.name}</p>
                 </div>
                 <div>
                   <p className="font-medium">Code</p>
-                  <p className="text-muted-foreground">{sfd.code}</p>
+                  <p className="text-muted-foreground">{typedSfd.code}</p>
                 </div>
-                {sfd.region && (
+                {typedSfd.region && (
                   <div>
                     <p className="font-medium">Région</p>
-                    <p className="text-muted-foreground">{sfd.region}</p>
+                    <p className="text-muted-foreground">{typedSfd.region}</p>
                   </div>
                 )}
-                {sfd.contact_email && (
+                {typedSfd.contact_email && (
                   <div>
                     <p className="font-medium">Email</p>
-                    <p className="text-muted-foreground">{sfd.contact_email}</p>
+                    <p className="text-muted-foreground">{typedSfd.contact_email}</p>
                   </div>
                 )}
-                {sfd.phone && (
+                {typedSfd.phone && (
                   <div>
                     <p className="font-medium">Téléphone</p>
-                    <p className="text-muted-foreground">{sfd.phone}</p>
+                    <p className="text-muted-foreground">{typedSfd.phone}</p>
                   </div>
                 )}
               </CardContent>
@@ -161,19 +202,19 @@ export default function AgencyManagementPage() {
                       <div>
                         <p className="text-sm font-medium">Montant maximum du prêt</p>
                         <p className="text-sm text-muted-foreground">
-                          {sfd.settings?.loan_settings?.max_loan_amount?.toLocaleString() || 0} FCFA
+                          {settings.loan_settings?.max_loan_amount?.toLocaleString() || 0} FCFA
                         </p>
                       </div>
                       <div>
                         <p className="text-sm font-medium">Montant minimum du prêt</p>
                         <p className="text-sm text-muted-foreground">
-                          {sfd.settings?.loan_settings?.min_loan_amount?.toLocaleString() || 0} FCFA
+                          {settings.loan_settings?.min_loan_amount?.toLocaleString() || 0} FCFA
                         </p>
                       </div>
                       <div>
                         <p className="text-sm font-medium">Taux d'intérêt par défaut</p>
                         <p className="text-sm text-muted-foreground">
-                          {sfd.settings?.loan_settings?.default_interest_rate || 0}%
+                          {settings.loan_settings?.default_interest_rate || 0}%
                         </p>
                       </div>
                     </CardContent>
@@ -187,13 +228,13 @@ export default function AgencyManagementPage() {
                       <div>
                         <p className="text-sm font-medium">Expiration du mot de passe</p>
                         <p className="text-sm text-muted-foreground">
-                          {sfd.settings?.security_settings?.password_expiry_days || 90} jours
+                          {settings.security_settings?.password_expiry_days || 90} jours
                         </p>
                       </div>
                       <div>
                         <p className="text-sm font-medium">Timeout de session</p>
                         <p className="text-sm text-muted-foreground">
-                          {sfd.settings?.security_settings?.session_timeout_minutes || 30} minutes
+                          {settings.security_settings?.session_timeout_minutes || 30} minutes
                         </p>
                       </div>
                     </CardContent>
