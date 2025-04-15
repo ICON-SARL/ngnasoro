@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Message } from '@/types/message';
+import { Message, UserRoleType } from '@/types/message';
 import { messageService } from '@/services/messageService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -43,7 +42,7 @@ export const useMessages = () => {
     return unsubscribe;
   }, [user?.id]);
 
-  const sendMessage = async (content: string, recipientId?: string, recipientRole?: string) => {
+  const sendMessage = async (content: string, recipientId?: string, recipientRole?: UserRoleType) => {
     if (!user?.id) return;
 
     try {
