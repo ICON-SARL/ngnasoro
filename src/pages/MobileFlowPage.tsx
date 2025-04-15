@@ -1,15 +1,10 @@
+
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import Footer from '@/components/Footer';
-import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
-import ProfilePage from '@/components/mobile/profile/ProfilePage';
-import AccountPage from '@/pages/mobile/AccountPage';
-import NotificationsPage from '@/pages/mobile/account/NotificationsPage';
-import SecurityPage from '@/pages/mobile/account/SecurityPage';
-import AboutPage from '@/pages/mobile/account/AboutPage';
-import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
+import MobileNavigation from '@/components/MobileNavigation';
 
 const MobileFlowPage: React.FC = () => {
   const { user, loading, isAdmin, isSfdAdmin } = useAuth();
@@ -23,21 +18,22 @@ const MobileFlowPage: React.FC = () => {
         return;
       }
       
-      if (isAdmin) {
+      // Vérifier le rôle et rediriger si nécessaire
+      const role = user.app_metadata?.role;
+      
+      if (role === 'admin') {
         toast({
-          title: "Accès refusé",
-          description: "Les administrateurs ne peuvent pas accéder à l'interface mobile.",
-          variant: "destructive",
+          title: "Redirection",
+          description: "Vous êtes connecté en tant qu'administrateur.",
         });
         navigate('/super-admin-dashboard');
         return;
       } 
       
-      if (isSfdAdmin) {
+      if (role === 'sfd_admin') {
         toast({
-          title: "Accès refusé",
-          description: "Les administrateurs SFD ne peuvent pas accéder à l'interface mobile.",
-          variant: "destructive",
+          title: "Redirection",
+          description: "Vous êtes connecté en tant qu'administrateur SFD.",
         });
         navigate('/agency-dashboard');
         return;
@@ -50,10 +46,6 @@ const MobileFlowPage: React.FC = () => {
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       <span className="ml-2">Chargement...</span>
     </div>;
-  }
-
-  if (isAdmin || isSfdAdmin) {
-    return null;
   }
 
   return (
@@ -111,20 +103,16 @@ const MobileFlowPage: React.FC = () => {
             </div>
           } />
           
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="savings" element={<FundsManagementPage />} />
+          <Route path="profile" element={<div className="p-4">Mon profil (À venir)</div>} />
+          <Route path="savings" element={<div className="p-4">Mes fonds (À venir)</div>} />
           <Route path="loans" element={<div className="p-4">Prêts (À venir)</div>} />
-          <Route path="transactions" element={<div className="p-4">Transactions (À venir)</div>} />
           
-          <Route path="account" element={<AccountPage />} />
-          <Route path="account/notifications" element={<NotificationsPage />} />
-          <Route path="account/security" element={<SecurityPage />} />
-          <Route path="account/about" element={<AboutPage />} />
-          <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
-          
-          <Route path="*" element={<Navigate to="main" replace />} />
+          {/* Default route */}
+          <Route index element={<Navigate to="main" replace />} />
         </Routes>
       </div>
+      
+      <MobileNavigation />
       <Footer />
     </div>
   );
