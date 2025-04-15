@@ -1,11 +1,9 @@
-
 import React from 'react';
-import {
-  createBrowserRouter,
-  RouterProvider,
-} from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AuthenticationGuard from '@/components/AuthenticationGuard';
 import AnonymousOnlyGuard from '@/components/AnonymousOnlyGuard';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import RouteErrorBoundary from '@/components/RouteErrorBoundary';
 import LoginPage from './pages/LoginPage';
 import RegistrationPage from './pages/RegistrationPage';
 import ProfilePage from './pages/ProfilePage';
@@ -23,6 +21,7 @@ const router = createBrowserRouter([
         <LoginPage />
       </AnonymousOnlyGuard>
     ),
+    errorElement: <RouteErrorBoundary />
   },
   {
     path: "/register",
@@ -31,6 +30,7 @@ const router = createBrowserRouter([
         <RegistrationPage />
       </AnonymousOnlyGuard>
     ),
+    errorElement: <RouteErrorBoundary />
   },
   {
     path: "/mobile-flow/profile",
@@ -41,6 +41,7 @@ const router = createBrowserRouter([
         </MobileLayout>
       </AuthenticationGuard>
     ),
+    errorElement: <RouteErrorBoundary />
   },
   {
     path: "/mobile-flow/main",
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
         </MobileLayout>
       </AuthenticationGuard>
     ),
+    errorElement: <RouteErrorBoundary />
   },
   {
     path: "/mobile-flow/sfd-savings",
@@ -61,6 +63,7 @@ const router = createBrowserRouter([
         </MobileLayout>
       </AuthenticationGuard>
     ),
+    errorElement: <RouteErrorBoundary />
   },
   {
     path: "/mobile-flow/sfd-loans",
@@ -71,15 +74,21 @@ const router = createBrowserRouter([
         </MobileLayout>
       </AuthenticationGuard>
     ),
+    errorElement: <RouteErrorBoundary />
   },
   {
     path: "/mobile-flow/sfd-selector",
     element: <SfdSelectorPage />,
+    errorElement: <RouteErrorBoundary />
   },
 ]);
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <ErrorBoundary>
+      <RouterProvider router={router} />
+    </ErrorBoundary>
+  );
 }
 
 export default App;
