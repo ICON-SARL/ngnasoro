@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { Users, CreditCard, TrendingUp, Wallet } from 'lucide-react';
 
-const StatsOverview: React.FC = () => {
+export const StatsOverview: React.FC = () => {
   const { activeSfdId, user } = useAuth();
 
   // This would typically fetch stats from your API
@@ -71,5 +71,3 @@ const StatsOverview: React.FC = () => {
     </div>
   );
 };
-
-export default StatsOverview;
