@@ -17,7 +17,7 @@ import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
 export const SfdHeader: React.FC = () => {
   const location = useLocation();
-  const { user, signOut } = useAuth(); // Changed from logout to signOut
+  const { user, signOut } = useAuth(); 
   const { activeSfdId, sfdData } = useSfdDataAccess();
   
   // Find the active SFD from sfdData using activeSfdId
@@ -32,8 +32,8 @@ export const SfdHeader: React.FC = () => {
     { name: 'Prêts', path: '/sfd-loans', icon: <CreditCard className="h-4 w-4 mr-2" /> },
     { name: 'Clients', path: '/sfd-clients', icon: <Users className="h-4 w-4 mr-2" /> },
     { name: 'Demandes d\'adhésion', path: '/sfd-adhesion-requests', icon: <UserPlus className="h-4 w-4 mr-2" /> },
-    { name: 'Transactions', path: '/transactions', icon: <Receipt className="h-4 w-4 mr-2" /> },
-    { name: 'Demandes de Subvention', path: '/sfd-subsidy-request', icon: <Landmark className="h-4 w-4 mr-2" /> },
+    { name: 'Transactions', path: '/sfd-transactions', icon: <Receipt className="h-4 w-4 mr-2" /> },
+    { name: 'Demandes de Subvention', path: '/sfd-subsidy-requests', icon: <Landmark className="h-4 w-4 mr-2" /> },
     { name: 'Paramètres', path: '/sfd-settings', icon: <Settings className="h-4 w-4 mr-2" /> },
   ];
   

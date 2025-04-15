@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,6 +56,15 @@ export function ClientAdhesionRequests() {
     rejectAdhesionRequest,
     refetchAdhesionRequests
   } = useClientAdhesions();
+
+  useEffect(() => {
+    // Log pour débogage
+    console.log('Adhesion Requests Component:', {
+      activeSfdId,
+      requestsCount: adhesionRequests.length,
+      isLoading: isLoadingAdhesionRequests
+    });
+  }, [activeSfdId, adhesionRequests, isLoadingAdhesionRequests]);
 
   const filteredRequests = adhesionRequests.filter(request => 
     request.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
