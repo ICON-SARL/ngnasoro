@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
 import { logAuditEvent } from '@/utils/audit/auditLogger';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextProps {
   user: User | null;
@@ -20,6 +21,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -55,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        console.log('Auth state change event:', event);
         setUser(newSession?.user || null);
         setSession(newSession);
         setLoading(false);
@@ -73,32 +76,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Log auth events
         if (event === 'SIGNED_IN') {
-          await logAuditEvent(
-            AuditLogCategory.AUTHENTICATION,
-            'user_login',
-            {
-              login_method: 'password',
-              timestamp: new Date().toISOString(),
-              user_role: newSession?.user.app_metadata?.role
-            },
-            newSession?.user.id,
-            AuditLogSeverity.INFO,
-            'success'
-          );
+          try {
+            await logAuditEvent(
+              AuditLogCategory.AUTHENTICATION,
+              'user_login',
+              {
+                login_method: 'password',
+                timestamp: new Date().toISOString(),
+                user_role: newSession?.user.app_metadata?.role
+              },
+              newSession?.user.id,
+              AuditLogSeverity.INFO,
+              'success'
+            );
+          } catch (error) {
+            console.error('Error logging sign-in event:', error);
+          }
         } else if (event === 'SIGNED_OUT') {
           // Only log if we have a user ID from before the signout
           const userId = user?.id;
           if (userId) {
-            await logAuditEvent(
-              AuditLogCategory.AUTHENTICATION,
-              'user_logout',
-              {
-                timestamp: new Date().toISOString()
-              },
-              userId,
-              AuditLogSeverity.INFO,
-              'success'
-            );
+            try {
+              await logAuditEvent(
+                AuditLogCategory.AUTHENTICATION,
+                'user_logout',
+                {
+                  timestamp: new Date().toISOString()
+                },
+                userId,
+                AuditLogSeverity.INFO,
+                'success'
+              );
+            } catch (error) {
+              console.error('Error logging sign-out event:', error);
+            }
           }
         }
       }
@@ -114,29 +125,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await supabase.auth.signInWithPassword({ email, password });
       
       if (result.error) {
-        await logAuditEvent(
-          AuditLogCategory.AUTHENTICATION,
-          'failed_login',
-          {
-            email,
-            reason: result.error.message,
-            timestamp: new Date().toISOString()
-          },
-          undefined,
-          AuditLogSeverity.WARNING,
-          'failure'
-        );
+        console.error('Sign in error:', result.error);
+        toast({
+          title: "Erreur de connexion",
+          description: result.error.message || "Impossible de se connecter",
+          variant: "destructive"
+        });
+        
+        try {
+          await logAuditEvent(
+            AuditLogCategory.AUTHENTICATION,
+            'failed_login',
+            {
+              email,
+              reason: result.error.message,
+              timestamp: new Date().toISOString()
+            },
+            undefined,
+            AuditLogSeverity.WARNING,
+            'failure'
+          );
+        } catch (logError) {
+          console.error('Error logging failed login:', logError);
+        }
       } else if (result.data.user) {
         console.log('Login successful:', {
           userId: result.data.user.id,
           role: result.data.user.app_metadata?.role,
           metadata: result.data.user.app_metadata,
         });
+        
+        toast({
+          title: "Connexion réussie",
+          description: "Vous êtes maintenant connecté",
+        });
       }
       
       return result;
     } catch (error) {
       console.error('Error signing in:', error);
+      toast({
+        title: "Erreur de connexion",
+        description: "Une erreur inattendue s'est produite",
+        variant: "destructive"
+      });
       return { error };
     }
   };
@@ -146,21 +178,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('AuthProvider - Signing out user');
       const userId = user?.id; // Capture user ID before signout
       
+      toast({
+        title: "Déconnexion en cours",
+        description: "Veuillez patienter..."
+      });
+      
       // Call Supabase signOut method
       const result = await supabase.auth.signOut();
       
       if (result.error) {
         console.error('Error during signOut:', result.error);
+        toast({
+          title: "Erreur de déconnexion",
+          description: result.error.message || "Une erreur s'est produite lors de la déconnexion",
+          variant: "destructive"
+        });
       } else {
         console.log('AuthProvider - SignOut successful');
         // Clear local state immediately to avoid UI inconsistencies
         setUser(null);
         setSession(null);
+        
+        toast({
+          title: "Déconnexion réussie",
+          description: "Vous avez été déconnecté avec succès"
+        });
+        
+        // Force a full page reload to clear any remaining state
+        window.location.href = '/auth';
       }
       
       return result;
     } catch (error) {
       console.error('Exception during signOut:', error);
+      toast({
+        title: "Erreur de déconnexion",
+        description: "Une erreur inattendue s'est produite",
+        variant: "destructive"
+      });
       return { error };
     }
   };

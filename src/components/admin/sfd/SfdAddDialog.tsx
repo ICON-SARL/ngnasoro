@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -25,7 +26,9 @@ import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreateSfdMutation } from '../hooks/sfd-management/mutations/useCreateSfdMutation';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 interface SfdAddDialogProps {
   open: boolean;
@@ -34,7 +37,9 @@ interface SfdAddDialogProps {
 
 export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
   const [error, setError] = useState<string | null>(null);
-  const createSfdMutation = useCreateSfdMutation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   const form = useForm<z.infer<typeof sfdFormSchema>>({
     resolver: zodResolver(sfdFormSchema),
@@ -51,16 +56,36 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
 
   const onSubmit = async (values: z.infer<typeof sfdFormSchema>) => {
     setError(null);
+    setIsSubmitting(true);
     
     try {
       console.log("Submitting SFD form with values:", values);
       
-      await createSfdMutation.mutateAsync({
-        sfdData: values,
-        createAdmin: false,
-        adminData: undefined
+      // Using the new Edge Function
+      const { data, error } = await supabase.functions.invoke('create-new-sfd', {
+        body: values,
       });
       
+      if (error) {
+        throw new Error(`Erreur lors de la création de la SFD: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error("Aucune donnée reçue du serveur");
+      }
+      
+      console.log("SFD created successfully:", data);
+      
+      // Show success toast
+      toast({
+        title: 'SFD ajoutée',
+        description: 'La SFD a été créée avec succès',
+      });
+      
+      // Invalidate the relevant queries
+      queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      
+      // Reset the form and close the dialog
       form.reset();
       onOpenChange(false);
     } catch (err: any) {
@@ -77,13 +102,15 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
       }
       
       setError(displayError);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
       // Ne pas permettre la fermeture pendant la création
-      if (createSfdMutation.isPending && open && !newOpen) {
+      if (isSubmitting && open && !newOpen) {
         return;
       }
       
@@ -212,12 +239,12 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={createSfdMutation.isPending}
+                disabled={isSubmitting}
               >
                 Annuler
               </Button>
-              <Button type="submit" disabled={createSfdMutation.isPending}>
-                {createSfdMutation.isPending ? (
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Création en cours...
