@@ -111,11 +111,7 @@ export function SfdAccountTransfers() {
   const refreshBalances = async () => {
     setIsRefreshing(true);
     try {
-      await synchronizeBalances.mutate(undefined, {
-        onSettled: () => {
-          setIsRefreshing(false);
-        }
-      });
+      await synchronizeBalances.mutate();
       toast({
         title: "Synchronisation terminée",
         description: "Les soldes des comptes ont été mis à jour",
@@ -127,6 +123,7 @@ export function SfdAccountTransfers() {
         description: "Impossible de synchroniser les soldes",
         variant: "destructive",
       });
+    } finally {
       setIsRefreshing(false);
     }
   };

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,9 +9,9 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { adaptSfdAccount, formatCurrency } from '@/utils/sfdAdapter';
-import AccountsList from '@/components/mobile/profile/AccountsList';
+import MobileAccountsList from '@/components/mobile/profile/AccountsList';
 
-interface AccountsListProps {
+interface SfdAccountsListProps {
   accounts: any[];
   activeSfdId?: string | null;
   onSwitchSfd?: (sfdId: string) => void;
@@ -18,7 +19,7 @@ interface AccountsListProps {
   isVerifying?: boolean;
 }
 
-const AccountsList: React.FC<AccountsListProps> = ({
+const SfdAccountsList: React.FC<SfdAccountsListProps> = ({
   accounts,
   activeSfdId,
   onSwitchSfd,
@@ -65,4 +66,31 @@ const AccountsList: React.FC<AccountsListProps> = ({
   );
 };
 
-export default AccountsList;
+interface MultiSFDAccountsProps {
+  accounts: any[];
+}
+
+const MultiSFDAccounts: React.FC<MultiSFDAccountsProps> = ({ accounts }) => {
+  const [activeSfdId, setActiveSfdId] = useState<string | null>(accounts[0]?.id || null);
+  
+  const handleSwitchSfd = (sfdId: string) => {
+    setActiveSfdId(sfdId);
+  };
+  
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">Vos comptes SFD</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <SfdAccountsList 
+          accounts={accounts}
+          activeSfdId={activeSfdId}
+          onSwitchSfd={handleSwitchSfd}
+        />
+      </CardContent>
+    </Card>
+  );
+};
+
+export default MultiSFDAccounts;
