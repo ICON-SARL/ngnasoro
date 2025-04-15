@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AgencyHeader } from '@/components/AgencyHeader';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
@@ -9,9 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User, Mail, Phone, Building } from 'lucide-react';
+import { NoSfdAccountState } from '@/components/mobile/profile/sfd/NoSfdAccountState';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
 const ProfilePage = () => {
   const { user, isAdmin } = useAuth();
+  const { sfdData } = useSfdDataAccess();
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -106,28 +108,28 @@ const ProfilePage = () => {
           
           <Card>
             <CardHeader>
-              <CardTitle>Sécurité du compte</CardTitle>
+              <CardTitle>Comptes SFD</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="changePassword">Changer de mot de passe</Label>
-                <Button id="changePassword" variant="outline" className="w-full">
-                  Modifier le mot de passe
-                </Button>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="twoFactor">Authentification à deux facteurs</Label>
-                <Button id="twoFactor" variant="outline" className="w-full">
-                  Configurer l'authentification à deux facteurs
-                </Button>
-              </div>
-              
-              <div className="pt-4">
-                <Button variant="destructive" className="w-full">
-                  Déconnecter toutes les sessions
-                </Button>
-              </div>
+            <CardContent>
+              {!sfdData || sfdData.length === 0 ? (
+                <NoSfdAccountState />
+              ) : (
+                <div className="space-y-4">
+                  {sfdData.map((sfd) => (
+                    <div 
+                      key={sfd.id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div>
+                        <h3 className="font-medium">{sfd.name}</h3>
+                        {sfd.region && (
+                          <p className="text-sm text-gray-500">{sfd.region}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
