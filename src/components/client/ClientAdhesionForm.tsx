@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,9 +31,10 @@ const formSchema = z.object({
 export interface ClientAdhesionFormProps {
   sfdId: string;
   onSuccess?: () => void;
+  sfdName?: string;
 }
 
-export function ClientAdhesionForm({ sfdId, onSuccess }: ClientAdhesionFormProps) {
+export function ClientAdhesionForm({ sfdId, onSuccess, sfdName }: ClientAdhesionFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const form = useForm<z.infer<typeof formSchema>>({

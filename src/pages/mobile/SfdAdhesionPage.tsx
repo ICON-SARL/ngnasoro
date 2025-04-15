@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,11 @@ const SfdAdhesionPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { userAdhesionRequests, isLoadingUserAdhesionRequests, refetchUserAdhesionRequests } = useClientAdhesions();
+  const { 
+    userAdhesionRequests, 
+    isLoadingUserAdhesionRequests, 
+    refetchUserAdhesionRequests 
+  } = useClientAdhesions();
   const [sfdInfo, setSfdInfo] = useState<{ name: string; region?: string } | null>(null);
   const [isLoadingSfd, setIsLoadingSfd] = useState(false);
   
