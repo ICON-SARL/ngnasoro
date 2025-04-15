@@ -108,6 +108,8 @@ serve(async (req) => {
     const validSfdIds = new Set();
     
     if (sfdsWithAdmins && sfdsWithAdmins.length > 0) {
+      console.log('SFDs with admin associations found:', sfdsWithAdmins.length);
+      
       sfdsWithAdmins.forEach(item => {
         // Check if user has sfd_admin role
         const hasAdminRole = item.user?.roles?.some(
@@ -116,6 +118,7 @@ serve(async (req) => {
         
         if (hasAdminRole && item.sfd_id) {
           validSfdIds.add(item.sfd_id);
+          console.log(`SFD ${item.sfd_id} has admin association with user ${item.user?.id}`);
         }
       });
       

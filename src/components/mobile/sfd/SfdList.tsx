@@ -26,8 +26,11 @@ const SfdList: React.FC<SfdListProps> = ({
 }) => {
   const [selectedSfdId, setSelectedSfdId] = React.useState<string | null>(null);
 
-  // Filtrer les SFDs actives uniquement
-  const activeSfds = sfds.filter(sfd => sfd.status === 'active');
+  // Ensure we only show active SFDs
+  const activeSfds = React.useMemo(() => {
+    console.log('Filtering active SFDs:', sfds);
+    return sfds.filter(sfd => sfd.status === 'active');
+  }, [sfds]);
 
   const handleSelectSfd = (sfdId: string) => {
     setSelectedSfdId(sfdId);
