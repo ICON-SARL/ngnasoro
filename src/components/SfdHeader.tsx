@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import LogoutButton from '@/components/LogoutButton';
 
 export function SfdHeader() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -30,51 +30,6 @@ export function SfdHeader() {
   // Trouver les informations de la SFD active
   const activeSfd = sfdData.find(sfd => sfd.id === activeSfdId);
   const sfdName = activeSfd?.name || 'SFD non sélectionnée';
-  
-  const handleLogout = async () => {
-    try {
-      // Notification de début de déconnexion
-      toast({
-        title: "Déconnexion en cours",
-        description: "Veuillez patienter..."
-      });
-      
-      console.log("SfdHeader - Initiating signOut");
-      const { error } = await signOut();
-      
-      if (error) {
-        console.error("SfdHeader - Error during signOut:", error);
-        throw error;
-      }
-      
-      console.log("SfdHeader - SignOut completed successfully");
-      toast({
-        title: "Déconnexion réussie",
-        description: "Vous avez été déconnecté avec succès"
-      });
-      
-      // Force a full page reload and redirect to clear any remaining state
-      console.log("SfdHeader - Redirecting to /sfd/auth");
-      setTimeout(() => {
-        window.location.href = '/sfd/auth';
-      }, 100);
-    } catch (error: any) {
-      console.error('Erreur lors de la déconnexion:', error);
-      toast({
-        title: "Erreur de déconnexion",
-        description: error.message || "Une erreur s'est produite lors de la déconnexion",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase();
-  };
   
   const isActiveRoute = (route: string) => {
     return location.pathname === route;
@@ -185,9 +140,9 @@ export function SfdHeader() {
                 Paramètres
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-red-500">
-                <LogOut className="mr-2 h-4 w-4" />
-                Se déconnecter
+              <DropdownMenuItem className="text-red-500">
+                <LogoutButton variant="ghost" size="sm" iconOnly className="p-0 h-auto" />
+                <span className="ml-2">Se déconnecter</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -212,13 +167,15 @@ export function SfdHeader() {
                     <span>{link.name}</span>
                   </Link>
                 ))}
-                <button 
-                  onClick={handleLogout}
-                  className="flex items-center py-2 px-3 rounded-lg text-red-500 hover:bg-muted"
-                >
-                  <LogOut className="h-5 w-5 mr-2" />
-                  <span>Se déconnecter</span>
-                </button>
+                <div className="flex items-center py-2 px-3 rounded-lg text-red-500 hover:bg-muted">
+                  <LogoutButton 
+                    variant="ghost" 
+                    size="sm" 
+                    className="p-0 h-auto flex items-center w-full justify-start text-red-500 hover:bg-transparent" 
+                    iconOnly={false} 
+                    text="Se déconnecter"
+                  />
+                </div>
               </div>
             </SheetContent>
           </Sheet>

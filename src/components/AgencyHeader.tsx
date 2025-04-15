@@ -14,43 +14,12 @@ import {
 import { Building, CreditCard, Users, FileText, LogOut, Settings, Landmark } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import LogoutButton from '@/components/LogoutButton';
 
 export const AgencyHeader = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
-  const handleSignOut = async () => {
-    try {
-      // Notification de début de déconnexion
-      toast({
-        title: "Déconnexion en cours",
-        description: "Veuillez patienter..."
-      });
-      
-      // Call signOut method
-      const { error } = await signOut();
-      
-      if (error) {
-        throw error;
-      }
-      
-      toast({
-        title: "Déconnexion réussie",
-        description: "Vous avez été déconnecté avec succès"
-      });
-      
-      // Force a full page reload
-      window.location.href = '/auth';
-    } catch (error: any) {
-      console.error('Erreur lors de la déconnexion:', error);
-      toast({
-        title: "Erreur de déconnexion",
-        description: error.message || "Une erreur s'est produite lors de la déconnexion",
-        variant: "destructive"
-      });
-    }
-  };
   
   return (
     <header className="bg-white border-b border-gray-200">
@@ -173,9 +142,14 @@ export const AgencyHeader = () => {
                   <span>Paramètres</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Se déconnecter</span>
+                <DropdownMenuItem>
+                  <LogoutButton 
+                    variant="ghost" 
+                    size="sm" 
+                    className="p-0 h-auto flex items-center w-full justify-start text-red-500 hover:bg-transparent" 
+                    iconOnly={false} 
+                    text="Se déconnecter"
+                  />
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

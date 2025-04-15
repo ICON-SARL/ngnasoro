@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -178,6 +177,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('AuthProvider - Signing out user');
       const userId = user?.id; // Capture user ID before signout
       
+      // Clear local state immediately to avoid UI inconsistencies
+      setLoading(true);
+      
       toast({
         title: "Déconnexion en cours",
         description: "Veuillez patienter..."
@@ -193,24 +195,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: result.error.message || "Une erreur s'est produite lors de la déconnexion",
           variant: "destructive"
         });
+        setLoading(false);
+        return result;
       } else {
         console.log('AuthProvider - SignOut successful');
         // Clear local state immediately to avoid UI inconsistencies
         setUser(null);
         setSession(null);
+        setLoading(false);
         
         toast({
           title: "Déconnexion réussie",
           description: "Vous avez été déconnecté avec succès"
         });
         
-        // Force a full page reload to clear any remaining state
-        window.location.href = '/auth';
+        // Redirection plus rapide
+        setTimeout(() => {
+          window.location.href = '/auth';
+        }, 100);
       }
       
       return result;
     } catch (error) {
       console.error('Exception during signOut:', error);
+      setLoading(false);
       toast({
         title: "Erreur de déconnexion",
         description: "Une erreur inattendue s'est produite",

@@ -113,12 +113,14 @@ const AgencyDashboardPage = () => {
           </Tabs>
         </div>
         
-        {/* Explicit logout button at the bottom */}
-        <div className="mt-8 text-center">
+        <div className="mt-8 p-4 bg-white rounded-lg shadow-sm text-center">
+          <h3 className="text-lg font-medium mb-2">Besoin de vous déconnecter ?</h3>
+          <p className="text-muted-foreground mb-4">Cliquez sur le bouton ci-dessous pour vous déconnecter en toute sécurité.</p>
           <LogoutButton 
-            variant="outline" 
-            className="border-red-200 hover:bg-red-50 min-w-[200px]"
-            text="Déconnexion"
+            variant="destructive"
+            size="lg"
+            className="min-w-[200px]"
+            text="Déconnexion Sécurisée"
           />
         </div>
       </div>

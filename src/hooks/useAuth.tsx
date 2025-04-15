@@ -13,7 +13,8 @@ export function useAuth() {
     isAdmin: userRole === 'admin' || userRole === UserRole.SuperAdmin,
     isSfdAdmin: userRole === 'sfd_admin' || userRole === UserRole.SfdAdmin,
     isClient: userRole === 'user' || userRole === 'client' || userRole === UserRole.Client,
-    userRole: userRole || 'user'
+    userRole: userRole || 'user',
+    signOut: auth.signOut, // Assurez-vous que la fonction signOut est exportée
   };
 }
 
