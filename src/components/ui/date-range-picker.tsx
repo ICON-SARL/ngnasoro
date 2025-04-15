@@ -20,7 +20,6 @@ interface DateRangePickerProps {
   className?: string;
 }
 
-// We'll rename this component to DatePickerWithRange to match what other files are trying to import
 export function DatePickerWithRange({
   date,
   setDate,
@@ -69,5 +68,5 @@ export function DatePickerWithRange({
   );
 }
 
-// Re-export the original DateRangePicker to maintain backward compatibility
+// Re-export the DatePickerWithRange to maintain backward compatibility
 export { DatePickerWithRange as DateRangePicker };

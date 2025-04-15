@@ -41,7 +41,7 @@ export type ReportFilter = {
   value: any;
 };
 
-// Updated the DateRange type to make 'to' optional
+// Define our own ReportDateRange type to avoid confusion with imported DateRange
 export type ReportDateRange = {
   from: string; // Using string instead of Date to avoid JSON serialization issues
   to?: string;  // Using string instead of Date and making it optional
@@ -49,7 +49,7 @@ export type ReportDateRange = {
 
 export type ReportParameters = {
   filters?: ReportFilter[];
-  date_range?: DateRange; // Using the RDP DateRange type
+  date_range?: ReportDateRange; // Use our custom ReportDateRange type instead of DateRange
   format: ReportFormat;
   sort_by?: string;
   sort_direction?: 'asc' | 'desc';

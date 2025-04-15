@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { ReportDefinition, ReportFormat, ReportParameters } from '@/types/report';
+import { ReportDefinition, ReportFormat, ReportParameters, ReportDateRange } from '@/types/report';
 import { DateRange } from 'react-day-picker';
 
 interface ReportParametersFormProps {
@@ -37,12 +37,18 @@ export function ReportParametersForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isDateRangeRequired && (!dateRange?.from || !dateRange?.to)) {
+    if (isDateRangeRequired && (!dateRange?.from)) {
       return; // Don't submit if date range is required but not provided
     }
     
+    // Convert DateRange to ReportDateRange (string-based version for API)
+    const reportDateRange: ReportDateRange | undefined = dateRange ? {
+      from: dateRange.from.toISOString(),
+      to: dateRange.to ? dateRange.to.toISOString() : undefined
+    } : undefined;
+    
     onGenerateReport({
-      date_range: dateRange,
+      date_range: reportDateRange,
       format
     });
   };
@@ -85,7 +91,7 @@ export function ReportParametersForm({
         <CardFooter>
           <Button 
             type="submit"
-            disabled={isGenerating || (isDateRangeRequired && (!dateRange?.from || !dateRange?.to))}
+            disabled={isGenerating || (isDateRangeRequired && (!dateRange?.from))}
             className="w-full"
           >
             {isGenerating ? 'Génération en cours...' : 'Générer le rapport'}
