@@ -1,6 +1,5 @@
 
-// SFD data types and interfaces
-
+// Add SfdData to the existing file
 export interface SfdData {
   id: string;
   name: string;
@@ -26,7 +25,7 @@ export interface QRCodeRequest {
 export interface SyncResult {
   success: boolean;
   message: string;
-  updates?: any[];
+  updates?: any;
 }
 
 // Define a client-side SfdAccount interface that will be used throughout the application
@@ -63,7 +62,7 @@ export interface SfdLoan {
   isLate: boolean;
 }
 
-// Update UserSfd interface to match what's used in fetchSfdAccounts.ts
+// Add UserSfd interface
 export interface UserSfd {
   id: string;
   is_default: boolean;
@@ -88,18 +87,4 @@ export interface LoanPaymentParams {
   amount: number;
   paymentMethod: string;
   reference?: string;
-}
-
-export interface SfdSubsidy {
-  id: string;
-  sfd_id: string;
-  amount: number;
-  used_amount: number;
-  remaining_amount: number;
-  status: 'active' | 'revoked' | 'depleted' | 'exhausted' | 'expired';
-  created_at: string;
-  allocated_by: string;
-  allocated_at: string;
-  end_date?: string;
-  description?: string;
 }

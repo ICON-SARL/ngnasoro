@@ -22,7 +22,7 @@ export interface User extends Omit<SupabaseUser, 'app_metadata' | 'user_metadata
     phone?: string;
     [key: string]: any;
   };
-  // Add these properties for backward compatibility with direct access
+  // For backward compatibility with direct property access
   full_name?: string;
   avatar_url?: string;
   sfd_id?: string;
@@ -35,8 +35,8 @@ export interface AuthContextProps {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<any>;
-  signUp: (email: string, password: string, metadata?: any) => Promise<any>;
+  signIn: (email: string, password: string) => Promise<{ error: any; data?: any }>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: any; data?: any }>;
   signOut: () => Promise<{ error: any }>;
   refreshSession: () => Promise<void>;
   activeSfdId: string | null;
@@ -49,7 +49,7 @@ export interface AuthContextProps {
   toggleBiometricAuth: () => Promise<void>;
 }
 
-// Add missing types
+// Add the missing AssociateSfdParams and related types
 export interface AssociateSfdParams {
   userId: string;
   sfdId: string;
@@ -61,18 +61,4 @@ export interface AssociateSfdResult {
   success: boolean;
   error?: string;
   userSfd?: any;
-}
-
-export interface UserSfdAssociation {
-  id: string;
-  user_id: string;
-  sfd_id: string;
-  is_default: boolean;
-  sfds: {
-    id: string;
-    name: string;
-    code: string;
-    region?: string;
-    status: string;
-  };
 }

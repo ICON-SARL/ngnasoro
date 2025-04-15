@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SfdData } from './types';
-import { User } from '@/hooks/auth/types';
+import { User } from '@/hooks/useAuth';
 
 export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateAction<SfdData[]>>) {
   const [loading, setLoading] = useState(true);
@@ -31,13 +31,12 @@ export function useSfdDataFetcher(setSfdData: React.Dispatch<React.SetStateActio
       if (error) throw error;
       
       if (data) {
-        // Properly handle the nested data structure
-        const sfdList: SfdData[] = data.map((item: any) => ({
-          id: item.sfds?.id || '',
-          name: item.sfds?.name || '',
-          code: item.sfds?.code || '',
-          region: item.sfds?.region || '',
-          status: item.sfds?.status || 'active',
+        const sfdList: SfdData[] = data.map(item => ({
+          id: item.sfds.id,
+          name: item.sfds.name,
+          code: item.sfds.code,
+          region: item.sfds.region,
+          status: item.sfds.status || 'active',
           token: null,
           lastFetched: null
         }));

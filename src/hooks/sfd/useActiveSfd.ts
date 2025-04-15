@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import type { User } from '@/hooks/auth/types';
+import { User } from '@/hooks/useAuth';
 import { fetchSfdBalance } from './fetchSfdBalance';
 import { fetchSfdLoans } from './fetchSfdLoans';
 import { fetchUserSfds } from './fetchSfdAccounts';

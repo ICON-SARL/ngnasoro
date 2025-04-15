@@ -1,79 +1,72 @@
-export interface SfdClient {
-  id: string;
-  user_id: string;
-  sfd_id: string;
-  client_number?: string;
-  status: 'active' | 'inactive' | 'pending' | 'rejected' | 'validated' | 'suspended';
-  created_at: string;
-  updated_at: string;
-  full_name: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  id_number?: string;
-  id_type?: string;
-  kyc_level?: number;
-  notes?: string;
-  validated_at?: string;
-  validated_by?: string;
-}
 
 export interface Loan {
   id: string;
   client_id: string;
   sfd_id: string;
-  loan_plan_id: string;
   amount: number;
-  term?: number;
-  duration_months?: number;
+  duration_months: number;
   interest_rate: number;
-  fees: number;
+  monthly_payment: number;
   purpose: string;
-  status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'active' | 'paid' | 'defaulted' | 'completed';
-  created_at: string;
-  created_by: string;
+  status: string;
   approved_at?: string;
   approved_by?: string;
-  rejected_at?: string;
-  rejected_by?: string;
-  rejection_reason?: string;
   disbursed_at?: string;
-  disbursed_by?: string;
-  disbursement_status?: string;
-  disbursement_date?: string;
-  disbursement_reference?: string;
-  total_paid?: number;
   next_payment_date?: string;
-  monthly_payment?: number;
-  reference?: string;
-  client_name?: string;
+  last_payment_date?: string;
+  created_at: string;
   subsidy_amount?: number;
-  sfds?: {
-    name: string;
-    logo_url: string;
-  };
+  subsidy_rate?: number;
+  // Adding missing properties
+  client_name?: string;
+  reference?: string;  // Explicitly add the optional reference property
+  updated_at?: string;  // Explicitly add the optional updated_at property
 }
 
-export interface LoanPlan {
+export interface SfdClient {
   id: string;
+  user_id?: string;
   sfd_id: string;
-  name: string;
-  description: string;
-  min_amount: number;
-  max_amount: number;
-  min_duration: number;
-  max_duration: number;
-  interest_rate: number;
-  fees: number;
-  requirements: string[];
-  is_active: boolean;
+  status: string;
+  full_name: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  id_number?: string;
+  id_type?: string;
+  kyc_level?: number;
+  validated_at?: string;
+  validated_by?: string;
   created_at: string;
-  is_subsidized?: boolean;
-  subsidy_rate?: number;
-  sfds?: {
-    name: string;
-    logo_url: string;
-  };
+  notes?: string;
+}
+
+export interface SfdLoan {
+  id: string;
+  amount: number;
+  remainingAmount: number;
+  nextDueDate: string;
+  isLate: boolean;
+}
+
+export interface ClientDocument {
+  id: string;
+  client_id: string;
+  document_type: string;
+  document_url: string;
+  uploaded_at: string;
+  verified?: boolean;
+  verified_at?: string;
+  verified_by?: string;
+}
+
+export interface ClientActivity {
+  id: string;
+  client_id: string;
+  activity_type: string;
+  description?: string;
+  performed_at?: string;
+  performed_by?: string;
 }
 
 export interface LoanPayment {
@@ -81,10 +74,9 @@ export interface LoanPayment {
   loan_id: string;
   amount: number;
   payment_method: string;
+  status: string;
   payment_date: string;
-  recorded_by: string;
-  status: 'pending' | 'completed' | 'failed';
-  reference: string;
+  transaction_id?: string;
   created_at: string;
 }
 
@@ -94,44 +86,19 @@ export interface SfdSubsidy {
   amount: number;
   used_amount: number;
   remaining_amount: number;
-  status: 'active' | 'exhausted' | 'expired' | 'revoked' | 'depleted';
-  created_at: string;
+  status: string;
   allocated_by: string;
   allocated_at: string;
   end_date?: string;
   description?: string;
 }
 
-export interface ClientDocument {
-  id: string;
-  client_id: string;
-  document_type: string;
-  document_url: string;
-  uploaded_at: string;
-  verified: boolean;
-  verified_at?: string;
-  verified_by?: string;
-}
-
-export interface ClientActivity {
-  id: string;
-  client_id: string;
-  activity_type: string;
-  description: string;
-  performed_at: string;
-  performed_by?: string;
-}
-
 export interface ClientNotification {
   id: string;
-  client_id: string;
   title: string;
   message: string;
-  is_read: boolean;
-  read: boolean;
+  type: string;
   created_at: string;
-  notification_type: string;
-  reference_id?: string;
+  read: boolean;
   action_link?: string;
-  type?: string;
 }

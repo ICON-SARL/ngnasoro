@@ -17,8 +17,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 const NewClientPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { activeSfdId } = useSfdDataAccess();
-  const { createClient } = useSfdClients(); // Changed from createClientMutation to createClient
+  const { activeSfdId } = useSfdDataAccess(); // Use the data access hook instead
+  const { createClient } = useSfdClients();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -31,8 +31,7 @@ const NewClientPage = () => {
     notes: ''
   });
   
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
+  // Redirect if no active SFD is selected
   useEffect(() => {
     if (!activeSfdId) {
       toast({
@@ -72,9 +71,7 @@ const NewClientPage = () => {
         address: formData.address || undefined,
         id_type: formData.id_type || undefined,
         id_number: formData.id_number || undefined,
-        notes: formData.notes || undefined,
-        user_id: '',
-        updated_at: new Date().toISOString()
+        notes: formData.notes || undefined
       });
       
       navigate('/mobile-flow/clients');
@@ -88,6 +85,7 @@ const NewClientPage = () => {
     }
   };
   
+  // Display a warning if no SFD ID is available
   if (!activeSfdId) {
     return (
       <div className="container mx-auto py-4 px-4 max-w-md">
@@ -116,6 +114,7 @@ const NewClientPage = () => {
     );
   }
   
+  // Original form rendering
   return (
     <div className="container mx-auto py-4 px-4 max-w-md">
       <Button 
@@ -230,9 +229,9 @@ const NewClientPage = () => {
             <Button 
               type="submit"
               className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-              disabled={isSubmitting}
+              disabled={createClient.isPending}
             >
-              {isSubmitting ? (
+              {createClient.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Création en cours...

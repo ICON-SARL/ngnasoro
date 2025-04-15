@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchUserSfds } from './fetchSfdAccounts';
 import { SfdAccount, SfdClientAccount } from './types';
-import type { User } from '@/hooks/auth/types';
+import { User } from '@/hooks/useAuth';
 
 export function useSfdList(user: User | null) {
   const { data, isLoading, isError, refetch } = useQuery({

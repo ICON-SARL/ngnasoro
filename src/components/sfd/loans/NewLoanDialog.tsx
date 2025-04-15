@@ -87,7 +87,7 @@ const NewLoanDialog = ({ isOpen, onClose, onLoanCreated }: NewLoanDialogProps) =
         subsidy_amount: data.subsidy_requested ? parseFloat(data.subsidy_amount) : 0,
       };
       
-      await sfdLoanApi.createLoan(loanData, user?.id || '');
+      await sfdLoanApi.createLoan(loanData);
       
       toast({
         title: 'Prêt créé',

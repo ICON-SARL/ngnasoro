@@ -5,7 +5,7 @@ import { sfdLoanApi } from '@/utils/sfdLoanApi';
 import { Loan } from '@/types/sfdClients';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useCachedSfdData } from '@/hooks/useCachedSfdData';
 
 export function useSfdLoans() {
   const { user } = useAuth();
@@ -57,7 +57,7 @@ export function useSfdLoans() {
 
   // Create loan mutation
   const createLoan = useMutation({
-    mutationFn: (loanData: any) => sfdLoanApi.createLoan(loanData, user?.id || ''),
+    mutationFn: sfdLoanApi.createLoan,
     onSuccess: () => {
       toast({
         title: "Prêt créé",
@@ -76,7 +76,7 @@ export function useSfdLoans() {
 
   // Approve loan mutation
   const approveLoan = useMutation({
-    mutationFn: (params: { loanId: string }) => sfdLoanApi.approveLoan(params.loanId, user?.id || ''),
+    mutationFn: (loanId: string) => sfdLoanApi.approveLoan(loanId),
     onSuccess: () => {
       toast({
         title: "Prêt approuvé",
@@ -88,7 +88,7 @@ export function useSfdLoans() {
 
   // Reject loan mutation
   const rejectLoan = useMutation({
-    mutationFn: (params: { loanId: string, reason?: string }) => sfdLoanApi.rejectLoan(params.loanId, user?.id || '', params.reason),
+    mutationFn: (loanId: string) => sfdLoanApi.rejectLoan(loanId),
     onSuccess: () => {
       toast({
         title: "Prêt rejeté",
@@ -100,7 +100,7 @@ export function useSfdLoans() {
 
   // Disburse loan mutation
   const disburseLoan = useMutation({
-    mutationFn: (params: { loanId: string }) => sfdLoanApi.disburseLoan(params.loanId, user?.id || ''),
+    mutationFn: (loanId: string) => sfdLoanApi.disburseLoan(loanId),
     onSuccess: () => {
       toast({
         title: "Prêt décaissé",
@@ -113,7 +113,7 @@ export function useSfdLoans() {
   // Record payment mutation
   const recordPayment = useMutation({
     mutationFn: ({ loanId, amount, paymentMethod }: { loanId: string, amount: number, paymentMethod: string }) => 
-      sfdLoanApi.recordLoanPayment(loanId, amount, paymentMethod, user?.id || ''),
+      sfdLoanApi.recordLoanPayment(loanId, amount, paymentMethod),
     onSuccess: () => {
       toast({
         title: "Paiement enregistré",
@@ -127,7 +127,6 @@ export function useSfdLoans() {
     data,
     isLoading,
     error,
-    loans: data, // Add loans as an alias of data for backward compatibility
     createLoan,
     approveLoan,
     rejectLoan,
