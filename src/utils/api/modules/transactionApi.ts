@@ -101,7 +101,7 @@ export const transactionApi = {
     reason: string;
     description: string;
     evidence?: string[];
-  }) {
+  }): Promise<TransactionDispute | null> {
     try {
       // First create the dispute record
       const { data: transaction, error: txError } = await supabase
@@ -148,7 +148,7 @@ export const transactionApi = {
           }
         });
 
-      return data;
+      return data as unknown as TransactionDispute;
     } catch (error) {
       handleError(error);
       return null;
@@ -168,7 +168,7 @@ export const transactionApi = {
     resolution: 'accepted' | 'rejected';
     notes: string;
     resolvedBy: string;
-  }) {
+  }): Promise<TransactionDispute | null> {
     try {
       // Get dispute details
       const { data: existingDispute, error: getError } = await supabase
@@ -225,7 +225,7 @@ export const transactionApi = {
           }
         });
 
-      return data;
+      return data as unknown as TransactionDispute;
     } catch (error) {
       handleError(error);
       return null;
