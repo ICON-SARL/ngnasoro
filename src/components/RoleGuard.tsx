@@ -36,7 +36,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
     // Check for exact role match
     let hasRole = false;
     
-    // Compare string values
+    // Compare string values instead of enum objects
     if (userRole === requiredRole) {
       hasRole = true;
     } else if (requiredRole === UserRole.CLIENT && userRole === 'user') {

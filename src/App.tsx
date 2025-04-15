@@ -10,6 +10,7 @@ import MobileFlowPage from '@/pages/MobileFlowPage';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import AdminLoginPage from '@/pages/AdminLoginPage';
 import ClientLoginPage from '@/pages/ClientLoginPage';
+import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import RoleGuard from '@/components/RoleGuard';
 import AnonymousOnlyGuard from '@/components/AnonymousOnlyGuard';
 import { UserRole } from '@/utils/auth/roleTypes';
@@ -56,6 +57,9 @@ function App() {
                       </AnonymousOnlyGuard>
                     }
                   />
+                  
+                  {/* Access Denied Page */}
+                  <Route path="/access-denied" element={<AccessDeniedPage />} />
                   
                   {/* Super Admin Routes */}
                   <Route
