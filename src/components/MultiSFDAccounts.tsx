@@ -83,7 +83,7 @@ export const MultiSFDAccounts = () => {
                       onClick={() => setSwitchToSFD(acc.id)}
                     >
                       <Avatar className="h-10 w-10 mr-3">
-                        <img src={acc.logo_url || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={acc.name} />
+                        <img src={acc.logoUrl || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={acc.name} />
                       </Avatar>
                       <div>
                         <p className="font-medium">{acc.name}</p>
@@ -115,7 +115,7 @@ export const MultiSFDAccounts = () => {
             <CardHeader className="pb-2">
               <div className="flex items-center">
                 <Avatar className="h-8 w-8 mr-2">
-                  <img src={account.logo_url || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={account.name} />
+                  <img src={account.logoUrl || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={account.name} />
                 </Avatar>
                 <CardTitle className="text-base">{account.name}</CardTitle>
               </div>
@@ -147,7 +147,7 @@ export const MultiSFDAccounts = () => {
             <div className="flex justify-between items-center">
               <div className="flex items-center">
                 <Avatar className="h-8 w-8 mr-2">
-                  <img src={activeSfdAccount.logo_url || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={activeSfdAccount.name} />
+                  <img src={activeSfdAccount.logoUrl || '/lovable-uploads/08a3f3d2-0612-4e7e-8248-5ba5eb3fce63.png'} alt={activeSfdAccount.name} />
                 </Avatar>
                 <CardTitle>{activeSfdAccount.name}</CardTitle>
               </div>

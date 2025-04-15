@@ -6,6 +6,7 @@ import { SfdAccount as DbSfdAccount, CreateTransferParams, SfdAccountTransfer } 
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { SfdClientAccount } from '@/hooks/sfd/types';
+import { useSfdList } from '@/hooks/sfd/useSfdList';
 
 export interface SfdLoanPaymentParams {
   loanId: string;
@@ -106,8 +107,8 @@ export function useSfdAccounts(sfdId?: string) {
     return accounts.map(acc => ({
       id: acc.id,
       name: acc.description || `Compte ${acc.account_type}`,
-      logo_url: null,
-      logoUrl: null, // Add for backward compatibility
+      logoUrl: null,
+      logo_url: null, // Add both properties for backward compatibility
       code: '',
       region: '',
       balance: acc.balance,
@@ -134,6 +135,7 @@ export function useSfdAccounts(sfdId?: string) {
   const enhancedSfdAccounts = listAccounts.map(acc => ({
     ...acc,
     logoUrl: acc.logo_url,
+    logo_url: acc.logo_url,
     balance: 0,
     currency: 'FCFA',
     sfd_id: acc.id,
