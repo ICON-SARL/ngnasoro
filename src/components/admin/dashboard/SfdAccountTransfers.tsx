@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -112,7 +111,7 @@ export function SfdAccountTransfers() {
   const refreshBalances = async () => {
     setIsRefreshing(true);
     try {
-      // Fix: Call mutate with no arguments when it expects 0 arguments
+      // Correction: Appeler mutate sans argument car elle n'en attend aucun
       await synchronizeBalances.mutate();
       toast({
         title: "Synchronisation terminée",
