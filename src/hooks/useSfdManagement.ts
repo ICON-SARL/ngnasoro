@@ -1,5 +1,4 @@
-
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sfd } from '../types/sfd-types';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,7 +57,8 @@ export function useSfdManagement() {
   // Activate SFD mutation
   const activateSfdMutation = useMutation({
     mutationFn: async (sfdId: string) => {
-      console.log('Activating SFD:', sfdId);
+      console.log(`Attempting to activate SFD with ID: ${sfdId}`);
+      
       const { data, error } = await supabase
         .from('sfds')
         .update({ status: 'active' })
@@ -66,19 +66,26 @@ export function useSfdManagement() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error activating SFD:', error);
+        throw error;
+      }
+
+      console.log('SFD activation successful:', data);
       return data;
     },
     onSuccess: () => {
+      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
       queryClient.invalidateQueries({ queryKey: ['active-sfds'] });
+      
       toast({
-        title: "SFD activée",
-        description: "La SFD a été activée avec succès"
+        title: "SFD Activée",
+        description: "La SFD a été activée avec succès",
       });
     },
     onError: (error: any) => {
-      console.error('Error activating SFD:', error);
+      console.error('Activation failed:', error);
       toast({
         title: "Erreur",
         description: "Impossible d'activer la SFD",
