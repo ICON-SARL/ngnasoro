@@ -22,37 +22,49 @@ const ActiveLoansSection: React.FC<ActiveLoansSectionProps> = ({
 }) => {
   const navigate = useNavigate();
   
-  // Calculate the progress and remaining amount for each loan
   const calculateLoanMetrics = (loan: Loan) => {
     const totalAmount = loan.amount * (1 + loan.interest_rate/100);
+    const monthlyPayment = loan.monthly_payment || (totalAmount / loan.duration_months);
     
-    // For this demo, let's determine paid amount based on sample data
-    // In a real app, this would come from payment records
-    const paidAmount = loan.status === 'completed' 
-      ? totalAmount 
-      : totalAmount * 0.4; // Assuming 40% has been paid for active loans
+    // Calculate paid amount based on monthly payment schedule
+    let paidAmount = 0;
+    if (loan.disbursed_at) {
+      const monthsSinceDisbursement = Math.floor(
+        (new Date().getTime() - new Date(loan.disbursed_at).getTime()) / 
+        (1000 * 60 * 60 * 24 * 30)
+      );
+      paidAmount = Math.min(totalAmount, monthlyPayment * monthsSinceDisbursement);
+    }
     
-    const remainingAmount = totalAmount - paidAmount;
-    const progress = Math.round((paidAmount / totalAmount) * 100);
+    const remainingAmount = Math.max(0, totalAmount - paidAmount);
+    const progress = Math.min(100, Math.round((paidAmount / totalAmount) * 100));
     
-    return {
-      paidAmount,
-      remainingAmount,
-      progress
-    };
+    return { paidAmount, remainingAmount, progress };
   };
   
-  // Format next payment date
-  const formatNextPaymentDate = (date?: string) => {
-    if (!date) return 'Non défini';
-    return new Date(date).toLocaleDateString('fr-FR');
+  const formatNextPaymentDate = (loan: Loan) => {
+    if (!loan.next_payment_date) return 'Non défini';
+    return new Date(loan.next_payment_date).toLocaleDateString('fr-FR');
   };
   
-  // View loan details
   const viewLoanDetails = (loanId: string) => {
     navigate('/mobile-flow/loan-details', { state: { loanId } });
   };
   
+  if (isLoading) {
+    return (
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-lg font-semibold">Mes prêts actifs</h2>
+        </div>
+        <div className="animate-pulse space-y-3">
+          <div className="h-32 bg-gray-200 rounded-lg"></div>
+          <div className="h-32 bg-gray-200 rounded-lg"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mb-6">
       <div className="flex justify-between items-center mb-3">
@@ -66,11 +78,7 @@ const ActiveLoansSection: React.FC<ActiveLoansSectionProps> = ({
         </Button>
       </div>
       
-      {isLoading ? (
-        <div className="py-4 flex justify-center">
-          <div className="animate-spin h-6 w-6 border-4 border-[#0D6A51] border-t-transparent rounded-full"></div>
-        </div>
-      ) : activeLoans.length > 0 ? (
+      {activeLoans.length > 0 ? (
         <>
           {activeLoans.map(loan => {
             const { progress, remainingAmount } = calculateLoanMetrics(loan);
@@ -79,9 +87,9 @@ const ActiveLoansSection: React.FC<ActiveLoansSectionProps> = ({
                 <CardContent className="p-4">
                   <div className="flex justify-between mb-2">
                     <div>
-                      <p className="font-medium">{loan.purpose || 'Microfinance Bamako'}</p>
+                      <p className="font-medium">{loan.purpose}</p>
                       <p className="text-xs text-gray-500">
-                        Prochain paiement: {formatNextPaymentDate(loan.next_payment_date)}
+                        Prochain paiement: {formatNextPaymentDate(loan)}
                       </p>
                     </div>
                     <p className="font-semibold">{formatCurrency(loan.amount)}</p>
