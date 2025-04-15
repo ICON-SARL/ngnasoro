@@ -87,7 +87,7 @@ export const getLoanSchedule = async (loanId: string) => {
   try {
     const response = await supabase.functions.invoke('loans-api/schedule', {
       method: 'GET',
-      query: { loanId }
+      headers: { loanId } // Fixing the incorrect 'query' property to use 'headers' instead
     });
 
     if (response.error) throw new Error(response.error.message);

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,17 +21,18 @@ export const LoanWorkflow = () => {
   const [loading, setLoading] = useState(true);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchLoans();
-  }, []);
+  }, [activeSfdId]);
 
   const fetchLoans = async () => {
     try {
       setLoading(true);
-      const fetchedLoans = await loanService.getSfdLoans();
+      // Fix: Pass the activeSfdId to getSfdLoans
+      const fetchedLoans = await loanService.getSfdLoans(activeSfdId || '');
       setLoans(fetchedLoans);
     } catch (error) {
       console.error('Error fetching loans:', error);
