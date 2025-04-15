@@ -677,6 +677,65 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          attachments: Json | null
+          content: string
+          created_at: string | null
+          deleted_at: string | null
+          id: string
+          metadata: Json | null
+          parent_id: string | null
+          read_by: Json | null
+          recipient_id: string | null
+          recipient_role: Database["public"]["Enums"]["app_role"] | null
+          sender_id: string
+          thread_id: string | null
+          type: Database["public"]["Enums"]["message_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          content: string
+          created_at?: string | null
+          deleted_at?: string | null
+          id?: string
+          metadata?: Json | null
+          parent_id?: string | null
+          read_by?: Json | null
+          recipient_id?: string | null
+          recipient_role?: Database["public"]["Enums"]["app_role"] | null
+          sender_id: string
+          thread_id?: string | null
+          type?: Database["public"]["Enums"]["message_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          content?: string
+          created_at?: string | null
+          deleted_at?: string | null
+          id?: string
+          metadata?: Json | null
+          parent_id?: string | null
+          read_by?: Json | null
+          recipient_id?: string | null
+          recipient_role?: Database["public"]["Enums"]["app_role"] | null
+          sender_id?: string
+          thread_id?: string | null
+          type?: Database["public"]["Enums"]["message_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mobile_money_settings: {
         Row: {
           api_key: string | null
@@ -1658,7 +1717,13 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      unread_messages_count: {
+        Row: {
+          count: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       assign_role: {
@@ -1668,6 +1733,10 @@ export type Database = {
       calculate_next_payment_date: {
         Args: { p_loan_id: string; p_current_date?: string }
         Returns: string
+      }
+      check_message_deletion: {
+        Args: { message_id: string; user_id: string }
+        Returns: boolean
       }
       check_overdue_loans: {
         Args: Record<PropertyKey, never>
@@ -1756,6 +1825,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "sfd_admin" | "user" | "meref_admin"
+      message_type: "direct" | "group" | "broadcast"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1872,6 +1942,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "sfd_admin", "user", "meref_admin"],
+      message_type: ["direct", "group", "broadcast"],
     },
   },
 } as const
