@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -12,6 +11,9 @@ import MobileFlowPage from '@/pages/MobileFlowPage';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import AdminLoginPage from '@/pages/AdminLoginPage';
 import ClientLoginPage from '@/pages/ClientLoginPage';
+import AuthRedirectPage from '@/pages/AuthRedirectPage';
+import RoleGuard from '@/components/RoleGuard';
+import { UserRole } from '@/hooks/auth/types';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -35,16 +37,31 @@ function App() {
                 <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<Navigate to="/auth" replace />} />
-                  <Route path="/auth" element={<LoginPage />} />
-                  <Route path="/admin/auth" element={<AdminLoginPage />} />
-                  <Route path="/client/auth" element={<ClientLoginPage />} />
+                  <Route path="/login" element={<AuthRedirectPage />} />
+                  <Route path="/auth" element={<AnonymousOnlyGuard><LoginPage /></AnonymousOnlyGuard>} />
+                  <Route path="/admin/auth" element={<AnonymousOnlyGuard><AdminLoginPage /></AnonymousOnlyGuard>} />
+                  <Route path="/client/auth" element={<AnonymousOnlyGuard><ClientLoginPage /></AnonymousOnlyGuard>} />
                   
-                  {/* Admin Routes */}
+                  {/* Admin Routes with Role Guards */}
                   <Route 
                     path="/super-admin-dashboard/*" 
                     element={
                       <AuthenticationGuard>
-                        <SuperAdminDashboard />
+                        <RoleGuard requiredRole={UserRole.SuperAdmin}>
+                          <SuperAdminDashboard />
+                        </RoleGuard>
+                      </AuthenticationGuard>
+                    } 
+                  />
+                  
+                  {/* Agency Routes with Role Guards */}
+                  <Route 
+                    path="/agency-dashboard/*" 
+                    element={
+                      <AuthenticationGuard>
+                        <RoleGuard requiredRole={UserRole.SfdAdmin}>
+                          <SuperAdminDashboard />
+                        </RoleGuard>
                       </AuthenticationGuard>
                     } 
                   />
@@ -54,7 +71,9 @@ function App() {
                     path="/mobile-flow/*" 
                     element={
                       <AuthenticationGuard>
-                        <MobileFlowPage />
+                        <RoleGuard requiredRole={UserRole.Client}>
+                          <MobileFlowPage />
+                        </RoleGuard>
                       </AuthenticationGuard>
                     } 
                   />

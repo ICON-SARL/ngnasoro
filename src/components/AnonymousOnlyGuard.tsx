@@ -27,11 +27,14 @@ const AnonymousOnlyGuard: React.FC<AnonymousOnlyGuardProps> = ({ children }) => 
     const role = user.app_metadata?.role;
     
     if (role === 'admin') {
+      console.log("Redirecting admin to super-admin-dashboard");
       return <Navigate to="/super-admin-dashboard" replace />;
     } else if (role === 'sfd_admin') {
+      console.log("Redirecting SFD admin to agency-dashboard");
       return <Navigate to="/agency-dashboard" replace />;
     } else {
       // Default for regular users
+      console.log("Redirecting regular user to mobile-flow/main");
       return <Navigate to="/mobile-flow/main" replace />;
     }
   }

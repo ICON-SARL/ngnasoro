@@ -36,8 +36,8 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     
     // Super admins have access to everything except specific client routes
     if (isAdmin) {
-      if (requiredRole === UserRole.Client) {
-        // Admins can't access client-only routes
+      if (requiredRole === UserRole.Client && location.pathname.includes("/mobile-flow")) {
+        // Block admins from accessing client mobile routes
         setHasAccess(false);
         return;
       }
@@ -122,10 +122,21 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
   }
 
   if (!hasAccess) {
-    // User doesn't have the required role, redirect to access denied
+    // Get the appropriate redirection path based on the role
+    let redirectPath = "/auth";
+    
+    if (isAdmin) {
+      redirectPath = "/super-admin-dashboard";
+    } else if (isSfdAdmin) {
+      redirectPath = "/agency-dashboard";
+    } else if (isClient) {
+      redirectPath = "/mobile-flow/main";
+    }
+    
+    // User doesn't have the required role, redirect to appropriate dashboard
     return (
       <Navigate 
-        to="/access-denied" 
+        to={redirectPath}
         state={{ 
           requiredRole,
           from: location.pathname 
