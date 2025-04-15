@@ -38,7 +38,8 @@ const settingsSchema = z.object({
   })
 });
 
-type FormValues = z.infer<typeof settingsSchema>;
+// Define the type derived from the schema
+type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 interface SfdSettingsFormProps {
   sfdId: string;
@@ -47,7 +48,7 @@ interface SfdSettingsFormProps {
 export function SfdSettingsForm({ sfdId }: SfdSettingsFormProps) {
   const { settings, isLoading, updateSettings } = useSfdSettings(sfdId);
   
-  const defaultValues: SfdSettings = {
+  const defaultValues: SettingsFormValues = {
     loan_settings: {
       min_loan_amount: 10000,
       max_loan_amount: 5000000,
@@ -66,7 +67,7 @@ export function SfdSettingsForm({ sfdId }: SfdSettingsFormProps) {
     }
   };
   
-  const form = useForm<SfdSettings>({
+  const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: settings || defaultValues
   });
@@ -78,8 +79,8 @@ export function SfdSettingsForm({ sfdId }: SfdSettingsFormProps) {
     }
   }, [settings, form]);
 
-  const onSubmit = async (data: SfdSettings) => {
-    updateSettings.mutate(data);
+  const onSubmit = async (data: SettingsFormValues) => {
+    updateSettings.mutate(data as SfdSettings);
   };
 
   if (isLoading) {

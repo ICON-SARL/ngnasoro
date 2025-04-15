@@ -66,9 +66,16 @@ export function useSfdSettings(sfdId: string) {
 
   const updateSettings = useMutation({
     mutationFn: async (newSettings: SfdSettings) => {
+      // Convert to a plain object for Supabase
+      const settingsForDb = {
+        loan_settings: { ...newSettings.loan_settings },
+        transaction_settings: { ...newSettings.transaction_settings },
+        security_settings: { ...newSettings.security_settings }
+      };
+
       const { data, error } = await supabase
         .from('sfds')
-        .update({ settings: newSettings })
+        .update({ settings: settingsForDb })
         .eq('id', sfdId)
         .select('settings')
         .single();
