@@ -10,7 +10,7 @@ export const DashboardWidgets = () => {
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
       try {
-        // Récupérer le nombre de SFDs actives
+        // Récupérer le nombre de SFDs actives - assurons-nous que le statut est 'active'
         const { count: activeSfdsCount, error: sfdError } = await supabase
           .from('sfds')
           .select('*', { count: 'exact', head: true })
@@ -79,7 +79,8 @@ export const DashboardWidgets = () => {
       }
     },
     refetchInterval: 30000, // Refresh every 30 seconds
-    staleTime: 15000 // Consider data fresh for 15 seconds
+    staleTime: 15000, // Consider data fresh for 15 seconds
+    refetchOnWindowFocus: true
   });
 
   const formatCurrency = (amount: number) => {
@@ -118,7 +119,7 @@ export const DashboardWidgets = () => {
           </div>
           <div className="text-xs text-gray-500 mt-1 flex items-center">
             <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
-            <span>+{stats?.activeSfds ? stats.activeSfds - 0 : 0} ce mois</span>
+            <span>+{stats?.activeSfds ? Math.max(0, stats.activeSfds - 0) : 0} ce mois</span>
           </div>
         </CardContent>
       </Card>

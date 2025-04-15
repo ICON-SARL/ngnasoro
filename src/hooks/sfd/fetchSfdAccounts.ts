@@ -6,7 +6,9 @@ export async function fetchUserSfds(userId: string) {
   if (!userId) return [];
   
   try {
-    // Get all active SFDs
+    console.log(`Fetching SFDs for user ${userId}...`);
+    
+    // Récupérer toutes les SFDs actives
     const { data: activeSfds, error: sfdsError } = await supabase
       .from('sfds')
       .select(`
@@ -24,7 +26,9 @@ export async function fetchUserSfds(userId: string) {
       return [];
     }
 
-    // For test accounts, return test data
+    console.log(`Found ${activeSfds?.length || 0} active SFDs`);
+    
+    // Pour les comptes de test, retourner des données de test
     if (userId.includes('test') || userId === 'client@test.com') {
       return [
         {
@@ -46,8 +50,8 @@ export async function fetchUserSfds(userId: string) {
       ];
     }
 
-    // Make sure to return all active SFDs
-    console.log(`Found ${activeSfds?.length || 0} active SFDs for user ${userId}`);
+    // S'assurer de retourner toutes les SFDs actives
+    console.log(`Returning ${activeSfds?.length || 0} active SFDs for user ${userId}`);
     return activeSfds || [];
   } catch (error) {
     console.error('Error in fetchUserSfds:', error);

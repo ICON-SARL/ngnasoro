@@ -14,14 +14,14 @@ export function useSfdList(user: User | null) {
       const userSfds = await fetchUserSfds(user.id);
       console.log('Fetched SFDs:', userSfds);
       
-      // Transform all SFDs into SfdAccount objects
+      // Transformer toutes les SFDs en objets SfdAccount
       const sfdAccounts: SfdClientAccount[] = userSfds.map(userSfd => ({
         id: userSfd.id,
         name: userSfd.name,
         code: userSfd.code,
         region: userSfd.region || '',
         logoUrl: userSfd.logo_url,
-        balance: 0, // Balance will be fetched separately
+        balance: 0, // Le solde sera récupéré séparément
         currency: 'FCFA',
         isDefault: false,
         isVerified: true,

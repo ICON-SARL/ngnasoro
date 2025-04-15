@@ -5,7 +5,8 @@ import {
   DashboardWidgets, 
   SuperAdminDashboardHeader, 
   DashboardTabs,
-  SimplifiedMerefDashboard
+  SimplifiedMerefDashboard,
+  SfdStatusAlert
 } from '@/components/admin/dashboard';
 import { AdminUsersList } from '@/components/admin/shared/AdminUsersList';
 import { AddAdminDialog } from '@/components/admin/shared/AddAdminDialog';
@@ -43,6 +44,9 @@ const SuperAdminDashboard = () => {
       
       <main className="flex-1 container mx-auto p-4 md:p-6">
         <SuperAdminDashboardHeader />
+        
+        {/* Afficher l'alerte de statut SFD */}
+        <SfdStatusAlert />
         
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-4">Accès Rapides</h2>

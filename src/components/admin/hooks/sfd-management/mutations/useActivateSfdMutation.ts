@@ -2,10 +2,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
 
 export function useActivateSfdMutation() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (sfdId: string) => {
@@ -27,10 +30,13 @@ export function useActivateSfdMutation() {
       }
     },
     onSuccess: () => {
-      // Invalidate queries that depend on SFD data
+      // Invalider TOUTES les requêtes qui dépendent des données SFD
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
       queryClient.invalidateQueries({ queryKey: ['user-sfds'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      
+      // Ajouter également l'invalidation du compteur sur le tableau de bord
+      queryClient.invalidateQueries({ queryKey: ['sfd-management-stats'] });
       
       toast({
         title: 'SFD activée',
