@@ -18,7 +18,7 @@ export const useSfdAdminForm = (onSuccess: () => void) => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const { createSfdAdmin, isLoading, error: apiError } = useSfdAdminManagement();
 
-  const form = useForm<SfdAdminFormData>({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       full_name: '',
@@ -29,7 +29,7 @@ export const useSfdAdminForm = (onSuccess: () => void) => {
     },
   });
 
-  const handleFormSubmit = async (values: SfdAdminFormData) => {
+  const handleFormSubmit = async (values: z.infer<typeof formSchema>) => {
     setSubmitError(null);
     
     try {

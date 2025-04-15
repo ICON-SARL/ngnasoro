@@ -9,11 +9,21 @@ import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useSfdData } from '@/components/admin/hooks/sfd-management/useSfdData';
-import type { SfdAdminFormData } from '../types';
 import { UseFormReturn } from 'react-hook-form';
+import { z } from 'zod';
+
+const formSchema = z.object({
+  full_name: z.string().min(1, "Le nom complet est requis"),
+  email: z.string().email("Format d'email invalide"),
+  password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
+  sfd_id: z.string().uuid("Veuillez sélectionner une SFD"),
+  notify: z.boolean().default(true),
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 interface SfdAdminFormProps {
-  form: UseFormReturn<SfdAdminFormData>;
+  form: UseFormReturn<FormData>;
   isLoading: boolean;
   submitError: string | null;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
