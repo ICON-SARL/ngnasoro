@@ -43,7 +43,7 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
         // Get all SFDs that are active, independent of user associations
         const { data, error } = await supabase
           .from('sfds')
-          .select('id, name, region, logo_url')
+          .select('id, name, region, logo_url, status')
           .eq('status', 'active')
           .order('name');
 
@@ -51,24 +51,13 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
         
         console.log(`Fetched ${data?.length || 0} active SFDs`);
         
-        // Get user's existing requests to filter out SFDs that already have pending requests
-        const { data: existingRequests, error: requestsError } = await supabase
-          .from('sfd_clients')
-          .select('sfd_id, status')
-          .eq('user_id', user?.id || '')
-          .in('status', ['pending', 'validated']);
-          
-        if (requestsError) {
-          console.error('Error fetching existing requests:', requestsError);
-        }
+        // Nous affichons maintenant toutes les SFDs actives
+        // sans filtrage par rapport aux demandes existantes
+        const availableSfds = data || [];
         
-        // Filter out SFDs that the user already has pending or validated requests for
-        const existingSfdIds = (existingRequests || []).map(req => req.sfd_id);
-        const availableSfds = data?.filter(sfd => !existingSfdIds.includes(sfd.id)) || [];
+        console.log(`${availableSfds.length} SFDs available for display`);
         
-        console.log(`${availableSfds.length} SFDs available after filtering existing requests`);
-        
-        // Always include test SFDs for development
+        // Toujours inclure les SFDs de test pour le développement
         if (availableSfds.length === 0 && process.env.NODE_ENV === 'development') {
           console.log('Adding test SFDs for development');
           availableSfds.push({
@@ -98,19 +87,18 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
   }, [isOpen, user?.id]);
 
   const sortPrioritySfds = (sfds: Sfd[]): Sfd[] => {
-    const prioritySfdNames = ["premier sfd", "deuxieme", "troisieme"];
+    const prioritySfdNames = ["rmcr", "meref", "premier sfd"];
     
     return [...sfds].sort((a, b) => {
-      const aIsPriority = prioritySfdNames.includes(a.name.toLowerCase());
-      const bIsPriority = prioritySfdNames.includes(b.name.toLowerCase());
+      const aIsPriority = prioritySfdNames.some(name => 
+        a.name.toLowerCase().includes(name.toLowerCase()));
+      const bIsPriority = prioritySfdNames.some(name => 
+        b.name.toLowerCase().includes(name.toLowerCase()));
       
       if (aIsPriority && !bIsPriority) return -1;
       if (!aIsPriority && bIsPriority) return 1;
       
-      if (aIsPriority && bIsPriority) {
-        return prioritySfdNames.indexOf(a.name.toLowerCase()) - prioritySfdNames.indexOf(b.name.toLowerCase());
-      }
-      
+      // Si les deux sont prioritaires, on les trie par nom
       return a.name.localeCompare(b.name);
     });
   };

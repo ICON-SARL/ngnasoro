@@ -40,15 +40,32 @@ export function useAvailableSfds(userId?: string) {
         
       if (pendingRequestsError) throw pendingRequestsError;
       
+      // If there are no pendingSfdRequests, check client_adhesion_requests
+      let pendingAdhesionRequests: any[] = [];
+      if (!pendingSfdRequests || pendingSfdRequests.length === 0) {
+        const { data: adhesionRequests, error: adhesionError } = await supabase
+          .from('client_adhesion_requests')
+          .select('id, sfd_id, status, created_at')
+          .eq('user_id', userId);
+          
+        if (!adhesionError && adhesionRequests) {
+          pendingAdhesionRequests = adhesionRequests;
+        }
+      }
+      
       // Get all SFDs to find the names
       const { data: allSfds, error: allSfdsError } = await supabase
         .from('sfds')
-        .select('id, name');
+        .select('id, name, code, region, logo_url, status')
+        .eq('status', 'active');
         
       if (allSfdsError) throw allSfdsError;
       
       // Map SFD names to requests
-      const pendingRequestsWithNames = (pendingSfdRequests || []).map(request => {
+      const pendingRequestsWithNames = [
+        ...(pendingSfdRequests || []),
+        ...(pendingAdhesionRequests || [])
+      ].map(request => {
         const sfd = allSfds?.find(s => s.id === request.sfd_id);
         return {
           ...request,
@@ -60,21 +77,11 @@ export function useAvailableSfds(userId?: string) {
       setPendingRequests(pendingRequestsWithNames || []);
       
       // Get IDs of SFDs that user has pending requests for
-      const pendingSfdIds = pendingSfdRequests?.map(request => request.sfd_id) || [];
+      const pendingSfdIds = pendingRequestsWithNames?.map(request => request.sfd_id) || [];
       
-      // Combine existing SFDs and pending SFDs to exclude from available list
-      const excludeSfdIds = [...userSfdIds, ...pendingSfdIds];
+      // Pour ce problème spécifique, affichons toutes les SFDs actives
+      setAvailableSfds(allSfds || []);
       
-      // Then get all active SFDs that user doesn't already have or has pending requests for
-      const { data: sfds, error: sfdsError } = await supabase
-        .from('sfds')
-        .select('id, name, code, region, logo_url, status')
-        .eq('status', 'active')
-        .not('id', 'in', `(${excludeSfdIds.length > 0 ? excludeSfdIds.join(',') : 'null'})`);
-      
-      if (sfdsError) throw sfdsError;
-      
-      setAvailableSfds(sfds || []);
     } catch (err: any) {
       console.error('Error fetching available SFDs:', err);
       setError(err.message);
@@ -112,16 +119,15 @@ export function useAvailableSfds(userId?: string) {
         return false;
       }
       
-      // Create a client request entry
+      // Create a client adhesion request entry
       const { data, error } = await supabase
-        .from('sfd_clients')
+        .from('client_adhesion_requests')
         .insert({
           user_id: userId,
           sfd_id: sfdId,
           full_name: '', // Will be updated from user profile
           phone: phoneNumber || null,
           status: 'pending',
-          kyc_level: 0
         })
         .select();
         
@@ -136,7 +142,7 @@ export function useAvailableSfds(userId?: string) {
         
       if (profile) {
         await supabase
-          .from('sfd_clients')
+          .from('client_adhesion_requests')
           .update({ 
             full_name: profile.full_name || 'Client' 
           })

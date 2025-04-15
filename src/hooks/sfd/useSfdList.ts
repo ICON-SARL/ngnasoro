@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchUserSfds } from './fetchSfdAccounts';
 import { SfdAccount, SfdClientAccount } from './types';
-import { User } from '@/hooks/useAuth';
+import { User } from '@/hooks/auth/types';
 
 export function useSfdList(user: User | null) {
   const { data, isLoading, isError, refetch } = useQuery({
@@ -31,6 +31,8 @@ export function useSfdList(user: User | null) {
       return sfdAccounts;
     },
     enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
   });
 
   return {
