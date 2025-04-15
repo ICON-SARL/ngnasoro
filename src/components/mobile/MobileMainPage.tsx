@@ -11,6 +11,8 @@ import { useClientLoans } from '@/hooks/useClientLoans';
 import { useTransactions } from '@/hooks/useTransactions';
 import ActiveLoansSection from './loans/ActiveLoansSection';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
+import Footer from '@/components/Footer';
+import MobileNavigation from './MobileNavigation';
 
 const MobileMainPage: React.FC = () => {
   const navigate = useNavigate();
@@ -47,7 +49,6 @@ const MobileMainPage: React.FC = () => {
       : `-${formatCurrencyAmount(Math.abs(tx.amount))}`,
     date: new Date(tx.date || tx.created_at || '').toLocaleDateString('fr-FR'),
     avatar: tx.avatar_url,
-    // Remove the sfd_name property which doesn't exist on Transaction type
   }));
   
   return (
@@ -104,6 +105,12 @@ const MobileMainPage: React.FC = () => {
         onClose={handleMenuClose}
         onNavigate={handleNavigate}
       />
+      
+      <Footer />
+      
+      <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden">
+        <MobileNavigation />
+      </div>
     </div>
   );
 };
