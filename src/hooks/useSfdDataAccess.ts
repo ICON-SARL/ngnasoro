@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,7 +49,29 @@ export function useSfdDataAccess() {
       try {
         console.log('Fetching SFDs for user:', user.id);
         
-        // Utiliser la fonction Edge pour contourner les problèmes de RLS
+        // First try direct database query for all active SFDs
+        const { data: directSfds, error: directError } = await supabase
+          .from('sfds')
+          .select('*')
+          .eq('status', 'active');
+          
+        if (directError) {
+          console.error('Error fetching SFDs directly:', directError);
+        } else if (directSfds && directSfds.length > 0) {
+          console.log(`Found ${directSfds.length} active SFDs directly`);
+          setSfdData(directSfds);
+          
+          // If no active SFD is set and we have SFDs, set the first one as active
+          if ((!activeSfdId || activeSfdId.trim() === '') && directSfds.length > 0) {
+            console.log('Setting first SFD as active:', directSfds[0].id);
+            setActiveSfdId(directSfds[0].id);
+          }
+          
+          setIsLoading(false);
+          return;
+        }
+        
+        // If direct query fails, try the edge function
         const { data, error } = await supabase.functions.invoke('fetch-sfds', {
           body: { userId: user.id }
         });
@@ -74,13 +95,13 @@ export function useSfdDataAccess() {
         
         console.log('SFDs retrieved:', data);
         
-        // Transformer les données si nécessaire
+        // Transform data if necessary
         const formattedSfds = Array.isArray(data) ? data : [];
         setSfdData(formattedSfds);
         
-        // Si aucune SFD active n'est définie et que nous avons des SFDs, définir la première comme active
+        // If no active SFD is defined and we have SFDs, set the first one as active
         if ((!activeSfdId || activeSfdId.trim() === '') && formattedSfds.length > 0) {
-          // Chercher une SFD par défaut, sinon prendre la première
+          // Look for a default SFD, otherwise take the first one
           const defaultSfd = formattedSfds.find(sfd => sfd.is_default);
           
           if (defaultSfd) {
@@ -94,6 +115,29 @@ export function useSfdDataAccess() {
       } catch (err: any) {
         console.error('Error in fetchSfds:', err);
         setError(err.message);
+        
+        // Add fallback data for development
+        setSfdData([
+          {
+            id: 'test-sfd1',
+            name: 'RMCR (Test)',
+            code: 'RMCR',
+            region: 'Centre',
+            status: 'active',
+            token: null,
+            lastFetched: null
+          },
+          {
+            id: 'test-sfd2',
+            name: 'NYESIGISO (Test)',
+            code: 'NYESIGISO',
+            region: 'Sud',
+            status: 'active',
+            token: null,
+            lastFetched: null
+          }
+        ]);
+        
         toast({
           title: "Erreur",
           description: "Impossible de récupérer les SFDs associées à votre compte",
