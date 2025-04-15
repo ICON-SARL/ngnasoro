@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useSfdLoans } from '@/hooks/useSfdLoans';
 import MobileNavigation from '@/components/MobileNavigation';
-import { ArrowLeft, FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, FileText, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const MobileMyLoansPage: React.FC = () => {
@@ -53,6 +52,14 @@ const MobileMyLoansPage: React.FC = () => {
       </div>
 
       <div className="p-4">
+        <Button 
+          onClick={() => navigate('/mobile-flow/loan-plans')}
+          className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90 mb-6"
+        >
+          <Plus className="mr-2 h-5 w-5" />
+          Demander un prêt
+        </Button>
+
         {isLoading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin h-8 w-8 border-4 border-[#0D6A51] border-t-transparent rounded-full"></div>
