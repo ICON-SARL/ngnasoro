@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LogoutButtonProps {
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
@@ -43,18 +44,15 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
         description: "Veuillez patienter..."
       });
       
-      // Force immediate UI update to show loading state
-      await new Promise(resolve => setTimeout(resolve, 0));
-      
-      console.log("LogoutButton - Calling signOut()");
-      const { error } = await signOut();
+      // Approche directe avec Supabase
+      const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error("LogoutButton - Error during signOut:", error);
+        console.error("LogoutButton - Error during direct signOut:", error);
         throw error;
       }
       
-      console.log("LogoutButton - SignOut successful");
+      console.log("LogoutButton - Direct SignOut successful");
       toast({
         title: "Déconnexion réussie",
         description: "Vous avez été déconnecté avec succès"
@@ -62,7 +60,9 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
       
       // Force a full page reload to clear any remaining state
       console.log("LogoutButton - Redirecting to", redirectPath);
-      window.location.href = redirectPath;
+      setTimeout(() => {
+        window.location.href = redirectPath;
+      }, 100);
     } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
       setIsLoggingOut(false);

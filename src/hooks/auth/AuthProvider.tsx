@@ -35,7 +35,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(data.session);
         setUser(data.session?.user || null);
         
-        // Debug log
         if (data.session?.user) {
           console.log('Loaded user data:', {
             id: data.session.user.id,
@@ -53,7 +52,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     fetchSession();
 
-    // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         console.log('Auth state change event:', event);
@@ -61,7 +59,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(newSession);
         setLoading(false);
         
-        // Debug log for auth state change
         if (newSession?.user) {
           console.log('Auth state changed:', {
             event,
@@ -73,7 +70,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Auth state changed: User signed out');
         }
         
-        // Log auth events
         if (event === 'SIGNED_IN') {
           try {
             await logAuditEvent(
@@ -92,9 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.error('Error logging sign-in event:', error);
           }
         } else if (event === 'SIGNED_OUT') {
-          // Only log if we have a user ID from before the signout
-          const userId = user?.id;
-          if (userId) {
+          if (user?.id) {
             try {
               await logAuditEvent(
                 AuditLogCategory.AUTHENTICATION,
@@ -102,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 {
                   timestamp: new Date().toISOString()
                 },
-                userId,
+                user.id,
                 AuditLogSeverity.INFO,
                 'success'
               );
@@ -175,9 +169,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       console.log('AuthProvider - Signing out user');
-      const userId = user?.id; // Capture user ID before signout
+      const userId = user?.id;
       
-      // Clear local state immediately to avoid UI inconsistencies
       setLoading(true);
       
       toast({
@@ -185,7 +178,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Veuillez patienter..."
       });
       
-      // Call Supabase signOut method
+      setUser(null);
+      setSession(null);
+      
       const result = await supabase.auth.signOut();
       
       if (result.error) {
@@ -199,9 +194,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return result;
       } else {
         console.log('AuthProvider - SignOut successful');
-        // Clear local state immediately to avoid UI inconsistencies
-        setUser(null);
-        setSession(null);
         setLoading(false);
         
         toast({
@@ -209,10 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: "Vous avez été déconnecté avec succès"
         });
         
-        // Redirection plus rapide
-        setTimeout(() => {
-          window.location.href = '/auth';
-        }, 100);
+        window.location.href = '/auth';
       }
       
       return result;
