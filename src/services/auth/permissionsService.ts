@@ -42,10 +42,10 @@ export const permissionsService = {
       
       // Check if any role has the required permission
       return userRoles.some(({ role }) => {
-        // Convert role string to UserRole enum if needed
-        const roleEnum = role as UserRole;
+        // Convert role string to key for permissions mapping
+        const roleKey = role as string;
         // Get permissions for this role from our predefined PERMISSIONS mapping
-        const rolePermissions = PERMISSIONS[roleEnum] || [];
+        const rolePermissions = PERMISSIONS[roleKey] || [];
         return rolePermissions.includes(permission);
       });
     } catch (error) {
@@ -67,11 +67,11 @@ export const permissionsService = {
       }
       
       // Find a role that has this permission
-      let roleWithPermission: UserRole | null = null;
+      let roleWithPermission: string | null = null;
       
       for (const [role, permissions] of Object.entries(PERMISSIONS)) {
         if (permissions.includes(permission)) {
-          roleWithPermission = role as UserRole;
+          roleWithPermission = role;
           break;
         }
       }
@@ -206,8 +206,8 @@ export const permissionsService = {
       
       // Combine role-based permissions
       const allPermissions = userRoles.flatMap(({ role }) => {
-        const roleEnum = role as UserRole;
-        return PERMISSIONS[roleEnum] || [];
+        const roleKey = role as string;
+        return PERMISSIONS[roleKey] || [];
       });
       
       // Remove duplicates
