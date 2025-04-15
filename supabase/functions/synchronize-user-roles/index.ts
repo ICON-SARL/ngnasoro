@@ -26,6 +26,18 @@ serve(async (req) => {
       }
     );
 
+    // Create a Supabase admin client with service role key for admin operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+
     // Get user from Auth context to verify they're allowed to do this
     const {
       data: { user },
@@ -53,10 +65,12 @@ serve(async (req) => {
       );
     }
 
-    // Synchronize SFD admin roles to Auth metadata
+    console.log('Starting synchronization of users and roles...');
+    
+    // Step 1: Synchronize SFD administrators with Auth metadata
     console.log('Synchronizing SFD administrators with Auth metadata...');
     
-    // Get all SFD administrators
+    // Get all active SFD administrators from the sfd_administrators table
     const { data: sfdAdmins, error: adminsError } = await supabaseClient
       .from('sfd_administrators')
       .select('user_id, sfd_id, status')
@@ -66,15 +80,94 @@ serve(async (req) => {
       throw new Error(`Failed to fetch SFD administrators: ${adminsError.message}`);
     }
 
-    // Update user roles in Auth metadata
-    for (const admin of sfdAdmins) {
-      const { error: updateError } = await supabaseClient.auth.admin.updateUserById(
+    console.log(`Found ${sfdAdmins?.length || 0} active SFD administrators`);
+
+    // Update auth metadata for each SFD admin
+    for (const admin of sfdAdmins || []) {
+      console.log(`Updating metadata for SFD admin: ${admin.user_id}`);
+      
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
         admin.user_id,
         { app_metadata: { role: 'sfd_admin', sfd_id: admin.sfd_id } }
       );
       
       if (updateError) {
         console.error(`Failed to update user ${admin.user_id} metadata:`, updateError);
+      } else {
+        console.log(`Successfully updated metadata for user ${admin.user_id}`);
+      }
+    }
+
+    // Step 2: Ensure user_roles table is in sync for SFD admins
+    console.log('Synchronizing user_roles table for SFD admins...');
+
+    for (const admin of sfdAdmins || []) {
+      // Check if role already exists
+      const { data: existingRole, error: roleCheckError } = await supabaseClient
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', admin.user_id)
+        .eq('role', 'sfd_admin')
+        .maybeSingle();
+
+      if (roleCheckError) {
+        console.error(`Error checking existing role for ${admin.user_id}:`, roleCheckError);
+        continue;
+      }
+
+      if (!existingRole) {
+        // Create the role if it doesn't exist
+        const { error: insertRoleError } = await supabaseClient
+          .from('user_roles')
+          .insert({
+            user_id: admin.user_id,
+            role: 'sfd_admin'
+          });
+
+        if (insertRoleError) {
+          console.error(`Failed to insert role for user ${admin.user_id}:`, insertRoleError);
+        } else {
+          console.log(`Created sfd_admin role for user ${admin.user_id}`);
+        }
+      } else {
+        console.log(`User ${admin.user_id} already has sfd_admin role`);
+      }
+    }
+
+    // Step 3: Verify user_sfds associations
+    console.log('Verifying user_sfds associations...');
+    
+    for (const admin of sfdAdmins || []) {
+      // Check if association already exists
+      const { data: existingAssoc, error: assocCheckError } = await supabaseClient
+        .from('user_sfds')
+        .select('id')
+        .eq('user_id', admin.user_id)
+        .eq('sfd_id', admin.sfd_id)
+        .maybeSingle();
+
+      if (assocCheckError) {
+        console.error(`Error checking user_sfds for ${admin.user_id}:`, assocCheckError);
+        continue;
+      }
+
+      if (!existingAssoc) {
+        // Create the association if it doesn't exist
+        const { error: insertAssocError } = await supabaseClient
+          .from('user_sfds')
+          .insert({
+            user_id: admin.user_id,
+            sfd_id: admin.sfd_id,
+            is_default: true
+          });
+
+        if (insertAssocError) {
+          console.error(`Failed to create user_sfds association for ${admin.user_id}:`, insertAssocError);
+        } else {
+          console.log(`Created user_sfds association for user ${admin.user_id} and SFD ${admin.sfd_id}`);
+        }
+      } else {
+        console.log(`User ${admin.user_id} already has association with SFD ${admin.sfd_id}`);
       }
     }
 
@@ -86,13 +179,18 @@ serve(async (req) => {
         action: 'roles_synchronized',
         category: 'ADMIN_ACTION',
         severity: 'INFO',
-        status: 'success'
+        status: 'success',
+        details: {
+          admin_count: sfdAdmins?.length || 0,
+          timestamp: new Date().toISOString()
+        }
       });
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'User roles synchronized successfully',
+        count: sfdAdmins?.length || 0,
         timestamp: new Date().toISOString() 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -109,3 +207,4 @@ serve(async (req) => {
     );
   }
 });
+
