@@ -9,7 +9,7 @@ interface AnonymousOnlyGuardProps {
 }
 
 const AnonymousOnlyGuard: React.FC<AnonymousOnlyGuardProps> = ({ children }) => {
-  const { user, loading, userRole } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   
   if (loading) {
@@ -27,12 +27,12 @@ const AnonymousOnlyGuard: React.FC<AnonymousOnlyGuardProps> = ({ children }) => 
     const role = user.app_metadata?.role;
     
     if (role === 'admin') {
-      return <Navigate to="/super-admin-dashboard" replace />;
+      return <Navigate to="/super-admin-dashboard" state={{ from: location }} replace />;
     } else if (role === 'sfd_admin') {
-      return <Navigate to="/agency-dashboard" replace />;
+      return <Navigate to="/agency-dashboard" state={{ from: location }} replace />;
     } else {
       // Default for regular users
-      return <Navigate to="/mobile-flow/main" replace />;
+      return <Navigate to="/mobile-flow/main" state={{ from: location }} replace />;
     }
   }
   

@@ -34,9 +34,17 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
     }
     
     // Check for exact role match
-    const hasRole = userRole === requiredRole;
-    setHasAccess(hasRole);
+    let hasRole = false;
     
+    // Compare string values
+    if (userRole === requiredRole) {
+      hasRole = true;
+    } else if (requiredRole === UserRole.CLIENT && userRole === 'user') {
+      // User role can access client routes
+      hasRole = true;
+    }
+    
+    setHasAccess(hasRole);
   }, [user, requiredRole]);
 
   if (loading || hasAccess === null) {
@@ -50,10 +58,10 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
 
   if (!user) {
     // Redirect to appropriate auth page based on required role
-    if (requiredRole === UserRole.SUPER_ADMIN) {
+    if (requiredRole === UserRole.SUPER_ADMIN || requiredRole === UserRole.ADMIN) {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
     } else if (requiredRole === UserRole.SFD_ADMIN) {
-      return <Navigate to="/agency/auth" state={{ from: location }} replace />;
+      return <Navigate to="/admin/auth" state={{ from: location }} replace />;
     } else {
       return <Navigate to="/auth" state={{ from: location }} replace />;
     }
