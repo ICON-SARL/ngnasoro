@@ -40,7 +40,7 @@ interface ClientAdhesionFormProps {
 export const ClientAdhesionForm: React.FC<ClientAdhesionFormProps> = ({ sfdId, onSuccess }) => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { createAdhesionRequest, isCreatingRequest } = useClientAdhesions();
+  const { submitAdhesionRequest, isCreatingRequest } = useClientAdhesions();
   
   const form = useForm<FormData>({
     resolver: zodResolver(adhesionSchema),
@@ -66,21 +66,26 @@ export const ClientAdhesionForm: React.FC<ClientAdhesionFormProps> = ({ sfdId, o
     }
 
     try {
-      createAdhesionRequest({
-        sfd_id: sfdId,
+      const result = await submitAdhesionRequest(sfdId, {
         full_name: data.full_name,
         profession: data.profession,
-        monthly_income: parseFloat(data.monthly_income),
+        monthly_income: data.monthly_income,
         source_of_income: data.source_of_income,
         phone: data.phone,
         email: data.email,
         address: data.address,
-      }, {
-        onSuccess: () => {
-          form.reset();
-          if (onSuccess) onSuccess();
-        }
       });
+      
+      if (result.success) {
+        form.reset();
+        if (onSuccess) onSuccess();
+      } else {
+        toast({
+          title: 'Erreur',
+          description: result.error || 'Une erreur est survenue lors de l\'envoi de votre demande',
+          variant: 'destructive',
+        });
+      }
     } catch (error: any) {
       console.error('Error submitting adhesion request:', error);
       toast({
