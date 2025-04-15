@@ -4,17 +4,27 @@ import { useAuth } from '@/hooks/useAuth';
 import { Shield, Check } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 const ProfileHeader = () => {
   const { user } = useAuth();
   
-  // Extract user name from metadata if available, or fall back to email
+  // Extract user info from metadata
   const userName = user?.user_metadata?.full_name || user?.full_name || user?.email?.split('@')[0] || 'Utilisateur';
+  const phoneNumber = user?.phone || user?.user_metadata?.phone || 'Non renseigné';
   
-  // Simulate KYC status for now
+  // Get last login time and format it
+  const lastLoginAt = user?.last_sign_in_at;
+  const formattedLastLogin = lastLoginAt 
+    ? formatDistanceToNow(new Date(lastLoginAt), { 
+        addSuffix: true,
+        locale: fr 
+      })
+    : 'Jamais connecté';
+
   const isKycVerified = true;
-  const phoneNumber = user?.phone || user?.user_metadata?.phone || '+223 76 45 32 10';
-  
+
   return (
     <div className="flex flex-col items-center justify-center p-4 bg-gradient-to-b from-[#0D6A51]/80 to-[#0D6A51]/20 text-white">
       <Avatar className="h-24 w-24 border-4 border-white mb-3">
@@ -27,13 +37,19 @@ const ProfileHeader = () => {
       <h2 className="text-xl font-bold text-center">{userName}</h2>
       <p className="text-sm opacity-90 mb-2">{phoneNumber}</p>
       
-      {isKycVerified && (
-        <Badge className="bg-green-500/90 hover:bg-green-500 flex items-center gap-1 px-2 py-1">
-          <Shield className="h-3 w-3" />
-          <Check className="h-3 w-3" />
-          KYC Vérifié
-        </Badge>
-      )}
+      <div className="flex flex-col items-center gap-2">
+        {isKycVerified && (
+          <Badge className="bg-green-500/90 hover:bg-green-500 flex items-center gap-1 px-2 py-1">
+            <Shield className="h-3 w-3" />
+            <Check className="h-3 w-3" />
+            KYC Vérifié
+          </Badge>
+        )}
+        
+        <div className="text-sm opacity-75 flex items-center gap-1">
+          Dernière connexion: {formattedLastLogin}
+        </div>
+      </div>
     </div>
   );
 };
