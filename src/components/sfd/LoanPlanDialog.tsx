@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -8,6 +7,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,10 +23,21 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Plus, X, Check } from 'lucide-react';
 
+const LOAN_PLAN_OPTIONS = [
+  "Intrants Agricoles",
+  "Culture Maraîchère",
+  "Équipements et Machines Agricoles",
+  "Élevage Avicole",
+  "Embouche Bovine/Ovine",
+  "Microcrédit pour Commerce de Proximité",
+  "Négoce de Bétail",
+  "Transformation Agroalimentaire"
+] as const;
+
 interface LoanPlanDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSaved?: () => void;  // Making this optional with ?
+  onSaved?: () => void;
   planToEdit: any | null;
 }
 
@@ -105,13 +122,12 @@ const LoanPlanDialog = ({
       return;
     }
     
-    // Validate that interest rate doesn't exceed max allowed
-    const maxAllowedRate = 15; // Using a hardcoded value as max_interest_rate is not available
+    const maxAllowedRate = 15;
     if (parseFloat(interestRate) > maxAllowedRate) {
       toast({
         title: "Taux d'intérêt trop élevé",
         description: `Le taux d'intérêt ne peut pas dépasser ${maxAllowedRate}% selon les régulations du MEREF.`,
-        variant: "destructive", // Changed from "warning" to "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -133,7 +149,6 @@ const LoanPlanDialog = ({
       };
       
       if (planToEdit) {
-        // Update existing plan
         const { error } = await supabase
           .from('sfd_loan_plans')
           .update({
@@ -149,7 +164,6 @@ const LoanPlanDialog = ({
           description: "Le plan de prêt a été modifié avec succès",
         });
       } else {
-        // Create new plan
         const { error } = await supabase
           .from('sfd_loan_plans')
           .insert(planData);
@@ -193,13 +207,21 @@ const LoanPlanDialog = ({
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-1 gap-2">
             <Label htmlFor="name">Nom du plan *</Label>
-            <Input
-              id="name"
+            <Select
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Prêt Agricole, Microprêt Commercial..."
-              required
-            />
+              onValueChange={setName}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un type de plan" />
+              </SelectTrigger>
+              <SelectContent>
+                {LOAN_PLAN_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="grid grid-cols-1 gap-2">
