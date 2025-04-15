@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-// Removing imports for non-existent pages and using the ones available
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
@@ -9,6 +8,8 @@ import PermissionTestPage from '@/pages/PermissionTestPage';
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
 import MobileFlowPage from '@/pages/MobileFlowPage';
 import { UserRole } from '@/utils/auth/roleTypes';
+import AgencyManagementPage from '@/pages/admin/AgencyManagementPage';
+import SfdManagementPage from '@/pages/admin/SfdManagementPage';
 
 // Creating a MobileRouter component that can be exported
 export const MobileRouter = () => {
@@ -34,6 +35,20 @@ const Router = () => {
         
         {/* Mobile Flow */}
         <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
+        
+        {/* Agency Management Pages */}
+        <Route path="/agency-dashboard" element={
+          <ProtectedRoute>
+            <AgencyManagementPage />
+          </ProtectedRoute>
+        } />
+        
+        {/* SFD Management Pages */}
+        <Route path="/sfd-management" element={
+          <ProtectedRoute requiredRoles={['admin', 'superadmin']}>
+            <SfdManagementPage />
+          </ProtectedRoute>
+        } />
         
         {/* Permission Test Page */}
         <Route path="/permission-test" element={<PermissionTestPage />} />
