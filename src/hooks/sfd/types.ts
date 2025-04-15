@@ -96,10 +96,10 @@ export interface SfdSubsidy {
   amount: number;
   used_amount: number;
   remaining_amount: number;
-  status: 'active' | 'revoked' | 'depleted';
+  status: 'active' | 'revoked' | 'depleted' | 'exhausted' | 'expired';
   created_at: string;
   allocated_by: string;
-  allocated_at: string;  // Make sure this property is defined
+  allocated_at: string;
   end_date?: string;
   description?: string;
 }

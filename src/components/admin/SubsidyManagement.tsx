@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { SfdSubsidy } from '@/hooks/sfd/types';
+import { useSubsidies } from '@/hooks/useSubsidies';
 import { 
   Card, 
   CardContent, 
@@ -48,8 +50,6 @@ import {
   FileText,
   Calendar
 } from 'lucide-react';
-import { useSubsidies } from '@/hooks/useSubsidies';
-import { SfdSubsidy } from '@/hooks/sfd/types';
 import { Progress } from '@/components/ui/progress';
 import { DatePicker } from '@/components/ui/date-picker';
 
@@ -108,7 +108,10 @@ export function SubsidyManagement() {
       case 'revoked':
         return <Badge className="bg-red-100 text-red-800">Révoquée</Badge>;
       case 'depleted':
+      case 'exhausted':
         return <Badge className="bg-blue-100 text-blue-800">Épuisée</Badge>;
+      case 'expired':
+        return <Badge className="bg-gray-100 text-gray-800">Expirée</Badge>;
       default:
         return <Badge>Inconnu</Badge>;
     }
