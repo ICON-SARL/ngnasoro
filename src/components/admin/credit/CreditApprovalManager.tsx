@@ -13,18 +13,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from '@/hooks/use-toast';
 
 export function CreditApprovalManager() {
   const { data: requests = [], isLoading } = useCreditRequests();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const { toast } = useToast();
   
   // Filter requests based on search term and status
   const filteredRequests = requests.filter(req => {
     const matchesSearch = 
       req.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
       req.sfd_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      req.purpose.toLowerCase().includes(searchTerm.toLowerCase());
+      req.purpose.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (req.client_name && req.client_name.toLowerCase().includes(searchTerm.toLowerCase()));
       
     const matchesStatus = 
       statusFilter === 'all' || 
@@ -36,16 +39,29 @@ export function CreditApprovalManager() {
   const handleSelectRequest = (request: CreditRequest) => {
     console.log('Selected request:', request);
     // Implement request details view
+    toast({
+      title: "Détails de la demande",
+      description: `Référence: ${request.reference}, Montant: ${request.amount.toLocaleString('fr-FR')} FCFA`,
+    });
   };
 
   const handleApproveRequest = (request: CreditRequest) => {
     console.log('Approve request:', request);
     // Implement approve logic
+    toast({
+      title: "Demande approuvée",
+      description: `La demande ${request.reference} a été approuvée.`,
+    });
   };
 
   const handleRejectRequest = (request: CreditRequest) => {
     console.log('Reject request:', request);
     // Implement reject logic
+    toast({
+      variant: "destructive",
+      title: "Demande rejetée",
+      description: `La demande ${request.reference} a été rejetée.`,
+    });
   };
 
   return (

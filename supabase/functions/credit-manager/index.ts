@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -22,7 +23,7 @@ serve(async (req) => {
     if (action === 'get_applications') {
       console.log('Fetching credit applications...');
       
-      // Fetch all credit applications from active SFDs
+      // Fetch all credit applications from the meref_loan_requests table
       const { data, error } = await supabase
         .from('meref_loan_requests')
         .select(`
@@ -45,7 +46,6 @@ serve(async (req) => {
             full_name
           )
         `)
-        .eq('sfds.status', 'active')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -62,8 +62,10 @@ serve(async (req) => {
         client_name: app.clients?.full_name,
         amount: app.amount,
         purpose: app.purpose,
-        status: app.status,
-        score: app.risk_score || Math.floor(Math.random() * (100 - 30) + 30), // Fallback score
+        status: (app.status === 'pending' || app.status === 'approved' || app.status === 'rejected') 
+          ? app.status 
+          : 'pending',
+        risk_score: app.risk_score || Math.floor(Math.random() * (100 - 30) + 30), // Fallback score
         created_at: app.created_at
       }));
 
@@ -117,29 +119,6 @@ serve(async (req) => {
     
       return new Response(
         JSON.stringify({ message: `Application ${applicationId} rejected successfully`, data }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (action === 'create_application') {
-      const { sfdId, amount, purpose } = payload;
-      console.log(`Creating application for SFD ${sfdId} with amount: ${amount} and purpose: ${purpose}`);
-  
-      const { data, error } = await supabase
-        .from('meref_loan_requests')
-        .insert({ sfd_id: sfdId, amount: amount, purpose: purpose, status: 'pending' })
-        .select();
-  
-      if (error) {
-        console.error('Error creating application:', error);
-        return new Response(
-          JSON.stringify({ error: `Failed to create application: ${error.message}` }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-  
-      return new Response(
-        JSON.stringify({ message: `Application created successfully`, data }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
