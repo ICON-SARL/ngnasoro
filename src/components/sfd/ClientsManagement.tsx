@@ -33,9 +33,7 @@ const ClientsManagement = () => {
   
   const { 
     clients, 
-    isLoading, 
-    validateClient, 
-    rejectClient 
+    isLoading
   } = useSfdClients();
 
   // Filter clients based on search term
@@ -90,7 +88,7 @@ const ClientsManagement = () => {
           </div>
           
           <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mt-4">
-            <TabsList className="grid grid-cols-4 mb-4">
+            <TabsList className="grid grid-cols-4">
               <TabsTrigger value="all" className="flex items-center justify-center">
                 <User className="h-4 w-4 mr-2" />
                 Tous
@@ -109,7 +107,7 @@ const ClientsManagement = () => {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="all" className="mt-0">
+            <TabsContent value="all" className="mt-6">
               <ClientList 
                 filteredClients={displayedClients} 
                 isLoading={isLoading} 
@@ -117,7 +115,7 @@ const ClientsManagement = () => {
               />
             </TabsContent>
             
-            <TabsContent value="pending" className="mt-0">
+            <TabsContent value="pending" className="mt-6">
               <ClientList 
                 filteredClients={displayedClients} 
                 isLoading={isLoading} 
@@ -125,7 +123,7 @@ const ClientsManagement = () => {
               />
             </TabsContent>
             
-            <TabsContent value="validated" className="mt-0">
+            <TabsContent value="validated" className="mt-6">
               <ClientList 
                 filteredClients={displayedClients} 
                 isLoading={isLoading} 
@@ -133,7 +131,7 @@ const ClientsManagement = () => {
               />
             </TabsContent>
             
-            <TabsContent value="rejected" className="mt-0">
+            <TabsContent value="rejected" className="mt-6">
               <ClientList 
                 filteredClients={displayedClients} 
                 isLoading={isLoading} 
