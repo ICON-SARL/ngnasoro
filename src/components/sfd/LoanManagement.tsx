@@ -9,10 +9,27 @@ import { MerefFundRequestForm } from './MerefFundRequestForm';
 import LoanList from './loans/LoanList';
 import LoanPlanManagement from './loans/LoanPlanManagement';
 import { useSfdLoans } from '@/hooks/useSfdLoans';
+import LoanPlanDialog from './LoanPlanDialog';
 
 export function LoanManagement() {
   const [activeTab, setActiveTab] = useState('loans');
   const { data: loans, isLoading } = useSfdLoans();
+  const [isLoanPlanDialogOpen, setIsLoanPlanDialogOpen] = useState(false);
+  const [planToEdit, setPlanToEdit] = useState<any>(null);
+  
+  const handleOpenNewPlanDialog = () => {
+    setPlanToEdit(null);
+    setIsLoanPlanDialogOpen(true);
+  };
+
+  const handleEditPlan = (plan: any) => {
+    setPlanToEdit(plan);
+    setIsLoanPlanDialogOpen(true);
+  };
+
+  const handleClosePlanDialog = () => {
+    setIsLoanPlanDialogOpen(false);
+  };
   
   return (
     <div className="space-y-6">
@@ -68,7 +85,10 @@ export function LoanManagement() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <LoanPlanManagement />
+              <LoanPlanManagement 
+                onNewPlan={handleOpenNewPlanDialog}
+                onEditPlan={handleEditPlan}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -112,6 +132,13 @@ export function LoanManagement() {
           <MerefFundRequestForm />
         </TabsContent>
       </Tabs>
+
+      {/* Loan Plan Dialog */}
+      <LoanPlanDialog 
+        isOpen={isLoanPlanDialogOpen} 
+        onClose={handleClosePlanDialog}
+        planToEdit={planToEdit}
+      />
     </div>
   );
 }
