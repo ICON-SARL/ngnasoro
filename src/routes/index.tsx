@@ -1,3 +1,4 @@
+
 import { createBrowserRouter } from 'react-router-dom';
 import AuthenticationPage from '@/pages/AuthenticationPage';
 import LoanApplicationPage from '@/pages/LoanApplicationPage';

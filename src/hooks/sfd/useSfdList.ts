@@ -1,53 +1,22 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { User } from '@supabase/supabase-js';
+import { fetchUserSfds } from './fetchSfdAccounts';
+import { User } from '@/hooks/auth/types';
 
-export const useSfdList = (user: User | null) => {
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['sfd-accounts', user?.id],
+export function useSfdList(user: User | null) {
+  const query = useQuery({
+    queryKey: ['user-sfds', user?.id],
     queryFn: async () => {
-      if (!user) return [];
-      
-      const { data: sfdClients, error } = await supabase
-        .from('sfd_clients')
-        .select(`
-          id,
-          sfd_id,
-          status,
-          sfds (
-            id,
-            name,
-            code,
-            region,
-            logo_url
-          )
-        `)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error fetching SFD accounts:', error);
-        return [];
-      }
-
-      return sfdClients.map(client => ({
-        id: client.sfd_id,
-        name: client.sfds?.name,
-        code: client.sfds?.code,
-        region: client.sfds?.region,
-        logo_url: client.sfds?.logo_url,
-        status: client.status,
-        isVerified: client.status === 'validated',
-        isDefault: false
-      }));
+      if (!user?.id) return [];
+      return fetchUserSfds(user.id);
     },
-    enabled: !!user,
+    enabled: !!user?.id,
   });
 
   return {
-    sfdAccounts: data || [],
-    isLoading,
-    isError,
-    refetch
+    sfdAccounts: query.data || [],
+    isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch
   };
-};
+}

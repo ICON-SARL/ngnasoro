@@ -42,7 +42,7 @@ const AccountsList: React.FC<AccountsListProps> = ({
             </div>
             <div className="flex items-center space-x-2">
               {account.status === 'active' && (
-                <Badge variant="default" className="bg-green-100 text-green-800">
+                <Badge variant="secondary" className="bg-green-100 text-green-800">
                   <Check className="h-3 w-3 mr-1" />
                   Vérifié
                 </Badge>
