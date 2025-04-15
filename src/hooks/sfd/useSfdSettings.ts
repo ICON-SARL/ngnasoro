@@ -41,7 +41,7 @@ export function useSfdSettings(sfdId: string) {
   });
 
   const updateSettings = useMutation({
-    mutationFn: async (newSettings: Partial<SfdSettings>) => {
+    mutationFn: async (newSettings: SfdSettings) => {
       const { data, error } = await supabase
         .from('sfds')
         .update({ settings: newSettings })
