@@ -10,12 +10,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useSfdData } from '@/components/admin/hooks/sfd-management/useSfdData';
 import type { SfdAdminFormData } from '../types';
+import { UseFormReturn } from 'react-hook-form';
 
 interface SfdAdminFormProps {
-  form: any; // Type will be provided by react-hook-form
+  form: UseFormReturn<SfdAdminFormData>;
   isLoading: boolean;
   submitError: string | null;
-  onSubmit: (data: SfdAdminFormData) => void;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   onCancel: () => void;
 }
 
