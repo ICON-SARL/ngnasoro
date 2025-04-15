@@ -121,3 +121,25 @@ export interface LoanApplication {
   purpose: string;
   supporting_documents?: string[];
 }
+
+export interface LoanPlan {
+  id: string;
+  sfd_id: string;
+  name: string;
+  description: string;
+  min_amount: number;
+  max_amount: number;
+  min_duration: number;
+  max_duration: number;
+  interest_rate: number;
+  fees: number;
+  requirements: string[];
+  is_active: boolean;
+  is_published: boolean;
+  created_at: string;
+  updated_at?: string;
+  sfds?: {
+    name: string;
+    logo_url: string;
+  };
+}

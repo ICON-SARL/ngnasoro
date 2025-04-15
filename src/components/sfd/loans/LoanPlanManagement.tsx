@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,22 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Plus, Edit, ToggleLeft, ToggleRight, Send, CheckCircle2 } from 'lucide-react';
-
-interface LoanPlan {
-  id: string;
-  name: string;
-  description: string;
-  min_amount: number;
-  max_amount: number;
-  min_duration: number;
-  max_duration: number;
-  interest_rate: number;
-  fees: number;
-  is_active: boolean;
-  is_published: boolean;
-  requirements: string[];
-  sfd_id: string;
-}
+import { LoanPlan } from '@/types/sfdClients';
 
 interface LoanPlanManagementProps {
   onNewPlan: () => void;
@@ -54,7 +38,12 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
         .eq('sfd_id', activeSfdId);
 
       if (error) throw error;
-      setLoanPlans(data || []);
+      const typedPlans: LoanPlan[] = data?.map(plan => ({
+        ...plan,
+        is_published: plan.is_published ?? false
+      })) || [];
+      
+      setLoanPlans(typedPlans);
     } catch (error) {
       console.error('Error fetching loan plans:', error);
       toast({
@@ -95,7 +84,6 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
   const publishPlan = async (plan: LoanPlan) => {
     setIsPublishing(plan.id);
     try {
-      // Update the plan status to published
       const { error } = await supabase
         .from('sfd_loan_plans')
         .update({ is_published: true })
@@ -103,17 +91,14 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
 
       if (error) throw error;
       
-      // Get SFD info for the notification
       const { data: sfdData } = await supabase
         .from('sfds')
         .select('name')
         .eq('id', activeSfdId)
         .single();
       
-      // Call edge function to send notifications to clients
-      await supabase.functions.invoke('client-notifications', {
+      await supabase.functions.invoke('loan-plan-notifications', {
         body: {
-          type: 'new_loan_plan',
           sfd_id: activeSfdId,
           loan_plan_id: plan.id,
           loan_plan_name: plan.name,
@@ -139,7 +124,6 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
     }
   };
 
-  // Format currency display (FCFA)
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
   };

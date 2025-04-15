@@ -5,27 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { BadgePercent } from 'lucide-react';
 import { LoanPlanCard } from './LoanPlanCard';
-
-interface LoanPlan {
-  id: string;
-  sfd_id: string;
-  name: string;
-  description: string;
-  min_amount: number;
-  max_amount: number;
-  min_duration: number;
-  max_duration: number;
-  interest_rate: number;
-  fees: number;
-  requirements: string[];
-  is_active: boolean;
-  is_published: boolean;
-  created_at: string;
-  sfds?: {
-    name: string;
-    logo_url: string;
-  };
-}
+import { LoanPlan } from '@/types/sfdClients';
 
 interface LoanPlansDisplayProps {
   subsidizedOnly?: boolean;
@@ -81,7 +61,13 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
         
         if (error) throw error;
         
-        setLoanPlans(data || []);
+        // Transform the data to ensure it conforms to LoanPlan interface
+        const typedPlans: LoanPlan[] = data?.map(plan => ({
+          ...plan,
+          is_published: Boolean(plan.is_published)
+        })) || [];
+        
+        setLoanPlans(typedPlans);
       } catch (error) {
         console.error('Erreur lors du chargement des plans de prêt:', error);
       } finally {
