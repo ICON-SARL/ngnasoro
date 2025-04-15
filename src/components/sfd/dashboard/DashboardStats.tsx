@@ -1,6 +1,6 @@
 
 import React from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Users, CreditCard, FileText } from 'lucide-react';
 import { useSfdStatistics } from '@/hooks/useSfdStatistics';
@@ -34,7 +34,7 @@ export function DashboardStats() {
               +{stats?.clientsNewThisMonth || 0} ce mois
             </p>
             <Link 
-              href="/sfd-clients"
+              to="/sfd-clients"
               className="text-sm text-primary hover:underline mt-2 inline-block"
             >
               Gérer les clients →
@@ -53,7 +53,7 @@ export function DashboardStats() {
               {stats?.pendingApprovalLoans || 0} en attente d'approbation
             </p>
             <Link 
-              href="/sfd-loans"
+              to="/sfd-loans"
               className="text-sm text-primary hover:underline mt-2 inline-block"
             >
               Gérer les prêts →
@@ -72,7 +72,7 @@ export function DashboardStats() {
               {stats?.pendingSubsidyRequests || 0} en attente d'approbation
             </p>
             <Link 
-              href="/sfd-subsidy-requests"
+              to="/sfd-subsidy-requests"
               className="text-sm text-primary hover:underline mt-2 inline-block"
             >
               Voir les demandes →
