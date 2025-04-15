@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,6 @@ const SfdSetupAssistantPage = () => {
   const [activeTab, setActiveTab] = useState('existing');
   const [creatingRequest, setCreatingRequest] = useState(false);
   
-  // Récupérer toutes les SFDs disponibles dans le système
   useEffect(() => {
     const fetchAllSfds = async () => {
       if (!user) return;
@@ -36,7 +34,6 @@ const SfdSetupAssistantPage = () => {
           
         if (error) throw error;
         
-        // Filtrer les SFDs déjà associées à l'utilisateur
         const userSfdIds = sfdData.map(sfd => sfd.id);
         const filteredSfds = data?.filter(sfd => !userSfdIds.includes(sfd.id)) || [];
         
@@ -59,7 +56,6 @@ const SfdSetupAssistantPage = () => {
   const handleAssociateSfd = async (sfdId: string) => {
     if (!user) return;
     
-    // Updated to pass only one argument to associateUserWithSfd
     const result = await associateUserWithSfd(sfdId);
     
     if (result) {
@@ -68,7 +64,6 @@ const SfdSetupAssistantPage = () => {
         description: "Vous avez été associé à cette SFD avec succès",
       });
       
-      // Rediriger vers la page précédente
       setTimeout(() => navigate(-1), 1500);
     } else {
       toast({
@@ -84,7 +79,6 @@ const SfdSetupAssistantPage = () => {
     
     setCreatingRequest(true);
     try {
-      // Créer une demande client en attente
       const { error } = await supabase
         .from('sfd_clients')
         .insert({
@@ -102,7 +96,6 @@ const SfdSetupAssistantPage = () => {
         description: "Votre demande d'accès à la SFD a été envoyée. Un administrateur va la traiter.",
       });
       
-      // Actualiser la liste des SFDs disponibles
       const { data, error: fetchError } = await supabase
         .from('sfds')
         .select('*')
@@ -133,7 +126,6 @@ const SfdSetupAssistantPage = () => {
       description: "Votre SFD active a été mise à jour",
     });
     
-    // Rediriger vers la page précédente
     setTimeout(() => navigate(-1), 1000);
   };
   
