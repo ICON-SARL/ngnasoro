@@ -23,9 +23,12 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
 
     const userRole = user.app_metadata?.role;
     
+    // Convert requiredRole to string for consistent comparison
+    const requiredRoleStr = String(requiredRole);
+    
     // Super admins have access to everything except client routes
     if (userRole === 'admin') {
-      if (requiredRole === UserRole.CLIENT) {
+      if (requiredRoleStr === String(UserRole.CLIENT)) {
         setHasAccess(false);
       } else {
         setHasAccess(true);
@@ -35,9 +38,6 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
     
     // Check for exact role match
     let hasRole = false;
-    
-    // Convert requiredRole enum to string for comparison
-    const requiredRoleStr = String(requiredRole);
     
     // Compare string values instead of enum objects
     if (userRole === requiredRoleStr) {
@@ -61,9 +61,11 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
 
   if (!user) {
     // Redirect to appropriate auth page based on required role
-    if (requiredRole === UserRole.SUPER_ADMIN || requiredRole === UserRole.ADMIN) {
+    const requiredRoleStr = String(requiredRole);
+    
+    if (requiredRoleStr === String(UserRole.SUPER_ADMIN) || requiredRoleStr === String(UserRole.ADMIN)) {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
-    } else if (requiredRole === UserRole.SFD_ADMIN) {
+    } else if (requiredRoleStr === String(UserRole.SFD_ADMIN)) {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
     } else {
       return <Navigate to="/auth" state={{ from: location }} replace />;
