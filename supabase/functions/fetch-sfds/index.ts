@@ -44,7 +44,15 @@ serve(async (req) => {
       throw sfdsError;
     }
     
-    console.log(`Found ${activeSfds?.length || 0} active SFDs`);
+    console.log(`Found ${activeSfds?.length || 0} active SFDs in database`);
+    
+    // Si aucune SFD active, log explicite
+    if (!activeSfds || activeSfds.length === 0) {
+      console.log('ATTENTION: Aucune SFD avec le statut "active" n\'a été trouvée dans la base de données.');
+    } else {
+      // Log les SFDs actives trouvées
+      console.log('SFDs actives trouvées:', activeSfds.map(sfd => `${sfd.name} (${sfd.id}) - status: ${sfd.status}`));
+    }
     
     // Get SFDs that have associated admins to ensure they're valid for clients
     const { data: sfdsWithAdmins, error: adminsError } = await supabase

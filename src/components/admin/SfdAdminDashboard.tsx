@@ -6,10 +6,13 @@ import { useAuth } from '@/hooks/useAuth';
 import ClientsOverview from './clients/ClientsOverview';
 import { StatsOverview } from './dashboard/StatsOverview';
 import { SfdAccountsManager } from './sfd-accounts/SfdAccountsManager';
+import { SfdStatusAlert } from './dashboard/SfdStatusAlert';
+import { useSfdStatusCheck } from '@/hooks/useSfdStatusCheck';
 
 const SfdAdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('overview');
+  const { data: sfdStatus } = useSfdStatusCheck();
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -19,6 +22,11 @@ const SfdAdminDashboard: React.FC = () => {
           {user?.email ? `Connecté en tant que ${user.email}` : 'Bienvenue dans votre tableau de bord SFD'}
         </p>
       </div>
+      
+      {/* Afficher l'alerte si aucune SFD active n'est détectée */}
+      {sfdStatus && !sfdStatus.hasActiveSfds && (
+        <SfdStatusAlert />
+      )}
       
       <Tabs 
         defaultValue="overview" 

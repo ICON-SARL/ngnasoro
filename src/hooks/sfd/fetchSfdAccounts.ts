@@ -28,6 +28,15 @@ export async function fetchUserSfds(userId: string) {
 
     console.log(`Found ${activeSfds?.length || 0} active SFDs`);
     
+    // Log chaque SFD active trouvée
+    if (activeSfds && activeSfds.length > 0) {
+      activeSfds.forEach(sfd => {
+        console.log(`SFD active: ${sfd.name} (${sfd.id}) - status: ${sfd.status}`);
+      });
+    } else {
+      console.warn("ATTENTION: Aucune SFD active n'a été trouvée dans la base de données");
+    }
+    
     // Pour les comptes de test, retourner des données de test
     if (userId.includes('test') || userId === 'client@test.com') {
       return [

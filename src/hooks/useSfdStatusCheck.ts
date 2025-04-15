@@ -18,6 +18,8 @@ export function useSfdStatusCheck() {
           
         if (error) throw error;
         
+        console.log(`Nombre de SFDs actives détecté: ${count}`);
+        
         return {
           activeSfdsCount: count || 0,
           hasActiveSfds: (count || 0) > 0
@@ -35,6 +37,7 @@ export function useSfdStatusCheck() {
         };
       }
     },
-    refetchInterval: 30000, // Vérifier toutes les 30 secondes
+    refetchInterval: 15000, // Vérifier plus fréquemment (toutes les 15 secondes)
+    refetchOnWindowFocus: true, // Rafraîchir lors du focus de fenêtre
   });
 }
