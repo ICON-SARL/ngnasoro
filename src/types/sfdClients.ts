@@ -1,4 +1,3 @@
-
 export interface Loan {
   id: string;
   client_id: string;
@@ -17,10 +16,9 @@ export interface Loan {
   created_at: string;
   subsidy_amount?: number;
   subsidy_rate?: number;
-  // Adding missing properties
   client_name?: string;
-  reference?: string;  // Explicitly add the optional reference property
-  updated_at?: string;  // Explicitly add the optional updated_at property
+  reference?: string;
+  updated_at?: string;
 }
 
 export interface SfdClient {
@@ -101,4 +99,16 @@ export interface ClientNotification {
   created_at: string;
   read: boolean;
   action_link?: string;
+}
+
+export interface CreateLoanInput {
+  client_id: string;
+  sfd_id: string;
+  amount: number;
+  duration_months: number;
+  interest_rate: number;
+  purpose: string;
+  monthly_payment: number;
+  subsidy_amount?: number;
+  subsidy_rate?: number;
 }
