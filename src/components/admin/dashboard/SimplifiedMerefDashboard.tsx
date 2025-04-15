@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building, Users, CreditCard } from 'lucide-react';
@@ -36,11 +37,11 @@ export function SimplifiedMerefDashboard() {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card className="border border-gray-100 shadow-sm">
         <CardHeader className="py-2">
-          <CardDescription>Agences SFD actives</CardDescription>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Agences SFD actives</CardTitle>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">
+            <CardDescription className="text-xl">
               {stats.isLoading ? '...' : stats.activeSfds}
-            </CardTitle>
+            </CardDescription>
             <Building className="h-4 w-4 text-gray-400" />
           </div>
         </CardHeader>
@@ -48,11 +49,11 @@ export function SimplifiedMerefDashboard() {
       
       <Card className="border border-gray-100 shadow-sm">
         <CardHeader className="py-2">
-          <CardDescription>Utilisateurs actifs</CardDescription>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Utilisateurs actifs</CardTitle>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">
+            <CardDescription className="text-xl">
               {stats.isLoading ? '...' : stats.activeUsers.toLocaleString('fr-FR')}
-            </CardTitle>
+            </CardDescription>
             <Users className="h-4 w-4 text-gray-400" />
           </div>
         </CardHeader>
@@ -60,11 +61,11 @@ export function SimplifiedMerefDashboard() {
       
       <Card className="border border-gray-100 shadow-sm">
         <CardHeader className="py-2">
-          <CardDescription>Crédits actifs</CardDescription>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Crédits actifs</CardTitle>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">
+            <CardDescription className="text-xl">
               {stats.isLoading ? '...' : stats.activeCredits}
-            </CardTitle>
+            </CardDescription>
             <CreditCard className="h-4 w-4 text-gray-400" />
           </div>
         </CardHeader>
