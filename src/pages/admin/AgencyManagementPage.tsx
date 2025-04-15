@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useCurrentSfd } from '@/hooks/useCurrentSfd';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +12,7 @@ import { SfdStatCards } from '@/components/sfd/dashboard/SfdStatCards';
 import { SfdInfoTab } from '@/components/sfd/tabs/SfdInfoTab';
 import { SfdSettingsTab } from '@/components/sfd/tabs/SfdSettingsTab';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ExtendedSfd } from '@/types/sfd-types';
 
 export default function AgencyManagementPage() {
   const { data: sfd, isLoading: sfdLoading } = useCurrentSfd();
