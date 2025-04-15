@@ -38,6 +38,10 @@ export const createClient = async (clientData: CreateClientInput): Promise<strin
       return null;
     }
     
+    // Get current user for sender_id
+    const { data: { user } } = await supabase.auth.getUser();
+    const senderId = user?.id || 'system';
+    
     // Notifier les administrateurs SFD
     await supabase
       .from('admin_notifications')
@@ -45,13 +49,14 @@ export const createClient = async (clientData: CreateClientInput): Promise<strin
         title: 'Nouvelle demande d\'adhésion',
         message: `${clientData.full_name} a demandé à adhérer à votre SFD.`,
         type: 'client_adhesion',
-        recipient_role: 'sfd_admin'
+        recipient_role: 'sfd_admin',
+        sender_id: senderId
       });
     
     // Log de l'événement
     await logAuditEvent({
       action: "client_adhesion_requested",
-      category: AuditLogCategory.CLIENT_MANAGEMENT,
+      category: AuditLogCategory.USER_MANAGEMENT, // Fixed: Changed from CLIENT_MANAGEMENT to USER_MANAGEMENT
       severity: AuditLogSeverity.INFO,
       status: 'success',
       target_resource: `client_adhesion_requests/${data.id}`,
@@ -144,7 +149,7 @@ export const approveAdhesion = async (clientId: string, adminId: string): Promis
     // Log de l'événement
     await logAuditEvent({
       action: "client_adhesion_approved",
-      category: AuditLogCategory.CLIENT_MANAGEMENT,
+      category: AuditLogCategory.USER_MANAGEMENT, // Fixed: Changed from CLIENT_MANAGEMENT to USER_MANAGEMENT
       severity: AuditLogSeverity.INFO,
       status: 'success',
       user_id: adminId,
