@@ -1,22 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Check } from 'lucide-react';
-import { PaymentMethodTabs } from './secure-payment/PaymentMethodTabs';
-import { SecurityFeatures } from './secure-payment/SecurityFeatures';
-import { ReconciliationSection } from './secure-payment/ReconciliationSection';
+import { Loader2, Phone, Check } from 'lucide-react';
 import TabHeader from './secure-payment/TabHeader';
-import PaymentDetails from './secure-payment/PaymentDetails';
-import SuccessView from './secure-payment/SuccessView';
 import MobileMoneyModal from './loan/MobileMoneyModal';
-import QRCodeScannerDialog from './secure-payment/QRCodeScannerDialog';
-import { usePaymentProcessor } from './secure-payment/hooks/usePaymentProcessor';
-import { useTransactions } from '@/hooks/useTransactions';
 
 export interface SecurePaymentTabProps {
   onBack?: () => void;
@@ -34,36 +23,13 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [paymentMethod, setPaymentMethod] = useState('sfd');
-  const [balanceStatus, setBalanceStatus] = useState<'sufficient' | 'insufficient'>('sufficient');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed' | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [progress, setProgress] = useState(0);
   const [mobileMoneyInitiated, setMobileMoneyInitiated] = useState(false);
-  const [qrScannerOpen, setQrScannerOpen] = useState(false);
   
   const amount = isWithdrawal ? 25000 : loanId ? 3500 : 10000;
-  
-  useEffect(() => {
-    const detectPrimaryAccount = () => {
-      const randomBalance = Math.random();
-      if (randomBalance < 0.3) {
-        setBalanceStatus('insufficient');
-        setPaymentMethod('mobile');
-        toast({
-          title: "Solde SFD insuffisant",
-          description: "Basculement automatique vers Mobile Money",
-          variant: "default",
-        });
-      } else {
-        setBalanceStatus('sufficient');
-        setPaymentMethod('sfd');
-      }
-    };
-    
-    detectPrimaryAccount();
-  }, [toast]);
-  
+
   const validateRepayment = (amount: number, method: string) => {
     if (!amount || amount <= 0) {
       toast({
@@ -87,108 +53,9 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   };
   
   const handlePayment = async () => {
-    if (paymentMethod === 'sfd') {
-      setQrScannerOpen(true);
-      return;
-    }
-    
-    const method = paymentMethod === 'mobile' ? 'mobile_money' : 'agency_qr';
-    
-    if (!isWithdrawal && !validateRepayment(amount, method)) {
-      return;
-    }
-    
-    setPaymentStatus('pending');
-    setProgress(0);
-    
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + 5;
-      });
-    }, 100);
-    
-    try {
-      if (!isWithdrawal && loanId) {
-        const { data, error } = await supabase.functions.invoke('process-repayment', {
-          body: {
-            loan_id: loanId || 'LOAN123',
-            amount: amount,
-            method: method
-          }
-        });
-        
-        if (error) throw error;
-        
-        if (data?.success && user) {
-          const { error: txError } = await supabase
-            .from('transactions')
-            .insert({
-              user_id: user.id,
-              name: isWithdrawal ? 'Retrait de fonds' : 'Remboursement de prêt',
-              type: isWithdrawal ? 'withdrawal' : 'repayment',
-              amount: isWithdrawal ? -amount : -amount,
-              date: new Date().toISOString()
-            });
-          
-          if (txError) console.error('Transaction record error:', txError);
-        }
-      }
-      
-      setTimeout(() => {
-        clearInterval(interval);
-        setProgress(100);
-        
-        const success = Math.random() > 0.2;
-        
-        if (success) {
-          setPaymentStatus('success');
-          setPaymentSuccess(true);
-          toast({
-            title: isWithdrawal ? "Retrait réussi" : "Paiement réussi",
-            description: isWithdrawal 
-              ? `Votre retrait de ${amount.toLocaleString()} FCFA a été traité avec succès.` 
-              : `Votre paiement de ${amount.toLocaleString()} FCFA a été traité avec succès.`,
-          });
-        } else {
-          setPaymentStatus('failed');
-          toast({
-            title: isWithdrawal ? "Échec du retrait" : "Échec du paiement",
-            description: "Veuillez réessayer ou sélectionner une autre méthode.",
-            variant: "destructive",
-          });
-        }
-      }, 2000);
-    } catch (error: any) {
-      clearInterval(interval);
-      setPaymentStatus('failed');
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors du traitement",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleQRScanSuccess = (transactionData: any) => {
-    setPaymentStatus('success');
-    setPaymentSuccess(true);
-    
-    toast({
-      title: isWithdrawal ? "Retrait réussi" : "Paiement réussi",
-      description: isWithdrawal 
-        ? `Votre retrait de ${amount.toLocaleString()} FCFA a été traité avec succès.` 
-        : `Votre paiement de ${amount.toLocaleString()} FCFA a été traité avec succès.`,
-    });
-  };
-
-  const handleMobileMoneyPayment = () => {
     setMobileMoneyInitiated(true);
   };
-  
+
   const handleBackAction = () => {
     if (onBack) {
       onBack();
@@ -278,45 +145,34 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
             </div>
           </div>
           
-          {paymentStatus === 'pending' && (
-            <div className="space-y-2 my-4">
-              <Progress value={progress} className="h-2" />
-              <p className="text-sm text-center text-gray-600">
-                {isWithdrawal 
-                  ? "Traitement de votre retrait..." 
-                  : "Traitement de votre paiement..."
-                }
-              </p>
-            </div>
-          )}
-          
-          <PaymentMethodTabs 
-            paymentMethod={paymentMethod}
-            balanceStatus={balanceStatus}
-            paymentStatus={paymentStatus}
-            onPaymentMethodChange={setPaymentMethod}
-            handlePayment={handlePayment}
-            isWithdrawal={isWithdrawal}
-          />
-          
-          <SecurityFeatures isWithdrawal={isWithdrawal} />
-          
-          {!isWithdrawal && <ReconciliationSection />}
+          <Button 
+            onClick={handlePayment}
+            disabled={paymentStatus === 'pending'}
+            className="w-full"
+          >
+            {paymentStatus === 'pending' ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isWithdrawal ? 'Traitement du retrait...' : 'Traitement du paiement...'}
+              </>
+            ) : (
+              <>
+                <Phone className="mr-2 h-4 w-4" />
+                {isWithdrawal ? 'Retirer via Mobile Money' : 'Payer via Mobile Money'}
+              </>
+            )}
+          </Button>
         </div>
       )}
       
       {mobileMoneyInitiated && (
-        <MobileMoneyModal onClose={() => setMobileMoneyInitiated(false)} isWithdrawal={isWithdrawal} />
-      )}
-      
-      <Dialog open={qrScannerOpen} onOpenChange={setQrScannerOpen}>
-        <DialogTrigger className="hidden">Scan QR Code</DialogTrigger>
-        <QRCodeScannerDialog 
-          onClose={() => setQrScannerOpen(false)} 
-          onSuccess={handleQRScanSuccess}
-          isWithdrawal={isWithdrawal} 
+        <MobileMoneyModal 
+          onClose={() => setMobileMoneyInitiated(false)} 
+          isWithdrawal={isWithdrawal}
+          amount={amount}
+          loanId={loanId}
         />
-      </Dialog>
+      )}
     </div>
   );
 };

@@ -1,19 +1,15 @@
 
 import React from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building, Phone } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Phone } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 
 interface PaymentMethodSelectorProps {
-  selectedMethod: 'qrcode' | 'mobile';
-  onMethodChange: (method: 'qrcode' | 'mobile') => void;
   insufficientBalance: boolean;
   isWithdrawal: boolean;
 }
 
 const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
-  selectedMethod,
-  onMethodChange,
   insufficientBalance,
   isWithdrawal
 }) => {
@@ -22,35 +18,24 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
       {insufficientBalance && isWithdrawal && (
         <Alert variant="warning" className="bg-amber-50 text-amber-800 border-amber-200">
           <AlertDescription className="text-sm">
-            Solde SFD insuffisant pour ce retrait. Vous pouvez tout de même utiliser le mode QR code si vous faites un dépôt avant.
+            Solde SFD insuffisant pour ce retrait.
           </AlertDescription>
         </Alert>
       )}
       
-      <Tabs value={selectedMethod} onValueChange={(value) => onMethodChange(value as 'qrcode' | 'mobile')} className="w-full">
-        <TabsList className="grid grid-cols-2 mb-2">
-          <TabsTrigger value="qrcode">
-            <Building className="h-4 w-4 mr-2" />
-            Code QR
-          </TabsTrigger>
-          <TabsTrigger value="mobile">
-            <Phone className="h-4 w-4 mr-2" />
-            Mobile Money
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-      
-      <div className="p-3 bg-gray-50 rounded-md text-sm">
-        {selectedMethod === 'qrcode' ? (
-          <div className="text-center">
-            <p>Scannez un code QR en agence SFD pour {isWithdrawal ? 'effectuer votre retrait' : 'effectuer votre paiement'}.</p>
+      <Card className="border p-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+            <Phone className="h-5 w-5 text-primary" />
           </div>
-        ) : (
-          <div className="text-center">
-            <p>Utilisez votre compte mobile money pour {isWithdrawal ? 'recevoir vos fonds' : 'effectuer votre paiement'}.</p>
+          <div>
+            <h3 className="font-medium">Mobile Money</h3>
+            <p className="text-sm text-gray-500">
+              {isWithdrawal ? 'Retirez via votre compte mobile money' : 'Déposez via votre compte mobile money'}
+            </p>
           </div>
-        )}
-      </div>
+        </div>
+      </Card>
     </div>
   );
 };
