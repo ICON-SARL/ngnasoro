@@ -1,10 +1,10 @@
-
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import Footer from '@/components/Footer';
 import MobileNavigation from '@/components/MobileNavigation';
+import ClientProfilePage from '@/components/mobile/profile/ClientProfilePage';
 
 const MobileFlowPage: React.FC = () => {
   const { user, loading, isAdmin, isSfdAdmin } = useAuth();
@@ -18,7 +18,6 @@ const MobileFlowPage: React.FC = () => {
         return;
       }
       
-      // Vérifier le rôle et rediriger si nécessaire
       const role = user.app_metadata?.role;
       
       if (role === 'admin') {
@@ -50,7 +49,6 @@ const MobileFlowPage: React.FC = () => {
 
   const handleAction = (action: string, data?: any) => {
     console.log('Action triggered:', action, data);
-    // Handle any specific actions here
   };
 
   return (
@@ -108,16 +106,15 @@ const MobileFlowPage: React.FC = () => {
             </div>
           } />
           
-          <Route path="profile" element={<div className="p-4">Mon profil (À venir)</div>} />
+          <Route path="profile" element={<ClientProfilePage />} />
           <Route path="savings" element={<div className="p-4">Mes fonds (À venir)</div>} />
           <Route path="loans" element={<div className="p-4">Prêts (À venir)</div>} />
           
-          {/* Default route */}
           <Route index element={<Navigate to="main" replace />} />
         </Routes>
       </div>
       
-      <MobileNavigation />
+      <MobileNavigation onAction={handleAction} />
       <Footer />
     </div>
   );

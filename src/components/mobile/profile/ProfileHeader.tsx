@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-const ProfileHeader = () => {
+const ProfileHeader: React.FC = () => {
   const { user } = useAuth();
   
   // Extract user info from metadata
