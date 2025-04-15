@@ -10,6 +10,7 @@ export function useActivateSfdMutation() {
   return useMutation({
     mutationFn: async (sfdId: string) => {
       try {
+        console.log('Activating SFD:', sfdId);
         const { data, error } = await supabase
           .from('sfds')
           .update({ status: 'active' })
@@ -18,6 +19,7 @@ export function useActivateSfdMutation() {
           .single();
 
         if (error) throw error;
+        console.log('SFD activated successfully:', data);
         return data;
       } catch (error: any) {
         console.error('Error activating SFD:', error);
@@ -25,7 +27,11 @@ export function useActivateSfdMutation() {
       }
     },
     onSuccess: () => {
+      // Invalidate queries that depend on SFD data
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      queryClient.invalidateQueries({ queryKey: ['user-sfds'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      
       toast({
         title: 'SFD activée',
         description: 'La SFD a été activée avec succès',

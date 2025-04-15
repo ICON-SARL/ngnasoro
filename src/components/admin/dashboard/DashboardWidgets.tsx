@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Building, Users, ArrowUpRight, CircleDollarSign } from 'lucide-react';
@@ -10,39 +9,77 @@ export const DashboardWidgets = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      // Récupérer le nombre de SFDs actives
-      const { count: activeSfdsCount } = await supabase
-        .from('sfds')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
+      try {
+        // Récupérer le nombre de SFDs actives
+        const { count: activeSfdsCount, error: sfdError } = await supabase
+          .from('sfds')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active');
 
-      // Récupérer le nombre d'administrateurs
-      const { count: adminsCount } = await supabase
-        .from('user_roles')
-        .select('*', { count: 'exact', head: true })
-        .eq('role', 'admin');
+        if (sfdError) {
+          console.error('Error fetching active SFDs count:', sfdError);
+          throw sfdError;
+        }
 
-      // Récupérer le nombre total d'utilisateurs
-      const { count: usersCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+        // Récupérer le nombre d'administrateurs
+        const { count: adminsCount, error: adminsError } = await supabase
+          .from('user_roles')
+          .select('*', { count: 'exact', head: true })
+          .eq('role', 'admin');
 
-      // Récupérer le montant total des subventions
-      const { data: subsidies } = await supabase
-        .from('sfd_subsidies')
-        .select('amount')
-        .eq('status', 'active');
+        if (adminsError) {
+          console.error('Error fetching admins count:', adminsError);
+          throw adminsError;
+        }
 
-      const totalSubsidies = subsidies?.reduce((sum, subsidy) => sum + Number(subsidy.amount), 0) || 0;
+        // Récupérer le nombre total d'utilisateurs
+        const { count: usersCount, error: usersError } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
 
-      return {
-        activeSfds: activeSfdsCount || 0,
-        admins: adminsCount || 0,
-        totalUsers: usersCount || 0,
-        totalSubsidies
-      };
+        if (usersError) {
+          console.error('Error fetching users count:', usersError);
+          throw usersError;
+        }
+
+        // Récupérer le montant total des subventions
+        const { data: subsidies, error: subsidiesError } = await supabase
+          .from('sfd_subsidies')
+          .select('amount')
+          .eq('status', 'active');
+
+        if (subsidiesError) {
+          console.error('Error fetching subsidies:', subsidiesError);
+          throw subsidiesError;
+        }
+
+        const totalSubsidies = subsidies?.reduce((sum, subsidy) => sum + Number(subsidy.amount), 0) || 0;
+
+        console.log('Dashboard stats loaded:', { 
+          activeSfds: activeSfdsCount || 0,
+          admins: adminsCount || 0,
+          totalUsers: usersCount || 0,
+          totalSubsidies
+        });
+        
+        return {
+          activeSfds: activeSfdsCount || 0,
+          admins: adminsCount || 0,
+          totalUsers: usersCount || 0,
+          totalSubsidies
+        };
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        return {
+          activeSfds: 0,
+          admins: 0,
+          totalUsers: 0,
+          totalSubsidies: 0
+        };
+      }
     },
-    refetchInterval: 30000 // Rafraîchir toutes les 30 secondes
+    refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 15000 // Consider data fresh for 15 seconds
   });
 
   const formatCurrency = (amount: number) => {
@@ -81,7 +118,7 @@ export const DashboardWidgets = () => {
           </div>
           <div className="text-xs text-gray-500 mt-1 flex items-center">
             <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
-            <span>+0 ce mois</span>
+            <span>+{stats?.activeSfds ? stats.activeSfds - 0 : 0} ce mois</span>
           </div>
         </CardContent>
       </Card>

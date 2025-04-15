@@ -10,7 +10,9 @@ export function useSfdList(user: User | null) {
     queryFn: async () => {
       if (!user?.id) return [];
       
+      console.log('Fetching SFDs for user:', user.id);
       const userSfds = await fetchUserSfds(user.id);
+      console.log('Fetched SFDs:', userSfds);
       
       // Transform all SFDs into SfdAccount objects
       const sfdAccounts: SfdClientAccount[] = userSfds.map(userSfd => ({

@@ -46,6 +46,8 @@ export async function fetchUserSfds(userId: string) {
       ];
     }
 
+    // Make sure to return all active SFDs
+    console.log(`Found ${activeSfds?.length || 0} active SFDs for user ${userId}`);
     return activeSfds || [];
   } catch (error) {
     console.error('Error in fetchUserSfds:', error);
