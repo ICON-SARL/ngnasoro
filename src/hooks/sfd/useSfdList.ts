@@ -1,40 +1,47 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchUserSfds } from './fetchSfdAccounts';
-import { SfdAccount, SfdClientAccount } from './types';
-import { User } from '@/hooks/auth/types';
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
 
-export function useSfdList(user: User | null) {
+export const useSfdList = (user: User | null) => {
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['user-sfds', user?.id],
+    queryKey: ['sfd-accounts', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user) return [];
       
-      console.log('Fetching SFDs for user:', user.id);
-      const userSfds = await fetchUserSfds(user.id);
-      console.log('Fetched SFDs:', userSfds);
-      
-      // Transformer toutes les SFDs en objets SfdAccount
-      const sfdAccounts: SfdClientAccount[] = userSfds.map(userSfd => ({
-        id: userSfd.id,
-        name: userSfd.name,
-        code: userSfd.code,
-        region: userSfd.region || '',
-        logoUrl: userSfd.logo_url,
-        balance: 0, // Le solde sera récupéré séparément
-        currency: 'FCFA',
-        isDefault: false,
-        isVerified: true,
-        status: userSfd.status || 'active',
-        sfd_id: userSfd.id,
-        account_type: 'main'
+      const { data: sfdClients, error } = await supabase
+        .from('sfd_clients')
+        .select(`
+          id,
+          sfd_id,
+          status,
+          sfds (
+            id,
+            name,
+            code,
+            region,
+            logo_url
+          )
+        `)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error fetching SFD accounts:', error);
+        return [];
+      }
+
+      return sfdClients.map(client => ({
+        id: client.sfd_id,
+        name: client.sfds?.name,
+        code: client.sfds?.code,
+        region: client.sfds?.region,
+        logo_url: client.sfds?.logo_url,
+        status: client.status,
+        isVerified: client.status === 'validated',
+        isDefault: false
       }));
-      
-      return sfdAccounts;
     },
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: true,
+    enabled: !!user,
   });
 
   return {
@@ -43,4 +50,4 @@ export function useSfdList(user: User | null) {
     isError,
     refetch
   };
-}
+};
