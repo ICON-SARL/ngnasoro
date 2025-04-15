@@ -111,7 +111,8 @@ export const transactionApi = {
 
       if (txError) throw txError;
 
-      const { data, error } = await supabase
+      // Use explicit typecasting with a temporary variable to help TypeScript
+      const disputeQuery = await supabase
         .from('transaction_disputes')
         .insert({
           transaction_id: transactionId,
@@ -121,15 +122,20 @@ export const transactionApi = {
           status: 'pending'
         })
         .select()
-        .single() as { data: TransactionDispute | null, error: any };
+        .single();
+      
+      // Safe handling of the dispute data
+      const disputeData = disputeQuery.data as TransactionDispute | null;
+      const disputeError = disputeQuery.error;
 
-      if (error) throw error;
+      if (disputeError) throw disputeError;
 
       await supabase
         .from('transactions')
         .update({ status: 'disputed' })
         .eq('id', transactionId);
 
+      // Create audit log entry
       await supabase
         .from('audit_logs')
         .insert({
@@ -139,12 +145,12 @@ export const transactionApi = {
           status: 'success',
           details: {
             transaction_id: transactionId,
-            dispute_id: data?.id,
+            dispute_id: disputeData ? disputeData.id : null,
             reason
           }
         });
 
-      return data;
+      return disputeData;
     } catch (error) {
       handleError(error);
       return null;
@@ -166,16 +172,22 @@ export const transactionApi = {
     resolvedBy: string;
   }): Promise<TransactionDispute | null> {
     try {
-      const { data: existingDispute, error: getError } = await supabase
+      // Retrieve the existing dispute first
+      const existingDisputeQuery = await supabase
         .from('transaction_disputes')
         .select('*')
         .eq('id', disputeId)
-        .single() as { data: TransactionDispute | null, error: any };
+        .single();
+      
+      // Safe handling of the existing dispute data
+      const existingDispute = existingDisputeQuery.data as TransactionDispute | null;
+      const getError = existingDisputeQuery.error;
 
       if (getError) throw getError;
       if (!existingDispute) return null;
 
-      const { data, error } = await supabase
+      // Update the dispute with resolution details
+      const updatedDisputeQuery = await supabase
         .from('transaction_disputes')
         .update({
           status: resolution === 'accepted' ? 'resolved' : 'rejected',
@@ -185,16 +197,23 @@ export const transactionApi = {
         })
         .eq('id', disputeId)
         .select()
-        .single() as { data: TransactionDispute | null, error: any };
+        .single();
+      
+      // Safe handling of the updated dispute data
+      const updatedDispute = updatedDisputeQuery.data as TransactionDispute | null;
+      const updateError = updatedDisputeQuery.error;
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
-      if (resolution === 'accepted') {
+      // If dispute is accepted, process the transaction reversal
+      if (resolution === 'accepted' && existingDispute.transaction_id) {
+        // Update transaction status to reversed
         await supabase
           .from('transactions')
           .update({ status: 'reversed' })
           .eq('id', existingDispute.transaction_id);
 
+        // Invoke the edge function to process the reversal
         await supabase.functions.invoke('process-transaction-reversal', {
           body: { 
             disputeId,
@@ -203,6 +222,7 @@ export const transactionApi = {
         });
       }
 
+      // Create audit log for the resolution
       await supabase
         .from('audit_logs')
         .insert({
@@ -217,7 +237,7 @@ export const transactionApi = {
           }
         });
 
-      return data;
+      return updatedDispute;
     } catch (error) {
       handleError(error);
       return null;
