@@ -1,4 +1,3 @@
-// Add SfdData to the existing file
 export interface SfdData {
   id: string;
   name: string;
@@ -28,7 +27,6 @@ export interface SyncResult {
   updates?: any;
 }
 
-// Define a client-side SfdAccount interface that will be used throughout the application
 export interface SfdClientAccount {
   id: string;
   name: string;
@@ -43,15 +41,13 @@ export interface SfdClientAccount {
   loans?: SfdLoan[];
   token?: string;
   lastFetched?: Date;
-  // These are for compatibility with the DB SfdAccount type
-  sfd_id: string;     // Making this required for compatibility
+  sfd_id: string;
   account_type?: string;
   description?: string | null;
   created_at?: string;
   updated_at?: string;
 }
 
-// Export SfdAccount as a type alias for backward compatibility
 export type SfdAccount = SfdClientAccount;
 
 export interface SfdLoan {
@@ -62,7 +58,6 @@ export interface SfdLoan {
   isLate: boolean;
 }
 
-// Add UserSfd interface
 export interface UserSfd {
   id: string;
   is_default: boolean;
@@ -75,13 +70,11 @@ export interface UserSfd {
   };
 }
 
-// Add SfdBalanceData interface
 export interface SfdBalanceData {
   balance: number;
   currency: string;
 }
 
-// Add LoanPaymentParams interface
 export interface LoanPaymentParams {
   loanId: string;
   amount: number;
