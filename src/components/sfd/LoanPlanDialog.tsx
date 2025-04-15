@@ -15,24 +15,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Plus, X, Check } from 'lucide-react';
-
-const LOAN_PLAN_OPTIONS = [
-  "Intrants Agricoles",
-  "Culture Maraîchère",
-  "Équipements et Machines Agricoles",
-  "Élevage Avicole",
-  "Embouche Bovine/Ovine",
-  "Microcrédit pour Commerce de Proximité",
-  "Négoce de Bétail",
-  "Transformation Agroalimentaire"
-] as const;
+import { Loader2, Check } from 'lucide-react';
+import { LoanAmountFields } from './loan-plan/LoanAmountFields';
+import { LoanDurationFields } from './loan-plan/LoanDurationFields';
+import { LoanRateFields } from './loan-plan/LoanRateFields';
+import { RequirementsList } from './loan-plan/RequirementsList';
+import { LOAN_PLAN_OPTIONS, MAX_INTEREST_RATE } from './loan-plan/constants';
 
 interface LoanPlanDialogProps {
   isOpen: boolean;
@@ -122,11 +115,10 @@ const LoanPlanDialog = ({
       return;
     }
     
-    const maxAllowedRate = 15;
-    if (parseFloat(interestRate) > maxAllowedRate) {
+    if (parseFloat(interestRate) > MAX_INTEREST_RATE) {
       toast({
         title: "Taux d'intérêt trop élevé",
-        description: `Le taux d'intérêt ne peut pas dépasser ${maxAllowedRate}% selon les régulations du MEREF.`,
+        description: `Le taux d'intérêt ne peut pas dépasser ${MAX_INTEREST_RATE}% selon les régulations du MEREF.`,
         variant: "destructive",
       });
       return;
@@ -235,125 +227,34 @@ const LoanPlanDialog = ({
             />
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="minAmount">Montant minimum (FCFA) *</Label>
-              <Input
-                id="minAmount"
-                type="number"
-                value={minAmount}
-                onChange={(e) => setMinAmount(e.target.value)}
-                required
-                min="0"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="maxAmount">Montant maximum (FCFA) *</Label>
-              <Input
-                id="maxAmount"
-                type="number"
-                value={maxAmount}
-                onChange={(e) => setMaxAmount(e.target.value)}
-                required
-                min="0"
-              />
-            </div>
-          </div>
+          <LoanAmountFields
+            minAmount={minAmount}
+            maxAmount={maxAmount}
+            onMinAmountChange={setMinAmount}
+            onMaxAmountChange={setMaxAmount}
+          />
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="minDuration">Durée minimum (mois) *</Label>
-              <Input
-                id="minDuration"
-                type="number"
-                value={minDuration}
-                onChange={(e) => setMinDuration(e.target.value)}
-                required
-                min="1"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="maxDuration">Durée maximum (mois) *</Label>
-              <Input
-                id="maxDuration"
-                type="number"
-                value={maxDuration}
-                onChange={(e) => setMaxDuration(e.target.value)}
-                required
-                min="1"
-              />
-            </div>
-          </div>
+          <LoanDurationFields
+            minDuration={minDuration}
+            maxDuration={maxDuration}
+            onMinDurationChange={setMinDuration}
+            onMaxDurationChange={setMaxDuration}
+          />
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="interestRate">Taux d'intérêt (%) *</Label>
-              <Input
-                id="interestRate"
-                type="number"
-                value={interestRate}
-                onChange={(e) => setInterestRate(e.target.value)}
-                required
-                min="0"
-                step="0.1"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="fees">Frais administratifs (%) *</Label>
-              <Input
-                id="fees"
-                type="number"
-                value={fees}
-                onChange={(e) => setFees(e.target.value)}
-                required
-                min="0"
-                step="0.1"
-              />
-            </div>
-          </div>
+          <LoanRateFields
+            interestRate={interestRate}
+            fees={fees}
+            onInterestRateChange={setInterestRate}
+            onFeesChange={setFees}
+          />
           
-          <div className="space-y-2">
-            <Label>Documents requis</Label>
-            <div className="flex space-x-2">
-              <Input
-                value={newRequirement}
-                onChange={(e) => setNewRequirement(e.target.value)}
-                placeholder="Ajouter un document requis"
-                className="flex-1"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddRequirement();
-                  }
-                }}
-              />
-              <Button 
-                type="button" 
-                onClick={handleAddRequirement}
-                variant="outline"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            {requirements.length > 0 && (
-              <ul className="mt-2 space-y-1">
-                {requirements.map((req, index) => (
-                  <li key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                    <span>{req}</span>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleRemoveRequirement(index)}
-                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <RequirementsList
+            requirements={requirements}
+            newRequirement={newRequirement}
+            onNewRequirementChange={setNewRequirement}
+            onAddRequirement={handleAddRequirement}
+            onRemoveRequirement={handleRemoveRequirement}
+          />
         </div>
         
         <DialogFooter>
