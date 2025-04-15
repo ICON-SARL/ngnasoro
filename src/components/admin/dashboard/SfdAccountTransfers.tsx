@@ -84,7 +84,7 @@ export function SfdAccountTransfers() {
               <SelectContent>
                 {accounts.map(account => (
                   <SelectItem key={account.id} value={account.id}>
-                    {account.description || `Compte ${account.account_type}`} ({formatCurrency(account.balance, account.currency)})
+                    {account.description || `Compte ${account.account_type}`} ({formatCurrency(account.balance)})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -99,7 +99,7 @@ export function SfdAccountTransfers() {
               <SelectContent>
                 {accounts.map(account => (
                   <SelectItem key={account.id} value={account.id}>
-                    {account.description || `Compte ${account.account_type}`} ({formatCurrency(account.balance, account.currency)})
+                    {account.description || `Compte ${account.account_type}`} ({formatCurrency(account.balance)})
                   </SelectItem>
                 ))}
               </SelectContent>
