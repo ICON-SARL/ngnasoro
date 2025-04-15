@@ -1100,6 +1100,41 @@ export type Database = {
           },
         ]
       }
+      sfd_performance_metrics: {
+        Row: {
+          created_at: string | null
+          id: string
+          metric_date: string
+          metrics: Json
+          sfd_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metric_date: string
+          metrics?: Json
+          sfd_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metric_date?: string
+          metrics?: Json
+          sfd_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sfd_performance_metrics_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sfd_stats: {
         Row: {
           id: string
@@ -1194,6 +1229,7 @@ export type Database = {
           name: string
           phone: string | null
           region: string | null
+          settings: Json | null
           status: string | null
           updated_at: string | null
         }
@@ -1208,6 +1244,7 @@ export type Database = {
           name: string
           phone?: string | null
           region?: string | null
+          settings?: Json | null
           status?: string | null
           updated_at?: string | null
         }
@@ -1222,6 +1259,7 @@ export type Database = {
           name?: string
           phone?: string | null
           region?: string | null
+          settings?: Json | null
           status?: string | null
           updated_at?: string | null
         }
@@ -1647,6 +1685,10 @@ export type Database = {
       sync_client_accounts: {
         Args: { p_sfd_id: string; p_client_id?: string }
         Returns: boolean
+      }
+      update_sfd_metrics: {
+        Args: { p_sfd_id: string }
+        Returns: Json
       }
       update_subsidy_usage: {
         Args: { p_sfd_id: string; p_amount: number }
