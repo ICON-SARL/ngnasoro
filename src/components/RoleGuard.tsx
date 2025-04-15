@@ -7,7 +7,7 @@ import { UserRole } from '@/utils/auth/roleTypes';
 
 interface RoleGuardProps {
   children: React.ReactNode;
-  requiredRole: UserRole;
+  requiredRole: UserRole | string;
 }
 
 const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
@@ -21,52 +21,42 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
       return;
     }
 
+    // Get role from user metadata
     const userRole = user.app_metadata?.role;
     
-    // Convert requiredRole to string for consistent comparison
-    const requiredRoleStr = String(requiredRole);
+    console.log('RoleGuard checking:', { 
+      userRole, 
+      requiredRole, 
+      userMetadata: user.app_metadata,
+      path: location.pathname
+    });
     
-    // Super admins have access to everything except client routes
-    if (userRole === 'admin') {
-      if (requiredRoleStr === String(UserRole.CLIENT)) {
-        setHasAccess(false);
-      } else {
-        setHasAccess(true);
-      }
+    // Admin has access to everything except client routes
+    if (userRole === 'admin' && requiredRole !== UserRole.CLIENT) {
+      setHasAccess(true);
       return;
     }
     
-    // Check for exact role match
-    let hasRole = false;
+    // Direct role comparison
+    setHasAccess(userRole === requiredRole);
     
-    // Compare string values instead of enum objects
-    if (userRole === requiredRoleStr) {
-      hasRole = true;
-    } else if (requiredRoleStr === String(UserRole.CLIENT) && userRole === 'user') {
-      // User role can access client routes
-      hasRole = true;
-    }
-    
-    setHasAccess(hasRole);
-  }, [user, requiredRole]);
+  }, [user, requiredRole, location.pathname]);
 
   if (loading || hasAccess === null) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="animate-spin h-8 w-8 text-primary mr-2" />
-        <span>Vérification des autorisations...</span>
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Vérification des autorisations...</span>
       </div>
     );
   }
 
   if (!user) {
     // Redirect to appropriate auth page based on required role
-    const requiredRoleStr = String(requiredRole);
-    
-    if (requiredRoleStr === String(UserRole.SUPER_ADMIN) || requiredRoleStr === String(UserRole.ADMIN)) {
+    if (requiredRole === UserRole.SUPER_ADMIN || requiredRole === 'admin') {
       return <Navigate to="/admin/auth" state={{ from: location }} replace />;
-    } else if (requiredRoleStr === String(UserRole.SFD_ADMIN)) {
-      return <Navigate to="/admin/auth" state={{ from: location }} replace />;
+    } else if (requiredRole === UserRole.SFD_ADMIN || requiredRole === 'sfd_admin') {
+      return <Navigate to="/sfd/auth" state={{ from: location }} replace />;
     } else {
       return <Navigate to="/auth" state={{ from: location }} replace />;
     }
@@ -89,3 +79,4 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
 };
 
 export default RoleGuard;
+

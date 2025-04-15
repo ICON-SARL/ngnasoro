@@ -14,10 +14,8 @@ import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import RoleGuard from '@/components/RoleGuard';
 import AnonymousOnlyGuard from '@/components/AnonymousOnlyGuard';
 import { UserRole } from '@/utils/auth/roleTypes';
-// Update the import to use the correct path to the admin version
 import SfdManagementPage from '@/pages/admin/SfdManagementPage';
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -37,8 +35,15 @@ function App() {
             <div className="flex flex-col min-h-screen">
               <div className="flex-grow">
                 <Routes>
-                  {/* Public Routes - Redirect to appropriate auth page */}
-                  <Route path="/" element={<Navigate to="/auth" replace />} />
+                  {/* Public Routes - Redirect based on auth state */}
+                  <Route 
+                    path="/" 
+                    element={
+                      <AnonymousOnlyGuard>
+                        <Navigate to="/auth" replace />
+                      </AnonymousOnlyGuard>
+                    } 
+                  />
                   
                   {/* Auth Routes - Only accessible when not authenticated */}
                   <Route
@@ -49,11 +54,21 @@ function App() {
                       </AnonymousOnlyGuard>
                     }
                   />
+                  
                   <Route
                     path="/admin/auth"
                     element={
                       <AnonymousOnlyGuard>
                         <AdminLoginPage />
+                      </AnonymousOnlyGuard>
+                    }
+                  />
+                  
+                  <Route
+                    path="/sfd/auth"
+                    element={
+                      <AnonymousOnlyGuard>
+                        <LoginPage isSfdAdmin={true} />
                       </AnonymousOnlyGuard>
                     }
                   />
@@ -91,7 +106,7 @@ function App() {
                     }
                   />
                   
-                  {/* Protected Routes - Accessible by any authenticated user */}
+                  {/* Protected Profile Route */}
                   <Route
                     path="/profile"
                     element={
@@ -101,7 +116,7 @@ function App() {
                     }
                   />
                   
-                  {/* Catch-all route - Redirect to appropriate dashboard based on role */}
+                  {/* Catch-all route - Redirect to appropriate auth page */}
                   <Route
                     path="*"
                     element={
@@ -120,3 +135,4 @@ function App() {
 }
 
 export default App;
+
