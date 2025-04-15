@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { Globe, ChevronDown, LogOut, Menu, Users, CreditCard, PieChart, Settings
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import LogoutButton from '@/components/LogoutButton';
 
 export function SfdHeader() {
   const { user, signOut } = useAuth();
@@ -25,12 +27,13 @@ export function SfdHeader() {
   const { toast } = useToast();
   const { activeSfdId, sfdData } = useSfdDataAccess();
   
-  // Find active SFD information
+  // Trouver les informations de la SFD active
   const activeSfd = sfdData.find(sfd => sfd.id === activeSfdId);
   const sfdName = activeSfd?.name || 'SFD non sélectionnée';
   
   const handleLogout = async () => {
     try {
+      // Notification de début de déconnexion
       toast({
         title: "Déconnexion en cours",
         description: "Veuillez patienter..."
@@ -55,28 +58,23 @@ export function SfdHeader() {
       setTimeout(() => {
         window.location.href = '/sfd/auth';
       }, 100);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
       toast({
         title: "Erreur de déconnexion",
-        description: "Une erreur s'est produite lors de la déconnexion",
+        description: error.message || "Une erreur s'est produite lors de la déconnexion",
         variant: "destructive"
       });
     }
   };
   
   const getInitials = (name: string) => {
-    if (!name) return 'AD';
     return name
       .split(' ')
       .map(n => n[0])
       .join('')
       .toUpperCase();
   };
-  
-  const userInitials = user?.user_metadata?.full_name 
-    ? getInitials(user.user_metadata.full_name) 
-    : 'AD';
   
   const isActiveRoute = (route: string) => {
     return location.pathname === route;
@@ -100,13 +98,11 @@ export function SfdHeader() {
             <span className="font-semibold hidden md:block">N'GNA SÔRÔ SFD</span>
           </Link>
           
-          {/* SFD Badge - consistently display the active SFD */}
-          {activeSfd && (
-            <Badge variant="outline" className="bg-primary/10 text-primary flex items-center gap-1 px-3 py-1 hidden md:flex">
-              <Building className="h-3.5 w-3.5 mr-1" />
-              {sfdName}
-            </Badge>
-          )}
+          {/* Affichage du nom de la SFD active */}
+          <Badge variant="outline" className="bg-primary/10 text-primary flex items-center gap-1 px-3 py-1 hidden md:flex">
+            <Building className="h-3.5 w-3.5 mr-1" />
+            {sfdName}
+          </Badge>
           
           <div className="hidden md:flex gap-1">
             {navLinks.map(link => (
@@ -126,13 +122,11 @@ export function SfdHeader() {
         </div>
         
         <div className="flex items-center gap-3">
-          {/* Mobile SFD badge */}
-          {activeSfd && (
-            <Badge variant="outline" className="bg-primary/10 text-primary px-2 py-1 md:hidden">
-              <Building className="h-3 w-3 mr-1" />
-              {sfdName.length > 10 ? `${sfdName.substring(0, 10)}...` : sfdName}
-            </Badge>
-          )}
+          {/* Badge SFD pour mobile */}
+          <Badge variant="outline" className="bg-primary/10 text-primary px-2 py-1 md:hidden">
+            <Building className="h-3 w-3 mr-1" />
+            {sfdName.length > 10 ? `${sfdName.substring(0, 10)}...` : sfdName}
+          </Badge>
           
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-4 w-4" />
@@ -160,7 +154,9 @@ export function SfdHeader() {
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-[#0D6A51] text-white">
-                    {userInitials}
+                    {user?.user_metadata?.full_name 
+                      ? user.user_metadata.full_name.split(' ').map(n => n[0]).join('').toUpperCase() 
+                      : 'AD'}
                   </AvatarFallback>
                 </Avatar>
               </Button>
