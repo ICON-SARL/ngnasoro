@@ -26,7 +26,6 @@ const ClientAdhesionDialog: React.FC<ClientAdhesionDialogProps> = ({
         
         <ClientAdhesionForm 
           sfdId={selectedSfd.id}
-          sfdName={selectedSfd.name}
           onSuccess={onClose}
         />
       </DialogContent>

@@ -29,7 +29,7 @@ const formSchema = z.object({
   address: z.string().min(5, 'L\'adresse est requise'),
 });
 
-interface ClientAdhesionFormProps {
+export interface ClientAdhesionFormProps {
   sfdId: string;
   onSuccess?: () => void;
 }

@@ -21,11 +21,14 @@ export type ClientAdhesionRequest = {
   notes?: string;
   kyc_status?: string;
   sfd_id: string;
+  user_id?: string;
 };
 
 export function useClientAdhesions() {
   const [adhesionRequests, setAdhesionRequests] = useState<ClientAdhesionRequest[]>([]);
+  const [userAdhesionRequests, setUserAdhesionRequests] = useState<ClientAdhesionRequest[]>([]);
   const [isLoadingAdhesionRequests, setIsLoadingAdhesionRequests] = useState(true);
+  const [isLoadingUserAdhesionRequests, setIsLoadingUserAdhesionRequests] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
   const { activeSfdId } = useSfdDataAccess();
@@ -42,7 +45,14 @@ export function useClientAdhesions() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAdhesionRequests(requests || []);
+      
+      // Ensure the status is of the correct type
+      const typedRequests = (requests || []).map(req => ({
+        ...req,
+        status: (req.status as 'pending' | 'approved' | 'rejected')
+      }));
+      
+      setAdhesionRequests(typedRequests);
     } catch (error) {
       console.error('Error fetching adhesion requests:', error);
       toast({
@@ -52,6 +62,38 @@ export function useClientAdhesions() {
       });
     } finally {
       setIsLoadingAdhesionRequests(false);
+    }
+  };
+
+  const fetchUserAdhesionRequests = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoadingUserAdhesionRequests(true);
+      const { data: requests, error } = await supabase
+        .from('client_adhesion_requests')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // Ensure the status is of the correct type
+      const typedRequests = (requests || []).map(req => ({
+        ...req,
+        status: (req.status as 'pending' | 'approved' | 'rejected')
+      }));
+      
+      setUserAdhesionRequests(typedRequests);
+    } catch (error) {
+      console.error('Error fetching user adhesion requests:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de récupérer vos demandes d\'adhésion',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingUserAdhesionRequests(false);
     }
   };
 
@@ -129,11 +171,20 @@ export function useClientAdhesions() {
     }
   }, [activeSfdId]);
 
+  useEffect(() => {
+    if (user) {
+      fetchUserAdhesionRequests();
+    }
+  }, [user]);
+
   return {
     adhesionRequests,
+    userAdhesionRequests,
     isLoadingAdhesionRequests,
+    isLoadingUserAdhesionRequests,
     approveAdhesionRequest,
     rejectAdhesionRequest,
-    refetchAdhesionRequests: fetchAdhesionRequests
+    refetchAdhesionRequests: fetchAdhesionRequests,
+    refetchUserAdhesionRequests: fetchUserAdhesionRequests
   };
 }
