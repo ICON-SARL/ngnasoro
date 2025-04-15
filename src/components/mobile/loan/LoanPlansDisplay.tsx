@@ -62,7 +62,7 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
         
         if (error) throw error;
         
-        // Convert fetched data to LoanPlan type
+        // Convert fetched data to LoanPlan type with necessary transformations
         const typedPlans = (data || []).map(plan => ({
           ...plan,
           is_active: Boolean(plan.is_active),
