@@ -9,22 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus, Edit, ToggleLeft, ToggleRight } from 'lucide-react';
-
-interface LoanPlan {
-  id: string;
-  name: string;
-  description: string;
-  min_amount: number;
-  max_amount: number;
-  min_duration: number;
-  max_duration: number;
-  interest_rate: number;
-  fees: number;
-  is_active: boolean;
-  requirements: string[];
-  sfd_id: string;
-}
+import { Plus, Edit, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react';
+import { LoanPlan } from '@/types/sfdClients';
 
 interface LoanPlanManagementProps {
   onNewPlan: () => void;
@@ -46,12 +32,17 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
   const fetchLoanPlans = async () => {
     setIsLoading(true);
     try {
+      console.log("Fetching loan plans for SFD ID:", activeSfdId);
       const { data, error } = await supabase
         .from('sfd_loan_plans')
         .select('*')
         .eq('sfd_id', activeSfdId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching loan plans:', error);
+        throw error;
+      }
+      
       setLoanPlans(data || []);
     } catch (error) {
       console.error('Error fetching loan plans:', error);
@@ -70,9 +61,13 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
       const { error } = await supabase
         .from('sfd_loan_plans')
         .update({ is_active: !plan.is_active })
-        .eq('id', plan.id);
+        .eq('id', plan.id)
+        .eq('sfd_id', activeSfdId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error toggling plan status:', error);
+        throw error;
+      }
       
       toast({
         title: plan.is_active ? "Plan désactivé" : "Plan activé",
@@ -107,7 +102,10 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
       <Card>
         <CardContent className="pt-6">
           {isLoading ? (
-            <div className="text-center py-6">Chargement des plans de prêt...</div>
+            <div className="text-center py-6 flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              Chargement des plans de prêt...
+            </div>
           ) : loanPlans.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">
               Aucun plan de prêt défini. Créez votre premier plan pour commencer.

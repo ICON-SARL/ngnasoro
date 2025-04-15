@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { LoanPlan } from '@/types/sfdClients';
+import { Loader2 } from 'lucide-react';
 
 interface LoanPlanDialogProps {
   isOpen: boolean;
@@ -31,7 +32,7 @@ const LoanPlanDialog: React.FC<LoanPlanDialogProps> = ({
   planToEdit
 }) => {
   const { toast } = useToast();
-  const { activeSfdId } = useAuth();
+  const { user, activeSfdId } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -138,8 +139,18 @@ const LoanPlanDialog: React.FC<LoanPlanDialogProps> = ({
       return;
     }
 
+    if (!activeSfdId) {
+      toast({
+        title: "Erreur",
+        description: "Aucun SFD sélectionné. Veuillez rafraîchir la page et réessayer.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
+      console.log("Creating/updating plan for SFD ID:", activeSfdId);
       
       // Filter out empty requirements
       const requirements = formData.requirements.filter(req => req.trim() !== '');
@@ -159,7 +170,10 @@ const LoanPlanDialog: React.FC<LoanPlanDialogProps> = ({
           .select()
           .single();
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating loan plan:', error);
+          throw error;
+        }
         
         toast({
           title: "Plan modifié",
@@ -173,7 +187,10 @@ const LoanPlanDialog: React.FC<LoanPlanDialogProps> = ({
           .select()
           .single();
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error creating loan plan:', error);
+          throw error;
+        }
         
         toast({
           title: "Plan créé",
@@ -182,11 +199,12 @@ const LoanPlanDialog: React.FC<LoanPlanDialogProps> = ({
       }
       
       onSaved();
-    } catch (error) {
+      onClose();
+    } catch (error: any) {
       console.error('Error saving loan plan:', error);
       toast({
         title: "Erreur",
-        description: "Impossible d'enregistrer le plan de prêt",
+        description: `Impossible d'enregistrer le plan de prêt: ${error.message}`,
         variant: "destructive"
       });
     } finally {
@@ -342,12 +360,17 @@ const LoanPlanDialog: React.FC<LoanPlanDialogProps> = ({
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Annuler</Button>
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>Annuler</Button>
           <Button 
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Enregistrement...' : planToEdit ? 'Modifier' : 'Créer'}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Enregistrement...
+              </>
+            ) : planToEdit ? 'Modifier' : 'Créer'}
           </Button>
         </DialogFooter>
       </DialogContent>
