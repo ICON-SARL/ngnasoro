@@ -19,7 +19,7 @@ export const useSfdAdminForm = (onSuccess: () => void) => {
   const { createSfdAdmin, isLoading, error: apiError } = useSfdAdminManagement();
 
   const form = useForm<SfdAdminFormData>({
-    resolver: zodResolver<SfdAdminFormData>(formSchema),
+    resolver: zodResolver<SfdAdminFormData, typeof formSchema>(formSchema),
     defaultValues: {
       full_name: '',
       email: '',
