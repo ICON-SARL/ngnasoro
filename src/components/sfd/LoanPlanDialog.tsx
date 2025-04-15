@@ -1,200 +1,177 @@
 
 import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter 
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Check, AlertTriangle } from 'lucide-react';
-import { LoanAmountFields } from './loan-plan/LoanAmountFields';
-import { LoanDurationFields } from './loan-plan/LoanDurationFields';
-import { LoanRateFields } from './loan-plan/LoanRateFields';
-import { RequirementsList } from './loan-plan/RequirementsList';
-import { LOAN_PLAN_OPTIONS, MAX_INTEREST_RATE } from './loan-plan/constants';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useAuth } from '@/hooks/useAuth';
+import { LoanPlan } from '@/types/sfdClients';
 
 interface LoanPlanDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSaved?: () => void;
-  planToEdit: any | null;
+  onSaved: () => void;
+  planToEdit: LoanPlan | null;
 }
 
-const LoanPlanDialog = ({
-  isOpen,
+const LoanPlanDialog: React.FC<LoanPlanDialogProps> = ({ 
+  isOpen, 
   onClose,
   onSaved,
   planToEdit
-}: LoanPlanDialogProps) => {
+}) => {
   const { toast } = useToast();
-  const { user, activeSfdId } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [minAmount, setMinAmount] = useState<string>('10000');
-  const [maxAmount, setMaxAmount] = useState<string>('5000000');
-  const [minDuration, setMinDuration] = useState<string>('1');
-  const [maxDuration, setMaxDuration] = useState<string>('36');
-  const [interestRate, setInterestRate] = useState<string>('5.0');
-  const [fees, setFees] = useState<string>('1.0');
-  const [requirements, setRequirements] = useState<string[]>([]);
-  const [newRequirement, setNewRequirement] = useState('');
-  const [sfdStatus, setSfdStatus] = useState<string | null>(null);
+  const { activeSfdId } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    min_amount: 10000,
+    max_amount: 5000000,
+    min_duration: 1,
+    max_duration: 36,
+    interest_rate: 5,
+    fees: 1,
+    is_active: true,
+    requirements: [''] as string[],
+  });
+
   useEffect(() => {
     if (planToEdit) {
-      setName(planToEdit.name || '');
-      setDescription(planToEdit.description || '');
-      setMinAmount(planToEdit.min_amount?.toString() || '10000');
-      setMaxAmount(planToEdit.max_amount?.toString() || '5000000');
-      setMinDuration(planToEdit.min_duration?.toString() || '1');
-      setMaxDuration(planToEdit.max_duration?.toString() || '36');
-      setInterestRate(planToEdit.interest_rate?.toString() || '5.0');
-      setFees(planToEdit.fees?.toString() || '1.0');
-      setRequirements(planToEdit.requirements || []);
+      setFormData({
+        name: planToEdit.name,
+        description: planToEdit.description || '',
+        min_amount: planToEdit.min_amount,
+        max_amount: planToEdit.max_amount,
+        min_duration: planToEdit.min_duration,
+        max_duration: planToEdit.max_duration,
+        interest_rate: planToEdit.interest_rate,
+        fees: planToEdit.fees,
+        is_active: planToEdit.is_active,
+        requirements: planToEdit.requirements?.length ? planToEdit.requirements : [''],
+      });
     } else {
-      resetForm();
+      // Reset form for new plan
+      setFormData({
+        name: '',
+        description: '',
+        min_amount: 10000,
+        max_amount: 5000000,
+        min_duration: 1,
+        max_duration: 36,
+        interest_rate: 5,
+        fees: 1,
+        is_active: true,
+        requirements: [''],
+      });
     }
-    
-    // Check SFD status when dialog opens
-    if (isOpen && activeSfdId) {
-      checkSfdStatus();
+  }, [planToEdit, isOpen]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: parseFloat(value) }));
+  };
+
+  const handleCheckboxChange = (checked: boolean) => {
+    setFormData(prev => ({ ...prev, is_active: checked }));
+  };
+
+  const handleRequirementChange = (index: number, value: string) => {
+    const updatedRequirements = [...formData.requirements];
+    updatedRequirements[index] = value;
+    setFormData(prev => ({ ...prev, requirements: updatedRequirements }));
+  };
+
+  const addRequirement = () => {
+    setFormData(prev => ({ 
+      ...prev, 
+      requirements: [...prev.requirements, ''] 
+    }));
+  };
+
+  const removeRequirement = (index: number) => {
+    const updatedRequirements = formData.requirements.filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, requirements: updatedRequirements }));
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "Erreur de validation",
+        description: "Le nom du plan est obligatoire",
+        variant: "destructive"
+      });
+      return;
     }
-  }, [planToEdit, isOpen, activeSfdId]);
-  
-  const checkSfdStatus = async () => {
-    if (!activeSfdId) return;
-    
+
+    if (formData.min_amount > formData.max_amount) {
+      toast({
+        title: "Erreur de validation",
+        description: "Le montant minimum ne peut pas être supérieur au montant maximum",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (formData.min_duration > formData.max_duration) {
+      toast({
+        title: "Erreur de validation",
+        description: "La durée minimum ne peut pas être supérieure à la durée maximum",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      const { data, error } = await supabase
-        .from('sfds')
-        .select('status')
-        .eq('id', activeSfdId)
-        .single();
-        
-      if (error) throw error;
+      setIsSubmitting(true);
       
-      setSfdStatus(data?.status || null);
-    } catch (error) {
-      console.error('Error checking SFD status:', error);
-      setSfdStatus('error');
-    }
-  };
-  
-  const resetForm = () => {
-    setName('');
-    setDescription('');
-    setMinAmount('10000');
-    setMaxAmount('5000000');
-    setMinDuration('1');
-    setMaxDuration('36');
-    setInterestRate('5.0');
-    setFees('1.0');
-    setRequirements([]);
-    setNewRequirement('');
-  };
-  
-  const handleAddRequirement = () => {
-    if (newRequirement.trim() && !requirements.includes(newRequirement.trim())) {
-      setRequirements([...requirements, newRequirement.trim()]);
-      setNewRequirement('');
-    }
-  };
-  
-  const handleRemoveRequirement = (index: number) => {
-    const updated = [...requirements];
-    updated.splice(index, 1);
-    setRequirements(updated);
-  };
-  
-  const handleSave = async () => {
-    if (!name) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez spécifier un nom pour ce plan",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!activeSfdId) {
-      toast({
-        title: "Erreur",
-        description: "SFD non identifié",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (sfdStatus !== 'active') {
-      toast({
-        title: "SFD inactif",
-        description: "Votre SFD n'est pas active. Veuillez contacter l'administrateur.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (parseFloat(interestRate) > MAX_INTEREST_RATE) {
-      toast({
-        title: "Taux d'intérêt trop élevé",
-        description: `Le taux d'intérêt ne peut pas dépasser ${MAX_INTEREST_RATE}% selon les régulations du MEREF.`,
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    try {
+      // Filter out empty requirements
+      const requirements = formData.requirements.filter(req => req.trim() !== '');
+      
       const planData = {
-        name,
-        description,
-        min_amount: parseFloat(minAmount),
-        max_amount: parseFloat(maxAmount),
-        min_duration: parseInt(minDuration),
-        max_duration: parseInt(maxDuration),
-        interest_rate: parseFloat(interestRate),
-        fees: parseFloat(fees),
+        ...formData,
         requirements,
         sfd_id: activeSfdId
       };
       
       if (planToEdit) {
-        const { error } = await supabase
+        // Update existing plan
+        const { data, error } = await supabase
           .from('sfd_loan_plans')
-          .update({
-            ...planData,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', planToEdit.id);
+          .update(planData)
+          .eq('id', planToEdit.id)
+          .select()
+          .single();
           
         if (error) throw error;
         
         toast({
-          title: "Plan mis à jour",
-          description: "Le plan de prêt a été modifié avec succès",
+          title: "Plan modifié",
+          description: "Le plan de prêt a été mis à jour avec succès",
         });
       } else {
-        const { error } = await supabase
+        // Create new plan
+        const { data, error } = await supabase
           .from('sfd_loan_plans')
-          .insert(planData);
+          .insert(planData)
+          .select()
+          .single();
           
         if (error) throw error;
         
@@ -204,137 +181,173 @@ const LoanPlanDialog = ({
         });
       }
       
-      if (onSaved) {
-        onSaved();
-      }
-      onClose();
-    } catch (error: any) {
+      onSaved();
+    } catch (error) {
       console.error('Error saving loan plan:', error);
       toast({
         title: "Erreur",
-        description: `Impossible d'enregistrer le plan : ${error.message}`,
-        variant: "destructive",
+        description: "Impossible d'enregistrer le plan de prêt",
+        variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
-  
-  // Determine if we should show a warning based on SFD status
-  const showSfdWarning = sfdStatus && sfdStatus !== 'active';
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{planToEdit ? "Modifier le plan de prêt" : "Nouveau plan de prêt"}</DialogTitle>
-          <DialogDescription>
-            {planToEdit 
-              ? "Modifiez les détails du plan de prêt existant." 
-              : "Configurez un nouveau type de prêt à offrir aux clients."}
-          </DialogDescription>
+          <DialogTitle>
+            {planToEdit ? 'Modifier le plan de prêt' : 'Nouveau plan de prêt'}
+          </DialogTitle>
         </DialogHeader>
-        
-        {showSfdWarning && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>SFD {sfdStatus === 'suspended' ? 'suspendu' : 'non actif'}</AlertTitle>
-            <AlertDescription>
-              {sfdStatus === 'suspended' 
-                ? "Cette SFD est actuellement suspendue. Veuillez contacter l'administrateur pour réactiver." 
-                : "Cette SFD n'est pas active. Veuillez vérifier son statut ou contacter l'administrateur."}
-            </AlertDescription>
-          </Alert>
-        )}
         
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-1 gap-2">
-            <Label htmlFor="name">Nom du plan *</Label>
-            <Select
-              value={name}
-              onValueChange={setName}
-              disabled={showSfdWarning}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un type de plan" />
-              </SelectTrigger>
-              <SelectContent>
-                {LOAN_PLAN_OPTIONS.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="name">Nom du plan</Label>
+            <Input
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              placeholder="Ex: Microcrédit Agricole"
+            />
           </div>
           
           <div className="grid grid-cols-1 gap-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Décrivez ce plan de prêt et ses conditions particulières..."
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="Description détaillée du plan de prêt"
               rows={3}
-              disabled={showSfdWarning}
             />
           </div>
           
-          <LoanAmountFields
-            minAmount={minAmount}
-            maxAmount={maxAmount}
-            onMinAmountChange={setMinAmount}
-            onMaxAmountChange={setMaxAmount}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="min_amount">Montant minimum (FCFA)</Label>
+              <Input
+                id="min_amount"
+                name="min_amount"
+                type="number"
+                value={formData.min_amount}
+                onChange={handleNumberChange}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="max_amount">Montant maximum (FCFA)</Label>
+              <Input
+                id="max_amount"
+                name="max_amount"
+                type="number"
+                value={formData.max_amount}
+                onChange={handleNumberChange}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="min_duration">Durée minimum (mois)</Label>
+              <Input
+                id="min_duration"
+                name="min_duration"
+                type="number"
+                value={formData.min_duration}
+                onChange={handleNumberChange}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="max_duration">Durée maximum (mois)</Label>
+              <Input
+                id="max_duration"
+                name="max_duration"
+                type="number"
+                value={formData.max_duration}
+                onChange={handleNumberChange}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="interest_rate">Taux d'intérêt (%)</Label>
+              <Input
+                id="interest_rate"
+                name="interest_rate"
+                type="number"
+                step="0.1"
+                value={formData.interest_rate}
+                onChange={handleNumberChange}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="fees">Frais (%)</Label>
+              <Input
+                id="fees"
+                name="fees"
+                type="number"
+                step="0.1"
+                value={formData.fees}
+                onChange={handleNumberChange}
+              />
+            </div>
+          </div>
           
-          <LoanDurationFields
-            minDuration={minDuration}
-            maxDuration={maxDuration}
-            onMinDurationChange={setMinDuration}
-            onMaxDurationChange={setMaxDuration}
-          />
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="is_active" 
+              checked={formData.is_active} 
+              onCheckedChange={handleCheckboxChange}
+            />
+            <Label htmlFor="is_active">Plan actif</Label>
+          </div>
           
-          <LoanRateFields
-            interestRate={interestRate}
-            fees={fees}
-            onInterestRateChange={setInterestRate}
-            onFeesChange={setFees}
-          />
-          
-          <RequirementsList
-            requirements={requirements}
-            newRequirement={newRequirement}
-            onNewRequirementChange={setNewRequirement}
-            onAddRequirement={handleAddRequirement}
-            onRemoveRequirement={handleRemoveRequirement}
-          />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Conditions requises</Label>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={addRequirement}
+              >
+                Ajouter une condition
+              </Button>
+            </div>
+            
+            {formData.requirements.map((requirement, index) => (
+              <div key={index} className="flex gap-2 items-center">
+                <Input
+                  value={requirement}
+                  onChange={(e) => handleRequirementChange(index, e.target.value)}
+                  placeholder="Ex: Pièce d'identité valide"
+                />
+                {formData.requirements.length > 1 && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => removeRequirement(index)}
+                  >
+                    &times;
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            Annuler
-          </Button>
+          <Button variant="outline" onClick={onClose}>Annuler</Button>
           <Button 
-            onClick={handleSave} 
-            disabled={isLoading || showSfdWarning} 
-            className={`${showSfdWarning ? 'bg-gray-400 hover:bg-gray-400' : 'bg-[#0D6A51] hover:bg-[#0D6A51]/90'}`}
+            onClick={handleSubmit}
+            disabled={isSubmitting}
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {planToEdit ? "Mise à jour..." : "Création..."}
-              </>
-            ) : planToEdit ? (
-              <>
-                <Check className="mr-2 h-4 w-4" />
-                Mettre à jour
-              </>
-            ) : (
-              <>
-                <Check className="mr-2 h-4 w-4" />
-                Créer
-              </>
-            )}
+            {isSubmitting ? 'Enregistrement...' : planToEdit ? 'Modifier' : 'Créer'}
           </Button>
         </DialogFooter>
       </DialogContent>

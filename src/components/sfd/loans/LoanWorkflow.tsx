@@ -31,7 +31,6 @@ export const LoanWorkflow = () => {
   const fetchLoans = async () => {
     try {
       setLoading(true);
-      // Fix: Pass the activeSfdId to getSfdLoans
       const fetchedLoans = await loanService.getSfdLoans(activeSfdId || '');
       setLoans(fetchedLoans);
     } catch (error) {

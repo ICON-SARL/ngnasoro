@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoanPlanManagement } from './LoanPlanManagement';
 import LoanList from './loans/LoanList';
 import LoanPlanDialog from './LoanPlanDialog';
+import LoanWorkflow from './loans/LoanWorkflow';
 
 export function LoanManagement() {
   const [activeTab, setActiveTab] = useState('plans');
@@ -42,7 +43,7 @@ export function LoanManagement() {
         </TabsContent>
         
         <TabsContent value="applications" className="space-y-4 mt-6">
-          <LoanList />
+          <LoanWorkflow />
         </TabsContent>
       </Tabs>
       

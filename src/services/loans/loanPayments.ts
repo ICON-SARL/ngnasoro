@@ -2,61 +2,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Checks if the client has sufficient funds for a loan payment
+ * Fetches payment history for a specific loan
  */
-export const checkClientFunds = async (clientId: string, amount: number): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase
-      .from('accounts')
-      .select('balance')
-      .eq('user_id', clientId)
-      .single();
-
-    if (error) throw error;
-    
-    return (data?.balance || 0) >= amount;
-  } catch (error) {
-    console.error('Error checking client funds:', error);
-    return false;
-  }
-};
-
-/**
- * Calculates payment details for a loan
- */
-export const calculatePaymentDetails = async (
-  principal: number, 
-  interestRate: number, 
-  durationMonths: number, 
-  startDate?: string
-) => {
-  try {
-    // Use the payment calculator edge function
-    const response = await supabase.functions.invoke('loan-payment-calculator', {
-      method: 'POST',
-      body: {
-        amount: principal,
-        interestRate,
-        durationMonths,
-        startDate: startDate || new Date().toISOString()
-      }
-    });
-
-    if (response.error) {
-      throw new Error(response.error.message);
-    }
-
-    return response.data;
-  } catch (error) {
-    console.error('Error calculating payment details:', error);
-    throw new Error('Failed to calculate payment details');
-  }
-};
-
-/**
- * Gets payment history for a loan
- */
-export const getPaymentHistory = async (loanId: string) => {
+export const getLoanPayments = async (loanId: string) => {
   try {
     const { data, error } = await supabase
       .from('loan_payments')
@@ -67,44 +15,83 @@ export const getPaymentHistory = async (loanId: string) => {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching payment history:', error);
-    throw new Error('Failed to fetch payment history');
+    console.error('Error fetching loan payments:', error);
+    throw new Error('Failed to fetch loan payment history');
   }
 };
 
 /**
- * Gets remaining balance for a loan
+ * Records a payment for a loan
  */
-export const getLoanRemainingBalance = async (loanId: string): Promise<number> => {
+export const recordLoanPayment = async (
+  loanId: string, 
+  amount: number, 
+  paymentMethod: string,
+  recordedBy: string
+) => {
   try {
-    // Get loan details
-    const { data: loan, error: loanError } = await supabase
-      .from('sfd_loans')
-      .select('amount, duration_months, monthly_payment')
-      .eq('id', loanId)
+    // 1. Create the payment record
+    const { data, error } = await supabase
+      .from('loan_payments')
+      .insert({
+        loan_id: loanId,
+        amount,
+        payment_method: paymentMethod,
+        status: 'completed',
+        payment_date: new Date().toISOString()
+      })
+      .select()
       .single();
 
-    if (loanError) throw loanError;
+    if (error) throw error;
 
-    // Get all payments made
-    const { data: payments, error: paymentsError } = await supabase
-      .from('loan_payments')
-      .select('amount')
-      .eq('loan_id', loanId)
-      .eq('status', 'completed');
-
-    if (paymentsError) throw paymentsError;
-
-    // Calculate total amount paid
-    const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
+    // 2. Update the loan's payment information
+    const today = new Date();
+    const nextMonth = new Date(today);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
     
-    // Calculate total due
-    const totalDue = loan.monthly_payment * loan.duration_months;
+    const { error: updateError } = await supabase
+      .from('sfd_loans')
+      .update({
+        last_payment_date: today.toISOString(),
+        next_payment_date: nextMonth.toISOString()
+      })
+      .eq('id', loanId);
+      
+    if (updateError) throw updateError;
     
-    // Return the remaining balance
-    return Math.max(0, totalDue - totalPaid);
+    // 3. Log the activity
+    await supabase.from('loan_activities').insert({
+      loan_id: loanId,
+      activity_type: 'payment_recorded',
+      description: `Payment of ${amount} FCFA recorded via ${paymentMethod}`,
+      performed_by: recordedBy
+    });
+
+    return data;
   } catch (error) {
-    console.error('Error calculating remaining balance:', error);
-    throw new Error('Failed to calculate remaining balance');
+    console.error('Error recording loan payment:', error);
+    throw error;
+  }
+};
+
+/**
+ * Sends a payment reminder to a client
+ */
+export const sendPaymentReminder = async (loanId: string) => {
+  try {
+    // This would typically call an API that sends emails/SMS
+    // For now, we'll just log it in the database
+
+    await supabase.from('loan_activities').insert({
+      loan_id: loanId,
+      activity_type: 'payment_reminder',
+      description: 'Payment reminder sent manually'
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error sending payment reminder:', error);
+    return false;
   }
 };
