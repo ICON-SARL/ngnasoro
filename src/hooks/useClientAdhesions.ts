@@ -67,13 +67,16 @@ export function useClientAdhesions() {
       try {
         if (!user?.id) return [];
 
+        console.log('Fetching user adhesion requests for user:', user.id);
+        
         const { data, error } = await supabase
           .from('client_adhesion_requests')
           .select(`
             *,
             sfds (
               name,
-              region
+              region,
+              status
             )
           `)
           .eq('user_id', user.id)
@@ -84,11 +87,14 @@ export function useClientAdhesions() {
           throw error;
         }
 
+        console.log('User adhesion requests retrieved:', data?.length || 0);
+        
         // Format the response to properly handle the joined data
         const formattedData = data.map(item => ({
           ...item,
           sfd_name: item.sfds?.name,
           sfd_region: item.sfds?.region,
+          sfd_status: item.sfds?.status,
           // Remove nested sfds data to avoid conflicts
           sfds: undefined
         }));
@@ -105,7 +111,8 @@ export function useClientAdhesions() {
       }
     },
     enabled: !!user?.id,
-    retry: 2, // Retry up to 2 times if there's an error
+    retry: 3, // Augmenter le nombre de tentatives 
+    refetchOnWindowFocus: true,
   });
 
   // Approve adhesion request mutation
@@ -227,18 +234,31 @@ export function useClientAdhesions() {
     }) => {
       if (!user?.id) throw new Error('Utilisateur non connecté');
 
-      // S'assurer que la SFD est active avant de créer une demande
+      // Vérification explicite que la SFD existe et est active
+      console.log(`Vérification que la SFD ${data.sfd_id} est active avant de créer une demande...`);
+      
       const { data: sfdData, error: sfdError } = await supabase
         .from('sfds')
         .select('name, status')
         .eq('id', data.sfd_id)
         .eq('status', 'active')
-        .single();
+        .maybeSingle();
 
-      if (sfdError || !sfdData) {
+      if (sfdError) {
+        console.error('Erreur lors de la vérification de la SFD:', sfdError);
+        throw new Error(`Erreur technique lors de la vérification de la SFD: ${sfdError.message}`);
+      }
+
+      if (!sfdData) {
+        console.error(`La SFD ${data.sfd_id} n'est pas disponible ou inactive`);
         throw new Error('Cette SFD n\'est pas disponible actuellement');
       }
 
+      console.log(`SFD ${data.sfd_id} vérifiée active, création de la demande...`);
+      
+      // Génération d'un numéro de référence unique
+      const referenceNumber = `ADH-${Date.now().toString(36).substring(4)}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+      
       const { data: result, error } = await supabase
         .from('client_adhesion_requests')
         .insert({
@@ -253,12 +273,17 @@ export function useClientAdhesions() {
           source_of_income: data.source_of_income,
           notes: data.notes,
           status: 'pending',
-          reference_number: `ADH-${Math.random().toString(36).substring(2, 10)}`
+          reference_number: referenceNumber
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erreur lors de la création de la demande:', error);
+        throw error;
+      }
+      
+      console.log('Demande créée avec succès:', result);
       return result as ClientAdhesionRequest;
     },
     onSuccess: () => {
@@ -270,6 +295,7 @@ export function useClientAdhesions() {
       });
     },
     onError: (error: any) => {
+      console.error('Erreur lors de la création de la demande:', error);
       toast({
         title: 'Erreur',
         description: `Impossible d'envoyer la demande: ${error.message}`,
