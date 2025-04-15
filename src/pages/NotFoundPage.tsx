@@ -1,20 +1,10 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, ArrowLeft, Home } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 const NotFoundPage = () => {
-  const navigate = useNavigate();
-
-  const handleGoHome = () => {
-    navigate('/');
-  };
-
-  const handleGoBack = () => {
-    navigate(-1);
-  };
-
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-50 px-4">
       <div className="p-6 bg-white rounded-lg shadow-md text-center max-w-md w-full">
@@ -29,17 +19,15 @@ const NotFoundPage = () => {
           <Button
             variant="outline"
             className="border-gray-200"
-            onClick={handleGoBack}
+            onClick={() => window.history.back()}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
             Retour
           </Button>
           <Button
             className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-            onClick={handleGoHome}
+            asChild
           >
-            <Home className="mr-2 h-4 w-4" />
-            Retour à l'accueil
+            <Link to="/">Retour à l'accueil</Link>
           </Button>
         </div>
       </div>

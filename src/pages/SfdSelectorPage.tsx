@@ -1,11 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Building, ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Building, Loader2 } from 'lucide-react';
+import SfdList from '@/components/mobile/sfd/SfdList';
 import { supabase } from '@/integrations/supabase/client';
+
+interface LocationState {
+  selectedSfdId?: string;
+}
 
 interface Sfd {
   id: string;
@@ -17,6 +23,7 @@ interface Sfd {
 }
 
 const SfdSelectorPage = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -24,6 +31,8 @@ const SfdSelectorPage = () => {
   const [existingRequests, setExistingRequests] = useState<{sfd_id: string, status: string}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sfds, setSfds] = useState<Sfd[]>([]);
+  
+  const { selectedSfdId } = (location.state as LocationState) || {};
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,18 +41,25 @@ const SfdSelectorPage = () => {
       setIsLoading(true);
       
       try {
-        // Fetch active SFDs
-        const { data: sfdsData, error: sfdsError } = await supabase
-          .from('sfds')
-          .select('*')
-          .eq('status', 'active')
-          .order('name');
-          
+        // 1. Récupérer les SFDs via la fonction Edge
+        console.log('Fetching SFDs from Edge function');
+        const { data: sfdsData, error: sfdsError } = await supabase.functions.invoke('fetch-sfds', {
+          body: { userId: user.id }
+        });
+        
         if (sfdsError) throw sfdsError;
         
-        setSfds(sfdsData || []);
+        // Vérifier les données SFDs
+        if (!Array.isArray(sfdsData)) {
+          console.error('Invalid SFDs data format:', sfdsData);
+          throw new Error('Format de données SFD invalide');
+        }
         
-        // Get existing requests
+        console.log(`Loaded ${sfdsData.length} SFDs from Edge function`);
+        setSfds(sfdsData);
+        
+        // 2. Récupérer les demandes existantes
+        console.log('Fetching existing SFD client requests');
         const { data: existingReqs, error: requestsError } = await supabase
           .from('sfd_clients')
           .select('sfd_id, status')
@@ -52,6 +68,7 @@ const SfdSelectorPage = () => {
         if (requestsError) throw requestsError;
         
         setExistingRequests(existingReqs || []);
+        console.log(`Found ${existingReqs?.length || 0} existing SFD client requests`);
       } catch (err) {
         console.error('Error loading data:', err);
         toast({
@@ -77,6 +94,23 @@ const SfdSelectorPage = () => {
       return;
     }
 
+    // Check if user already has a request for this SFD
+    const existingRequest = existingRequests.find(req => req.sfd_id === sfdId);
+    if (existingRequest) {
+      if (existingRequest.status === 'validated') {
+        toast({
+          title: "Information",
+          description: "Vous êtes déjà client de cette SFD",
+        });
+      } else {
+        toast({
+          title: "Information",
+          description: "Vous avez déjà une demande en cours pour cette SFD",
+        });
+      }
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -87,6 +121,7 @@ const SfdSelectorPage = () => {
           sfd_id: sfdId,
           status: 'pending',
           full_name: user.user_metadata?.full_name || '',
+          kyc_level: 0
         })
         .select();
       
@@ -97,9 +132,12 @@ const SfdSelectorPage = () => {
         description: "Votre demande a été envoyée avec succès. Vous serez notifié lorsqu'elle sera traitée.",
       });
       
+      // Update the local state to prevent duplicate requests
+      setExistingRequests(prev => [...prev, {sfd_id: sfdId, status: 'pending'}]);
+      
       navigate('/mobile-flow/profile');
     } catch (error: any) {
-      console.error('Error sending request:', error);
+      console.error('Erreur lors de la soumission de la demande:', error);
       toast({
         title: "Erreur",
         description: "Impossible d'envoyer votre demande. Veuillez réessayer plus tard.",
@@ -129,13 +167,13 @@ const SfdSelectorPage = () => {
       </header>
       
       <main className="flex-1 container mx-auto max-w-md p-4">
-        <Card className="p-4 mb-4 bg-white">
+        <Card className="p-4 mb-4 bg-white shadow-sm">
           <div className="flex items-start space-x-3">
             <Building className="h-6 w-6 text-[#0D6A51] mt-1" />
             <div>
               <h2 className="font-medium text-gray-900">SFDs Partenaires MEREF</h2>
               <p className="text-sm text-gray-600 mt-1">
-                Sélectionnez une SFD pour envoyer une demande d'association de compte.
+                Sélectionnez une SFD pour envoyer une demande d'association de compte. 
                 L'agent SFD vérifiera votre identité et validera votre compte.
               </p>
             </div>
@@ -147,44 +185,12 @@ const SfdSelectorPage = () => {
             <Loader2 className="h-8 w-8 animate-spin text-[#0D6A51]" />
           </div>
         ) : (
-          <div className="space-y-4">
-            {sfds.map((sfd) => {
-              const existingRequest = existingRequests.find(r => r.sfd_id === sfd.id);
-              
-              return (
-                <Card
-                  key={sfd.id}
-                  className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => !existingRequest && handleSendRequest(sfd.id)}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                      {sfd.logo_url ? (
-                        <img 
-                          src={sfd.logo_url} 
-                          alt={sfd.name}
-                          className="h-8 w-8 object-contain" 
-                        />
-                      ) : (
-                        <Building className="h-6 w-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{sfd.name}</h3>
-                      {sfd.region && (
-                        <p className="text-sm text-gray-500">{sfd.region}</p>
-                      )}
-                      {existingRequest && (
-                        <p className="text-sm text-amber-600 mt-1">
-                          Demande {existingRequest.status === 'pending' ? 'en attente' : 'envoyée'}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+          <SfdList 
+            onSelectSfd={handleSendRequest} 
+            existingRequests={existingRequests}
+            isSubmitting={isSubmitting}
+            sfds={sfds}
+          />
         )}
       </main>
     </div>
