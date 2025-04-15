@@ -1,3 +1,4 @@
+
 import { createBrowserRouter } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
 import LoanApplicationPage from '@/pages/LoanApplicationPage';
@@ -9,7 +10,7 @@ import MobileLoanPlansPage from '@/pages/mobile/MobileLoanPlansPage';
 import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage';
 import MobileLoansListPage from '@/pages/mobile/MobileLoansListPage';
 import { mobileRoutes } from './mobile.routes';
-import { SfdManagementPage } from '@/pages/SfdManagementPage';
+import SfdManagementPage from '@/pages/SfdManagementPage';
 
 export const router = createBrowserRouter([
   {

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -43,9 +42,7 @@ export function SfdAddDialog({ open, onOpenChange }: SfdAddDialogProps) {
       status: 'active',
       description: '',
       contact_email: '',
-      email: '',
       phone: '',
-      address: '',
       logo_url: '',
       legal_document_url: '',
       subsidy_balance: 0,

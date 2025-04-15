@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   AlertDialog,
@@ -13,7 +12,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from 'lucide-react';
-import { SfdForm } from './SfdForm';
+import { SfdForm } from '@/components/admin/sfd/SfdForm';
 
 interface SfdDialogsProps {
   showSuspendDialog: boolean;

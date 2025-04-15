@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Power, PowerOff } from 'lucide-react';
-import { Sfd } from '@/hooks/useSfdManagement';
+import { Sfd } from '@/components/admin/types/sfd-types';
 
 interface SfdTableProps {
   sfds: Sfd[];
