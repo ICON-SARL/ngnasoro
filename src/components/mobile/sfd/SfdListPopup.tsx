@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ChevronRight, Building, FileCheck } from 'lucide-react';
@@ -39,33 +40,31 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
       try {
         console.log('Fetching active SFDs for popup display');
         
-        const { data, error } = await supabase
-          .from('sfds')
-          .select('id, name, region, logo_url, status')
-          .eq('status', 'active')
-          .order('name');
+        // Utiliser la fonction Edge pour récupérer les SFDs actives
+        const { data, error } = await supabase.functions.invoke('fetch-sfds', {
+          body: { userId: user?.id }
+        });
 
         if (error) throw error;
         
-        console.log(`Fetched ${data?.length || 0} active SFDs`);
+        console.log(`Fetched ${data?.length || 0} active SFDs from Edge function`);
         
-        const availableSfds = data || [];
+        // Vérifier si la réponse contient une erreur
+        if (data && data.error) {
+          throw new Error(data.error);
+        }
         
-        if (availableSfds.length === 0 && process.env.NODE_ENV === 'development') {
-          availableSfds.push({
-            id: 'test-sfd-1',
-            name: 'SFD Test 1',
-            region: 'Région Test',
-            logo_url: null,
-            status: 'active'
-          });
+        const availableSfds = Array.isArray(data) ? data : [];
+        
+        if (availableSfds.length === 0) {
+          console.warn('No SFDs returned from Edge function');
         }
         
         const sortedSfds = sortPrioritySfds(availableSfds);
         setSfds(sortedSfds);
       } catch (err: any) {
         console.error('Error loading SFDs:', err);
-        setError('Unable to load the list of SFDs. Please try again later.');
+        setError('Impossible de charger la liste des SFDs. Veuillez réessayer plus tard.');
       } finally {
         setIsLoading(false);
       }

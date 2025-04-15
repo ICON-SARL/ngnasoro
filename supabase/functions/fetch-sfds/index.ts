@@ -57,8 +57,7 @@ serve(async (req) => {
       }
     }
     
-    // Fetch active SFDs with explicit status filter
-    // Added explicit console logging for debugging status filter
+    // Fetch only real SFDs from DB (exclude test data)
     console.log('Fetching SFDs with status filter: "active"');
     const { data: activeSfds, error: sfdsError } = await supabase
       .from('sfds')
@@ -70,14 +69,15 @@ serve(async (req) => {
         status,
         logo_url
       `)
-      .eq('status', 'active');
+      .eq('status', 'active')
+      .not('code', 'ilike', '%test%'); // Exclude test SFDs
       
     if (sfdsError) {
       console.error('Error fetching SFDs:', sfdsError);
       throw sfdsError;
     }
     
-    console.log(`Found ${activeSfds?.length || 0} active SFDs in database`);
+    console.log(`Found ${activeSfds?.length || 0} active real SFDs in database`);
     
     // Si aucune SFD active, log explicite
     if (!activeSfds || activeSfds.length === 0) {
@@ -130,8 +130,11 @@ serve(async (req) => {
     }
 
     // If no valid SFDs found and we're in development, provide test data
-    if ((!validSfds || validSfds.length === 0) && Deno.env.get('ENVIRONMENT') === 'development') {
-      console.log('No valid SFDs found, returning test data for development');
+    // But ONLY if we're in development environment
+    const isDevEnvironment = Deno.env.get('ENVIRONMENT') === 'development';
+    
+    if ((!validSfds || validSfds.length === 0) && isDevEnvironment) {
+      console.log('No valid SFDs found, returning test data for development only');
       return new Response(
         JSON.stringify([
           {

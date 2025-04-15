@@ -13,6 +13,15 @@ interface LocationState {
   selectedSfdId?: string;
 }
 
+interface Sfd {
+  id: string;
+  name: string;
+  code: string;
+  region?: string;
+  status: string;
+  logo_url?: string;
+}
+
 const SfdSelectorPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -21,15 +30,35 @@ const SfdSelectorPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingRequests, setExistingRequests] = useState<{sfd_id: string, status: string}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [sfds, setSfds] = useState<Sfd[]>([]);
   
   const { selectedSfdId } = (location.state as LocationState) || {};
 
   useEffect(() => {
-    const fetchExistingRequests = async () => {
+    const fetchData = async () => {
       if (!user?.id) return;
       
       setIsLoading(true);
+      
       try {
+        // 1. Récupérer les SFDs via la fonction Edge
+        console.log('Fetching SFDs from Edge function');
+        const { data: sfdsData, error: sfdsError } = await supabase.functions.invoke('fetch-sfds', {
+          body: { userId: user.id }
+        });
+        
+        if (sfdsError) throw sfdsError;
+        
+        // Vérifier les données SFDs
+        if (!Array.isArray(sfdsData)) {
+          console.error('Invalid SFDs data format:', sfdsData);
+          throw new Error('Format de données SFD invalide');
+        }
+        
+        console.log(`Loaded ${sfdsData.length} SFDs from Edge function`);
+        setSfds(sfdsData);
+        
+        // 2. Récupérer les demandes existantes
         console.log('Fetching existing SFD client requests');
         const { data: existingReqs, error: requestsError } = await supabase
           .from('sfd_clients')
@@ -41,14 +70,19 @@ const SfdSelectorPage = () => {
         setExistingRequests(existingReqs || []);
         console.log(`Found ${existingReqs?.length || 0} existing SFD client requests`);
       } catch (err) {
-        console.error('Error fetching existing requests:', err);
+        console.error('Error loading data:', err);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les données. Veuillez réessayer plus tard.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchExistingRequests();
-  }, [user?.id]);
+    fetchData();
+  }, [user?.id, toast]);
 
   const handleSendRequest = async (sfdId: string) => {
     if (!user) {
@@ -155,6 +189,7 @@ const SfdSelectorPage = () => {
             onSelectSfd={handleSendRequest} 
             existingRequests={existingRequests}
             isSubmitting={isSubmitting}
+            sfds={sfds}
           />
         )}
       </main>
