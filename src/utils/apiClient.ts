@@ -41,7 +41,10 @@ export const apiClient = {
   updateUserProfile: profileApi.updateUserProfile,
   
   // Transaction operations
-  getUserTransactions: transactionApi.getUserTransactions,
+  getTransactionHistory: transactionApi.getTransactionHistory,
+  generateTransactionReport: transactionApi.generateTransactionReport,
+  reportTransactionDispute: transactionApi.reportTransactionDispute,
+  resolveTransactionDispute: transactionApi.resolveTransactionDispute,
   
   // Edge functions
   callEdgeFunction: edgeFunctionApi.callEdgeFunction,

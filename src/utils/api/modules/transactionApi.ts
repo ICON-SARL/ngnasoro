@@ -1,8 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { handleError } from "@/utils/errorHandler";
-import { Transaction } from "@/types/transactions";
-import { TransactionFilters } from "@/services/transactions/types";
+import { Transaction, TransactionDispute, TransactionFilters } from "@/types/transactions";
 
 export const transactionApi = {
   /**
@@ -29,7 +28,7 @@ export const transactionApi = {
         query = query.lte('created_at', filters.endDate);
       }
       
-      if (filters?.type) {
+      if (filters?.type && filters.type !== 'all') {
         query = query.eq('type', filters.type);
       }
       
@@ -49,12 +48,17 @@ export const transactionApi = {
         query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
       }
       
+      let rangeStart = 0;
+      let rangeEnd = 9;
+      
+      if (filters?.page !== undefined && filters?.limit) {
+        rangeStart = filters.page * filters.limit;
+        rangeEnd = rangeStart + filters.limit - 1;
+      }
+      
       const { data, error } = await query
         .order('created_at', { ascending: false })
-        .range(
-          filters?.page ? filters.page * (filters?.limit || 10) : 0,
-          filters?.page ? (filters.page + 1) * (filters?.limit || 10) - 1 : 9
-        );
+        .range(rangeStart, rangeEnd);
 
       if (error) throw error;
       return data;
@@ -100,7 +104,16 @@ export const transactionApi = {
   }) {
     try {
       // First create the dispute record
-      const { data: dispute, error: disputeError } = await supabase
+      const { data: transaction, error: txError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('id', transactionId)
+        .single();
+
+      if (txError) throw txError;
+
+      // Create dispute record
+      const { data, error } = await supabase
         .from('transaction_disputes')
         .insert({
           transaction_id: transactionId,
@@ -112,7 +125,7 @@ export const transactionApi = {
         .select()
         .single();
 
-      if (disputeError) throw disputeError;
+      if (error) throw error;
 
       // Update transaction status
       await supabase
@@ -130,12 +143,12 @@ export const transactionApi = {
           status: 'success',
           details: {
             transaction_id: transactionId,
-            dispute_id: dispute.id,
+            dispute_id: data.id,
             reason
           }
         });
 
-      return dispute;
+      return data;
     } catch (error) {
       handleError(error);
       return null;
@@ -157,7 +170,17 @@ export const transactionApi = {
     resolvedBy: string;
   }) {
     try {
-      const { data: dispute, error: disputeError } = await supabase
+      // Get dispute details
+      const { data: existingDispute, error: getError } = await supabase
+        .from('transaction_disputes')
+        .select('*')
+        .eq('id', disputeId)
+        .single();
+
+      if (getError) throw getError;
+
+      // Update dispute status
+      const { data, error } = await supabase
         .from('transaction_disputes')
         .update({
           status: resolution === 'accepted' ? 'resolved' : 'rejected',
@@ -169,20 +192,20 @@ export const transactionApi = {
         .select()
         .single();
 
-      if (disputeError) throw disputeError;
+      if (error) throw error;
 
       if (resolution === 'accepted') {
         // Update transaction status
         await supabase
           .from('transactions')
           .update({ status: 'reversed' })
-          .eq('id', dispute.transaction_id);
+          .eq('id', existingDispute.transaction_id);
 
         // Create reversal transaction if needed
         await supabase.functions.invoke('process-transaction-reversal', {
           body: { 
             disputeId,
-            transactionId: dispute.transaction_id
+            transactionId: existingDispute.transaction_id
           }
         });
       }
@@ -202,7 +225,7 @@ export const transactionApi = {
           }
         });
 
-      return dispute;
+      return data;
     } catch (error) {
       handleError(error);
       return null;

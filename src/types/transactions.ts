@@ -1,10 +1,10 @@
 export interface Transaction {
   id: number | string;
   name: string;
-  type: 'deposit' | 'withdrawal' | 'transfer' | 'payment' | 'loan_repayment' | 'loan_disbursement' | 'other';
+  type: 'deposit' | 'withdrawal' | 'transfer' | 'payment' | 'loan_repayment' | 'loan_disbursement' | 'reversal' | 'other';
   amount: number;
   date: string;
-  status?: 'pending' | 'completed' | 'failed' | 'success' | 'flagged';
+  status?: 'pending' | 'completed' | 'failed' | 'success' | 'flagged' | 'disputed' | 'reversed';
   description?: string;
   category?: string;
   reference?: string;
@@ -19,6 +19,7 @@ export interface Transaction {
     agency?: string;
     [key: string]: any;
   };
+  affects_balance?: boolean;
 }
 
 export interface Account {
@@ -47,7 +48,8 @@ export interface TransactionDispute {
 
 export interface TransactionFilters {
   period?: 'today' | 'week' | 'month' | 'year' | 'all';
-  type?: 'all' | 'deposit' | 'withdrawal' | 'transfer' | 'payment' | 'loan_repayment' | 'loan_disbursement' | 'other';
+  type?: 'all' | 'deposit' | 'withdrawal' | 'transfer' | 'payment' | 'loan_repayment' | 'loan_disbursement' | 'reversal' | 'other';
+  status?: 'pending' | 'completed' | 'failed' | 'success' | 'flagged' | 'disputed' | 'reversed';
   startDate?: string;
   endDate?: string;
   search?: string;
