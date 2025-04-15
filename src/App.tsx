@@ -13,6 +13,7 @@ import ClientLoginPage from '@/pages/ClientLoginPage';
 import RoleGuard from '@/components/RoleGuard';
 import AnonymousOnlyGuard from '@/components/AnonymousOnlyGuard';
 import { UserRole } from '@/utils/auth/roleTypes';
+import SfdManagementPage from '@/pages/SfdManagementPage';
 
 // Create a client
 const queryClient = new QueryClient({
