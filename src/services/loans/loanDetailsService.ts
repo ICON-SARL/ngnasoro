@@ -56,12 +56,13 @@ export const fetchLoanDetails = async (loanId: string): Promise<{
       remainingAmount: loan.amount - paidAmount,
       nextPaymentDue: loan.next_payment_date || '',
       paymentHistory: (payments || []).map(payment => ({
-        id: payment.id,
+        id: Number(payment.id), // Conversion de string à number pour résoudre l'erreur
         date: payment.payment_date,
         amount: payment.amount,
         status: payment.status
       })),
-      status: loan.status,
+      // Utiliser un type valide pour status
+      status: loan.status as "pending" | "approved" | "disbursed" | "completed" | "rejected",
       progress: Math.min(100, Math.round((paidAmount / loan.amount) * 100)),
       lateFees: 0, // This would be calculated based on business rules
       disbursed: !!loan.disbursed_at,
@@ -74,7 +75,7 @@ export const fetchLoanDetails = async (loanId: string): Promise<{
       loanPurpose: loan.purpose,
       totalAmount: loan.amount,
       disbursalDate: loan.disbursed_at || '',
-      endDate: loan.end_date || '',
+      endDate: loan.disbursed_at ? new Date(new Date(loan.disbursed_at).setMonth(new Date(loan.disbursed_at).getMonth() + loan.duration_months)).toISOString() : '', // Calculer la date de fin basée sur la date de décaissement et la durée
       interestRate: loan.interest_rate,
       status: loan.status,
       disbursed: !!loan.disbursed_at,
