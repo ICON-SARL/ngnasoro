@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
-import { SfdManagementContainer } from '@/components/admin/sfd-management/SfdManagementContainer';
+import { SfdManagement } from '@/components/admin/SfdManagement';
 import { Footer } from '@/components';
 
 export default function SfdManagementPage() {
@@ -18,7 +18,7 @@ export default function SfdManagementPage() {
         </div>
         
         <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
-          <SfdManagementContainer />
+          <SfdManagement />
         </div>
       </main>
       
