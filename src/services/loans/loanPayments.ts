@@ -9,7 +9,7 @@ export const recordLoanPayment = async (
   loanId: string,
   amount: number,
   paymentDate: string = new Date().toISOString(),
-  description: string = 'Paiement de prêt'
+  paymentMethod: string = 'cash'
 ) => {
   try {
     const { data, error } = await supabase
@@ -18,7 +18,7 @@ export const recordLoanPayment = async (
         loan_id: loanId,
         amount,
         payment_date: paymentDate,
-        description,
+        payment_method: paymentMethod,
         status: 'completed'
       })
       .select('*')
@@ -47,14 +47,16 @@ export const sendPaymentReminder = async (
   try {
     // Créer une notification
     const { data, error } = await supabase
-      .from('notifications')
+      .from('admin_notifications')
       .insert({
         user_id: clientId,
         title: 'Rappel de paiement',
         message: `Votre paiement pour le prêt est dû le ${new Date(dueDate).toLocaleDateString()}`,
         type: 'payment_reminder',
         status: 'unread',
-        metadata: { loan_id: loanId, due_date: dueDate }
+        recipient_id: clientId,
+        sender_id: clientId, // Utiliser l'ID du client comme expéditeur par défaut
+        action_link: `/loans/${loanId}`
       });
       
     if (error) throw error;
