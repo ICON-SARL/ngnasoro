@@ -3,19 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-
-interface Loan {
-  id: string;
-  created_at: string;
-  amount: number;
-  duration_months: number;
-  interest_rate: number;
-  monthly_payment: number;
-  purpose: string;
-  client_id: string;
-  sfd_id: string;
-  status: string;
-}
+import { Loan } from '@/types/sfdClients';
 
 export function useLoansPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -37,7 +25,7 @@ export function useLoansPage() {
 
       const { data, error } = await supabase
         .from('sfd_loans')
-        .select('*')
+        .select('*, sfd_clients(full_name, email)')
         .eq('sfd_id', sfdId)
         .order('created_at', { ascending: false });
 
@@ -45,7 +33,26 @@ export function useLoansPage() {
         throw new Error(error.message);
       }
 
-      setLoans(data || []);
+      // Map the raw data to include client_name and ensure all required fields are present
+      const formattedLoans: Loan[] = (data || []).map(loan => ({
+        ...loan,
+        client_name: loan.sfd_clients?.full_name || 'Client #' + loan.client_id.substring(0, 4),
+        reference: loan.reference || loan.id.substring(0, 8),
+        subsidy_amount: loan.subsidy_amount || 0,
+        subsidy_rate: loan.subsidy_rate || 0,
+        id: loan.id,
+        client_id: loan.client_id,
+        sfd_id: loan.sfd_id,
+        amount: loan.amount,
+        duration_months: loan.duration_months,
+        interest_rate: loan.interest_rate,
+        monthly_payment: loan.monthly_payment,
+        purpose: loan.purpose,
+        status: loan.status || 'pending',
+        created_at: loan.created_at,
+      }));
+
+      setLoans(formattedLoans);
     } catch (error: any) {
       setError(error.message);
       toast({
