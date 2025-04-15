@@ -1,7 +1,9 @@
 
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, CreditCard, PiggyBank, User } from 'lucide-react';
+import { Home, CreditCard, FileText, PiggyBank, User } from 'lucide-react';
+import { mobileNavItems } from '@/config/mobileNavigation';
+import * as Icons from 'lucide-react';
 
 interface MobileNavigationProps {
   onAction?: (action: string, data?: any) => void;
@@ -10,7 +12,7 @@ interface MobileNavigationProps {
 }
 
 const MobileNavigation: React.FC<MobileNavigationProps> = ({ 
-  onAction,
+  onAction, 
   isHeader = false,
   className = ""
 }) => {
@@ -20,7 +22,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   const isActive = (path: string) => {
     return location.pathname.includes(path);
   };
-
+  
   const handleNavigation = (path: string, action?: string) => {
     navigate(path);
     if (onAction && action) {
@@ -28,47 +30,26 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
     }
   };
 
+  // Get icon component dynamically
+  const getIcon = (iconName: string, className: string = "h-5 w-5") => {
+    const IconComponent = (Icons as any)[iconName] || Icons.CircleDot;
+    return <IconComponent className={className} />;
+  };
+  
   return (
     <div className={`${isHeader ? '' : 'fixed bottom-0 left-0 right-0 z-40'} bg-white border-t border-gray-200 py-2 px-4 flex justify-around items-center ${className}`}>
-      <div 
-        className={`flex flex-col items-center ${isActive('/mobile-flow/main') ? 'text-[#0D6A51]' : 'text-gray-500'}`}
-        onClick={() => handleNavigation('/mobile-flow/main', 'Navigate to Home')}
-      >
-        <div className={`p-2 rounded-full ${isActive('/mobile-flow/main') ? 'bg-[#0D6A51]/10' : ''}`}>
-          <Home className="h-5 w-5" />
+      {mobileNavItems.map((item) => (
+        <div 
+          key={item.id}
+          className={`flex flex-col items-center ${isActive(item.route) ? 'text-[#0D6A51]' : 'text-gray-500'}`}
+          onClick={() => handleNavigation(item.route, `Navigate to ${item.label}`)}
+        >
+          <div className={`p-2 rounded-full ${isActive(item.route) ? 'bg-[#0D6A51]/10' : ''}`}>
+            {getIcon(item.icon, "h-5 w-5")}
+          </div>
+          <span className="text-xs mt-1">{item.label}</span>
         </div>
-        <span className="text-xs mt-1">Accueil</span>
-      </div>
-      
-      <div 
-        className={`flex flex-col items-center ${isActive('/mobile-flow/loans') ? 'text-[#0D6A51]' : 'text-gray-500'}`}
-        onClick={() => handleNavigation('/mobile-flow/loans', 'Navigate to Loans')}
-      >
-        <div className={`p-2 rounded-full ${isActive('/mobile-flow/loans') ? 'bg-[#0D6A51]/10' : ''}`}>
-          <CreditCard className="h-5 w-5" />
-        </div>
-        <span className="text-xs mt-1">Prêts</span>
-      </div>
-      
-      <div 
-        className={`flex flex-col items-center ${isActive('/mobile-flow/savings') ? 'text-[#0D6A51]' : 'text-gray-500'}`}
-        onClick={() => handleNavigation('/mobile-flow/savings', 'Navigate to Savings')}
-      >
-        <div className={`p-2 rounded-full ${isActive('/mobile-flow/savings') ? 'bg-[#0D6A51]/10' : ''}`}>
-          <PiggyBank className="h-5 w-5" />
-        </div>
-        <span className="text-xs mt-1">Mes fonds</span>
-      </div>
-      
-      <div 
-        className={`flex flex-col items-center ${isActive('/mobile-flow/profile') ? 'text-[#0D6A51]' : 'text-gray-500'}`}
-        onClick={() => handleNavigation('/mobile-flow/profile', 'Navigate to Profile')}
-      >
-        <div className={`p-2 rounded-full ${isActive('/mobile-flow/profile') ? 'bg-[#0D6A51]/10' : ''}`}>
-          <User className="h-5 w-5" />
-        </div>
-        <span className="text-xs mt-1">Profil</span>
-      </div>
+      ))}
     </div>
   );
 };

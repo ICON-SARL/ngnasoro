@@ -1,4 +1,3 @@
-
 import { MobileNavItem, MobileMenuSection, MobileMenuItem } from '@/types/navigation';
 
 export const mobileNavItems: MobileNavItem[] = [
@@ -25,6 +24,12 @@ export const mobileNavItems: MobileNavItem[] = [
     label: 'Mes fonds',
     icon: 'Wallet',
     route: '/mobile-flow/funds'
+  },
+  {
+    id: 'profile',
+    label: 'Profil',
+    icon: 'User',
+    route: '/mobile-flow/profile'
   }
 ];
 
