@@ -6,7 +6,26 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { BadgePercent } from 'lucide-react';
 import { LoanPlanCard } from './LoanPlanCard';
-import { LoanPlan } from '@/types/sfdClients';
+
+interface LoanPlan {
+  id: string;
+  sfd_id: string;
+  name: string;
+  description: string;
+  min_amount: number;
+  max_amount: number;
+  min_duration: number;
+  max_duration: number;
+  interest_rate: number;
+  fees: number;
+  requirements: string[];
+  is_active: boolean;
+  created_at: string;
+  sfds?: {
+    name: string;
+    logo_url: string;
+  };
+}
 
 interface LoanPlansDisplayProps {
   subsidizedOnly?: boolean;
@@ -22,20 +41,6 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
     const fetchLoanPlans = async () => {
       setIsLoading(true);
       try {
-        // Get the user's connected SFDs
-        let userSfdIds: string[] = [];
-        
-        if (user?.id) {
-          const { data: userSfds } = await supabase
-            .from('user_sfds')
-            .select('sfd_id')
-            .eq('user_id', user.id);
-            
-          if (userSfds?.length) {
-            userSfdIds = userSfds.map(item => item.sfd_id);
-          }
-        }
-        
         // Determine whether to filter by sfd_id
         let query = supabase
           .from('sfd_loan_plans')
@@ -46,31 +51,29 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
               logo_url
             )
           `)
-          .eq('is_active', true)
-          .eq('is_published', true);
+          .eq('is_active', true);
           
-        // Filter by specific SFD if provided
+        // Filter by SFD if specified
         if (sfdId) {
           query = query.eq('sfd_id', sfdId);
-        } 
-        // Otherwise filter by user's connected SFDs
-        else if (userSfdIds.length > 0) {
-          query = query.in('sfd_id', userSfdIds);
+        } else if (user?.id) {
+          // Get the user's connected SFDs
+          const { data: userSfds } = await supabase
+            .from('user_sfds')
+            .select('sfd_id')
+            .eq('user_id', user.id);
+            
+          if (userSfds?.length) {
+            const sfdIds = userSfds.map(item => item.sfd_id);
+            query = query.in('sfd_id', sfdIds);
+          }
         }
         
         const { data, error } = await query.order('created_at', { ascending: false });
         
         if (error) throw error;
         
-        // Convert fetched data to LoanPlan type with necessary transformations
-        const typedPlans: LoanPlan[] = (data || []).map(plan => ({
-          ...plan,
-          is_active: Boolean(plan.is_active),
-          is_published: Boolean(plan.is_published),
-          requirements: plan.requirements || []
-        }));
-        
-        setLoanPlans(typedPlans);
+        setLoanPlans(data || []);
       } catch (error) {
         console.error('Erreur lors du chargement des plans de prêt:', error);
       } finally {
