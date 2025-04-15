@@ -2,15 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
-
-type SfdData = {
-  id: string;
-  name: string;
-  region?: string;
-  code: string;
-  logo_url?: string;
-  status: 'active' | 'inactive' | string;
-};
+import { SfdData } from './sfd/types';
 
 export function useSfdDataAccess() {
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);

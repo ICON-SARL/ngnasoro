@@ -1,4 +1,3 @@
-
 // Add SfdData to the existing file
 export interface SfdData {
   id: string;
@@ -9,8 +8,9 @@ export interface SfdData {
   status: string;
   balance?: number;
   currency?: string;
-  token?: string;
-  lastFetched?: Date;
+  token?: string | null;
+  lastFetched?: Date | null;
+  is_default?: boolean;
 }
 
 export interface QRCodeRequest {
