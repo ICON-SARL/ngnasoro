@@ -29,7 +29,7 @@ export const useSfdAdminForm = (onSuccess: () => void) => {
     },
   });
 
-  const handleSubmit = async (values: SfdAdminFormData) => {
+  const handleFormSubmit = async (values: SfdAdminFormData) => {
     setSubmitError(null);
     
     try {
@@ -50,6 +50,6 @@ export const useSfdAdminForm = (onSuccess: () => void) => {
     form,
     isLoading,
     submitError,
-    handleSubmit: form.handleSubmit(handleSubmit),
+    handleSubmit: form.handleSubmit(handleFormSubmit),
   };
 };
