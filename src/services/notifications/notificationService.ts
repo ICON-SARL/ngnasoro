@@ -9,6 +9,7 @@ export interface RealtimeNotification {
   type: string;
   recipient_id?: string;
   recipient_role?: string;
+  sender_id?: string;
   action_link?: string;
   read: boolean;
   created_at: string;
@@ -71,8 +72,15 @@ export const sendNotification = async ({
   recipient_id,
   recipient_role,
   action_link
-}: Omit<RealtimeNotification, 'id' | 'read' | 'created_at'>) => {
+}: Omit<RealtimeNotification, 'id' | 'read' | 'created_at' | 'sender_id'>) => {
   try {
+    // Get the current authenticated user to set as sender
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error("No authenticated user found to send notification");
+    }
+    
     const { data, error } = await supabase
       .from('admin_notifications')
       .insert({
@@ -82,6 +90,7 @@ export const sendNotification = async ({
         recipient_id,
         recipient_role,
         action_link,
+        sender_id: user.id,
         read: false
       })
       .select()
