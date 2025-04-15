@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus, Edit, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Edit, ToggleLeft, ToggleRight, Send, CheckCircle2 } from 'lucide-react';
 
 interface LoanPlan {
   id: string;
@@ -22,6 +22,7 @@ interface LoanPlan {
   interest_rate: number;
   fees: number;
   is_active: boolean;
+  is_published: boolean;
   requirements: string[];
   sfd_id: string;
 }
@@ -36,6 +37,7 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
   const { activeSfdId } = useAuth();
   const [loanPlans, setLoanPlans] = useState<LoanPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPublishing, setIsPublishing] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeSfdId) {
@@ -90,6 +92,53 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
     }
   };
 
+  const publishPlan = async (plan: LoanPlan) => {
+    setIsPublishing(plan.id);
+    try {
+      // Update the plan status to published
+      const { error } = await supabase
+        .from('sfd_loan_plans')
+        .update({ is_published: true })
+        .eq('id', plan.id);
+
+      if (error) throw error;
+      
+      // Get SFD info for the notification
+      const { data: sfdData } = await supabase
+        .from('sfds')
+        .select('name')
+        .eq('id', activeSfdId)
+        .single();
+      
+      // Call edge function to send notifications to clients
+      await supabase.functions.invoke('client-notifications', {
+        body: {
+          type: 'new_loan_plan',
+          sfd_id: activeSfdId,
+          loan_plan_id: plan.id,
+          loan_plan_name: plan.name,
+          sfd_name: sfdData?.name || 'Votre SFD'
+        }
+      });
+      
+      toast({
+        title: "Plan publié",
+        description: `Le plan "${plan.name}" a été publié avec succès et les clients ont été notifiés.`
+      });
+      
+      fetchLoanPlans();
+    } catch (error) {
+      console.error('Error publishing plan:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de publier le plan",
+        variant: "destructive"
+      });
+    } finally {
+      setIsPublishing(null);
+    }
+  };
+
   // Format currency display (FCFA)
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
@@ -121,7 +170,8 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
                   <TableHead>Durée</TableHead>
                   <TableHead>Taux</TableHead>
                   <TableHead>Statut</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
+                  <TableHead>Publication</TableHead>
+                  <TableHead className="w-[130px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -152,6 +202,17 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
                       )}
                     </TableCell>
                     <TableCell>
+                      {plan.is_published ? (
+                        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-300">
+                          <CheckCircle2 className="h-3 w-3 mr-1" /> Publié
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-800 hover:bg-amber-100 border-amber-200">
+                          Non publié
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center space-x-2">
                         <Button 
                           variant="ghost" 
@@ -171,6 +232,16 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
                             <ToggleLeft className="h-4 w-4 text-gray-400" />
                           )}
                         </Button>
+                        {plan.is_active && !plan.is_published && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => publishPlan(plan)}
+                            disabled={isPublishing === plan.id}
+                          >
+                            <Send className="h-4 w-4 text-blue-600" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

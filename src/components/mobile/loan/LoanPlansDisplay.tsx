@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +19,7 @@ interface LoanPlan {
   fees: number;
   requirements: string[];
   is_active: boolean;
+  is_published: boolean;
   created_at: string;
   sfds?: {
     name: string;
@@ -41,6 +41,20 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
     const fetchLoanPlans = async () => {
       setIsLoading(true);
       try {
+        // Get the user's connected SFDs
+        let userSfdIds: string[] = [];
+        
+        if (user?.id) {
+          const { data: userSfds } = await supabase
+            .from('user_sfds')
+            .select('sfd_id')
+            .eq('user_id', user.id);
+            
+          if (userSfds?.length) {
+            userSfdIds = userSfds.map(item => item.sfd_id);
+          }
+        }
+        
         // Determine whether to filter by sfd_id
         let query = supabase
           .from('sfd_loan_plans')
@@ -51,22 +65,16 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
               logo_url
             )
           `)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .eq('is_published', true);
           
-        // Filter by SFD if specified
+        // Filter by specific SFD if provided
         if (sfdId) {
           query = query.eq('sfd_id', sfdId);
-        } else if (user?.id) {
-          // Get the user's connected SFDs
-          const { data: userSfds } = await supabase
-            .from('user_sfds')
-            .select('sfd_id')
-            .eq('user_id', user.id);
-            
-          if (userSfds?.length) {
-            const sfdIds = userSfds.map(item => item.sfd_id);
-            query = query.in('sfd_id', sfdIds);
-          }
+        } 
+        // Otherwise filter by user's connected SFDs
+        else if (userSfdIds.length > 0) {
+          query = query.in('sfd_id', userSfdIds);
         }
         
         const { data, error } = await query.order('created_at', { ascending: false });
