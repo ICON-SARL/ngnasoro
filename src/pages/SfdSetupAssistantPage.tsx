@@ -59,7 +59,8 @@ const SfdSetupAssistantPage = () => {
   const handleAssociateSfd = async (sfdId: string) => {
     if (!user) return;
     
-    const result = await associateUserWithSfd(sfdId, true);
+    // Updated to pass only one argument to associateUserWithSfd
+    const result = await associateUserWithSfd(sfdId);
     
     if (result) {
       toast({
