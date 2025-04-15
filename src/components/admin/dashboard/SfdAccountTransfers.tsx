@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -96,7 +97,7 @@ export function SfdAccountTransfers() {
       setFromAccountId('');
       setToAccountId('');
       
-      // Call refetchAccounts with no arguments
+      // Call refetchAccounts with no arguments - FIX #2
       await refetchAccounts();
     } catch (error) {
       console.error('Transfer error:', error);
@@ -111,7 +112,7 @@ export function SfdAccountTransfers() {
   const refreshBalances = async () => {
     setIsRefreshing(true);
     try {
-      // Call synchronizeBalances.mutate with no arguments
+      // Call synchronizeBalances.mutate with no arguments - FIX #1
       await synchronizeBalances.mutate();
       toast({
         title: "Synchronisation terminée",
