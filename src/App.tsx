@@ -199,6 +199,13 @@ function App() {
                   </RoleGuard>
                 </ProtectedRoute>
               } />
+              <Route path="/mobile-flow/sfd-adhesion/:sfdId" element={
+                <ProtectedRoute>
+                  <RoleGuard requiredRole={UserRole.Client}>
+                    <SfdAdhesionPage />
+                  </RoleGuard>
+                </ProtectedRoute>
+              } />
               <Route path="/mobile-flow/*" element={
                 <ProtectedRoute>
                   <RoleGuard requiredRole={UserRole.Client}>

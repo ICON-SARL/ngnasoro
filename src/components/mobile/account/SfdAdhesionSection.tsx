@@ -96,8 +96,8 @@ const SfdAdhesionSection: React.FC = () => {
       return;
     }
     
-    setSelectedSfd(sfd);
-    setDialogOpen(true);
+    // Au lieu d'ouvrir la boîte de dialogue, naviguer vers la page d'adhésion SFD
+    navigate(`/mobile-flow/sfd-adhesion/${sfd.id}`);
   };
   
   const handleCloseDialog = () => {
@@ -133,9 +133,15 @@ const SfdAdhesionSection: React.FC = () => {
     return null;
   };
   
+  // Fonction pour empêcher les redirections non désirées
+  const handleContainerClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  
   return (
     <>
-      <Card className="mb-6">
+      <Card className="mb-6" onClick={handleContainerClick}>
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center">
             <Building className="h-5 w-5 mr-2 text-[#0D6A51]" />
@@ -168,7 +174,10 @@ const SfdAdhesionSection: React.FC = () => {
               
               <div className="pt-2">
                 <Button 
-                  onClick={handleGoToSfdSetup}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleGoToSfdSetup();
+                  }}
                   className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
                 >
                   <Building className="h-4 w-4 mr-2" />
@@ -184,7 +193,10 @@ const SfdAdhesionSection: React.FC = () => {
                           key={sfd.id}
                           variant="outline" 
                           className="flex flex-col h-auto items-center justify-center p-3 text-center"
-                          onClick={() => handleOpenSfdDialog(sfd)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenSfdDialog(sfd);
+                          }}
                         >
                           <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center mb-1">
                             <Building className="h-4 w-4 text-blue-600" />
@@ -196,7 +208,10 @@ const SfdAdhesionSection: React.FC = () => {
                         <Button 
                           variant="outline" 
                           className="flex flex-col h-auto items-center justify-center p-3"
-                          onClick={handleGoToSfdSetup}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleGoToSfdSetup();
+                          }}
                         >
                           <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center mb-1">
                             <Plus className="h-4 w-4 text-gray-600" />
@@ -212,12 +227,6 @@ const SfdAdhesionSection: React.FC = () => {
           )}
         </CardContent>
       </Card>
-      
-      <ClientAdhesionDialog 
-        isOpen={dialogOpen} 
-        onClose={handleCloseDialog} 
-        selectedSfd={selectedSfd}
-      />
     </>
   );
 };
