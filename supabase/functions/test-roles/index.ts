@@ -146,13 +146,14 @@ serve(async (req) => {
         );
       }
       
-      // Get permissions for the role from our definitions
-      const { data: rolePermissions, error: roleError } = await supabase.rpc('get_role_permissions', {
-        role_name: role
-      });
+      // Get permissions for the role from our view
+      const { data: rolePermissions, error: roleError } = await supabase
+        .from('role_permissions_view')
+        .select('permission')
+        .eq('role', role);
       
       if (roleError) {
-        // If the RPC function doesn't exist, return hard-coded permissions based on role
+        // If the view doesn't exist, return hard-coded permissions based on role
         // This is a fallback mechanism
         let permissions: string[] = [];
         
@@ -190,18 +191,21 @@ serve(async (req) => {
         );
       }
       
+      // Extract permission values from result
+      const permissions = rolePermissions.map(row => row.permission);
+      
       return new Response(
         JSON.stringify({ 
           success: true,
           role,
-          permissions: rolePermissions,
+          permissions,
           source: 'database'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    // NEW: Test real-time permission checking
+    // Test real-time permission checking
     if (action === 'check_permission') {
       if (!userId || !permission) {
         return new Response(
@@ -210,55 +214,72 @@ serve(async (req) => {
         );
       }
       
-      // Use the database function to check permission in real-time
-      const { data, error } = await supabase.rpc('check_real_time_permission', {
-        user_id: userId,
-        permission_name: permission
-      });
+      // Get user role first
+      const { data: userRoleData, error: userRoleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
       
-      if (error) {
-        console.error('Error checking permission:', error);
+      if (userRoleError) {
+        // Fallback to auth.users metadata if no explicit role
+        const { data: userData, error: authError } = await supabase.auth.admin.getUserById(userId);
         
-        // Fallback: Check permission using role-based logic
-        const { data: userRole } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .single();
-        
-        if (!userRole) {
+        if (authError) {
           return new Response(
             JSON.stringify({ 
               success: false,
-              error: 'User role not found'
+              error: 'User not found'
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
         
-        // Get permissions for this role
-        const { data: permissions } = await supabase.rpc('get_role_permissions', {
-          role_name: userRole.role
-        });
+        // Use role from auth metadata
+        const role = userData.user.app_metadata?.role || 'user';
         
-        const hasPermission = permissions && permissions.includes(permission);
+        // Now check permission using role_permissions_view
+        const { data: permData, error: permError } = await supabase
+          .from('role_permissions_view')
+          .select('permission')
+          .eq('role', role)
+          .eq('permission', permission);
+        
+        const hasPermission = permData && permData.length > 0;
         
         return new Response(
           JSON.stringify({ 
             success: true,
             permission,
             has_permission: hasPermission,
-            source: 'fallback_check',
-            checked_at: new Date().toISOString()
+            source: 'auth_metadata_check',
+            checked_at: new Date().toISOString(),
+            user_id: userId
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
+      // Get the role from user_roles
+      const role = userRoleData.role;
+      
+      // Check permission using role_permissions_view
+      const { data: permData, error: permError } = await supabase
+        .from('role_permissions_view')
+        .select('permission')
+        .eq('role', role)
+        .eq('permission', permission);
+      
+      const hasPermission = permData && permData.length > 0;
+      
       return new Response(
         JSON.stringify({ 
           success: true,
-          ...data
+          permission,
+          has_permission: hasPermission,
+          source: 'user_roles_check',
+          checked_at: new Date().toISOString(),
+          user_id: userId
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

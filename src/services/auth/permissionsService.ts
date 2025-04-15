@@ -11,20 +11,31 @@ export const permissionsService = {
    */
   async getUserPermissions(userId: string): Promise<string[]> {
     try {
-      // First try to get from database function
-      const { data: dbPermissions, error } = await supabase.rpc('get_role_permissions', {
-        role_name: await this.getUserRole(userId)
-      });
+      // First try to get user role
+      const userRole = await this.getUserRole(userId);
       
-      if (error) {
+      // Then try to get permissions for this role using a query rather than rpc
+      const { data: dbPermissions, error } = await supabase
+        .from('role_permissions_view')
+        .select('permission')
+        .eq('role', userRole)
+        .then(result => {
+          if (result.error) return { data: null, error: result.error };
+          // Transform the result to a string array
+          return { 
+            data: result.data?.map(row => row.permission) || [], 
+            error: null 
+          };
+        });
+      
+      if (error || !dbPermissions) {
         console.error('Error fetching permissions from database:', error);
         
         // Fallback to local permission definitions
-        const userRole = await this.getUserRole(userId);
         return this.getPermissionsForRole(userRole as UserRole);
       }
       
-      return dbPermissions || [];
+      return dbPermissions;
     } catch (err) {
       console.error('Error in getUserPermissions:', err);
       return [];
@@ -68,21 +79,35 @@ export const permissionsService = {
    */
   async hasPermission(userId: string, permission: string): Promise<boolean> {
     try {
-      // First try to use the database function for real-time permission checking
-      const { data, error } = await supabase.rpc('check_real_time_permission', {
-        user_id: userId,
-        permission_name: permission
-      });
+      // Query the database directly instead of using RPC
+      // First get the user's role
+      const userRole = await this.getUserRole(userId);
       
-      if (!error && data) {
-        return data.has_permission;
+      // Then check if this role has the permission
+      const { data, error } = await supabase
+        .from('role_permissions_view')
+        .select('permission')
+        .eq('role', userRole)
+        .eq('permission', permission)
+        .single()
+        .then(result => {
+          if (result.error && result.error.code !== 'PGRST116') {
+            // PGRST116 is the error code for no rows returned
+            return { data: null, error: result.error };
+          }
+          // If we got a row, the permission exists
+          return { data: result.data ? true : false, error: null };
+        });
+      
+      if (error) {
+        console.warn('Falling back to local permission check', error);
+        
+        // Fallback to local permission check
+        const userPermissions = await this.getUserPermissions(userId);
+        return userPermissions.includes(permission);
       }
       
-      console.warn('Falling back to local permission check', error);
-      
-      // Fallback to local permission check
-      const userPermissions = await this.getUserPermissions(userId);
-      return userPermissions.includes(permission);
+      return !!data;
     } catch (err) {
       console.error('Error in hasPermission:', err);
       return false;
