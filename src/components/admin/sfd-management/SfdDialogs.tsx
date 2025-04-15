@@ -5,7 +5,7 @@ import { SfdEditDialog } from './SfdEditDialog';
 import { SfdSuspendDialog } from './SfdSuspendDialog';
 import { SfdReactivateDialog } from './SfdReactivateDialog';
 import { SfdActivateDialog } from './SfdActivateDialog';
-import { Sfd } from '@/types/sfd-types';
+import { Sfd } from '@/components/admin/types/sfd-types';
 import { UseMutationResult } from '@tanstack/react-query';
 import { SfdFormValues } from '@/components/admin/sfd/schemas/sfdFormSchema';
 
@@ -76,8 +76,6 @@ export function SfdDialogs({
       <SfdAddDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
-        onSubmit={handleAddSfd}
-        isLoading={addSfdMutation.isPending}
       />
       
       <SfdEditDialog

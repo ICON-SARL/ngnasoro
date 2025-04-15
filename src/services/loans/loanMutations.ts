@@ -49,7 +49,7 @@ export const approveLoan = async (loanId: string, userId: string): Promise<boole
 /**
  * Rejects a loan
  */
-export const rejectLoan = async (loanId: string, userId: string): Promise<boolean> => {
+export const rejectLoan = async (loanId: string, userId: string, reason?: string): Promise<boolean> => {
   const { error } = await supabase
     .from('sfd_loans')
     .update({ 

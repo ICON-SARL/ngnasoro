@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -76,8 +75,7 @@ const LoanDetailsDialog = ({ isOpen, onClose, loan, onLoanUpdated }: LoanDetails
   const handleRejectLoan = async () => {
     try {
       setLoading(true);
-      // Ajouter une raison de rejet (3ème argument)
-      await sfdLoanApi.rejectLoan(loan.id, user!.id, "Demande rejetée par l'administrateur");
+      await sfdLoanApi.rejectLoan(loan.id, user!.id);
       toast({
         title: 'Prêt rejeté',
         description: 'Le prêt a été rejeté',

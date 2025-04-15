@@ -11,7 +11,7 @@ export const sfdLoanApi = {
   // Loan operations
   createLoan: loanService.createLoan,
   getSfdLoans: loanService.getSfdLoans,
-  getLoanById: loanService.getLoanById,
+  getLoanById: loanService.fetchLoanById, // Updated to match the actual function name
   approveLoan: loanService.approveLoan,
   rejectLoan: loanService.rejectLoan,
   disburseLoan: loanService.disburseLoan,
