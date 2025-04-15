@@ -112,6 +112,7 @@ export function SfdAccountTransfers() {
   const refreshBalances = async () => {
     setIsRefreshing(true);
     try {
+      // Fix line 84: Call mutate with no arguments
       await synchronizeBalances.mutate();
       toast({
         title: "Synchronisation terminée",
