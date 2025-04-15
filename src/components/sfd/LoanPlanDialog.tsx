@@ -15,19 +15,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Plus, X, Check, AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Plus, X, Check } from 'lucide-react';
 
 interface LoanPlanDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  onSaved?: () => void;
   planToEdit: any | null;
 }
 
 const LoanPlanDialog = ({
   isOpen,
   onClose,
+  onSaved,
   planToEdit
 }: LoanPlanDialogProps) => {
   const { toast } = useToast();
@@ -43,38 +43,6 @@ const LoanPlanDialog = ({
   const [fees, setFees] = useState<string>('1.0');
   const [requirements, setRequirements] = useState<string[]>([]);
   const [newRequirement, setNewRequirement] = useState('');
-  const [repaymentType, setRepaymentType] = useState<string>('fixed');
-  const [merefSettings, setMerefSettings] = useState<any>(null);
-  const [interestRateExceeded, setInterestRateExceeded] = useState(false);
-  
-  // Fetch MEREF settings
-  useEffect(() => {
-    const fetchMerefSettings = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('meref_settings')
-          .select('*')
-          .single();
-        
-        if (error) throw error;
-        setMerefSettings(data);
-      } catch (error) {
-        console.error('Error fetching MEREF settings:', error);
-      }
-    };
-    
-    fetchMerefSettings();
-  }, []);
-  
-  // Check interest rate against MEREF limits
-  useEffect(() => {
-    if (merefSettings && parseFloat(interestRate) > 0) {
-      // Since max_interest_rate doesn't exist, we'll use a fallback value
-      // or we could check against a hardcoded regulatory limit
-      const maxAllowedRate = 20; // Example fallback value for maximum allowed interest rate
-      setInterestRateExceeded(parseFloat(interestRate) > maxAllowedRate);
-    }
-  }, [interestRate, merefSettings]);
   
   useEffect(() => {
     if (planToEdit) {
@@ -87,7 +55,6 @@ const LoanPlanDialog = ({
       setInterestRate(planToEdit.interest_rate?.toString() || '5.0');
       setFees(planToEdit.fees?.toString() || '1.0');
       setRequirements(planToEdit.requirements || []);
-      setRepaymentType(planToEdit.repayment_type || 'fixed');
     } else {
       resetForm();
     }
@@ -104,7 +71,6 @@ const LoanPlanDialog = ({
     setFees('1.0');
     setRequirements([]);
     setNewRequirement('');
-    setRepaymentType('fixed');
   };
   
   const handleAddRequirement = () => {
@@ -118,84 +84,6 @@ const LoanPlanDialog = ({
     const updated = [...requirements];
     updated.splice(index, 1);
     setRequirements(updated);
-  };
-  
-  const validateSfdBalance = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('sfd_accounts')
-        .select('balance')
-        .eq('sfd_id', activeSfdId)
-        .eq('account_type', 'operation')
-        .single();
-      
-      if (error) throw error;
-      
-      // Check if the SFD has enough balance for the max loan amount
-      if (data.balance < parseFloat(maxAmount)) {
-        return {
-          valid: false,
-          message: `Le solde du compte d'opération (${data.balance} FCFA) est inférieur au montant maximum du prêt (${maxAmount} FCFA).`
-        };
-      }
-      
-      return { valid: true };
-    } catch (error) {
-      console.error('Error validating SFD balance:', error);
-      return { 
-        valid: false, 
-        message: "Impossible de vérifier le solde du compte d'opération."
-      };
-    }
-  };
-  
-  const generateAmortizationSchedule = (amount: number, duration: number, rate: number, type: string) => {
-    // Simplified amortization schedule generation
-    const annualRate = rate / 100;
-    const monthlyRate = annualRate / 12;
-    let schedule = [];
-    
-    if (type === 'fixed') {
-      // Fixed monthly payment (PMT formula)
-      const pmt = amount * monthlyRate * Math.pow(1 + monthlyRate, duration) / 
-                (Math.pow(1 + monthlyRate, duration) - 1);
-      
-      let remainingBalance = amount;
-      
-      for (let i = 1; i <= duration; i++) {
-        const interestPayment = remainingBalance * monthlyRate;
-        const principalPayment = pmt - interestPayment;
-        remainingBalance -= principalPayment;
-        
-        schedule.push({
-          month: i,
-          payment: pmt,
-          principal: principalPayment,
-          interest: interestPayment,
-          balance: remainingBalance > 0 ? remainingBalance : 0
-        });
-      }
-    } else {
-      // Decreasing installments (equal principal payments)
-      const principalPayment = amount / duration;
-      let remainingBalance = amount;
-      
-      for (let i = 1; i <= duration; i++) {
-        const interestPayment = remainingBalance * monthlyRate;
-        const payment = principalPayment + interestPayment;
-        remainingBalance -= principalPayment;
-        
-        schedule.push({
-          month: i,
-          payment: payment,
-          principal: principalPayment,
-          interest: interestPayment,
-          balance: remainingBalance > 0 ? remainingBalance : 0
-        });
-      }
-    }
-    
-    return schedule;
   };
   
   const handleSave = async () => {
@@ -217,38 +105,9 @@ const LoanPlanDialog = ({
       return;
     }
     
-    // Validate interest rate against MEREF limits
-    if (interestRateExceeded) {
-      toast({
-        title: "Taux d'intérêt trop élevé",
-        description: "Le taux d'intérêt dépasse les limites réglementaires définies par le MEREF.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Check SFD account balance
-    const balanceCheck = await validateSfdBalance();
-    if (!balanceCheck.valid) {
-      toast({
-        title: "Solde insuffisant",
-        description: balanceCheck.message,
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setIsLoading(true);
     
     try {
-      // Generate sample amortization schedule for preview/validation
-      const schedule = generateAmortizationSchedule(
-        parseFloat(maxAmount),
-        parseInt(maxDuration),
-        parseFloat(interestRate),
-        repaymentType
-      );
-      
       const planData = {
         name,
         description,
@@ -259,8 +118,6 @@ const LoanPlanDialog = ({
         interest_rate: parseFloat(interestRate),
         fees: parseFloat(fees),
         requirements,
-        repayment_type: repaymentType,
-        amortization_preview: schedule.slice(0, 3), // Store just first 3 entries as preview
         sfd_id: activeSfdId
       };
       
@@ -294,6 +151,9 @@ const LoanPlanDialog = ({
         });
       }
       
+      if (onSaved) {
+        onSaved();
+      }
       onClose();
     } catch (error: any) {
       console.error('Error saving loan plan:', error);
@@ -320,15 +180,6 @@ const LoanPlanDialog = ({
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
-          {interestRateExceeded && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Attention : Le taux d'intérêt dépasse les limites réglementaires définies par le MEREF.
-              </AlertDescription>
-            </Alert>
-          )}
-          
           <div className="grid grid-cols-1 gap-2">
             <Label htmlFor="name">Nom du plan *</Label>
             <Input
@@ -426,22 +277,6 @@ const LoanPlanDialog = ({
                 step="0.1"
               />
             </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="repaymentType">Type de remboursement *</Label>
-            <Select
-              value={repaymentType}
-              onValueChange={setRepaymentType}
-            >
-              <SelectTrigger id="repaymentType">
-                <SelectValue placeholder="Sélectionnez le type de remboursement" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="fixed">Mensualités fixes</SelectItem>
-                <SelectItem value="decreasing">Mensualités dégressives</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           
           <div className="space-y-2">
