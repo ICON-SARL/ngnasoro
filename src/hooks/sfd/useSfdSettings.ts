@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -37,36 +36,15 @@ export function useSfdSettings(sfdId: string) {
 
       if (error) throw error;
       
-      // Safely convert data.settings to SfdSettings type
+      // Parse and validate settings
       const settingsData = data?.settings as Record<string, any> || {};
-      
-      // Parse JSON data into our strongly typed interface
-      return {
-        loan_settings: {
-          min_loan_amount: Number(settingsData.loan_settings?.min_loan_amount || 10000),
-          max_loan_amount: Number(settingsData.loan_settings?.max_loan_amount || 5000000),
-          default_interest_rate: Number(settingsData.loan_settings?.default_interest_rate || 5),
-          late_payment_fee: Number(settingsData.loan_settings?.late_payment_fee || 2)
-        },
-        transaction_settings: {
-          daily_withdrawal_limit: Number(settingsData.transaction_settings?.daily_withdrawal_limit || 1000000),
-          requires_2fa: Boolean(settingsData.transaction_settings?.requires_2fa ?? true),
-          notification_enabled: Boolean(settingsData.transaction_settings?.notification_enabled ?? true)
-        },
-        security_settings: {
-          password_expiry_days: Number(settingsData.security_settings?.password_expiry_days || 90),
-          session_timeout_minutes: Number(settingsData.security_settings?.session_timeout_minutes || 30),
-          ip_whitelist: Array.isArray(settingsData.security_settings?.ip_whitelist) 
-            ? settingsData.security_settings.ip_whitelist 
-            : []
-        }
-      } as SfdSettings;
+      return settingsSchema.parse(settingsData) as SfdSettings;
     }
   });
 
   const updateSettings = useMutation({
     mutationFn: async (newSettings: SfdSettings) => {
-      // Convert to a plain object for Supabase
+      // Convert settings to a plain object for storage
       const settingsForDb = {
         loan_settings: { ...newSettings.loan_settings },
         transaction_settings: { ...newSettings.transaction_settings },
@@ -77,7 +55,7 @@ export function useSfdSettings(sfdId: string) {
         .from('sfds')
         .update({ settings: settingsForDb })
         .eq('id', sfdId)
-        .select('settings')
+        .select()
         .single();
 
       if (error) throw error;
