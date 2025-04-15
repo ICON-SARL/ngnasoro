@@ -44,10 +44,7 @@ export function useSfdMetrics(sfdId: string) {
       if (error) throw error;
       
       // Safely convert data.metrics to SfdMetrics type
-      const metricsData = data?.metrics as Record<string, any>;
-      if (!metricsData) {
-        throw new Error("Metrics data not found");
-      }
+      const metricsData = data?.metrics as Record<string, any> || {};
       
       // Parse JSON data into our strongly typed interface
       return {

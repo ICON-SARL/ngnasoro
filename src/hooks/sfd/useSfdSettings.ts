@@ -38,10 +38,7 @@ export function useSfdSettings(sfdId: string) {
       if (error) throw error;
       
       // Safely convert data.settings to SfdSettings type
-      const settingsData = data?.settings as Record<string, any>;
-      if (!settingsData) {
-        throw new Error("Settings data not found");
-      }
+      const settingsData = data?.settings as Record<string, any> || {};
       
       // Parse JSON data into our strongly typed interface
       return {
@@ -71,7 +68,7 @@ export function useSfdSettings(sfdId: string) {
     mutationFn: async (newSettings: SfdSettings) => {
       const { data, error } = await supabase
         .from('sfds')
-        .update({ settings: newSettings as any })
+        .update({ settings: newSettings })
         .eq('id', sfdId)
         .select('settings')
         .single();
