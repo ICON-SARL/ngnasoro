@@ -123,3 +123,4 @@ describe('Client Loan Flow Integration Test', () => {
     console.log('Logs: Aucune erreur de permission ou de transaction');
   });
 });
+
