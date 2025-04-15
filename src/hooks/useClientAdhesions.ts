@@ -18,7 +18,8 @@ export function useClientAdhesions() {
   const {
     data: adhesionRequests = [],
     isLoading: isLoadingAdhesionRequests,
-    refetch: refetchAdhesionRequests
+    refetch: refetchAdhesionRequests,
+    error: adhesionRequestsError
   } = useQuery({
     queryKey: ['client-adhesion-requests', activeSfdId],
     queryFn: async () => {
@@ -47,17 +48,19 @@ export function useClientAdhesions() {
           description: `Impossible de récupérer les demandes d'adhésion: ${error.message}`,
           variant: 'destructive',
         });
-        return [];
+        throw error;
       }
     },
     enabled: !!activeSfdId && !!user,
+    retry: 2, // Retry up to 2 times if there's an error
   });
 
   // Fetch user's own adhesion requests
   const {
     data: userAdhesionRequests = [],
     isLoading: isLoadingUserAdhesionRequests,
-    refetch: refetchUserAdhesionRequests
+    refetch: refetchUserAdhesionRequests,
+    error: userAdhesionRequestsError
   } = useQuery({
     queryKey: ['user-adhesion-requests', user?.id],
     queryFn: async () => {
@@ -66,7 +69,13 @@ export function useClientAdhesions() {
 
         const { data, error } = await supabase
           .from('client_adhesion_requests')
-          .select('*')
+          .select(`
+            *,
+            sfds (
+              name,
+              region
+            )
+          `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
@@ -75,7 +84,16 @@ export function useClientAdhesions() {
           throw error;
         }
 
-        return data as ClientAdhesionRequest[];
+        // Format the response to properly handle the joined data
+        const formattedData = data.map(item => ({
+          ...item,
+          sfd_name: item.sfds?.name,
+          sfd_region: item.sfds?.region,
+          // Remove nested sfds data to avoid conflicts
+          sfds: undefined
+        }));
+
+        return formattedData as ClientAdhesionRequest[];
       } catch (error: any) {
         console.error('Error in fetching user adhesion requests:', error);
         toast({
@@ -83,10 +101,11 @@ export function useClientAdhesions() {
           description: `Impossible de récupérer vos demandes d'adhésion: ${error.message}`,
           variant: 'destructive',
         });
-        return [];
+        throw error;
       }
     },
     enabled: !!user?.id,
+    retry: 2, // Retry up to 2 times if there's an error
   });
 
   // Approve adhesion request mutation
@@ -111,6 +130,8 @@ export function useClientAdhesions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-adhesion-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['user-adhesion-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['sfd-statistics'] });
       toast({
         title: 'Demande approuvée',
         description: 'La demande d\'adhésion a été approuvée avec succès.',
@@ -148,6 +169,8 @@ export function useClientAdhesions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-adhesion-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['user-adhesion-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['sfd-statistics'] });
       toast({
         title: 'Demande rejetée',
         description: 'La demande d\'adhésion a été rejetée.',
@@ -189,6 +212,72 @@ export function useClientAdhesions() {
     }
   };
 
+  // Mutation pour créer une nouvelle demande d'adhésion
+  const createAdhesionRequestMutation = useMutation({
+    mutationFn: async (data: {
+      sfd_id: string;
+      full_name: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      profession?: string;
+      monthly_income?: number;
+      source_of_income?: string;
+      notes?: string;
+    }) => {
+      if (!user?.id) throw new Error('Utilisateur non connecté');
+
+      // S'assurer que la SFD est active avant de créer une demande
+      const { data: sfdData, error: sfdError } = await supabase
+        .from('sfds')
+        .select('name, status')
+        .eq('id', data.sfd_id)
+        .eq('status', 'active')
+        .single();
+
+      if (sfdError || !sfdData) {
+        throw new Error('Cette SFD n\'est pas disponible actuellement');
+      }
+
+      const { data: result, error } = await supabase
+        .from('client_adhesion_requests')
+        .insert({
+          user_id: user.id,
+          sfd_id: data.sfd_id,
+          full_name: data.full_name,
+          email: data.email,
+          phone: data.phone,
+          address: data.address,
+          profession: data.profession,
+          monthly_income: data.monthly_income,
+          source_of_income: data.source_of_income,
+          notes: data.notes,
+          status: 'pending',
+          reference_number: `ADH-${Math.random().toString(36).substring(2, 10)}`
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result as ClientAdhesionRequest;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-adhesion-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['sfd-statistics'] });
+      toast({
+        title: 'Demande envoyée',
+        description: 'Votre demande d\'adhésion a été envoyée avec succès.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: `Impossible d'envoyer la demande: ${error.message}`,
+        variant: 'destructive',
+      });
+    }
+  });
+
   return {
     adhesionRequests,
     userAdhesionRequests,
@@ -198,6 +287,10 @@ export function useClientAdhesions() {
     refetchAdhesionRequests,
     refetchUserAdhesionRequests,
     approveAdhesionRequest,
-    rejectAdhesionRequest
+    rejectAdhesionRequest,
+    createAdhesionRequest: createAdhesionRequestMutation.mutate,
+    isCreatingRequest: createAdhesionRequestMutation.isPending,
+    adhesionRequestsError,
+    userAdhesionRequestsError
   };
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -31,14 +32,30 @@ const SfdAdhesionPage: React.FC = () => {
       
       setIsLoadingSfd(true);
       try {
+        // Correction: Ajout de eq('status', 'active') pour s'assurer que la SFD est active
         const { data, error } = await supabase
           .from('sfds')
           .select('name, region')
           .eq('id', sfdId)
-          .single();
+          .eq('status', 'active')
+          .maybeSingle(); // Utiliser maybeSingle au lieu de single pour éviter l'erreur
           
-        if (error) throw error;
-        setSfdInfo(data);
+        if (error) {
+          console.error('Error fetching SFD info:', error);
+          throw error;
+        }
+        
+        if (data) {
+          setSfdInfo(data);
+        } else {
+          // Si la SFD n'existe pas ou n'est pas active
+          console.log(`SFD not found or not active: ${sfdId}`);
+          toast({
+            title: "SFD non disponible",
+            description: "Cette SFD n'est pas disponible actuellement.",
+            variant: "destructive",
+          });
+        }
       } catch (error) {
         console.error('Error fetching SFD info:', error);
       } finally {
@@ -48,7 +65,7 @@ const SfdAdhesionPage: React.FC = () => {
     
     fetchSfdInfo();
     refetchUserAdhesionRequests();
-  }, [sfdId]);
+  }, [sfdId, toast, refetchUserAdhesionRequests]);
   
   if (!sfdId) {
     return (
@@ -153,16 +170,25 @@ const SfdAdhesionPage: React.FC = () => {
                 )}
               </div>
             ) : (
-              <ClientAdhesionForm 
-                sfdId={sfdId} 
-                onSuccess={() => {
-                  toast({
-                    title: "Demande envoyée",
-                    description: "Votre demande d'adhésion a été envoyée avec succès"
-                  });
-                  refetchUserAdhesionRequests();
-                }}
-              />
+              sfdInfo ? (
+                <ClientAdhesionForm 
+                  sfdId={sfdId} 
+                  onSuccess={() => {
+                    toast({
+                      title: "Demande envoyée",
+                      description: "Votre demande d'adhésion a été envoyée avec succès"
+                    });
+                    refetchUserAdhesionRequests();
+                  }}
+                />
+              ) : (
+                <Alert>
+                  <AlertTitle>SFD non disponible</AlertTitle>
+                  <AlertDescription>
+                    Impossible de charger les informations de cette SFD. Veuillez réessayer ultérieurement.
+                  </AlertDescription>
+                </Alert>
+              )
             )
           )}
         </CardContent>
