@@ -35,11 +35,24 @@ serve(async (req) => {
     }
 
     // Handle different operations based on the request
-    const { action, sfdId, data } = await req.json()
+    const { action, data } = await req.json()
     
     // For getting SFD accounts info (only approved SFDs)
     if (action === 'getSfdAccounts') {
-      console.log(`Fetching approved SFD accounts for user: ${user.id}`);
+      const sfdId = data?.sfdId;
+      
+      // Validate sfdId is not empty
+      if (!sfdId || sfdId === '') {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'SFD ID is required and cannot be empty'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+      
+      console.log(`Fetching approved SFD accounts for user: ${user.id} and SFD: ${sfdId}`);
       
       // Get SFDs that have approved this client
       // First check if the user has any approved client records
@@ -156,7 +169,19 @@ serve(async (req) => {
     
     // For synchronizing SFD accounts (keep only approved ones)
     if (action === 'synchronizeSfdAccounts') {
-      const { forceSync } = data || {};
+      const { forceSync, sfdId } = data || {};
+      
+      // Validate sfdId is not empty
+      if (!sfdId || sfdId === '') {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'SFD ID is required and cannot be empty'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+      
       let success = false;
       let message = 'No accounts to synchronize';
       
@@ -299,8 +324,8 @@ serve(async (req) => {
     }
     
     return new Response(
-      JSON.stringify({ success: false, message: 'Unknown action' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: false, message: 'Unknown action or invalid parameters' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
     );
   } catch (error) {
     console.error('Error:', error.message);

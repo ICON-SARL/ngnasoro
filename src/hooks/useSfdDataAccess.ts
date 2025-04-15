@@ -21,21 +21,24 @@ export function useSfdDataAccess() {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Retrieve stored SFD ID on mount
   useEffect(() => {
     const storedSfdId = localStorage.getItem('activeSfdId');
-    if (storedSfdId) {
+    if (storedSfdId && storedSfdId.trim() !== '') {
       console.log('Found stored SFD ID:', storedSfdId);
       setActiveSfdId(storedSfdId);
     }
   }, []);
 
+  // Save SFD ID to localStorage when it changes
   useEffect(() => {
-    if (activeSfdId) {
+    if (activeSfdId && activeSfdId.trim() !== '') {
       console.log('Setting active SFD ID in localStorage:', activeSfdId);
       localStorage.setItem('activeSfdId', activeSfdId);
     }
   }, [activeSfdId]);
 
+  // Fetch SFDs for the current user
   useEffect(() => {
     const fetchSfds = async () => {
       if (!user) {
@@ -76,14 +79,14 @@ export function useSfdDataAccess() {
         setSfdData(formattedSfds);
         
         // Si aucune SFD active n'est définie et que nous avons des SFDs, définir la première comme active
-        if (!activeSfdId && formattedSfds.length > 0) {
+        if ((!activeSfdId || activeSfdId.trim() === '') && formattedSfds.length > 0) {
           // Chercher une SFD par défaut, sinon prendre la première
           const defaultSfd = formattedSfds.find(sfd => sfd.is_default);
           
           if (defaultSfd) {
             console.log('Setting default SFD as active:', defaultSfd.id);
             setActiveSfdId(defaultSfd.id);
-          } else {
+          } else if (formattedSfds.length > 0) {
             console.log('No default SFD found, setting first SFD as active:', formattedSfds[0].id);
             setActiveSfdId(formattedSfds[0].id);
           }
@@ -104,7 +107,13 @@ export function useSfdDataAccess() {
     fetchSfds();
   }, [user, toast, activeSfdId]);
 
+  // Update active SFD
   const setActiveSfd = useCallback((sfdId: string) => {
+    if (!sfdId || sfdId.trim() === '') {
+      console.warn('Attempted to set an empty SFD ID');
+      return;
+    }
+    
     console.log('Changing active SFD to:', sfdId);
     setActiveSfdId(sfdId);
     toast({
@@ -113,7 +122,18 @@ export function useSfdDataAccess() {
     });
   }, [toast]);
 
+  // Switch active SFD with validation
   const switchActiveSfd = useCallback(async (sfdId: string): Promise<boolean> => {
+    if (!sfdId || sfdId.trim() === '') {
+      console.warn('Attempted to switch to an empty SFD ID');
+      toast({
+        title: "Erreur",
+        description: "Identifiant SFD invalide",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
     if (!sfdData.find(sfd => sfd.id === sfdId)) {
       toast({
         title: "Erreur",

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { sfdAccountService } from '@/services/sfdAccountService';
@@ -20,7 +19,7 @@ export function useSfdAccounts(sfdId?: string) {
   const queryClient = useQueryClient();
   const effectiveSfdId = sfdId || activeSfdId;
 
-  // Get all accounts for the SFD
+  // Get all accounts for the SFD - make sure effectiveSfdId is not empty
   const {
     data: accounts = [],
     isLoading,
@@ -28,20 +27,34 @@ export function useSfdAccounts(sfdId?: string) {
     refetch: refetchAccounts
   } = useQuery({
     queryKey: ['sfd-accounts', effectiveSfdId],
-    queryFn: () => sfdAccountService.getSfdAccounts(effectiveSfdId || ''),
-    enabled: !!effectiveSfdId,
+    queryFn: () => {
+      // Check if we have a valid SFD ID before making the query
+      if (!effectiveSfdId) {
+        console.warn('No active SFD ID available, skipping accounts query');
+        return Promise.resolve([]);
+      }
+      return sfdAccountService.getSfdAccounts(effectiveSfdId);
+    },
+    enabled: !!user && !!effectiveSfdId && effectiveSfdId !== '', // Only run if we have both user and valid SFD ID
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Get transfer history
+  // Get transfer history - make sure effectiveSfdId is not empty
   const {
     data: transferHistory = [],
     isLoading: isLoadingHistory,
     refetch: refetchHistory
   } = useQuery({
     queryKey: ['sfd-transfers', effectiveSfdId],
-    queryFn: () => sfdAccountService.getSfdTransferHistory(effectiveSfdId || ''),
-    enabled: !!effectiveSfdId,
+    queryFn: () => {
+      // Check if we have a valid SFD ID before making the query
+      if (!effectiveSfdId) {
+        console.warn('No active SFD ID available, skipping transfers query');
+        return Promise.resolve([]);
+      }
+      return sfdAccountService.getSfdTransferHistory(effectiveSfdId);
+    },
+    enabled: !!user && !!effectiveSfdId && effectiveSfdId !== '', // Only run if we have both user and valid SFD ID
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -126,8 +139,8 @@ export function useSfdAccounts(sfdId?: string) {
   const sfdAccounts = transformAccounts(accounts);
 
   // Compute the active SFD account for UI components that expect it
-  const activeSfdAccount = accounts.length > 0 ? {
-    id: effectiveSfdId || accounts[0].sfd_id,
+  const activeSfdAccount = accounts.length > 0 && effectiveSfdId ? {
+    id: effectiveSfdId,
     name: 'SFD Account',
     logoUrl: null,
     balance: accounts.reduce((sum, acc) => sum + acc.balance, 0),
@@ -136,7 +149,7 @@ export function useSfdAccounts(sfdId?: string) {
     isVerified: true,
     loans: [],
     status: 'active',
-    sfd_id: effectiveSfdId || accounts[0].sfd_id,
+    sfd_id: effectiveSfdId,
     account_type: '',
     description: null,
     created_at: '',
