@@ -10,21 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Plus, Edit, ToggleLeft, ToggleRight } from 'lucide-react';
-
-interface LoanPlan {
-  id: string;
-  name: string;
-  description: string;
-  min_amount: number;
-  max_amount: number;
-  min_duration: number;
-  max_duration: number;
-  interest_rate: number;
-  fees: number;
-  is_active: boolean;
-  requirements: string[];
-  sfd_id: string;
-}
+import { LoanPlan } from '@/types/sfdClients';
 
 interface LoanPlanManagementProps {
   onNewPlan: () => void;
@@ -52,7 +38,9 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
         .eq('sfd_id', activeSfdId);
 
       if (error) throw error;
-      setLoanPlans(data || []);
+      // Cast the data to ensure type safety
+      const typedData = data as unknown as LoanPlan[];
+      setLoanPlans(typedData || []);
     } catch (error) {
       console.error('Error fetching loan plans:', error);
       toast({

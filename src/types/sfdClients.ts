@@ -1,3 +1,4 @@
+
 export interface Loan {
   id: string;
   client_id: string;
@@ -19,6 +20,7 @@ export interface Loan {
   client_name?: string;
   reference?: string;
   updated_at?: string;
+  is_published?: boolean;
 }
 
 export interface SfdClient {
@@ -120,4 +122,27 @@ export interface LoanApplication {
   interest_rate?: number;
   purpose: string;
   supporting_documents?: string[];
+}
+
+// Add an interface for LoanPlan that includes is_published property
+export interface LoanPlan {
+  id: string;
+  name: string;
+  description: string;
+  min_amount: number;
+  max_amount: number;
+  min_duration: number;
+  max_duration: number;
+  interest_rate: number;
+  fees: number;
+  is_active: boolean;
+  is_published?: boolean;
+  requirements: string[];
+  sfd_id: string;
+  created_at: string;
+  updated_at: string;
+  sfds?: {
+    name: string;
+    logo_url: string;
+  };
 }

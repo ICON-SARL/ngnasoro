@@ -84,7 +84,7 @@ const LoanList: React.FC<LoanListProps> = (props) => {
               {loan.status === 'defaulted' && <Badge className="bg-red-200 text-red-900">En défaut</Badge>}
             </TableCell>
             <TableCell>
-              {loan.subsidy_amount > 0 ? 
+              {(loan.subsidy_amount && loan.subsidy_amount > 0) ? 
                 `${loan.subsidy_amount.toLocaleString()} FCFA` : 
                 'Non'
               }
