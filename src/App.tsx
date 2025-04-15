@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AuthenticationGuard from '@/components/AuthenticationGuard';
@@ -80,7 +81,7 @@ const router = createBrowserRouter([
     path: "/mobile-flow/sfd-selector",
     element: <SfdSelectorPage />,
     errorElement: <RouteErrorBoundary />
-  },
+  }
 ]);
 
 function App() {
@@ -92,3 +93,4 @@ function App() {
 }
 
 export default App;
+
