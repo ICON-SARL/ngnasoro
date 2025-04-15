@@ -14,3 +14,9 @@ export const sortAccounts = (accounts: SfdAccountDisplay[]): SfdAccountDisplay[]
     return a.name.localeCompare(b.name);
   });
 };
+
+// Add this helper function for checking if balance can be displayed
+export const canDisplayBalance = (account: SfdAccountDisplay | null): boolean => {
+  if (!account) return false;
+  return account.isVerified || account.isDefault;
+};
