@@ -97,7 +97,7 @@ export function SfdAccountTransfers() {
       setFromAccountId('');
       setToAccountId('');
       
-      // Fix: Call refetchAccounts with no arguments as it doesn't expect any
+      // Call refetchAccounts with no arguments
       await refetchAccounts();
     } catch (error) {
       console.error('Transfer error:', error);
@@ -112,7 +112,7 @@ export function SfdAccountTransfers() {
   const refreshBalances = async () => {
     setIsRefreshing(true);
     try {
-      // Fix: Call synchronizeBalances.mutate with no arguments as it doesn't expect any
+      // Call synchronizeBalances.mutate with no arguments
       await synchronizeBalances.mutate();
       toast({
         title: "Synchronisation terminée",
