@@ -17,8 +17,11 @@ import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
 export const SfdHeader: React.FC = () => {
   const location = useLocation();
-  const { user, logout } = useAuth();
-  const { activeSfd } = useSfdDataAccess();
+  const { user, signOut } = useAuth(); // Changed from logout to signOut
+  const { activeSfdId, sfdData } = useSfdDataAccess();
+  
+  // Find the active SFD from sfdData using activeSfdId
+  const activeSfd = sfdData.find(sfd => sfd.id === activeSfdId);
   
   const isActive = (path: string) => {
     return location.pathname === path;
