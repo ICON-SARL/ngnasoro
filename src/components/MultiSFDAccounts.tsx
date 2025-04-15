@@ -1,8 +1,14 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Building, Check, Loader2 } from 'lucide-react';
-import AddSfdButton from './sfd-accounts/AddSfdButton';
+import AddSfdButton from '@/components/mobile/profile/sfd-accounts/AddSfdButton';
+import { Building, Clock, CreditCard, Check, Loader2, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { adaptSfdAccount, formatCurrency } from '@/utils/sfdAdapter';
+import AccountsList from '@/components/mobile/profile/AccountsList';
 
 interface AccountsListProps {
   accounts: any[];
