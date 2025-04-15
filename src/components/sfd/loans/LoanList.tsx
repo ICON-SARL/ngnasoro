@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -12,28 +12,18 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useLoansPage } from '@/hooks/sfd/useLoansPage';
+import { Loan } from '@/types/sfdClients';
 
-interface Loan {
-  id: string;
-  reference?: string;
-  client_id: string;
-  client_name?: string;
-  amount: number;
-  duration_months: number;
-  interest_rate: number;
-  status: string;
-  subsidy_amount: number;
-}
-
-interface LoanListProps {
-  loans: Loan[];
-  loading: boolean;
-}
-
-const LoanList: React.FC<LoanListProps> = ({ loans, loading }) => {
+const LoanList: React.FC = () => {
   const navigate = useNavigate();
+  const { loans, isLoading, refetch } = useLoansPage();
   
-  if (loading) {
+  useEffect(() => {
+    refetch();
+  }, []);
+  
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-40">
         <p>Chargement des prêts...</p>
@@ -43,11 +33,9 @@ const LoanList: React.FC<LoanListProps> = ({ loans, loading }) => {
   
   if (loans.length === 0) {
     return (
-      <TableRow>
-        <TableCell colSpan={8} className="text-center py-8">
-          Aucun prêt trouvé
-        </TableCell>
-      </TableRow>
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Aucun prêt trouvé</p>
+      </div>
     );
   }
   
@@ -104,4 +92,4 @@ const LoanList: React.FC<LoanListProps> = ({ loans, loading }) => {
   );
 };
 
-export default LoanList;
+export default LoanList; // Changed to default export instead of named export
