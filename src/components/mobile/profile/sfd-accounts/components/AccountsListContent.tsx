@@ -19,8 +19,13 @@ const AccountsListContent: React.FC<AccountsListContentProps> = ({
   switchingId,
   isVerifying
 }) => {
+  // Fonction pour empêcher la navigation par défaut
+  const handleContainerClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" onClick={handleContainerClick}>
       {accounts.map((sfd) => (
         <SfdAccountItem
           key={sfd.id}

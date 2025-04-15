@@ -73,14 +73,23 @@ const AccountsSection: React.FC<SfdAccountsSectionProps> = ({
 
   const isProcessing = isRefreshing || isSyncing;
 
+  // Fonction pour empêcher les redirections non désirées
+  const handleContainerClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
-    <Card>
+    <Card onClick={handleContainerClick}>
       <CardHeader className="pb-2 flex justify-between items-center flex-row">
         <CardTitle className="text-lg font-bold">Mes Comptes SFD</CardTitle>
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={refreshAccounts}
+          onClick={(e) => {
+            e.stopPropagation();
+            refreshAccounts();
+          }}
           disabled={isProcessing || isLoading || !onRefresh}
           className="flex items-center"
         >

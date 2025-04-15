@@ -23,7 +23,11 @@ const SfdAccountItem: React.FC<SfdAccountItemProps> = ({
   onSwitchSfd,
   isProcessing
 }) => {
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    // Empêcher la propagation de l'événement pour éviter toute redirection non désirée
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (!isActive && !isProcessing) {
       onSwitchSfd(sfd.id);
     }
@@ -76,7 +80,19 @@ const SfdAccountItem: React.FC<SfdAccountItemProps> = ({
         {isProcessing ? (
           <Loader size="sm" />
         ) : (
-          <Button variant="ghost" size="icon" className="h-8 w-8" tabIndex={-1}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8" 
+            tabIndex={-1}
+            onClick={(e) => {
+              // Empêcher la propagation pour éviter le double déclenchement
+              e.stopPropagation();
+              if (!isActive && !isProcessing) {
+                onSwitchSfd(sfd.id);
+              }
+            }}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         )}

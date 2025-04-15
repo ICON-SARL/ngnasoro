@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -102,6 +103,12 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
       });
   };
 
+  // Fonction pour empêcher les redirections non désirées
+  const handleContainerClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   if (syncError) {
     return (
       <ErrorState 
@@ -116,7 +123,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
 
   return (
     <>
-      <div className="space-y-4 mt-4">
+      <div className="space-y-4 mt-4" onClick={handleContainerClick}>
         {showEmptyState ? (
           <div className="text-center p-6 border rounded-lg">
             <Building className="h-12 w-12 mx-auto mb-3 text-gray-300" />
