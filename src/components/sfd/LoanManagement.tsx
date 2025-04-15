@@ -6,9 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { PlusCircle } from 'lucide-react';
 import { MerefFundRequestForm } from './MerefFundRequestForm';
+import LoanList from './loans/LoanList';
+import { useSfdLoans } from '@/hooks/useSfdLoans';
 
 export function LoanManagement() {
   const [activeTab, setActiveTab] = useState('loans');
+  const { data: loans, isLoading } = useSfdLoans();
   
   return (
     <div className="space-y-6">
@@ -40,9 +43,7 @@ export function LoanManagement() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                La liste des prêts clients sera implémentée ici.
-              </p>
+              <LoanList loans={loans || []} loading={isLoading} />
             </CardContent>
           </Card>
         </TabsContent>
