@@ -327,6 +327,53 @@ export type Database = {
           },
         ]
       }
+      generated_reports: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          definition_id: string | null
+          error: string | null
+          format: string
+          id: string
+          parameters: Json | null
+          result_url: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          definition_id?: string | null
+          error?: string | null
+          format: string
+          id?: string
+          parameters?: Json | null
+          result_url?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          definition_id?: string | null
+          error?: string | null
+          format?: string
+          id?: string
+          parameters?: Json | null
+          result_url?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_reports_definition_id_fkey"
+            columns: ["definition_id"]
+            isOneToOne: false
+            referencedRelation: "report_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loan_activities: {
         Row: {
           activity_type: string
@@ -883,6 +930,42 @@ export type Database = {
           used_at?: string | null
           used_by?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      report_definitions: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          permissions: Database["public"]["Enums"]["app_role"][]
+          schema: Json
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          permissions?: Database["public"]["Enums"]["app_role"][]
+          schema: Json
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          permissions?: Database["public"]["Enums"]["app_role"][]
+          schema?: Json
+          type?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1817,6 +1900,10 @@ export type Database = {
       update_subsidy_usage: {
         Args: { p_sfd_id: string; p_amount: number }
         Returns: undefined
+      }
+      user_can_access_report: {
+        Args: { _user_id: string; _report_id: string }
+        Returns: boolean
       }
       verify_qr_code: {
         Args: { p_code: string }
