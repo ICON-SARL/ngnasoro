@@ -7,6 +7,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import PermissionTestPage from '@/pages/PermissionTestPage';
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
+import MobileFlowPage from '@/pages/MobileFlowPage';
 import { UserRole } from '@/utils/auth/roleTypes';
 
 // Creating a MobileRouter component that can be exported
@@ -30,6 +31,9 @@ const Router = () => {
         <Route path="/auth" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/access-denied" element={<AccessDeniedPage />} />
+        
+        {/* Mobile Flow */}
+        <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
         
         {/* Permission Test Page */}
         <Route path="/permission-test" element={<PermissionTestPage />} />

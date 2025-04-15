@@ -1,17 +1,14 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import MobileMenu from './MobileMenu';
+import MobileMenu from './menu/MobileDrawerMenu';
 import MobileHeader from './MobileHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Plus, CreditCard, ArrowUpDown, Wallet } from 'lucide-react';
-import TransactionList, { TransactionListItem } from './TransactionList';
 import { useAuth } from '@/hooks/useAuth';
-import { useClientLoans } from '@/hooks/useClientLoans';
-import { useTransactions } from '@/hooks/useTransactions';
-import ActiveLoansSection from './loans/ActiveLoansSection';
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
-import Footer from '@/components/Footer';
 import MobileNavigation from './MobileNavigation';
 
 const MobileMainPage: React.FC = () => {
@@ -19,14 +16,8 @@ const MobileMainPage: React.FC = () => {
   const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
-  const { loans, isLoading: loansLoading, refetchLoans } = useClientLoans();
+  const { accounts, sfdAccounts, isLoading: accountsLoading } = useSfdAccounts();
   
-  const { transactions, isLoading: transactionsLoading, fetchTransactions } = useTransactions(user?.id);
-  
-  const activeLoans = loans.filter(loan => 
-    loan.status === 'active' || loan.status === 'approved' || loan.status === 'disbursed'
-  );
-
   const handleMenuToggle = () => {
     setIsMenuOpen(!isMenuOpen);
   };
@@ -35,21 +26,10 @@ const MobileMainPage: React.FC = () => {
     setIsMenuOpen(false);
   };
 
-  const handleNavigate = (path: string) => {
-    navigate(path);
-    handleMenuClose();
+  const handleLogout = async () => {
+    // Logout functionality will be added later
+    navigate('/auth');
   };
-
-  const formattedTransactions: TransactionListItem[] = transactions.slice(0, 5).map(tx => ({
-    id: tx.id,
-    name: tx.name || (tx.type === 'deposit' ? 'Dépôt' : tx.type === 'withdrawal' ? 'Retrait' : 'Transaction'),
-    type: tx.type,
-    amount: tx.type === 'deposit' || tx.type === 'loan_disbursement' 
-      ? `+${formatCurrencyAmount(tx.amount)}` 
-      : `-${formatCurrencyAmount(Math.abs(tx.amount))}`,
-    date: new Date(tx.date || tx.created_at || '').toLocaleDateString('fr-FR'),
-    avatar: tx.avatar_url,
-  }));
   
   return (
     <div className="pb-16">
@@ -86,27 +66,74 @@ const MobileMainPage: React.FC = () => {
           </Card>
         </div>
         
-        <ActiveLoansSection 
-          activeLoans={activeLoans} 
-          isLoading={loansLoading} 
-          onViewAll={() => navigate('/mobile-flow/my-loans')}
-          onNewLoan={() => navigate('/mobile-flow/loans')}
-        />
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-semibold">Mes prêts actifs</h2>
+            <Button 
+              variant="ghost" 
+              className="text-sm text-[#0D6A51] p-0 h-auto font-medium"
+              onClick={() => navigate('/mobile-flow/loans')}
+            >
+              Voir tout <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+          
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="text-center py-6">
+                <CreditCard className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <h3 className="font-medium mb-1">Pas de prêts actifs</h3>
+                <p className="text-sm text-gray-500 mb-3">Vous n'avez pas de prêts en cours</p>
+                <Button 
+                  variant="outline"
+                  className="border-[#0D6A51] text-[#0D6A51]"
+                  onClick={() => navigate('/mobile-flow/loans')}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Demander un prêt
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
         
-        <TransactionList 
-          transactions={formattedTransactions}
-          isLoading={transactionsLoading}
-          onViewAll={() => navigate('/mobile-flow/transactions')}
-        />
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-semibold">Transactions récentes</h2>
+            <Button 
+              variant="ghost" 
+              className="text-sm text-[#0D6A51] p-0 h-auto font-medium"
+              onClick={() => navigate('/mobile-flow/transactions')}
+            >
+              Voir tout <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+          
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              {accountsLoading ? (
+                <div className="animate-pulse space-y-3">
+                  <div className="h-12 bg-gray-200 rounded"></div>
+                  <div className="h-12 bg-gray-200 rounded"></div>
+                  <div className="h-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <Wallet className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <h3 className="font-medium mb-1">Pas de transactions</h3>
+                  <p className="text-sm text-gray-500">Vos transactions récentes apparaîtront ici</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
       
       <MobileMenu 
         isOpen={isMenuOpen}
         onClose={handleMenuClose}
-        onNavigate={handleNavigate}
+        onLogout={handleLogout}
       />
-      
-      <Footer />
       
       <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden">
         <MobileNavigation />

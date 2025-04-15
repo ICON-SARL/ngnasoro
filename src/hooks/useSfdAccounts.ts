@@ -23,9 +23,8 @@ export function useSfdAccounts() {
     operationAccount: null,
     transferFunds: { mutate: async () => ({ success: true }) },
     synchronizeBalances: { 
-      mutate: async (_, options) => {
+      mutate: async () => {
         await refetch();
-        if (options?.onSettled) options.onSettled();
         return { success: true };
       }
     },
