@@ -242,10 +242,10 @@ export function ClientManagementSystem() {
                           <DropdownMenuItem>Voir les détails</DropdownMenuItem>
                           {client.status === 'pending' && (
                             <>
-                              <DropdownMenuItem onClick={() => batchValidateClients.mutate({ clientIds: [client.id], validatedBy: '' })}>
+                              <DropdownMenuItem onClick={() => batchValidateClients.mutate({ notes: '' })}>
                                 Valider
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => batchRejectClients.mutate({ clientIds: [client.id], validatedBy: '', rejectionReason: 'Rejet individuel' })}>
+                              <DropdownMenuItem onClick={() => batchRejectClients.mutate({ rejectionReason: 'Rejet individuel' })}>
                                 Rejeter
                               </DropdownMenuItem>
                             </>
