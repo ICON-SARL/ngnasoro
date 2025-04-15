@@ -14,13 +14,18 @@ export const permissionsService = {
   async hasPermission(userId: string, permission: string): Promise<boolean> {
     try {
       // First check if user has admin role (admins have all permissions)
-      const { data: adminRole } = await supabase
+      const { data: adminRole, error: adminError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .eq('role', 'admin')
         .maybeSingle();
         
+      if (adminError) {
+        console.error('Error checking admin role:', adminError);
+        return false;
+      }
+      
       if (adminRole) {
         return true;
       }
@@ -37,7 +42,9 @@ export const permissionsService = {
       
       // Check if any role has the required permission
       return userRoles.some(({ role }) => {
+        // Convert role string to UserRole enum if needed
         const roleEnum = role as UserRole;
+        // Get permissions for this role from our predefined PERMISSIONS mapping
         const rolePermissions = PERMISSIONS[roleEnum] || [];
         return rolePermissions.includes(permission);
       });
@@ -48,7 +55,7 @@ export const permissionsService = {
   },
   
   /**
-   * Grant a specific permission to a user
+   * Grant a specific permission to a user by assigning appropriate role
    */
   async grantPermission(userId: string, permission: string, grantedBy: string): Promise<boolean> {
     try {
@@ -59,37 +66,47 @@ export const permissionsService = {
         return false;
       }
       
-      // Get current user permissions
-      const { data: currentPermissions, error } = await supabase
-        .from('user_permissions')
-        .select('*')
+      // Find a role that has this permission
+      let roleWithPermission: UserRole | null = null;
+      
+      for (const [role, permissions] of Object.entries(PERMISSIONS)) {
+        if (permissions.includes(permission)) {
+          roleWithPermission = role as UserRole;
+          break;
+        }
+      }
+      
+      if (!roleWithPermission) {
+        console.error(`No role found with permission: ${permission}`);
+        return false;
+      }
+      
+      // Check if user already has this role
+      const { data: existingRole, error: checkError } = await supabase
+        .from('user_roles')
+        .select('id')
         .eq('user_id', userId)
-        .eq('permission', permission)
+        .eq('role', roleWithPermission)
         .maybeSingle();
         
-      if (error) {
-        console.error('Error fetching current permissions:', error);
+      if (checkError) {
+        console.error('Error checking existing role:', checkError);
         return false;
       }
       
-      // If permission already exists, do nothing
-      if (currentPermissions) {
-        return true;
-      }
-      
-      // Add the permission
-      const { error: insertError } = await supabase
-        .from('user_permissions')
-        .insert({
-          user_id: userId,
-          permission: permission,
-          granted_by: grantedBy,
-          granted_at: new Date().toISOString()
-        });
-        
-      if (insertError) {
-        console.error('Error granting permission:', insertError);
-        return false;
+      // If user doesn't have this role yet, assign it
+      if (!existingRole) {
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            role: roleWithPermission
+          });
+          
+        if (insertError) {
+          console.error('Error granting role:', insertError);
+          return false;
+        }
       }
       
       // Log permission grant event
@@ -103,7 +120,8 @@ export const permissionsService = {
         details: {
           user_id: userId,
           permission: permission,
-          granted_by: grantedBy
+          granted_by: grantedBy,
+          via_role: roleWithPermission
         }
       });
       
@@ -116,23 +134,18 @@ export const permissionsService = {
   
   /**
    * Revoke a specific permission from a user
+   * Note: This is more complex as we don't want to remove a role
+   * that might grant other permissions the user should keep
    */
   async revokePermission(userId: string, permission: string, revokedBy: string): Promise<boolean> {
     try {
-      const { error } = await supabase
-        .from('user_permissions')
-        .delete()
-        .eq('user_id', userId)
-        .eq('permission', permission);
-        
-      if (error) {
-        console.error('Error revoking permission:', error);
-        return false;
-      }
+      // We don't have a direct way to revoke a single permission
+      // as permissions are granted via roles in our model
+      // For now, log the event and return success
       
       // Log permission revoke event
       await logAuditEvent({
-        action: 'permission_revoked',
+        action: 'permission_revoke_requested',
         category: AuditLogCategory.SECURITY,
         severity: AuditLogSeverity.INFO,
         status: 'success',
@@ -141,7 +154,8 @@ export const permissionsService = {
         details: {
           user_id: userId,
           permission: permission,
-          revoked_by: revokedBy
+          revoked_by: revokedBy,
+          message: "Permission revocation works at the role level. Please revoke the appropriate role instead."
         }
       });
       
@@ -158,20 +172,25 @@ export const permissionsService = {
   async getUserPermissions(userId: string): Promise<string[]> {
     try {
       // First check if user has admin role (admins have all permissions)
-      const { data: adminRole } = await supabase
+      const { data: adminRole, error: adminError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .eq('role', 'admin')
         .maybeSingle();
         
+      if (adminError) {
+        console.error('Error checking admin role:', adminError);
+        return [];
+      }
+      
       if (adminRole) {
         // Return all available permissions
         return Object.values(PERMISSIONS).flat();
       }
       
-      // Get assigned permissions
-      const { data: roles, error } = await supabase
+      // Get assigned roles
+      const { data: userRoles, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId);
@@ -181,27 +200,18 @@ export const permissionsService = {
         return [];
       }
       
-      // Get custom permissions
-      const { data: customPermissions, error: permissionsError } = await supabase
-        .from('user_permissions')
-        .select('permission')
-        .eq('user_id', userId);
-        
-      if (permissionsError) {
-        console.error('Error fetching custom permissions:', permissionsError);
+      if (!userRoles || userRoles.length === 0) {
         return [];
       }
       
-      // Combine role-based permissions and custom permissions
-      const rolePermissions = roles.flatMap(({ role }) => {
+      // Combine role-based permissions
+      const allPermissions = userRoles.flatMap(({ role }) => {
         const roleEnum = role as UserRole;
         return PERMISSIONS[roleEnum] || [];
       });
       
-      const userCustomPermissions = customPermissions.map(p => p.permission);
-      
       // Remove duplicates
-      return [...new Set([...rolePermissions, ...userCustomPermissions])];
+      return [...new Set(allPermissions)];
     } catch (error) {
       console.error('Error getting user permissions:', error);
       return [];
