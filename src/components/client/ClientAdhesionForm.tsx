@@ -5,188 +5,210 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useClientAdhesions } from '@/hooks/useClientAdhesions';
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { Loader2 } from 'lucide-react';
 
-// Define the form schema with validation
-const adhesionSchema = z.object({
-  full_name: z.string().min(3, "Le nom complet est requis"),
-  email: z.string().email("Email invalide").optional(),
-  phone: z.string().min(8, "Numéro de téléphone invalide").optional(),
-  address: z.string().optional(),
-  id_type: z.string().optional(),
-  id_number: z.string().optional(),
-  notes: z.string().optional()
+const formSchema = z.object({
+  full_name: z.string().min(3, 'Le nom complet est requis'),
+  profession: z.string().min(2, 'La profession est requise'),
+  monthly_income: z.string().min(1, 'Le revenu mensuel est requis'),
+  source_of_income: z.string().min(2, 'La source de revenu est requise'),
+  phone: z.string().min(8, 'Numéro de téléphone invalide'),
+  email: z.string().email('Email invalide').optional().or(z.literal('')),
+  address: z.string().min(5, 'L\'adresse est requise'),
 });
 
-type AdhesionFormValues = z.infer<typeof adhesionSchema>;
-
-export interface ClientAdhesionFormProps {
+interface ClientAdhesionFormProps {
   sfdId: string;
-  sfdName?: string;
   onSuccess?: () => void;
 }
 
-export const ClientAdhesionForm: React.FC<ClientAdhesionFormProps> = ({ 
-  sfdId, 
-  sfdName,
-  onSuccess 
-}) => {
+export function ClientAdhesionForm({ sfdId, onSuccess }: ClientAdhesionFormProps) {
+  const { toast } = useToast();
   const { user } = useAuth();
-  const { createAdhesionRequest } = useClientAdhesions();
-  
-  const defaultValues: Partial<AdhesionFormValues> = {
-    full_name: user?.user_metadata?.full_name || '',
-    email: user?.email || '',
-    phone: user?.user_metadata?.phone || '',
-    address: user?.user_metadata?.address || '',
-  };
-  
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors, isSubmitting },
-    reset
-  } = useForm<AdhesionFormValues>({
-    resolver: zodResolver(adhesionSchema),
-    defaultValues
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
   });
-  
-  const onSubmit = async (data: AdhesionFormValues) => {
+
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
-      const result = await createAdhesionRequest({
-        sfd_id: sfdId,
-        full_name: data.full_name,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
-        id_type: data.id_type,
-        id_number: data.id_number,
-        notes: data.notes
-      });
-      
-      if (result) {
-        reset();
-        if (onSuccess) onSuccess();
+      if (!user) {
+        toast({
+          title: 'Erreur',
+          description: 'Vous devez être connecté pour soumettre une demande.',
+          variant: 'destructive',
+        });
+        return;
       }
+
+      const { error } = await supabase
+        .from('client_adhesion_requests')
+        .insert({
+          full_name: data.full_name,
+          profession: data.profession,
+          monthly_income: parseFloat(data.monthly_income),
+          source_of_income: data.source_of_income,
+          phone: data.phone,
+          email: data.email,
+          address: data.address,
+          sfd_id: sfdId,
+          user_id: user.id,
+          status: 'pending',
+          kyc_status: 'pending',
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Demande envoyée',
+        description: 'Votre demande d\'adhésion a été envoyée avec succès.',
+      });
+
+      form.reset();
+      if (onSuccess) onSuccess();
     } catch (error) {
-      console.error("Error submitting adhesion form:", error);
+      console.error('Error submitting adhesion request:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Une erreur est survenue lors de l\'envoi de votre demande.',
+        variant: 'destructive',
+      });
     }
   };
-  
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {sfdName && (
-        <div className="mb-4 text-center">
-          <h3 className="text-lg font-medium text-[#0D6A51]">Adhésion à {sfdName}</h3>
-          <p className="text-sm text-gray-500">Remplissez ce formulaire pour soumettre votre demande</p>
-        </div>
-      )}
-      
-      <div>
-        <Label htmlFor="full_name">Nom complet *</Label>
-        <Input 
-          id="full_name" 
-          {...register('full_name')} 
-          className={errors.full_name ? "border-red-300" : ""}
-        />
-        {errors.full_name && (
-          <p className="text-xs text-red-500 mt-1">{errors.full_name.message}</p>
-        )}
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input 
-            id="email" 
-            type="email" 
-            {...register('email')} 
-            className={errors.email ? "border-red-300" : ""}
-          />
-          {errors.email && (
-            <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="full_name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nom complet*</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
-        </div>
-        
-        <div>
-          <Label htmlFor="phone">Téléphone</Label>
-          <Input 
-            id="phone" 
-            {...register('phone')} 
-            className={errors.phone ? "border-red-300" : ""}
-          />
-          {errors.phone && (
-            <p className="text-xs text-red-500 mt-1">{errors.phone.message}</p>
+        />
+
+        <FormField
+          control={form.control}
+          name="profession"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Profession*</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
-        </div>
-      </div>
-      
-      <div>
-        <Label htmlFor="address">Adresse</Label>
-        <Input 
-          id="address" 
-          {...register('address')} 
         />
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="id_type">Type de pièce d'identité</Label>
-          <Select onValueChange={(value) => {}} defaultValue="">
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Sélectionner" {...register('id_type')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="cni">Carte Nationale d'Identité</SelectItem>
-              <SelectItem value="passport">Passeport</SelectItem>
-              <SelectItem value="voting_card">Carte d'électeur</SelectItem>
-              <SelectItem value="other">Autre</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div>
-          <Label htmlFor="id_number">Numéro de pièce</Label>
-          <Input 
-            id="id_number" 
-            {...register('id_number')} 
-          />
-        </div>
-      </div>
-      
-      <div>
-        <Label htmlFor="notes">Notes supplémentaires</Label>
-        <Input 
-          id="notes" 
-          {...register('notes')} 
+
+        <FormField
+          control={form.control}
+          name="monthly_income"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Revenu mensuel (FCFA)*</FormLabel>
+              <FormControl>
+                <Input type="number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      
-      <div className="pt-4">
-        <Button 
-          type="submit" 
-          className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
+
+        <FormField
+          control={form.control}
+          name="source_of_income"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Source de revenu*</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez la source" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="salary">Salaire</SelectItem>
+                  <SelectItem value="business">Entreprise</SelectItem>
+                  <SelectItem value="freelance">Freelance</SelectItem>
+                  <SelectItem value="other">Autre</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Téléphone*</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Adresse*</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? (
             <>
-              <span className="mr-2">Envoi en cours...</span>
-              <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Envoi en cours...
             </>
           ) : (
-            "Soumettre ma demande"
+            "Soumettre la demande"
           )}
         </Button>
-      </div>
-    </form>
+      </form>
+    </Form>
   );
-};
+}
