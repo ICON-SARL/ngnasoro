@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MobileHeader } from '@/components/mobile/MobileHeader';
+import MobileHeader from '@/components/mobile/MobileHeader';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AvailableSfdCard } from '@/components/mobile/sfd-accounts/AvailableSfdCard';

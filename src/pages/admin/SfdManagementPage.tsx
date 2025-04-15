@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { Footer } from '@/components';
 import { SfdAddDialog } from '@/components/admin/sfd-management/SfdAddDialog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Sfd {
   id: string;
@@ -25,6 +27,7 @@ interface Sfd {
 export default function SfdManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const { toast } = useToast();
   
   const { data: sfds = [], isLoading, refetch } = useQuery({
     queryKey: ['sfds'],
