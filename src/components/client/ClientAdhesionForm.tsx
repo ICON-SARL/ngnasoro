@@ -62,10 +62,9 @@ export const ClientAdhesionForm: React.FC<ClientAdhesionFormProps> = ({
   
   const onSubmit = async (data: AdhesionFormValues) => {
     try {
-      // Ensure full_name is passed as required
-      await createAdhesionRequest.mutateAsync({
+      const result = await createAdhesionRequest({
         sfd_id: sfdId,
-        full_name: data.full_name, // Now this is guaranteed to exist
+        full_name: data.full_name,
         email: data.email,
         phone: data.phone,
         address: data.address,
@@ -74,8 +73,10 @@ export const ClientAdhesionForm: React.FC<ClientAdhesionFormProps> = ({
         notes: data.notes
       });
       
-      reset();
-      if (onSuccess) onSuccess();
+      if (result) {
+        reset();
+        if (onSuccess) onSuccess();
+      }
     } catch (error) {
       console.error("Error submitting adhesion form:", error);
     }

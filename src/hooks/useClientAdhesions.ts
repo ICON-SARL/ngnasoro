@@ -4,19 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
-
-export interface ClientAdhesionRequest {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string;
-  sfd_id: string;
-  status: 'pending' | 'approved' | 'rejected';
-  created_at: string;
-  notes?: string;
-  user_id?: string;
-  [key: string]: any;
-}
+import { ClientAdhesionRequest } from '@/types/adhesionTypes';
 
 export function useClientAdhesions() {
   const [adhesionRequests, setAdhesionRequests] = useState<ClientAdhesionRequest[]>([]);
@@ -54,7 +42,7 @@ export function useClientAdhesions() {
       }
       
       console.log(`Loaded ${data.length} adhesion requests from Edge function`);
-      setAdhesionRequests(data);
+      setAdhesionRequests(data as ClientAdhesionRequest[]);
     } catch (err: any) {
       console.error('Error fetching adhesion requests:', err);
       toast({
@@ -161,6 +149,81 @@ export function useClientAdhesions() {
     }
   };
 
+  // Add the missing functions to match component usage
+  
+  // Function to create a new adhesion request
+  const createAdhesionRequest = async (data: {
+    sfd_id: string;
+    full_name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    id_number?: string;
+    id_type?: string;
+    notes?: string;
+  }) => {
+    if (!user?.id) {
+      toast({
+        title: 'Erreur',
+        description: 'Vous devez être connecté pour soumettre une demande',
+        variant: 'destructive',
+      });
+      return null;
+    }
+    
+    try {
+      const { data: result, error } = await supabase
+        .from('client_adhesion_requests')
+        .insert({
+          user_id: user.id,
+          sfd_id: data.sfd_id,
+          full_name: data.full_name,
+          email: data.email,
+          phone: data.phone,
+          address: data.address,
+          id_number: data.id_number,
+          id_type: data.id_type,
+          notes: data.notes,
+          status: 'pending'
+        })
+        .select()
+        .single();
+        
+      if (error) {
+        console.error('Error creating adhesion request:', error);
+        throw error;
+      }
+      
+      toast({
+        title: 'Demande envoyée',
+        description: 'Votre demande d\'adhésion a été envoyée avec succès',
+      });
+      
+      // Refresh user's adhesion requests
+      refetchUserAdhesionRequests();
+      
+      return result;
+    } catch (err: any) {
+      console.error('Error creating adhesion request:', err);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'envoyer la demande d\'adhésion',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  };
+
+  // Function to approve an adhesion request
+  const approveAdhesionRequest = async (adhesionId: string, notes?: string) => {
+    return processAdhesionRequest(adhesionId, 'approved', notes);
+  };
+
+  // Function to reject an adhesion request
+  const rejectAdhesionRequest = async (adhesionId: string, notes?: string) => {
+    return processAdhesionRequest(adhesionId, 'rejected', notes);
+  };
+
   return {
     adhesionRequests,
     isLoadingAdhesionRequests,
@@ -169,5 +232,8 @@ export function useClientAdhesions() {
     refetchAdhesionRequests,
     refetchUserAdhesionRequests,
     processAdhesionRequest,
+    createAdhesionRequest,
+    approveAdhesionRequest,
+    rejectAdhesionRequest,
   };
 }

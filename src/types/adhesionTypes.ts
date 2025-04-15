@@ -1,4 +1,3 @@
-
 export interface ClientAdhesionRequest {
   id: string;
   user_id?: string;
@@ -9,11 +8,17 @@ export interface ClientAdhesionRequest {
   address?: string;
   id_number?: string;
   id_type?: string;
-  status: 'pending_validation' | 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'pending_validation' | 'approved' | 'rejected';
   created_at: string;
   processed_at?: string;
   processed_by?: string;
   notes?: string;
+  reference_number?: string;
+  kyc_status?: string;
+  profession?: string;
+  source_of_income?: string;
+  monthly_income?: number;
+  rejection_reason?: string;
 }
 
 export interface MobileMoneyWebhook {

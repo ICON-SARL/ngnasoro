@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
@@ -56,56 +55,46 @@ export function ClientAdhesionRequests() {
     refetchAdhesionRequests
   } = useClientAdhesions();
 
-  // Filtrer les demandes par terme de recherche
   const filteredRequests = adhesionRequests.filter(request => 
     request.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (request.email && request.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (request.phone && request.phone.includes(searchTerm))
   );
 
-  // Filtrer les demandes par statut
   const pendingRequests = filteredRequests.filter(request => request.status === 'pending');
   const approvedRequests = filteredRequests.filter(request => request.status === 'approved');
   const rejectedRequests = filteredRequests.filter(request => request.status === 'rejected');
 
-  // Afficher les détails d'une demande
   const handleViewRequest = (request: ClientAdhesionRequest) => {
     setSelectedRequest(request);
     setIsViewDialogOpen(true);
     setProcessingNotes(request.notes || '');
   };
 
-  // Approuver une demande
   const handleApproveRequest = () => {
     if (!selectedRequest) return;
     
-    approveAdhesionRequest.mutate({
-      adhesionId: selectedRequest.id,
-      notes: processingNotes
-    }, {
-      onSuccess: () => {
-        setIsViewDialogOpen(false);
-        setProcessingNotes('');
-      }
-    });
+    approveAdhesionRequest(selectedRequest.id, processingNotes)
+      .then(success => {
+        if (success) {
+          setIsViewDialogOpen(false);
+          setProcessingNotes('');
+        }
+      });
   };
 
-  // Rejeter une demande
   const handleRejectRequest = () => {
     if (!selectedRequest) return;
     
-    rejectAdhesionRequest.mutate({
-      adhesionId: selectedRequest.id,
-      notes: processingNotes
-    }, {
-      onSuccess: () => {
-        setIsViewDialogOpen(false);
-        setProcessingNotes('');
-      }
-    });
+    rejectAdhesionRequest(selectedRequest.id, processingNotes)
+      .then(success => {
+        if (success) {
+          setIsViewDialogOpen(false);
+          setProcessingNotes('');
+        }
+      });
   };
 
-  // Afficher un badge de statut
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':

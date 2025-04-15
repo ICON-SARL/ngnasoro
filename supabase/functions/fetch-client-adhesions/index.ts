@@ -35,6 +35,7 @@ serve(async (req) => {
     // First, determine which SFD this admin user is associated with
     if (!sfdId) {
       console.log("No SFD ID provided, attempting to find default SFD for user");
+      
       // Find the admin's default SFD
       const { data: userSfds, error: sfdsError } = await supabase
         .from('user_sfds')
