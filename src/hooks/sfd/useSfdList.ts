@@ -12,19 +12,19 @@ export function useSfdList(user: User | null) {
       
       const userSfds = await fetchUserSfds(user.id);
       
-      // Transform UserSfd objects into SfdAccount objects
+      // Transform all SFDs into SfdAccount objects
       const sfdAccounts: SfdClientAccount[] = userSfds.map(userSfd => ({
-        id: userSfd.sfds.id,
-        name: userSfd.sfds.name,
-        code: userSfd.sfds.code,
-        region: userSfd.sfds.region,
-        logoUrl: userSfd.sfds.logo_url,
-        balance: 0, // This will be fetched separately
+        id: userSfd.id,
+        name: userSfd.name,
+        code: userSfd.code,
+        region: userSfd.region || '',
+        logoUrl: userSfd.logo_url,
+        balance: 0, // Balance will be fetched separately
         currency: 'FCFA',
-        isDefault: userSfd.is_default,
-        isVerified: true, // Default is verified
-        status: 'active',
-        sfd_id: userSfd.sfds.id, // Set sfd_id equal to id for compatibility
+        isDefault: false,
+        isVerified: true,
+        status: userSfd.status || 'active',
+        sfd_id: userSfd.id,
         account_type: 'main'
       }));
       

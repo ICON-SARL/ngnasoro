@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ChevronRight, Building, FileCheck } from 'lucide-react';
@@ -40,7 +39,6 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
       try {
         console.log('Fetching active SFDs for popup display');
         
-        // Get all SFDs that are active, independent of user associations
         const { data, error } = await supabase
           .from('sfds')
           .select('id, name, region, logo_url, status')
@@ -51,33 +49,23 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
         
         console.log(`Fetched ${data?.length || 0} active SFDs`);
         
-        // Nous affichons maintenant toutes les SFDs actives
-        // sans filtrage par rapport aux demandes existantes
         const availableSfds = data || [];
         
-        console.log(`${availableSfds.length} SFDs available for display`);
-        
-        // Toujours inclure les SFDs de test pour le développement
         if (availableSfds.length === 0 && process.env.NODE_ENV === 'development') {
-          console.log('Adding test SFDs for development');
           availableSfds.push({
             id: 'test-sfd-1',
             name: 'SFD Test 1',
             region: 'Région Test',
-            logo_url: null
-          }, {
-            id: 'test-sfd-2',
-            name: 'SFD Test 2',
-            region: 'Région Test',
-            logo_url: null
+            logo_url: null,
+            status: 'active'
           });
         }
         
         const sortedSfds = sortPrioritySfds(availableSfds);
         setSfds(sortedSfds);
       } catch (err: any) {
-        console.error('Erreur lors du chargement des SFDs:', err);
-        setError('Impossible de charger la liste des SFDs. Veuillez réessayer plus tard.');
+        console.error('Error loading SFDs:', err);
+        setError('Unable to load the list of SFDs. Please try again later.');
       } finally {
         setIsLoading(false);
       }
@@ -98,7 +86,6 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
       if (aIsPriority && !bIsPriority) return -1;
       if (!aIsPriority && bIsPriority) return 1;
       
-      // Si les deux sont prioritaires, on les trie par nom
       return a.name.localeCompare(b.name);
     });
   };
