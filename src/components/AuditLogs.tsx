@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { AuditLogCategory, AuditLogSeverity, AuditLogFilterOptions, AuditLogEvent } from '@/utils/audit/auditLoggerTypes';
 import { getAuditLogs } from '@/utils/audit/auditLoggerCore';
-import { User } from '@/hooks/useAuth';
+import type { User } from '@/hooks/auth/types';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -377,4 +376,3 @@ export const AuditLogs = () => {
     </div>
   );
 };
-
