@@ -1,8 +1,8 @@
-
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import Footer from '@/components/Footer';
 import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
 import ProfilePage from '@/components/mobile/profile/ProfilePage';
 import AccountPage from '@/pages/mobile/AccountPage';
@@ -16,7 +16,6 @@ const MobileFlowPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Vérifier si l'utilisateur est authentifié et rediriger en fonction du rôle
   useEffect(() => {
     if (!loading) {
       if (!user) {
@@ -24,7 +23,6 @@ const MobileFlowPage: React.FC = () => {
         return;
       }
       
-      // Si l'utilisateur est admin ou sfd_admin, rediriger vers le tableau de bord approprié
       if (isAdmin) {
         toast({
           title: "Accès refusé",
@@ -54,80 +52,80 @@ const MobileFlowPage: React.FC = () => {
     </div>;
   }
 
-  // Si nous sommes encore en train de charger la page mais que l'utilisateur est admin ou sfd_admin,
-  // empêcher le rendu du contenu pour éviter les flashs d'interface
   if (isAdmin || isSfdAdmin) {
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Routes>
-        <Route path="main" element={
-          <div className="pb-20">
-            <div className="p-4 bg-[#0D6A51] text-white">
-              <h1 className="text-xl font-bold">Dashboard principal</h1>
-              <p className="text-sm">Bienvenue sur votre espace client</p>
-            </div>
-            <div className="p-4">
-              <div className="bg-white rounded-lg p-4 shadow mb-4">
-                <h2 className="text-lg font-semibold mb-2">Votre compte</h2>
-                <div className="bg-gray-50 p-3 rounded-md">
-                  <p className="font-medium">Solde disponible</p>
-                  <p className="text-2xl font-bold">0 FCFA</p>
-                </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="flex-grow">
+        <Routes>
+          <Route path="main" element={
+            <div className="pb-20">
+              <div className="p-4 bg-[#0D6A51] text-white">
+                <h1 className="text-xl font-bold">Dashboard principal</h1>
+                <p className="text-sm">Bienvenue sur votre espace client</p>
               </div>
-              
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <button 
-                  className="bg-white p-4 rounded-lg shadow text-center"
-                  onClick={() => navigate('/mobile-flow/savings')}
-                >
-                  <div className="flex flex-col items-center">
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mb-2">
-                      <span className="text-green-600">💰</span>
-                    </div>
-                    <span className="text-sm font-medium">Mes fonds</span>
+              <div className="p-4">
+                <div className="bg-white rounded-lg p-4 shadow mb-4">
+                  <h2 className="text-lg font-semibold mb-2">Votre compte</h2>
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <p className="font-medium">Solde disponible</p>
+                    <p className="text-2xl font-bold">0 FCFA</p>
                   </div>
-                </button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  <button 
+                    className="bg-white p-4 rounded-lg shadow text-center"
+                    onClick={() => navigate('/mobile-flow/savings')}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                        <span className="text-green-600">💰</span>
+                      </div>
+                      <span className="text-sm font-medium">Mes fonds</span>
+                    </div>
+                  </button>
+                  
+                  <button 
+                    className="bg-white p-4 rounded-lg shadow text-center"
+                    onClick={() => navigate('/mobile-flow/loans')}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                        <span className="text-blue-600">💳</span>
+                      </div>
+                      <span className="text-sm font-medium">Prêts</span>
+                    </div>
+                  </button>
+                </div>
                 
                 <button 
-                  className="bg-white p-4 rounded-lg shadow text-center"
-                  onClick={() => navigate('/mobile-flow/loans')}
+                  className="w-full bg-[#0D6A51] text-white py-3 px-4 rounded-lg font-medium"
+                  onClick={() => navigate('/mobile-flow/profile')}
                 >
-                  <div className="flex flex-col items-center">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-2">
-                      <span className="text-blue-600">💳</span>
-                    </div>
-                    <span className="text-sm font-medium">Prêts</span>
-                  </div>
+                  Voir mon profil
                 </button>
               </div>
-              
-              <button 
-                className="w-full bg-[#0D6A51] text-white py-3 px-4 rounded-lg font-medium"
-                onClick={() => navigate('/mobile-flow/profile')}
-              >
-                Voir mon profil
-              </button>
             </div>
-          </div>
-        } />
-        
-        <Route path="profile" element={<ProfilePage />} />
-        <Route path="savings" element={<FundsManagementPage />} />
-        <Route path="loans" element={<div className="p-4">Prêts (À venir)</div>} />
-        <Route path="transactions" element={<div className="p-4">Transactions (À venir)</div>} />
-        
-        <Route path="account" element={<AccountPage />} />
-        <Route path="account/notifications" element={<NotificationsPage />} />
-        <Route path="account/security" element={<SecurityPage />} />
-        <Route path="account/about" element={<AboutPage />} />
-        <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
-        
-        {/* Redirection par défaut vers le dashboard principal */}
-        <Route path="*" element={<Navigate to="main" replace />} />
-      </Routes>
+          } />
+          
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="savings" element={<FundsManagementPage />} />
+          <Route path="loans" element={<div className="p-4">Prêts (À venir)</div>} />
+          <Route path="transactions" element={<div className="p-4">Transactions (À venir)</div>} />
+          
+          <Route path="account" element={<AccountPage />} />
+          <Route path="account/notifications" element={<NotificationsPage />} />
+          <Route path="account/security" element={<SecurityPage />} />
+          <Route path="account/about" element={<AboutPage />} />
+          <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
+          
+          <Route path="*" element={<Navigate to="main" replace />} />
+        </Routes>
+      </div>
+      <Footer />
     </div>
   );
 };
