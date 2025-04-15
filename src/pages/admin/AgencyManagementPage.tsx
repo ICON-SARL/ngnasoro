@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useCurrentSfd } from '@/hooks/useCurrentSfd';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,8 +7,9 @@ import { Loader2, Users, CreditCard, FileText, Settings, Building2, ArrowUpRight
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdStats } from '@/hooks/useSfdStats';
 import { SfdDashboard } from '@/components/sfd/SfdDashboard';
+import { SyncStatusIndicator } from '@/components/sync/SyncStatusIndicator';
+import { PermissionSyncStatus } from '@/components/sync/PermissionSyncStatus';
 
-// Define a type for the SFD settings structure
 interface SfdSettings {
   loan_settings?: {
     max_loan_amount?: number;
@@ -29,7 +29,6 @@ interface SfdSettings {
   };
 }
 
-// Extend the Sfd type to include the settings property
 interface ExtendedSfd {
   id: string;
   name: string;
@@ -77,7 +76,6 @@ export default function AgencyManagementPage() {
     );
   }
 
-  // Cast the sfd to our extended type with properly typed settings
   const typedSfd = sfd as unknown as ExtendedSfd;
   const settings = typedSfd.settings || {};
 
@@ -87,13 +85,20 @@ export default function AgencyManagementPage() {
       
       <main className="container mx-auto py-6 px-4">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Gestion de {typedSfd.name}</h1>
-          <p className="text-muted-foreground">
-            Configuration et paramètres de votre SFD
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-2xl font-bold">Gestion de {typedSfd.name}</h1>
+              <p className="text-muted-foreground">
+                Configuration et paramètres de votre SFD
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <SyncStatusIndicator />
+              <PermissionSyncStatus />
+            </div>
+          </div>
         </div>
 
-        {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card>
             <CardHeader className="pb-2">
@@ -192,7 +197,6 @@ export default function AgencyManagementPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Settings from sfd.settings */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <Card>
                     <CardHeader>
