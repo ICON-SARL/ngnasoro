@@ -1,71 +1,40 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-export interface SfdAdmin {
-  id: string;
-  email: string;
-  full_name: string;
-  sfd_id: string;
-  role: string;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { useRolesSynchronization } from './useRolesSynchronization';
 
 export function useSfdAdminManagement() {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { synchronizeRoles } = useRolesSynchronization();
 
-  const addSfdAdmin = async ({
-    email,
-    password,
-    full_name,
-    role,
-    sfd_id,
-    notify = true
-  }: {
-    email: string;
-    password: string;
-    full_name: string;
-    role: string;
-    sfd_id: string;
-    notify?: boolean;
-  }) => {
+  const createSfdAdmin = async (email: string, sfdId: string) => {
     setIsLoading(true);
-    setError(null);
-
     try {
       const { data, error } = await supabase.functions.invoke('create-sfd-admin', {
-        body: JSON.stringify({
-          adminData: {
-            email,
-            password,
-            full_name,
-            role,
-            sfd_id,
-            notify
-          }
-        })
+        body: { email, sfdId }
       });
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+
+      // Synchronize roles after creating admin
+      await synchronizeRoles();
 
       toast({
-        title: 'Administrateur créé',
-        description: `${full_name} a été ajouté comme administrateur SFD`
+        title: "Administrateur SFD créé",
+        description: "L'administrateur SFD a été créé avec succès"
       });
-
-      return data;
-    } catch (err: any) {
+      
+      return true;
+    } catch (err) {
       console.error('Error creating SFD admin:', err);
-      setError(err.message);
       toast({
-        title: 'Erreur',
-        description: err.message,
-        variant: 'destructive'
+        title: "Erreur",
+        description: "Impossible de créer l'administrateur SFD",
+        variant: "destructive"
       });
-      throw err;
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +42,6 @@ export function useSfdAdminManagement() {
 
   return {
     isLoading,
-    error,
-    addSfdAdmin
+    createSfdAdmin
   };
 }

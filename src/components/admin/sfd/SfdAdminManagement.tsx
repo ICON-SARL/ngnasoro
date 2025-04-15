@@ -1,11 +1,11 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SfdAdminAddDialog } from './SfdAdminAddDialog';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Shield, MessageSquare } from 'lucide-react';
+import { UserPlus, Shield } from 'lucide-react';
 import { useState } from 'react';
 import { AdminCommunicationPanel } from '../shared/AdminCommunicationPanel';
+import { RoleSyncIndicator } from '../RoleSyncIndicator';
 
 export function SfdAdminManagement() {
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -14,10 +14,13 @@ export function SfdAdminManagement() {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Gestion des Administrateurs SFD</h2>
-        <Button onClick={() => setShowAddDialog(true)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Nouvel Administrateur SFD
-        </Button>
+        <div className="flex gap-2 items-center">
+          <RoleSyncIndicator />
+          <Button onClick={() => setShowAddDialog(true)}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Nouvel Administrateur SFD
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
