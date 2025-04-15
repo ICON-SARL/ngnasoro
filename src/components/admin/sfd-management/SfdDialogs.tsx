@@ -1,33 +1,32 @@
 
 import React from 'react';
+import { SfdAddDialog } from './SfdAddDialog';
+import { SfdEditDialog } from './SfdEditDialog';
+import { SfdSuspendDialog } from './SfdSuspendDialog';
+import { SfdReactivateDialog } from './SfdReactivateDialog';
+import { SfdActivateDialog } from './SfdActivateDialog';
 import { Sfd } from '../types/sfd-types';
-import { SfdFormValues } from '../sfd/schemas/sfdFormSchema';
-import { SuspendSfdDialog } from '../sfd/SuspendSfdDialog';
-import { ReactivateSfdDialog } from '../sfd/ReactivateSfdDialog';
-import { ActivateSfdDialog } from '../sfd/ActivateSfdDialog';
-import { SfdAddDialog } from '../sfd/SfdAddDialog';
-import { SfdEditDialog } from '../sfd/SfdEditDialog';
-import { useQueryClient } from '@tanstack/react-query';
+import { UseMutationResult } from '@tanstack/react-query';
 
 interface SfdDialogsProps {
   showSuspendDialog: boolean;
-  setShowSuspendDialog: (state: boolean) => void;
+  setShowSuspendDialog: (value: boolean) => void;
   showReactivateDialog: boolean;
-  setShowReactivateDialog: (state: boolean) => void;
+  setShowReactivateDialog: (value: boolean) => void;
   showActivateDialog: boolean;
-  setShowActivateDialog: (state: boolean) => void;
+  setShowActivateDialog: (value: boolean) => void;
   showAddDialog: boolean;
-  setShowAddDialog: (state: boolean) => void;
+  setShowAddDialog: (value: boolean) => void;
   showEditDialog: boolean;
-  setShowEditDialog: (state: boolean) => void;
+  setShowEditDialog: (value: boolean) => void;
   selectedSfd: Sfd | null;
-  suspendSfdMutation: any;
-  reactivateSfdMutation: any;
-  activateSfdMutation: any;
-  addSfdMutation: any;
-  editSfdMutation: any;
-  handleAddSfd: (formData: SfdFormValues) => void;
-  handleEditSfd: (formData: SfdFormValues) => void;
+  suspendSfdMutation: UseMutationResult<any, Error, string, unknown>;
+  reactivateSfdMutation: UseMutationResult<any, Error, string, unknown>;
+  activateSfdMutation: UseMutationResult<any, Error, string, unknown>;
+  addSfdMutation: UseMutationResult<any, Error, any, unknown>;
+  editSfdMutation: UseMutationResult<any, Error, any, unknown>;
+  handleAddSfd: (formData: any) => void;
+  handleEditSfd: (formData: any) => void;
 }
 
 export function SfdDialogs({
@@ -48,117 +47,45 @@ export function SfdDialogs({
   addSfdMutation,
   editSfdMutation,
   handleAddSfd,
-  handleEditSfd
+  handleEditSfd,
 }: SfdDialogsProps) {
-  const queryClient = useQueryClient();
-
-  // Handler for suspend action
-  const handleConfirmSuspend = () => {
-    if (selectedSfd) {
-      suspendSfdMutation.mutate(selectedSfd.id);
-      setShowSuspendDialog(false);
-      // Refresh data after action
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['sfds'] });
-      }, 500);
-    }
-  };
-
-  // Handler for reactivate action
-  const handleConfirmReactivate = () => {
-    if (selectedSfd) {
-      reactivateSfdMutation.mutate(selectedSfd.id);
-      setShowReactivateDialog(false);
-      // Refresh data after action
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['sfds'] });
-      }, 500);
-    }
-  };
-
-  // Handler for activate action
-  const handleConfirmActivate = () => {
-    if (selectedSfd) {
-      activateSfdMutation.mutate(selectedSfd.id);
-      setShowActivateDialog(false);
-      // Refresh data after action
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['sfds'] });
-      }, 500);
-    }
-  };
-
-  // Handler for dialog closing with better data refresh
-  const handleDialogChange = (setStateFunction: Function, state: boolean) => {
-    setStateFunction(state);
-    if (!state) {
-      // When dialog closes, refresh data with a delay to ensure DB updates complete
-      setTimeout(() => {
-        console.log('Dialog closed, refreshing data...');
-        queryClient.invalidateQueries({ queryKey: ['sfds'] });
-      }, 500);
-    }
-  };
-
   return (
     <>
-      {/* Suspend Dialog */}
-      <SuspendSfdDialog
+      <SfdSuspendDialog
         open={showSuspendDialog}
-        onOpenChange={(state) => handleDialogChange(setShowSuspendDialog, state)}
+        onOpenChange={setShowSuspendDialog}
         selectedSfd={selectedSfd}
-        onConfirm={(id) => {
-          suspendSfdMutation.mutate(id);
-          setShowSuspendDialog(false);
-          // Refresh data after action
-          setTimeout(() => {
-            queryClient.invalidateQueries({ queryKey: ['sfds'] });
-          }, 500);
-        }}
-        isPending={suspendSfdMutation.isPending}
+        suspendSfdMutation={suspendSfdMutation}
       />
-
-      {/* Reactivate Dialog */}
-      <ReactivateSfdDialog
+      
+      <SfdReactivateDialog
         open={showReactivateDialog}
-        onOpenChange={(state) => handleDialogChange(setShowReactivateDialog, state)}
+        onOpenChange={setShowReactivateDialog}
         selectedSfd={selectedSfd}
-        onConfirm={(id) => {
-          reactivateSfdMutation.mutate(id);
-          setShowReactivateDialog(false);
-          // Refresh data after action
-          setTimeout(() => {
-            queryClient.invalidateQueries({ queryKey: ['sfds'] });
-          }, 500);
-        }}
-        isPending={reactivateSfdMutation.isPending}
+        reactivateSfdMutation={reactivateSfdMutation}
       />
-
-      {/* Activate Dialog */}
-      <ActivateSfdDialog
+      
+      <SfdActivateDialog
         open={showActivateDialog}
-        onOpenChange={(state) => handleDialogChange(setShowActivateDialog, state)}
-        sfd={selectedSfd}
-        onActivate={handleConfirmActivate}
-        isLoading={activateSfdMutation.isPending}
+        onOpenChange={setShowActivateDialog}
+        selectedSfd={selectedSfd}
+        activateSfdMutation={activateSfdMutation}
       />
-
-      {/* Add Dialog */}
+      
       <SfdAddDialog
         open={showAddDialog}
-        onOpenChange={(state) => handleDialogChange(setShowAddDialog, state)}
+        onOpenChange={setShowAddDialog}
+        onSubmit={handleAddSfd}
+        isLoading={addSfdMutation.isPending}
       />
-
-      {/* Edit Dialog */}
-      {selectedSfd && (
-        <SfdEditDialog
-          open={showEditDialog}
-          onOpenChange={(state) => handleDialogChange(setShowEditDialog, state)}
-          sfd={selectedSfd}
-          onSubmit={handleEditSfd}
-          isLoading={editSfdMutation.isPending}
-        />
-      )}
+      
+      <SfdEditDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onSubmit={handleEditSfd}
+        isLoading={editSfdMutation.isPending}
+        sfd={selectedSfd}
+      />
     </>
   );
 }

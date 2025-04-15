@@ -38,6 +38,9 @@ export function useActivateSfdMutation() {
       // Ajouter également l'invalidation du compteur sur le tableau de bord
       queryClient.invalidateQueries({ queryKey: ['sfd-management-stats'] });
       
+      // Important: invalidate the SFD status check query to remove the alert
+      queryClient.invalidateQueries({ queryKey: ['sfd-status-check'] });
+      
       toast({
         title: 'SFD activée',
         description: 'La SFD a été activée avec succès',

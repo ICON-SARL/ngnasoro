@@ -1,116 +1,185 @@
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sfd } from '../types/sfd-types';
-import { SfdFormValues } from '../sfd/schemas/sfdFormSchema';
-import { useSfdData } from './sfd-management/useSfdData';
-import { useSfdMutations } from './sfd-management/useSfdMutations';
-import { useSfdFilters } from './sfd-management/useSfdFilters';
-import { useSfdExport } from './sfd-management/useSfdExport';
-import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSuspendSfdMutation } from './sfd-management/mutations/useSuspendSfdMutation';
+import { useReactivateSfdMutation } from './sfd-management/mutations/useReactivateSfdMutation';
+import { useActivateSfdMutation } from './sfd-management/mutations/useActivateSfdMutation';
 
 export function useSfdManagement() {
-  // For direct cache invalidation
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  
-  // Local state
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedSfd, setSelectedSfd] = useState<Sfd | null>(null);
   const [showSuspendDialog, setShowSuspendDialog] = useState(false);
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
   const [showActivateDialog, setShowActivateDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Use the sub-hooks
-  const { sfds, isLoading, isError, refetch } = useSfdData();
-  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, filteredSfds } = useSfdFilters(sfds);
+  // Fetch all SFDs
   const { 
-    addSfdMutation, 
-    editSfdMutation, 
-    suspendSfdMutation, 
-    reactivateSfdMutation,
-    activateSfdMutation
-  } = useSfdMutations();
-  const { handleExportPdf, handleExportExcel, isExporting } = useSfdExport(filteredSfds, statusFilter);
-
-  // Event handlers
-  const handleAddSfd = (formData: SfdFormValues) => {
-    addSfdMutation.mutate(formData, {
-      onSuccess: () => {
-        setShowAddDialog(false);
-        // Explicitly refresh data after adding
-        setTimeout(() => {
-          refetch();
-          queryClient.invalidateQueries({ queryKey: ['sfds'] });
-        }, 500);
+    data: sfds = [], 
+    isLoading, 
+    isError,
+    refetch 
+  } = useQuery({
+    queryKey: ['sfds'],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('sfds')
+          .select('*')
+          .order('name');
+        
+        if (error) throw error;
+        
+        return data as Sfd[];
+      } catch (err: any) {
+        console.error('Error fetching SFDs:', err);
+        throw err;
       }
-    });
-  };
+    }
+  });
 
-  const handleEditSfd = (formData: SfdFormValues) => {
-    if (selectedSfd) {
-      console.log('Editing SFD:', selectedSfd.id, formData);
-      editSfdMutation.mutate({ id: selectedSfd.id, data: formData }, {
-        onSuccess: () => {
-          // Explicitly refresh data after editing
-          setShowEditDialog(false);
-          
-          toast({
-            title: 'SFD mise à jour',
-            description: 'Les modifications ont été enregistrées avec succès.',
-          });
-          
-          setTimeout(() => {
-            console.log('Refreshing SFD data after edit');
-            refetch();
-            queryClient.invalidateQueries({ queryKey: ['sfds'] });
-          }, 500);
-        }
+  const forceRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  // Filter SFDs based on search term
+  const filteredSfds = sfds.filter(sfd => 
+    sfd.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    sfd.code.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (sfd.region && sfd.region.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  // Mutations
+  const suspendSfdMutation = useSuspendSfdMutation();
+  const reactivateSfdMutation = useReactivateSfdMutation();
+  const activateSfdMutation = useActivateSfdMutation();
+
+  // Add SFD mutation
+  const addSfdMutation = useMutation({
+    mutationFn: async (formData: any) => {
+      const { data, error } = await supabase
+        .from('sfds')
+        .insert({
+          name: formData.name,
+          code: formData.code,
+          region: formData.region,
+          status: 'pending', // Default status for new SFDs
+          contact_email: formData.email,
+          phone: formData.phone,
+          description: formData.description
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      toast({
+        title: "SFD ajouté",
+        description: "Le SFD a été ajouté avec succès."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: `Une erreur est survenue: ${error.message}`,
+        variant: "destructive"
       });
     }
-  };
+  });
 
-  const handleShowEditDialog = (sfd: Sfd) => {
-    console.log('Setting selected SFD for edit:', sfd);
-    setSelectedSfd(sfd);
-    setShowEditDialog(true);
-  };
+  // Edit SFD mutation
+  const editSfdMutation = useMutation({
+    mutationFn: async (formData: any) => {
+      const { data, error } = await supabase
+        .from('sfds')
+        .update({
+          name: formData.name,
+          code: formData.code,
+          region: formData.region,
+          contact_email: formData.email,
+          phone: formData.phone,
+          description: formData.description
+        })
+        .eq('id', formData.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      toast({
+        title: "SFD modifié",
+        description: "Le SFD a été modifié avec succès."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: `Une erreur est survenue: ${error.message}`,
+        variant: "destructive"
+      });
+    }
+  });
 
-  const handleSuspendSfd = (sfd: Sfd) => {
+  // Handler for suspending an SFD
+  const handleSuspendSfd = useCallback((sfd: Sfd) => {
     setSelectedSfd(sfd);
     setShowSuspendDialog(true);
-  };
+  }, []);
 
-  const handleReactivateSfd = (sfd: Sfd) => {
+  // Handler for reactivating an SFD
+  const handleReactivateSfd = useCallback((sfd: Sfd) => {
     setSelectedSfd(sfd);
     setShowReactivateDialog(true);
-  };
+  }, []);
 
-  const handleActivateSfd = (sfd: Sfd) => {
+  // Handler for activating a pending SFD
+  const handleActivateSfd = useCallback((sfd: Sfd) => {
     setSelectedSfd(sfd);
     setShowActivateDialog(true);
-  };
+  }, []);
 
-  // Force refetch data
-  const forceRefresh = () => {
-    console.log('Force refreshing SFD data');
-    queryClient.invalidateQueries({ queryKey: ['sfds'] });
-    refetch();
-  };
+  // Handler for showing edit dialog
+  const handleShowEditDialog = useCallback((sfd: Sfd) => {
+    setSelectedSfd(sfd);
+    setShowEditDialog(true);
+  }, []);
+
+  // Handler for adding new SFD
+  const handleAddSfd = useCallback((formData: any) => {
+    addSfdMutation.mutate(formData);
+    setShowAddDialog(false);
+  }, [addSfdMutation]);
+
+  // Handler for editing SFD
+  const handleEditSfd = useCallback((formData: any) => {
+    editSfdMutation.mutate(formData);
+    setShowEditDialog(false);
+  }, [editSfdMutation]);
 
   return {
-    sfds,
     filteredSfds,
     isLoading,
     isError,
-    isExporting,
-    selectedSfd,
-    setSelectedSfd,
     searchTerm,
     setSearchTerm,
-    statusFilter,
-    setStatusFilter,
+    selectedSfd,
+    handleShowEditDialog,
+    handleSuspendSfd,
+    handleReactivateSfd,
+    handleActivateSfd,
     showSuspendDialog,
     setShowSuspendDialog,
     showReactivateDialog,
@@ -128,13 +197,6 @@ export function useSfdManagement() {
     editSfdMutation,
     handleAddSfd,
     handleEditSfd,
-    handleShowEditDialog,
-    handleSuspendSfd,
-    handleReactivateSfd,
-    handleActivateSfd,
-    handleExportPdf,
-    handleExportExcel,
-    refetch,
     forceRefresh
   };
 }
