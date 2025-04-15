@@ -14,10 +14,14 @@ export async function verifyPermissionSystem(): Promise<{
 }> {
   try {
     // 1. Vérifier l'existence de la vue de permissions
+    // Using a direct table query instead of an RPC function that doesn't exist
     const { data: viewData, error: viewError } = await supabase
-      .rpc('check_table_exists', { table_name: 'role_permissions_view' });
+      .from('pg_tables')
+      .select('tablename')
+      .eq('tablename', 'role_permissions_view')
+      .single();
     
-    const viewExists = viewData === true;
+    const viewExists = viewData !== null;
     
     // 2. Vérifier le fonctionnement de l'edge function
     const { data: edgeData, error: edgeError } = await supabase.functions.invoke('test-roles', {
