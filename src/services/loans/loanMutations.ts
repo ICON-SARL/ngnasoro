@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Loan, CreateLoanInput } from '@/types/sfdClients';
 import { logAuditEvent } from '@/utils/audit';
@@ -81,7 +82,8 @@ export const approveLoan = async (loanId: string, userId: string): Promise<boole
       message: `Votre demande de prêt de ${loan.amount} FCFA a été approuvée.`,
       type: 'loan_approval',
       recipient_id: loan.client_id,
-      sender_id: userId
+      sender_id: userId,
+      action_link: `/loans/${loanId}`
     });
     
     // 3. Log audit event
@@ -146,7 +148,8 @@ export const rejectLoan = async (loanId: string, userId: string, reason?: string
       message: `Votre demande de prêt de ${loan.amount} FCFA a été rejetée. ${reason ? `Raison: ${reason}` : ''}`,
       type: 'loan_rejection',
       recipient_id: loan.client_id,
-      sender_id: userId
+      sender_id: userId,
+      action_link: `/loans/${loanId}`
     });
     
     // Log audit event
@@ -235,7 +238,8 @@ export const disburseLoan = async (loanId: string, userId: string): Promise<bool
       message: `Votre prêt de ${loan.amount} FCFA a été décaissé et crédité sur votre compte.`,
       type: 'loan_disbursement',
       recipient_id: loan.client_id,
-      sender_id: userId
+      sender_id: userId,
+      action_link: `/loans/${loanId}`
     });
     
     // 4. Log audit event
@@ -262,8 +266,6 @@ export const disburseLoan = async (loanId: string, userId: string): Promise<bool
 };
 
 export const loanService = {
-  
-
   /**
    * Check loan payment status and send reminders if needed
    */
@@ -284,11 +286,20 @@ export const loanService = {
    */
   async schedulePaymentReminder(loanId: string, reminderDate: string): Promise<boolean> {
     try {
+      // Get user from auth
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('User not authenticated');
+        return false;
+      }
+      
       const { data, error } = await supabase
         .from('admin_notifications')
         .insert({
           type: 'payment_reminder_scheduled',
-          recipient_id: auth.uid(),
+          recipient_id: user.id,
+          sender_id: user.id,
           title: 'Rappel de paiement programmé',
           message: `Un rappel a été programmé pour le ${new Date(reminderDate).toLocaleDateString()}`,
           action_link: `/loans/${loanId}`
