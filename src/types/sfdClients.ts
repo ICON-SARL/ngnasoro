@@ -1,4 +1,3 @@
-
 export interface Loan {
   id: string;
   client_id: string;

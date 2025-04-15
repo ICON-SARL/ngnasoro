@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -39,10 +40,11 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
 
       if (error) throw error;
       
-      const typedPlans: LoanPlan[] = data?.map(plan => ({
+      const typedPlans = (data || []).map(plan => ({
         ...plan,
-        is_published: Boolean(plan.is_published)
-      })) || [];
+        is_published: Boolean(plan.is_published),
+        is_active: Boolean(plan.is_active)
+      })) as LoanPlan[];
       
       setLoanPlans(typedPlans);
     } catch (error) {

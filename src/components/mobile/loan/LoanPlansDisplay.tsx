@@ -62,11 +62,12 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
         
         if (error) throw error;
         
-        // Transform to ensure all properties are correctly typed
-        const typedPlans: LoanPlan[] = data?.map(plan => ({
+        // Type assertion to handle the response data properly
+        const typedPlans = (data || []).map(plan => ({
           ...plan,
-          is_published: Boolean(plan.is_published)
-        })) || [];
+          is_published: Boolean(plan.is_published),
+          is_active: Boolean(plan.is_active)
+        })) as LoanPlan[];
         
         setLoanPlans(typedPlans);
       } catch (error) {
