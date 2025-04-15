@@ -1,48 +1,32 @@
 
 import React from 'react';
-import { SfdHeader } from '@/components/sfd/SfdHeader';
-import { ClientAdhesionRequests } from '@/components/sfd/ClientAdhesionRequests';
-import { Card, CardContent } from '@/components/ui/card';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { SfdHeader } from '@/components/SfdHeader';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SfdNavigation } from '@/components/sfd/SfdNavigation';
 
-const SfdAdhesionRequestsPage = () => {
-  const { hasPermission } = usePermissions();
-  const canViewAdhesions = hasPermission('view_client_adhesions');
-  
-  if (!canViewAdhesions) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <SfdHeader />
-        <main className="container mx-auto px-4 py-6">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Accès refusé</AlertTitle>
-            <AlertDescription>
-              Vous n'avez pas les permissions nécessaires pour accéder à cette page.
-            </AlertDescription>
-          </Alert>
-        </main>
-      </div>
-    );
-  }
-  
+const SfdAdhesionRequestsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <SfdHeader />
       
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto p-4 md:p-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Demandes d'adhésion</h1>
+          <h2 className="text-2xl font-bold">Demandes d'Adhésion</h2>
           <p className="text-muted-foreground">
-            Gérez les demandes d'adhésion des clients à votre SFD
+            Gérez les demandes d'adhésion et validez les nouveaux clients
           </p>
         </div>
         
+        <div className="mb-6">
+          <SfdNavigation />
+        </div>
+        
         <Card>
-          <CardContent className="p-6">
-            <ClientAdhesionRequests />
+          <CardHeader>
+            <CardTitle>Demandes en Attente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>La liste des demandes d'adhésion en attente sera affichée ici.</p>
           </CardContent>
         </Card>
       </main>

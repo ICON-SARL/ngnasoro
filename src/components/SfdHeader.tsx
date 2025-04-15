@@ -19,6 +19,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import LogoutButton from '@/components/LogoutButton';
+import { sfdNavigationItems } from './sfd/SfdNavigation';
 
 export function SfdHeader() {
   const { user } = useAuth();
@@ -35,16 +36,6 @@ export function SfdHeader() {
     return location.pathname === route;
   };
 
-  const navLinks = [
-    { name: 'Tableau de bord', icon: <PieChart className="w-4 h-4 mr-2" />, path: '/agency-dashboard' },
-    { name: 'Clients', icon: <Users className="w-4 h-4 mr-2" />, path: '/sfd-clients' },
-    { name: 'Prêts', icon: <CreditCard className="w-4 h-4 mr-2" />, path: '/sfd-loans' },
-    { name: 'Demandes d\'adhésion', icon: <Users className="w-4 h-4 mr-2" />, path: '/sfd-adhesion-requests' },
-    { name: 'Transactions', icon: <BarChart className="w-4 h-4 mr-2" />, path: '/sfd-transactions' },
-    { name: 'Subventions', icon: <Landmark className="w-4 h-4 mr-2" />, path: '/sfd-subsidy-requests' },
-    { name: 'Paramètres', icon: <Settings className="w-4 h-4 mr-2" />, path: '/sfd-settings' },
-  ];
-  
   return (
     <header className="sticky top-0 z-40 border-b bg-background">
       <div className="container flex h-16 items-center justify-between py-4">
@@ -61,19 +52,31 @@ export function SfdHeader() {
           </Badge>
           
           <div className="hidden md:flex gap-1">
-            {navLinks.map(link => (
+            {sfdNavigationItems.map(link => (
               <Button 
                 key={link.path}
                 variant={isActiveRoute(link.path) ? "default" : "ghost"} 
                 asChild
                 size="sm"
+                onClick={() => navigate(link.path)}
               >
                 <Link to={link.path} className="flex items-center">
                   {link.icon}
-                  {link.name}
+                  {link.label}
                 </Link>
               </Button>
             ))}
+            <Button 
+              variant={isActiveRoute("/sfd-settings") ? "default" : "ghost"} 
+              asChild
+              size="sm"
+              onClick={() => navigate("/sfd-settings")}
+            >
+              <Link to="/sfd-settings" className="flex items-center">
+                <Settings className="h-4 w-4 mr-2" />
+                Paramètres
+              </Link>
+            </Button>
           </div>
         </div>
         
@@ -156,7 +159,7 @@ export function SfdHeader() {
             </SheetTrigger>
             <SheetContent side="right">
               <div className="grid gap-4 py-4">
-                {navLinks.map(link => (
+                {sfdNavigationItems.map(link => (
                   <Link 
                     key={link.path}
                     to={link.path} 
@@ -165,9 +168,18 @@ export function SfdHeader() {
                     }`}
                   >
                     {link.icon}
-                    <span>{link.name}</span>
+                    <span>{link.label}</span>
                   </Link>
                 ))}
+                <Link 
+                  to="/sfd-settings" 
+                  className={`flex items-center py-2 px-3 rounded-lg ${
+                    isActiveRoute("/sfd-settings") ? 'bg-muted font-medium' : 'hover:bg-muted'
+                  }`}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  <span>Paramètres</span>
+                </Link>
                 <div className="flex items-center py-2 px-3 rounded-lg text-red-500 hover:bg-muted">
                   <LogoutButton 
                     variant="ghost" 

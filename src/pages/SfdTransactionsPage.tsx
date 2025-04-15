@@ -1,28 +1,32 @@
 
 import React from 'react';
 import { SfdHeader } from '@/components/SfdHeader';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SfdNavigation } from '@/components/sfd/SfdNavigation';
 
-const SfdTransactionsPage = () => {
+const SfdTransactionsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <SfdHeader />
       
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto p-4 md:p-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Transactions</h1>
+          <h2 className="text-2xl font-bold">Transactions</h2>
           <p className="text-muted-foreground">
-            Gérez les transactions de votre SFD
+            Suivez toutes les transactions de votre SFD
           </p>
         </div>
         
+        <div className="mb-6">
+          <SfdNavigation />
+        </div>
+        
         <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center justify-center py-10">
-              <p className="text-muted-foreground text-center mb-4">
-                Module de transactions en cours de développement.
-              </p>
-            </div>
+          <CardHeader>
+            <CardTitle>Historique des Transactions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>L'historique des transactions sera affiché ici.</p>
           </CardContent>
         </Card>
       </main>

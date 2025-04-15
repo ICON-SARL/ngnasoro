@@ -16,6 +16,11 @@ import AnonymousOnlyGuard from '@/components/AnonymousOnlyGuard';
 import { UserRole } from '@/utils/auth/roleTypes';
 import SfdManagementPage from '@/pages/admin/SfdManagementPage';
 import AgencyManagementPage from '@/pages/admin/AgencyManagementPage';
+import LoansPage from '@/pages/LoansPage';
+import SfdClientsPage from '@/pages/SfdClientsPage';
+import SfdAdhesionRequestsPage from '@/pages/SfdAdhesionRequestsPage';
+import SfdTransactionsPage from '@/pages/SfdTransactionsPage';
+import SfdSubsidyRequestsPage from '@/pages/SfdSubsidyRequestsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -93,6 +98,51 @@ function App() {
                     element={
                       <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
                         <AgencyManagementPage />
+                      </RoleGuard>
+                    }
+                  />
+                  
+                  <Route
+                    path="/sfd-loans"
+                    element={
+                      <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
+                        <LoansPage />
+                      </RoleGuard>
+                    }
+                  />
+                  
+                  <Route
+                    path="/sfd-clients"
+                    element={
+                      <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
+                        <SfdClientsPage />
+                      </RoleGuard>
+                    }
+                  />
+                  
+                  <Route
+                    path="/sfd-adhesion-requests"
+                    element={
+                      <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
+                        <SfdAdhesionRequestsPage />
+                      </RoleGuard>
+                    }
+                  />
+                  
+                  <Route
+                    path="/sfd-transactions"
+                    element={
+                      <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
+                        <SfdTransactionsPage />
+                      </RoleGuard>
+                    }
+                  />
+                  
+                  <Route
+                    path="/sfd-subsidy-requests"
+                    element={
+                      <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
+                        <SfdSubsidyRequestsPage />
                       </RoleGuard>
                     }
                   />
