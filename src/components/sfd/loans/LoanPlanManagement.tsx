@@ -43,7 +43,8 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
       const typedPlans = (data || []).map(plan => ({
         ...plan,
         is_published: Boolean(plan.is_published),
-        is_active: Boolean(plan.is_active)
+        is_active: Boolean(plan.is_active),
+        requirements: plan.requirements || []
       })) as LoanPlan[];
       
       setLoanPlans(typedPlans);
