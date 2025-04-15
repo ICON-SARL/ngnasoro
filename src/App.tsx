@@ -1,10 +1,11 @@
+
 import React from 'react';
 import {
   createBrowserRouter,
   RouterProvider,
 } from "react-router-dom";
-import AuthenticationGuard from './components/AuthenticationGuard';
-import AnonymousOnlyGuard from './components/AnonymousOnlyGuard';
+import AuthenticationGuard from '@/components/AuthenticationGuard';
+import AnonymousOnlyGuard from '@/components/AnonymousOnlyGuard';
 import LoginPage from './pages/LoginPage';
 import RegistrationPage from './pages/RegistrationPage';
 import ProfilePage from './pages/ProfilePage';
