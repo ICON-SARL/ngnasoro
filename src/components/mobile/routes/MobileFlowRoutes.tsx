@@ -7,6 +7,13 @@ import WelcomeScreen from '../WelcomeScreen';
 import ProfilePage from '../profile/ProfilePage';
 import SplashScreen from '../SplashScreen';
 import SfdSelectorPage from '@/pages/SfdSelectorPage';
+import MobileLoansPage from '@/pages/mobile/MobileLoansPage';
+import MobileLoanPlansPage from '@/pages/mobile/MobileLoanPlansPage';
+import MobileLoanSimulatorPage from '@/pages/mobile/MobileLoanSimulatorPage';
+import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage';
+import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
+import MobileLoanDetailsPage from '@/pages/mobile/MobileLoanDetailsPage';
+import SfdConnectionPage from '@/pages/mobile/SfdConnectionPage';
 
 interface MobileFlowRoutesProps {
   onAction: (action: string, data?: any) => void;
@@ -57,6 +64,35 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       
       <Route path="sfd-selector" element={
         <SfdSelectorPage />
+      } />
+      
+      <Route path="sfd-connection" element={
+        <SfdConnectionPage />
+      } />
+      
+      {/* Routes de prêt */}
+      <Route path="loans" element={
+        <MobileLoansPage />
+      } />
+      
+      <Route path="loan-plans" element={
+        <MobileLoanPlansPage />
+      } />
+      
+      <Route path="loan-simulator" element={
+        <MobileLoanSimulatorPage />
+      } />
+      
+      <Route path="loan-application" element={
+        <MobileLoanApplicationPage />
+      } />
+      
+      <Route path="my-loans" element={
+        <MobileMyLoansPage />
+      } />
+      
+      <Route path="loan-details/:id" element={
+        <MobileLoanDetailsPage />
       } />
       
       {/* Default route - redirect to main dashboard */}
