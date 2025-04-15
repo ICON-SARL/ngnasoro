@@ -1,158 +1,88 @@
 
 import React from 'react';
-import { useSfdManagement } from '../hooks/useSfdManagement';
+import { useSfdManagement } from '@/hooks/useSfdManagement';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, RefreshCw, Search } from 'lucide-react';
-import { SfdTable } from '../sfd/SfdTable'; 
-import { SfdDialogs } from './SfdDialogs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
+import { Card, CardContent } from '@/components/ui/card';
+import { Building, Search, MapPin, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export function SfdManagementContainer() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  
   const {
     filteredSfds,
     isLoading,
-    isError,
     searchTerm,
     setSearchTerm,
-    selectedSfd,
-    handleShowEditDialog,
-    handleSuspendSfd,
-    handleReactivateSfd,
     handleActivateSfd,
-    showSuspendDialog,
-    setShowSuspendDialog,
-    showReactivateDialog,
-    setShowReactivateDialog,
-    showActivateDialog,
-    setShowActivateDialog,
-    showAddDialog,
-    setShowAddDialog,
-    showEditDialog,
-    setShowEditDialog,
-    suspendSfdMutation,
-    reactivateSfdMutation,
-    activateSfdMutation,
-    addSfdMutation,
-    editSfdMutation,
-    handleAddSfd,
-    handleEditSfd,
-    forceRefresh
+    activateSfdMutation
   } = useSfdManagement();
-
-  if (isError) {
-    return (
-      <Alert variant="destructive" className="mt-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Erreur</AlertTitle>
-        <AlertDescription className="space-y-2">
-          <p>Une erreur est survenue lors du chargement des SFDs. Veuillez réessayer.</p>
-          <Button 
-            onClick={forceRefresh} 
-            variant="outline" 
-            size="sm" 
-            className="mt-2"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Réessayer
-          </Button>
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  // Enhance edit SFD to ensure data refresh
-  const handleEditSfdWithRefresh = (formData: any) => {
-    handleEditSfd(formData);
-    // Add a delayed refresh to ensure updated data is fetched after backend processes
-    setTimeout(() => {
-      console.log('Forcing data refresh after SFD edit');
-      queryClient.invalidateQueries({ queryKey: ['sfds'] });
-      forceRefresh();
-    }, 1000);
-  };
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row justify-between gap-4">
+      <div className="flex justify-between items-center mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Rechercher par nom, code ou région..."
+            placeholder="Rechercher une SFD..."
             className="pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            className="flex-shrink-0"
-            onClick={forceRefresh}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Actualiser
-          </Button>
-          <Button 
-            className="flex-shrink-0" 
-            onClick={() => setShowAddDialog(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Ajouter une SFD
-          </Button>
-        </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-          <p className="text-muted-foreground">Chargement des SFDs...</p>
-        </div>
-      ) : (
-        <SfdTable
-          sfds={filteredSfds}
-          isLoading={false}
-          isError={false}
-          onEdit={handleShowEditDialog}
-          onSuspend={handleSuspendSfd}
-          onReactivate={handleReactivateSfd} 
-          onActivate={handleActivateSfd}
-          onViewDetails={(sfd) => console.log('View details for', sfd.name)}
-        />
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredSfds.map((sfd) => (
+          <Card key={sfd.id} className="overflow-hidden border-gray-200">
+            <div className={`h-2 w-full ${sfd.status === 'active' ? 'bg-green-500' : 'bg-amber-500'}`} />
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="h-12 w-12 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <Building className="h-6 w-6 text-blue-500" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">{sfd.name}</h3>
+                  <p className="text-sm text-gray-500">Code: {sfd.code}</p>
+                </div>
+              </div>
 
-      <SfdDialogs
-        showSuspendDialog={showSuspendDialog}
-        setShowSuspendDialog={setShowSuspendDialog}
-        showReactivateDialog={showReactivateDialog}
-        setShowReactivateDialog={setShowReactivateDialog}
-        showActivateDialog={showActivateDialog}
-        setShowActivateDialog={setShowActivateDialog}
-        showAddDialog={showAddDialog}
-        setShowAddDialog={setShowAddDialog}
-        showEditDialog={showEditDialog}
-        setShowEditDialog={setShowEditDialog}
-        selectedSfd={selectedSfd}
-        suspendSfdMutation={suspendSfdMutation}
-        reactivateSfdMutation={reactivateSfdMutation}
-        activateSfdMutation={activateSfdMutation}
-        addSfdMutation={addSfdMutation}
-        editSfdMutation={editSfdMutation}
-        handleAddSfd={handleAddSfd}
-        handleEditSfd={handleEditSfdWithRefresh}
-      />
+              <div className="space-y-2 mb-4">
+                {sfd.region && (
+                  <div className="flex items-center text-sm text-gray-600">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    <span>{sfd.region}</span>
+                  </div>
+                )}
+                <div className="flex items-center text-sm text-gray-600">
+                  <Users className="h-4 w-4 mr-2" />
+                  <span>0 clients</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center mt-4">
+                <Badge 
+                  variant={sfd.status === 'active' ? 'default' : 'warning'}
+                  className={sfd.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}
+                >
+                  {sfd.status === 'active' ? 'Actif' : 'Inactif'}
+                </Badge>
+                
+                {sfd.status !== 'active' && (
+                  <Button
+                    onClick={() => handleActivateSfd(sfd.id)}
+                    disabled={activateSfdMutation.isPending}
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {activateSfdMutation.isPending ? 'Activation...' : 'Activer'}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
