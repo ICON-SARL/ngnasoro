@@ -14,28 +14,22 @@ export const permissionsService = {
       // First try to get user role
       const userRole = await this.getUserRole(userId);
       
-      // Then try to get permissions for this role using a query rather than rpc
-      const { data: dbPermissions, error } = await supabase
-        .from('role_permissions_view')
-        .select('permission')
-        .eq('role', userRole)
-        .then(result => {
-          if (result.error) return { data: null, error: result.error };
-          // Transform the result to a string array
-          return { 
-            data: result.data?.map(row => row.permission) || [], 
-            error: null 
-          };
-        });
+      // Call the test-roles function to get permissions for this role
+      const { data, error } = await supabase.functions.invoke('test-roles', {
+        body: JSON.stringify({
+          action: 'verify_permissions',
+          role: userRole
+        })
+      });
       
-      if (error || !dbPermissions) {
-        console.error('Error fetching permissions from database:', error);
+      if (error || !data?.permissions) {
+        console.error('Error fetching permissions from edge function:', error);
         
         // Fallback to local permission definitions
         return this.getPermissionsForRole(userRole as UserRole);
       }
       
-      return dbPermissions;
+      return data.permissions;
     } catch (err) {
       console.error('Error in getUserPermissions:', err);
       return [];
@@ -79,25 +73,14 @@ export const permissionsService = {
    */
   async hasPermission(userId: string, permission: string): Promise<boolean> {
     try {
-      // Query the database directly instead of using RPC
-      // First get the user's role
-      const userRole = await this.getUserRole(userId);
-      
-      // Then check if this role has the permission
-      const { data, error } = await supabase
-        .from('role_permissions_view')
-        .select('permission')
-        .eq('role', userRole)
-        .eq('permission', permission)
-        .single()
-        .then(result => {
-          if (result.error && result.error.code !== 'PGRST116') {
-            // PGRST116 is the error code for no rows returned
-            return { data: null, error: result.error };
-          }
-          // If we got a row, the permission exists
-          return { data: result.data ? true : false, error: null };
-        });
+      // Use the edge function for real-time permission checking
+      const { data, error } = await supabase.functions.invoke('test-roles', {
+        body: JSON.stringify({
+          action: 'check_permission',
+          userId,
+          permission
+        })
+      });
       
       if (error) {
         console.warn('Falling back to local permission check', error);
@@ -107,7 +90,7 @@ export const permissionsService = {
         return userPermissions.includes(permission);
       }
       
-      return !!data;
+      return data?.has_permission || false;
     } catch (err) {
       console.error('Error in hasPermission:', err);
       return false;

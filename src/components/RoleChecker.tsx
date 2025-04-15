@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { permissionsService } from '@/services/auth/permissionsService';
 import { PERMISSIONS } from '@/utils/auth/roleTypes';
 import { Check, X, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface RoleCheckerProps {
   userId: string;
@@ -51,12 +52,24 @@ export function RoleChecker({ userId, role }: RoleCheckerProps) {
     const loadPermissions = async () => {
       try {
         setLoading(true);
-        const perms = await permissionsService.getUserPermissions(userId);
-        setPermissions(perms);
+        
+        // Call the edge function to get permissions for this role
+        const { data, error } = await supabase.functions.invoke('test-roles', {
+          body: JSON.stringify({
+            action: 'verify_permissions',
+            role
+          })
+        });
+        
+        if (error || !data?.permissions) {
+          throw new Error(error?.message || 'Failed to load permissions');
+        }
+        
+        setPermissions(data.permissions);
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error loading permissions:', err);
-        setError('Erreur lors du chargement des permissions');
+        setError(err.message || 'Erreur lors du chargement des permissions');
       } finally {
         setLoading(false);
       }
@@ -65,7 +78,7 @@ export function RoleChecker({ userId, role }: RoleCheckerProps) {
     if (userId) {
       loadPermissions();
     }
-  }, [userId]);
+  }, [userId, role]);
 
   const testRealTimePermissions = async () => {
     try {
@@ -75,15 +88,27 @@ export function RoleChecker({ userId, role }: RoleCheckerProps) {
       // Get permissions to test for this role
       const permissionsToTest = keyPermissions[role as keyof typeof keyPermissions] || [];
       
-      // Test each permission in real-time
+      // Test each permission in real-time using the edge function
       for (const permission of permissionsToTest) {
-        results[permission] = await permissionsService.hasPermission(userId, permission);
+        const { data, error } = await supabase.functions.invoke('test-roles', {
+          body: JSON.stringify({
+            action: 'check_permission',
+            userId,
+            permission
+          })
+        });
+        
+        if (error) {
+          throw new Error(error.message);
+        }
+        
+        results[permission] = data?.has_permission || false;
       }
       
       setTestResults(results);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error testing permissions:', err);
-      setError('Erreur lors des tests de permission en temps réel');
+      setError('Erreur lors des tests de permission en temps réel: ' + err.message);
     } finally {
       setRunningTest(false);
     }
