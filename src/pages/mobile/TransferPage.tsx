@@ -3,11 +3,15 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { TransferForm } from '@/components/mobile/transfers/TransferForm';
-import { TransferHistory } from '@/components/mobile/transfers/TransferHistory';
+import TransferOptions from '@/components/mobile/funds-management/TransferOptions';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useState } from 'react';
+import MobileMoneyModal from '@/components/mobile/loan/MobileMoneyModal';
 
 export default function TransferPage() {
   const navigate = useNavigate();
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   
   const handleBack = () => {
     navigate('/mobile-flow/main');
@@ -25,18 +29,33 @@ export default function TransferPage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold text-[#0D6A51]">Transfert</h1>
+          <div>
+            <h1 className="text-xl font-bold text-[#0D6A51]">Transfert</h1>
+            <p className="text-gray-500 text-sm">Dépôt et retrait via Mobile Money</p>
+          </div>
         </div>
-        <p className="text-gray-500 text-sm">Envoyez de l'argent facilement</p>
       </div>
       
-      <div className="p-4 space-y-6">
-        <TransferForm />
-        
-        <div className="mt-6">
-          <TransferHistory />
-        </div>
+      <div className="p-4">
+        <TransferOptions 
+          onWithdraw={() => setShowWithdrawModal(true)}
+          onDeposit={() => setShowDepositModal(true)}
+        />
       </div>
+
+      <Dialog open={showDepositModal} onOpenChange={setShowDepositModal}>
+        <MobileMoneyModal 
+          onClose={() => setShowDepositModal(false)}
+          isWithdrawal={false}
+        />
+      </Dialog>
+
+      <Dialog open={showWithdrawModal} onOpenChange={setShowWithdrawModal}>
+        <MobileMoneyModal 
+          onClose={() => setShowWithdrawModal(false)}
+          isWithdrawal={true}
+        />
+      </Dialog>
     </div>
   );
 }
