@@ -13,14 +13,17 @@ interface SfdStatistics {
   pendingSubsidyRequests: number;
 }
 
-export const useSfdStatistics = () => {
+export const useSfdStatistics = (sfdId?: string) => {
   const { activeSfdId } = useAuth();
   const { toast } = useToast();
+  
+  // Use the provided sfdId if available, otherwise use activeSfdId from auth context
+  const targetSfdId = sfdId || activeSfdId;
 
   return useQuery({
-    queryKey: ['sfd-statistics', activeSfdId],
+    queryKey: ['sfd-statistics', targetSfdId],
     queryFn: async (): Promise<SfdStatistics> => {
-      if (!activeSfdId) {
+      if (!targetSfdId) {
         throw new Error("Aucune SFD sélectionnée");
       }
 
@@ -33,7 +36,7 @@ export const useSfdStatistics = () => {
         const { count: totalClients, error: clientsError } = await supabase
           .from('sfd_clients')
           .select('*', { count: 'exact', head: true })
-          .eq('sfd_id', activeSfdId);
+          .eq('sfd_id', targetSfdId);
 
         if (clientsError) throw clientsError;
 
@@ -41,7 +44,7 @@ export const useSfdStatistics = () => {
         const { count: newClients, error: newClientsError } = await supabase
           .from('sfd_clients')
           .select('*', { count: 'exact', head: true })
-          .eq('sfd_id', activeSfdId)
+          .eq('sfd_id', targetSfdId)
           .gte('created_at', firstDayOfMonth);
 
         if (newClientsError) throw newClientsError;
@@ -50,7 +53,7 @@ export const useSfdStatistics = () => {
         const { count: activeLoans, error: activeLoansError } = await supabase
           .from('sfd_loans')
           .select('*', { count: 'exact', head: true })
-          .eq('sfd_id', activeSfdId)
+          .eq('sfd_id', targetSfdId)
           .eq('status', 'active');
 
         if (activeLoansError) throw activeLoansError;
@@ -59,7 +62,7 @@ export const useSfdStatistics = () => {
         const { count: pendingLoans, error: pendingLoansError } = await supabase
           .from('sfd_loans')
           .select('*', { count: 'exact', head: true })
-          .eq('sfd_id', activeSfdId)
+          .eq('sfd_id', targetSfdId)
           .eq('status', 'pending');
 
         if (pendingLoansError) throw pendingLoansError;
@@ -68,7 +71,7 @@ export const useSfdStatistics = () => {
         const { count: subsidyRequests, error: subsidyError } = await supabase
           .from('subsidy_requests')
           .select('*', { count: 'exact', head: true })
-          .eq('sfd_id', activeSfdId);
+          .eq('sfd_id', targetSfdId);
 
         if (subsidyError) throw subsidyError;
 
@@ -76,7 +79,7 @@ export const useSfdStatistics = () => {
         const { count: pendingSubsidies, error: pendingSubsidyError } = await supabase
           .from('subsidy_requests')
           .select('*', { count: 'exact', head: true })
-          .eq('sfd_id', activeSfdId)
+          .eq('sfd_id', targetSfdId)
           .eq('status', 'pending');
 
         if (pendingSubsidyError) throw pendingSubsidyError;
@@ -99,6 +102,6 @@ export const useSfdStatistics = () => {
         throw error;
       }
     },
-    enabled: !!activeSfdId,
+    enabled: !!targetSfdId,
   });
 };
