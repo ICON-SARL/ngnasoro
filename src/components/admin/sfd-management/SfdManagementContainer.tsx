@@ -62,7 +62,7 @@ export function SfdManagementContainer() {
 
               <div className="flex justify-between items-center mt-4">
                 <Badge 
-                  variant={sfd.status === 'active' ? 'default' : 'warning'}
+                  variant={sfd.status === 'active' ? 'default' : 'outline'}
                   className={sfd.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}
                 >
                   {sfd.status === 'active' ? 'Actif' : 'Inactif'}

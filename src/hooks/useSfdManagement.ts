@@ -5,6 +5,24 @@ import { Sfd } from '../types/sfd-types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Define and export the SFD interface that's used by components
+export interface SFD {
+  id: string;
+  name: string;
+  code: string;
+  region: string;
+  status: 'active' | 'pending' | 'suspended' | 'inactive';
+  contact_email?: string;
+  phone?: string;
+  description?: string;
+  logo_url?: string | null;
+  legal_document_url?: string | null;
+  created_at: string;
+  updated_at?: string;
+  client_count?: number;
+  loan_count?: number;
+}
+
 export function useSfdManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSfd, setSelectedSfd] = useState<Sfd | null>(null);
