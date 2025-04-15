@@ -20,7 +20,7 @@ import { Loader2, Plus, X, Check } from 'lucide-react';
 interface LoanPlanDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSaved?: () => void;
+  onSaved?: () => void;  // Making this optional with ?
   planToEdit: any | null;
 }
 
@@ -101,6 +101,17 @@ const LoanPlanDialog = ({
         title: "Erreur",
         description: "SFD non identifié",
         variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate that interest rate doesn't exceed max allowed
+    const maxAllowedRate = 15; // Using a hardcoded value as max_interest_rate is not available
+    if (parseFloat(interestRate) > maxAllowedRate) {
+      toast({
+        title: "Taux d'intérêt trop élevé",
+        description: `Le taux d'intérêt ne peut pas dépasser ${maxAllowedRate}% selon les régulations du MEREF.`,
+        variant: "destructive", // Changed from "warning" to "destructive"
       });
       return;
     }
