@@ -4,7 +4,8 @@ import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 export enum UserRole {
   SuperAdmin = 'admin',
   SfdAdmin = 'sfd_admin',
-  Client = 'client'
+  Client = 'client',
+  User = 'user' // Adding User role that was referenced but missing
 }
 
 export interface User extends SupabaseUser {
@@ -36,4 +37,18 @@ export interface AuthContextProps {
   refreshSession: () => Promise<void>;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
+}
+
+// Adding the missing interfaces
+export interface AssociateSfdParams {
+  userId: string;
+  sfdId: string;
+  isDefault?: boolean;
+  makeDefault?: boolean;
+}
+
+export interface AssociateSfdResult {
+  success: boolean;
+  userSfd?: any;
+  error?: string;
 }

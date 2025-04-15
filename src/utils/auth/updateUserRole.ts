@@ -30,5 +30,6 @@ export const updateUserRole = async (userId: string, role: UserRole | string): P
  * Note: This should be called when a new user signs up
  */
 export const setDefaultUserRole = async (userId: string): Promise<boolean> => {
+  // Using the User role from the UserRole enum instead of UserRole.User
   return updateUserRole(userId, UserRole.User);
 };
