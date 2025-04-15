@@ -35,7 +35,7 @@ const LoanList: React.FC<LoanListProps> = (props) => {
     if (!props.loans) {
       refetch();
     }
-  }, [props.loans]);
+  }, [props.loans, refetch]);
   
   if (isLoading) {
     return (
