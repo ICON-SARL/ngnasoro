@@ -36,10 +36,13 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
     // Check for exact role match
     let hasRole = false;
     
+    // Convert requiredRole enum to string for comparison
+    const requiredRoleStr = String(requiredRole);
+    
     // Compare string values instead of enum objects
-    if (userRole === requiredRole) {
+    if (userRole === requiredRoleStr) {
       hasRole = true;
-    } else if (requiredRole === UserRole.CLIENT && userRole === 'user') {
+    } else if (requiredRoleStr === String(UserRole.CLIENT) && userRole === 'user') {
       // User role can access client routes
       hasRole = true;
     }
@@ -73,7 +76,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
         to="/access-denied" 
         state={{ 
           from: location.pathname,
-          requiredRole 
+          requiredRole: String(requiredRole)
         }} 
         replace 
       />
