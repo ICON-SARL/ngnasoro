@@ -7,6 +7,8 @@ import { Transaction } from '@/types/transactions';
 import TransactionList from '../TransactionList';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
 import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
+import { useAutoSynchronization } from '@/hooks/useAutoSynchronization';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface MainDashboardProps {
   onAction?: (newView: string, data?: any) => void;
@@ -16,14 +18,16 @@ export interface MainDashboardProps {
   toggleMenu?: () => void;
 }
 
-const MainDashboard: React.FC<MainDashboardProps> = ({
-  onAction,
-  account,
-  transactions = [],
-  transactionsLoading = false,
-  toggleMenu
-}) => {
+export function MainDashboard({ 
+  onAction, 
+  account, 
+  transactions = [], 
+  transactionsLoading = false 
+}: MainDashboardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { activeSfdId } = useAuth();
+  
+  useAutoSynchronization(activeSfdId);
   
   const handleOpenMenu = () => {
     setMenuOpen(true);
