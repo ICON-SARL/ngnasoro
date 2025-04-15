@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { User } from '@/hooks/useAuth';
+import { User } from '@/hooks/auth/types';
 import { fetchSfdBalance } from './fetchSfdBalance';
 import { fetchSfdLoans } from './fetchSfdLoans';
 import { fetchUserSfds } from './fetchSfdAccounts';
@@ -16,7 +16,7 @@ export function useActiveSfd(user: User | null, activeSfdId: string | null) {
       
       // Get basic SFD info
       const sfdsList = await fetchUserSfds(user.id);
-      const activeSfd = sfdsList.find(sfd => sfd.sfds.id === activeSfdId);
+      const activeSfd = sfdsList.find(sfd => sfd.id === activeSfdId);
       
       if (!activeSfd) {
         console.error('Active SFD not found for this user');
@@ -31,12 +31,12 @@ export function useActiveSfd(user: User | null, activeSfdId: string | null) {
         const loansData = await fetchSfdLoans(user.id, activeSfdId);
         
         return {
-          id: activeSfd.sfds.id,
-          name: activeSfd.sfds.name,
-          logoUrl: activeSfd.sfds.logo_url,
-          region: activeSfd.sfds.region,
-          code: activeSfd.sfds.code,
-          isDefault: activeSfd.is_default,
+          id: activeSfd.id,
+          name: activeSfd.name,
+          logoUrl: activeSfd.logo_url,
+          region: activeSfd.region || '',
+          code: activeSfd.code,
+          isDefault: false, // Default value since it's not available in the current data structure
           balance: balanceData.balance,
           currency: balanceData.currency,
           loans: loansData

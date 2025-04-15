@@ -29,7 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loan } from '@/types/sfdClients';
 
 const LoanAgreementManagement = () => {
-  const { loans, isLoading, approveLoan, rejectLoan, disburseLoan } = useSfdLoans();
+  const { data: loans, isLoading, approveLoan, rejectLoan, disburseLoan } = useSfdLoans();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);

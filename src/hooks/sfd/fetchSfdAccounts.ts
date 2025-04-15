@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { SfdAccount, SfdClientAccount } from './types';
 
 export async function fetchUserSfds(userId: string) {
   if (!userId) return [];
