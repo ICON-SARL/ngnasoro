@@ -11,6 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useMerefFundRequests } from '@/hooks/useMerefFundRequests';
 import { formatDateToLocale } from '@/utils/dateUtils';
+import { Loader2 } from 'lucide-react';
 
 export const MerefRequestList: React.FC = () => {
   const { fundRequests, isLoading } = useMerefFundRequests();

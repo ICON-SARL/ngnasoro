@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { PlusCircle } from 'lucide-react';
 
 interface MerefRequestHeaderProps {
   onNewRequest: () => void;

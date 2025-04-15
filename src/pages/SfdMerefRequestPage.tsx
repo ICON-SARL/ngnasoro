@@ -38,7 +38,7 @@ const SfdMerefRequestPage: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="new">
-            <MerefFundRequestForm onSuccess={() => setActiveTab('list')} />
+            <MerefFundRequestForm />
           </TabsContent>
         </Tabs>
       </main>
