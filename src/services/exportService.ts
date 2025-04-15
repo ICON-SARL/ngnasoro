@@ -90,27 +90,23 @@ export const exportService = {
     
     // Use a type assertion to tell TypeScript that this is a valid table
     // We need to do this because the type parameter is dynamic
-    let query = supabase.from(type as any);
+    const query = supabase.from(type as any).select('*');
 
+    // Apply date filters if provided
     if (startDate && endDate) {
-      // We need to add select() first to get the proper builder type
-      query = query.select('*')
-                  .gte('created_at', startDate)
-                  .lte('created_at', endDate);
-    } else {
-      // Make sure to call select() if not filtering by date
-      query = query.select('*');
+      query.gte('created_at', startDate).lte('created_at', endDate);
     }
 
     // Add any additional filters
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined) {
-          query = query.eq(key, value);
+          query.eq(key, value);
         }
       });
     }
 
+    // Execute the query
     const { data, error } = await query;
     
     if (error) throw error;
