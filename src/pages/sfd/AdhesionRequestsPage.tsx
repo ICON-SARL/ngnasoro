@@ -35,6 +35,11 @@ export default function AdhesionRequestsPage() {
   const approvedRequests = filteredRequests.filter(r => r.status === 'approved');
   const rejectedRequests = filteredRequests.filter(r => r.status === 'rejected');
 
+  // Create a proper event handler that calls refetchAdhesionRequests
+  const handleRefresh = () => {
+    refetchAdhesionRequests();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <SfdHeader />
@@ -54,7 +59,7 @@ export default function AdhesionRequestsPage() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={refetchAdhesionRequests}
+                onClick={handleRefresh}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Actualiser
