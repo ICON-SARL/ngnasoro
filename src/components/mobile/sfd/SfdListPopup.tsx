@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, ChevronRight, Building, FileCheck } from 'lucide-react';
+import { ChevronRight, Building, FileCheck, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,27 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
       try {
         console.log('Fetching active SFDs for popup display');
         
-        // Utiliser la fonction Edge pour récupérer les SFDs actives
+        // First try to get SFDs directly from the database
+        const { data: directSfds, error: directError } = await supabase
+          .from('sfds')
+          .select('id, name, region, logo_url')
+          .eq('status', 'active')
+          .order('name');
+          
+        if (directError) {
+          console.error('Error fetching SFDs from database:', directError);
+          throw directError;
+        }
+        
+        if (directSfds && directSfds.length > 0) {
+          console.log(`Fetched ${directSfds.length} active SFDs from database`);
+          const sortedSfds = sortPrioritySfds(directSfds);
+          setSfds(sortedSfds);
+          setIsLoading(false);
+          return;
+        }
+        
+        // If no SFDs found in database, try the Edge function
         const { data, error } = await supabase.functions.invoke('fetch-sfds', {
           body: { userId: user?.id }
         });
@@ -98,6 +119,28 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
     return request?.status || null;
   };
 
+  const handleRefresh = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('sfds')
+        .select('id, name, region, logo_url')
+        .eq('status', 'active')
+        .order('name');
+        
+      if (error) throw error;
+      
+      const sortedSfds = sortPrioritySfds(data || []);
+      setSfds(sortedSfds);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error refreshing SFDs:', err);
+      setError('Impossible de rafraîchir la liste des SFDs.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
@@ -116,18 +159,29 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
               <Loader2 className="h-8 w-8 animate-spin text-[#0D6A51]" />
             </div>
           ) : error ? (
-            <div className="text-center py-8 text-red-500">
-              <p>{error}</p>
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => navigate('/mobile-flow/sfd-selector')}
-              >
-                Voir tous les SFDs
-              </Button>
+            <div className="text-center py-8">
+              <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+              <p className="text-amber-600 mb-4">{error}</p>
+              <div className="flex flex-col space-y-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={handleRefresh}
+                >
+                  Réessayer
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate('/mobile-flow/sfd-selector')}
+                >
+                  Voir tous les SFDs
+                </Button>
+              </div>
             </div>
           ) : sfds.length === 0 ? (
             <div className="text-center py-8">
+              <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
               <p className="text-gray-600 mb-2">Aucun SFD disponible pour le moment.</p>
               <p className="text-sm text-gray-500 mb-6">
                 Consultez la liste complète des SFDs pour faire une demande d'adhésion.

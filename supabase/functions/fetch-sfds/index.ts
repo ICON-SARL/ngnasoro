@@ -69,15 +69,14 @@ serve(async (req) => {
         status,
         logo_url
       `)
-      .eq('status', 'active')
-      .not('code', 'ilike', '%test%'); // Exclude test SFDs
+      .eq('status', 'active');
       
     if (sfdsError) {
       console.error('Error fetching SFDs:', sfdsError);
       throw sfdsError;
     }
     
-    console.log(`Found ${activeSfds?.length || 0} active real SFDs in database`);
+    console.log(`Found ${activeSfds?.length || 0} active SFDs in database`);
     
     // Si aucune SFD active, log explicite
     if (!activeSfds || activeSfds.length === 0) {
@@ -127,10 +126,15 @@ serve(async (req) => {
     
     // If we found valid SFDs with admins, filter active SFDs to only include those
     let validSfds = activeSfds;
+    
+    // For now, skip the admin filtering to ensure we return all active SFDs
+    // Comment this out until we confirm all SFDs have admin associations
+    /*
     if (validSfdIds.size > 0) {
       validSfds = activeSfds.filter(sfd => validSfdIds.has(sfd.id));
       console.log(`Filtered to ${validSfds.length} active SFDs with admins`);
     }
+    */
 
     // If no valid SFDs found and we're in development, provide test data
     // But ONLY if we're in development environment

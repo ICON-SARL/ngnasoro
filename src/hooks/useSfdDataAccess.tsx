@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,7 +40,7 @@ export function useSfdDataAccess() {
       
       setIsLoading(true);
       try {
-        console.log('Fetching active SFDs for user:', user.id);
+        console.log('Fetching SFDs for user:', user.id);
         
         // First try direct database query for active SFDs
         const { data: directSfds, error: directError } = await supabase
@@ -54,12 +55,20 @@ export function useSfdDataAccess() {
 
         if (directSfds && directSfds.length > 0) {
           console.log(`Found ${directSfds.length} active SFDs`);
+          console.log('SFDs retrieved:', directSfds);
           setSfdData(directSfds);
           
           // If no active SFD is set and we have SFDs, set the first one as active
           if ((!activeSfdId || activeSfdId.trim() === '') && directSfds.length > 0) {
-            console.log('Setting first active SFD as default:', directSfds[0].id);
+            console.log('No default SFD found, setting first SFD as active:', directSfds[0].id);
             setActiveSfdId(directSfds[0].id);
+          } else {
+            // Validate if the current activeSfdId is in the list of active SFDs
+            const activeSfdExists = directSfds.some(sfd => sfd.id === activeSfdId);
+            if (!activeSfdExists && directSfds.length > 0) {
+              console.log('Active SFD not found in active SFDs list, setting first SFD as active:', directSfds[0].id);
+              setActiveSfdId(directSfds[0].id);
+            }
           }
           
           setIsLoading(false);
@@ -75,11 +84,20 @@ export function useSfdDataAccess() {
         
         const activeSfds = Array.isArray(data) ? data.filter(sfd => sfd.status === 'active') : [];
         console.log(`Found ${activeSfds.length} active SFDs from edge function`);
+        console.log('SFDs retrieved:', activeSfds);
         
         setSfdData(activeSfds);
         
         if ((!activeSfdId || activeSfdId.trim() === '') && activeSfds.length > 0) {
+          console.log('No default SFD found, setting first SFD as active:', activeSfds[0].id);
           setActiveSfdId(activeSfds[0].id);
+        } else {
+          // Validate if the current activeSfdId is in the list of active SFDs
+          const activeSfdExists = activeSfds.some(sfd => sfd.id === activeSfdId);
+          if (!activeSfdExists && activeSfds.length > 0) {
+            console.log('Active SFD not found in active SFDs list, setting first SFD as active:', activeSfds[0].id);
+            setActiveSfdId(activeSfds[0].id);
+          }
         }
       } catch (err: any) {
         console.error('Error fetching SFDs:', err);
@@ -124,7 +142,10 @@ export function useSfdDataAccess() {
       return false;
     }
     
-    if (!sfdData.find(sfd => sfd.id === sfdId)) {
+    // Check if the SFD exists in sfdData
+    const sfdExists = sfdData.some(sfd => sfd.id === sfdId);
+    if (!sfdExists) {
+      console.warn(`SFD with ID ${sfdId} not found in available SFDs`);
       toast({
         title: "Erreur",
         description: "La SFD n'existe pas ou n'est pas accessible",
@@ -170,7 +191,35 @@ export function useSfdDataAccess() {
 
   const getActiveSfdData = useCallback(async (): Promise<SfdData | null> => {
     if (!activeSfdId) return null;
-    return sfdData.find(s => s.id === activeSfdId) || null;
+    
+    const activeSfd = sfdData.find(s => s.id === activeSfdId);
+    if (activeSfd) return activeSfd;
+    
+    // If we don't have the active SFD in our state, check if it exists and is active
+    try {
+      const { data, error } = await supabase
+        .from('sfds')
+        .select('*')
+        .eq('id', activeSfdId)
+        .eq('status', 'active')
+        .single();
+        
+      if (error || !data) {
+        console.info('SFD not found or inactive:', activeSfdId);
+        
+        // If the active SFD is not found but we have other SFDs, set the first one as active
+        if (sfdData.length > 0) {
+          setActiveSfdId(sfdData[0].id);
+          return sfdData[0];
+        }
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error checking active SFD:', error);
+      return null;
+    }
   }, [activeSfdId, sfdData]);
 
   const associateUserWithSfd = useCallback(async (sfdId: string, isDefault: boolean = false): Promise<boolean> => {
