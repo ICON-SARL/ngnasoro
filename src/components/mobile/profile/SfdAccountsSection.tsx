@@ -5,13 +5,21 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { useToast } from '@/hooks/use-toast';
-import AccountsList from './AccountsList';
-import LoadingState from './LoadingState';
-import EmptyAccountsState from './EmptyAccountsState';
-import useSfdAccountsData from './hooks/useSfdAccountsData';
-import useSfdAccountSwitching from './hooks/useSfdAccountSwitching';
+import { AccountsList, EmptyAccountsState, LoadingState } from '@/components/mobile/profile/sfd-accounts';
+import useSfdAccountsData from '@/components/mobile/profile/sfd-accounts/hooks/useSfdAccountsData';
+import useSfdAccountSwitching from '@/components/mobile/profile/sfd-accounts/hooks/useSfdAccountSwitching';
 
-const SfdAccountsSection: React.FC = () => {
+interface SfdAccountsSectionProps {
+  sfdData?: any[];
+  activeSfdId?: string | null;
+  onSwitchSfd?: (sfdId: string) => Promise<boolean> | void;
+}
+
+const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = ({
+  sfdData: propsSfdData,
+  activeSfdId: propsActiveSfdId,
+  onSwitchSfd
+}) => {
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
   
@@ -21,13 +29,13 @@ const SfdAccountsSection: React.FC = () => {
     effectiveActiveSfdId, 
     isLoading, 
     refetch 
-  } = useSfdAccountsData();
+  } = useSfdAccountsData(propsSfdData, propsActiveSfdId);
   
   const {
     switchingId,
     isVerifying,
     handleSwitchSfd,
-  } = useSfdAccountSwitching();
+  } = useSfdAccountSwitching(onSwitchSfd);
 
   const refreshAccounts = async () => {
     setIsRefreshing(true);
