@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import ClientsOverview from './clients/ClientsOverview';
-import StatsOverview from './dashboard/StatsOverview';
+import { StatsOverview } from './dashboard/StatsOverview';
 import { SfdAccountsManager } from './sfd-accounts/SfdAccountsManager';
 
 const SfdAdminDashboard: React.FC = () => {
