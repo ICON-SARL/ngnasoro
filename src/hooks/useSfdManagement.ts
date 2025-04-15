@@ -10,7 +10,7 @@ export interface SFD {
   id: string;
   name: string;
   code: string;
-  region: string;
+  region?: string;  // Changed from 'region: string' to 'region?: string' to make it optional
   status: 'active' | 'pending' | 'suspended' | 'inactive';
   contact_email?: string;
   phone?: string;
