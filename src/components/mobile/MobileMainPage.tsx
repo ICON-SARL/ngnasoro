@@ -45,9 +45,9 @@ const MobileMainPage: React.FC = () => {
     amount: tx.type === 'deposit' || tx.type === 'loan_disbursement' 
       ? `+${formatCurrencyAmount(tx.amount)}` 
       : `-${formatCurrencyAmount(Math.abs(tx.amount))}`,
-    date: new Date(tx.date || tx.created_at).toLocaleDateString('fr-FR'),
+    date: new Date(tx.date || tx.created_at || '').toLocaleDateString('fr-FR'),
     avatar: tx.avatar_url,
-    sfdName: tx.sfd_name
+    // Remove the sfd_name property which doesn't exist on Transaction type
   }));
   
   return (
