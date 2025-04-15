@@ -15,13 +15,44 @@ import SfdLoans from './pages/mobile/SfdLoans';
 import SfdSelectorPage from './pages/SfdSelectorPage';
 import WelcomeScreen from './components/mobile/WelcomeScreen';
 import NotFoundPage from './pages/NotFoundPage';
+import AuthRedirectPage from './pages/AuthRedirectPage';
+import AdminLoginPage from './pages/AdminLoginPage';
+import ClientLoginPage from './pages/ClientLoginPage';
 
 const router = createBrowserRouter([
   {
+    path: "/",
+    element: <AuthRedirectPage />,
+    errorElement: <RouteErrorBoundary />
+  },
+  {
     path: "/login",
+    element: <AuthRedirectPage />,
+    errorElement: <RouteErrorBoundary />
+  },
+  {
+    path: "/auth",
     element: (
       <AnonymousOnlyGuard>
-        <LoginPage />
+        <ClientLoginPage />
+      </AnonymousOnlyGuard>
+    ),
+    errorElement: <RouteErrorBoundary />
+  },
+  {
+    path: "/admin/auth",
+    element: (
+      <AnonymousOnlyGuard>
+        <AdminLoginPage />
+      </AnonymousOnlyGuard>
+    ),
+    errorElement: <RouteErrorBoundary />
+  },
+  {
+    path: "/sfd/auth",
+    element: (
+      <AnonymousOnlyGuard>
+        <LoginPage isSfdAdmin={true} />
       </AnonymousOnlyGuard>
     ),
     errorElement: <RouteErrorBoundary />
