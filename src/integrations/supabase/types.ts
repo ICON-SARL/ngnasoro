@@ -1037,6 +1037,41 @@ export type Database = {
           },
         ]
       }
+      sfd_administrators: {
+        Row: {
+          created_at: string
+          id: string
+          sfd_id: string
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          sfd_id: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          sfd_id?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sfd_administrators_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sfd_clients: {
         Row: {
           address: string | null
@@ -1277,6 +1312,44 @@ export type Database = {
           },
         ]
       }
+      sfd_roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          permissions: Json
+          sfd_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          permissions?: Json
+          sfd_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          permissions?: Json
+          sfd_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sfd_roles_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sfd_stats: {
         Row: {
           id: string
@@ -1352,6 +1425,48 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "sfd_subsidies_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sfd_user_roles: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          role_id: string
+          sfd_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role_id: string
+          sfd_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role_id?: string
+          sfd_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sfd_user_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sfd_user_roles_sfd_id_fkey"
             columns: ["sfd_id"]
             isOneToOne: false
             referencedRelation: "sfds"
@@ -1859,6 +1974,10 @@ export type Database = {
           _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
         }
+        Returns: boolean
+      }
+      has_sfd_role: {
+        Args: { _user_id: string; _sfd_id: string; _role_name: string }
         Returns: boolean
       }
       is_admin: {
