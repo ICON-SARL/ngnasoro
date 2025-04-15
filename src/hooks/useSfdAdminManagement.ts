@@ -58,7 +58,7 @@ export function useSfdAdminManagement() {
 
   return {
     isLoading,
-    error,
+    error, // Now we properly expose the error state
     createSfdAdmin
   };
 }

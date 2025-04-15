@@ -48,7 +48,7 @@ export const SfdAdminAddDialog: React.FC<SfdAdminAddDialogProps> = ({
   onOpenChange 
 }) => {
   const { sfds, isLoading: isLoadingSfds } = useSfdData();
-  const { createSfdAdmin, isLoading } = useSfdAdminManagement();
+  const { createSfdAdmin, isLoading, error: apiError } = useSfdAdminManagement();
   const [submitError, setSubmitError] = useState<string | null>(null);
   
   const form = useForm<FormValues>({
@@ -73,7 +73,7 @@ export const SfdAdminAddDialog: React.FC<SfdAdminAddDialogProps> = ({
         form.reset();
         onOpenChange(false);
       } else {
-        setSubmitError("Une erreur s'est produite lors de la création de l'administrateur");
+        setSubmitError(apiError || "Une erreur s'est produite lors de la création de l'administrateur");
       }
     } catch (error: any) {
       setSubmitError(error.message || "Une erreur s'est produite lors de la création de l'administrateur");

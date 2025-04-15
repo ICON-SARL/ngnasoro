@@ -7,7 +7,7 @@ export function useSfdManagementContainerState() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedSfdId, setSelectedSfdId] = useState('');
   const { sfds, isLoading: isLoadingSfds } = useSfdData();
-  const { createSfdAdmin, isLoading } = useSfdAdminManagement();
+  const { createSfdAdmin, isLoading, error: adminCreationError } = useSfdAdminManagement();
   const [error, setError] = useState<string | null>(null);
 
   const handleOpenDialog = () => {
@@ -31,7 +31,7 @@ export function useSfdManagementContainerState() {
         handleCloseDialog();
         return true;
       } else {
-        setError("Impossible de créer l'administrateur SFD");
+        setError(adminCreationError || "Impossible de créer l'administrateur SFD");
         return false;
       }
     } catch (err: any) {
