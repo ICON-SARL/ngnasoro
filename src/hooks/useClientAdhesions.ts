@@ -14,7 +14,7 @@ export function useClientAdhesions() {
   const queryClient = useQueryClient();
   const [isProcessingAction, setIsProcessingAction] = useState(false);
 
-  // Fetch adhesion requests
+  // Fetch adhesion requests for SFD
   const {
     data: adhesionRequests = [],
     isLoading: isLoadingAdhesionRequests,
@@ -53,9 +53,45 @@ export function useClientAdhesions() {
     enabled: !!activeSfdId && !!user,
   });
 
+  // Fetch user's own adhesion requests
+  const {
+    data: userAdhesionRequests = [],
+    isLoading: isLoadingUserAdhesionRequests,
+    refetch: refetchUserAdhesionRequests
+  } = useQuery({
+    queryKey: ['user-adhesion-requests', user?.id],
+    queryFn: async () => {
+      try {
+        if (!user?.id) return [];
+
+        const { data, error } = await supabase
+          .from('client_adhesion_requests')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching user adhesion requests:', error);
+          throw error;
+        }
+
+        return data as ClientAdhesionRequest[];
+      } catch (error: any) {
+        console.error('Error in fetching user adhesion requests:', error);
+        toast({
+          title: 'Erreur',
+          description: `Impossible de récupérer vos demandes d'adhésion: ${error.message}`,
+          variant: 'destructive',
+        });
+        return [];
+      }
+    },
+    enabled: !!user?.id,
+  });
+
   // Approve adhesion request mutation
   const approveMutation = useMutation({
-    mutationFn: async (requestId: string, notes?: string) => {
+    mutationFn: async (params: { adhesionId: string; notes?: string }) => {
       if (!user) throw new Error('Utilisateur non authentifié');
       
       const { data, error } = await supabase
@@ -64,9 +100,9 @@ export function useClientAdhesions() {
           status: 'approved',
           processed_by: user.id,
           processed_at: new Date().toISOString(),
-          notes: notes || null
+          notes: params.notes || null
         })
-        .eq('id', requestId)
+        .eq('id', params.adhesionId)
         .select()
         .single();
 
@@ -92,7 +128,7 @@ export function useClientAdhesions() {
 
   // Reject adhesion request mutation
   const rejectMutation = useMutation({
-    mutationFn: async (requestId: string, notes?: string) => {
+    mutationFn: async (params: { adhesionId: string; notes?: string }) => {
       if (!user) throw new Error('Utilisateur non authentifié');
       
       const { data, error } = await supabase
@@ -101,9 +137,9 @@ export function useClientAdhesions() {
           status: 'rejected',
           processed_by: user.id,
           processed_at: new Date().toISOString(),
-          notes: notes || null
+          notes: params.notes || null
         })
-        .eq('id', requestId)
+        .eq('id', params.adhesionId)
         .select()
         .single();
 
@@ -131,7 +167,7 @@ export function useClientAdhesions() {
   const approveAdhesionRequest = async (requestId: string, notes?: string) => {
     setIsProcessingAction(true);
     try {
-      await approveMutation.mutateAsync(requestId, notes);
+      await approveMutation.mutateAsync({ adhesionId: requestId, notes });
       return true;
     } catch (error) {
       return false;
@@ -144,7 +180,7 @@ export function useClientAdhesions() {
   const rejectAdhesionRequest = async (requestId: string, notes?: string) => {
     setIsProcessingAction(true);
     try {
-      await rejectMutation.mutateAsync(requestId, notes);
+      await rejectMutation.mutateAsync({ adhesionId: requestId, notes });
       return true;
     } catch (error) {
       return false;
@@ -155,9 +191,12 @@ export function useClientAdhesions() {
 
   return {
     adhesionRequests,
+    userAdhesionRequests,
     isLoadingAdhesionRequests,
+    isLoadingUserAdhesionRequests,
     isProcessingAction,
     refetchAdhesionRequests,
+    refetchUserAdhesionRequests,
     approveAdhesionRequest,
     rejectAdhesionRequest
   };
