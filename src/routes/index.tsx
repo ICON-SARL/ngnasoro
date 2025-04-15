@@ -9,6 +9,7 @@ import MobileLoanPlansPage from '@/pages/mobile/MobileLoanPlansPage';
 import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage';
 import MobileLoansListPage from '@/pages/mobile/MobileLoansListPage';
 import { mobileRoutes } from './mobile.routes';
+import { SfdManagementPage } from '@/pages/SfdManagementPage';
 
 export const router = createBrowserRouter([
   {
@@ -30,6 +31,10 @@ export const router = createBrowserRouter([
   {
     path: '/mobile-flow/main',
     element: <MobileHomePage />,
+  },
+  {
+    path: '/sfd-management',
+    element: <SfdManagementPage />
   },
   ...mobileRoutes
 ]);
