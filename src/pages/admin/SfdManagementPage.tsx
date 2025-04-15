@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { Input } from '@/components/ui/input';
@@ -43,7 +42,30 @@ export default function SfdManagementPage() {
     }
   });
   
-  // Filter SFDs based on search term
+  const activateSfd = async (sfdId: string) => {
+    try {
+      const { error } = await supabase
+        .from('sfds')
+        .update({ status: 'active' })
+        .eq('id', sfdId);
+        
+      if (error) throw error;
+      
+      refetch();
+      toast({
+        title: 'SFD activée',
+        description: 'La SFD a été activée avec succès',
+      });
+    } catch (err) {
+      console.error('Error activating SFD:', err);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'activer la SFD',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const filteredSfds = sfds.filter(sfd => 
     sfd.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     sfd.code.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -157,9 +179,20 @@ export default function SfdManagementPage() {
                         <Badge variant={sfd.status === 'active' ? 'default' : 'destructive'}>
                           {sfd.status === 'active' ? 'Actif' : 'Inactif'}
                         </Badge>
-                        <Button variant="outline" size="sm">
-                          Gérer
-                        </Button>
+                        {sfd.status !== 'active' ? (
+                          <Button 
+                            variant="default"
+                            size="sm"
+                            onClick={() => activateSfd(sfd.id)}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            Activer
+                          </Button>
+                        ) : (
+                          <Button variant="outline" size="sm">
+                            Gérer
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
