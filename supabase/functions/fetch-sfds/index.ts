@@ -22,11 +22,44 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    const { userId } = await req.json();
+    // Parse request body
+    const body = await req.json().catch(() => ({}));
+    const { userId, action, sfdId } = body;
     
-    console.log(`Fetching SFDs for userId: ${userId || 'not provided'}`);
+    console.log(`Fetching SFDs for userId: ${userId || 'not provided'}, action: ${action || 'none'}, sfdId: ${sfdId || 'none'}`);
     
-    // First approach: Get all active SFDs
+    // Handle special actions
+    if (action === 'setDefault' && userId && sfdId) {
+      try {
+        // Reset all default flags for this user
+        await supabase
+          .from('user_sfds')
+          .update({ is_default: false })
+          .eq('user_id', userId);
+        
+        // Set the selected SFD as default
+        await supabase
+          .from('user_sfds')
+          .update({ is_default: true })
+          .eq('user_id', userId)
+          .eq('sfd_id', sfdId);
+        
+        return new Response(
+          JSON.stringify({ success: true }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      } catch (actionError) {
+        console.error('Error setting default SFD:', actionError);
+        throw actionError;
+      }
+    }
+    
+    // Fetch active SFDs with explicit status filter
+    // Added explicit console logging for debugging status filter
+    console.log('Fetching SFDs with status filter: "active"');
     const { data: activeSfds, error: sfdsError } = await supabase
       .from('sfds')
       .select(`

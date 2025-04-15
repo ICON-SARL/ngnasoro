@@ -11,6 +11,7 @@ interface Sfd {
   region?: string;
   code?: string;
   logo_url?: string;
+  status: string;
 }
 
 interface SfdListProps {
@@ -31,17 +32,40 @@ const SfdList: React.FC<SfdListProps> = ({ onSelectSfd, existingRequests = [], i
       try {
         console.log('Fetching all active SFDs for SfdList');
         
+        // Utiliser la fonction Edge pour une récupération plus fiable
+        try {
+          console.log('Attempting to fetch SFDs via Edge Function');
+          const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke('fetch-sfds', {
+            body: {}
+          });
+          
+          if (edgeFunctionError) {
+            console.error('Edge Function error:', edgeFunctionError);
+            throw edgeFunctionError;
+          }
+          
+          if (edgeFunctionData) {
+            console.log(`Retrieved ${edgeFunctionData.length} SFDs via Edge Function`);
+            setSfds(sortSfdsWithPriority(edgeFunctionData));
+            setIsLoading(false);
+            return;
+          }
+        } catch (edgeError) {
+          console.warn('Failed to fetch via Edge Function, falling back to direct query:', edgeError);
+        }
+        
+        // Fallback: requête directe à la base de données
         const { data, error } = await supabase
           .from('sfds')
-          .select('id, name, region, code, logo_url')
+          .select('id, name, region, code, logo_url, status')
           .eq('status', 'active')
           .order('name');
           
         if (error) throw error;
         
-        console.log(`Retrieved ${data?.length || 0} active SFDs`);
+        console.log(`Retrieved ${data?.length || 0} active SFDs via direct query`);
         
-        // If no SFDs found in production, add fake data in development mode
+        // Si aucune SFD trouvée en production, ajouter des données factices en mode développement
         const sfdsList = data || [];
         if (sfdsList.length === 0 && process.env.NODE_ENV === 'development') {
           console.log('Adding sample SFDs for development');
@@ -51,14 +75,16 @@ const SfdList: React.FC<SfdListProps> = ({ onSelectSfd, existingRequests = [], i
               name: 'Exemple SFD #1',
               region: 'Région Test',
               code: 'ESFD1',
-              logo_url: null
+              logo_url: null,
+              status: 'active'
             },
             {
               id: 'sample-sfd-2',
               name: 'Exemple SFD #2',
               region: 'Région Test',
               code: 'ESFD2',
-              logo_url: null
+              logo_url: null,
+              status: 'active'
             }
           );
         }
