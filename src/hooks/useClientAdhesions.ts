@@ -42,7 +42,10 @@ export function useClientAdhesions() {
       }
       
       console.log(`Loaded ${data.length} adhesion requests from Edge function`);
-      setAdhesionRequests(data as ClientAdhesionRequest[]);
+      
+      // Cast the data to ClientAdhesionRequest[]
+      const typedData = data as ClientAdhesionRequest[];
+      setAdhesionRequests(typedData);
     } catch (err: any) {
       console.error('Error fetching adhesion requests:', err);
       toast({
@@ -75,7 +78,10 @@ export function useClientAdhesions() {
       }
       
       console.log(`Loaded ${data?.length || 0} user adhesion requests`);
-      setUserAdhesionRequests(data || []);
+      
+      // Cast the data to ClientAdhesionRequest[]
+      const typedData = data as ClientAdhesionRequest[];
+      setUserAdhesionRequests(typedData);
     } catch (err: any) {
       console.error('Error fetching user adhesion requests:', err);
       toast({

@@ -45,6 +45,7 @@ export function ClientAdhesionRequests() {
   const [selectedRequest, setSelectedRequest] = useState<ClientAdhesionRequest | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [processingNotes, setProcessingNotes] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const { activeSfdId } = useSfdDataAccess();
   const { 
@@ -71,28 +72,34 @@ export function ClientAdhesionRequests() {
     setProcessingNotes(request.notes || '');
   };
 
-  const handleApproveRequest = () => {
+  const handleApproveRequest = async () => {
     if (!selectedRequest) return;
     
-    approveAdhesionRequest(selectedRequest.id, processingNotes)
-      .then(success => {
-        if (success) {
-          setIsViewDialogOpen(false);
-          setProcessingNotes('');
-        }
-      });
+    setIsProcessing(true);
+    try {
+      const success = await approveAdhesionRequest(selectedRequest.id, processingNotes);
+      if (success) {
+        setIsViewDialogOpen(false);
+        setProcessingNotes('');
+      }
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const handleRejectRequest = () => {
+  const handleRejectRequest = async () => {
     if (!selectedRequest) return;
     
-    rejectAdhesionRequest(selectedRequest.id, processingNotes)
-      .then(success => {
-        if (success) {
-          setIsViewDialogOpen(false);
-          setProcessingNotes('');
-        }
-      });
+    setIsProcessing(true);
+    try {
+      const success = await rejectAdhesionRequest(selectedRequest.id, processingNotes);
+      if (success) {
+        setIsViewDialogOpen(false);
+        setProcessingNotes('');
+      }
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -292,7 +299,7 @@ export function ClientAdhesionRequests() {
                         variant="outline" 
                         onClick={handleRejectRequest}
                         className="border-red-200 text-red-600 hover:bg-red-50"
-                        disabled={rejectAdhesionRequest.isPending}
+                        disabled={isProcessing}
                       >
                         <XCircle className="h-4 w-4 mr-1" />
                         Rejeter
@@ -300,7 +307,7 @@ export function ClientAdhesionRequests() {
                       <Button 
                         onClick={handleApproveRequest}
                         className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-                        disabled={approveAdhesionRequest.isPending}
+                        disabled={isProcessing}
                       >
                         <CheckCircle className="h-4 w-4 mr-1" />
                         Approuver

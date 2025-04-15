@@ -1,3 +1,4 @@
+
 export interface ClientAdhesionRequest {
   id: string;
   user_id?: string;
@@ -8,7 +9,7 @@ export interface ClientAdhesionRequest {
   address?: string;
   id_number?: string;
   id_type?: string;
-  status: 'pending' | 'pending_validation' | 'approved' | 'rejected';
+  status: string; // Changed from enum to string to accept any status value
   created_at: string;
   processed_at?: string;
   processed_by?: string;
