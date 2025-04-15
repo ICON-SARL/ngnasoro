@@ -30,6 +30,7 @@ import ProtectedRoute from '@/components/routes/ProtectedRoute';
 import RoleGuard from '@/components/RoleGuard';
 import { UserRole } from '@/hooks/auth/types';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
+import SfdAdhesionRequestsPage from '@/pages/SfdAdhesionRequestsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -111,6 +112,14 @@ function App() {
                 <ProtectedRoute requireSfdAdmin={true}>
                   <RoleGuard requiredRole={UserRole.SfdAdmin}>
                     <ClientsPage />
+                  </RoleGuard>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/sfd-adhesion-requests" element={
+                <ProtectedRoute requireSfdAdmin={true}>
+                  <RoleGuard requiredRole={UserRole.SfdAdmin}>
+                    <SfdAdhesionRequestsPage />
                   </RoleGuard>
                 </ProtectedRoute>
               } />
