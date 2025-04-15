@@ -14,14 +14,15 @@ export async function verifyPermissionSystem(): Promise<{
 }> {
   try {
     // 1. Vérifier l'existence de la vue de permissions
-    // Using a direct table query instead of an RPC function that doesn't exist
+    // Instead of directly querying pg_tables which causes TypeScript errors,
+    // We'll use a more indirect approach to check if the view exists
     const { data: viewData, error: viewError } = await supabase
-      .from('pg_tables')
-      .select('tablename')
-      .eq('tablename', 'role_permissions_view')
-      .single();
+      .from('role_permissions_view')
+      .select('*')
+      .limit(1);
     
-    const viewExists = viewData !== null;
+    // If there's no error, the view exists
+    const viewExists = !viewError;
     
     // 2. Vérifier le fonctionnement de l'edge function
     const { data: edgeData, error: edgeError } = await supabase.functions.invoke('test-roles', {
