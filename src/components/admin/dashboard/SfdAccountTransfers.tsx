@@ -37,7 +37,6 @@ export function SfdAccountTransfers() {
   const [toAccountId, setToAccountId] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Adapt all accounts to ensure they have all required properties
   const adaptedAccounts = accounts.map(account => adaptSfdAccount(account));
   
   const handleTransfer = async () => {
@@ -111,7 +110,6 @@ export function SfdAccountTransfers() {
   const refreshBalances = async () => {
     setIsRefreshing(true);
     try {
-      // Correction: Appeler mutate sans argument car elle n'en attend aucun
       await synchronizeBalances.mutate();
       toast({
         title: "Synchronisation terminée",
