@@ -4,16 +4,36 @@ import { useCurrentSfd } from '@/hooks/useCurrentSfd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SfdHeader } from '@/components/sfd/SfdHeader';
+import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function AgencyManagementPage() {
   const { data: sfd, isLoading } = useCurrentSfd();
+  const { user, userRole } = useAuth();
+
+  console.log("AgencyManagementPage - User:", user?.id);
+  console.log("AgencyManagementPage - User role:", userRole);
 
   if (isLoading) {
-    return <div>Chargement...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mr-2" />
+        <span>Chargement des données SFD...</span>
+      </div>
+    );
   }
 
   if (!sfd) {
-    return <div>Aucune SFD trouvée</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-md">
+          <h1 className="text-2xl font-bold text-red-600">Aucune SFD associée</h1>
+          <p className="mt-2">
+            Votre compte n'est pas encore associé à une SFD. Veuillez contacter l'administrateur système.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

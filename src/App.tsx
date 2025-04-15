@@ -92,7 +92,7 @@ function App() {
                     path="/agency-dashboard/*"
                     element={
                       <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
-                        <SfdManagementPage />
+                        <AgencyManagementPage />
                       </RoleGuard>
                     }
                   />
