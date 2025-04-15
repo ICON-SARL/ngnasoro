@@ -1,263 +1,316 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Plus, RefreshCw, Clock, Edit } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { Loader2 } from 'lucide-react';
-import { CreateTransferParams } from '@/types/sfdAccounts';
+import { adaptSfdAccounts, adaptSfdAccount, formatCurrency, getAccountDisplayName } from '@/utils/sfdAdapter';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-export const SfdAccountsManager = () => {
-  const { accounts, isLoading, refetch } = useSfdAccounts();
-  const { user } = useAuth();
+export function SfdAccountsManager() {
+  const { accounts, isLoading, refetchAccounts, synchronizeBalances } = useSfdAccounts();
   const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isAddingAccount, setIsAddingAccount] = useState(false);
+  const [isEditingAccount, setIsEditingAccount] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<any>(null);
+  const [newAccountData, setNewAccountData] = useState({
+    accountType: '',
+    description: '',
+    initialBalance: '0',
+  });
   
-  const [fromAccountId, setFromAccountId] = useState<string>('');
-  const [toAccountId, setToAccountId] = useState<string>('');
-  const [amount, setAmount] = useState<string>('');
-  const [description, setDescription] = useState<string>('');
-  const [isTransferring, setIsTransferring] = useState<boolean>(false);
+  // Adapt all accounts to ensure they have all required properties
+  const adaptedAccounts = adaptSfdAccounts(accounts);
   
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return amount.toLocaleString('fr-FR') + ' FCFA';
-  };
-  
-  const handleTransfer = async () => {
-    if (!user || !fromAccountId || !toAccountId || !amount || fromAccountId === toAccountId) {
-      toast({
-        title: "Erreur de transfert",
-        description: "Veuillez sélectionner des comptes différents et spécifier un montant",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const transferAmount = parseFloat(amount);
-    if (isNaN(transferAmount) || transferAmount <= 0) {
-      toast({
-        title: "Montant invalide",
-        description: "Veuillez entrer un montant valide",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Find source account to check balance
-    const sourceAccount = accounts?.find(acc => acc.id === fromAccountId);
-    if (sourceAccount && sourceAccount.balance < transferAmount) {
-      toast({
-        title: "Fonds insuffisants",
-        description: "Le compte source n'a pas assez de fonds pour ce transfert",
-        variant: "destructive"
-      });
-      return;
-    }
-    
+  const handleRefreshAccounts = async () => {
+    setIsRefreshing(true);
     try {
-      setIsTransferring(true);
-      
-      // Extract SFD ID from source account
-      const sfdId = sourceAccount?.sfd_id;
-      
-      if (!sfdId) {
-        throw new Error("SFD ID introuvable");
-      }
-      
-      // Create transfer parameters
-      const transferParams: CreateTransferParams = {
-        sfdId,
-        fromAccountId,
-        toAccountId,
-        amount: transferAmount,
-        description: description || "Transfert entre comptes SFD"
-      };
-      
-      // Call Supabase function to process transfer
-      const { data, error } = await supabase.functions.invoke('sfd-account-transfer', {
-        body: transferParams
-      });
-      
-      if (error) throw error;
-      
-      if (data.success) {
-        toast({
-          title: "Transfert réussi",
-          description: `${formatCurrency(transferAmount)} transféré avec succès`,
-        });
-        
-        // Clear form
-        setFromAccountId('');
-        setToAccountId('');
-        setAmount('');
-        setDescription('');
-        
-        // Refresh accounts data
-        refetch();
-      } else {
-        throw new Error(data.message || "Échec du transfert pour une raison inconnue");
-      }
-    } catch (error: any) {
-      console.error('Transfer error:', error);
+      await synchronizeBalances.mutate();
+      await refetchAccounts();
       toast({
-        title: "Erreur de transfert",
-        description: error.message || "Une erreur s'est produite lors du transfert",
-        variant: "destructive"
+        title: "Synchronisation terminée",
+        description: "Les comptes SFD ont été mis à jour",
+      });
+    } catch (error) {
+      console.error('Error refreshing accounts:', error);
+      toast({
+        title: "Erreur de synchronisation",
+        description: "Une erreur est survenue lors de la mise à jour des comptes",
+        variant: "destructive",
       });
     } finally {
-      setIsTransferring(false);
+      setIsRefreshing(false);
     }
   };
   
-  const getAccountTypeLabel = (type: string) => {
-    switch (type) {
-      case 'operation': return 'Opérations';
-      case 'remboursement': return 'Remboursements';
-      case 'epargne': return 'Épargne';
-      default: return type;
-    }
+  const handleAddAccount = async () => {
+    // This would be implemented when the backend is ready
+    toast({
+      title: "Fonctionnalité en développement",
+      description: "L'ajout de comptes sera bientôt disponible",
+    });
+    setIsAddingAccount(false);
+    resetForm();
   };
   
-  const getSfdById = (sfdId: string) => {
-    const sfdAccount = accounts?.find(account => account.sfd_id === sfdId);
-    return sfdId; // In a real implementation, you would return the SFD name from a map of SFDs
+  const handleEditAccount = async () => {
+    // This would be implemented when the backend is ready
+    toast({
+      title: "Fonctionnalité en développement",
+      description: "La modification de comptes sera bientôt disponible",
+    });
+    setIsEditingAccount(false);
+    setSelectedAccount(null);
+    resetForm();
   };
   
-  return (
-    <div className="space-y-6">
+  const resetForm = () => {
+    setNewAccountData({
+      accountType: '',
+      description: '',
+      initialBalance: '0',
+    });
+  };
+  
+  const handleEditClick = (account: any) => {
+    const adaptedAccount = adaptSfdAccount(account);
+    setSelectedAccount(adaptedAccount);
+    setNewAccountData({
+      accountType: adaptedAccount.account_type || '',
+      description: adaptedAccount.description || '',
+      initialBalance: String(adaptedAccount.balance || 0),
+    });
+    setIsEditingAccount(true);
+  };
+  
+  if (isLoading) {
+    return (
       <Card>
-        <CardHeader>
-          <CardTitle>Gestion des Comptes SFD</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-lg font-medium mb-4">Liste des Comptes</h3>
-              
-              {isLoading ? (
-                <div className="flex items-center justify-center p-6">
-                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                  <span>Chargement des comptes...</span>
-                </div>
-              ) : accounts && accounts.length > 0 ? (
-                <div className="border rounded-md overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SFD</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {accounts.map(account => (
-                        <tr key={account.id}>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm">{getSfdById(account.sfd_id)}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm">{getAccountTypeLabel(account.account_type)}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">{formatCurrency(account.balance)}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm">
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              account.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {account.status === 'active' ? 'Actif' : 'Inactif'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center p-4 border rounded-md bg-gray-50">
-                  Aucun compte trouvé
-                </div>
-              )}
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-medium mb-4">Effectuer un Transfert</h3>
-              
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fromAccount">Compte Source</Label>
-                  <Select value={fromAccountId} onValueChange={setFromAccountId}>
-                    <SelectTrigger id="fromAccount">
-                      <SelectValue placeholder="Sélectionner le compte source" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts?.map(account => (
-                        <SelectItem key={`from-${account.id}`} value={account.id}>
-                          {getSfdById(account.sfd_id)} - {getAccountTypeLabel(account.account_type)} ({formatCurrency(account.balance)})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="toAccount">Compte Destination</Label>
-                  <Select value={toAccountId} onValueChange={setToAccountId}>
-                    <SelectTrigger id="toAccount">
-                      <SelectValue placeholder="Sélectionner le compte destination" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts?.map(account => (
-                        <SelectItem key={`to-${account.id}`} value={account.id}>
-                          {getSfdById(account.sfd_id)} - {getAccountTypeLabel(account.account_type)} ({formatCurrency(account.balance)})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Montant (FCFA)</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    min="0"
-                    step="1000"
-                    placeholder="Montant à transférer"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Input
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Description du transfert"
-                  />
-                </div>
-                
-                <Button 
-                  className="w-full" 
-                  onClick={handleTransfer}
-                  disabled={isTransferring || !fromAccountId || !toAccountId || !amount}
-                >
-                  {isTransferring ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Transfert en cours...
-                    </>
-                  ) : (
-                    'Effectuer le Transfert'
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
+        <CardContent className="flex justify-center items-center py-12">
+          <Loader className="h-8 w-8 text-primary" />
         </CardContent>
       </Card>
-    </div>
+    );
+  }
+  
+  return (
+    <Card>
+      <CardHeader className="pb-3 flex justify-between items-center flex-row">
+        <CardTitle className="text-lg">Gestion des comptes SFD</CardTitle>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefreshAccounts}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? (
+              <Loader className="mr-2 h-4 w-4" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            Actualiser
+          </Button>
+          <Dialog open={isAddingAccount} onOpenChange={setIsAddingAccount}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Nouveau compte
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Ajouter un nouveau compte</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="account-type">Type de compte</Label>
+                  <Select 
+                    value={newAccountData.accountType} 
+                    onValueChange={(value) => setNewAccountData({...newAccountData, accountType: value})}
+                  >
+                    <SelectTrigger id="account-type">
+                      <SelectValue placeholder="Sélectionner un type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="operation">Opération</SelectItem>
+                      <SelectItem value="epargne">Épargne</SelectItem>
+                      <SelectItem value="remboursement">Remboursement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Input 
+                    id="description" 
+                    value={newAccountData.description} 
+                    onChange={(e) => setNewAccountData({...newAccountData, description: e.target.value})}
+                    placeholder="Description du compte"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="balance">Solde initial</Label>
+                  <Input 
+                    id="balance" 
+                    type="number" 
+                    min="0" 
+                    value={newAccountData.initialBalance} 
+                    onChange={(e) => setNewAccountData({...newAccountData, initialBalance: e.target.value})}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddingAccount(false)}>Annuler</Button>
+                <Button onClick={handleAddAccount}>Ajouter le compte</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="all">
+          <TabsList className="mb-4">
+            <TabsTrigger value="all">Tous les comptes</TabsTrigger>
+            <TabsTrigger value="operation">Opération</TabsTrigger>
+            <TabsTrigger value="savings">Épargne</TabsTrigger>
+            <TabsTrigger value="repayment">Remboursement</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="all" className="space-y-4">
+            {adaptedAccounts.length > 0 ? (
+              adaptedAccounts.map(account => (
+                <div key={account.id} className="flex justify-between items-center p-3 border rounded-lg">
+                  <div>
+                    <div className="flex items-center">
+                      <p className="font-medium">{getAccountDisplayName(account)}</p>
+                      <Badge variant="outline" className="ml-2 text-xs">
+                        {account.account_type || 'Principal'}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      ID: {account.id.substring(0, 8)}...
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="font-semibold">{formatCurrency(account.balance || 0, account.currency || 'FCFA')}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Dernière activité: {new Date().toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(account)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">Aucun compte trouvé</p>
+                <Button className="mt-4" onClick={() => setIsAddingAccount(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Ajouter un compte
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+          
+          {/* Similar TabsContent for other account types, showing filtered results */}
+          <TabsContent value="operation" className="space-y-4">
+            {adaptedAccounts
+              .filter(account => account.account_type === 'operation')
+              .map(account => (
+                <div key={account.id} className="flex justify-between items-center p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">{getAccountDisplayName(account)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      ID: {account.id.substring(0, 8)}...
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="font-semibold">{formatCurrency(account.balance || 0, account.currency || 'FCFA')}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Dernière activité: {new Date().toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(account)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+          </TabsContent>
+        </Tabs>
+        
+        <Dialog open={isEditingAccount} onOpenChange={setIsEditingAccount}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Modifier le compte</DialogTitle>
+            </DialogHeader>
+            {selectedAccount && (
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-account-type">Type de compte</Label>
+                  <Select 
+                    value={newAccountData.accountType} 
+                    onValueChange={(value) => setNewAccountData({...newAccountData, accountType: value})}
+                  >
+                    <SelectTrigger id="edit-account-type">
+                      <SelectValue placeholder="Sélectionner un type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="operation">Opération</SelectItem>
+                      <SelectItem value="epargne">Épargne</SelectItem>
+                      <SelectItem value="remboursement">Remboursement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-description">Description</Label>
+                  <Input 
+                    id="edit-description" 
+                    value={newAccountData.description} 
+                    onChange={(e) => setNewAccountData({...newAccountData, description: e.target.value})}
+                    placeholder="Description du compte"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-balance">Solde actuel</Label>
+                  <Input 
+                    id="edit-balance" 
+                    type="number" 
+                    min="0" 
+                    value={newAccountData.initialBalance} 
+                    onChange={(e) => setNewAccountData({...newAccountData, initialBalance: e.target.value})}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditingAccount(false)}>Annuler</Button>
+              <Button onClick={handleEditAccount}>Enregistrer les modifications</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
   );
-};
+}
