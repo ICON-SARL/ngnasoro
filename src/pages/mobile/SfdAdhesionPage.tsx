@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -35,6 +34,8 @@ const SfdAdhesionPage: React.FC = () => {
       setSfdError(null);
       
       try {
+        console.log('Fetching SFD info for ID:', sfdId);
+        
         const { data, error } = await supabase
           .from('sfds')
           .select('name, region')
@@ -43,28 +44,21 @@ const SfdAdhesionPage: React.FC = () => {
           .maybeSingle();
           
         if (error) {
-          console.error('Error fetching SFD info:', error);
-          setSfdError(`Erreur technique: ${error.message}`);
+          console.error('Error technique lors de la récupération des informations SFD:', error);
+          setSfdError('Une erreur technique est survenue. Veuillez réessayer.');
           throw error;
         }
         
         if (data) {
+          console.log('SFD found:', data);
           setSfdInfo(data);
         } else {
-          // Message d'erreur plus explicite
-          const errorMsg = `SFD avec ID ${sfdId} non trouvée ou inactive`;
-          console.log(errorMsg);
+          console.log('SFD not found or inactive:', sfdId);
           setSfdError('Cette SFD n\'est pas disponible actuellement.');
-          
-          // Une seule notification toast au lieu de multiples
-          toast({
-            title: "SFD non disponible",
-            description: "Cette SFD n'est pas disponible actuellement.",
-            variant: "destructive",
-          });
+          navigate('/mobile-flow/account');
         }
       } catch (error) {
-        console.error('Error fetching SFD info:', error);
+        console.error('Error in fetchSfdInfo:', error);
       } finally {
         setIsLoadingSfd(false);
       }
@@ -72,8 +66,8 @@ const SfdAdhesionPage: React.FC = () => {
     
     fetchSfdInfo();
     refetchUserAdhesionRequests();
-  }, [sfdId, toast, refetchUserAdhesionRequests]);
-  
+  }, [sfdId, toast, refetchUserAdhesionRequests, navigate]);
+
   if (!sfdId) {
     return (
       <div className="container max-w-md mx-auto py-4 px-4">
@@ -97,7 +91,7 @@ const SfdAdhesionPage: React.FC = () => {
       <Button 
         variant="ghost" 
         className="mb-4" 
-        onClick={() => navigate(-1)}
+        onClick={() => navigate('/mobile-flow/account')}
       >
         <ArrowLeft className="h-4 w-4 mr-2" /> Retour
       </Button>
@@ -108,7 +102,7 @@ const SfdAdhesionPage: React.FC = () => {
             <Building className="h-5 w-5 mr-2 text-[#0D6A51]" />
             {isLoadingSfd ? (
               <span className="flex items-center">
-                Chargement... <div className="h-3 w-3 ml-2 animate-spin rounded-full border-t-[1px] border-[#0D6A51]"></div>
+                Chargement... <Loader className="ml-2" />
               </span>
             ) : (
               <>Demande d'adhésion {sfdInfo && <span className="text-[#0D6A51]">{sfdInfo.name}</span>}</>
@@ -125,8 +119,8 @@ const SfdAdhesionPage: React.FC = () => {
             <Alert className="bg-red-50 border-red-200">
               <XCircle className="h-4 w-4 text-red-600" />
               <AlertTitle className="text-red-800">SFD non disponible</AlertTitle>
-              <AlertDescription className="text-red-700">
-                {sfdError}
+              <AlertDescription className="text-red-700 space-y-4">
+                <p>{sfdError}</p>
                 <Button 
                   variant="outline" 
                   size="sm" 
