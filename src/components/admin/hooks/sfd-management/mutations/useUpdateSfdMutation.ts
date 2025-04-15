@@ -53,8 +53,11 @@ export function useUpdateSfdMutation() {
       console.log('SFD updated successfully:', updatedSfd);
       return updatedSfd;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
+      // Force invalidate all queries related to sfds to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
+      queryClient.invalidateQueries({ queryKey: ['sfd', variables.id] });
+      
       toast({
         title: 'SFD modifiée',
         description: 'Les modifications ont été enregistrées avec succès',
@@ -66,7 +69,7 @@ export function useUpdateSfdMutation() {
           action: 'update_sfd',
           category: AuditLogCategory.SFD_OPERATIONS,
           severity: AuditLogSeverity.INFO,
-          details: { sfd_id: variables.id },
+          details: { sfd_id: variables.id, status: variables.data.status },
           status: 'success'
         });
       }
