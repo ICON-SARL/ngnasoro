@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { SfdAddDialog } from './SfdAddDialog';
-import { SfdEditDialog } from './SfdEditDialog';
-import { SfdSuspendDialog } from './SfdSuspendDialog';
-import { SfdReactivateDialog } from './SfdReactivateDialog';
+import { SfdEditDialog } from '@/components/admin/sfd-management/SfdEditDialog';
+import { SfdSuspendDialog } from '@/components/admin/sfd-management/SfdSuspendDialog';
+import { SfdReactivateDialog } from '@/components/admin/sfd-management/SfdReactivateDialog';
 import { SfdActivateDialog } from './SfdActivateDialog';
 import { Sfd } from '../types/sfd-types';
 import { UseMutationResult } from '@tanstack/react-query';
