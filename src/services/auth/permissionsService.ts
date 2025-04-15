@@ -4,6 +4,9 @@ import { UserRole, PERMISSIONS } from '@/utils/auth/roleTypes';
 import { logAuditEvent } from '@/utils/audit';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 
+// Type for the role values accepted by the database
+type DatabaseRole = 'admin' | 'sfd_admin' | 'user' | 'meref_admin';
+
 /**
  * Detailed permissions service for managing fine-grained access control
  */
@@ -81,12 +84,15 @@ export const permissionsService = {
         return false;
       }
       
+      // Convert UserRole enum value to string for database storage
+      const databaseRole: DatabaseRole = roleWithPermission.toString() as DatabaseRole;
+      
       // Check if user already has this role
       const { data: existingRole, error: checkError } = await supabase
         .from('user_roles')
         .select('id')
         .eq('user_id', userId)
-        .eq('role', roleWithPermission)
+        .eq('role', databaseRole)
         .maybeSingle();
         
       if (checkError) {
@@ -100,7 +106,7 @@ export const permissionsService = {
           .from('user_roles')
           .insert({
             user_id: userId,
-            role: roleWithPermission
+            role: databaseRole
           });
           
         if (insertError) {
@@ -121,7 +127,7 @@ export const permissionsService = {
           user_id: userId,
           permission: permission,
           granted_by: grantedBy,
-          via_role: roleWithPermission
+          via_role: databaseRole
         }
       });
       
