@@ -15,13 +15,27 @@ import { useNavigate } from 'react-router-dom';
 import { useLoansPage } from '@/hooks/sfd/useLoansPage';
 import { Loan } from '@/types/sfdClients';
 
-const LoanList: React.FC = () => {
+// Define props interface for when receiving loans and loading state from parent
+interface LoanListProps {
+  loans?: Loan[];
+  loading?: boolean;
+}
+
+const LoanList: React.FC<LoanListProps> = (props) => {
   const navigate = useNavigate();
-  const { loans, isLoading, refetch } = useLoansPage();
+  // Use provided loans/loading or fetch them with the hook
+  const { loans: fetchedLoans, isLoading: fetchLoading, refetch } = useLoansPage();
+  
+  // Use props if provided, otherwise use the fetched data
+  const loans = props.loans || fetchedLoans;
+  const isLoading = props.loading || fetchLoading;
   
   useEffect(() => {
-    refetch();
-  }, []);
+    // Only fetch if we're not using provided loans
+    if (!props.loans) {
+      refetch();
+    }
+  }, [props.loans]);
   
   if (isLoading) {
     return (
@@ -31,7 +45,7 @@ const LoanList: React.FC = () => {
     );
   }
   
-  if (loans.length === 0) {
+  if (!loans || loans.length === 0) {
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground">Aucun prêt trouvé</p>
@@ -92,4 +106,4 @@ const LoanList: React.FC = () => {
   );
 };
 
-export default LoanList; // Changed to default export instead of named export
+export default LoanList;

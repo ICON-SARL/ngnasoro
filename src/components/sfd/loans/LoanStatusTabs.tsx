@@ -3,19 +3,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import LoanList from './LoanList';
-
-interface Loan {
-  id: string;
-  reference?: string;
-  client_id: string;
-  client_name?: string;
-  amount: number;
-  duration_months: number;
-  interest_rate: number;
-  status: string;
-  subsidy_amount: number;
-  created_at: string;
-}
+import { Loan } from '@/types/sfdClients';
 
 interface LoanStatusTabsProps {
   activeTab: string;
