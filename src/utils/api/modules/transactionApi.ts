@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { handleError } from "@/utils/errorHandler";
 import { Transaction, TransactionDispute, TransactionFilters } from "@/types/transactions";
@@ -103,7 +102,6 @@ export const transactionApi = {
     evidence?: string[];
   }): Promise<TransactionDispute | null> {
     try {
-      // First create the dispute record
       const { data: transaction, error: txError } = await supabase
         .from('transactions')
         .select('*')
@@ -112,9 +110,8 @@ export const transactionApi = {
 
       if (txError) throw txError;
 
-      // Create dispute record
       const { data, error } = await supabase
-        .from('transaction_disputes')
+        .from('transaction_disputes' as any)
         .insert({
           transaction_id: transactionId,
           reason,
@@ -127,13 +124,11 @@ export const transactionApi = {
 
       if (error) throw error;
 
-      // Update transaction status
       await supabase
         .from('transactions')
         .update({ status: 'disputed' })
         .eq('id', transactionId);
 
-      // Create audit log
       await supabase
         .from('audit_logs')
         .insert({
@@ -170,18 +165,16 @@ export const transactionApi = {
     resolvedBy: string;
   }): Promise<TransactionDispute | null> {
     try {
-      // Get dispute details
       const { data: existingDispute, error: getError } = await supabase
-        .from('transaction_disputes')
+        .from('transaction_disputes' as any)
         .select('*')
         .eq('id', disputeId)
         .single();
 
       if (getError) throw getError;
 
-      // Update dispute status
       const { data, error } = await supabase
-        .from('transaction_disputes')
+        .from('transaction_disputes' as any)
         .update({
           status: resolution === 'accepted' ? 'resolved' : 'rejected',
           resolution_notes: notes,
@@ -195,13 +188,11 @@ export const transactionApi = {
       if (error) throw error;
 
       if (resolution === 'accepted') {
-        // Update transaction status
         await supabase
           .from('transactions')
           .update({ status: 'reversed' })
           .eq('id', existingDispute.transaction_id);
 
-        // Create reversal transaction if needed
         await supabase.functions.invoke('process-transaction-reversal', {
           body: { 
             disputeId,
@@ -210,7 +201,6 @@ export const transactionApi = {
         });
       }
 
-      // Create audit log
       await supabase
         .from('audit_logs')
         .insert({
