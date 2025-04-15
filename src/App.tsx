@@ -13,6 +13,8 @@ import FinancialSnapshot from './pages/mobile/FinancialSnapshot';
 import SfdSavings from './pages/mobile/SfdSavings';
 import SfdLoans from './pages/mobile/SfdLoans';
 import SfdSelectorPage from './pages/SfdSelectorPage';
+import WelcomeScreen from './components/mobile/WelcomeScreen';
+import NotFoundPage from './pages/NotFoundPage';
 
 const router = createBrowserRouter([
   {
@@ -56,6 +58,13 @@ const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />
   },
   {
+    path: "/mobile-flow/welcome",
+    element: (
+      <WelcomeScreen onStart={() => window.location.href = '/mobile-flow/main'} />
+    ),
+    errorElement: <RouteErrorBoundary />
+  },
+  {
     path: "/mobile-flow/sfd-savings",
     element: (
       <AuthenticationGuard>
@@ -81,6 +90,11 @@ const router = createBrowserRouter([
     path: "/mobile-flow/sfd-selector",
     element: <SfdSelectorPage />,
     errorElement: <RouteErrorBoundary />
+  },
+  {
+    path: "*",
+    element: <NotFoundPage />,
+    errorElement: <RouteErrorBoundary />
   }
 ]);
 
@@ -93,4 +107,3 @@ function App() {
 }
 
 export default App;
-
