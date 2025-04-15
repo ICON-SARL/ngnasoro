@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -20,12 +21,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Check } from 'lucide-react';
+import { Loader2, Check, AlertTriangle } from 'lucide-react';
 import { LoanAmountFields } from './loan-plan/LoanAmountFields';
 import { LoanDurationFields } from './loan-plan/LoanDurationFields';
 import { LoanRateFields } from './loan-plan/LoanRateFields';
 import { RequirementsList } from './loan-plan/RequirementsList';
 import { LOAN_PLAN_OPTIONS, MAX_INTEREST_RATE } from './loan-plan/constants';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface LoanPlanDialogProps {
   isOpen: boolean;
@@ -53,6 +55,7 @@ const LoanPlanDialog = ({
   const [fees, setFees] = useState<string>('1.0');
   const [requirements, setRequirements] = useState<string[]>([]);
   const [newRequirement, setNewRequirement] = useState('');
+  const [sfdStatus, setSfdStatus] = useState<string | null>(null);
   
   useEffect(() => {
     if (planToEdit) {
@@ -68,7 +71,31 @@ const LoanPlanDialog = ({
     } else {
       resetForm();
     }
-  }, [planToEdit, isOpen]);
+    
+    // Check SFD status when dialog opens
+    if (isOpen && activeSfdId) {
+      checkSfdStatus();
+    }
+  }, [planToEdit, isOpen, activeSfdId]);
+  
+  const checkSfdStatus = async () => {
+    if (!activeSfdId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('sfds')
+        .select('status')
+        .eq('id', activeSfdId)
+        .single();
+        
+      if (error) throw error;
+      
+      setSfdStatus(data?.status || null);
+    } catch (error) {
+      console.error('Error checking SFD status:', error);
+      setSfdStatus('error');
+    }
+  };
   
   const resetForm = () => {
     setName('');
@@ -110,6 +137,15 @@ const LoanPlanDialog = ({
       toast({
         title: "Erreur",
         description: "SFD non identifié",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (sfdStatus !== 'active') {
+      toast({
+        title: "SFD inactif",
+        description: "Votre SFD n'est pas active. Veuillez contacter l'administrateur.",
         variant: "destructive",
       });
       return;
@@ -184,6 +220,9 @@ const LoanPlanDialog = ({
     }
   };
   
+  // Determine if we should show a warning based on SFD status
+  const showSfdWarning = sfdStatus && sfdStatus !== 'active';
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -196,12 +235,25 @@ const LoanPlanDialog = ({
           </DialogDescription>
         </DialogHeader>
         
+        {showSfdWarning && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>SFD {sfdStatus === 'suspended' ? 'suspendu' : 'non actif'}</AlertTitle>
+            <AlertDescription>
+              {sfdStatus === 'suspended' 
+                ? "Cette SFD est actuellement suspendue. Veuillez contacter l'administrateur pour réactiver." 
+                : "Cette SFD n'est pas active. Veuillez vérifier son statut ou contacter l'administrateur."}
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-1 gap-2">
             <Label htmlFor="name">Nom du plan *</Label>
             <Select
               value={name}
               onValueChange={setName}
+              disabled={showSfdWarning}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner un type de plan" />
@@ -224,6 +276,7 @@ const LoanPlanDialog = ({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Décrivez ce plan de prêt et ses conditions particulières..."
               rows={3}
+              disabled={showSfdWarning}
             />
           </div>
           
@@ -261,7 +314,11 @@ const LoanPlanDialog = ({
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Annuler
           </Button>
-          <Button onClick={handleSave} disabled={isLoading} className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">
+          <Button 
+            onClick={handleSave} 
+            disabled={isLoading || showSfdWarning} 
+            className={`${showSfdWarning ? 'bg-gray-400 hover:bg-gray-400' : 'bg-[#0D6A51] hover:bg-[#0D6A51]/90'}`}
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

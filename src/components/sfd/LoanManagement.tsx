@@ -1,142 +1,132 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Building, BadgePercent, FileText } from 'lucide-react';
-import { MerefFundRequestForm } from './MerefFundRequestForm';
-import LoanList from './loans/LoanList';
-import LoanPlanManagement from './loans/LoanPlanManagement';
-import { useSfdLoans } from '@/hooks/useSfdLoans';
+import { LoanPlanManagement } from './LoanPlanManagement';
+import { LoanList } from './loans/LoanList';
 import LoanPlanDialog from './LoanPlanDialog';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { SfdActivationAlert } from './SfdActivationAlert';
 
 export function LoanManagement() {
-  const [activeTab, setActiveTab] = useState('loans');
-  const { data: loans, isLoading } = useSfdLoans();
-  const [isLoanPlanDialogOpen, setIsLoanPlanDialogOpen] = useState(false);
-  const [planToEdit, setPlanToEdit] = useState<any>(null);
-  
-  const handleOpenNewPlanDialog = () => {
+  const [activeTab, setActiveTab] = useState('plans');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [planToEdit, setPlanToEdit] = useState<any | null>(null);
+  const [sfdStatus, setSfdStatus] = useState<string>('active');
+  const [sfdName, setSfdName] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const { activeSfdId } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (activeSfdId) {
+      checkSfdStatus();
+    }
+  }, [activeSfdId]);
+
+  const checkSfdStatus = async () => {
+    if (!activeSfdId) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('sfds')
+        .select('status, name')
+        .eq('id', activeSfdId)
+        .single();
+        
+      if (error) throw error;
+      
+      setSfdStatus(data?.status || 'error');
+      setSfdName(data?.name || '');
+    } catch (error) {
+      console.error('Error checking SFD status:', error);
+      setSfdStatus('error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNewPlan = () => {
+    if (sfdStatus !== 'active') {
+      toast({
+        title: "SFD inactive",
+        description: "Veuillez activer la SFD avant de créer des plans de prêt",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setPlanToEdit(null);
-    setIsLoanPlanDialogOpen(true);
+    setIsDialogOpen(true);
   };
 
   const handleEditPlan = (plan: any) => {
+    if (sfdStatus !== 'active') {
+      toast({
+        title: "SFD inactive",
+        description: "Veuillez activer la SFD avant de modifier des plans de prêt",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setPlanToEdit(plan);
-    setIsLoanPlanDialogOpen(true);
+    setIsDialogOpen(true);
   };
 
-  const handleClosePlanDialog = () => {
-    setIsLoanPlanDialogOpen(false);
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
   };
-  
+
+  const handleSfdActivated = () => {
+    checkSfdStatus();
+    toast({
+      title: "SFD activée",
+      description: "La SFD a été activée avec succès",
+    });
+  };
+
+  if (isLoading) {
+    return <div className="p-4 text-center">Chargement des informations de la SFD...</div>;
+  }
+
+  const showActivationAlert = sfdStatus !== 'active' && activeSfdId;
+
   return (
-    <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="loans" className="flex items-center">
-              <FileText className="h-4 w-4 mr-2" />
-              Prêts Clients
-            </TabsTrigger>
-            <TabsTrigger value="plans" className="flex items-center">
-              <BadgePercent className="h-4 w-4 mr-2" />
-              Plans de Prêt
-            </TabsTrigger>
-            <TabsTrigger value="meref" className="flex items-center">
-              <Building className="h-4 w-4 mr-2" />
-              Demandes MEREF
-            </TabsTrigger>
-          </TabsList>
-          
-          {activeTab === 'meref' && (
-            <Button 
-              onClick={() => setActiveTab('meref-new')} 
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <PlusCircle className="h-4 w-4" />
-              Nouvelle demande
-            </Button>
-          )}
-        </div>
-        
-        <TabsContent value="loans" className="space-y-4 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Prêts Clients</CardTitle>
-              <CardDescription>
-                Gérez les prêts octroyés à vos clients
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <LoanList loans={loans || []} loading={isLoading} />
-            </CardContent>
-          </Card>
-        </TabsContent>
+    <div className="space-y-4">
+      {showActivationAlert && (
+        <SfdActivationAlert 
+          sfdId={activeSfdId || ''} 
+          sfdName={sfdName}
+          status={sfdStatus}
+          onActivate={handleSfdActivated}
+        />
+      )}
+      
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="plans">Plans de Prêt</TabsTrigger>
+          <TabsTrigger value="applications">Demandes</TabsTrigger>
+        </TabsList>
         
         <TabsContent value="plans" className="space-y-4 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Plans de Prêt</CardTitle>
-              <CardDescription>
-                Créez et gérez vos offres de prêts pour les clients
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <LoanPlanManagement 
-                onNewPlan={handleOpenNewPlanDialog}
-                onEditPlan={handleEditPlan}
-              />
-            </CardContent>
-          </Card>
+          <LoanPlanManagement 
+            onNewPlan={handleNewPlan} 
+            onEditPlan={handleEditPlan}
+          />
         </TabsContent>
         
-        <TabsContent value="meref" className="space-y-4 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Demandes de financement MEREF</CardTitle>
-              <CardDescription>
-                Vos demandes de financement auprès du MEREF
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                La liste des demandes de financement MEREF sera implémentée ici.
-              </p>
-              
-              <Separator className="my-4" />
-              
-              <div className="flex justify-center">
-                <Button 
-                  onClick={() => setActiveTab('meref-new')} 
-                  className="flex items-center gap-2"
-                >
-                  <PlusCircle className="h-4 w-4" />
-                  Nouvelle demande de financement
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="meref-new" className="space-y-4 mt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Nouvelle demande de financement MEREF</h2>
-            <Button variant="outline" onClick={() => setActiveTab('meref')}>
-              Retour aux demandes
-            </Button>
-          </div>
-          
-          <MerefFundRequestForm />
+        <TabsContent value="applications" className="space-y-4 mt-6">
+          <LoanList />
         </TabsContent>
       </Tabs>
-
-      {/* Loan Plan Dialog */}
+      
       <LoanPlanDialog 
-        isOpen={isLoanPlanDialogOpen} 
-        onClose={handleClosePlanDialog}
+        isOpen={isDialogOpen} 
+        onClose={handleDialogClose} 
+        onSaved={checkSfdStatus}
         planToEdit={planToEdit}
       />
     </div>

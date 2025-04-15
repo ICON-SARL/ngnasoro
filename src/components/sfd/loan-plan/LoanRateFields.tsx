@@ -2,6 +2,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { MAX_INTEREST_RATE } from './constants';
 
 interface LoanRateFieldsProps {
   interestRate: string;
@@ -27,8 +28,14 @@ export function LoanRateFields({
           onChange={(e) => onInterestRateChange(e.target.value)}
           required
           min="0"
+          max={MAX_INTEREST_RATE}
           step="0.1"
         />
+        {parseFloat(interestRate) > MAX_INTEREST_RATE && (
+          <p className="text-xs text-red-500">
+            Le taux ne peut pas dépasser {MAX_INTEREST_RATE}% selon les régulations.
+          </p>
+        )}
       </div>
       <div className="space-y-2">
         <Label htmlFor="fees">Frais administratifs (%) *</Label>
