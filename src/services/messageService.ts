@@ -4,10 +4,17 @@ import { Message, SendMessageParams } from '@/types/message';
 
 export const messageService = {
   async sendMessage(params: SendMessageParams): Promise<Message> {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error("No authenticated user found");
+    }
+    
     const { data, error } = await supabase
       .from('messages')
       .insert({
         ...params,
+        sender_id: user.id,
         read_by: []
       })
       .select()

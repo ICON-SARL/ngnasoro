@@ -15,6 +15,24 @@ export interface RealtimeNotification {
   created_at: string;
 }
 
+export interface NotificationChannel {
+  push: boolean;
+  email: boolean;
+  sms: boolean;
+  sound: boolean;
+}
+
+export interface NotificationPreferences {
+  channels: NotificationChannel;
+  language: string;
+  categories?: {
+    payments: boolean;
+    loans: boolean;
+    system: boolean;
+    marketing: boolean;
+  };
+}
+
 // Subscribe to real-time notifications
 export const subscribeToNotifications = (
   userId: string, 
@@ -134,4 +152,87 @@ export const getUserNotifications = async (userId: string, userRole: string) => 
     console.error('Error fetching notifications:', error);
     throw error;
   }
+};
+
+// Get notification preferences
+export const getNotificationPreferences = async (): Promise<NotificationPreferences> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error("No authenticated user found");
+    }
+    
+    const { data, error } = await supabase.functions.invoke('user_settings', {
+      body: { action: 'settings', method: 'GET' }
+    });
+    
+    if (error) throw error;
+    
+    if (data?.data) {
+      return {
+        channels: data.data.notifications as NotificationChannel,
+        language: data.data.language,
+        categories: data.data.categories || {
+          payments: true,
+          loans: true,
+          system: true,
+          marketing: false
+        }
+      };
+    }
+    
+    // Return default preferences if none found
+    return {
+      channels: {
+        push: true,
+        email: false,
+        sms: true,
+        sound: true
+      },
+      language: 'fr',
+      categories: {
+        payments: true,
+        loans: true,
+        system: true,
+        marketing: false
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching notification preferences:', error);
+    throw error;
+  }
+};
+
+// Update notification preferences
+export const updateNotificationPreferences = async (preferences: NotificationPreferences): Promise<void> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error("No authenticated user found");
+    }
+    
+    const { error } = await supabase.functions.invoke('user_settings', {
+      body: {
+        action: 'settings',
+        method: 'POST',
+        notifications: preferences.channels,
+        language: preferences.language,
+        categories: preferences.categories
+      }
+    });
+    
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error updating notification preferences:', error);
+    throw error;
+  }
+};
+
+// Get notification channels
+export const getAvailableChannels = async (): Promise<string[]> => {
+  // This would typically come from a backend configuration
+  // For now we'll return fixed channels
+  return ['push', 'email', 'sms', 'in-app'];
 };
