@@ -13,7 +13,8 @@ import ClientLoginPage from '@/pages/ClientLoginPage';
 import RoleGuard from '@/components/RoleGuard';
 import AnonymousOnlyGuard from '@/components/AnonymousOnlyGuard';
 import { UserRole } from '@/utils/auth/roleTypes';
-import SfdManagementPage from '@/pages/SfdManagementPage';
+// Update the import to use the correct path to the admin version
+import SfdManagementPage from '@/pages/admin/SfdManagementPage';
 
 // Create a client
 const queryClient = new QueryClient({
