@@ -37,6 +37,13 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
       return;
     }
     
+    // Handle equivalence between 'user' and 'client' roles
+    if ((userRole === 'user' && requiredRole === UserRole.CLIENT) || 
+        (userRole === 'client' && requiredRole === UserRole.USER)) {
+      setHasAccess(true);
+      return;
+    }
+    
     // Direct role comparison
     setHasAccess(userRole === requiredRole);
     
@@ -79,4 +86,3 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
 };
 
 export default RoleGuard;
-
