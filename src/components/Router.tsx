@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
@@ -9,6 +10,7 @@ import { UserRole } from '@/utils/auth/roleTypes';
 import AgencyManagementPage from '@/pages/admin/AgencyManagementPage';
 import SfdManagementPage from '@/pages/admin/SfdManagementPage';
 import SfdAdminDashboard from '@/components/sfd/SfdAdminDashboard';
+import MobileFlowPage from '@/pages/mobile/MobileFlowPage';
 
 const Router = () => {
   return (
