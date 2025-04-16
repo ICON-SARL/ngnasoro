@@ -1,288 +1,208 @@
 
 import React, { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { formatDate } from '@/utils/formatters';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
-import {
+import { 
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-
-interface AdhesionRequest {
-  id: string;
-  user_id: string;
-  full_name: string;
-  email?: string;
-  phone?: string;
-  status: string;
-  created_at: string;
-  sfd_id: string;
-  sfd_name?: string;
-  notes?: string;
-}
+import { useSfdAdhesionRequests } from '@/hooks/useSfdAdhesionRequests';
 
 interface AdhesionRequestsTableProps {
-  requests: AdhesionRequest[];
+  requests: any[];
   isLoading: boolean;
   onStatusChange?: () => void;
 }
 
-export const AdhesionRequestsTable: React.FC<AdhesionRequestsTableProps> = ({ 
-  requests, 
+export const AdhesionRequestsTable: React.FC<AdhesionRequestsTableProps> = ({
+  requests,
   isLoading,
   onStatusChange
 }) => {
-  const [selectedRequest, setSelectedRequest] = useState<AdhesionRequest | null>(null);
-  const [dialogAction, setDialogAction] = useState<'approve' | 'reject' | null>(null);
+  const { processAdhesionRequest, isProcessing } = useSfdAdhesionRequests();
+  const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+  const [dialogType, setDialogType] = useState<'approve' | 'reject' | null>(null);
   const [notes, setNotes] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const { toast } = useToast();
-  const { user } = useAuth();
-
-  const handleApproveClick = (request: AdhesionRequest) => {
+  
+  const handleOpenDialog = (request: any, type: 'approve' | 'reject') => {
     setSelectedRequest(request);
-    setDialogAction('approve');
+    setDialogType(type);
     setNotes('');
   };
-
-  const handleRejectClick = (request: AdhesionRequest) => {
-    setSelectedRequest(request);
-    setDialogAction('reject');
-    setNotes('');
-  };
-
-  const closeDialog = () => {
+  
+  const handleCloseDialog = () => {
     setSelectedRequest(null);
-    setDialogAction(null);
+    setDialogType(null);
     setNotes('');
   };
-
-  const handleConfirmAction = async () => {
-    if (!selectedRequest || !user?.id) return;
+  
+  const handleProcess = async () => {
+    if (!selectedRequest || !dialogType) return;
     
-    setIsProcessing(true);
+    const result = await processAdhesionRequest(
+      selectedRequest.id,
+      dialogType,
+      notes || undefined
+    );
     
-    try {
-      if (dialogAction === 'approve') {
-        // Call the edge function to approve the request
-        const { error } = await supabase.functions.invoke('approve-adhesion-request', {
-          body: {
-            adhesionId: selectedRequest.id,
-            notes: notes,
-            adminId: user.id
-          }
-        });
-        
-        if (error) throw error;
-        
-        toast({
-          title: 'Demande approuvée',
-          description: 'La demande d\'adhésion a été approuvée avec succès.',
-        });
-      } else if (dialogAction === 'reject') {
-        // Update the request status to rejected
-        const { error } = await supabase
-          .from('client_adhesion_requests')
-          .update({
-            status: 'rejected',
-            processed_by: user.id,
-            processed_at: new Date().toISOString(),
-            notes: notes,
-            rejection_reason: notes
-          })
-          .eq('id', selectedRequest.id);
-          
-        if (error) throw error;
-        
-        // Create notification
-        await supabase
-          .from('admin_notifications')
-          .insert({
-            title: 'Demande d\'adhésion rejetée',
-            message: `Votre demande d'adhésion a été rejetée. Raison: ${notes || 'Non spécifiée'}`,
-            type: 'client_adhesion_rejected',
-            recipient_id: selectedRequest.user_id,
-            sender_id: user.id
-          });
-          
-        toast({
-          title: 'Demande rejetée',
-          description: 'La demande d\'adhésion a été rejetée.',
-        });
-      }
-      
-      // Refresh the data
-      if (onStatusChange) {
-        onStatusChange();
-      }
-      
-      closeDialog();
-    } catch (error) {
-      console.error('Error processing adhesion request:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Une erreur est survenue lors du traitement de la demande.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsProcessing(false);
+    if (result.success && onStatusChange) {
+      handleCloseDialog();
+      onStatusChange();
     }
   };
-
-  const getActionButtons = (request: AdhesionRequest) => {
-    if (request.status === 'pending') {
-      return (
-        <div className="flex space-x-2">
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600"
-            onClick={() => handleApproveClick(request)}
-          >
-            <CheckCircle className="h-4 w-4 mr-1" /> Approuver
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
-            onClick={() => handleRejectClick(request)}
-          >
-            <XCircle className="h-4 w-4 mr-1" /> Rejeter
-          </Button>
-        </div>
-      );
-    } else if (request.status === 'approved') {
-      return (
-        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md text-xs flex items-center">
-          <CheckCircle className="h-3 w-3 mr-1" /> Approuvé
-        </span>
-      );
-    } else if (request.status === 'rejected') {
-      return (
-        <span className="px-2 py-1 bg-red-100 text-red-800 rounded-md text-xs flex items-center">
-          <XCircle className="h-3 w-3 mr-1" /> Rejeté
-        </span>
-      );
-    }
-    
-    return null;
-  };
-
+  
   if (isLoading) {
     return (
-      <div className="flex justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex flex-col items-center justify-center p-8">
+        <Loader size="lg" />
+        <p className="mt-4 text-muted-foreground">Chargement des demandes...</p>
       </div>
     );
   }
-
+  
   if (requests.length === 0) {
     return (
-      <div className="p-8 text-center border rounded-lg bg-gray-50">
-        <AlertCircle className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-        <p className="text-gray-600">Aucune demande d'adhésion trouvée.</p>
+      <div className="text-center py-12 border rounded-lg">
+        <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
+        <h3 className="mt-4 text-lg font-medium">Aucune demande</h3>
+        <p className="mt-2 text-muted-foreground">
+          Il n'y a pas de demandes d'adhésion correspondant à ces critères.
+        </p>
       </div>
     );
   }
-
+  
   return (
     <>
       <div className="rounded-md border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Nom complet</TableHead>
+              <TableHead>Nom</TableHead>
               <TableHead>Contact</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Statut</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {requests.map((request) => (
               <TableRow key={request.id}>
-                <TableCell className="font-medium">
-                  {formatDate(request.created_at)}
-                </TableCell>
+                <TableCell className="font-medium">{request.full_name}</TableCell>
                 <TableCell>
-                  {request.full_name}
+                  {request.phone || 'N/A'}
+                  {request.email && <div className="text-xs text-muted-foreground">{request.email}</div>}
                 </TableCell>
+                <TableCell>{formatDate(request.created_at)}</TableCell>
                 <TableCell>
-                  <div className="flex flex-col text-sm">
-                    {request.email && (
-                      <span>{request.email}</span>
-                    )}
-                    {request.phone && (
-                      <span className="text-gray-500">{request.phone}</span>
-                    )}
-                  </div>
+                  {request.status === 'pending' && (
+                    <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs">
+                      En attente
+                    </span>
+                  )}
+                  {request.status === 'approved' && (
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                      Approuvée
+                    </span>
+                  )}
+                  {request.status === 'rejected' && (
+                    <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
+                      Rejetée
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
-                  {getActionButtons(request)}
+                  {request.status === 'pending' && (
+                    <div className="flex space-x-2 justify-end">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                        onClick={() => handleOpenDialog(request, 'approve')}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Approuver
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleOpenDialog(request, 'reject')}
+                      >
+                        <XCircle className="h-4 w-4 mr-1" />
+                        Rejeter
+                      </Button>
+                    </div>
+                  )}
+                  {request.status !== 'pending' && (
+                    <span className="text-sm text-muted-foreground">
+                      {request.processed_at ? `Traitée le ${formatDate(request.processed_at)}` : 'Traitée'}
+                    </span>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
-
-      <Dialog open={!!selectedRequest && !!dialogAction} onOpenChange={(open) => !open && closeDialog()}>
+      
+      <Dialog open={!!selectedRequest && !!dialogType} onOpenChange={handleCloseDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {dialogAction === 'approve' ? 'Approuver la demande' : 'Rejeter la demande'}
+              {dialogType === 'approve' ? 'Approuver la demande' : 'Rejeter la demande'}
             </DialogTitle>
             <DialogDescription>
-              {dialogAction === 'approve' 
-                ? 'Voulez-vous approuver cette demande d\'adhésion ?' 
-                : 'Veuillez indiquer la raison du rejet de cette demande.'}
+              {dialogType === 'approve' ? (
+                'Êtes-vous sûr de vouloir approuver cette demande ? Un compte client sera créé pour cet utilisateur.'
+              ) : (
+                'Êtes-vous sûr de vouloir rejeter cette demande ? Veuillez fournir une raison.'
+              )}
             </DialogDescription>
           </DialogHeader>
           
-          {selectedRequest && (
-            <div className="py-4">
-              <p><strong>Demandeur:</strong> {selectedRequest.full_name}</p>
-              {selectedRequest.email && <p><strong>Email:</strong> {selectedRequest.email}</p>}
-              {selectedRequest.phone && <p><strong>Téléphone:</strong> {selectedRequest.phone}</p>}
-              <p><strong>Date de la demande:</strong> {formatDate(selectedRequest.created_at)}</p>
-            </div>
-          )}
-          
-          <div className="mt-2">
+          <div className="py-4">
+            <label className="block text-sm font-medium mb-2">
+              {dialogType === 'approve' ? 'Notes (optionnel)' : 'Raison du rejet'}
+            </label>
             <Textarea
-              placeholder={dialogAction === 'approve' 
-                ? 'Notes supplémentaires (optionnel)' 
-                : 'Raison du rejet (sera communiquée au client)'}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              placeholder={dialogType === 'approve' ? 'Notes internes' : 'Raison du rejet'}
               rows={3}
-              required={dialogAction === 'reject'}
             />
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog} disabled={isProcessing}>
+            <Button variant="outline" onClick={handleCloseDialog}>
               Annuler
             </Button>
-            <Button 
-              onClick={handleConfirmAction} 
-              disabled={isProcessing || (dialogAction === 'reject' && !notes)}
-              variant={dialogAction === 'approve' ? 'default' : 'destructive'}
+            <Button
+              onClick={handleProcess}
+              disabled={isProcessing || (dialogType === 'reject' && !notes)}
+              variant={dialogType === 'approve' ? 'default' : 'destructive'}
             >
               {isProcessing ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Traitement...
                 </>
-              ) : dialogAction === 'approve' ? (
+              ) : dialogType === 'approve' ? (
                 'Approuver'
               ) : (
                 'Rejeter'
