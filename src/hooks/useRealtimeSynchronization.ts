@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -38,7 +39,7 @@ export function useRealtimeSynchronization() {
     try {
       console.log(`Synchronizing accounts for user ${user.id}${activeSfdId ? ` with active SFD ${activeSfdId}` : ''}`);
       
-      const { data: functionResponse, error: functionError, success } = await supabase.functions.invoke('synchronize-sfd-accounts', {
+      const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
         body: {
           userId: user.id,
           sfdId: activeSfdId || null,
@@ -46,19 +47,20 @@ export function useRealtimeSynchronization() {
         }
       });
       
-      if (functionError) {
-        console.error("Error calling synchronize-sfd-accounts function:", functionError);
-        throw new Error(`Erreur de communication avec le serveur: ${functionError.message}`);
+      if (error) {
+        console.error("Error calling synchronize-sfd-accounts function:", error);
+        throw new Error(`Erreur de communication avec le serveur: ${error.message}`);
       }
       
-      if (!success && functionResponse && !functionResponse.success) {
-        throw new Error(functionResponse.message || "Échec de la synchronisation");
+      // Check for success from the data object itself
+      if (data && data.success === false) {
+        throw new Error(data.message || "Échec de la synchronisation");
       }
       
       setLastSynced(new Date());
       setRetryCount(0);
       
-      if (functionResponse && functionResponse.updates && functionResponse.updates.length > 0) {
+      if (data && data.updates && data.updates.length > 0) {
         toast({
           title: "Synchronisation réussie",
           description: "Vos comptes SFD ont été mis à jour",
