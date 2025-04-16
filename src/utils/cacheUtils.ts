@@ -5,38 +5,36 @@
 interface CacheEntry {
   value: any;
   expiresAt: number;
+  createdAt: number;
 }
 
 class SfdCache {
   private cache: { [sfdId: string]: { [key: string]: CacheEntry } } = {};
-  private DEFAULT_TTL = 15 * 60 * 1000; // 15 minutes in milliseconds
+  private DEFAULT_TTL = 5 * 60 * 1000; // Reduced from 15 to 5 minutes
 
   /**
-   * Set a value in the cache
-   * @param sfdId The SFD namespace
-   * @param key The cache key
-   * @param value The value to cache
-   * @param ttl Time to live in milliseconds (default: 15min)
+   * Set a value in the cache with enhanced logging
    */
   set(sfdId: string, key: string, value: any, ttl: number = this.DEFAULT_TTL): void {
+    console.log(`[SfdCache] Setting cache for SFD ${sfdId}, key: ${key}`, { value, ttl });
+
     if (!this.cache[sfdId]) {
       this.cache[sfdId] = {};
     }
 
     this.cache[sfdId][key] = {
       value,
-      expiresAt: Date.now() + ttl
+      expiresAt: Date.now() + ttl,
+      createdAt: Date.now()
     };
   }
 
   /**
-   * Get a value from the cache
-   * @param sfdId The SFD namespace
-   * @param key The cache key
-   * @returns The cached value or null if not found or expired
+   * Get a value from the cache with detailed logging
    */
   get(sfdId: string, key: string): any | null {
     if (!this.cache[sfdId] || !this.cache[sfdId][key]) {
+      console.log(`[SfdCache] No cache found for SFD ${sfdId}, key: ${key}`);
       return null;
     }
 
@@ -44,9 +42,15 @@ class SfdCache {
     
     // Check if the entry has expired
     if (Date.now() > entry.expiresAt) {
+      console.log(`[SfdCache] Cache expired for SFD ${sfdId}, key: ${key}`);
       this.delete(sfdId, key);
       return null;
     }
+
+    console.log(`[SfdCache] Cache hit for SFD ${sfdId}, key: ${key}`, {
+      age: Date.now() - entry.createdAt,
+      remainingTTL: entry.expiresAt - Date.now()
+    });
 
     return entry.value;
   }
