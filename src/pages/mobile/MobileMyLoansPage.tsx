@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useSfdLoans } from '@/hooks/useSfdLoans';
 import MobileNavigation from '@/components/MobileNavigation';
-import { ArrowLeft, FileText, Plus } from 'lucide-react';
+import { ArrowLeft, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const MobileMyLoansPage: React.FC = () => {
@@ -41,7 +41,7 @@ const MobileMyLoansPage: React.FC = () => {
             variant="ghost" 
             size="sm" 
             className="mr-2 p-0"
-            onClick={() => navigate('/mobile-flow/loans')}
+            onClick={() => navigate('/mobile-flow/main')}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -53,14 +53,6 @@ const MobileMyLoansPage: React.FC = () => {
       </div>
 
       <div className="p-4">
-        <Button 
-          onClick={() => navigate('/mobile-flow/loan-plans')}
-          className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90 mb-6"
-        >
-          <Plus className="mr-2 h-5 w-5" />
-          Demander un prêt
-        </Button>
-
         {isLoading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin h-8 w-8 border-4 border-[#0D6A51] border-t-transparent rounded-full"></div>
@@ -74,12 +66,6 @@ const MobileMyLoansPage: React.FC = () => {
             <p className="mt-2 text-sm text-gray-500">
               Vous n'avez pas encore de prêt actif ou de demande en cours.
             </p>
-            <Button 
-              onClick={() => navigate('/mobile-flow/loan-application')}
-              className="mt-4 bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-            >
-              Demander un prêt
-            </Button>
           </div>
         ) : (
           <div className="space-y-4">
@@ -127,3 +113,4 @@ const MobileMyLoansPage: React.FC = () => {
 };
 
 export default MobileMyLoansPage;
+
