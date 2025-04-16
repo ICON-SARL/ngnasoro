@@ -175,25 +175,17 @@ export function useClientAdhesions() {
         throw new Error('User not authenticated');
       }
 
-      const { data, error } = await supabase
-        .from('client_adhesion_requests')
-        .insert({
-          sfd_id: sfdId,
-          user_id: user.id,
-          full_name: input.full_name,
-          profession: input.profession,
-          monthly_income: input.monthly_income ? parseFloat(input.monthly_income) : null,
-          source_of_income: input.source_of_income,
-          phone: input.phone,
-          email: input.email,
-          address: input.address,
-          status: 'pending',
-          kyc_status: 'pending'
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.functions.invoke('process-client-adhesion', {
+        body: { 
+          userId: user.id, 
+          sfdId, 
+          adhesionData: input 
+        }
+      });
 
       if (error) throw error;
+      if (!data.success) throw new Error(data.message || 'Failed to submit adhesion request');
+      
       return data;
     },
     onSuccess: () => {
