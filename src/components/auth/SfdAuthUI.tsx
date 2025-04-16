@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Logo from './Logo';
-import LoginForm from './auth/login/LoginForm';
+import LoginForm from '@/components/auth/login/LoginForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
 
