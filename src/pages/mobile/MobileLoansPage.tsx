@@ -4,15 +4,21 @@ import MobileNavigation from '@/components/mobile/MobileNavigation';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CreditCard, Plus, Building, BadgePercent } from 'lucide-react';
+import { CreditCard, BadgePercent, Building } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import LoanPlansDisplay from '@/components/mobile/loan/LoanPlansDisplay';
 
-const LoanTypeCard: React.FC<{ 
+const LoanTypeCard = ({
+  title,
+  description,
+  icon,
+  onClick
+}: {
   title: string;
   description: string;
   icon: React.ReactNode;
   onClick: () => void;
-}> = ({ title, description, icon, onClick }) => (
+}) => (
   <Card className="mb-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={onClick}>
     <CardContent className="p-4 flex items-center">
       <div className="flex-shrink-0 mr-4 p-3 rounded-full bg-[#0D6A51]/10 text-[#0D6A51]">
@@ -60,6 +66,11 @@ const MobileLoansPage: React.FC = () => {
             icon={<Building className="h-6 w-6" />}
             onClick={() => navigate('/mobile-flow/loan-plans')}
           />
+        </div>
+
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-3">Plans de prêt disponibles</h2>
+          <LoanPlansDisplay />
         </div>
         
         <div className="mt-8 mb-4 flex justify-center">
