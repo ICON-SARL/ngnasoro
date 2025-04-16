@@ -2,11 +2,11 @@
 import React from 'react';
 import { AdminManagementPage } from './management';
 import RoleGuard from '../RoleGuard';
-import { UserRole } from '@/hooks/auth/types';
+import { Role } from '@/utils/audit/auditPermissions';
 
 export function AdminManagement() {
   return (
-    <RoleGuard requiredRole={UserRole.SuperAdmin}>
+    <RoleGuard requiredRole={Role.ADMIN}>
       <AdminManagementPage />
     </RoleGuard>
   );

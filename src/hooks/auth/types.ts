@@ -9,7 +9,6 @@ export enum UserRole {
 }
 
 export interface User extends SupabaseUser {
-  // Add these properties that are referenced in various components
   full_name?: string;
   avatar_url?: string;
   phone?: string;
