@@ -25,44 +25,55 @@ export function useRealtimeSync({
     }
     
     // Create the subscription
-    const channel = supabase
-      .channel(channelName);
+    const channel = supabase.channel(channelName);
     
     // Add event handlers
     if (onInsert) {
-      channel.on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: table,
-        filter: filter ? { filter } : undefined 
-      }, (payload) => {
-        console.log(`New ${table} record inserted:`, payload.new);
-        onInsert(payload.new);
-      });
+      channel.on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: table,
+          filter: filter ? filter : undefined
+        },
+        (payload) => {
+          console.log(`New ${table} record inserted:`, payload.new);
+          onInsert(payload.new);
+        }
+      );
     }
     
     if (onUpdate) {
-      channel.on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: table,
-        filter: filter ? { filter } : undefined 
-      }, (payload) => {
-        console.log(`${table} record updated:`, payload.new);
-        onUpdate(payload.new);
-      });
+      channel.on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: table,
+          filter: filter ? filter : undefined
+        },
+        (payload) => {
+          console.log(`${table} record updated:`, payload.new);
+          onUpdate(payload.new);
+        }
+      );
     }
     
     if (onDelete) {
-      channel.on('postgres_changes', { 
-        event: 'DELETE', 
-        schema: 'public', 
-        table: table,
-        filter: filter ? { filter } : undefined 
-      }, (payload) => {
-        console.log(`${table} record deleted:`, payload.old);
-        onDelete(payload.old);
-      });
+      channel.on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: table,
+          filter: filter ? filter : undefined
+        },
+        (payload) => {
+          console.log(`${table} record deleted:`, payload.old);
+          onDelete(payload.old);
+        }
+      );
     }
     
     // Subscribe to the channel
