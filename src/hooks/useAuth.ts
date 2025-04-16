@@ -120,19 +120,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  return (
-    <AuthContext.Provider value={{
-      user,
-      session,
-      userRole,
-      loading,
-      signIn,
-      signOut,
-      activeSfdId,
-      setActiveSfdId: updateActiveSfdId,
-    }}>
-      {children}
-    </AuthContext.Provider>
+  // Since this is a .ts file, not a .tsx file, we can't use JSX syntax here
+  // Instead, we'll use React.createElement
+  return React.createElement(
+    AuthContext.Provider,
+    {
+      value: {
+        user,
+        session,
+        userRole,
+        loading,
+        signIn,
+        signOut,
+        activeSfdId,
+        setActiveSfdId: updateActiveSfdId,
+      }
+    },
+    children
   );
 };
 
