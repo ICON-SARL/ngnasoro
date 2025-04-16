@@ -127,7 +127,7 @@ export function ClientAdhesionRequests() {
         });
       } else if (actionType === 'reject') {
         // Utiliser la fonction du hook pour le rejet
-        await supabase
+        const { error } = await supabase
           .from('client_adhesion_requests')
           .update({
             status: 'rejected',
@@ -136,6 +136,11 @@ export function ClientAdhesionRequests() {
             notes: notes
           })
           .eq('id', selectedRequest.id);
+          
+        if (error) {
+          console.error('Error rejecting request:', error);
+          throw new Error(error.message || 'Erreur lors du rejet');
+        }
           
         toast({
           title: 'Demande rejetée',

@@ -101,17 +101,17 @@ serve(async (req) => {
     
     console.log('Successfully created SFD client');
     
-    // 3. Create a client account
+    // 3. Create a client account - MODIFIED: Removed sfd_id as it doesn't exist in the accounts table
     if (adhesion.user_id) {
-      console.log(`Creating account for user ${adhesion.user_id} in SFD ${adhesion.sfd_id}`);
+      console.log(`Creating account for user ${adhesion.user_id}`);
       
       const { error: accountError } = await supabase
         .from('accounts')
         .insert({
           user_id: adhesion.user_id,
           balance: 0,
-          currency: 'FCFA',
-          sfd_id: adhesion.sfd_id
+          currency: 'FCFA'
+          // Removed sfd_id which was causing the error
         });
       
       if (accountError) {
