@@ -1,75 +1,37 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, DollarSign, FileText } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Building, CreditCard, Users, FileText, Landmark } from 'lucide-react';
 
-// Export the navigation items so they can be reused in other components
-export const sfdNavigationItems = [
+export interface SfdNavigationItem {
+  path: string;
+  label: string;
+  icon: React.ReactNode;
+}
+
+export const sfdNavigationItems: SfdNavigationItem[] = [
   {
-    title: 'Tableau de Bord',
-    icon: <LayoutDashboard className="w-5 h-5" />,
-    href: '/agency-dashboard',
-    path: '/agency-dashboard',
-    label: 'Tableau de Bord'
+    path: "/agency-dashboard",
+    label: "Tableau de bord",
+    icon: <Building className="h-4 w-4 mr-2" />
   },
   {
-    title: 'Clients',
-    icon: <Users className="w-5 h-5" />,
-    href: '/sfd-clients',
-    path: '/sfd-clients',
-    label: 'Clients'
+    path: "/sfd-loans",
+    label: "Prêts",
+    icon: <CreditCard className="h-4 w-4 mr-2" />
   },
   {
-    title: 'Prêts',
-    icon: <CreditCard className="w-5 h-5" />,
-    href: '/sfd-loans',
-    path: '/sfd-loans',
-    label: 'Prêts'
+    path: "/sfd-clients",
+    label: "Clients",
+    icon: <Users className="h-4 w-4 mr-2" />
   },
   {
-    title: 'Transactions',
-    icon: <DollarSign className="w-5 h-5" />,
-    href: '/sfd-transactions',
-    path: '/sfd-transactions',
-    label: 'Transactions'
+    path: "/sfd-transactions",
+    label: "Transactions",
+    icon: <FileText className="h-4 w-4 mr-2" />
   },
   {
-    title: 'Demandes d\'Adhésion',
-    icon: <FileText className="w-5 h-5" />,
-    href: '/sfd-adhesion-requests',
-    path: '/sfd-adhesion-requests',
-    label: 'Demandes d\'Adhésion'
+    path: "/sfd-subsidy-requests",
+    label: "Subventions",
+    icon: <Landmark className="h-4 w-4 mr-2" />
   }
 ];
-
-export const SfdNavigation = () => {
-  const location = useLocation();
-
-  const navItems = sfdNavigationItems.map(item => ({
-    ...item,
-    active: location.pathname === item.href
-  }));
-
-  return (
-    <nav className="flex overflow-x-auto mb-6 pb-2">
-      <div className="flex space-x-1">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            to={item.href}
-            className={cn(
-              "flex items-center px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap",
-              item.active 
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            {item.icon}
-            <span className="ml-2">{item.title}</span>
-          </Link>
-        ))}
-      </div>
-    </nav>
-  );
-};

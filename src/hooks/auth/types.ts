@@ -35,3 +35,15 @@ export interface AuthContextProps {
   toggleBiometricAuth?: () => Promise<void>;
   signUp?: (email: string, password: string, userData?: any) => Promise<any>;
 }
+
+// Parameters for associating a user with an SFD
+export interface AssociateSfdParams {
+  userId: string;
+  sfdId: string;
+}
+
+// Result of associating a user with an SFD
+export interface AssociateSfdResult {
+  success: boolean;
+  error?: string;
+}
