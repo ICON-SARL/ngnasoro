@@ -27,6 +27,9 @@ const formSchema = z.object({
   address: z.string().min(5, { message: 'L\'adresse est requise' }),
 });
 
+// Define the type for the form values based on the schema
+type FormValues = z.infer<typeof formSchema>;
+
 interface NewAdhesionRequestFormProps {
   sfdId: string;
   onSuccess?: () => void;
@@ -39,7 +42,7 @@ export const NewAdhesionRequestForm: React.FC<NewAdhesionRequestFormProps> = ({
   const { user } = useAuth();
   const { submitAdhesionRequest, isCreatingRequest } = useClientAdhesions();
   
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       full_name: user?.user_metadata?.full_name || '',
@@ -52,8 +55,10 @@ export const NewAdhesionRequestForm: React.FC<NewAdhesionRequestFormProps> = ({
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
     try {
+      // Since our form values are now guaranteed to have all required fields
+      // thanks to zod validation, we can safely pass them to submitAdhesionRequest
       const { success } = await submitAdhesionRequest(sfdId, values);
       if (success && onSuccess) {
         onSuccess();
