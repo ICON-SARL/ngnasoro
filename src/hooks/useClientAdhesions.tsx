@@ -1,10 +1,19 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ClientAdhesionRequest } from '@/types/adhesionTypes';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+
+export interface AdhesionRequestInput {
+  full_name: string;
+  profession: string;
+  monthly_income: string;
+  source_of_income: string;
+  phone: string;
+  email: string;
+  address: string;
+}
 
 export function useClientAdhesions() {
   const { user } = useAuth();
@@ -194,20 +203,66 @@ export function useClientAdhesions() {
     }
   });
 
+  // Submit adhesion request
+  const submitAdhesionRequest = async (sfdId: string, input: AdhesionRequestInput) => {
+    try {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { data, error } = await supabase
+        .from('client_adhesion_requests')
+        .insert({
+          sfd_id: sfdId,
+          user_id: user.id,
+          full_name: input.full_name,
+          profession: input.profession,
+          monthly_income: parseFloat(input.monthly_income),
+          source_of_income: input.source_of_income,
+          phone: input.phone,
+          email: input.email,
+          address: input.address,
+          status: 'pending',
+          kyc_status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await queryClient.invalidateQueries({ queryKey: ['userAdhesionRequests'] });
+      
+      toast({
+        title: "Demande envoyée",
+        description: "Votre demande d'adhésion a été envoyée avec succès"
+      });
+      
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('Error submitting adhesion request:', error);
+      
+      toast({
+        title: "Erreur",
+        description: error.message || 'Une erreur est survenue lors de l\'envoi de votre demande',
+        variant: "destructive"
+      });
+      
+      return { 
+        success: false, 
+        error: error.message || 'Une erreur est survenue lors de l\'envoi de votre demande' 
+      };
+    }
+  };
+
   return {
-    // Données et état des requêtes
-    adhesionRequests: adhesionRequestsQuery.data || [],
     userAdhesionRequests: userAdhesionRequestsQuery.data || [],
-    isLoadingAdhesionRequests: adhesionRequestsQuery.isLoading,
     isLoadingUserAdhesionRequests: userAdhesionRequestsQuery.isLoading,
-    
-    // Mutations
-    createAdhesionRequest,
+    refetchUserAdhesionRequests: () => queryClient.invalidateQueries({ queryKey: ['userAdhesionRequests'] }),
+    submitAdhesionRequest,
+    adhesionRequests: adhesionRequestsQuery.data || [],
+    isLoadingAdhesionRequests: adhesionRequestsQuery.isLoading,
     approveAdhesionRequest,
     rejectAdhesionRequest,
-    
-    // Rechargement manuel
-    refetchAdhesionRequests: () => queryClient.invalidateQueries({ queryKey: ['adhesion-requests'] }),
-    refetchUserAdhesionRequests: () => queryClient.invalidateQueries({ queryKey: ['user-adhesion-requests'] }),
+    refetchAdhesionRequests: () => queryClient.invalidateQueries({ queryKey: ['adhesionRequests'] }),
   };
 }

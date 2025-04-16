@@ -2,7 +2,8 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -12,89 +13,53 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useClientAdhesions } from '@/hooks/useClientAdhesions';
+import { Loader2 } from 'lucide-react';
 
-const adhesionRequestSchema = z.object({
-  full_name: z.string().min(3, 'Le nom complet est requis'),
-  profession: z.string().min(2, 'La profession est requise'),
-  monthly_income: z.string().min(1, 'Le revenu mensuel est requis'),
-  source_of_income: z.string().min(2, 'La source de revenu est requise'),
-  phone: z.string().min(8, 'Numéro de téléphone invalide'),
-  email: z.string().email('Email invalide'),
-  address: z.string().min(5, 'L\'adresse est requise'),
+const formSchema = z.object({
+  full_name: z.string().min(2, { message: 'Le nom est requis' }),
+  profession: z.string().min(2, { message: 'La profession est requise' }),
+  monthly_income: z.string().min(1, { message: 'Le revenu mensuel est requis' }),
+  source_of_income: z.string().min(2, { message: 'La source de revenu est requise' }),
+  phone: z.string().min(8, { message: 'Le numéro de téléphone est requis' }),
+  email: z.string().email({ message: 'Email invalide' }),
+  address: z.string().min(5, { message: 'L\'adresse est requise' }),
 });
-
-type FormData = z.infer<typeof adhesionRequestSchema>;
 
 interface NewAdhesionRequestFormProps {
   sfdId: string;
   onSuccess?: () => void;
 }
 
-export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestFormProps) {
-  const { toast } = useToast();
+export const NewAdhesionRequestForm: React.FC<NewAdhesionRequestFormProps> = ({ 
+  sfdId,
+  onSuccess 
+}) => {
   const { user } = useAuth();
+  const { submitAdhesionRequest, isCreatingRequest } = useClientAdhesions();
   
-  const form = useForm<FormData>({
-    resolver: zodResolver(adhesionRequestSchema),
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       full_name: user?.user_metadata?.full_name || '',
       email: user?.email || '',
-      phone: '',
-      address: '',
       profession: '',
       monthly_income: '',
       source_of_income: '',
+      phone: '',
+      address: '',
     },
   });
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      if (!user) {
-        toast({
-          title: 'Erreur',
-          description: 'Vous devez être connecté pour soumettre une demande.',
-          variant: 'destructive',
-        });
-        return;
+      const { success } = await submitAdhesionRequest(sfdId, values);
+      if (success && onSuccess) {
+        onSuccess();
       }
-
-      const { error } = await supabase
-        .from('client_adhesion_requests')
-        .insert({
-          full_name: data.full_name,
-          profession: data.profession,
-          monthly_income: parseFloat(data.monthly_income),
-          source_of_income: data.source_of_income,
-          phone: data.phone,
-          email: data.email,
-          address: data.address,
-          sfd_id: sfdId,
-          user_id: user.id,
-          status: 'pending',
-          kyc_status: 'pending',
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Demande envoyée',
-        description: 'Votre demande d\'adhésion a été envoyée avec succès.',
-      });
-
-      form.reset();
-      if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Error submitting adhesion request:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Une erreur est survenue lors de l\'envoi de votre demande.',
-        variant: 'destructive',
-      });
     }
   };
 
@@ -134,9 +99,9 @@ export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestF
           name="monthly_income"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Revenu mensuel (FCFA)</FormLabel>
+              <FormLabel>Revenu mensuel</FormLabel>
               <FormControl>
-                <Input type="number" {...field} />
+                <Input {...field} type="number" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -150,31 +115,7 @@ export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestF
             <FormItem>
               <FormLabel>Source de revenu</FormLabel>
               <FormControl>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez la source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="salary">Salaire</SelectItem>
-                    <SelectItem value="business">Entreprise</SelectItem>
-                    <SelectItem value="freelance">Freelance</SelectItem>
-                    <SelectItem value="other">Autre</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" {...field} />
+                <Input {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -188,7 +129,21 @@ export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestF
             <FormItem>
               <FormLabel>Téléphone</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} type="tel" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input {...field} type="email" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -209,10 +164,21 @@ export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestF
           )}
         />
 
-        <Button type="submit" className="w-full">
-          Soumettre la demande
+        <Button 
+          type="submit" 
+          className="w-full"
+          disabled={isCreatingRequest}
+        >
+          {isCreatingRequest ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Envoi en cours...
+            </>
+          ) : (
+            'Envoyer la demande'
+          )}
         </Button>
       </form>
     </Form>
   );
-}
+};
