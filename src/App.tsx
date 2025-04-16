@@ -83,33 +83,33 @@ import { ExamplesSettingsCaseStudies } from "@/pages/ExamplesSettingsCaseStudies
 import { ExamplesSettingsCaseStudy } from "@/pages/ExamplesSettingsCaseStudy"
 import { ExamplesSettingsContact } from "@/pages/ExamplesSettingsContact"
 import { ExamplesSettingsTerms } from "@/pages/ExamplesSettingsTerms"
-import { ExamplesSettingsPolicy from "@/pages/ExamplesSettingsPolicy"
-import { ExamplesSettingsAccountSecurity from "@/pages/ExamplesSettingsAccountSecurity"
-import { ExamplesSettingsAccountNotifications from "@/pages/ExamplesSettingsAccountNotifications"
-import { ExamplesSettingsAccountIntegrations from "@/pages/ExamplesSettingsAccountIntegrations"
-import { ExamplesSettingsAccountApi from "@/pages/ExamplesSettingsAccountApi"
-import { ExamplesSettingsAccountSettings from "@/pages/ExamplesSettingsAccountSettings"
-import { ExamplesSettingsAccountProfile from "@/pages/ExamplesSettingsAccountProfile"
-import { ExamplesSettingsAccountEmail from "@/pages/ExamplesSettingsAccountEmail"
-import { ExamplesSettingsAccountChat from "@/pages/ExamplesSettingsAccountChat"
-import { ExamplesSettingsAccountFile from "@/pages/ExamplesSettingsAccountFile"
-import { ExamplesSettingsAccountCalendar from "@/pages/ExamplesSettingsAccountCalendar"
-import { ExamplesSettingsAccountInvoice from "@/pages/ExamplesSettingsAccountInvoice"
-import { ExamplesSettingsAccountBlog from "@/pages/ExamplesSettingsAccountBlog"
-import { ExamplesSettingsAccountPost from "@/pages/ExamplesSettingsAccountPost"
-import { ExamplesSettingsAccountPricing from "@/pages/ExamplesSettingsAccountPricing"
-import { ExamplesSettingsAccountFaqs from "@/pages/ExamplesSettingsAccountFaqs"
-import { ExamplesSettingsAccountTestimonials from "@/pages/ExamplesSettingsAccountTestimonials"
-import { ExamplesSettingsAccountReviews from "@/pages/ExamplesSettingsAccountReviews"
-import { ExamplesSettingsAccountCareers from "@/pages/ExamplesSettingsAccountCareers"
-import { ExamplesSettingsAccountJobs from "@/pages/ExamplesSettingsAccountJobs"
-import { ExamplesSettingsAccountJob from "@/pages/ExamplesSettingsAccountJob"
-import { ExamplesSettingsAccountCompany from "@/pages/ExamplesSettingsAccountCompany"
-import { ExamplesSettingsAccountCaseStudies from "@/pages/ExamplesSettingsAccountCaseStudies"
-import { ExamplesSettingsAccountCaseStudy from "@/pages/ExamplesSettingsAccountCaseStudy"
-import { ExamplesSettingsAccountContact from "@/pages/ExamplesSettingsAccountContact"
-import { ExamplesSettingsAccountTerms from "@/pages/ExamplesSettingsAccountTerms"
-import { ExamplesSettingsAccountPolicy from "@/pages/ExamplesSettingsAccountPolicy"
+import { ExamplesSettingsPolicy } from "@/pages/ExamplesSettingsPolicy"
+import { ExamplesSettingsAccountSecurity } from "@/pages/ExamplesSettingsAccountSecurity"
+import { ExamplesSettingsAccountNotifications } from "@/pages/ExamplesSettingsAccountNotifications"
+import { ExamplesSettingsAccountIntegrations } from "@/pages/ExamplesSettingsAccountIntegrations"
+import { ExamplesSettingsAccountApi } from "@/pages/ExamplesSettingsAccountApi"
+import { ExamplesSettingsAccountSettings } from "@/pages/ExamplesSettingsAccountSettings"
+import { ExamplesSettingsAccountProfile } from "@/pages/ExamplesSettingsAccountProfile"
+import { ExamplesSettingsAccountEmail } from "@/pages/ExamplesSettingsAccountEmail"
+import { ExamplesSettingsAccountChat } from "@/pages/ExamplesSettingsAccountChat"
+import { ExamplesSettingsAccountFile } from "@/pages/ExamplesSettingsAccountFile"
+import { ExamplesSettingsAccountCalendar } from "@/pages/ExamplesSettingsAccountCalendar"
+import { ExamplesSettingsAccountInvoice } from "@/pages/ExamplesSettingsAccountInvoice"
+import { ExamplesSettingsAccountBlog } from "@/pages/ExamplesSettingsAccountBlog"
+import { ExamplesSettingsAccountPost } from "@/pages/ExamplesSettingsAccountPost"
+import { ExamplesSettingsAccountPricing } from "@/pages/ExamplesSettingsAccountPricing"
+import { ExamplesSettingsAccountFaqs } from "@/pages/ExamplesSettingsAccountFaqs"
+import { ExamplesSettingsAccountTestimonials } from "@/pages/ExamplesSettingsAccountTestimonials"
+import { ExamplesSettingsAccountReviews } from "@/pages/ExamplesSettingsAccountReviews"
+import { ExamplesSettingsAccountCareers } from "@/pages/ExamplesSettingsAccountCareers"
+import { ExamplesSettingsAccountJobs } from "@/pages/ExamplesSettingsAccountJobs"
+import { ExamplesSettingsAccountJob } from "@/pages/ExamplesSettingsAccountJob"
+import { ExamplesSettingsAccountCompany } from "@/pages/ExamplesSettingsAccountCompany"
+import { ExamplesSettingsAccountCaseStudies } from "@/pages/ExamplesSettingsAccountCaseStudies"
+import { ExamplesSettingsAccountCaseStudy } from "@/pages/ExamplesSettingsAccountCaseStudy"
+import { ExamplesSettingsAccountContact } from "@/pages/ExamplesSettingsAccountContact"
+import { ExamplesSettingsAccountTerms } from "@/pages/ExamplesSettingsAccountTerms"
+import { ExamplesSettingsAccountPolicy } from "@/pages/ExamplesSettingsAccountPolicy"
 import { AuthProvider } from "@/hooks/useAuth";
 import { MobileLayout } from '@/layouts/MobileLayout';
 import MobileFlowRoutes from '@/components/mobile/routes/MobileFlowRoutes';
@@ -488,91 +488,91 @@ function App() {
           path: "examples/account/api",
           element: <ExamplesSettingsAccountApi />,
         },
-		{
+        {
           path: "examples/account/settings",
           element: <ExamplesSettingsAccountSettings />,
         },
-		{
+        {
           path: "examples/account/profile",
           element: <ExamplesSettingsAccountProfile />,
         },
-		{
+        {
           path: "examples/account/email",
           element: <ExamplesSettingsAccountEmail />,
         },
-		{
+        {
           path: "examples/account/chat",
           element: <ExamplesSettingsAccountChat />,
         },
-		{
+        {
           path: "examples/account/file",
           element: <ExamplesSettingsAccountFile />,
         },
-		{
+        {
           path: "examples/account/calendar",
           element: <ExamplesSettingsAccountCalendar />,
         },
-		{
+        {
           path: "examples/account/invoice",
           element: <ExamplesSettingsAccountInvoice />,
         },
-		{
+        {
           path: "examples/account/blog",
           element: <ExamplesSettingsAccountBlog />,
         },
-		{
+        {
           path: "examples/account/post",
           element: <ExamplesSettingsAccountPost />,
         },
-		{
+        {
           path: "examples/account/pricing",
           element: <ExamplesSettingsAccountPricing />,
         },
-		{
+        {
           path: "examples/account/faqs",
           element: <ExamplesSettingsAccountFaqs />,
         },
-		{
+        {
           path: "examples/account/testimonials",
           element: <ExamplesSettingsAccountTestimonials />,
         },
-		{
+        {
           path: "examples/account/reviews",
           element: <ExamplesSettingsAccountReviews />,
         },
-		{
+        {
           path: "examples/account/careers",
           element: <ExamplesSettingsAccountCareers />,
         },
-		{
+        {
           path: "examples/account/jobs",
           element: <ExamplesSettingsAccountJobs />,
         },
-		{
+        {
           path: "examples/account/job",
           element: <ExamplesSettingsAccountJob />,
         },
-		{
+        {
           path: "examples/account/company",
           element: <ExamplesSettingsAccountCompany />,
         },
-		{
+        {
           path: "examples/account/case-studies",
           element: <ExamplesSettingsAccountCaseStudies />,
         },
-		{
+        {
           path: "examples/account/case-study",
           element: <ExamplesSettingsAccountCaseStudy />,
         },
-		{
+        {
           path: "examples/account/contact",
           element: <ExamplesSettingsAccountContact />,
         },
-		{
+        {
           path: "examples/account/terms",
           element: <ExamplesSettingsAccountTerms />,
         },
-		{
+        {
           path: "examples/account/policy",
           element: <ExamplesSettingsAccountPolicy />,
         },
