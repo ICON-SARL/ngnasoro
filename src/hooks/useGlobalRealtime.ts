@@ -59,10 +59,10 @@ export function useGlobalRealtime(subscriptions: TableSubscription[] = []) {
         filter = filter ? `${filter}&sfd_id=eq.${activeSfdId}` : `sfd_id=eq.${activeSfdId}`;
       }
       
-      // Fixed: Use the proper method signature for subscribing to postgres changes
+      // Use the correct structure for subscribing to postgres changes
       channel.on(
-        'postgres_changes',
-        {
+        'postgres_changes', 
+        { 
           event: subscription.event,
           schema: 'public',
           table: subscription.table,
@@ -72,18 +72,30 @@ export function useGlobalRealtime(subscriptions: TableSubscription[] = []) {
       );
     });
     
-    // Handle connection status changes - fixed by using separate on() calls
-    channel.on('system', { event: 'connected' }, () => {
+    // Handle connection status changes with separate on() calls
+    channel.on('presence', { event: 'sync' }, () => {
       setIsConnected(true);
       console.log('[Realtime] Connected to global channel');
     });
     
-    channel.on('system', { event: 'disconnected' }, () => {
+    channel.on('presence', { event: 'join' }, () => {
+      setIsConnected(true);
+      console.log('[Realtime] Connected to global channel');
+    });
+    
+    channel.on('presence', { event: 'leave' }, () => {
       setIsConnected(false);
       console.log('[Realtime] Disconnected from global channel');
     });
     
-    channel.subscribe();
+    channel.subscribe((status) => {
+      console.log(`[Realtime] Subscription status: ${status}`);
+      if (status === 'SUBSCRIBED') {
+        setIsConnected(true);
+      } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+        setIsConnected(false);
+      }
+    });
     
     // Cleanup on unmount
     return () => {
