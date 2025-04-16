@@ -72,28 +72,15 @@ export function useGlobalRealtime(subscriptions: TableSubscription[] = []) {
       );
     });
     
-    // Handle connection status changes with separate on() calls
-    channel.on('presence', { event: 'sync' }, () => {
-      setIsConnected(true);
-      console.log('[Realtime] Connected to global channel');
-    });
-    
-    channel.on('presence', { event: 'join' }, () => {
-      setIsConnected(true);
-      console.log('[Realtime] Connected to global channel');
-    });
-    
-    channel.on('presence', { event: 'leave' }, () => {
-      setIsConnected(false);
-      console.log('[Realtime] Disconnected from global channel');
-    });
-    
+    // Track channel status using subscription callback
     channel.subscribe((status) => {
       console.log(`[Realtime] Subscription status: ${status}`);
       if (status === 'SUBSCRIBED') {
         setIsConnected(true);
+        console.log('[Realtime] Connected to global channel');
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
         setIsConnected(false);
+        console.log('[Realtime] Disconnected from global channel');
       }
     });
     
