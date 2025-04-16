@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
@@ -9,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus, Edit, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react';
+import { Plus, Edit, ToggleLeft, ToggleRight, Loader2, ArrowLeft } from 'lucide-react';
 import { LoanPlan } from '@/types/sfdClients';
 
 interface LoanPlanManagementProps {
@@ -22,6 +23,7 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
   const { activeSfdId } = useAuth();
   const [loanPlans, setLoanPlans] = useState<LoanPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (activeSfdId) {
@@ -90,10 +92,25 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
     return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
   };
 
+  // Navigation vers le tableau de bord
+  const handleBackToDashboard = () => {
+    navigate('/agency-dashboard');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Plans de Prêt</h2>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleBackToDashboard}
+            className="flex items-center gap-1"
+          >
+            <ArrowLeft className="h-4 w-4" /> Tableau de bord
+          </Button>
+          <h2 className="text-2xl font-bold">Plans de Prêt</h2>
+        </div>
         <Button onClick={onNewPlan} className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">
           <Plus className="mr-2 h-4 w-4" /> Nouveau Plan
         </Button>
