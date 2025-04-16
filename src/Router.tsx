@@ -18,12 +18,14 @@ import MobileWelcomePage from './pages/MobileWelcomePage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import ClientLoginPage from './pages/ClientLoginPage';
 
-// Using the components that actually exist in the project
+// Import the components that actually exist in the project
 import LoanPlansPage from './components/mobile/loan/LoanPlansPage';
 import PaymentPage from './pages/mobile/PaymentPage';
 import AccountPage from './pages/mobile/AccountPage';
 import MobileLoansPage from './pages/mobile/MobileLoansPage';
 import MobileMyLoansPage from './pages/mobile/MobileMyLoansPage';
+import MobileMainPage from './pages/mobile/MobileMainPage';
+import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
 
 const Router = () => {
   return (
@@ -43,14 +45,14 @@ const Router = () => {
           {/* Mobile Flow Routes */}
           <Route path="/mobile-flow" element={<ProtectedRoute><MobileFlowPage /></ProtectedRoute>}>
             <Route path="welcome" element={<MobileWelcomePage />} />
-            <Route path="main" element={<div>Mobile Main Page</div>} />
+            <Route path="main" element={<MobileMainPage />} />
             <Route path="loans" element={<MobileLoansPage />} />
             <Route path="loan-plans" element={<LoanPlansPage />} />
             <Route path="my-loans" element={<MobileMyLoansPage />} />
             <Route path="loan-details/:id" element={<LoanDetailsPage />} />
             <Route path="payment" element={<PaymentPage />} />
             <Route path="account" element={<AccountPage />} />
-            <Route path="sfd-adhesion/:sfdId" element={<div>SFD Adhesion</div>} />
+            <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
             <Route path="*" element={<Navigate to="main" replace />} />
           </Route>
 
