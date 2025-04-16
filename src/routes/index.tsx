@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthRoutes } from './routes/authRoutes';
-import { AdminRoutes } from './routes/adminRoutes';
-import { SfdAdminRoutes } from './routes/sfdAdminRoutes';
-import { ClientRoutes } from './routes/clientRoutes';
+import { AuthRoutes } from './authRoutes';
+import { AdminRoutes } from './adminRoutes';
+import { SfdAdminRoutes } from './sfdAdminRoutes';
+import { ClientRoutes } from './clientRoutes';
 
 const AppRoutes = () => {
   return (
