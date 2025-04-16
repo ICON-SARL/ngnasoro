@@ -27,3 +27,38 @@ export interface ClientAdhesionRequest {
     logo_url?: string;
   };
 }
+
+// Mobile Money Settings Interface
+export interface MobileMoneySettings {
+  id: string;
+  provider: string;
+  api_key: string | null;
+  api_url: string | null;
+  webhook_secret: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string | null;
+  provider_name: string;
+  provider_logo_url?: string;
+  transaction_fee_percentage?: number;
+  transaction_fee_fixed?: number;
+  minimum_amount?: number;
+  maximum_amount?: number;
+}
+
+// Mobile Money Webhook Interface
+export interface MobileMoneyWebhook {
+  id: string;
+  user_id: string;
+  reference_id: string;
+  amount: number;
+  provider: string;
+  phone_number: string;
+  status: 'pending' | 'processed' | 'failed';
+  transaction_type: 'deposit' | 'withdrawal';
+  created_at: string;
+  processed_at: string | null;
+  account_id: string | null;
+  raw_payload: any;
+  metadata?: any;
+}
