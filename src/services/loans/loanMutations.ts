@@ -16,6 +16,7 @@ export const createLoan = async (loanData: CreateLoanInput): Promise<Loan> => {
         durationMonths: loanData.duration_months,
         interestRate: loanData.interest_rate,
         purpose: loanData.purpose,
+        monthlyPayment: loanData.monthly_payment,
         subsidyAmount: loanData.subsidy_amount,
         subsidyRate: loanData.subsidy_rate
       }

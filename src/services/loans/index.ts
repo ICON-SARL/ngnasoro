@@ -1,3 +1,5 @@
 
 export * from './loanService';
-export * from './loanPaymentService'; // We're assuming this file exists already
+export * from './loanCalculations';
+export * from './loanReminderService';
+export * from './loanMutations';
