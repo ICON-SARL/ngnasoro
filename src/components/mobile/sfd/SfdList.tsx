@@ -1,10 +1,10 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Building } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
+import { SfdListItem } from './SfdListItem';
 
 interface Sfd {
   id: string;
@@ -25,7 +25,6 @@ interface SfdListProps {
 const SfdList: React.FC<SfdListProps> = ({
   sfds,
   existingRequests,
-  isSubmitting,
   onSelectSfd,
 }) => {
   const navigate = useNavigate();
@@ -64,38 +63,14 @@ const SfdList: React.FC<SfdListProps> = ({
         <Card 
           key={sfd.id}
           className="cursor-pointer hover:bg-gray-50 transition-colors"
-          onClick={() => handleSfdClick(sfd)}
         >
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
-                {sfd.logo_url ? (
-                  <img 
-                    src={sfd.logo_url} 
-                    alt={sfd.name}
-                    className="h-8 w-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <Building className="h-6 w-6 text-primary" />
-                )}
-              </div>
-              <div>
-                <h3 className="font-medium">{sfd.name}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {sfd.region || sfd.code}
-                </p>
-              </div>
-            </div>
-            <Button 
-              variant="secondary" 
-              className="ml-4"
-              disabled={existingRequests.some(req => req.sfd_id === sfd.id)}
-            >
-              {existingRequests.some(req => req.sfd_id === sfd.id && req.status === 'pending') 
-                ? 'Demande en cours'
-                : 'Rejoindre'}
-            </Button>
-          </CardContent>
+          <SfdListItem
+            sfd={sfd}
+            isPending={existingRequests.some(
+              req => req.sfd_id === sfd.id && req.status === 'pending'
+            )}
+            onClick={() => handleSfdClick(sfd)}
+          />
         </Card>
       ))}
     </div>

@@ -37,41 +37,13 @@ export const useClientAdhesions = () => {
         .select('*')
         .eq('user_id', user.id);
         
-      if (error) {
-        console.error('Error fetching adhesion requests:', error);
-        throw error;
-      }
-      
+      if (error) throw error;
       return data as ClientAdhesionRequest[];
     },
     enabled: !!user?.id
   });
 
-  // Fetch all adhesion requests (for admin)
-  const { 
-    data: adhesionRequests,
-    isLoading: isLoadingAdhesionRequests,
-    refetch: refetchAdhesionRequests
-  } = useQuery({
-    queryKey: ['adhesionRequests'],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('client_adhesion_requests')
-        .select('*');
-        
-      if (error) {
-        console.error('Error fetching all adhesion requests:', error);
-        throw error;
-      }
-      
-      return data as ClientAdhesionRequest[];
-    },
-    enabled: !!user?.id
-  });
-
-  // Submit a new adhesion request
+  // Submit adhesion request
   const submitAdhesionRequest = async (sfdId: string, input: AdhesionRequestInput) => {
     try {
       setIsCreatingRequest(true);
@@ -100,8 +72,7 @@ export const useClientAdhesions = () => {
 
       if (error) throw error;
 
-      // Refresh the adhesion requests list
-      await queryClient.invalidateQueries({queryKey: ['userAdhesionRequests']});
+      await queryClient.invalidateQueries({ queryKey: ['userAdhesionRequests'] });
       
       return { success: true, data };
     } catch (error: any) {
@@ -115,91 +86,11 @@ export const useClientAdhesions = () => {
     }
   };
 
-  // Approve an adhesion request
-  const approveAdhesionRequest = async (adhesionId: string, notes?: string) => {
-    try {
-      const { error } = await supabase
-        .from('client_adhesion_requests')
-        .update({
-          status: 'approved',
-          processed_at: new Date().toISOString(),
-          processed_by: user?.id,
-          notes: notes
-        })
-        .eq('id', adhesionId);
-
-      if (error) throw error;
-
-      // Refresh the adhesion requests list
-      await queryClient.invalidateQueries({queryKey: ['adhesionRequests']});
-      
-      toast({
-        title: "Demande approuvée",
-        description: "La demande d'adhésion a été approuvée avec succès",
-      });
-      
-      return true;
-    } catch (error: any) {
-      console.error('Error approving adhesion request:', error);
-      toast({
-        title: "Erreur",
-        description: `Impossible d'approuver la demande: ${error.message}`,
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-
-  // Reject an adhesion request
-  const rejectAdhesionRequest = async (adhesionId: string, notes?: string) => {
-    try {
-      const { error } = await supabase
-        .from('client_adhesion_requests')
-        .update({
-          status: 'rejected',
-          processed_at: new Date().toISOString(),
-          processed_by: user?.id,
-          notes: notes
-        })
-        .eq('id', adhesionId);
-
-      if (error) throw error;
-
-      // Refresh the adhesion requests list
-      await queryClient.invalidateQueries({queryKey: ['adhesionRequests']});
-      
-      toast({
-        title: "Demande rejetée",
-        description: "La demande d'adhésion a été rejetée",
-      });
-      
-      return true;
-    } catch (error: any) {
-      console.error('Error rejecting adhesion request:', error);
-      toast({
-        title: "Erreur",
-        description: `Impossible de rejeter la demande: ${error.message}`,
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-
   return {
-    // User adhesion requests
     userAdhesionRequests: userAdhesionRequests || [],
     isLoadingUserAdhesionRequests,
     refetchUserAdhesionRequests,
     submitAdhesionRequest,
-    isCreatingRequest,
-    
-    // All adhesion requests (for admin)
-    adhesionRequests: adhesionRequests || [],
-    isLoadingAdhesionRequests,
-    refetchAdhesionRequests,
-    
-    // Admin actions
-    approveAdhesionRequest,
-    rejectAdhesionRequest
+    isCreatingRequest
   };
 };
