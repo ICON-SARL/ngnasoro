@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader } from '@/components/ui/loader';
 import { formatDate } from '@/utils/formatters';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 const SfdAdhesionPage: React.FC = () => {
   const { sfdId } = useParams<{ sfdId: string }>();
@@ -71,6 +71,31 @@ const SfdAdhesionPage: React.FC = () => {
     fetchSfdInfo();
     refetchUserAdhesionRequests();
   }, [sfdId, toast, refetchUserAdhesionRequests, navigate, user]);
+
+  useRealtimeSync({
+    table: 'client_adhesion_requests',
+    filter: sfdId ? `sfd_id=eq.${sfdId}` : undefined,
+    onUpdate: (updatedRequest) => {
+      if (updatedRequest.user_id === user?.id) {
+        console.log('Adhesion request updated:', updatedRequest);
+        refetchUserAdhesionRequests();
+        
+        // Notifications pour les changements de statut
+        if (updatedRequest.status === 'approved') {
+          toast({
+            title: "Demande approuvée",
+            description: "Votre demande d'adhésion a été approuvée",
+          });
+        } else if (updatedRequest.status === 'rejected') {
+          toast({
+            title: "Demande rejetée",
+            description: updatedRequest.rejection_reason || "Votre demande d'adhésion a été rejetée",
+            variant: "destructive"
+          });
+        }
+      }
+    }
+  });
 
   if (!sfdId) {
     return (

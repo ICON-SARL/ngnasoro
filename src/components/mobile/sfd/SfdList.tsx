@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 interface SfdProps {
   id: string;
@@ -31,11 +31,32 @@ const SfdList: React.FC<SfdListProps> = ({
   onSelectSfd,
   onRetry
 }) => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  // Fonction pour gérer le clic sur le bouton Réessayer
+  useRealtimeSync({
+    table: 'client_adhesion_requests',
+    filter: user?.id ? `user_id=eq.${user.id}` : undefined,
+    onInsert: () => {
+      console.log('New adhesion request detected');
+    },
+    onUpdate: (updatedRequest) => {
+      if (updatedRequest.status === 'approved') {
+        toast({
+          title: "Demande approuvée",
+          description: "Votre demande d'adhésion a été approuvée",
+        });
+      } else if (updatedRequest.status === 'rejected') {
+        toast({
+          title: "Demande rejetée",
+          description: updatedRequest.rejection_reason || "Votre demande d'adhésion a été rejetée",
+          variant: "destructive"
+        });
+      }
+    }
+  });
+
   const handleRetryClick = async (sfd: SfdProps, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation(); // Empêcher la propagation du clic
@@ -83,7 +104,6 @@ const SfdList: React.FC<SfdListProps> = ({
     }
   };
 
-  // Fonction pour gérer le clic sur le bouton Rejoindre
   const handleJoinClick = async (sfd: SfdProps, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation(); // Empêcher la propagation du clic
