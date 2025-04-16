@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, CreditCard, FileText, PiggyBank, User } from 'lucide-react';
@@ -42,16 +41,10 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       path: '/mobile-flow/loans'
     },
     {
-      id: 'my-loans',
-      label: 'Mes prêts',
-      icon: FileText,
-      path: '/mobile-flow/my-loans'
-    },
-    {
       id: 'funds',
       label: 'Mes fonds',
       icon: PiggyBank,
-      path: '/mobile-flow/savings'
+      path: '/mobile-flow/funds-management'
     },
     {
       id: 'profile',

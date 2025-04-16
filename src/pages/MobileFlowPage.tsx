@@ -1,12 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
-import { MobileRouter } from '@/components/Router';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
 import FloatingMenuButton from '@/components/mobile/FloatingMenuButton';
 import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 import SfdSelectorPage from '@/pages/SfdSelectorPage';
+import FundsManagementPage from '@/pages/mobile/FundsManagementPage';
 
 const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
@@ -95,6 +96,7 @@ const MobileFlowPage: React.FC = () => {
       <Routes>
         <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
         <Route path="sfd-selector" element={<SfdSelectorPage />} />
+        <Route path="funds-management" element={<FundsManagementPage />} />
         <Route path="*" element={<MobileRouter />} />
       </Routes>
     </div>
