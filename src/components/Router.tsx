@@ -8,6 +8,7 @@ import PermissionTestPage from '@/pages/PermissionTestPage';
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
 import { UserRole } from '@/hooks/auth/types';
 import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
+import SfdSelectorPage from '@/pages/SfdSelectorPage';
 
 export const MobileRouter = () => {
   return (
@@ -15,7 +16,6 @@ export const MobileRouter = () => {
       <Route path="/" element={<div>Mobile Home</div>} />
       <Route path="/main" element={<div>Mobile Main</div>} />
       <Route path="/loan-activity" element={<div>Loan Activity</div>} />
-      <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
       <Route path="*" element={<div>Mobile Page Not Found</div>} />
     </Routes>
   );

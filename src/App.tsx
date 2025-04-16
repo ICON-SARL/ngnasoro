@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -153,7 +154,7 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-                  {/* Client/User Routes - Add role checks to prevent admin access */}
+                  {/* Client/User Routes - MODIFICATION: Allow access to both clients AND users */}
                   <Route path="/mobile-flow/main" element={
                     <ProtectedRoute>
                       <RoleGuard requiredRole={UserRole.Client}>
@@ -205,16 +206,13 @@ function App() {
                   } />
                   <Route path="/mobile-flow/sfd-adhesion/:sfdId" element={
                     <ProtectedRoute>
-                      <RoleGuard requiredRole={UserRole.Client}>
-                        <SfdAdhesionPage />
-                      </RoleGuard>
+                      {/* Cette route devrait être accessible aux utilisateurs 'user' ET 'client' */}
+                      <MobileFlowPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/mobile-flow/*" element={
                     <ProtectedRoute>
-                      <RoleGuard requiredRole={UserRole.Client}>
-                        <MobileFlowPage />
-                      </RoleGuard>
+                      <MobileFlowPage />
                     </ProtectedRoute>
                   } />
                   

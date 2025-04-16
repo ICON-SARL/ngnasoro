@@ -16,6 +16,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useClientAdhesions, AdhesionRequestInput } from '@/hooks/useClientAdhesions';
 import { useAuth } from '@/hooks/useAuth';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { UserCircle2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Schema definition for adhesion request form
 const adhesionFormSchema = z.object({
@@ -37,6 +40,7 @@ interface ClientAdhesionFormProps {
 
 export function ClientAdhesionForm({ sfdId, onSuccess }: ClientAdhesionFormProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { submitAdhesionRequest, isCreatingRequest } = useClientAdhesions();
   
   // Initialize form with default values from user profile if available
@@ -71,6 +75,11 @@ export function ClientAdhesionForm({ sfdId, onSuccess }: ClientAdhesionFormProps
       if (result.success) {
         form.reset();
         if (onSuccess) onSuccess();
+        
+        // Rediriger vers la page principale après soumission réussie
+        setTimeout(() => {
+          navigate('/mobile-flow/main');
+        }, 3000);
       }
     } catch (error) {
       console.error('Error submitting adhesion form:', error);
@@ -78,120 +87,130 @@ export function ClientAdhesionForm({ sfdId, onSuccess }: ClientAdhesionFormProps
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="full_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nom complet</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <>
+      <Alert className="mb-6 bg-blue-50 border-blue-200">
+        <UserCircle2 className="h-5 w-5 text-blue-600" />
+        <AlertTitle className="text-blue-800">Devenir client</AlertTitle>
+        <AlertDescription className="text-blue-700">
+          Pour accéder à toutes les fonctionnalités de l'application, vous devez devenir client en soumettant cette demande d'adhésion à la SFD.
+        </AlertDescription>
+      </Alert>
 
-        <FormField
-          control={form.control}
-          name="profession"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Profession</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="full_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nom complet</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="monthly_income"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Revenu mensuel (FCFA)</FormLabel>
-              <FormControl>
-                <Input type="number" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="profession"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Profession</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="source_of_income"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Source de revenu</FormLabel>
-              <FormControl>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez la source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="salary">Salaire</SelectItem>
-                    <SelectItem value="business">Entreprise</SelectItem>
-                    <SelectItem value="freelance">Freelance</SelectItem>
-                    <SelectItem value="other">Autre</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="monthly_income"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Revenu mensuel (FCFA)</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="source_of_income"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Source de revenu</FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez la source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="salary">Salaire</SelectItem>
+                      <SelectItem value="business">Entreprise</SelectItem>
+                      <SelectItem value="freelance">Freelance</SelectItem>
+                      <SelectItem value="other">Autre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Téléphone</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input type="email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="address"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Adresse</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Téléphone</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <Button type="submit" className="w-full" disabled={isCreatingRequest}>
-          {isCreatingRequest ? 'Envoi en cours...' : 'Soumettre la demande'}
-        </Button>
-      </form>
-    </Form>
+          <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Adresse</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button type="submit" className="w-full" disabled={isCreatingRequest}>
+            {isCreatingRequest ? 'Envoi en cours...' : 'Soumettre la demande d\'adhésion'}
+          </Button>
+        </form>
+      </Form>
+    </>
   );
 }

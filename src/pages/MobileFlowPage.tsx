@@ -1,131 +1,112 @@
-import React, { useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
+// Correctly importing MobileRouter as a named export
+import { MobileRouter } from '@/components/Router';
 import { useToast } from '@/hooks/use-toast';
-import Footer from '@/components/Footer';
-import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
-import ProfilePage from '@/components/mobile/profile/ProfilePage';
-import AccountPage from '@/pages/mobile/AccountPage';
-import NotificationsPage from '@/pages/mobile/account/NotificationsPage';
-import SecurityPage from '@/pages/mobile/account/SecurityPage';
-import AboutPage from '@/pages/mobile/account/AboutPage';
+import { useAuth } from '@/hooks/useAuth';
+import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
+import FloatingMenuButton from '@/components/mobile/FloatingMenuButton';
 import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
+import SfdSelectorPage from '@/pages/SfdSelectorPage';
 
 const MobileFlowPage: React.FC = () => {
-  const { user, loading, isAdmin, isSfdAdmin } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   
+  const { user, loading, signOut, userRole } = useAuth();
+
+  // Check if user is authenticated
   useEffect(() => {
     if (!loading) {
       if (!user) {
+        toast({
+          title: "Accès refusé",
+          description: "Vous devez être connecté pour accéder à cette page.",
+          variant: "destructive",
+        });
         navigate('/auth');
         return;
       }
       
-      if (isAdmin) {
+      // Get the user role and redirect if needed
+      const role = user.app_metadata?.role;
+      
+      if (role === 'admin') {
         toast({
-          title: "Accès refusé",
-          description: "Les administrateurs ne peuvent pas accéder à l'interface mobile.",
-          variant: "destructive",
+          title: "Redirection",
+          description: "Vous êtes connecté en tant qu'administrateur.",
         });
         navigate('/super-admin-dashboard');
         return;
       } 
       
-      if (isSfdAdmin) {
+      if (role === 'sfd_admin') {
         toast({
-          title: "Accès refusé",
-          description: "Les administrateurs SFD ne peuvent pas accéder à l'interface mobile.",
-          variant: "destructive",
+          title: "Redirection",
+          description: "Vous êtes connecté en tant qu'administrateur SFD.",
         });
         navigate('/agency-dashboard');
         return;
       }
+
+      // Si c'est un nouvel utilisateur sans accès au flux client, l'orienter vers l'adhésion
+      if (role === 'user' && location.pathname === '/mobile-flow/main') {
+        toast({
+          title: "Bienvenue",
+          description: "Pour accéder à toutes les fonctionnalités, vous devez d'abord adhérer à une SFD.",
+        });
+        // Rediriger vers la sélection de SFD pour adhésion
+        navigate('/mobile-flow/sfd-selector');
+      }
     }
-  }, [user, loading, navigate, toast, isAdmin, isSfdAdmin]);
+  }, [user, loading, navigate, toast, location.pathname]);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/auth');
+      toast({
+        title: "Déconnexion réussie",
+        description: "À bientôt !",
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Erreur de déconnexion",
+        description: "Impossible de vous déconnecter.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
+  };
 
   if (loading) {
-    return <div className="p-4 flex items-center justify-center h-screen">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      <span className="ml-2">Chargement...</span>
-    </div>;
-  }
-
-  if (isAdmin || isSfdAdmin) {
-    return null;
+    return <div className="p-8 text-center">Chargement...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="flex-grow">
-        <Routes>
-          <Route path="main" element={
-            <div className="pb-20">
-              <div className="p-4 bg-[#0D6A51] text-white">
-                <h1 className="text-xl font-bold">Dashboard principal</h1>
-                <p className="text-sm">Bienvenue sur votre espace client</p>
-              </div>
-              <div className="p-4">
-                <div className="bg-white rounded-lg p-4 shadow mb-4">
-                  <h2 className="text-lg font-semibold mb-2">Votre compte</h2>
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <p className="font-medium">Solde disponible</p>
-                    <p className="text-2xl font-bold">0 FCFA</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  <button 
-                    className="bg-white p-4 rounded-lg shadow text-center"
-                    onClick={() => navigate('/mobile-flow/savings')}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mb-2">
-                        <span className="text-green-600">💰</span>
-                      </div>
-                      <span className="text-sm font-medium">Mes fonds</span>
-                    </div>
-                  </button>
-                  
-                  <button 
-                    className="bg-white p-4 rounded-lg shadow text-center"
-                    onClick={() => navigate('/mobile-flow/loans')}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-2">
-                        <span className="text-blue-600">💳</span>
-                      </div>
-                      <span className="text-sm font-medium">Prêts</span>
-                    </div>
-                  </button>
-                </div>
-                
-                <button 
-                  className="w-full bg-[#0D6A51] text-white py-3 px-4 rounded-lg font-medium"
-                  onClick={() => navigate('/mobile-flow/profile')}
-                >
-                  Voir mon profil
-                </button>
-              </div>
-            </div>
-          } />
-          
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="savings" element={<FundsManagementPage />} />
-          <Route path="loans" element={<div className="p-4">Prêts (À venir)</div>} />
-          <Route path="transactions" element={<div className="p-4">Transactions (À venir)</div>} />
-          
-          <Route path="account" element={<AccountPage />} />
-          <Route path="account/notifications" element={<NotificationsPage />} />
-          <Route path="account/security" element={<SecurityPage />} />
-          <Route path="account/about" element={<AboutPage />} />
-          <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
-          
-          <Route path="*" element={<Navigate to="main" replace />} />
-        </Routes>
-      </div>
-      <Footer />
+    <div className="min-h-screen bg-white">
+      <FloatingMenuButton onClick={toggleMenu} />
+      <MobileDrawerMenu 
+        isOpen={menuOpen} 
+        onClose={() => setMenuOpen(false)} 
+        onLogout={handleLogout} 
+      />
+      <Routes>
+        {/* Route pour la page d'adhésion SFD - accessible aux utilisateurs 'user' */}
+        <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
+        <Route path="sfd-selector" element={<SfdSelectorPage />} />
+        {/* Autres routes MobileFlow */}
+        <Route path="*" element={<MobileRouter />} />
+      </Routes>
     </div>
   );
 };

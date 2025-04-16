@@ -1,14 +1,14 @@
 
 import React from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { Shield, ArrowLeft } from 'lucide-react';
+import { Shield, ArrowLeft, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
 const AccessDeniedPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut, isAdmin, isSfdAdmin, isClient } = useAuth();
+  const { user, signOut, isAdmin, isSfdAdmin, isClient, userRole } = useAuth();
   
   const state = location.state as { 
     from: string;
@@ -29,6 +29,10 @@ const AccessDeniedPage = () => {
     if (isSfdAdmin) return '/agency-dashboard';
     return '/mobile-flow/main';
   };
+
+  // Déterminer si l'utilisateur est un simple utilisateur tentant d'accéder à une zone client
+  const isUserTryingClientAccess = userRole === 'user' && 
+    (requiredRole === 'client' || requiredRole === UserRole.Client);
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -60,6 +64,22 @@ const AccessDeniedPage = () => {
             )}
           </div>
         </div>
+        
+        {isUserTryingClientAccess && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 text-amber-800">
+            <h3 className="font-semibold mb-2">Devenir client</h3>
+            <p className="text-sm">
+              Vous êtes actuellement un simple utilisateur. Pour accéder à cette section, vous devez d'abord 
+              devenir client en soumettant une demande d'adhésion à une SFD.
+            </p>
+            <Link to="/mobile-flow/sfd-selector">
+              <Button className="w-full mt-3 bg-amber-600 hover:bg-amber-700">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Adhérer à une SFD
+              </Button>
+            </Link>
+          </div>
+        )}
         
         <div className="flex flex-col gap-3 mt-6">
           <Button onClick={() => navigate(-1)} variant="outline" className="w-full">
