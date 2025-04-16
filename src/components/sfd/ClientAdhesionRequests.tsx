@@ -106,18 +106,23 @@ export function ClientAdhesionRequests() {
       if (actionType === 'approve') {
         console.log(`Confirming ${actionType} action for request:`, selectedRequest.id);
         
-        // Using edgeFunctionApi for better error handling
+        // Using direct Supabase Function invoke for better debugging
         try {
-          const response = await edgeFunctionApi.callEdgeFunction('approve-adhesion-request', {
-            adhesionId: selectedRequest.id,
-            userId: user.id,
-            notes
-          }, {
-            timeout: 30000, // 30 seconds timeout
-            maxRetries: 2   // Try up to 2 times
+          const { data, error } = await supabase.functions.invoke('approve-adhesion-request', {
+            body: {
+              adhesionId: selectedRequest.id,
+              userId: user.id,
+              notes
+            }
           });
           
-          console.log('Edge function response:', response);
+          if (error) {
+            console.error('Supabase function error:', error);
+            setErrorMessage(error.message || 'Erreur lors de l\'approbation');
+            throw error;
+          }
+          
+          console.log('Direct function response:', data);
           
           toast({
             title: 'Demande approuvée',
@@ -127,10 +132,10 @@ export function ClientAdhesionRequests() {
           await refetchAdhesionRequests();
           handleCloseDialog();
           return;
-        } catch (edgeError: any) {
-          console.error('Edge function error:', edgeError);
-          setErrorMessage(edgeError.message || 'Erreur lors de l\'approbation via edge function');
-          throw edgeError;
+        } catch (functionError: any) {
+          console.error('Function direct call error:', functionError);
+          setErrorMessage(functionError.message || 'Erreur lors de l\'approbation via fonction');
+          throw functionError;
         }
       } else if (actionType === 'reject') {
         // Utiliser la fonction du hook pour le rejet

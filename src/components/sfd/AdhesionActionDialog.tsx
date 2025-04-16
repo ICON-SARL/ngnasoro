@@ -39,6 +39,10 @@ export function AdhesionActionDialog({
 }: AdhesionActionDialogProps) {
   if (!request || !action) return null;
 
+  const handleConfirm = () => {
+    onConfirm(notes);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={isProcessing ? undefined : onClose}>
       <DialogContent className="sm:max-w-md">
@@ -98,7 +102,7 @@ export function AdhesionActionDialog({
             Annuler
           </Button>
           <Button
-            onClick={() => onConfirm(notes)}
+            onClick={handleConfirm}
             className={action === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
             disabled={isProcessing}
           >

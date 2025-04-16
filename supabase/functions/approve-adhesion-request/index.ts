@@ -56,143 +56,174 @@ serve(async (req) => {
     
     console.log(`Found adhesion request for user ${adhesion.user_id} to SFD ${adhesion.sfd_id}`);
     
-    // Begin transaction steps - we'll use separate steps instead of a transaction
-    
-    // 1. Update adhesion request to 'approved'
-    const { error: updateError } = await supabase
-      .from('client_adhesion_requests')
-      .update({
-        status: 'approved',
-        processed_by: userId,
-        processed_at: new Date().toISOString(),
-        notes: notes || ''
-      })
-      .eq('id', adhesionId);
-    
-    if (updateError) {
-      console.error('Error updating adhesion request:', updateError);
-      throw updateError;
-    }
-    
-    console.log('Successfully updated adhesion request status to approved');
-    
-    // 2. Create an SFD client
-    const clientData = {
-      full_name: adhesion.full_name,
-      email: adhesion.email,
-      phone: adhesion.phone,
-      address: adhesion.address || '',
-      id_number: adhesion.id_number || '',
-      id_type: adhesion.id_type || 'ID',
-      sfd_id: adhesion.sfd_id,
-      user_id: adhesion.user_id,
-      status: 'validated',
-      validated_by: userId,
-      validated_at: new Date().toISOString()
-    };
-    
-    console.log('Creating SFD client with data:', clientData);
-    
-    const { data: client, error: clientError } = await supabase
-      .from('sfd_clients')
-      .insert(clientData)
-      .select()
-      .single();
-    
-    if (clientError) {
-      console.error('Error creating client:', clientError);
-      throw clientError;
-    }
-    
-    console.log('Successfully created SFD client');
-    
-    // 3. Check if the user already has an account before creating a new one
-    console.log(`Checking for existing account for user ${adhesion.user_id}`);
-    
-    const { data: existingAccount, error: checkError } = await supabase
-      .from('accounts')
-      .select('id')
-      .eq('user_id', adhesion.user_id)
-      .maybeSingle();
-    
-    if (checkError) {
-      console.error('Error checking for existing account:', checkError);
-      // Continue execution, don't throw error here
-    }
-    
-    // Only create account if user doesn't already have one
-    if (!existingAccount) {
-      console.log(`Creating new account for user ${adhesion.user_id}`);
+    // Begin transaction - we'll use "fake" transactions with careful error handling
+    try {
+      // 1. Update adhesion request to 'approved'
+      const { error: updateError } = await supabase
+        .from('client_adhesion_requests')
+        .update({
+          status: 'approved',
+          processed_by: userId,
+          processed_at: new Date().toISOString(),
+          notes: notes || ''
+        })
+        .eq('id', adhesionId);
       
-      const { data: newAccount, error: accountError } = await supabase
-        .from('accounts')
-        .insert({
-          user_id: adhesion.user_id,
-          balance: 0,
-          currency: 'FCFA'
-          // Note: We're not including sfd_id as it appears to not exist in the table schema
-        });
-      
-      if (accountError) {
-        console.error('Error creating account:', accountError);
-        // Log the error but don't fail the entire process
-        console.log('Will continue despite account creation error');
-      } else {
-        console.log('Successfully created account');
+      if (updateError) {
+        console.error('Error updating adhesion request:', updateError);
+        throw updateError;
       }
-    } else {
-      console.log(`User ${adhesion.user_id} already has an account, skipping creation`);
-    }
-    
-    // 4. Create audit log entry
-    try {
-      console.log('Creating audit log entry');
       
-      await supabase
-        .from('audit_logs')
-        .insert({
-          user_id: userId,
-          action: 'client_adhesion_approved',
-          category: 'USER_MANAGEMENT',
-          status: 'success',
-          severity: 'info',
-          target_resource: `client_adhesion_requests/${adhesionId}`,
-          details: {
-            client_name: adhesion.full_name,
-            sfd_id: adhesion.sfd_id
-          }
-        });
-    } catch (auditError) {
-      console.error('Error creating audit log:', auditError);
-      // Continue execution, don't throw error here
-    }
-    
-    // 5. Create notification for the client
-    try {
-      if (adhesion.user_id) {
-        console.log(`Creating notification for user ${adhesion.user_id}`);
+      console.log('Successfully updated adhesion request status to approved');
+      
+      // 2. Create an SFD client
+      const clientData = {
+        full_name: adhesion.full_name,
+        email: adhesion.email,
+        phone: adhesion.phone,
+        address: adhesion.address || '',
+        id_number: adhesion.id_number || '',
+        id_type: adhesion.id_type || 'ID',
+        sfd_id: adhesion.sfd_id,
+        user_id: adhesion.user_id,
+        status: 'validated',
+        validated_by: userId,
+        validated_at: new Date().toISOString()
+      };
+      
+      console.log('Creating SFD client with data:', clientData);
+      
+      const { data: client, error: clientError } = await supabase
+        .from('sfd_clients')
+        .insert(clientData)
+        .select()
+        .single();
+      
+      if (clientError) {
+        console.error('Error creating client:', clientError);
+        throw clientError;
+      }
+      
+      console.log('Successfully created SFD client with ID:', client.id);
+      
+      // 3. Check if the user already has an account before creating a new one
+      console.log(`Checking for existing account for user ${adhesion.user_id}`);
+      
+      const { data: existingAccount, error: checkError } = await supabase
+        .from('accounts')
+        .select('id')
+        .eq('user_id', adhesion.user_id)
+        .maybeSingle();
+      
+      if (checkError) {
+        console.error('Error checking for existing account:', checkError);
+        // Continue execution, don't throw error here
+      }
+      
+      // Only create account if user doesn't already have one
+      if (!existingAccount) {
+        console.log(`Creating new account for user ${adhesion.user_id}`);
+        
+        const { data: newAccount, error: accountError } = await supabase
+          .from('accounts')
+          .insert({
+            user_id: adhesion.user_id,
+            balance: 0,
+            currency: 'FCFA'
+            // N'INCLUEZ PAS sfd_id s'il n'existe pas dans le schéma de la table
+          });
+        
+        if (accountError) {
+          console.error('Error creating account:', accountError);
+          console.log('Error details:', accountError.details);
+          console.log('Error hint:', accountError.hint);
+          console.log('Error message:', accountError.message);
+          
+          // Log full error object for debugging
+          console.log('Full error object:', JSON.stringify(accountError));
+          
+          // On ne fait pas échouer toute l'opération si la création du compte échoue
+          console.log('Will continue despite account creation error');
+        } else {
+          console.log('Successfully created account');
+        }
+      } else {
+        console.log(`User ${adhesion.user_id} already has an account, skipping creation`);
+      }
+      
+      // 4. Create audit log entry
+      try {
+        console.log('Creating audit log entry');
         
         await supabase
-          .from('admin_notifications')
+          .from('audit_logs')
           .insert({
-            title: 'Adhésion approuvée',
-            message: 'Votre demande d\'adhésion a été approuvée. Bienvenue!',
-            type: 'adhesion_approved',
-            recipient_id: adhesion.user_id,
-            sender_id: userId
+            user_id: userId,
+            action: 'client_adhesion_approved',
+            category: 'USER_MANAGEMENT',
+            status: 'success',
+            severity: 'info',
+            target_resource: `client_adhesion_requests/${adhesionId}`,
+            details: {
+              client_name: adhesion.full_name,
+              sfd_id: adhesion.sfd_id
+            }
           });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+        // Continue execution, don't throw error here
       }
-    } catch (notificationError) {
-      console.error('Error creating notification:', notificationError);
-      // Continue execution, don't throw error here
+      
+      // 5. Create notification for the client
+      try {
+        if (adhesion.user_id) {
+          console.log(`Creating notification for user ${adhesion.user_id}`);
+          
+          await supabase
+            .from('admin_notifications')
+            .insert({
+              title: 'Adhésion approuvée',
+              message: 'Votre demande d\'adhésion a été approuvée. Bienvenue!',
+              type: 'adhesion_approved',
+              recipient_id: adhesion.user_id,
+              sender_id: userId
+            });
+        }
+      } catch (notificationError) {
+        console.error('Error creating notification:', notificationError);
+        // Continue execution, don't throw error here
+      }
+      
+      console.log('Adhesion request approval completed successfully');
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "Adhesion request approved successfully", 
+          client 
+        }), 
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+          status: 200 
+        }
+      );
+      
+    } catch (transactionError) {
+      console.error('Transaction error:', transactionError);
+      // Retry logic could be implemented here
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: transactionError.message || "Error in transaction",
+          details: "A transaction error occurred, please check logs"
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+          status: 500 
+        }
+      );
     }
-    
-    console.log('Adhesion request approval completed successfully');
-    
-    return new Response(
-      JSON.stringify({ success: true, message: "Adhesion request approved successfully", client }), 
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-    );
     
   } catch (error) {
     console.error('Error processing adhesion approval:', error);
