@@ -9,12 +9,9 @@ const AuthRedirectPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Si l'URL est exactement /login, rediriger vers /auth qui est notre page d'authentification standard
-    if (window.location.pathname === '/login') {
-      // Pas de redirection automatique, nous laissons l'utilisateur choisir
-      console.log('Page de redirection chargée.');
-    }
-  }, [navigate]);
+    // Si l'URL est exactement /auth, nous laissons l'utilisateur choisir
+    console.log('Page de redirection d\'authentification chargée.');
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
@@ -33,7 +30,7 @@ const AuthRedirectPage = () => {
               </p>
               <Button 
                 className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90" 
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate('/login')}
               >
                 Espace Client
               </Button>

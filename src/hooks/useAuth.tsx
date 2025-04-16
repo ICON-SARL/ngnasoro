@@ -1,4 +1,5 @@
 
+// Re-export from the new location to maintain backward compatibility
 import { useAuth as useAuthOriginal } from './auth/AuthContext';
 import { User, AuthContextProps, UserRole } from './auth/types';
 import { AuthProvider } from './auth/AuthContext';
