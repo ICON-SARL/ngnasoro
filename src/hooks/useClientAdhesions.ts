@@ -137,6 +137,11 @@ export function useClientAdhesions() {
     try {
       setIsCreatingRequest(true);
       
+      // Parse monthly_income as a number, default to 0 if invalid
+      const monthlyIncome = data.monthly_income 
+        ? parseFloat(data.monthly_income) 
+        : undefined;
+      
       const { error } = await supabase
         .from('client_adhesion_requests')
         .insert({
@@ -147,7 +152,7 @@ export function useClientAdhesions() {
           phone: data.phone,
           address: data.address,
           profession: data.profession,
-          monthly_income: data.monthly_income,
+          monthly_income: monthlyIncome,
           source_of_income: data.source_of_income,
           status: 'pending'
         });

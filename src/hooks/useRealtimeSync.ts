@@ -19,14 +19,14 @@ export function useRealtimeSync({
 }: RealtimeSyncProps) {
   useEffect(() => {
     // Build the channel topic with optional filter
-    let topic = `realtime:public:${table}`;
+    let channelName = `realtime:public:${table}`;
     if (filter) {
-      topic += `:${filter}`;
+      channelName += `:${filter}`;
     }
     
     // Create the subscription
     const channel = supabase
-      .channel(topic)
+      .channel(channelName)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',

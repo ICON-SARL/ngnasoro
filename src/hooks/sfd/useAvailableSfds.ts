@@ -83,13 +83,28 @@ export function useAvailableSfds(userId?: string) {
     try {
       console.log(`Requesting access to SFD ${sfdId}${phoneNumber ? ` with phone ${phoneNumber}` : ''}`);
       
-      // Create the adhesion request in the database
+      // Get user details to provide full name
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userId)
+        .single();
+        
+      if (userError) {
+        console.error('Error fetching user profile:', userError);
+        throw userError;
+      }
+      
+      const fullName = userData?.full_name || 'Unnamed User';
+      
+      // Create the adhesion request with required full_name field
       const { data, error } = await supabase
         .from('client_adhesion_requests')
         .insert({
           user_id: userId,
           sfd_id: sfdId,
           status: 'pending',
+          full_name: fullName,
           phone: phoneNumber || null
         })
         .select();
