@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface RealtimeEvent<T = any> {
   table: string;
@@ -43,7 +44,7 @@ export function useGlobalRealtime(subscriptions: TableSubscription[] = []) {
     if (!user?.id || subscriptions.length === 0) return;
 
     // Create a channel for all subscriptions
-    const channel = supabase.channel('global-realtime');
+    const channel: RealtimeChannel = supabase.channel('global-realtime');
     
     // Add all subscriptions to the channel
     subscriptions.forEach(subscription => {
@@ -59,12 +60,17 @@ export function useGlobalRealtime(subscriptions: TableSubscription[] = []) {
         filter = filter ? `${filter}&sfd_id=eq.${activeSfdId}` : `sfd_id=eq.${activeSfdId}`;
       }
       
-      channel.on('postgres_changes', {
-        event: subscription.event, 
-        schema: 'public',
-        table: subscription.table,
-        filter: filter || undefined
-      }, handleRealtimeEvent);
+      // Use the correct method signature with proper types
+      channel.on(
+        'postgres_changes', 
+        { 
+          event: subscription.event, 
+          schema: 'public',
+          table: subscription.table,
+          filter: filter || undefined
+        }, 
+        handleRealtimeEvent
+      );
     });
     
     // Track channel status using subscription callback
