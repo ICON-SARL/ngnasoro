@@ -73,7 +73,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
         delay: 0.3,
         ease: "easeOut"
       }} className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-1">NGNA SÔRÔ!</h1>
+          <h1 className="text-4xl font-bold text-white mb-1">N'GNA SÔRÔ!</h1>
           <p className="text-white/80">Votre partenaire financier</p>
         </motion.div>
         
