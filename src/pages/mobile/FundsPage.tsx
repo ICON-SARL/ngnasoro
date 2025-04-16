@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTransactions } from '@/hooks/transactions';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +17,7 @@ const FundsPage = () => {
   const [showDepositDialog, setShowDepositDialog] = useState(false);
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentBalance, setCurrentBalance] = useState<number>(0);
   
   const { 
     getBalance,
@@ -36,10 +37,31 @@ const FundsPage = () => {
     }
   });
 
+  // Fetch balance when component mounts or dependencies change
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const balance = await getBalance();
+        setCurrentBalance(balance);
+      } catch (error) {
+        console.error('Error fetching balance:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de récupérer le solde",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchBalance();
+  }, [getBalance, toast]);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
       await refetch();
+      const balance = await getBalance();
+      setCurrentBalance(balance);
       toast({
         title: "Mise à jour",
         description: "Données actualisées avec succès",
@@ -57,9 +79,6 @@ const FundsPage = () => {
 
   const handleBack = () => navigate('/mobile-flow/main');
   
-  // Get the current balance, handling the potential Promise return type
-  const currentBalance = getBalance() || 0;
-
   return (
     <div className="min-h-screen bg-gray-50">
       <FundsHeader 
