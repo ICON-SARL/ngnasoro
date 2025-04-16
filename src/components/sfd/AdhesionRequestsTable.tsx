@@ -1,3 +1,4 @@
+
 import { 
   Table,
   TableBody,
@@ -53,6 +54,7 @@ export function AdhesionRequestsTable({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
+      case 'pending_validation':
         return <Badge variant="outline" className="bg-amber-50 text-amber-700">En attente</Badge>;
       case 'approved':
         return <Badge className="bg-green-50 text-green-700">Approuvée</Badge>;
@@ -104,7 +106,7 @@ export function AdhesionRequestsTable({
             <TableCell>{getStatusBadge(request.status)}</TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end gap-2">
-                {request.status === 'pending' && onApprove && onReject && (
+                {(request.status === 'pending' || request.status === 'pending_validation') && onApprove && onReject && (
                   <>
                     <Button 
                       variant="outline" 

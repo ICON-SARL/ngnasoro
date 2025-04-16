@@ -64,12 +64,14 @@ export function ClientAdhesionRequests() {
   );
 
   const handleApprove = (request: ClientAdhesionRequest) => {
+    console.log('Approving request:', request);
     setSelectedRequest(request);
     setActionType('approve');
     setNotes('');
   };
 
   const handleReject = (request: ClientAdhesionRequest) => {
+    console.log('Rejecting request:', request);
     setSelectedRequest(request);
     setActionType('reject');
     setNotes('');
@@ -84,6 +86,8 @@ export function ClientAdhesionRequests() {
   const handleConfirmAction = async (notes?: string) => {
     if (!selectedRequest) return;
 
+    console.log(`Confirming ${actionType} action for request:`, selectedRequest.id);
+    
     if (actionType === 'approve') {
       await approveAdhesionRequest(selectedRequest.id, notes);
     } else if (actionType === 'reject') {
@@ -94,7 +98,6 @@ export function ClientAdhesionRequests() {
     refetchAdhesionRequests();
   };
 
-  // Définition de la fonction handleRefresh qui était manquante
   const handleRefresh = () => {
     refetchAdhesionRequests();
   };
@@ -133,6 +136,8 @@ export function ClientAdhesionRequests() {
       </div>
     );
   }
+
+  console.log('Rendering tabs with pendingRequests:', pendingRequests.length);
 
   return (
     <div className="space-y-4">
