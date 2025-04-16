@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider } from "@/hooks/auth/AuthContext"; // Correct import path
 import MobileFlowPage from './pages/MobileFlowPage';
 import FundsPage from './pages/mobile/FundsPage';
 

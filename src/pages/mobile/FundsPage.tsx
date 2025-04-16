@@ -56,6 +56,9 @@ const FundsPage = () => {
   };
 
   const handleBack = () => navigate('/mobile-flow/main');
+  
+  // Get the current balance, handling the potential Promise return type
+  const currentBalance = getBalance() || 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -66,7 +69,7 @@ const FundsPage = () => {
       />
 
       <FundsBalanceSection 
-        balance={getBalance() || 0}
+        balance={currentBalance}
         isRefreshing={isRefreshing || isLoading}
       />
 
