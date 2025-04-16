@@ -17,6 +17,8 @@ export function useSfdForm({ initialData, onSubmit }: UseSfdFormProps) {
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Handle subsidy_balance as a calculated field,
+  // but keep it in the form for UI display purposes
   const form = useForm<SfdFormValues>({
     resolver: zodResolver(sfdFormSchema),
     defaultValues: {
@@ -25,7 +27,7 @@ export function useSfdForm({ initialData, onSubmit }: UseSfdFormProps) {
       region: initialData?.region || '',
       description: initialData?.description || '',
       contact_email: initialData?.contact_email || '',
-      email: initialData?.contact_email || '', 
+      email: initialData?.contact_email || '', // Duplicate for compatibility
       phone: initialData?.phone || '',
       address: initialData?.address || '',
       status: (initialData?.status as 'active' | 'pending' | 'suspended') || 'active',

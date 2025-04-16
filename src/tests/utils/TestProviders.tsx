@@ -7,7 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 
 interface TestProvidersProps {
   children: React.ReactNode;
-  queryClient?: QueryClient; // Make it optional so we can use a default
+  queryClient: QueryClient;
   initialEntries?: string[];
 }
 
@@ -17,13 +17,7 @@ interface TestProvidersProps {
  */
 export const TestProviders: React.FC<TestProvidersProps> = ({ 
   children, 
-  queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
-  }), 
+  queryClient, 
   initialEntries = ['/'] 
 }) => {
   return (

@@ -1,11 +1,23 @@
 
 import { SfdAccountDisplay } from '../types/SfdAccountTypes';
 
-export type AccountStatus = 'active' | 'default' | 'inactive' | 'pending';
+export type AccountStatus = 'active' | 'verified' | 'pending' | 'inactive';
 
-export const getAccountStatus = (account: SfdAccountDisplay): AccountStatus => {
-  if (!account) return 'inactive';
+/**
+ * Determines the account status from the SFD account data
+ */
+export function getAccountStatus(account: SfdAccountDisplay): AccountStatus {
+  if (account.isDefault) {
+    return 'active';
+  }
   
-  if (account.isDefault) return 'default';
-  return 'active';
-};
+  if (account.isVerified) {
+    return 'verified';
+  }
+  
+  if (account.status === 'pending') {
+    return 'pending';
+  }
+  
+  return 'inactive';
+}

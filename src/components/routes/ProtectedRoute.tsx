@@ -1,39 +1,53 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
-import { Layout } from '@/components/Layout';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRoles?: string[];
+  requireAdmin?: boolean;
+  requireSfdAdmin?: boolean;
 }
 
-const ProtectedRoute = ({ children, requiredRoles }: ProtectedRouteProps) => {
-  const { user, loading, userRole } = useAuth();
-
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  requireAdmin = false,
+  requireSfdAdmin = false,
+}) => {
+  const { user, loading, isAdmin, isSfdAdmin } = useAuth();
+  const location = useLocation();
+  
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mr-2" />
-        <span>Vérification de l'authentification...</span>
+        <Loader2 className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-2" />
+        <span>Chargement...</span>
       </div>
     );
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  // Check for role restrictions if required
-  if (requiredRoles && requiredRoles.length > 0) {
-    if (!userRole || !requiredRoles.includes(userRole)) {
-      return <Navigate to="/access-denied" replace />;
+    // Redirect to appropriate auth page based on requirements
+    if (requireAdmin) {
+      return <Navigate to="/admin/auth" state={{ from: location }} replace />;
+    } else if (requireSfdAdmin) {
+      return <Navigate to="/sfd/auth" state={{ from: location }} replace />;
+    } else {
+      return <Navigate to="/auth" state={{ from: location }} replace />;
     }
   }
+  
+  // Check role-based permissions
+  if (requireAdmin && !isAdmin) {
+    return <Navigate to="/access-denied" state={{ from: location, requiredRole: 'admin' }} replace />;
+  }
+  
+  if (requireSfdAdmin && !isSfdAdmin) {
+    return <Navigate to="/access-denied" state={{ from: location, requiredRole: 'sfd_admin' }} replace />;
+  }
 
-  return <Layout>{children}</Layout>;
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

@@ -1,14 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+// Correctly importing MobileRouter as a named export
+import { MobileRouter } from '@/components/Router';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
 import FloatingMenuButton from '@/components/mobile/FloatingMenuButton';
-import ProfilePage from '@/components/mobile/profile/ProfilePage';
-import SfdSelectorPage from '@/pages/SfdSelectorPage';
-import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
-import MobileMainPage from '@/components/mobile/MobileMainPage';
 
 const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
@@ -90,16 +88,7 @@ const MobileFlowPage: React.FC = () => {
         onClose={() => setMenuOpen(false)} 
         onLogout={handleLogout} 
       />
-      
-      {/* Mobile Routes */}
-      <Routes>
-        <Route path="/" element={<Navigate to="/mobile-flow/main" replace />} />
-        <Route path="/main" element={<MobileMainPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/sfd-selector" element={<SfdSelectorPage />} />
-        <Route path="/sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
-        <Route path="*" element={<div>Mobile Page Not Found</div>} />
-      </Routes>
+      <MobileRouter />
     </div>
   );
 };

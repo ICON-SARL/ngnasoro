@@ -17,7 +17,7 @@ export const useLoginForm = (
   const [cooldownActive, setCooldownActive] = useState(false);
   const [cooldownTime, setCooldownTime] = useState(0);
   const [emailSent, setEmailSent] = useState(false);
-  const { signIn, signOut } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -48,7 +48,6 @@ export const useLoginForm = (
     setErrorMessage(null);
     
     try {
-      console.log(`Tentative de connexion avec mode: ${adminMode ? 'admin' : isSfdAdmin ? 'sfd_admin' : 'client'}`);
       const result = await signIn(email, password);
       
       if (result.error) {
@@ -83,21 +82,13 @@ export const useLoginForm = (
           description: "Vous êtes maintenant connecté.",
         });
         
-        // Vérification stricte du mode et du rôle pour la redirection
+        // Redirect based on user role
         if (adminMode && userRole === 'admin') {
           navigate('/super-admin-dashboard');
         } else if (isSfdAdmin && userRole === 'sfd_admin') {
           navigate('/agency-dashboard');
-        } else if (!adminMode && !isSfdAdmin && (userRole === 'user' || userRole === 'client')) {
-          navigate('/mobile-flow/main');
         } else {
-          // Redirection incorrecte - rôle ne correspond pas au mode
-          setErrorMessage(`Accès refusé. Votre compte (${userRole}) n'a pas les droits nécessaires pour cette interface.`);
-          
-          // Déconnexion automatique après connexion incorrecte
-          setTimeout(async () => {
-            await signOut();
-          }, 1000);
+          navigate('/mobile-flow/main');
         }
       }
     } catch (err) {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building, Plus } from 'lucide-react';
@@ -45,11 +46,11 @@ const SfdAdhesionSection: React.FC = () => {
         if (requestsError) throw requestsError;
         
         // Formatter les données des demandes
-        const formattedRequests = requests.map(request => ({
+        const formattedRequests: SfdClientRequest[] = requests.map(request => ({
           id: request.id,
           sfd_id: request.sfd_id,
           sfd_name: request.sfds?.name,
-          status: (request.status as "pending" | "approved" | "rejected") || "pending",
+          status: request.status,
           created_at: request.created_at
         }));
         

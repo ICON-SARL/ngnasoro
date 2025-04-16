@@ -1,62 +1,80 @@
 
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { Shield, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ShieldX, ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const AccessDeniedPage = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const state = location.state as { from?: string; requiredRole?: string } | null;
+  const navigate = useNavigate();
+  const { user, signOut, isAdmin, isSfdAdmin, isClient } = useAuth();
   
-  const goBack = () => {
-    navigate(-1);
+  const state = location.state as { 
+    from: string;
+    requiredRole?: string;
+    requiredPermission?: string;
+  } | null;
+  
+  const fromPath = state?.from || '/';
+  const requiredRole = state?.requiredRole || 'unknown';
+  
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
   };
   
-  const goToLogin = () => {
-    navigate('/auth');
+  const getDashboardLink = () => {
+    if (isAdmin) return '/super-admin-dashboard';
+    if (isSfdAdmin) return '/agency-dashboard';
+    return '/mobile-flow/main';
   };
   
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-            <ShieldX className="h-8 w-8 text-red-600" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg">
+        <div className="flex flex-col items-center mb-6">
+          <div className="h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <Shield className="h-8 w-8 text-red-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-red-600">Accès Refusé</h1>
+          <p className="text-center text-gray-600 mt-2">
+            Vous n'avez pas les autorisations nécessaires pour accéder à cette ressource.
+          </p>
+        </div>
+        
+        <div className="border-t border-b border-gray-200 py-4 my-4">
+          <div className="text-sm text-gray-600">
+            <p className="mb-2">
+              <strong>Ressource demandée :</strong> {String(fromPath)}
+            </p>
+            {requiredRole && (
+              <p className="mb-2">
+                <strong>Rôle requis :</strong> {requiredRole}
+              </p>
+            )}
+            {user && (
+              <p>
+                <strong>Votre rôle :</strong> {user.app_metadata?.role || 'Non défini'}
+              </p>
+            )}
           </div>
         </div>
         
-        <h1 className="text-2xl font-bold text-center mb-2">Accès refusé</h1>
-        
-        <p className="text-gray-600 text-center mb-6">
-          Vous n'avez pas les autorisations nécessaires pour accéder à cette page.
-          {state?.requiredRole && (
-            <span className="block mt-2">
-              Rôle requis: <strong>{state.requiredRole}</strong>
-            </span>
-          )}
-          {state?.from && (
-            <span className="block mt-1 text-sm text-gray-500">
-              Page demandée: {state.from}
-            </span>
-          )}
-        </p>
-        
-        <div className="flex flex-col space-y-3">
-          <Button 
-            variant="outline"
-            className="w-full"
-            onClick={goBack}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Retourner à la page précédente
+        <div className="flex flex-col gap-3 mt-6">
+          <Button onClick={() => navigate(-1)} variant="outline" className="w-full">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Retour à la page précédente
           </Button>
           
-          <Button 
-            className="w-full"
-            onClick={goToLogin}
-          >
-            Se connecter avec un autre compte
+          <Link to={getDashboardLink()}>
+            <Button className="w-full">
+              Aller au tableau de bord
+            </Button>
+          </Link>
+          
+          <Button variant="ghost" onClick={handleSignOut} className="w-full">
+            Se déconnecter
           </Button>
         </div>
       </div>

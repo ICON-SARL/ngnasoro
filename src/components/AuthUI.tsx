@@ -2,12 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import Logo from '@/components/auth/Logo';
-import LoginForm from '@/components/auth/login/LoginForm';
-import RegisterForm from '@/components/auth/RegisterForm';
+import Logo from './auth/Logo';
+import LoginForm from './auth/login/LoginForm';
+import RegisterForm from './auth/RegisterForm';
+import { Check, AlertTriangle, RefreshCw } from 'lucide-react';
+import LanguageSelector from './LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserRole } from '@/hooks/auth/types';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 interface AuthUIProps {
   initialMode?: 'default' | 'admin' | 'sfd_admin';
@@ -16,38 +19,63 @@ interface AuthUIProps {
 const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
   const [activeTab, setActiveTab] = useState('login');
   const [authMode, setAuthMode] = useState<'default' | 'admin' | 'sfd_admin'>(initialMode);
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, loading, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [authSuccess, setAuthSuccess] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authTimeout, setAuthTimeout] = useState(false);
   const { toast } = useToast();
+  
+  // Add a timeout to detect when authentication is taking too long
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
+    
+    if (loading) {
+      timeoutId = setTimeout(() => {
+        setAuthTimeout(true);
+      }, 10000); // 10 seconds timeout
+    } else {
+      setAuthTimeout(false);
+    }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [loading]);
+  
+  useEffect(() => {
+    const hash = location.hash;
+    if (hash && hash.includes('access_token')) {
+      setAuthSuccess(true);
+      
+      const timer = setTimeout(() => {
+        navigate('/mobile-flow/main');
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location, navigate]);
   
   useEffect(() => {
     if (user && !loading) {
       console.log('Authenticated user:', user);
-      console.log('User role from metadata:', user.app_metadata?.role);
+      console.log('User role from auth context:', userRole);
+      
+      // Get user role from app_metadata
+      const role = user.app_metadata?.role;
+      console.log('User role from metadata:', role);
       
       // Redirect based on role
-      if (user.app_metadata?.role === UserRole.SuperAdmin || user.app_metadata?.role === 'admin') {
-        toast({
-          title: "Connecté en tant qu'administrateur",
-          description: "Redirection vers le tableau de bord admin..."
-        });
+      if (role === UserRole.SuperAdmin || role === 'admin') {
         navigate('/super-admin-dashboard');
-      } else if (user.app_metadata?.role === UserRole.SfdAdmin || user.app_metadata?.role === 'sfd_admin') {
-        toast({
-          title: "Connecté en tant qu'administrateur SFD",
-          description: "Redirection vers le tableau de bord SFD..."
-        });
+      } else if (role === UserRole.SfdAdmin || role === 'sfd_admin') {
         navigate('/agency-dashboard');
       } else {
-        toast({
-          title: "Connecté",
-          description: "Redirection vers l'application mobile..."
-        });
         navigate('/mobile-flow/main');
       }
     }
-  }, [user, userRole, loading, navigate, toast]);
+  }, [user, userRole, loading, navigate, location.pathname, toast]);
   
   useEffect(() => {
     // Check if we're on a specific page to set authentication mode
@@ -66,6 +94,47 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
       setActiveTab('login');
     }
   }, [location.pathname, location.search, initialMode]);
+  
+  const handleRetry = () => {
+    setAuthTimeout(false);
+    setAuthError(null);
+    window.location.reload();
+  };
+  
+  if (authSuccess) {
+    return (
+      <div className="auth-container">
+        <div className="max-w-md w-full auth-card p-8 text-center">
+          <div className="h-20 w-20 bg-green-100 text-green-600 rounded-full mx-auto flex items-center justify-center mb-6">
+            <Check className="h-10 w-10" />
+          </div>
+          <h1 className="text-3xl font-bold text-green-700 mb-3">Connexion réussie!</h1>
+          <p className="mt-2 text-gray-600 text-lg">Vous allez être redirigé vers l'application...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (authTimeout && loading) {
+    return (
+      <div className="auth-container">
+        <div className="max-w-md w-full auth-card p-8 text-center">
+          <div className="h-20 w-20 bg-amber-100 text-amber-600 rounded-full mx-auto flex items-center justify-center mb-6">
+            <AlertTriangle className="h-10 w-10" />
+          </div>
+          <h1 className="text-2xl font-bold text-amber-700 mb-3">Connexion trop longue</h1>
+          <p className="mt-2 text-gray-600 mb-6">La vérification de votre session prend plus de temps que prévu. Vérifiez votre connexion internet et réessayez.</p>
+          <Button 
+            onClick={handleRetry} 
+            className="mx-auto flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Réessayer
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -82,11 +151,15 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
   }
 
   return (
-    <div className="auth-container py-8 px-4 flex justify-center items-center min-h-screen bg-gray-50">
+    <div className="auth-container">
+      <div className="absolute top-4 right-4">
+        <LanguageSelector />
+      </div>
+      
       <div className="w-full max-w-md">
         <Logo />
         
-        <div className="auth-card bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="auth-card">
           {authMode === 'admin' && (
             <div className="p-4 bg-amber-50 border-b border-amber-100">
               <h2 className="text-amber-800 font-medium text-center">
@@ -111,19 +184,29 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
             </div>
           )}
           
+          {authError && (
+            <div className="p-4 bg-red-50 text-red-800 text-sm">
+              <p className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                {authError}
+              </p>
+            </div>
+          )}
+          
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full grid grid-cols-2">
               <TabsTrigger value="login">Connexion</TabsTrigger>
               <TabsTrigger value="register">Inscription</TabsTrigger>
             </TabsList>
-            <TabsContent value="login" className="p-4">
+            <TabsContent value="login">
               <LoginForm 
                 adminMode={authMode === 'admin'} 
                 isSfdAdmin={authMode === 'sfd_admin'} 
+                onError={setAuthError}
               />
             </TabsContent>
-            <TabsContent value="register" className="p-4">
-              <RegisterForm />
+            <TabsContent value="register">
+              <RegisterForm onError={setAuthError} />
             </TabsContent>
           </Tabs>
           

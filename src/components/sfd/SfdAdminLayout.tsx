@@ -2,19 +2,12 @@
 import React from 'react';
 import { Settings, Users, CreditCard, Home, FileSpreadsheet, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import LogoutButton from '@/components/LogoutButton';
 
 interface SfdAdminLayoutProps {
   children: React.ReactNode;
 }
 
 export function SfdAdminLayout({ children }: SfdAdminLayoutProps) {
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
@@ -52,11 +45,10 @@ export function SfdAdminLayout({ children }: SfdAdminLayoutProps) {
         </div>
         
         <div className="p-4 border-t">
-          <LogoutButton 
-            variant="ghost" 
-            className="w-full justify-start text-red-500"
-            redirectPath="/auth"
-          />
+          <Button variant="ghost" className="w-full justify-start text-red-500">
+            <LogOut className="mr-3 h-5 w-5" />
+            Déconnexion
+          </Button>
         </div>
       </div>
       

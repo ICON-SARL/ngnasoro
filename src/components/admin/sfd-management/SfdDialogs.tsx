@@ -1,51 +1,45 @@
 
 import React from 'react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from 'lucide-react';
-import { SfdForm } from '@/components/admin/sfd/SfdForm';
+import { SfdAddDialog } from './SfdAddDialog';
+import { SfdEditDialog } from './SfdEditDialog';
+import { SfdSuspendDialog } from './SfdSuspendDialog';
+import { SfdReactivateDialog } from './SfdReactivateDialog';
+import { SfdActivateDialog } from './SfdActivateDialog';
+import { Sfd } from '@/components/admin/types/sfd-types';
+import { UseMutationResult } from '@tanstack/react-query';
+import { SfdFormValues } from '@/components/admin/sfd/schemas/sfdFormSchema';
 
 interface SfdDialogsProps {
   showSuspendDialog: boolean;
-  setShowSuspendDialog: (show: boolean) => void;
+  setShowSuspendDialog: (value: boolean) => void;
   showReactivateDialog: boolean;
-  setShowReactivateDialog: (show: boolean) => void;
+  setShowReactivateDialog: (value: boolean) => void;
   showActivateDialog: boolean;
-  setShowActivateDialog: (show: boolean) => void;
+  setShowActivateDialog: (value: boolean) => void;
   showAddDialog: boolean;
-  setShowAddDialog: (show: boolean) => void;
+  setShowAddDialog: (value: boolean) => void;
   showEditDialog: boolean;
-  setShowEditDialog: (show: boolean) => void;
-  selectedSfd: any;
-  suspendSfdMutation: any;
-  reactivateSfdMutation: any;
-  activateSfdMutation: any;
-  addSfdMutation: any;
-  editSfdMutation: any;
-  handleAddSfd: (formData: any) => void;
-  handleEditSfd: (formData: any) => void;
+  setShowEditDialog: (value: boolean) => void;
+  selectedSfd: Sfd | null;
+  suspendSfdMutation: UseMutationResult<any, Error, string, unknown>;
+  reactivateSfdMutation: UseMutationResult<any, Error, string, unknown>;
+  activateSfdMutation: UseMutationResult<any, Error, string, unknown>;
+  addSfdMutation: UseMutationResult<any, Error, any, unknown>;
+  editSfdMutation: UseMutationResult<any, Error, any, unknown>;
+  handleAddSfd: (formData: SfdFormValues) => void;
+  handleEditSfd: (formData: SfdFormValues) => void;
 }
 
 export function SfdDialogs({
   showSuspendDialog,
   setShowSuspendDialog,
-  showReactivateDialog,
+  showReactivateDialog,  
   setShowReactivateDialog,
   showActivateDialog,
   setShowActivateDialog,
   showAddDialog,
   setShowAddDialog,
-  showEditDialog,
+  showEditDialog, 
   setShowEditDialog,
   selectedSfd,
   suspendSfdMutation,
@@ -54,125 +48,43 @@ export function SfdDialogs({
   addSfdMutation,
   editSfdMutation,
   handleAddSfd,
-  handleEditSfd
+  handleEditSfd,
 }: SfdDialogsProps) {
   return (
     <>
-      {/* Suspend Dialog */}
-      <AlertDialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Suspendre la SFD</AlertDialogTitle>
-            <AlertDialogDescription>
-              Êtes-vous sûr de vouloir suspendre {selectedSfd?.name} ? 
-              Cette action empêchera temporairement l'accès à la plateforme.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => {
-                suspendSfdMutation.mutate(selectedSfd?.id);
-                setShowSuspendDialog(false);
-              }}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {suspendSfdMutation.isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'Suspendre'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Reactivate Dialog */}
-      <AlertDialog open={showReactivateDialog} onOpenChange={setShowReactivateDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Réactiver la SFD</AlertDialogTitle>
-            <AlertDialogDescription>
-              Voulez-vous réactiver {selectedSfd?.name} ?
-              Cela rétablira leur accès à la plateforme.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => {
-                reactivateSfdMutation.mutate(selectedSfd?.id);
-                setShowReactivateDialog(false);
-              }}
-            >
-              {reactivateSfdMutation.isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'Réactiver'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Activate Dialog */}
-      <AlertDialog open={showActivateDialog} onOpenChange={setShowActivateDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Activer la SFD</AlertDialogTitle>
-            <AlertDialogDescription>
-              Voulez-vous activer {selectedSfd?.name} ?
-              Cela leur donnera accès à la plateforme.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => {
-                activateSfdMutation.mutate(selectedSfd?.id);
-                setShowActivateDialog(false);
-              }}
-            >
-              {activateSfdMutation.isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'Activer'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Add SFD Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Ajouter une nouvelle SFD</DialogTitle>
-          </DialogHeader>
-          <SfdForm
-            onSubmit={handleAddSfd}
-            isLoading={addSfdMutation.isLoading}
-            onCancel={() => setShowAddDialog(false)}
-            formMode="create"
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit SFD Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Modifier la SFD</DialogTitle>
-          </DialogHeader>
-          <SfdForm
-            defaultValues={selectedSfd}
-            onSubmit={handleEditSfd}
-            isLoading={editSfdMutation.isLoading}
-            onCancel={() => setShowEditDialog(false)}
-            formMode="edit"
-          />
-        </DialogContent>
-      </Dialog>
+      <SfdSuspendDialog
+        open={showSuspendDialog}
+        onOpenChange={setShowSuspendDialog}
+        selectedSfd={selectedSfd}
+        suspendSfdMutation={suspendSfdMutation}
+      />
+      
+      <SfdReactivateDialog
+        open={showReactivateDialog}
+        onOpenChange={setShowReactivateDialog}
+        selectedSfd={selectedSfd}
+        reactivateSfdMutation={reactivateSfdMutation}
+      />
+      
+      <SfdActivateDialog
+        open={showActivateDialog}
+        onOpenChange={setShowActivateDialog}
+        selectedSfd={selectedSfd}
+        activateSfdMutation={activateSfdMutation}
+      />
+      
+      <SfdAddDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+      />
+      
+      <SfdEditDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onSubmit={handleEditSfd}
+        isLoading={editSfdMutation.isPending}
+        sfd={selectedSfd}
+      />
     </>
   );
 }

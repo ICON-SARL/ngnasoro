@@ -12,17 +12,45 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Building, CreditCard, Users, FileText, LogOut, Settings, Landmark } from 'lucide-react';
-import { useAuth, getUserDisplayName } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import LogoutButton from '@/components/LogoutButton';
 
 export const AgencyHeader = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Get user name from metadata or email
-  const userName = getUserDisplayName(user);
+  const handleSignOut = async () => {
+    try {
+      // Notification de début de déconnexion
+      toast({
+        title: "Déconnexion en cours",
+        description: "Veuillez patienter..."
+      });
+      
+      // Call signOut method
+      const { error } = await signOut();
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Déconnexion réussie",
+        description: "Vous avez été déconnecté avec succès"
+      });
+      
+      // Force a full page reload
+      window.location.href = '/auth';
+    } catch (error: any) {
+      console.error('Erreur lors de la déconnexion:', error);
+      toast({
+        title: "Erreur de déconnexion",
+        description: error.message || "Une erreur s'est produite lors de la déconnexion",
+        variant: "destructive"
+      });
+    }
+  };
   
   return (
     <header className="bg-white border-b border-gray-200">
@@ -103,9 +131,9 @@ export const AgencyHeader = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder-avatar.jpg" alt={userName} />
+                    <AvatarImage src="/placeholder-avatar.jpg" alt={user?.full_name || 'User'} />
                     <AvatarFallback className="bg-[#0D6A51] text-white">
-                      {userName.charAt(0).toUpperCase()}
+                      {user?.full_name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -113,7 +141,7 @@ export const AgencyHeader = () => {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{userName}</p>
+                    <p className="text-sm font-medium leading-none">{user?.full_name || 'SFD User'}</p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user?.email || 'sfd@example.com'}
                     </p>
@@ -145,14 +173,9 @@ export const AgencyHeader = () => {
                   <span>Paramètres</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <LogoutButton 
-                    variant="ghost" 
-                    size="sm" 
-                    className="p-0 h-auto flex items-center w-full justify-start text-red-500 hover:bg-transparent" 
-                    iconOnly={false} 
-                    text="Se déconnecter"
-                  />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Se déconnecter</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

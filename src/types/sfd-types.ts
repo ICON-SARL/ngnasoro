@@ -1,3 +1,4 @@
+
 export interface Sfd {
   id: string;
   name: string;
@@ -9,29 +10,6 @@ export interface Sfd {
   phone?: string;
   legal_document_url?: string | null;
   description?: string;
-  created_at: string;
+  created_at: string; // Changed from optional to required to match admin type
   updated_at?: string;
-}
-
-export interface SfdSettings {
-  loan_settings?: {
-    max_loan_amount?: number;
-    min_loan_amount?: number;
-    default_interest_rate?: number;
-    late_payment_fee?: number;
-  };
-  security_settings?: {
-    password_expiry_days?: number;
-    session_timeout_minutes?: number;
-    ip_whitelist?: string[];
-  };
-  transaction_settings?: {
-    daily_withdrawal_limit?: number;
-    requires_2fa?: boolean;
-    notification_enabled?: boolean;
-  };
-}
-
-export interface ExtendedSfd extends Sfd {
-  settings?: SfdSettings;
 }

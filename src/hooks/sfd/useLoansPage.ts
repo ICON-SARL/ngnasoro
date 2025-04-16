@@ -9,31 +9,20 @@ export function useLoansPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, activeSfdId } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const fetchLoans = async () => {
     setIsLoading(true);
     try {
-      // Get SFD ID from different possible sources
-      const sfdId = activeSfdId || 
-                    user?.user_metadata?.sfd_id || 
-                    user?.app_metadata?.sfd_id;
+      // Use the updated way to access sfd_id
+      const sfdId = user?.sfd_id || user?.app_metadata?.sfd_id;
 
       if (!sfdId) {
         setError('SFD ID is missing from user data.');
-        console.error('Cannot fetch loans: Missing SFD ID');
-        toast({
-          title: "Erreur",
-          description: "Impossible de déterminer votre SFD",
-          variant: "destructive",
-        });
-        setIsLoading(false);
         return;
       }
 
-      console.log('Fetching loans for SFD ID:', sfdId);
-      
       const { data, error } = await supabase
         .from('sfd_loans')
         .select('*, sfd_clients(full_name, email)')
@@ -64,10 +53,8 @@ export function useLoansPage() {
       }));
 
       setLoans(formattedLoans);
-      console.log(`Loaded ${formattedLoans.length} loans`);
     } catch (error: any) {
       setError(error.message);
-      console.error('Error fetching loans:', error);
       toast({
         title: "Erreur",
         description: "Impossible de récupérer les prêts de la SFD",
@@ -82,7 +69,7 @@ export function useLoansPage() {
     if (user) {
       fetchLoans();
     }
-  }, [user, activeSfdId]);
+  }, [user]);
 
   return {
     loans,

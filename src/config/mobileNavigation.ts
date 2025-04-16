@@ -1,92 +1,140 @@
-import { MobileNavItem, MobileMenuSection, MobileMenuItem } from '@/types/navigation';
 
+import { MobileMenuSection, MobileNavItem } from '@/types/navigation';
+
+// Navigation principale (footer)
 export const mobileNavItems: MobileNavItem[] = [
   {
     id: 'home',
     label: 'Accueil',
-    icon: 'Home',
+    icon: 'home',
     route: '/mobile-flow/main'
   },
   {
     id: 'loans',
     label: 'Prêts',
-    icon: 'CreditCard',
-    route: '/mobile-flow/loans'
+    icon: 'credit-card',
+    route: '/mobile-flow/loan-application'
   },
   {
-    id: 'my-loans',
+    id: 'loan-activity',
     label: 'Mes prêts',
-    icon: 'FileText',
-    route: '/mobile-flow/my-loans'
+    icon: 'file-text',
+    route: '/mobile-flow/loan-activity'
   },
   {
     id: 'funds',
     label: 'Mes fonds',
-    icon: 'Wallet',
-    route: '/mobile-flow/funds'
+    icon: 'piggy-bank',
+    route: '/mobile-flow/funds-management'
   },
   {
     id: 'profile',
     label: 'Profil',
-    icon: 'User',
+    icon: 'user',
     route: '/mobile-flow/profile'
   }
 ];
 
+// Menu principal avec sections
 export const mobileMenuSections: MobileMenuSection[] = [
   {
-    id: 'main',
-    title: 'Menu principal',
+    id: 'banking',
+    title: 'Opérations bancaires',
     color: '#0D6A51',
     items: [
       {
-        id: 'home',
-        label: 'Accueil',
-        icon: 'Home',
-        route: '/mobile-flow/main'
+        id: 'secure-payment',
+        label: 'Paiement sécurisé',
+        icon: 'shield-check',
+        route: '/mobile-flow/secure-payment',
+        color: '#0D6A51'
       },
       {
-        id: 'loans',
-        label: 'Prêts',
-        icon: 'CreditCard',
-        route: '/mobile-flow/loans'
+        id: 'scheduled-transfers',
+        label: 'Transferts programmés',
+        icon: 'calendar-clock',
+        route: '/mobile-flow/schedule-transfer',
+        color: '#0D6A51'
       },
       {
-        id: 'my-loans',
-        label: 'Mes prêts',
-        icon: 'FileText',
-        route: '/mobile-flow/my-loans'
+        id: 'multi-sfd',
+        label: 'Gestion Multi-SFD',
+        icon: 'building',
+        route: '/mobile-flow/multi-sfd',
+        color: '#0D6A51',
+        coming: true
       },
       {
-        id: 'funds',
-        label: 'Mes fonds',
-        icon: 'Wallet',
-        route: '/mobile-flow/funds'
+        id: 'advanced-security',
+        label: 'Sécurité avancée',
+        icon: 'shield-check',
+        route: '/mobile-flow/secure-layer',
+        color: '#0D6A51',
+        coming: true
       }
     ]
   },
   {
-    id: 'account',
-    title: 'Mon compte',
-    color: '#4A5568',
+    id: 'loans',
+    title: 'Prêts et financements',
+    color: '#FFAB2E',
     items: [
       {
-        id: 'profile',
-        label: 'Profil',
-        icon: 'User',
-        route: '/mobile-flow/profile'
+        id: 'loan-application',
+        label: 'Demander un prêt',
+        icon: 'hand-coins',
+        route: '/mobile-flow/loan-application',
+        color: '#FFAB2E'
       },
       {
-        id: 'settings',
-        label: 'Paramètres',
-        icon: 'Settings',
-        route: '/mobile-flow/settings'
+        id: 'loan-activity',
+        label: 'Mes prêts',
+        icon: 'file-text',
+        route: '/mobile-flow/loan-activity',
+        color: '#FFAB2E'
       },
       {
-        id: 'help',
-        label: 'Aide',
-        icon: 'HelpCircle',
-        route: '/mobile-flow/help'
+        id: 'funds',
+        label: 'Mes fonds',
+        icon: 'wallet',
+        route: '/mobile-flow/funds-management',
+        color: '#FFAB2E'
+      },
+      {
+        id: 'late-payment-alerts',
+        label: 'Alertes retards',
+        icon: 'bell',
+        route: '/mobile-flow/late-payments',
+        color: '#FFAB2E',
+        coming: true
+      }
+    ]
+  },
+  {
+    id: 'support',
+    title: 'Support & Aide',
+    color: '#6E59A5',
+    items: [
+      {
+        id: 'contact-advisor',
+        label: 'Contacter un conseiller',
+        icon: 'message-square',
+        route: '/mobile-flow/contact-advisor',
+        color: '#6E59A5'
+      },
+      {
+        id: 'faq',
+        label: 'FAQ et assistance',
+        icon: 'help-circle',
+        route: '/mobile-flow/faq',
+        color: '#6E59A5'
+      },
+      {
+        id: 'search',
+        label: 'Rechercher',
+        icon: 'search',
+        route: '/mobile-flow/search',
+        color: '#6E59A5'
       }
     ]
   }

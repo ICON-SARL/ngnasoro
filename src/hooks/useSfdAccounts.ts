@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { sfdAccountService } from '@/services/sfdAccountService';
@@ -6,7 +5,6 @@ import { SfdAccount as DbSfdAccount, CreateTransferParams, SfdAccountTransfer } 
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { SfdClientAccount } from '@/hooks/sfd/types';
-import { useSfdList } from '@/hooks/sfd/useSfdList';
 
 export interface SfdLoanPaymentParams {
   loanId: string;
@@ -21,7 +19,7 @@ export function useSfdAccounts(sfdId?: string) {
   const queryClient = useQueryClient();
   const effectiveSfdId = sfdId || activeSfdId;
 
-  // Get all accounts for the SFD
+  // Get all accounts for the SFD - make sure effectiveSfdId is not empty
   const {
     data: accounts = [],
     isLoading,
@@ -29,20 +27,34 @@ export function useSfdAccounts(sfdId?: string) {
     refetch: refetchAccounts
   } = useQuery({
     queryKey: ['sfd-accounts', effectiveSfdId],
-    queryFn: () => sfdAccountService.getSfdAccounts(effectiveSfdId || ''),
-    enabled: !!effectiveSfdId,
+    queryFn: () => {
+      // Check if we have a valid SFD ID before making the query
+      if (!effectiveSfdId) {
+        console.warn('No active SFD ID available, skipping accounts query');
+        return Promise.resolve([]);
+      }
+      return sfdAccountService.getSfdAccounts(effectiveSfdId);
+    },
+    enabled: !!user && !!effectiveSfdId && effectiveSfdId !== '', // Only run if we have both user and valid SFD ID
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Get transfer history
+  // Get transfer history - make sure effectiveSfdId is not empty
   const {
     data: transferHistory = [],
     isLoading: isLoadingHistory,
     refetch: refetchHistory
   } = useQuery({
     queryKey: ['sfd-transfers', effectiveSfdId],
-    queryFn: () => sfdAccountService.getSfdTransferHistory(effectiveSfdId || ''),
-    enabled: !!effectiveSfdId,
+    queryFn: () => {
+      // Check if we have a valid SFD ID before making the query
+      if (!effectiveSfdId) {
+        console.warn('No active SFD ID available, skipping transfers query');
+        return Promise.resolve([]);
+      }
+      return sfdAccountService.getSfdTransferHistory(effectiveSfdId);
+    },
+    enabled: !!user && !!effectiveSfdId && effectiveSfdId !== '', // Only run if we have both user and valid SFD ID
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -102,13 +114,12 @@ export function useSfdAccounts(sfdId?: string) {
   const repaymentAccount = accounts.find(account => account.account_type === 'remboursement');
   const savingsAccount = accounts.find(account => account.account_type === 'epargne');
 
-  // For compatibility with components expecting SfdClientAccount type
+  // Make sure all required fields are present when transforming accounts
   const transformAccounts = (accounts: DbSfdAccount[]): SfdClientAccount[] => {
     return accounts.map(acc => ({
       id: acc.id,
       name: acc.description || `Compte ${acc.account_type}`,
       logoUrl: null,
-      logo_url: null, // Add both properties for backward compatibility
       code: '',
       region: '',
       balance: acc.balance,
@@ -116,47 +127,29 @@ export function useSfdAccounts(sfdId?: string) {
       isDefault: false,
       isVerified: true,
       status: acc.status,
-      sfd_id: acc.sfd_id,  
+      sfd_id: acc.sfd_id,
       account_type: acc.account_type,
-      description: acc.description,
+      description: acc.description, // Add description to fix the type error
       created_at: acc.created_at,
-      updated_at: acc.updated_at,
-      loans: [] // Add empty loans array for compatibility
+      updated_at: acc.updated_at
     }));
   };
 
   // Get transformed accounts as client accounts
   const sfdAccounts = transformAccounts(accounts);
 
-  // Get accounts from useSfdList and enhance them with additional properties
-  const { sfdAccounts: listAccounts, isLoading: isListLoading } = useSfdList(user);
-  
-  // Enhance listAccounts with additional properties needed by components
-  const enhancedSfdAccounts = listAccounts.map(acc => ({
-    ...acc,
-    logoUrl: acc.logo_url,
-    logo_url: acc.logo_url,
-    balance: 0,
-    currency: 'FCFA',
-    sfd_id: acc.id,
-    account_type: '',
-    description: acc.name,
-    loans: [],
-  }));
-
   // Compute the active SFD account for UI components that expect it
-  const activeSfdAccount = accounts.length > 0 ? {
-    id: effectiveSfdId || accounts[0].sfd_id,
+  const activeSfdAccount = accounts.length > 0 && effectiveSfdId ? {
+    id: effectiveSfdId,
     name: 'SFD Account',
     logoUrl: null,
-    logo_url: null,
     balance: accounts.reduce((sum, acc) => sum + acc.balance, 0),
     currency: accounts[0]?.currency || 'FCFA',
     isDefault: true,
     isVerified: true,
     loans: [],
     status: 'active',
-    sfd_id: effectiveSfdId || accounts[0].sfd_id,
+    sfd_id: effectiveSfdId,
     account_type: '',
     description: null,
     created_at: '',
@@ -166,8 +159,8 @@ export function useSfdAccounts(sfdId?: string) {
   // Return both the original accounts and transformed accounts for compatibility
   return {
     accounts,
-    sfdAccounts: enhancedSfdAccounts.length > 0 ? enhancedSfdAccounts : sfdAccounts,
-    isLoading: isLoading || isListLoading,
+    sfdAccounts,
+    isLoading,
     error,
     transferHistory,
     isLoadingHistory,

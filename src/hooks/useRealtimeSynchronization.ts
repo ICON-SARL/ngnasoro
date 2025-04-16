@@ -1,93 +1,142 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { adminCommunicationApi } from '@/utils/api/modules/adminCommunicationApi';
+import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from './use-toast';
 
 export function useRealtimeSynchronization() {
   const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
-  const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
-
+  const { user, activeSfdId } = useAuth();
+  const syncInProgressRef = useRef(false);
+  
+  // Reset retry count when SFD changes
   useEffect(() => {
-    // Set up realtime subscription
-    const channel = supabase.channel('sync_status')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public' },
-        (payload) => {
-          console.log('Realtime update received:', payload);
-          setLastSynced(new Date().toISOString());
-        }
-      )
-      .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
-      });
+    setRetryCount(0);
+    setSyncError(null);
+  }, [activeSfdId]);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const synchronizeWithSfd = async () => {
-    console.log('Starting SFD synchronization...');
+  const synchronizeWithSfd = useCallback(async () => {
+    if (!user) {
+      console.log("Cannot synchronize: No authenticated user");
+      setSyncError("Vous devez être connecté pour synchroniser vos comptes");
+      return false;
+    }
+    
+    // Prevent concurrent synchronization calls
+    if (syncInProgressRef.current) {
+      console.log("Synchronization already in progress, skipping");
+      return false;
+    }
+    
+    syncInProgressRef.current = true;
     setIsSyncing(true);
     setSyncError(null);
-
+    
     try {
-      const startTime = performance.now();
+      console.log(`Synchronizing accounts for user ${user.id}${activeSfdId ? ` with active SFD ${activeSfdId}` : ''}`);
       
-      // Test the connection first
-      const connectionStatus = await testConnection();
-      if (!connectionStatus.ok) {
-        throw new Error('La connexion au serveur a échoué');
+      // Direct call to the supabase functions API for more control
+      const { data: functionResponse, error: functionError } = await supabase.functions.invoke('synchronize-sfd-accounts', {
+        body: {
+          userId: user.id,
+          sfdId: activeSfdId || null, // Send null instead of empty string
+          forceSync: true
+        }
+      });
+      
+      if (functionError) {
+        console.error("Error calling synchronize-sfd-accounts function:", functionError);
+        throw new Error(`Erreur de communication avec le serveur: ${functionError.message}`);
       }
-
-      // Simulate sync process (replace with actual sync logic)
-      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const endTime = performance.now();
-      console.log(`Synchronization completed in ${Math.round(endTime - startTime)}ms`);
+      if (!functionResponse.success) {
+        throw new Error(functionResponse.message || "Échec de la synchronisation");
+      }
       
-      setLastSynced(new Date().toISOString());
-      setRetryCount(0);
+      setLastSynced(new Date());
+      setRetryCount(0); // Reset retry count on success
+      
+      if (functionResponse.updates && functionResponse.updates.length > 0) {
+        // Show success toast only if there were actual updates
+        toast({
+          title: "Synchronisation réussie",
+          description: "Vos comptes SFD ont été mis à jour",
+        });
+      }
+      
+      syncInProgressRef.current = false;
+      return true;
     } catch (error: any) {
-      console.error('Sync error:', error);
-      setSyncError(error.message || 'Erreur de synchronisation');
+      console.error("Error synchronizing with SFD:", error);
+      
+      // Set the error message
+      setSyncError(error.message || "Impossible de synchroniser vos comptes pour le moment");
+      
+      // Increment retry count for exponential backoff
       setRetryCount(prev => prev + 1);
       
-      toast({
-        title: "Erreur de synchronisation",
-        description: error.message || "Une erreur est survenue lors de la synchronisation",
-        variant: "destructive",
-      });
+      // Report error to admin backend if we have an activeSfdId
+      if (activeSfdId) {
+        try {
+          await adminCommunicationApi.reportSyncError(
+            user.id, 
+            activeSfdId, 
+            error.message || "Unknown synchronization error", 
+            error.stack
+          );
+        } catch (reportError) {
+          // Silent failure for error reporting
+          console.error("Failed to report error:", reportError);
+        }
+      }
+      
+      // Show a more user-friendly error message based on retry count
+      if (retryCount > 2) {
+        toast({
+          title: "Problème de connexion persistant",
+          description: "Nous rencontrons des difficultés pour synchroniser vos comptes. Veuillez réessayer plus tard.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erreur de synchronisation",
+          description: "Impossible de synchroniser vos comptes pour le moment. Veuillez réessayer.",
+          variant: "destructive",
+        });
+      }
+      
+      syncInProgressRef.current = false;
+      return false;
     } finally {
       setIsSyncing(false);
     }
-  };
+  }, [user, activeSfdId, toast, retryCount]);
 
-  const testConnection = async () => {
-    console.log('Testing connection...');
+  // Test connection function
+  const testConnection = useCallback(async () => {
+    if (!user || !activeSfdId) return false;
+    
     try {
-      const { data, error } = await supabase.from('sfds').select('id').limit(1);
-      
-      if (error) throw error;
-      
-      console.log('Connection test successful');
-      return { ok: true };
+      const result = await adminCommunicationApi.pingAdminServer();
+      return result && result.success;
     } catch (error) {
-      console.error('Connection test failed:', error);
-      return { ok: false, error };
+      console.error("Connection test failed:", error);
+      return false;
     }
-  };
+  }, [user, activeSfdId]);
 
   return {
     synchronizeWithSfd,
+    testConnection,
     isSyncing,
     lastSynced,
     syncError,
-    retryCount,
-    testConnection
+    retryCount
   };
 }

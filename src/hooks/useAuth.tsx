@@ -1,17 +1,10 @@
 
-import { useAuth as useAuthFromContext } from './auth/AuthContext';
+import { useAuth as useAuthOriginal } from './auth/AuthContext';
 import { User, AuthContextProps, UserRole } from './auth/types';
 
-export function useAuth() {
-  const auth = useAuthFromContext();
-  
-  // We're using the existing methods from the auth context 
-  // instead of recomputing them, since they already have the same logic.
-  return {
-    ...auth
-  };
-}
+// Re-export the hook with the same name
+export const useAuth = useAuthOriginal;
 
-// Re-exporter les types
+// Re-export types to maintain backward compatibility
 export type { User, AuthContextProps };
 export { UserRole };

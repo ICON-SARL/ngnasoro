@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,21 +8,11 @@ import { StatsOverview } from './dashboard/StatsOverview';
 import { SfdAccountsManager } from './sfd-accounts/SfdAccountsManager';
 import { SfdStatusAlert } from './dashboard/SfdStatusAlert';
 import { useSfdStatusCheck } from '@/hooks/useSfdStatusCheck';
-import { SfdInfoCard } from '../sfd/SfdInfoCard';
-import { useCurrentSfd } from '@/hooks/useCurrentSfd';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useNavigate } from 'react-router-dom';
 
 const SfdAdminDashboard: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>('overview');
   const { data: sfdStatus } = useSfdStatusCheck();
-  const { data: currentSfd, isLoading: isLoadingSfd } = useCurrentSfd();
-
-  const handleManageSfd = () => {
-    navigate('/agency-management');
-  };
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -32,18 +23,13 @@ const SfdAdminDashboard: React.FC = () => {
         </p>
       </div>
       
-      {isLoadingSfd ? (
-        <Skeleton className="h-[200px] w-full" />
-      ) : currentSfd ? (
-        <SfdInfoCard sfd={currentSfd} onManage={handleManageSfd} />
-      ) : null}
-
+      {/* Afficher l'alerte si aucune SFD active n'est détectée */}
       {sfdStatus && !sfdStatus.hasActiveSfds && (
         <SfdStatusAlert />
       )}
       
       <Tabs 
-        defaultValue={activeTab} 
+        defaultValue="overview" 
         value={activeTab} 
         onValueChange={setActiveTab} 
         className="space-y-4"

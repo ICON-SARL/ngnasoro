@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -155,11 +154,7 @@ const Header = () => {
       {/* Mobile Navigation in Header for Tablet */}
       {isMobileFlowPage && (
         <div className="hidden sm:block md:hidden">
-          <MobileNavigation 
-            isHeader={true} 
-            className="mt-2" 
-            onAction={handleAction} 
-          />
+          <MobileNavigation isHeader={true} className="mt-2" onAction={handleAction} />
         </div>
       )}
 

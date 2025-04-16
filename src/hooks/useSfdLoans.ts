@@ -1,72 +1,59 @@
 
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { sfdLoanApi } from '@/utils/sfdLoanApi';
-import { Loan } from '@/types/sfdClients';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { useCachedSfdData } from '@/hooks/useCachedSfdData';
-import { supabase } from '@/integrations/supabase/client';
+import { sfdLoanApi } from '@/utils/sfdLoanApi';
 
 export function useSfdLoans() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const { data, isLoading, error, refetch } = useQuery({
+
+  const query = useQuery({
     queryKey: ['sfd-loans', user?.id],
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
-      console.log('Fetching SFD loans for user:', user.id);
 
-      try {
-        const { data: clientsData, error: clientsError } = await supabase
-          .from('sfd_clients')
-          .select('id')
-          .eq('user_id', user.id);
+      const { data: clientsData, error: clientsError } = await supabase
+        .from('sfd_clients')
+        .select('id')
+        .eq('user_id', user.id);
 
-        if (clientsError) {
-          console.error('Error fetching client data:', clientsError);
-          throw new Error('Failed to fetch client data');
-        }
-
-        if (!clientsData?.length) {
-          console.log('No client records found for user');
-          return [];
-        }
-
-        const clientIds = clientsData.map(client => client.id);
-        console.log('Found client IDs:', clientIds);
-
-        const { data: loans, error: loansError } = await supabase
-          .from('sfd_loans')
-          .select(`
-            *,
-            sfds:sfd_id (
-              name,
-              logo_url
-            )
-          `)
-          .in('client_id', clientIds)
-          .order('created_at', { ascending: false });
-
-        if (loansError) {
-          console.error('Error fetching loans:', loansError);
-          throw loansError;
-        }
-
-        console.log('Successfully fetched loans:', loans?.length || 0);
-        return loans || [];
-      } catch (err) {
-        console.error('Error in useSfdLoans query:', err);
-        throw err;
+      if (clientsError) {
+        throw new Error('Failed to fetch client data');
       }
+
+      if (!clientsData?.length) {
+        return [];
+      }
+
+      const clientIds = clientsData.map(client => client.id);
+
+      const { data: loans, error: loansError } = await supabase
+        .from('sfd_loans')
+        .select(`
+          *,
+          sfds:sfd_id (
+            name,
+            logo_url
+          )
+        `)
+        .in('client_id', clientIds)
+        .order('created_at', { ascending: false });
+
+      if (loansError) {
+        throw loansError;
+      }
+
+      return loans || [];
     },
     meta: {
       errorMessage: "Impossible de charger vos prêts"
     }
   });
 
+  // Create loan mutation
   const createLoan = useMutation({
     mutationFn: sfdLoanApi.createLoan,
     onSuccess: () => {
@@ -85,6 +72,7 @@ export function useSfdLoans() {
     }
   });
 
+  // Approve loan mutation
   const approveLoan = useMutation({
     mutationFn: (loanId: string) => sfdLoanApi.approveLoan(loanId, user?.id || ''),
     onSuccess: () => {
@@ -96,6 +84,7 @@ export function useSfdLoans() {
     }
   });
 
+  // Reject loan mutation
   const rejectLoan = useMutation({
     mutationFn: (loanId: string) => sfdLoanApi.rejectLoan(loanId, user?.id || ''),
     onSuccess: () => {
@@ -107,6 +96,7 @@ export function useSfdLoans() {
     }
   });
 
+  // Disburse loan mutation
   const disburseLoan = useMutation({
     mutationFn: (loanId: string) => sfdLoanApi.disburseLoan(loanId, user?.id || ''),
     onSuccess: () => {
@@ -118,9 +108,10 @@ export function useSfdLoans() {
     }
   });
 
+  // Record payment mutation
   const recordPayment = useMutation({
     mutationFn: ({ loanId, amount, paymentMethod }: { loanId: string, amount: number, paymentMethod: string }) => 
-      sfdLoanApi.recordLoanPayment(loanId, amount, paymentMethod),
+      sfdLoanApi.recordLoanPayment(loanId, amount, paymentMethod, user?.id || ''),
     onSuccess: () => {
       toast({
         title: "Paiement enregistré",
@@ -131,10 +122,10 @@ export function useSfdLoans() {
   });
 
   return {
-    data,
-    isLoading,
-    error,
-    refetch,
+    data: query.data,
+    loans: query.data, // Add this for backward compatibility
+    isLoading: query.isLoading,
+    error: query.error,
     createLoan,
     approveLoan,
     rejectLoan,

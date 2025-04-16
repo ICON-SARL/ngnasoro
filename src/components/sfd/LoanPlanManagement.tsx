@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
@@ -10,8 +9,22 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus, Edit, ToggleLeft, ToggleRight, Loader2, ArrowLeft } from 'lucide-react';
-import { LoanPlan } from '@/types/sfdClients';
+import { Plus, Edit, ToggleLeft, ToggleRight } from 'lucide-react';
+
+interface LoanPlan {
+  id: string;
+  name: string;
+  description: string;
+  min_amount: number;
+  max_amount: number;
+  min_duration: number;
+  max_duration: number;
+  interest_rate: number;
+  fees: number;
+  is_active: boolean;
+  requirements: string[];
+  sfd_id: string;
+}
 
 interface LoanPlanManagementProps {
   onNewPlan: () => void;
@@ -23,7 +36,6 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
   const { activeSfdId } = useAuth();
   const [loanPlans, setLoanPlans] = useState<LoanPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (activeSfdId) {
@@ -34,17 +46,12 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
   const fetchLoanPlans = async () => {
     setIsLoading(true);
     try {
-      console.log("Fetching loan plans for SFD ID:", activeSfdId);
       const { data, error } = await supabase
         .from('sfd_loan_plans')
         .select('*')
         .eq('sfd_id', activeSfdId);
 
-      if (error) {
-        console.error('Error fetching loan plans:', error);
-        throw error;
-      }
-      
+      if (error) throw error;
       setLoanPlans(data || []);
     } catch (error) {
       console.error('Error fetching loan plans:', error);
@@ -63,13 +70,9 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
       const { error } = await supabase
         .from('sfd_loan_plans')
         .update({ is_active: !plan.is_active })
-        .eq('id', plan.id)
-        .eq('sfd_id', activeSfdId);
+        .eq('id', plan.id);
 
-      if (error) {
-        console.error('Error toggling plan status:', error);
-        throw error;
-      }
+      if (error) throw error;
       
       toast({
         title: plan.is_active ? "Plan désactivé" : "Plan activé",
@@ -92,25 +95,10 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
     return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
   };
 
-  // Navigation vers le tableau de bord
-  const handleBackToDashboard = () => {
-    navigate('/agency-dashboard');
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleBackToDashboard}
-            className="flex items-center gap-1"
-          >
-            <ArrowLeft className="h-4 w-4" /> Tableau de bord
-          </Button>
-          <h2 className="text-2xl font-bold">Plans de Prêt</h2>
-        </div>
+        <h2 className="text-2xl font-bold">Plans de Prêt</h2>
         <Button onClick={onNewPlan} className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">
           <Plus className="mr-2 h-4 w-4" /> Nouveau Plan
         </Button>
@@ -119,10 +107,7 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
       <Card>
         <CardContent className="pt-6">
           {isLoading ? (
-            <div className="text-center py-6 flex items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              Chargement des plans de prêt...
-            </div>
+            <div className="text-center py-6">Chargement des plans de prêt...</div>
           ) : loanPlans.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">
               Aucun plan de prêt défini. Créez votre premier plan pour commencer.

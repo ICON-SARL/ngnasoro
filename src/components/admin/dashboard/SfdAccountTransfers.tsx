@@ -48,8 +48,7 @@ export function SfdAccountTransfers() {
     }
 
     try {
-      // Use mutate instead of mutateAsync (which isn't available in our implementation)
-      await transferFunds.mutate({
+      await transferFunds.mutateAsync({
         sfdId: accounts[0]?.sfd_id || '', // Assuming all accounts belong to same SFD
         fromAccountId,
         toAccountId,
@@ -84,7 +83,7 @@ export function SfdAccountTransfers() {
               <SelectContent>
                 {accounts.map(account => (
                   <SelectItem key={account.id} value={account.id}>
-                    {account.description || `Compte ${account.account_type}`} ({formatCurrency(account.balance)})
+                    {account.description || `Compte ${account.account_type}`} ({formatCurrency(account.balance, account.currency)})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -99,7 +98,7 @@ export function SfdAccountTransfers() {
               <SelectContent>
                 {accounts.map(account => (
                   <SelectItem key={account.id} value={account.id}>
-                    {account.description || `Compte ${account.account_type}`} ({formatCurrency(account.balance)})
+                    {account.description || `Compte ${account.account_type}`} ({formatCurrency(account.balance, account.currency)})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -131,10 +130,10 @@ export function SfdAccountTransfers() {
 
         <Button 
           onClick={handleTransfer} 
-          disabled={!fromAccountId || !toAccountId || !amount || false} // Remove isPending check since it's not available
+          disabled={!fromAccountId || !toAccountId || !amount || transferFunds.isPending}
           className="w-full"
         >
-          {false ? ( // Remove isPending check since it's not available
+          {transferFunds.isPending ? (
             <>
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
               Transfert en cours...

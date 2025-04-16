@@ -37,10 +37,12 @@ export function useSfdManagement() {
       status: formData.status,
       description: formData.description,
       contact_email: formData.contact_email,
+      email: formData.email,
       phone: formData.phone,
+      address: formData.address,
       logo_url: formData.logo_url,
       legal_document_url: formData.legal_document_url,
-      // Optional fields that require special handling
+      // Only include subsidy_balance during creation, not for updates
       ...(formData.subsidy_balance !== undefined && { subsidy_balance: formData.subsidy_balance })
     });
     setShowAddDialog(false);
@@ -57,9 +59,12 @@ export function useSfdManagement() {
           status: formData.status,
           description: formData.description,
           contact_email: formData.contact_email,
+          email: formData.email,
           phone: formData.phone,
+          address: formData.address,
           logo_url: formData.logo_url,
           legal_document_url: formData.legal_document_url
+          // Note: We don't include subsidy_balance in edit operations
         }
       });
       setShowEditDialog(false);

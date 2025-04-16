@@ -3,42 +3,68 @@ import { supabase } from '@/integrations/supabase/client';
 import { LoanStatus, LoanDetails } from '@/types/loans';
 
 /**
- * Fetches comprehensive details for a loan
+ * Fetches loan details from the database
  */
-export const fetchLoanDetails = async (loanId: string): Promise<{ 
-  loanDetails?: LoanDetails,
-  loanStatus?: LoanStatus,
-  error?: string
-}> => {
+export async function fetchLoanDetails(loanId: string | undefined): Promise<{
+  loanDetails: LoanDetails | null;
+  loanStatus: LoanStatus | null;
+  error: string | null;
+}> {
   try {
-    // Fetch the basic loan info
-    const { data: loan, error: loanError } = await supabase
+    if (!loanId) {
+      return { loanDetails: null, loanStatus: null, error: null };
+    }
+    
+    const { data, error } = await supabase
       .from('sfd_loans')
       .select(`
-        *,
-        client:client_id (
-          id,
-          full_name,
-          phone,
-          email
-        ),
-        sfd:sfd_id (
-          id,
-          name,
-          logo_url
-        )
+        id, 
+        amount, 
+        interest_rate, 
+        duration_months, 
+        monthly_payment,
+        purpose,
+        disbursed_at,
+        status,
+        next_payment_date,
+        last_payment_date,
+        sfd_id,
+        client_id
       `)
       .eq('id', loanId)
       .single();
-
-    if (loanError) throw loanError;
+      
+    if (error) throw error;
     
-    if (!loan) {
-      return { error: 'Loan not found' };
+    if (!data) {
+      return { loanDetails: null, loanStatus: null, error: 'Loan not found' };
     }
     
-    // Fetch payment history
-    const { data: payments, error: paymentsError } = await supabase
+    // Process loan details
+    const loanDetails: LoanDetails = {
+      loanType: data.purpose.includes('Micro') ? 'Microcrédit' : 'Prêt standard',
+      loanPurpose: data.purpose,
+      totalAmount: data.amount,
+      disbursalDate: new Date(data.disbursed_at || Date.now()).toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      endDate: new Date(new Date(data.disbursed_at || Date.now()).setMonth(
+        new Date(data.disbursed_at || Date.now()).getMonth() + data.duration_months
+      )).toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      interestRate: data.interest_rate,
+      status: data.status,
+      disbursed: !!data.disbursed_at,
+      withdrawn: data.status === 'withdrawn'
+    };
+    
+    // Get payment history
+    const { data: paymentsData, error: paymentsError } = await supabase
       .from('loan_payments')
       .select('*')
       .eq('loan_id', loanId)
@@ -46,74 +72,55 @@ export const fetchLoanDetails = async (loanId: string): Promise<{
       
     if (paymentsError) throw paymentsError;
     
-    // Calculate total paid amount
-    const paidAmount = payments ? payments.reduce((sum, payment) => sum + payment.amount, 0) : 0;
+    // Calculate loan status values
+    const paidAmount = paymentsData?.reduce((total, payment) => total + payment.amount, 0) || 0;
+    const totalAmount = data.amount + (data.amount * data.interest_rate / 100);
+    const remainingAmount = totalAmount - paidAmount;
+    const progress = Math.min(100, Math.round((paidAmount / totalAmount) * 100));
     
-    // Calculate loan status data
-    const loanStatus: LoanStatus = {
-      totalAmount: loan.amount,
-      paidAmount: paidAmount,
-      remainingAmount: loan.amount - paidAmount,
-      nextPaymentDue: loan.next_payment_date || '',
-      paymentHistory: (payments || []).map(payment => ({
-        id: Number(payment.id), // Conversion de string à number pour résoudre l'erreur
-        date: payment.payment_date,
-        amount: payment.amount,
-        status: payment.status
-      })),
-      // Utiliser un type valide pour status
-      status: loan.status as "pending" | "approved" | "disbursed" | "completed" | "rejected",
-      progress: Math.min(100, Math.round((paidAmount / loan.amount) * 100)),
-      lateFees: 0, // This would be calculated based on business rules
-      disbursed: !!loan.disbursed_at,
-      withdrawn: false
-    };
+    const now = new Date();
+    const nextPaymentDate = data.next_payment_date ? new Date(data.next_payment_date) : null;
+    const lateFees = (nextPaymentDate && nextPaymentDate < now) ? data.monthly_payment * 0.05 : 0;
     
-    // Format loan details
-    const loanDetails: LoanDetails = {
-      loanType: 'Standard', // This could be fetched from a loan_types table
-      loanPurpose: loan.purpose,
-      totalAmount: loan.amount,
-      disbursalDate: loan.disbursed_at || '',
-      endDate: loan.disbursed_at ? new Date(new Date(loan.disbursed_at).setMonth(new Date(loan.disbursed_at).getMonth() + loan.duration_months)).toISOString() : '', // Calculer la date de fin basée sur la date de décaissement et la durée
-      interestRate: loan.interest_rate,
-      status: loan.status,
-      disbursed: !!loan.disbursed_at,
-      withdrawn: false
-    };
-    
-    return {
-      loanDetails,
-      loanStatus
-    };
-  } catch (error: any) {
-    console.error('Error fetching loan details:', error);
-    return { error: error.message || 'Failed to fetch loan details' };
-  }
-};
-
-/**
- * Fetch loan activities
- */
-export const fetchLoanActivities = async (loanId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('loan_activities')
-      .select(`
-        *,
-        user:performed_by (
-          id,
-          email,
-          app_metadata->>full_name
-        )
-      `)
-      .eq('loan_id', loanId)
-      .order('performed_at', { ascending: false });
+    // Format payment history
+    const paymentHistory = paymentsData?.map((payment, index) => {
+      let status: 'paid' | 'pending' | 'late';
+      if (payment.status === 'completed') status = 'paid';
+      else if (payment.status === 'late') status = 'late';
+      else status = 'pending';
       
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching loan activities:', error);
-    throw new Error('Failed to fetch loan activities');
+      return {
+        id: index + 1,
+        date: new Date(payment.payment_date).toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
+        }),
+        amount: payment.amount,
+        status
+      };
+    }) || [];
+    
+    // Create loan status object
+    const loanStatus: LoanStatus = {
+      nextPaymentDue: nextPaymentDate ? nextPaymentDate.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      }) : 'Non défini',
+      paidAmount,
+      totalAmount,
+      remainingAmount,
+      progress,
+      lateFees,
+      paymentHistory,
+      disbursed: !!data.disbursed_at,
+      withdrawn: data.status === 'withdrawn'
+    };
+    
+    return { loanDetails, loanStatus, error: null };
+  } catch (err: any) {
+    console.error('Error fetching loan details:', err);
+    return { loanDetails: null, loanStatus: null, error: err.message };
   }
-};
+}

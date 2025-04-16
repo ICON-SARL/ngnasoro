@@ -4,7 +4,8 @@ import MobileNavigation from '@/components/mobile/MobileNavigation';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CreditCard, Building, BadgePercent } from 'lucide-react';
+import { CreditCard, Plus, Building, BadgePercent } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const LoanTypeCard: React.FC<{ 
   title: string;
@@ -27,6 +28,7 @@ const LoanTypeCard: React.FC<{
 
 const MobileLoansPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">

@@ -11,7 +11,7 @@ interface PrivateLayoutProps {
 }
 
 const PrivateLayout: React.FC<PrivateLayoutProps> = ({ children }) => {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, refreshSession } = useAuth();
   
   useEffect(() => {
     // Log the authentication state for debugging
@@ -28,10 +28,10 @@ const PrivateLayout: React.FC<PrivateLayoutProps> = ({ children }) => {
         <Button 
           variant="outline"
           className="mt-4"
-          onClick={() => window.location.reload()}
+          onClick={() => refreshSession()}
         >
           <RefreshCw className="mr-2 h-4 w-4" />
-          Rafraîchir la page
+          Rafraîchir la session
         </Button>
       </div>
     );

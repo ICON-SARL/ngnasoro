@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -24,23 +25,27 @@ const SfdSetupPage = () => {
       if (user) {
         setIsLoading(true);
         try {
+          // Check for existing SFDs
           const { data: sfds } = await supabase
             .from('user_sfds')
             .select('id')
             .eq('user_id', user.id);
             
+          // Check for pending requests
           const { data: requests } = await supabase
             .from('sfd_clients')
             .select('id')
             .eq('user_id', user.id)
             .eq('status', 'pending');
             
+          // Ensure we're setting boolean values
           const hasExistingSfds = Boolean(sfds && sfds.length > 0) || Boolean(activeSfdId);
           const hasPendingRequests = Boolean(requests && requests.length > 0);
           
           setHasSfds(hasExistingSfds);
           setHasRequests(hasPendingRequests);
           
+          // Set active tab based on user's state
           if (hasExistingSfds) {
             setActiveTab('manage');
           } else if (hasPendingRequests) {
