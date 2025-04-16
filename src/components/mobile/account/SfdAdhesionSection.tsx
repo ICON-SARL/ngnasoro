@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader } from '@/components/ui/loader';
 import { AvailableSfd, SfdClientRequest } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 import ClientAdhesionDialog from '@/components/mobile/account/ClientAdhesionDialog';
+import EmptySfdState from '@/components/mobile/EmptySfdState';
 
 const SfdAdhesionSection: React.FC = () => {
   const navigate = useNavigate();
