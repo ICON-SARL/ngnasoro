@@ -15,6 +15,7 @@ import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage'
 import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
 import MobileLoanDetailsPage from '@/pages/mobile/MobileLoanDetailsPage';
 import SfdConnectionPage from '@/pages/mobile/SfdConnectionPage';
+import LoanProcessFlowPage from '@/pages/mobile/LoanProcessFlowPage';
 
 interface MobileFlowRoutesProps {
   onAction: (action: string, data?: any) => void;
@@ -98,6 +99,10 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       
       <Route path="loan-details/:id" element={
         <MobileLoanDetailsPage />
+      } />
+      
+      <Route path="loan-process-flow" element={
+        <LoanProcessFlowPage />
       } />
       
       {/* Default route - redirect to main dashboard */}
