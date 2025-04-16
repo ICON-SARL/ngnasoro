@@ -4,6 +4,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
 import { useToast } from '@/hooks/use-toast';
+import MobileLayout from '@/components/mobile/layout/MobileLayout';
 
 const MobileFlowPage = () => {
   const { user, loading } = useAuth();
@@ -24,10 +25,9 @@ const MobileFlowPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <MobileLayout>
       <Outlet />
-      <MobileNavigation />
-    </div>
+    </MobileLayout>
   );
 };
 

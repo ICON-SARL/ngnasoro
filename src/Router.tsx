@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
@@ -16,13 +17,13 @@ import MobileFlowPage from './pages/MobileFlowPage';
 import MobileWelcomePage from './pages/MobileWelcomePage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import ClientLoginPage from './pages/ClientLoginPage';
-import MobileMainPage from './pages/MobileMainPage';
-import MobileLoansPage from './pages/MobileLoansPage';
-import LoanPlansPage from './pages/LoanPlansPage';
-import MobileMyLoansPage from './pages/MobileMyLoansPage';
-import PaymentPage from './pages/PaymentPage';
-import AccountPage from './pages/AccountPage';
-import SfdAdhesionPage from './pages/SfdAdhesionPage';
+
+// Using the components that actually exist in the project
+import LoanPlansPage from './components/mobile/loan/LoanPlansPage';
+import PaymentPage from './pages/mobile/PaymentPage';
+import AccountPage from './pages/mobile/AccountPage';
+import MobileLoansPage from './pages/mobile/MobileLoansPage';
+import MobileMyLoansPage from './pages/mobile/MobileMyLoansPage';
 
 const Router = () => {
   return (
@@ -42,14 +43,14 @@ const Router = () => {
           {/* Mobile Flow Routes */}
           <Route path="/mobile-flow" element={<ProtectedRoute><MobileFlowPage /></ProtectedRoute>}>
             <Route path="welcome" element={<MobileWelcomePage />} />
-            <Route path="main" element={<MobileMainPage />} />
+            <Route path="main" element={<div>Mobile Main Page</div>} />
             <Route path="loans" element={<MobileLoansPage />} />
             <Route path="loan-plans" element={<LoanPlansPage />} />
             <Route path="my-loans" element={<MobileMyLoansPage />} />
             <Route path="loan-details/:id" element={<LoanDetailsPage />} />
             <Route path="payment" element={<PaymentPage />} />
             <Route path="account" element={<AccountPage />} />
-            <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
+            <Route path="sfd-adhesion/:sfdId" element={<div>SFD Adhesion</div>} />
             <Route path="*" element={<Navigate to="main" replace />} />
           </Route>
 
