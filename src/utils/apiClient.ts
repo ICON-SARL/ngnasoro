@@ -47,7 +47,7 @@ export const apiClient = {
   resolveTransactionDispute: transactionApi.resolveTransactionDispute,
   
   // Edge functions
-  callEdgeFunction: edgeFunctionApi.callEdgeFunction,
+  callEdgeFunction: edgeFunctionApi.callFunction,
   
   // Dashboard operations
   getDashboardData: dashboardApi.getDashboardData,

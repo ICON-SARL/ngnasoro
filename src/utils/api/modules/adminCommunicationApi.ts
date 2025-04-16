@@ -12,7 +12,7 @@ export const adminCommunicationApi = {
    * @param sfdId SFD ID
    */
   async fetchSfdAccountData(userId: string, sfdId: string) {
-    return edgeFunctionApi.callEdgeFunction('admin-api-gateway', {
+    return edgeFunctionApi.callFunction('admin-api-gateway', {
       endpoint: `/accounts/${userId}/sfd/${sfdId}`,
       method: 'GET'
     });
@@ -25,7 +25,7 @@ export const adminCommunicationApi = {
    * @param forceSync Force synchronization even if data is recent
    */
   async synchronizeAccounts(userId: string, sfdId?: string, forceSync: boolean = false) {
-    return edgeFunctionApi.callEdgeFunction('synchronize-sfd-accounts', {
+    return edgeFunctionApi.callFunction('synchronize-sfd-accounts', {
       userId,
       sfdId,
       forceSync
@@ -40,7 +40,7 @@ export const adminCommunicationApi = {
    * @param errorStack Error stack trace if available
    */
   async reportSyncError(userId: string, sfdId: string, errorMessage: string, errorStack?: string) {
-    return edgeFunctionApi.callEdgeFunction('admin-api-gateway', {
+    return edgeFunctionApi.callFunction('admin-api-gateway', {
       endpoint: '/support/sync-error',
       method: 'POST',
       data: {
@@ -50,7 +50,7 @@ export const adminCommunicationApi = {
         errorStack,
         timestamp: new Date().toISOString()
       }
-    }, { showToast: false });
+    });
   },
   
   /**
@@ -59,7 +59,7 @@ export const adminCommunicationApi = {
    * @param sfdId SFD ID
    */
   async getAccountStatus(userId: string, sfdId: string) {
-    return edgeFunctionApi.callEdgeFunction('admin-api-gateway', {
+    return edgeFunctionApi.callFunction('admin-api-gateway', {
       endpoint: `/accounts/${userId}/status`,
       method: 'GET',
       params: { sfdId }
@@ -70,12 +70,9 @@ export const adminCommunicationApi = {
    * Ping admin server to check connectivity
    */
   async pingAdminServer() {
-    return edgeFunctionApi.callEdgeFunction('admin-api-gateway', {
+    return edgeFunctionApi.callFunction('admin-api-gateway', {
       endpoint: '/ping',
       method: 'GET'
-    }, { 
-      showToast: false,
-      timeout: 5000 // Short timeout for ping
     });
   }
 };

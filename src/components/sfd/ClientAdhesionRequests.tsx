@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,18 +39,15 @@ export function ClientAdhesionRequests() {
   } = useClientAdhesions();
 
   useEffect(() => {
-    // Charger les demandes dès que le composant est monté
     refetchAdhesionRequests();
   }, [refetchAdhesionRequests]);
 
-  // Filtrer les demandes par terme de recherche
   const filteredRequests = adhesionRequests.filter(request => 
     request.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     request.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     request.phone?.includes(searchTerm)
   );
 
-  // Grouper les demandes par statut
   const pendingRequests = filteredRequests.filter(r => r.status === 'pending');
   const approvedRequests = filteredRequests.filter(r => r.status === 'approved');
   const rejectedRequests = filteredRequests.filter(r => r.status === 'rejected');
@@ -60,7 +56,6 @@ export function ClientAdhesionRequests() {
     refetchAdhesionRequests();
   };
 
-  // Fonction pour ouvrir la boîte de dialogue d'action
   const handleOpenActionDialog = (request: ClientAdhesionRequest, action: 'approve' | 'reject') => {
     setSelectedRequest(request);
     setActionType(action);
@@ -68,7 +63,6 @@ export function ClientAdhesionRequests() {
     setShowActionDialog(true);
   };
 
-  // Fonction pour fermer la boîte de dialogue d'action
   const handleCloseActionDialog = () => {
     setShowActionDialog(false);
     setSelectedRequest(null);
@@ -76,14 +70,12 @@ export function ClientAdhesionRequests() {
     setActionNotes('');
   };
 
-  // Fonction pour approuver une demande
   const handleApproveRequest = async () => {
     if (!selectedRequest || !user) return;
     
     setIsProcessing(true);
     
     try {
-      // Utiliser la fonction edge pour approuver la demande
       const { data, error } = await edgeFunctionApi.callFunction('approve-adhesion-request', {
         adhesionRequestId: selectedRequest.id,
         adminUserId: user.id,
@@ -97,7 +89,6 @@ export function ClientAdhesionRequests() {
         description: "La demande d'adhésion a été approuvée avec succès.",
       });
       
-      // Actualiser les demandes
       refetchAdhesionRequests();
       handleCloseActionDialog();
       
@@ -113,14 +104,12 @@ export function ClientAdhesionRequests() {
     }
   };
 
-  // Fonction pour rejeter une demande
   const handleRejectRequest = async () => {
     if (!selectedRequest || !user) return;
     
     setIsProcessing(true);
     
     try {
-      // Mettre à jour le statut de la demande
       const { error } = await supabase
         .from('client_adhesion_requests')
         .update({
@@ -139,7 +128,6 @@ export function ClientAdhesionRequests() {
         description: "La demande d'adhésion a été rejetée.",
       });
       
-      // Actualiser les demandes
       refetchAdhesionRequests();
       handleCloseActionDialog();
       
@@ -155,7 +143,6 @@ export function ClientAdhesionRequests() {
     }
   };
 
-  // Handler pour confirmer l'action (approuver ou rejeter)
   const handleConfirmAction = () => {
     if (actionType === 'approve') {
       handleApproveRequest();
@@ -246,7 +233,6 @@ export function ClientAdhesionRequests() {
         </TabsContent>
       </Tabs>
 
-      {/* Boîte de dialogue pour l'approbation/rejet */}
       {showActionDialog && selectedRequest && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
@@ -259,7 +245,6 @@ export function ClientAdhesionRequests() {
                 : `Êtes-vous sûr de vouloir rejeter la demande de ${selectedRequest.full_name} ?`}
             </p>
             
-            {/* Champ pour les notes */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">
                 {actionType === 'approve' ? 'Notes (optionnel)' : 'Raison du rejet'}
@@ -287,7 +272,7 @@ export function ClientAdhesionRequests() {
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader className="h-4 w-4 mr-2 animate-spin" />
                     Traitement...
                   </>
                 ) : actionType === 'approve' ? 'Approuver' : 'Rejeter'}

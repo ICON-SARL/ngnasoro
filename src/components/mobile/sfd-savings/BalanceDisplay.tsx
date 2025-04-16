@@ -24,7 +24,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
   isPending = false,
   isVerified = true
 }) => {
-  const formattedBalance = formatCurrency(balance, currency);
+  const formattedBalance = formatCurrency(balance);
   
   return (
     <div className="relative flex flex-col items-center justify-center my-4 pt-2 pb-4 px-4 bg-gray-50 rounded-xl">

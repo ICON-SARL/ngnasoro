@@ -21,6 +21,7 @@ export function useClientAdhesions() {
   const [adhesionRequests, setAdhesionRequests] = useState<ClientAdhesionRequest[]>([]);
   const [userAdhesionRequests, setUserAdhesionRequests] = useState<ClientAdhesionRequest[]>([]);
   const [isLoadingAdhesionRequests, setIsLoadingAdhesionRequests] = useState(false);
+  const [isLoadingUserAdhesionRequests, setIsLoadingUserAdhesionRequests] = useState(false);
   const [isCreatingRequest, setIsCreatingRequest] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -29,7 +30,7 @@ export function useClientAdhesions() {
   const fetchUserAdhesionRequests = useCallback(async () => {
     if (!user) return;
     
-    setIsLoadingAdhesionRequests(true);
+    setIsLoadingUserAdhesionRequests(true);
     
     try {
       const { data, error } = await supabase
@@ -40,7 +41,12 @@ export function useClientAdhesions() {
         
       if (error) throw error;
       
-      setUserAdhesionRequests(data || []);
+      const typedData = data?.map(item => ({
+        ...item,
+        status: item.status as "pending" | "pending_validation" | "approved" | "rejected"
+      })) || [];
+      
+      setUserAdhesionRequests(typedData);
     } catch (error) {
       console.error('Erreur lors de la récupération des demandes d\'adhésion:', error);
       toast({
@@ -49,7 +55,7 @@ export function useClientAdhesions() {
         variant: "destructive"
       });
     } finally {
-      setIsLoadingAdhesionRequests(false);
+      setIsLoadingUserAdhesionRequests(false);
     }
   }, [user, toast]);
 
@@ -68,7 +74,12 @@ export function useClientAdhesions() {
         
       if (error) throw error;
       
-      setAdhesionRequests(data || []);
+      const typedData = data?.map(item => ({
+        ...item,
+        status: item.status as "pending" | "pending_validation" | "approved" | "rejected"
+      })) || [];
+      
+      setAdhesionRequests(typedData);
     } catch (error) {
       console.error('Erreur lors de la récupération des demandes d\'adhésion:', error);
       toast({
@@ -113,6 +124,9 @@ export function useClientAdhesions() {
         return { success: false, error: 'Demande existante' };
       }
       
+      // Convert monthly_income to numeric value for database storage
+      const monthlyIncome = parseFloat(data.monthly_income);
+      
       // Créer la demande d'adhésion
       const { data: newRequest, error } = await supabase
         .from('client_adhesion_requests')
@@ -121,7 +135,7 @@ export function useClientAdhesions() {
           sfd_id: sfdId,
           full_name: data.full_name,
           profession: data.profession,
-          monthly_income: data.monthly_income,
+          monthly_income: monthlyIncome,
           source_of_income: data.source_of_income,
           phone: data.phone,
           email: data.email,
@@ -179,6 +193,7 @@ export function useClientAdhesions() {
     adhesionRequests,
     userAdhesionRequests,
     isLoadingAdhesionRequests,
+    isLoadingUserAdhesionRequests,
     isCreatingRequest,
     submitAdhesionRequest,
     refetchUserAdhesionRequests,

@@ -26,7 +26,7 @@ export function SfdLoanPageBalance() {
       <CardContent>
         <div className="flex justify-between items-center">
           <div>
-            <div className="text-2xl font-bold">{formatCurrency(balance, 'FCFA')}</div>
+            <div className="text-2xl font-bold">{formatCurrency(balance)}</div>
             <div className="text-sm text-muted-foreground">
               Compte opérationnel
             </div>

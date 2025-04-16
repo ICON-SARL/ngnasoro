@@ -24,5 +24,10 @@ export const edgeFunctionApi = {
       console.error(`Erreur lors de l'appel à la fonction ${functionName}:`, error);
       return { data: null, error };
     }
+  },
+  
+  // Alias for backward compatibility (some functions call this instead)
+  callEdgeFunction: async <T = any>(functionName: string, payload: any, options?: { showToast?: boolean; timeout?: number }) => {
+    return edgeFunctionApi.callFunction<T>(functionName, payload);
   }
 };
