@@ -2,165 +2,175 @@
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
+import { User, UserRole, AuthContextProps } from './types';
 import { logAuditEvent } from '@/utils/audit/auditLogger';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
-import { User, UserRole, AuthContextProps } from './types';
+import { useToast } from '@/hooks/use-toast';
 
+// Create a context with the AuthContextProps type
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
+// Export the AuthProvider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<UserRole | string>('');
+  const [userRole, setUserRole] = useState<UserRole | string>(UserRole.User);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
-  const [authInitialized, setAuthInitialized] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const { toast } = useToast();
 
-  // Check if user has admin, sfd_admin, or client role
-  const isAdmin = userRole === UserRole.SuperAdmin || userRole === 'admin';
-  const isSfdAdmin = userRole === UserRole.SfdAdmin || userRole === 'sfd_admin';
-  const isClient = userRole === UserRole.Client || userRole === 'client' || userRole === 'user';
-
-  // Function to adapt Supabase user to our extended User type
-  const adaptUser = (sbUser: any): User | null => {
-    if (!sbUser) return null;
-    
-    return {
-      ...sbUser,
-      // Map metadata fields to top-level properties for backward compatibility
-      full_name: sbUser.user_metadata?.full_name,
-      avatar_url: sbUser.user_metadata?.avatar_url,
-      phone: sbUser.user_metadata?.phone,
-      sfd_id: sbUser.app_metadata?.sfd_id,
-    };
-  };
-
+  // Initialize authentication state
   useEffect(() => {
-    const initializeAuth = async () => {
+    console.log('Initializing auth context...');
+    
+    const fetchSession = async () => {
       try {
-        console.log('Initializing auth context...');
-        
-        // Set up auth state listener FIRST
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (event, newSession) => {
-            console.log('Auth state change event:', event);
-            
-            // Simple synchronous state updates in callback
-            setSession(newSession);
-            // Adapt user object
-            setUser(adaptUser(newSession?.user));
-            
-            const role = newSession?.user?.app_metadata?.role || 'user';
-            setUserRole(role);
-            console.log('Auth state changed - User role:', role);
-            
-            // Log auth events
-            if (event === 'SIGNED_IN' && newSession?.user) {
-              setTimeout(() => {
-                logAuditEvent(
-                  AuditLogCategory.AUTHENTICATION,
-                  'user_login',
-                  {
-                    login_method: 'password',
-                    timestamp: new Date().toISOString(),
-                    user_role: role
-                  },
-                  newSession.user.id,
-                  AuditLogSeverity.INFO,
-                  'success'
-                ).catch(err => console.error('Error logging audit event:', err));
-              }, 0);
-            } else if (event === 'SIGNED_OUT') {
-              setTimeout(() => {
-                if (user?.id) {
-                  logAuditEvent(
-                    AuditLogCategory.AUTHENTICATION,
-                    'user_logout',
-                    {
-                      timestamp: new Date().toISOString()
-                    },
-                    user.id,
-                    AuditLogSeverity.INFO,
-                    'success'
-                  ).catch(err => console.error('Error logging audit event:', err));
-                }
-              }, 0);
-            }
-          }
-        );
-
-        // Add a timeout to prevent infinite loading
-        const sessionTimeout = setTimeout(() => {
-          if (loading) {
-            console.log('Session check timed out, defaulting to not authenticated');
-            setLoading(false);
-            setAuthInitialized(true);
-          }
-        }, 5000); // 5 second timeout
-        
-        // THEN check for existing session
         const { data, error } = await supabase.auth.getSession();
-        
-        // Clear the timeout as the request has completed
-        clearTimeout(sessionTimeout);
         
         if (error) {
           console.error('Error fetching session:', error);
-          setLoading(false);
-          setAuthInitialized(true);
           return;
         }
         
-        if (data?.session) {
-          setSession(data.session);
-          setUser(adaptUser(data.session.user));
-          setUserRole(data.session.user.app_metadata?.role || 'user');
+        setSession(data.session);
+        
+        if (data.session?.user) {
+          const role = data.session.user.app_metadata?.role || UserRole.User;
+          setUserRole(role);
           
-          // Debug log
+          // Set user with additional properties
+          setUser({
+            ...data.session.user,
+            full_name: data.session.user.user_metadata?.full_name,
+            avatar_url: data.session.user.user_metadata?.avatar_url,
+            phone: data.session.user.user_metadata?.phone,
+            sfd_id: data.session.user.user_metadata?.sfd_id,
+          });
+          
           console.log('Loaded user data:', {
             id: data.session.user.id,
             email: data.session.user.email,
-            role: data.session.user.app_metadata?.role,
+            role: role,
             metadata: data.session.user.app_metadata,
           });
-          
-          // Load biometric settings
-          const { data: securityData } = await supabase
-            .from('security_settings')
-            .select('biometric_auth')
-            .eq('user_id', data.session.user.id)
-            .single();
-            
-          setBiometricEnabled(securityData?.biometric_auth || false);
+
+          // Check if there's a stored SFD ID in localStorage
+          const storedSfdId = localStorage.getItem('activeSfdId');
+          if (storedSfdId) {
+            console.log('Found stored SFD ID:', storedSfdId);
+            setActiveSfdId(storedSfdId);
+          } else if (data.session.user.user_metadata?.sfd_id) {
+            console.log('Using SFD ID from user metadata:', data.session.user.user_metadata.sfd_id);
+            setActiveSfdId(data.session.user.user_metadata.sfd_id);
+          }
         }
-        
-        setLoading(false);
-        setAuthInitialized(true);
-        
-        return () => {
-          subscription.unsubscribe();
-          clearTimeout(sessionTimeout);
-        };
       } catch (err) {
-        console.error('Error in auth initialization:', err);
+        console.error('Error in auth session fetching:', err);
+      } finally {
         setLoading(false);
-        setAuthInitialized(true);
       }
     };
 
-    initializeAuth();
+    fetchSession();
+
+    // Listen for auth changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        console.log('Auth state change event:', event);
+        
+        if (newSession?.user) {
+          const role = newSession.user.app_metadata?.role || UserRole.User;
+          setUserRole(role);
+          
+          setUser({
+            ...newSession.user,
+            full_name: newSession.user.user_metadata?.full_name,
+            avatar_url: newSession.user.user_metadata?.avatar_url,
+            phone: newSession.user.user_metadata?.phone,
+            sfd_id: newSession.user.user_metadata?.sfd_id,
+          });
+          
+          console.log('Auth state changed - User role:', role);
+        } else {
+          setUser(null);
+          setUserRole(UserRole.User);
+          console.log('Auth state changed: User signed out');
+        }
+        
+        setSession(newSession);
+        
+        // Log authentication events
+        if (event === 'SIGNED_IN' && newSession) {
+          try {
+            await logAuditEvent(
+              AuditLogCategory.AUTHENTICATION,
+              'user_login',
+              {
+                login_method: 'password',
+                timestamp: new Date().toISOString(),
+                user_role: newSession.user.app_metadata?.role
+              },
+              newSession.user.id,
+              AuditLogSeverity.INFO,
+              'success'
+            );
+          } catch (error) {
+            console.error('Error logging sign-in event:', error);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          const userId = user?.id;
+          if (userId) {
+            try {
+              await logAuditEvent(
+                AuditLogCategory.AUTHENTICATION,
+                'user_logout',
+                {
+                  timestamp: new Date().toISOString()
+                },
+                userId,
+                AuditLogSeverity.INFO,
+                'success'
+              );
+            } catch (error) {
+              console.error('Error logging sign-out event:', error);
+            }
+          }
+        }
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
+  // Set active SFD ID and store it in localStorage
+  const handleSetActiveSfdId = (id: string | null) => {
+    console.log('Setting active SFD ID in localStorage:', id);
+    setActiveSfdId(id);
+    if (id) {
+      localStorage.setItem('activeSfdId', id);
+    } else {
+      localStorage.removeItem('activeSfdId');
+    }
+  };
+
+  // Sign in method
   const signIn = async (email: string, password: string) => {
     try {
-      setLoading(true);
       const result = await supabase.auth.signInWithPassword({ email, password });
       
       if (result.error) {
-        console.error('Login error:', result.error);
-        setTimeout(() => {
-          logAuditEvent(
+        console.error('Sign in error:', result.error);
+        toast({
+          title: "Erreur de connexion",
+          description: result.error.message || "Impossible de se connecter",
+          variant: "destructive"
+        });
+        
+        try {
+          await logAuditEvent(
             AuditLogCategory.AUTHENTICATION,
             'failed_login',
             {
@@ -171,38 +181,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             undefined,
             AuditLogSeverity.WARNING,
             'failure'
-          ).catch(err => console.error('Error logging audit event:', err));
-        }, 0);
-        
-        return { error: result.error };
-      } else {
+          );
+        } catch (logError) {
+          console.error('Error logging failed login:', logError);
+        }
+      } else if (result.data.user) {
         console.log('Login successful:', {
-          userId: result.data.user?.id,
-          role: result.data.user?.app_metadata?.role,
-          metadata: result.data.user?.app_metadata,
+          userId: result.data.user.id,
+          role: result.data.user.app_metadata?.role,
+          metadata: result.data.user.app_metadata,
         });
         
-        return { 
-          error: null, 
-          data: { 
-            user: adaptUser(result.data.user),
-            session: result.data.session 
-          } 
-        };
+        toast({
+          title: "Connexion réussie",
+          description: "Vous êtes maintenant connecté",
+        });
       }
+      
+      return result;
     } catch (error) {
       console.error('Error signing in:', error);
+      toast({
+        title: "Erreur de connexion",
+        description: "Une erreur inattendue s'est produite",
+        variant: "destructive"
+      });
       return { error };
-    } finally {
-      setLoading(false);
     }
   };
 
+  // Sign up method
   const signUp = async (email: string, password: string, metadata?: any) => {
     try {
-      setLoading(true);
-      
-      const { data, error } = await supabase.auth.signUp({
+      const result = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -210,115 +221,131 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       
-      if (error) {
-        console.error('Signup error:', error);
-        return { error };
+      if (result.error) {
+        toast({
+          title: "Erreur d'inscription",
+          description: result.error.message || "Impossible de créer le compte",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Inscription réussie",
+          description: "Votre compte a été créé avec succès",
+        });
       }
       
-      return { 
-        error: null, 
-        data: { 
-          user: adaptUser(data.user),
-          session: data.session 
-        } 
-      };
-    } catch (error) {
-      console.error('Error signing up:', error);
-      return { error };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      setLoading(true);
-      const result = await supabase.auth.signOut();
-      setLoading(false);
       return result;
     } catch (error) {
-      console.error('Error signing out:', error);
-      setLoading(false);
+      console.error('Error signing up:', error);
+      toast({
+        title: "Erreur d'inscription",
+        description: "Une erreur inattendue s'est produite",
+        variant: "destructive"
+      });
       return { error };
     }
   };
 
+  // Sign out method
+  const signOut = async () => {
+    try {
+      console.log('AuthProvider - Signing out user');
+      const userId = user?.id;
+      
+      toast({
+        title: "Déconnexion en cours",
+        description: "Veuillez patienter..."
+      });
+      
+      const result = await supabase.auth.signOut();
+      
+      if (result.error) {
+        console.error('Error during signOut:', result.error);
+        toast({
+          title: "Erreur de déconnexion",
+          description: result.error.message || "Une erreur s'est produite lors de la déconnexion",
+          variant: "destructive"
+        });
+      } else {
+        console.log('AuthProvider - SignOut successful');
+        setUser(null);
+        setSession(null);
+        localStorage.removeItem('activeSfdId');
+        
+        toast({
+          title: "Déconnexion réussie",
+          description: "Vous avez été déconnecté avec succès"
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Exception during signOut:', error);
+      toast({
+        title: "Erreur de déconnexion",
+        description: "Une erreur inattendue s'est produite",
+        variant: "destructive"
+      });
+      return { error };
+    }
+  };
+
+  // Refresh session method
   const refreshSession = async () => {
     try {
-      setLoading(true);
       const { data, error } = await supabase.auth.refreshSession();
-      
       if (error) {
         console.error('Error refreshing session:', error);
-        setLoading(false);
         return;
       }
       
       setSession(data.session);
-      setUser(adaptUser(data.session?.user));
-      setUserRole(data.session?.user?.app_metadata?.role || 'user');
-      setLoading(false);
+      if (data.session?.user) {
+        setUser({
+          ...data.session.user,
+          full_name: data.session.user.user_metadata?.full_name,
+          avatar_url: data.session.user.user_metadata?.avatar_url,
+          phone: data.session.user.user_metadata?.phone,
+          sfd_id: data.session.user.user_metadata?.sfd_id,
+        });
+      } else {
+        setUser(null);
+      }
     } catch (error) {
       console.error('Error refreshing session:', error);
-      setLoading(false);
     }
   };
-  
+
+  // Toggle biometric authentication
   const toggleBiometricAuth = async () => {
-    if (!user) return;
-    
-    const newValue = !biometricEnabled;
-    setBiometricEnabled(newValue);
-    
-    try {
-      await supabase
-        .from('security_settings')
-        .upsert({
-          user_id: user.id,
-          biometric_auth: newValue,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id' });
-    } catch (error) {
-      console.error('Error updating biometric settings:', error);
-      // Revert state on error
-      setBiometricEnabled(!newValue);
-      throw error;
-    }
+    setBiometricEnabled(!biometricEnabled);
+    // In a real implementation, you would save this preference to the user's profile
+    return Promise.resolve();
   };
 
-  // Only render the app once auth is initialized
-  if (!authInitialized) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500">Initialisation du système...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const value = {
+  // Expose authentication properties and methods via context
+  const authContext: AuthContextProps = {
     user,
     session,
     loading,
     userRole,
-    isAdmin,
-    isSfdAdmin,
-    isClient,
+    isAdmin: userRole === UserRole.SuperAdmin,
+    isSfdAdmin: userRole === UserRole.SfdAdmin,
+    isClient: userRole === UserRole.Client,
     activeSfdId,
-    setActiveSfdId,
+    setActiveSfdId: handleSetActiveSfdId,
     signIn,
     signUp,
     signOut,
     refreshSession,
     biometricEnabled,
-    toggleBiometricAuth
+    toggleBiometricAuth,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={authContext}>{children}</AuthContext.Provider>;
 };
 
+// Export the useAuth hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

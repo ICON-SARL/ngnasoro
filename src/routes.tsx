@@ -31,6 +31,7 @@ const AppRoutes = () => {
       
       {/* Admin Routes */}
       <Route path="/sfd-management" element={<ProtectedRoute><SfdManagementPage /></ProtectedRoute>} />
+      <Route path="/agency-dashboard" element={<ProtectedRoute requireSfdAdmin><PrivateLayout><div>Tableau de bord de l'agence</div></PrivateLayout></ProtectedRoute>} />
       
       {/* Fallback Route */}
       <Route path="*" element={<Navigate to="/mobile-flow" replace />} />
