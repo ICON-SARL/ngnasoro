@@ -29,6 +29,7 @@ export function ClientAdhesionRequests() {
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
   const [notes, setNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -75,6 +76,7 @@ export function ClientAdhesionRequests() {
     setSelectedRequest(request);
     setActionType('approve');
     setNotes('');
+    setErrorMessage(null);
   };
 
   const handleReject = (request: ClientAdhesionRequest) => {
@@ -82,6 +84,7 @@ export function ClientAdhesionRequests() {
     setSelectedRequest(request);
     setActionType('reject');
     setNotes('');
+    setErrorMessage(null);
   };
 
   const handleCloseDialog = () => {
@@ -89,16 +92,19 @@ export function ClientAdhesionRequests() {
     setActionType(null);
     setNotes('');
     setIsProcessing(false);
+    setErrorMessage(null);
   };
 
   const handleConfirmAction = async (notes?: string) => {
     if (!selectedRequest || !user || isProcessing) return;
 
     setIsProcessing(true);
-    console.log(`Confirming ${actionType} action for request:`, selectedRequest.id);
+    setErrorMessage(null);
     
     try {
       if (actionType === 'approve') {
+        console.log(`Confirming ${actionType} action for request:`, selectedRequest.id);
+        
         // Utiliser l'Edge Function pour l'approbation
         console.log('Calling approve-adhesion-request with params:', { 
           adhesionId: selectedRequest.id, 
@@ -116,6 +122,7 @@ export function ClientAdhesionRequests() {
         
         if (error) {
           console.error('Edge function error:', error);
+          setErrorMessage(error.message || 'Erreur lors de l\'approbation');
           throw new Error(error.message || 'Erreur lors de l\'approbation');
         }
         
@@ -133,12 +140,13 @@ export function ClientAdhesionRequests() {
             status: 'rejected',
             processed_by: user.id,
             processed_at: new Date().toISOString(),
-            notes: notes
+            notes: notes || ''
           })
           .eq('id', selectedRequest.id);
           
         if (error) {
           console.error('Error rejecting request:', error);
+          setErrorMessage(error.message || 'Erreur lors du rejet');
           throw new Error(error.message || 'Erreur lors du rejet');
         }
           
@@ -150,21 +158,26 @@ export function ClientAdhesionRequests() {
       
       // Actualiser la liste après l'action
       await refetchAdhesionRequests();
+      handleCloseDialog();
     } catch (error) {
       console.error('Error during confirmation action:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Une erreur s\'est produite';
+      
+      setErrorMessage(errorMsg);
+      
       toast({
         title: 'Erreur',
-        description: error instanceof Error ? error.message : 'Une erreur s\'est produite',
+        description: errorMsg,
         variant: 'destructive'
       });
     } finally {
-      handleCloseDialog();
       setIsProcessing(false);
     }
   };
 
   const handleRefresh = () => {
     refetchAdhesionRequests();
+    setErrorMessage(null);
   };
 
   if (isLoadingAdhesionRequests) {
@@ -227,6 +240,14 @@ export function ClientAdhesionRequests() {
         </Button>
       </div>
 
+      {errorMessage && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erreur</AlertTitle>
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
+
       <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="pending" className="flex items-center">
@@ -276,6 +297,7 @@ export function ClientAdhesionRequests() {
         notes={notes}
         onNotesChange={setNotes}
         isProcessing={isProcessing}
+        errorMessage={errorMessage}
       />
     </div>
   );

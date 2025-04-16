@@ -10,8 +10,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react';
 import { ClientAdhesionRequest } from '@/types/adhesionTypes';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AdhesionActionDialogProps {
   request: ClientAdhesionRequest | null;
@@ -22,6 +23,7 @@ interface AdhesionActionDialogProps {
   notes: string;
   onNotesChange: (value: string) => void;
   isProcessing?: boolean;
+  errorMessage?: string | null;
 }
 
 export function AdhesionActionDialog({
@@ -33,6 +35,7 @@ export function AdhesionActionDialog({
   notes,
   onNotesChange,
   isProcessing = false,
+  errorMessage = null,
 }: AdhesionActionDialogProps) {
   if (!request || !action) return null;
 
@@ -56,6 +59,14 @@ export function AdhesionActionDialog({
               <p className="font-medium">Client</p>
               <p className="text-sm text-gray-500">{request.full_name}</p>
             </div>
+
+            {errorMessage && (
+              <Alert variant="destructive" className="my-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
+
             <div>
               <label htmlFor="notes" className="text-sm font-medium">
                 Notes (optionnel)
