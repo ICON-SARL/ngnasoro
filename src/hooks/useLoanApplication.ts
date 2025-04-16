@@ -78,6 +78,23 @@ export const useLoanApplication = (sfdId?: string) => {
           .single();
 
         if (clientError) throw clientError;
+        
+        // Get selected loan plan to determine interest rate
+        const { data: loanPlan, error: loanPlanError } = await supabase
+          .from('sfd_loan_plans')
+          .select('interest_rate, fees')
+          .eq('id', application.loan_plan_id)
+          .single();
+          
+        if (loanPlanError) throw loanPlanError;
+        
+        // Calculate monthly payment
+        const monthlyInterestRate = loanPlan.interest_rate / 100 / 12;
+        const totalMonths = application.duration_months;
+        // Calculate monthly payment using standard amortization formula
+        const monthlyPayment = (application.amount * monthlyInterestRate * 
+          Math.pow(1 + monthlyInterestRate, totalMonths)) / 
+          (Math.pow(1 + monthlyInterestRate, totalMonths) - 1);
 
         // Create loan record
         const { data: loan, error: loanError } = await supabase
@@ -89,6 +106,8 @@ export const useLoanApplication = (sfdId?: string) => {
             duration_months: application.duration_months,
             purpose: application.purpose,
             loan_plan_id: application.loan_plan_id,
+            interest_rate: loanPlan.interest_rate,
+            monthly_payment: Math.round(monthlyPayment),
             status: 'pending'
           })
           .select()

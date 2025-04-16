@@ -71,7 +71,6 @@ export const LoanApplicationForm: React.FC = () => {
       }));
 
     await submitApplication.mutateAsync({
-      ...values,
       amount: values.amount,
       duration_months: values.duration_months,
       purpose: values.purpose,
