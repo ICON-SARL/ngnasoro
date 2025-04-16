@@ -5,6 +5,7 @@ import {
   Card, 
   CardContent, 
   CardDescription, 
+  CardFooter, 
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
@@ -14,14 +15,12 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { CalendarDays, CreditCard, Users, FileText, Loader2 } from 'lucide-react';
+import { CalendarDays, CreditCard, Users, Clock, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import LogoutButton from '@/components/LogoutButton';
-import { useSfdStatistics } from '@/hooks/useSfdStatistics';
 
 const AgencyDashboardPage = () => {
   const { user } = useAuth();
-  const { data: stats, isLoading } = useSfdStatistics();
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -42,71 +41,53 @@ const AgencyDashboardPage = () => {
           />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Clients Totaux</CardTitle>
+              <CardTitle>Clients Totaux</CardTitle>
               <CardDescription>Nombre total de clients actifs</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <div className="flex items-center space-x-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Chargement...</span>
-                </div>
-              ) : (
-                <>
-                  <div className="text-3xl font-bold">{stats?.clientsTotal || 0}</div>
-                  <p className="text-sm text-muted-foreground">
-                    +{stats?.clientsNewThisMonth || 0} ce mois
-                  </p>
-                </>
-              )}
+              <div className="text-3xl font-bold">1250</div>
             </CardContent>
+            <CardFooter className="text-right">
+              <Button variant="secondary" size="sm">
+                <Users className="h-4 w-4 mr-2" />
+                Voir les clients
+              </Button>
+            </CardFooter>
           </Card>
           
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Prêts Actifs</CardTitle>
+              <CardTitle>Prêts Actifs</CardTitle>
               <CardDescription>Nombre total de prêts en cours</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <div className="flex items-center space-x-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Chargement...</span>
-                </div>
-              ) : (
-                <>
-                  <div className="text-3xl font-bold">{stats?.activeLoans || 0}</div>
-                  <p className="text-sm text-muted-foreground">
-                    {stats?.pendingApprovalLoans || 0} en attente d'approbation
-                  </p>
-                </>
-              )}
+              <div className="text-3xl font-bold">320</div>
             </CardContent>
+            <CardFooter className="text-right">
+              <Button variant="secondary" size="sm">
+                <CreditCard className="h-4 w-4 mr-2" />
+                Voir les prêts
+              </Button>
+            </CardFooter>
           </Card>
           
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Demandes de Subvention</CardTitle>
-              <CardDescription>Aperçu des demandes de subvention</CardDescription>
+              <CardTitle>Dernières Transactions</CardTitle>
+              <CardDescription>Aperçu des transactions récentes</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <div className="flex items-center space-x-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Chargement...</span>
-                </div>
-              ) : (
-                <>
-                  <div className="text-3xl font-bold">{stats?.subsidyRequests || 0}</div>
-                  <p className="text-sm text-muted-foreground">
-                    {stats?.pendingSubsidyRequests || 0} en attente d'approbation
-                  </p>
-                </>
-              )}
+              <div className="text-3xl font-bold">78</div>
             </CardContent>
+            <CardFooter className="text-right">
+              <Button variant="secondary" size="sm">
+                <Clock className="h-4 w-4 mr-2" />
+                Voir les transactions
+              </Button>
+            </CardFooter>
           </Card>
         </div>
         
@@ -132,6 +113,7 @@ const AgencyDashboardPage = () => {
           </Tabs>
         </div>
         
+        {/* Explicit logout button at the bottom */}
         <div className="mt-8 text-center">
           <LogoutButton 
             variant="outline" 

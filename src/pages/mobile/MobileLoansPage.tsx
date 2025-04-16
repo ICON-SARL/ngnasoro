@@ -1,11 +1,11 @@
 
 import React from 'react';
+import MobileNavigation from '@/components/mobile/MobileNavigation';
 import { useNavigate } from 'react-router-dom';
-import MobileLayout from '@/components/mobile/layout/MobileLayout';
-import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CreditCard, Plus, Building, BadgePercent, FileText } from 'lucide-react';
+import { CreditCard, Plus, Building, BadgePercent } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const LoanTypeCard: React.FC<{ 
   title: string;
@@ -26,12 +26,12 @@ const LoanTypeCard: React.FC<{
   </Card>
 );
 
-const MobileLoansPage = () => {
+const MobileLoansPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
   return (
-    <MobileLayout>
+    <div className="min-h-screen bg-gray-50 pb-20">
       <div className="bg-white p-4 shadow-sm">
         <h1 className="text-xl font-bold">Prêts</h1>
         <p className="text-gray-500 text-sm">Découvrez les options de financement</p>
@@ -60,25 +60,20 @@ const MobileLoansPage = () => {
             icon={<Building className="h-6 w-6" />}
             onClick={() => navigate('/mobile-flow/loan-plans')}
           />
-          
-          <LoanTypeCard
-            title="Processus de prêt"
-            description="Comprendre les étapes du processus d'obtention d'un prêt"
-            icon={<FileText className="h-6 w-6" />}
-            onClick={() => navigate('/mobile-flow/loan-process-flow')}
-          />
         </div>
         
-        <div className="mt-8 mb-4">
+        <div className="mt-8 mb-4 flex justify-center">
           <Button 
             onClick={() => navigate('/mobile-flow/my-loans')}
-            className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+            className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 flex items-center gap-2"
           >
             Voir mes prêts
           </Button>
         </div>
       </div>
-    </MobileLayout>
+      
+      <MobileNavigation />
+    </div>
   );
 };
 

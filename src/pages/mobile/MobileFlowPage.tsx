@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+// Correctly importing MobileRouter as a named export
+import { MobileRouter } from '@/components/Router';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
 import FloatingMenuButton from '@/components/mobile/FloatingMenuButton';
-import MobileFlowRoutes from '@/components/mobile/routes/MobileFlowRoutes';
-import MobileNavigation from '@/components/mobile/MobileNavigation';
 
 const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
@@ -14,9 +14,6 @@ const MobileFlowPage: React.FC = () => {
   const location = useLocation();
   const [showWelcome, setShowWelcome] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [account, setAccount] = useState(null);
-  const [transactions, setTransactions] = useState([]);
-  const [transactionsLoading, setTransactionsLoading] = useState(false);
   
   const { user, loading, signOut } = useAuth();
 
@@ -78,47 +75,20 @@ const MobileFlowPage: React.FC = () => {
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
-  
-  const handleAction = (action: string, data?: any) => {
-    console.log("Action:", action, data);
-    // Handle actions from child components
-  };
-  
-  const handlePaymentSubmit = async (data: { recipient: string, amount: number, note: string }) => {
-    console.log("Payment submitted:", data);
-    // Implement payment submission logic
-  };
-
-  // Skip navigation on specific routes
-  const shouldSkipNavigation = () => {
-    // Add routes that shouldn't display the bottom navigation here
-    const noNavRoutes = ['/mobile-flow/splash', '/mobile-flow/welcome'];
-    return noNavRoutes.some(route => location.pathname.includes(route));
-  };
 
   if (loading) {
     return <div className="p-8 text-center">Chargement...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-white pb-16">
+    <div className="min-h-screen bg-white">
       <FloatingMenuButton onClick={toggleMenu} />
       <MobileDrawerMenu 
         isOpen={menuOpen} 
         onClose={() => setMenuOpen(false)} 
         onLogout={handleLogout} 
       />
-      <MobileFlowRoutes 
-        onAction={handleAction}
-        account={account}
-        transactions={transactions}
-        transactionsLoading={transactionsLoading}
-        toggleMenu={toggleMenu}
-        showWelcome={showWelcome}
-        setShowWelcome={setShowWelcome}
-        handlePaymentSubmit={handlePaymentSubmit}
-      />
-      {!shouldSkipNavigation() && <MobileNavigation />}
+      <MobileRouter />
     </div>
   );
 };

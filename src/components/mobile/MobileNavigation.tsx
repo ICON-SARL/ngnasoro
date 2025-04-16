@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import * as Icons from 'lucide-react';
+import { Home, CreditCard, FileText, PiggyBank, User } from 'lucide-react';
 import { mobileNavItems } from '@/config/mobileNavigation';
+import * as Icons from 'lucide-react';
 
 interface MobileNavigationProps {
   onAction?: (action: string, data?: any) => void;

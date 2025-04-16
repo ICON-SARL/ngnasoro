@@ -2,21 +2,9 @@
 import { useAuth as useAuthOriginal } from './auth/AuthContext';
 import { User, AuthContextProps, UserRole } from './auth/types';
 
-export const useAuth = () => {
-  const auth = useAuthOriginal();
-  
-  const isAdmin = auth.user?.app_metadata?.role === 'admin';
-  const isSfdAdmin = auth.user?.app_metadata?.role === 'sfd_admin';
-  const isClient = auth.user?.app_metadata?.role === 'client';
-  
-  return {
-    ...auth,
-    isAdmin,
-    isSfdAdmin,
-    isClient,
-    userRole: auth.user?.app_metadata?.role || 'user'
-  };
-};
+// Re-export the hook with the same name
+export const useAuth = useAuthOriginal;
 
+// Re-export types to maintain backward compatibility
 export type { User, AuthContextProps };
 export { UserRole };

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -104,6 +105,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
       });
       
       if (onError) onError(errorMessage);
+      
     } finally {
       setIsLoading(false);
     }
@@ -170,6 +172,12 @@ const LoginForm: React.FC<LoginFormProps> = ({
           )}
         />
         
+        <div className="text-right">
+          <a href="#" className="text-sm text-primary hover:underline">
+            Mot de passe oublié?
+          </a>
+        </div>
+        
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? (
             <>
@@ -180,16 +188,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
             <>Se connecter</>
           )}
         </Button>
-
+        
         {adminMode && (
           <div className="mt-4 text-xs text-center text-amber-600">
-            Interface administrateur MEREF
+            Interface administrateur MEREF avec accès aux fonctionnalités avancées
           </div>
         )}
         
         {isSfdAdmin && (
           <div className="mt-4 text-xs text-center text-blue-600">
-            Interface administrateur SFD
+            Interface administrateur SFD avec accès à la gestion de votre SFD
           </div>
         )}
       </form>

@@ -1,17 +1,20 @@
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Hook to listen for realtime permission updates
+ * Hook to subscribe to real-time permission changes
  */
-export function useRealtimePermissions(userId: string | null, onUpdate: () => void) {
+export function useRealtimePermissions(
+  userId: string | null,
+  onPermissionsChange: () => void
+): void {
   useEffect(() => {
     if (!userId) return;
 
-    // Subscribe to the user_roles channel for this user
-    const channel = supabase
-      .channel(`user_roles:${userId}`)
+    // Subscribe to user_roles changes
+    const userRolesSubscription = supabase
+      .channel('user_roles_changes')
       .on(
         'postgres_changes',
         {
@@ -21,38 +24,14 @@ export function useRealtimePermissions(userId: string | null, onUpdate: () => vo
           filter: `user_id=eq.${userId}`
         },
         () => {
-          console.log('Received realtime update for user roles');
-          onUpdate();
+          console.log('User roles changed, refreshing permissions');
+          onPermissionsChange();
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      userRolesSubscription.unsubscribe();
     };
-  }, [userId, onUpdate]);
-}
-
-/**
- * Function to request a permission update broadcast
- */
-export async function broadcastPermissionsUpdate(userId: string) {
-  try {
-    const { error } = await supabase.functions.invoke('auth-manager', {
-      body: JSON.stringify({
-        method: 'broadcast-permissions-update',
-        userId
-      })
-    });
-
-    if (error) {
-      console.error('Error broadcasting permissions update:', error);
-      return false;
-    }
-
-    return true;
-  } catch (err) {
-    console.error('Error in broadcastPermissionsUpdate:', err);
-    return false;
-  }
+  }, [userId, onPermissionsChange]);
 }

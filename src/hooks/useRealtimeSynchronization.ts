@@ -2,6 +2,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { adminCommunicationApi } from '@/utils/api/modules/adminCommunicationApi';
+import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useRealtimeSynchronization() {
@@ -39,7 +41,7 @@ export function useRealtimeSynchronization() {
     try {
       console.log(`Synchronizing accounts for user ${user.id}${activeSfdId ? ` with active SFD ${activeSfdId}` : ''}`);
       
-      // Direct call to the supabase functions API
+      // Direct call to the supabase functions API for more control
       const { data: functionResponse, error: functionError } = await supabase.functions.invoke('synchronize-sfd-accounts', {
         body: {
           userId: user.id,
@@ -79,6 +81,21 @@ export function useRealtimeSynchronization() {
       // Increment retry count for exponential backoff
       setRetryCount(prev => prev + 1);
       
+      // Report error to admin backend if we have an activeSfdId
+      if (activeSfdId) {
+        try {
+          await adminCommunicationApi.reportSyncError(
+            user.id, 
+            activeSfdId, 
+            error.message || "Unknown synchronization error", 
+            error.stack
+          );
+        } catch (reportError) {
+          // Silent failure for error reporting
+          console.error("Failed to report error:", reportError);
+        }
+      }
+      
       // Show a more user-friendly error message based on retry count
       if (retryCount > 2) {
         toast({
@@ -106,14 +123,8 @@ export function useRealtimeSynchronization() {
     if (!user || !activeSfdId) return false;
     
     try {
-      // Just a basic test to see if we can connect to Supabase
-      const { data, error } = await supabase.from('user_sfds')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('sfd_id', activeSfdId)
-        .limit(1);
-        
-      return !error;
+      const result = await adminCommunicationApi.pingAdminServer();
+      return result && result.success;
     } catch (error) {
       console.error("Connection test failed:", error);
       return false;
