@@ -3,13 +3,21 @@ import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { dashboardApi, DashboardData } from '@/utils/dashboardApi';
+import { useGlobalRealtime } from '@/hooks/useGlobalRealtime';
 
 export function useMobileDashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
+  
+  // Configure real-time tables to listen to
+  const { events, isConnected } = useGlobalRealtime([
+    { table: 'accounts', event: 'UPDATE' },
+    { table: 'transactions', event: 'INSERT' },
+    { table: 'sfd_loans', event: 'UPDATE' }
+  ]);
   
   const fetchDashboardData = useCallback(async (period: 'day' | 'week' | 'month' | 'year' = 'month') => {
     if (!user?.id) {
@@ -64,11 +72,28 @@ export function useMobileDashboard() {
     }
   }, [user, fetchDashboardData]);
   
+  // Refresh dashboard data when relevant real-time events occur
+  useEffect(() => {
+    if (events.length > 0) {
+      // Only refresh if we got an account update or transaction insert
+      const shouldRefresh = events.some(event => 
+        (event.table === 'accounts' && event.event === 'UPDATE') ||
+        (event.table === 'transactions' && event.event === 'INSERT')
+      );
+      
+      if (shouldRefresh) {
+        console.log('[Dashboard] Refreshing due to realtime update');
+        fetchDashboardData();
+      }
+    }
+  }, [events, fetchDashboardData]);
+  
   return {
     dashboardData,
     isLoading,
     error,
     fetchDashboardData,
-    refreshDashboardData
+    refreshDashboardData,
+    isRealTimeConnected: isConnected
   };
 }

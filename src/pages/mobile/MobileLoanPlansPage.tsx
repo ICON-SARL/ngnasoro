@@ -5,9 +5,16 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { LoanPlansTabs } from '@/components/mobile/loan/sections/LoanPlansTabs';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
+import { useGlobalRealtime } from '@/hooks/useGlobalRealtime';
 
 const MobileLoanPlansPage: React.FC = () => {
   const navigate = useNavigate();
+  
+  // Setup real-time updates for loan plans
+  useGlobalRealtime([
+    { table: 'sfd_loan_plans', event: 'UPDATE' },
+    { table: 'sfd_loan_plans', event: 'INSERT' }
+  ]);
   
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
