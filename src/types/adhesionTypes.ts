@@ -22,31 +22,3 @@ export interface ClientAdhesionRequest {
   monthly_income?: number;
   rejection_reason?: string;
 }
-
-export interface MobileMoneyWebhook {
-  id: string;
-  reference_id: string;
-  provider: string;
-  transaction_type: string;
-  amount: number;
-  phone_number: string;
-  status: 'pending' | 'processed' | 'failed';
-  user_id?: string;
-  account_id?: string;
-  created_at: string;
-  processed_at?: string;
-  raw_payload?: any;
-  signature?: string;
-  is_verified: boolean;
-}
-
-export interface MobileMoneySettings {
-  id: string;
-  provider: string;
-  webhook_secret: string;
-  api_key?: string;
-  api_url?: string;
-  created_at: string;
-  updated_at: string;
-  is_active: boolean;
-}

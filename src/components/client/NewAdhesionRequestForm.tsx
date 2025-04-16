@@ -63,22 +63,12 @@ export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestF
         return;
       }
 
-      // Assurez-vous que full_name n'est pas vide
-      if (!data.full_name) {
-        toast({
-          title: 'Erreur',
-          description: 'Le nom complet est obligatoire.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
       const { error } = await supabase
         .from('client_adhesion_requests')
         .insert({
           full_name: data.full_name,
           profession: data.profession,
-          monthly_income: parseFloat(data.monthly_income), // Convertir en nombre
+          monthly_income: parseFloat(data.monthly_income),
           source_of_income: data.source_of_income,
           phone: data.phone,
           email: data.email,
