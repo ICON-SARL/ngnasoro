@@ -65,14 +65,13 @@ export const getSfdLoans = async () => {
 /**
  * Approve a loan
  */
-export const approveLoan = async (loanId: string, approverUserId: string) => {
+export const approveLoan = async (loanId: string) => {
   try {
     const { data, error } = await supabase
       .from('sfd_loans')
       .update({
         status: 'approved',
         approved_at: new Date().toISOString(),
-        approved_by: approverUserId
       })
       .eq('id', loanId)
       .select()
@@ -89,7 +88,7 @@ export const approveLoan = async (loanId: string, approverUserId: string) => {
 /**
  * Reject a loan
  */
-export const rejectLoan = async (loanId: string, rejectorUserId: string) => {
+export const rejectLoan = async (loanId: string) => {
   try {
     const { data, error } = await supabase
       .from('sfd_loans')
@@ -135,14 +134,15 @@ export const disburseLoan = async (loanId: string) => {
 /**
  * Record loan payment
  */
-export const recordLoanPayment = async (loanId: string, paymentData: any) => {
+export const recordLoanPayment = async (loanId: string, amount: number, paymentMethod: string) => {
   try {
     // First, create the payment record
     const { data: paymentRecord, error: paymentError } = await supabase
       .from('loan_payments')
       .insert([{
         loan_id: loanId,
-        ...paymentData
+        amount,
+        payment_method: paymentMethod
       }])
       .select()
       .single();
@@ -153,7 +153,7 @@ export const recordLoanPayment = async (loanId: string, paymentData: any) => {
     const { data: loanData, error: loanError } = await supabase
       .from('sfd_loans')
       .update({
-        last_payment_date: paymentData.payment_date || new Date().toISOString()
+        last_payment_date: new Date().toISOString()
       })
       .eq('id', loanId)
       .select()

@@ -6,7 +6,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import PermissionTestPage from '@/pages/PermissionTestPage';
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
-import { UserRole } from '@/hooks/auth/types';
+import { UserRole } from '@/utils/auth/roleTypes';
 import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 import SfdSelectorPage from '@/pages/SfdSelectorPage';
 import { LoanActivityPage } from '@/pages/mobile/LoanActivityPage';

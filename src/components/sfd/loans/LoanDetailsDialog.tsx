@@ -53,7 +53,7 @@ const LoanDetailsDialog = ({ isOpen, onClose, loan, onLoanUpdated }: LoanDetails
   const handleApproveLoan = async () => {
     try {
       setLoading(true);
-      await sfdLoanApi.approveLoan(loan.id, user!.id);
+      await sfdLoanApi.approveLoan(loan.id);
       toast({
         title: 'Prêt approuvé',
         description: 'Le prêt a été approuvé avec succès',
@@ -75,7 +75,7 @@ const LoanDetailsDialog = ({ isOpen, onClose, loan, onLoanUpdated }: LoanDetails
   const handleRejectLoan = async () => {
     try {
       setLoading(true);
-      await sfdLoanApi.rejectLoan(loan.id, user!.id);
+      await sfdLoanApi.rejectLoan(loan.id);
       toast({
         title: 'Prêt rejeté',
         description: 'Le prêt a été rejeté',
@@ -97,7 +97,7 @@ const LoanDetailsDialog = ({ isOpen, onClose, loan, onLoanUpdated }: LoanDetails
   const handleDisburseLoan = async () => {
     try {
       setLoading(true);
-      await sfdLoanApi.disburseLoan(loan.id, user!.id);
+      await sfdLoanApi.disburseLoan(loan.id);
       toast({
         title: 'Prêt décaissé',
         description: 'Le prêt a été décaissé avec succès',
@@ -131,8 +131,7 @@ const LoanDetailsDialog = ({ isOpen, onClose, loan, onLoanUpdated }: LoanDetails
       await sfdLoanApi.recordLoanPayment(
         loan.id,
         parseFloat(paymentAmount),
-        'cash',
-        user!.id
+        'cash'
       );
       toast({
         title: 'Paiement enregistré',
@@ -144,7 +143,7 @@ const LoanDetailsDialog = ({ isOpen, onClose, loan, onLoanUpdated }: LoanDetails
       console.error('Error recording payment:', error);
       toast({
         title: 'Erreur',
-        description: "Une erreur s'est produite lors de l'enregistrement du paiement",
+        description: "Une erreur s'est produite lors de l'enregistrement du paiement',
         variant: 'destructive',
       });
     } finally {
