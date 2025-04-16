@@ -14,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useClientAdhesions } from '@/hooks/useClientAdhesions';
+import { useClientAdhesions, AdhesionRequestInput } from '@/hooks/useClientAdhesions';
 import { useAuth } from '@/hooks/useAuth';
 
 // Schema definition for adhesion request form
@@ -55,7 +55,18 @@ export function ClientAdhesionForm({ sfdId, onSuccess }: ClientAdhesionFormProps
 
   const onSubmit = async (values: AdhesionFormValues) => {
     try {
-      const result = await submitAdhesionRequest(sfdId, values);
+      // Ensure we're passing all required fields with proper types
+      const adhesionData: AdhesionRequestInput = {
+        full_name: values.full_name,
+        profession: values.profession,
+        monthly_income: values.monthly_income,
+        source_of_income: values.source_of_income,
+        phone: values.phone,
+        email: values.email,
+        address: values.address,
+      };
+
+      const result = await submitAdhesionRequest(sfdId, adhesionData);
       
       if (result.success) {
         form.reset();

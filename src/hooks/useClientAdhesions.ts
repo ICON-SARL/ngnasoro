@@ -6,7 +6,8 @@ import { ClientAdhesionRequest } from '@/types/adhesionTypes';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
-interface AdhesionRequestInput {
+// Update the interface definition to make properties consistent
+export interface AdhesionRequestInput {
   full_name: string;
   profession: string;
   monthly_income: string;
