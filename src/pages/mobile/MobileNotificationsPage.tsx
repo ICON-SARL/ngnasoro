@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { ArrowLeft, Bell, Check, Trash2 } from 'lucide-react';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { useGlobalRealtime } from '@/hooks/useGlobalRealtime';
+import { useGlobalRealtime, TableSubscription } from '@/hooks/useGlobalRealtime';
 
 interface Notification {
   id: string;
@@ -27,10 +26,12 @@ const MobileNotificationsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   // Set up realtime updates for notifications
-  useGlobalRealtime([
+  const tableSubscriptions: TableSubscription[] = [
     { table: 'admin_notifications', event: 'INSERT' },
     { table: 'admin_notifications', event: 'UPDATE' }
-  ]);
+  ];
+  
+  const { isConnected } = useGlobalRealtime(tableSubscriptions);
   
   useEffect(() => {
     const fetchNotifications = async () => {

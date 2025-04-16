@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Menu, RefreshCw, User, Bell } from 'lucide-react';
 import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
 import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
-import { useGlobalRealtime } from '@/hooks/useGlobalRealtime';
+import { useGlobalRealtime, TableSubscription } from '@/hooks/useGlobalRealtime';
 
 const MobileMainPage: React.FC = () => {
   const navigate = useNavigate();
@@ -20,11 +19,13 @@ const MobileMainPage: React.FC = () => {
   const [notificationCount, setNotificationCount] = useState(0);
   
   // Set up realtime listeners for relevant tables
-  useGlobalRealtime([
+  const tableSubscriptions: TableSubscription[] = [
     { table: 'accounts', event: 'UPDATE' },
     { table: 'transactions', event: 'INSERT' },
     { table: 'admin_notifications', event: 'INSERT' }
-  ]);
+  ];
+  
+  const { isConnected } = useGlobalRealtime(tableSubscriptions);
   
   // Check for unread notifications on component mount
   useEffect(() => {

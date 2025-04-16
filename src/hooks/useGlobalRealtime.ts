@@ -5,11 +5,26 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
-export function useGlobalRealtime() {
+// Define types for table subscriptions
+export type TableSubscription = {
+  table: string;
+  event: 'INSERT' | 'UPDATE' | 'DELETE' | '*';
+  filter?: string;
+};
+
+// Define a type for real-time events
+export type RealtimeEvent = {
+  table: string;
+  event: 'INSERT' | 'UPDATE' | 'DELETE';
+  payload: any;
+};
+
+export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
+  const [events, setEvents] = useState<RealtimeEvent[]>([]);
   
   // Initial channel setup
   useEffect(() => {
@@ -56,22 +71,42 @@ export function useGlobalRealtime() {
           }
         });
         
-        // Setup database change subscription
-        // NOTE: Fixing the error by using correct channel type syntax
-        supabase
-          .channel('schema-db-changes')
-          .on('postgres_changes', { 
-            event: '*', 
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${user.id}`
-          }, (payload) => {
-            console.log('Database change detected:', payload);
-            if (payload.new && payload.new.user_id === user.id) {
-              handleDatabaseNotification(payload.new);
-            }
-          })
-          .subscribe();
+        // Setup database change subscription if table subscriptions are provided
+        if (tableSubscriptions && tableSubscriptions.length > 0) {
+          const dbChannel = supabase.channel('schema-db-changes');
+          
+          // Add a listener for each table subscription
+          tableSubscriptions.forEach(sub => {
+            dbChannel.on('postgres_changes', { 
+              event: sub.event, 
+              schema: 'public',
+              table: sub.table,
+              filter: sub.filter || `user_id=eq.${user.id}`
+            }, (payload) => {
+              console.log(`Database change detected in ${sub.table}:`, payload);
+              
+              // Type guard to check if payload.new exists and has a user_id property
+              if (payload.new && typeof payload.new === 'object') {
+                // Check if the payload is related to the current user before adding to events
+                const payloadUserId = (payload.new as any).user_id;
+                if (payloadUserId === user.id) {
+                  setEvents(prev => [...prev, {
+                    table: sub.table,
+                    event: payload.eventType as any,
+                    payload: payload.new
+                  }]);
+                  
+                  // If notifications table updated, handle it specially
+                  if (sub.table === 'notifications') {
+                    handleDatabaseNotification(payload.new);
+                  }
+                }
+              }
+            });
+          });
+          
+          dbChannel.subscribe();
+        }
           
         setChannel(newChannel);
       } catch (error) {
@@ -87,7 +122,7 @@ export function useGlobalRealtime() {
         channel.unsubscribe();
       }
     };
-  }, [user]);
+  }, [user, tableSubscriptions]);
   
   // Handle notifications received via broadcast
   const handleNotification = useCallback((payload: any) => {
@@ -96,7 +131,7 @@ export function useGlobalRealtime() {
       toast({
         title,
         description: message,
-        variant: type === 'error' ? 'destructive' : type === 'success' ? 'default' : 'secondary'
+        variant: type === 'error' ? 'destructive' : 'default'
       });
     }
   }, [toast]);
@@ -107,8 +142,7 @@ export function useGlobalRealtime() {
       toast({
         title: notification.title,
         description: notification.message || notification.description,
-        variant: notification.type === 'error' ? 'destructive' : 
-                notification.type === 'success' ? 'default' : 'secondary'
+        variant: notification.type === 'error' ? 'destructive' : 'default'
       });
     }
   }, [toast]);
@@ -135,6 +169,7 @@ export function useGlobalRealtime() {
   
   return {
     isConnected,
-    sendBroadcast
+    sendBroadcast,
+    events
   };
 }

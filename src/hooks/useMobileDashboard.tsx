@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { dashboardApi, DashboardData } from '@/utils/dashboardApi';
-import { useGlobalRealtime } from '@/hooks/useGlobalRealtime';
+import { useGlobalRealtime, TableSubscription } from '@/hooks/useGlobalRealtime';
 
 export function useMobileDashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -13,11 +13,13 @@ export function useMobileDashboard() {
   const { toast } = useToast();
   
   // Configure real-time tables to listen to
-  const { events, isConnected } = useGlobalRealtime([
+  const tableSubscriptions: TableSubscription[] = [
     { table: 'accounts', event: 'UPDATE' },
     { table: 'transactions', event: 'INSERT' },
     { table: 'sfd_loans', event: 'UPDATE' }
-  ]);
+  ];
+  
+  const { events, isConnected } = useGlobalRealtime(tableSubscriptions);
   
   const fetchDashboardData = useCallback(async (period: 'day' | 'week' | 'month' | 'year' = 'month') => {
     if (!user?.id) {
