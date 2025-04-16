@@ -4,31 +4,30 @@ import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { SfdManagementManager } from '@/components/admin/sfd/SfdManagementManager';
 import { Footer } from '@/components';
 import { SfdDetail } from '@/components/admin/sfd-management/SfdDetail';
-import { useSfdManagement } from '@/hooks/useSfdManagement';
+import { useSfdManagement, SFD } from '@/hooks/useSfdManagement';
 import { SfdAdminManager } from '@/components/admin/sfd/SfdAdminManager';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sfd } from '@/types/sfd-types';
 
 export default function SfdManagementPage() {
   const { sfds, isLoading } = useSfdManagement();
-  const [selectedSfd, setSelectedSfd] = useState<Sfd | null>(null);
+  const [selectedSfd, setSelectedSfd] = useState<SFD | null>(null);
   const [activeTab, setActiveTab] = useState('details');
 
   // Update selectedSfd when sfds are loaded
   useEffect(() => {
     if (sfds?.length > 0 && !selectedSfd) {
-      setSelectedSfd(sfds[0]);
+      setSelectedSfd(sfds[0] as SFD);
     }
   }, [sfds, selectedSfd]);
 
-  const handleSfdSelect = (sfd: Sfd) => {
+  const handleSfdSelect = (sfd: SFD) => {
     setSelectedSfd(sfd);
     // Reset to details tab when selecting a new SFD
     setActiveTab('details');
   };
 
-  const handleEdit = (sfd: Sfd) => {
+  const handleEdit = (sfd: SFD) => {
     console.log('Editing SFD', sfd.name);
     // Logic for editing would go here
   };
