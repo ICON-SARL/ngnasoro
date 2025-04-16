@@ -5,16 +5,10 @@ import { User, AuthContextProps, UserRole } from './auth/types';
 export function useAuth() {
   const auth = useAuthFromContext();
   
-  const userRole = auth.user?.app_metadata?.role;
-  
-  // Ajouter des méthodes de commodité avec des vérifications plus strictes
+  // We're using the existing methods from the auth context 
+  // instead of recomputing them, since they already have the same logic.
   return {
-    ...auth,
-    isAdmin: userRole === 'admin' || userRole === UserRole.SuperAdmin,
-    isSfdAdmin: userRole === 'sfd_admin' || userRole === UserRole.SfdAdmin,
-    isClient: userRole === 'user' || userRole === 'client' || userRole === UserRole.Client,
-    userRole: userRole || 'user',
-    signOut: auth.signOut, // Assurez-vous que la fonction signOut est exportée
+    ...auth
   };
 }
 

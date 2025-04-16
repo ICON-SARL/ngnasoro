@@ -1,54 +1,37 @@
 
-import { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
-export enum UserRole {
-  SuperAdmin = 'admin',
-  SfdAdmin = 'sfd_admin',
-  Client = 'client',
-  User = 'user' // Adding User role that was referenced but missing
-}
-
+// Extended User type to include common properties
 export interface User extends SupabaseUser {
+  // Add properties that we access but might not be in the Supabase User type
   full_name?: string;
   avatar_url?: string;
-  phone?: string;
   sfd_id?: string;
 }
 
-export interface Role {
-  id: string;
-  name: string;
-  permissions: string[];
+export enum UserRole {
+  SuperAdmin = 'super_admin',
+  Admin = 'admin',
+  SfdAdmin = 'sfd_admin',
+  Client = 'client',
+  User = 'user'
 }
+
+export type Role = UserRole | string;
 
 export interface AuthContextProps {
   user: User | null;
   session: Session | null;
+  userRole: string | null;
   loading: boolean;
-  userRole: UserRole | string;
+  signIn: (email: string, password: string) => Promise<any>;
+  signOut: () => Promise<any>;
+  activeSfdId: string | null;
+  setActiveSfdId: (sfdId: string | null) => void;
   isAdmin: boolean;
   isSfdAdmin: boolean;
   isClient: boolean;
-  activeSfdId: string | null;
-  setActiveSfdId: (id: string | null) => void;
-  signIn: (email: string, password: string) => Promise<{ error: any; data?: any }>;
-  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: any; data?: any }>;
-  signOut: () => Promise<{ error: any }>;
-  refreshSession: () => Promise<void>;
-  biometricEnabled: boolean;
-  toggleBiometricAuth: () => Promise<void>;
-}
-
-// Adding the missing interfaces
-export interface AssociateSfdParams {
-  userId: string;
-  sfdId: string;
-  isDefault?: boolean;
-  makeDefault?: boolean;
-}
-
-export interface AssociateSfdResult {
-  success: boolean;
-  userSfd?: any;
-  error?: string;
+  biometricEnabled?: boolean;
+  toggleBiometricAuth?: () => Promise<void>;
+  signUp?: (email: string, password: string, userData?: any) => Promise<any>;
 }

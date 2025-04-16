@@ -51,7 +51,7 @@ export function usePermissions() {
           
           // Combine permissions from all roles
           combinedPermissions = roles.reduce((acc, role) => {
-            return [...acc, ...(DEFAULT_ROLE_PERMISSIONS[role] || [])];
+            return [...acc, ...(DEFAULT_ROLE_PERMISSIONS[role as UserRole] || [])];
           }, [] as string[]);
         }
         
