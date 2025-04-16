@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { LoanPlan } from '@/types/sfdClients';
 
 export function useSfdLoanPlans() {
   const { user } = useAuth();
@@ -26,7 +27,7 @@ export function useSfdLoanPlans() {
         throw error;
       }
 
-      return plansData || [];
+      return plansData as LoanPlan[] || [];
     },
     meta: {
       errorMessage: "Impossible de charger les plans de prêt"
