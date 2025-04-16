@@ -59,17 +59,12 @@ export function useGlobalRealtime(subscriptions: TableSubscription[] = []) {
         filter = filter ? `${filter}&sfd_id=eq.${activeSfdId}` : `sfd_id=eq.${activeSfdId}`;
       }
       
-      // Use the correct structure for subscribing to postgres changes
-      channel.on(
-        'postgres_changes',
-        { 
-          event: subscription.event,
-          schema: 'public',
-          table: subscription.table,
-          filter: filter || undefined
-        },
-        handleRealtimeEvent
-      );
+      channel.on('postgres_changes', {
+        event: subscription.event, 
+        schema: 'public',
+        table: subscription.table,
+        filter: filter || undefined
+      }, handleRealtimeEvent);
     });
     
     // Track channel status using subscription callback

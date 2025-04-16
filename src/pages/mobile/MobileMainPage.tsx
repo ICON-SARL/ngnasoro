@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardContent from '@/components/mobile/dashboard/DashboardContent';
@@ -7,15 +7,41 @@ import Footer from '@/components/Footer';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Menu, RefreshCw } from 'lucide-react';
+import { Menu, RefreshCw, User, Bell } from 'lucide-react';
 import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
 import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
+import { useGlobalRealtime } from '@/hooks/useGlobalRealtime';
 
 const MobileMainPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const { synchronizeWithSfd, isSyncing } = useRealtimeSynchronization();
+  const [notificationCount, setNotificationCount] = useState(0);
+  
+  // Set up realtime listeners for relevant tables
+  useGlobalRealtime([
+    { table: 'accounts', event: 'UPDATE' },
+    { table: 'transactions', event: 'INSERT' },
+    { table: 'admin_notifications', event: 'INSERT' }
+  ]);
+  
+  // Check for unread notifications on component mount
+  useEffect(() => {
+    const checkNotifications = async () => {
+      try {
+        // In a real implementation, we'd fetch the count of unread notifications
+        // For demo purposes, we're using a mock count
+        setNotificationCount(2);
+      } catch (error) {
+        console.error('Error checking notifications:', error);
+      }
+    };
+    
+    if (user?.id) {
+      checkNotifications();
+    }
+  }, [user?.id]);
   
   const handleAction = (action: string, data?: any) => {
     switch (action) {
@@ -37,8 +63,15 @@ const MobileMainPage: React.FC = () => {
       case 'Account':
         navigate('/mobile-flow/account');
         break;
+      case 'Notifications':
+        navigate('/mobile-flow/notifications');
+        setNotificationCount(0);
+        break;
+      case 'Profile':
+        navigate('/mobile-flow/profile');
+        break;
       default:
-        // Si l'action a des données associées, les passer via state
+        // If the action has associated data, pass it via state
         if (data) {
           navigate(`/mobile-flow/${action.toLowerCase()}`, { state: data });
         } else {
@@ -77,11 +110,35 @@ const MobileMainPage: React.FC = () => {
               variant="ghost" 
               size="icon"
               className="text-white hover:bg-white/10" 
+              onClick={() => handleAction('Profile')}
+            >
+              <User className="h-5 w-5" />
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="text-white hover:bg-white/10 relative" 
+              onClick={() => handleAction('Notifications')}
+            >
+              <Bell className="h-5 w-5" />
+              {notificationCount > 0 && (
+                <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
+                  {notificationCount}
+                </span>
+              )}
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="text-white hover:bg-white/10" 
               disabled={isSyncing}
               onClick={handleManualSync}
             >
               <RefreshCw className={`h-5 w-5 ${isSyncing ? 'animate-spin' : ''}`} />
             </Button>
+            
             <Button 
               variant="ghost" 
               size="icon"
