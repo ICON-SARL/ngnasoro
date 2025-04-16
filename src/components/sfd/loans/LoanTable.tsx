@@ -17,10 +17,17 @@ interface LoanTableProps {
   periodFilter?: string;
 }
 
+// Define an extended type for loans with the joined client data
+interface LoanWithClient extends Loan {
+  sfd_clients?: {
+    full_name: string;
+  };
+}
+
 export function LoanTable({ status = 'all', searchQuery = '', periodFilter = 'all' }: LoanTableProps) {
   const { activeSfdId } = useAuth();
   const navigate = useNavigate();
-  const [loans, setLoans] = useState<Loan[]>([]);
+  const [loans, setLoans] = useState<LoanWithClient[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
