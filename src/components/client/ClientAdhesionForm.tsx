@@ -14,13 +14,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions';
-import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
-// Schéma de validation pour le formulaire
-const adhesionSchema = z.object({
+// Schema definition for adhesion request form
+const adhesionFormSchema = z.object({
   full_name: z.string().min(3, 'Le nom complet est requis'),
   profession: z.string().min(2, 'La profession est requise'),
   monthly_income: z.string().min(1, 'Le revenu mensuel est requis'),
@@ -30,24 +28,24 @@ const adhesionSchema = z.object({
   address: z.string().min(5, 'L\'adresse est requise'),
 });
 
-type FormData = z.infer<typeof adhesionSchema>;
+type AdhesionFormValues = z.infer<typeof adhesionFormSchema>;
 
 interface ClientAdhesionFormProps {
   sfdId: string;
   onSuccess?: () => void;
 }
 
-export const ClientAdhesionForm: React.FC<ClientAdhesionFormProps> = ({ sfdId, onSuccess }) => {
-  const { toast } = useToast();
+export function ClientAdhesionForm({ sfdId, onSuccess }: ClientAdhesionFormProps) {
   const { user } = useAuth();
   const { submitAdhesionRequest, isCreatingRequest } = useClientAdhesions();
   
-  const form = useForm<FormData>({
-    resolver: zodResolver(adhesionSchema),
+  // Initialize form with default values from user profile if available
+  const form = useForm<AdhesionFormValues>({
+    resolver: zodResolver(adhesionFormSchema),
     defaultValues: {
       full_name: user?.user_metadata?.full_name || '',
       email: user?.email || '',
-      phone: '',
+      phone: user?.phone || '',
       address: '',
       profession: '',
       monthly_income: '',
@@ -55,44 +53,16 @@ export const ClientAdhesionForm: React.FC<ClientAdhesionFormProps> = ({ sfdId, o
     },
   });
 
-  const onSubmit = async (data: FormData) => {
-    if (!user) {
-      toast({
-        title: 'Erreur',
-        description: 'Vous devez être connecté pour soumettre une demande.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+  const onSubmit = async (values: AdhesionFormValues) => {
     try {
-      const result = await submitAdhesionRequest(sfdId, {
-        full_name: data.full_name,
-        profession: data.profession,
-        monthly_income: data.monthly_income,
-        source_of_income: data.source_of_income,
-        phone: data.phone,
-        email: data.email,
-        address: data.address,
-      });
+      const result = await submitAdhesionRequest(sfdId, values);
       
       if (result.success) {
         form.reset();
         if (onSuccess) onSuccess();
-      } else {
-        toast({
-          title: 'Erreur',
-          description: result.error || 'Une erreur est survenue lors de l\'envoi de votre demande',
-          variant: 'destructive',
-        });
       }
-    } catch (error: any) {
-      console.error('Error submitting adhesion request:', error);
-      toast({
-        title: 'Erreur',
-        description: `Impossible d'envoyer la demande: ${error.message}`,
-        variant: 'destructive',
-      });
+    } catch (error) {
+      console.error('Error submitting adhesion form:', error);
     }
   };
 
@@ -208,16 +178,9 @@ export const ClientAdhesionForm: React.FC<ClientAdhesionFormProps> = ({ sfdId, o
         />
 
         <Button type="submit" className="w-full" disabled={isCreatingRequest}>
-          {isCreatingRequest ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Envoi en cours...
-            </>
-          ) : (
-            "Soumettre la demande"
-          )}
+          {isCreatingRequest ? 'Envoi en cours...' : 'Soumettre la demande'}
         </Button>
       </form>
     </Form>
   );
-};
+}

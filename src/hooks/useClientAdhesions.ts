@@ -93,9 +93,21 @@ export const useClientAdhesions = () => {
 
       await queryClient.invalidateQueries({ queryKey: ['userAdhesionRequests'] });
       
+      toast({
+        title: "Demande envoyée",
+        description: "Votre demande d'adhésion a été envoyée avec succès"
+      });
+      
       return { success: true, data };
     } catch (error: any) {
       console.error('Error submitting adhesion request:', error);
+      
+      toast({
+        title: "Erreur",
+        description: error.message || 'Une erreur est survenue lors de l\'envoi de votre demande',
+        variant: "destructive"
+      });
+      
       return { 
         success: false, 
         error: error.message || 'Une erreur est survenue lors de l\'envoi de votre demande' 
@@ -125,9 +137,22 @@ export const useClientAdhesions = () => {
       if (error) throw error;
       
       await queryClient.invalidateQueries({ queryKey: ['adhesionRequests'] });
+      
+      toast({
+        title: "Demande approuvée",
+        description: "La demande d'adhésion a été approuvée"
+      });
+      
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error approving adhesion request:', error);
+      
+      toast({
+        title: "Erreur",
+        description: error.message || 'Une erreur est survenue lors de l\'approbation de la demande',
+        variant: "destructive"
+      });
+      
       return false;
     }
   };
@@ -152,9 +177,22 @@ export const useClientAdhesions = () => {
       if (error) throw error;
       
       await queryClient.invalidateQueries({ queryKey: ['adhesionRequests'] });
+      
+      toast({
+        title: "Demande rejetée",
+        description: "La demande d'adhésion a été rejetée"
+      });
+      
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error rejecting adhesion request:', error);
+      
+      toast({
+        title: "Erreur",
+        description: error.message || 'Une erreur est survenue lors du rejet de la demande',
+        variant: "destructive"
+      });
+      
       return false;
     }
   };
@@ -165,7 +203,6 @@ export const useClientAdhesions = () => {
     refetchUserAdhesionRequests,
     submitAdhesionRequest,
     isCreatingRequest,
-    // Add these properties to fix the errors
     adhesionRequests: adhesionRequests || [],
     isLoadingAdhesionRequests,
     approveAdhesionRequest,
