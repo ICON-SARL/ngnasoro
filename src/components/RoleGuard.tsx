@@ -65,6 +65,15 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
       return;
     }
     
+    // Users with 'user' role can access client routes (added for compatibility)
+    if (userRole === 'user' && (
+      requiredRole === UserRole.Client || 
+      requiredRole === 'client'
+    )) {
+      setHasAccess(true);
+      return;
+    }
+    
     // Map string roles to the enum for consistency
     const normalizeRole = (role: string | UserRole): string => {
       if (typeof role === 'string') {
@@ -75,6 +84,12 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     
     const normalizedRequiredRole = normalizeRole(requiredRole);
     const normalizedUserRole = normalizeRole(userRole);
+    
+    // If client route and user role, allow access
+    if (normalizedRequiredRole === 'client' && normalizedUserRole === 'user') {
+      setHasAccess(true);
+      return;
+    }
     
     // Check for exact role match
     const permitted = normalizedUserRole === normalizedRequiredRole;

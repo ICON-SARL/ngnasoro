@@ -62,17 +62,29 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
       return;
     }
     
+    // Allow 'user' role to access client routes
+    if (userRole === 'user' && (
+      requiredRole === 'client' || 
+      requiredRole === UserRole.CLIENT
+    )) {
+      console.log('User role accessing client features, granting access');
+      setHasAccess(true);
+      return;
+    }
+    
     // Fix for role comparison - compare string values instead of enum to string
     let roleMatch = false;
     
     if (!requiredRole) {
       roleMatch = true;
     } else if (typeof requiredRole === 'string') {
-      roleMatch = userRole === requiredRole;
+      roleMatch = (userRole === requiredRole) || 
+                 (requiredRole === 'client' && userRole === 'user');
     } else {
       // Using string comparison instead of toString()
       roleMatch = userRole === UserRole[requiredRole] || 
-               (requiredRole === UserRole.SFD_ADMIN && userRole === 'sfd_admin');
+               (requiredRole === UserRole.SFD_ADMIN && userRole === 'sfd_admin') ||
+               (requiredRole === UserRole.CLIENT && userRole === 'user');
     }
     
     // Check permissions - comparing string values with string literal enum values
@@ -88,6 +100,14 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({
         (requiredPermission.includes('sfd') || 
          requiredPermission.includes('client') || 
          requiredPermission.includes('loan'))) {
+      permissionMatch = true;
+    }
+    
+    // User can access client permissions
+    if (!permissionMatch && userRole === 'user' && requiredPermission && 
+        (requiredPermission.includes('client') || 
+         requiredPermission === 'access_client_dashboard' ||
+         requiredPermission === 'request_adhesion')) {
       permissionMatch = true;
     }
     

@@ -1,4 +1,3 @@
-
 export enum UserRole {
   SUPER_ADMIN = 'admin',
   ADMIN = 'admin',
@@ -109,10 +108,10 @@ export const DEFAULT_ROLE_PERMISSIONS = {
   // Basic user permissions (minimal)
   [UserRole.USER]: [
     PERMISSIONS.REQUEST_ADHESION,
+    PERMISSIONS.ACCESS_CLIENT_DASHBOARD,
+    PERMISSIONS.VIEW_LOAN_HISTORY,
+    PERMISSIONS.REQUEST_LOAN,
   ],
-  
-  // Since SUPER_ADMIN and ADMIN are assigned the same value in the enum,
-  // we only need one entry in the permissions map
 };
 
 // Fix error by adding explicit type and adding SUPER_ADMIN permissions reference

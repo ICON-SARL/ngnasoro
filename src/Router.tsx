@@ -14,6 +14,7 @@ import ClientsPage from './pages/ClientsPage';
 import SfdClientsPage from './pages/SfdClientsPage';
 import ClientDetailsPage from './pages/ClientDetailsPage';
 import MobileFlowPage from './pages/MobileFlowPage';
+import MobileWelcomePage from './pages/MobileWelcomePage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import ClientLoginPage from './pages/ClientLoginPage';
 
@@ -42,6 +43,7 @@ const Router = () => {
           <Route path="/client/:clientId" element={<ProtectedRoute><ClientDetailsPage /></ProtectedRoute>} />
           
           {/* Mobile Flow */}
+          <Route path="/mobile-flow/welcome" element={<ProtectedRoute><MobileWelcomePage /></ProtectedRoute>} />
           <Route path="/mobile-flow/*" element={<ProtectedRoute><MobileFlowPage /></ProtectedRoute>} />
           
           {/* Catch-all route */}
