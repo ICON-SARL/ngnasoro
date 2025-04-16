@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, CheckCircle, Clock, XCircle, Building } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { ClientAdhesionForm } from '@/components/client/ClientAdhesionForm';
+import { NewAdhesionRequestForm } from '@/components/client/NewAdhesionRequestForm';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader } from '@/components/ui/loader';
@@ -29,6 +28,8 @@ const SfdAdhesionPage: React.FC = () => {
   const [sfdError, setSfdError] = useState<string | null>(null);
   
   useEffect(() => {
+    if (!user) return;
+    
     const fetchSfdInfo = async () => {
       if (!sfdId) return;
       
@@ -189,7 +190,7 @@ const SfdAdhesionPage: React.FC = () => {
             </div>
           ) : (
             sfdInfo ? (
-              <ClientAdhesionForm 
+              <NewAdhesionRequestForm 
                 sfdId={sfdId} 
                 onSuccess={() => {
                   toast({

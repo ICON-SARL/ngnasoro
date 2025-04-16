@@ -37,8 +37,8 @@ const SfdAdhesionSection: React.FC = () => {
         if (sfdsError) throw sfdsError;
         
         const { data: requests, error: requestsError } = await supabase
-          .from('sfd_clients')
-          .select('id, sfd_id, status, created_at, sfds(name)')
+          .from('client_adhesion_requests')
+          .select('id, sfd_id, status, created_at, sfds:sfd_id(name)')
           .eq('user_id', user.id);
         
         if (requestsError) throw requestsError;
@@ -54,7 +54,7 @@ const SfdAdhesionSection: React.FC = () => {
         setAvailableSfds(sfds as AvailableSfd[]);
         setUserRequests(formattedRequests);
       } catch (error) {
-        console.error('Erreur lors de la récupération des données:', error);
+        console.error('Error fetching data:', error);
         toast({
           title: 'Erreur',
           description: 'Impossible de charger les données des SFD',
@@ -146,7 +146,7 @@ const SfdAdhesionSection: React.FC = () => {
           <div className="flex justify-center py-4">
             <Loader size="md" />
           </div>
-        ) : userRequests.length === 0 && availableSfds.length === 0 ? (
+        ) : availableSfds.length === 0 && userRequests.length === 0 ? (
           <EmptySfdState />
         ) : (
           <div className="space-y-4">

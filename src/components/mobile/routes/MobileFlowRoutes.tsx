@@ -7,14 +7,7 @@ import WelcomeScreen from '../WelcomeScreen';
 import ProfilePage from '../profile/ProfilePage';
 import SplashScreen from '../SplashScreen';
 import SfdSelectorPage from '@/pages/SfdSelectorPage';
-import MobileLoansPage from '@/pages/mobile/MobileLoansPage';
-import MobileLoanPlansPage from '@/pages/mobile/MobileLoanPlansPage';
-import MobileLoanSimulatorPage from '@/pages/mobile/MobileLoanSimulatorPage';
-import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage';
-import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
-import MobileLoanDetailsPage from '@/pages/mobile/MobileLoanDetailsPage';
-import SfdConnectionPage from '@/pages/mobile/SfdConnectionPage';
-import EmptySfdState from '../EmptySfdState';
+import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 
 interface MobileFlowRoutesProps {
   onAction: (action: string, data?: any) => void;
@@ -37,18 +30,10 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
   setShowWelcome,
   handlePaymentSubmit
 }) => {
-  console.log("Rendering MobileFlowRoutes with account:", account);
-  
   return (
     <Routes>
-      <Route path="splash" element={
-        <SplashScreen onComplete={() => onAction('Start')} />
-      } />
-      
-      <Route path="welcome" element={
-        <WelcomeScreen onStart={() => onAction('Start')} />
-      } />
-      
+      <Route path="splash" element={<SplashScreen onComplete={() => onAction('Start')} />} />
+      <Route path="welcome" element={<WelcomeScreen onStart={() => onAction('Start')} />} />
       <Route path="main" element={
         <MainDashboard
           account={account}
@@ -58,53 +43,11 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
           toggleMenu={toggleMenu}
         />
       } />
-      
-      <Route path="profile" element={
-        <ProfilePage />
-      } />
-
-      <Route path="sfd-selector" element={
-        <SfdSelectorPage />
-      } />
-      
-      <Route path="sfd-connection" element={
-        <SfdConnectionPage />
-      } />
-      
-      <Route path="empty-sfd" element={
-        <EmptySfdState />
-      } />
-      
-      <Route path="funds-management" element={
-        <FundsManagementView />
-      } />
-      
-      <Route path="loans" element={
-        <MobileLoansPage />
-      } />
-      
-      <Route path="loan-plans" element={
-        <MobileLoanPlansPage />
-      } />
-      
-      <Route path="loan-simulator" element={
-        <MobileLoanSimulatorPage />
-      } />
-      
-      <Route path="loan-application" element={
-        <MobileLoanApplicationPage />
-      } />
-      
-      <Route path="my-loans" element={
-        <MobileMyLoansPage />
-      } />
-      
-      <Route path="loan-details/:id" element={
-        <MobileLoanDetailsPage />
-      } />
-      
+      <Route path="profile" element={<ProfilePage />} />
+      <Route path="sfd-selector" element={<SfdSelectorPage />} />
+      <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
+      <Route path="funds-management" element={<FundsManagementView />} />
       <Route index element={<Navigate to="main" replace />} />
-      
       <Route path="*" element={<Navigate to="main" replace />} />
     </Routes>
   );
