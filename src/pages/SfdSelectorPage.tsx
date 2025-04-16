@@ -121,6 +121,46 @@ const SfdSelectorPage = () => {
     }
   };
 
+  const handleRetryRequest = async (sfdId: string) => {
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour réessayer une demande",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      // Supprimer l'ancienne demande rejetée
+      const { error: deleteError } = await supabase
+        .from('client_adhesion_requests')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('sfd_id', sfdId)
+        .eq('status', 'rejected');
+        
+      if (deleteError) {
+        console.error('Erreur lors de la suppression de l\'ancienne demande:', deleteError);
+        throw deleteError;
+      }
+      
+      // Mettre à jour la liste des demandes existantes
+      setExistingRequests(existingRequests.filter(req => !(req.sfd_id === sfdId && req.status === 'rejected')));
+      
+      // Rediriger vers la page d'adhésion pour créer une nouvelle demande
+      console.log(`Redirecting to adhesion page for retry SFD: ${sfdId}`);
+      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
+      
+    } catch (err) {
+      console.error('Error handling retry request:', err);
+      handleError(err);
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white shadow-sm p-4 flex items-center">
@@ -159,7 +199,8 @@ const SfdSelectorPage = () => {
           </div>
         ) : (
           <SfdList 
-            onSelectSfd={handleSendRequest} 
+            onSelectSfd={handleSendRequest}
+            onRetry={handleRetryRequest}
             existingRequests={existingRequests}
             isSubmitting={isSubmitting}
             sfds={sfds}

@@ -21,17 +21,65 @@ interface SfdListProps {
   existingRequests?: Array<{sfd_id: string, status: string}>;
   isSubmitting?: boolean;
   onSelectSfd?: (sfdId: string) => void;
+  onRetry?: (sfdId: string) => void;
 }
 
 const SfdList: React.FC<SfdListProps> = ({ 
   sfds, 
   existingRequests = [], 
   isSubmitting = false,
-  onSelectSfd 
+  onSelectSfd,
+  onRetry
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Fonction pour gérer le clic sur le bouton Réessayer
+  const handleRetryClick = async (sfd: SfdProps, e: React.MouseEvent) => {
+    e.stopPropagation(); // Empêcher la propagation du clic
+    
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour soumettre une demande",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      console.log(`Réessayer pour SFD: ${sfd.id}`);
+      
+      // Si une fonction de rappel pour réessayer est fournie, l'utiliser
+      if (onRetry) {
+        onRetry(sfd.id);
+      } else {
+        // Supprimer l'ancienne demande rejetée
+        const { error: deleteError } = await supabase
+          .from('client_adhesion_requests')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('sfd_id', sfd.id)
+          .eq('status', 'rejected');
+          
+        if (deleteError) {
+          console.error('Erreur lors de la suppression de l\'ancienne demande:', deleteError);
+          throw deleteError;
+        }
+        
+        // Rediriger vers la page d'adhésion pour créer une nouvelle demande
+        navigate(`/mobile-flow/sfd-adhesion/${sfd.id}`);
+      }
+    } catch (error) {
+      console.error('Error handling retry:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de traiter votre demande. Veuillez réessayer.",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Fonction pour gérer le clic sur le bouton Rejoindre
   const handleJoinClick = async (sfd: SfdProps, e: React.MouseEvent) => {
@@ -115,19 +163,30 @@ const SfdList: React.FC<SfdListProps> = ({
                     </div>
                   </div>
                   
-                  <Button
-                    onClick={(e) => handleJoinClick(sfd, e)}
-                    className={`${
-                      isPending 
-                        ? 'bg-amber-500 hover:bg-amber-600' 
-                        : isRejected
-                          ? 'bg-red-100 text-red-800 hover:bg-red-200'
-                          : 'bg-[#0D6A51] hover:bg-[#0D6A51]/90'
-                    }`}
-                    disabled={isSubmitting || isPending}
-                  >
-                    {isPending ? 'En attente' : isRejected ? 'Réessayer' : 'Rejoindre'}
-                  </Button>
+                  {isPending ? (
+                    <Button
+                      className="bg-amber-500 hover:bg-amber-600"
+                      disabled={true}
+                    >
+                      En attente
+                    </Button>
+                  ) : isRejected ? (
+                    <Button
+                      onClick={(e) => handleRetryClick(sfd, e)}
+                      className="bg-red-100 text-red-800 hover:bg-red-200"
+                      disabled={isSubmitting}
+                    >
+                      Réessayer
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={(e) => handleJoinClick(sfd, e)}
+                      className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+                      disabled={isSubmitting}
+                    >
+                      Rejoindre
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>

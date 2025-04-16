@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader } from '@/components/ui/loader';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SfdListPopupProps {
   isOpen: boolean;
@@ -22,14 +23,16 @@ interface Sfd {
 
 const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
   const [sfds, setSfds] = useState<Sfd[]>([]);
+  const [existingRequests, setExistingRequests] = useState<{sfd_id: string, status: string}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    const fetchActiveSfds = async () => {
-      if (!isOpen) return;
+    const fetchData = async () => {
+      if (!isOpen || !user?.id) return;
 
       setIsLoading(true);
       setError(null);
@@ -37,32 +40,29 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
       try {
         console.log('Fetching active SFDs for popup display');
         
-        // Option 1: Direct database query
-        const { data: directData, error: directError } = await supabase
-          .from('sfds')
-          .select('id, name, region, logo_url')
-          .eq('status', 'active')
-          .order('name');
-          
-        if (directError) throw directError;
+        // Récupérer les SFDs via la fonction Edge
+        const { data: sfdsData, error: sfdsError } = await supabase.functions.invoke('fetch-sfds', {
+          body: { userId: user.id }
+        });
         
-        if (directData && directData.length > 0) {
-          setSfds(directData);
-          setIsLoading(false);
-          return;
-        }
+        if (sfdsError) throw sfdsError;
         
-        // Option 2: Edge function as fallback
-        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('fetch-sfds');
-        
-        if (edgeError) throw edgeError;
-        
-        if (Array.isArray(edgeData)) {
-          console.log(`Fetched ${edgeData.length} active SFDs from Edge function`);
-          setSfds(edgeData);
+        if (Array.isArray(sfdsData)) {
+          console.log(`Fetched ${sfdsData.length} active SFDs from Edge function`);
+          setSfds(sfdsData);
         } else {
           throw new Error('Aucune SFD active trouvée');
         }
+        
+        // Récupérer les demandes existantes
+        const { data: existingReqs, error: requestsError } = await supabase
+          .from('client_adhesion_requests')
+          .select('sfd_id, status')
+          .eq('user_id', user.id);
+          
+        if (requestsError) throw requestsError;
+        
+        setExistingRequests(existingReqs || []);
       } catch (err: any) {
         console.error('Erreur lors du chargement des SFDs:', err);
         setError('Impossible de charger la liste des SFDs. Veuillez réessayer plus tard.');
@@ -76,13 +76,41 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
       }
     };
 
-    fetchActiveSfds();
-  }, [isOpen, toast]);
+    fetchData();
+  }, [isOpen, toast, user?.id]);
 
   const handleSelectSfd = (sfdId: string) => {
     // Rediriger directement vers la page de sélection SFD avec le paramètre
     navigate('/sfd-selector', { state: { selectedSfdId: sfdId } });
     onClose();
+  };
+
+  const renderButton = (sfd: Sfd) => {
+    const existingRequest = existingRequests.find(req => req.sfd_id === sfd.id);
+    const isPending = existingRequest && ['pending', 'pending_validation'].includes(existingRequest.status);
+    const isRejected = existingRequest && existingRequest.status === 'rejected';
+    
+    if (isPending) {
+      return (
+        <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-md text-sm">
+          En attente
+        </span>
+      );
+    } else if (isRejected) {
+      return (
+        <span className="px-3 py-1 bg-red-100 text-red-800 rounded-md text-sm cursor-pointer"
+              onClick={() => handleSelectSfd(sfd.id)}>
+          Réessayer
+        </span>
+      );
+    } else {
+      return (
+        <span className="px-3 py-1 bg-[#0D6A51]/10 text-[#0D6A51] rounded-md text-sm cursor-pointer"
+              onClick={() => handleSelectSfd(sfd.id)}>
+          Rejoindre
+        </span>
+      );
+    }
   };
 
   return (
@@ -126,28 +154,30 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
               {sfds.map((sfd) => (
                 <div 
                   key={sfd.id}
-                  className="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => handleSelectSfd(sfd.id)}
+                  className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="h-12 w-12 flex-shrink-0 bg-gray-100 rounded-md flex items-center justify-center mr-3 overflow-hidden">
-                    {sfd.logo_url ? (
-                      <img 
-                        src={sfd.logo_url} 
-                        alt={sfd.name} 
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-lg font-bold text-gray-500">
-                        {sfd.name.charAt(0)}
-                      </span>
-                    )}
+                  <div className="flex items-center">
+                    <div className="h-12 w-12 flex-shrink-0 bg-gray-100 rounded-md flex items-center justify-center mr-3 overflow-hidden">
+                      {sfd.logo_url ? (
+                        <img 
+                          src={sfd.logo_url} 
+                          alt={sfd.name} 
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-lg font-bold text-gray-500">
+                          {sfd.name.charAt(0)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-800">{sfd.name}</h3>
+                      {sfd.region && (
+                        <p className="text-sm text-gray-500">{sfd.region}</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-800">{sfd.name}</h3>
-                    {sfd.region && (
-                      <p className="text-sm text-gray-500">{sfd.region}</p>
-                    )}
-                  </div>
+                  {renderButton(sfd)}
                 </div>
               ))}
             </div>
