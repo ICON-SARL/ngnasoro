@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
@@ -8,6 +9,7 @@ import ProtectedRoute from '@/components/routes/ProtectedRoute';
 import { UserRole } from '@/hooks/auth/types';
 import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 import SfdSelectorPage from '@/pages/SfdSelectorPage';
+import { LoanApplicationForm } from '@/components/loan/LoanApplicationForm';
 
 export const MobileRouter = () => {
   return (

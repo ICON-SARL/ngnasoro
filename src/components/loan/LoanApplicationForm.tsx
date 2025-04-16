@@ -36,7 +36,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const LoanApplicationForm = () => {
+export const LoanApplicationForm: React.FC = () => {
   const { sfdId } = useParams();
   const navigate = useNavigate();
   const [selectedFiles, setSelectedFiles] = useState<Record<LoanDocumentType, File | null>>({
@@ -72,6 +72,10 @@ export const LoanApplicationForm = () => {
 
     await submitApplication.mutateAsync({
       ...values,
+      amount: values.amount,
+      duration_months: values.duration_months,
+      purpose: values.purpose,
+      loan_plan_id: values.loan_plan_id,
       documents,
     });
 
