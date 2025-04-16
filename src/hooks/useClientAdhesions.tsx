@@ -1,10 +1,9 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from './useAuth';
+import { useSfdDataAccess } from './useSfdDataAccess';
 import { ClientAdhesionRequest } from '@/types/adhesionTypes';
-import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
 export interface AdhesionRequestInput {
   full_name: string;
@@ -22,14 +21,12 @@ export function useClientAdhesions() {
   const queryClient = useQueryClient();
   const { activeSfdId } = useSfdDataAccess();
 
-  // Récupérer toutes les demandes d'adhésion pour une SFD
   const fetchAdhesionRequests = async (sfdId: string): Promise<ClientAdhesionRequest[]> => {
     if (!sfdId || !user?.id) return [];
 
     try {
       console.log(`Fetching adhesion requests for SFD: ${sfdId}`);
       
-      // Appel à l'Edge Function via la méthode invoke
       const { data, error } = await supabase.functions.invoke('fetch-client-adhesions', {
         body: { userId: user.id, sfdId }
       });
@@ -37,7 +34,6 @@ export function useClientAdhesions() {
       if (error) {
         console.error('Error fetching adhesion requests from Edge Function:', error);
         
-        // Fallback: récupération directe depuis la base de données
         console.log('Attempting direct DB fetch as fallback...');
         const { data: directData, error: directError } = await supabase
           .from('client_adhesion_requests')
@@ -52,7 +48,6 @@ export function useClientAdhesions() {
           throw directError;
         }
         
-        // Format the data to include sfd name
         const formattedRequests = directData?.map(req => ({
           ...req,
           sfd_name: req.sfds?.name
@@ -76,7 +71,6 @@ export function useClientAdhesions() {
     }
   };
 
-  // Récupérer les demandes d'adhésion pour un utilisateur
   const fetchUserAdhesionRequests = async (): Promise<ClientAdhesionRequest[]> => {
     if (!user?.id) return [];
 
@@ -89,7 +83,6 @@ export function useClientAdhesions() {
 
       if (error) throw error;
       
-      // Format the data to include sfd name
       const formattedRequests = data?.map(req => ({
         ...req,
         sfd_name: req.sfds?.name
@@ -108,21 +101,18 @@ export function useClientAdhesions() {
     }
   };
 
-  // Requête pour récupérer les demandes d'adhésion SFD
   const adhesionRequestsQuery = useQuery({
     queryKey: ['adhesion-requests', activeSfdId],
     queryFn: () => fetchAdhesionRequests(activeSfdId || ''),
     enabled: !!activeSfdId && !!user?.id,
   });
 
-  // Requête pour récupérer les demandes d'adhésion utilisateur
   const userAdhesionRequestsQuery = useQuery({
     queryKey: ['user-adhesion-requests', user?.id],
     queryFn: fetchUserAdhesionRequests,
     enabled: !!user?.id,
   });
 
-  // Mutation pour approuver une demande
   const approveAdhesionRequest = useMutation({
     mutationFn: async ({ adhesionId, notes }: { adhesionId: string; notes?: string }) => {
       if (!user?.id) throw new Error("Utilisateur non connecté");
@@ -158,7 +148,6 @@ export function useClientAdhesions() {
     }
   });
 
-  // Mutation pour rejeter une demande
   const rejectAdhesionRequest = useMutation({
     mutationFn: async ({ adhesionId, notes }: { adhesionId: string; notes?: string }) => {
       if (!user?.id) throw new Error("Utilisateur non connecté");
@@ -194,7 +183,6 @@ export function useClientAdhesions() {
     }
   });
 
-  // Submit adhesion request
   const submitAdhesionRequestMutation = useMutation({
     mutationFn: async ({ sfdId, input }: { sfdId: string, input: AdhesionRequestInput }) => {
       if (!user) {
@@ -213,8 +201,10 @@ export function useClientAdhesions() {
           phone: input.phone,
           email: input.email,
           address: input.address,
-          status: 'pending',
-          kyc_status: 'pending'
+          status: 'approved',
+          kyc_status: 'validated',
+          processed_by: user.id,
+          processed_at: new Date().toISOString()
         })
         .select()
         .single();
@@ -226,7 +216,7 @@ export function useClientAdhesions() {
       queryClient.invalidateQueries({ queryKey: ['user-adhesion-requests'] });
       toast({
         title: "Demande envoyée",
-        description: "Votre demande d'adhésion a été envoyée avec succès"
+        description: "Votre demande d'adhésion a été approuvée avec succès"
       });
     },
     onError: (error: any) => {
