@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Account } from '@/types/transactions';
 import MainDashboard from '../dashboard/MainDashboard';
+import FundsManagementView from '../funds/FundsManagementView';
 import WelcomeScreen from '../WelcomeScreen';
 import ProfilePage from '../profile/ProfilePage';
 import SplashScreen from '../SplashScreen';
@@ -68,6 +68,10 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       
       <Route path="sfd-connection" element={
         <SfdConnectionPage />
+      } />
+      
+      <Route path="funds-management" element={
+        <FundsManagementView />
       } />
       
       {/* Routes de prêt */}
