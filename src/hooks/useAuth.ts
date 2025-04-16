@@ -1,7 +1,7 @@
-
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
+import React from 'react';
 
 interface AuthContextType {
   user: User | null;
@@ -12,24 +12,36 @@ interface AuthContextType {
   signOut: () => Promise<any>;
   activeSfdId: string | null;
   setActiveSfdId: (sfdId: string | null) => void;
+  isAdmin: boolean;
+  isSfdAdmin: boolean;
+  isClient: boolean;
+  biometricEnabled?: boolean;
+  toggleBiometricAuth?: () => Promise<void>;
+  signUp?: (email: string, password: string, userData?: any) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
+  const [biometricEnabled, setBiometricEnabled] = useState<boolean>(false);
+
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
+  const isSfdAdmin = userRole === 'sfd_admin';
+  const isClient = userRole === 'client' || userRole === 'user';
 
   useEffect(() => {
-    // Récupérer la session au chargement
+    console.log('AuthProvider: Initializing authentication...');
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('AuthProvider: Session loaded:', session ? 'Session found' : 'No session');
       setSession(session);
       setUser(session?.user ?? null);
       
-      // Extraire le rôle de l'utilisateur depuis app_metadata
       if (session?.user) {
         const role = session.user.app_metadata?.role;
         console.log('User authenticated:', session.user.email);
@@ -38,12 +50,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    // Configurer le listener de changement d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('AuthProvider: Auth state changed:', _event);
       setSession(session);
       setUser(session?.user ?? null);
       
-      // Mettre à jour le rôle lors du changement d'authentification
       if (session?.user) {
         const role = session.user.app_metadata?.role;
         console.log('Auth state changed. New role:', role);
@@ -55,7 +66,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
 
-    // Récupérer le SFD actif du localStorage
     const storedSfdId = localStorage.getItem('activeSfdId');
     if (storedSfdId) {
       console.log('Found stored SFD ID:', storedSfdId);
@@ -65,7 +75,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fonction pour définir le SFD actif
   const updateActiveSfdId = (sfdId: string | null) => {
     console.log('Setting active SFD ID in localStorage:', sfdId);
     setActiveSfdId(sfdId);
@@ -86,7 +95,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) throw error;
       
-      // Mettre à jour le rôle après connexion
       if (data.user) {
         const role = data.user.app_metadata?.role;
         console.log('Sign in successful. User role:', role);
@@ -100,13 +108,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const signUp = async (email: string, password: string, userData?: any) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: userData
+        }
+      });
+      
+      if (error) throw error;
+      
+      return { data, error: null };
+    } catch (error: any) {
+      console.error('Sign up error:', error.message);
+      return { data: null, error };
+    }
+  };
+
   const signOut = async () => {
     try {
       console.log('Signing out...');
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      // Réinitialiser l'état
       setUser(null);
       setSession(null);
       setUserRole(null);
@@ -120,8 +146,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Since this is a .ts file, not a .tsx file, we can't use JSX syntax here
-  // Instead, we'll use React.createElement
+  const toggleBiometricAuth = async () => {
+    try {
+      setBiometricEnabled(!biometricEnabled);
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error toggling biometric auth:', error);
+      throw error;
+    }
+  };
+
   return React.createElement(
     AuthContext.Provider,
     {
@@ -134,6 +168,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signOut,
         activeSfdId,
         setActiveSfdId: updateActiveSfdId,
+        isAdmin,
+        isSfdAdmin,
+        isClient,
+        biometricEnabled,
+        toggleBiometricAuth,
+        signUp
       }
     },
     children
@@ -143,7 +183,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
+    console.error('useAuth called outside of AuthProvider!');
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+export const getUserDisplayName = (user: User | null) => {
+  if (!user) return 'Anonymous User';
+  
+  const metadataFullName = user.user_metadata?.full_name;
+  if (metadataFullName) return metadataFullName;
+  
+  return user.email?.split('@')[0] || 'User';
+};
+
+export const getUserAvatar = (user: User | null) => {
+  if (!user) return null;
+  return user.user_metadata?.avatar_url || null;
 };

@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Building, CreditCard, Users, FileText, LogOut, Settings, Landmark } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth, getUserDisplayName } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import LogoutButton from '@/components/LogoutButton';
 
@@ -21,8 +21,8 @@ export const AgencyHeader = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Get user name from user metadata or email
-  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'SFD User';
+  // Get user name from metadata or email
+  const userName = getUserDisplayName(user);
   
   return (
     <header className="bg-white border-b border-gray-200">

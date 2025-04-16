@@ -16,7 +16,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
   requiredRole,
   fallbackPath = '/login'
 }) => {
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, loading, isAdmin, isSfdAdmin } = useAuth();
   const location = useLocation();
   
   console.log('RoleGuard checking access:', { userRole, requiredRole, path: location.pathname });
@@ -41,11 +41,22 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
     }
   }
   
-  // Vérifier si l'utilisateur a le rôle requis
+  // Admin has access to everything
+  if (isAdmin) {
+    return <>{children}</>;
+  }
+  
+  // SFD Admin has access to SFD-specific roles
+  if (isSfdAdmin && (requiredRole === UserRole.SFD_ADMIN || requiredRole === 'sfd_admin')) {
+    return <>{children}</>;
+  }
+  
+  // Check if the user has the required role
   const hasRequiredRole = 
     userRole === requiredRole || 
     (requiredRole === UserRole.SFD_ADMIN && userRole === 'sfd_admin') ||
-    (requiredRole === UserRole.SUPER_ADMIN && userRole === 'admin');
+    (requiredRole === UserRole.SUPER_ADMIN && userRole === 'admin') ||
+    (requiredRole === UserRole.CLIENT && (userRole === 'client' || userRole === 'user'));
     
   if (!hasRequiredRole) {
     console.log('Access denied. Required role:', requiredRole, 'User role:', userRole);
