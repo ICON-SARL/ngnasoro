@@ -23,49 +23,16 @@ export default function SfdConnectionPage() {
           .order('name');
           
         if (directError) {
-          console.error('Error fetching SFDs directly:', directError);
+          console.error('Error fetching SFDs:', directError);
           throw directError;
         }
         
         if (directData && directData.length > 0) {
-          console.log(`Retrieved ${directData.length} SFDs directly from database`);
           return directData;
         }
         
-        // If no direct results, try the edge function
-        console.log('No SFDs found directly, trying edge function...');
-        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('fetch-sfds', {});
-        
-        if (edgeError) {
-          console.error('Error fetching SFDs from edge function:', edgeError);
-          throw edgeError;
-        }
-        
-        if (edgeData && Array.isArray(edgeData) && edgeData.length > 0) {
-          console.log(`Retrieved ${edgeData.length} SFDs from edge function`);
-          return edgeData;
-        }
-        
-        // If still no results, return hardcoded data for development
-        console.log('No SFDs found, returning development data');
-        return [
-          {
-            id: 'test-sfd1',
-            name: 'RMCR (Test)',
-            code: 'RMCR',
-            region: 'Centre',
-            status: 'active',
-            logo_url: null
-          },
-          {
-            id: 'test-sfd2',
-            name: 'NYESIGISO (Test)',
-            code: 'NYESIGISO',
-            region: 'Sud',
-            status: 'active',
-            logo_url: null
-          }
-        ];
+        // Return empty array if no SFDs found
+        return [];
       } catch (error) {
         console.error('Failed to fetch SFDs:', error);
         throw error;

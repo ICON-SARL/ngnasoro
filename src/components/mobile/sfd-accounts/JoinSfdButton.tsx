@@ -21,7 +21,7 @@ export const JoinSfdButton = ({ sfdId, sfdName }: { sfdId: string; sfdName: stri
         return;
       }
 
-      // Navigate to the SFD adhesion page instead of creating the request directly
+      // Navigate to the SFD adhesion page
       navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
       
     } catch (err) {
