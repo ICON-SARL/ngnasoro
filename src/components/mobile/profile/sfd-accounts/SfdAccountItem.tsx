@@ -57,7 +57,7 @@ const SfdAccountItem: React.FC<SfdAccountItemProps> = ({
           
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-500">
-              {sfd.balance.toLocaleString()} {sfd.currency}
+              {sfd.balance?.toLocaleString() || 0} {sfd.currency || 'FCFA'}
             </span>
             
             {sfd.isVerified && (

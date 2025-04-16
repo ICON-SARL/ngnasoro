@@ -30,9 +30,10 @@ export default function useSfdAccountsData(
         currency: sfd.currency || 'FCFA',
         code: sfd.code || '',
         region: sfd.region || '',
-        logoUrl: sfd.logoUrl || sfd.logo_url || null,
-        isDefault: Boolean(sfd.isDefault || sfd.is_default),
-        isVerified: true
+        logo_url: sfd.logoUrl || sfd.logo_url || null,
+        is_default: Boolean(sfd.isDefault || sfd.is_default),
+        isVerified: Boolean(sfd.isVerified || true),
+        status: sfd.status || 'active'
       };
     }).filter(Boolean);
   };

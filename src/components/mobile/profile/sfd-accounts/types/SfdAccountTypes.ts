@@ -27,5 +27,6 @@ export interface SfdAccountDisplay {
   currency?: string;
   logo_url?: string;
   is_default?: boolean;
+  isVerified?: boolean;
   last_updated?: string;
 }

@@ -18,7 +18,7 @@ export function useRealtimeSync({
   onDelete
 }: RealtimeSyncProps) {
   useEffect(() => {
-    // Build the channel topic with optional filter
+    // Build the channel name with optional filter
     let channelName = `realtime:public:${table}`;
     if (filter) {
       channelName += `:${filter}`;
@@ -26,35 +26,47 @@ export function useRealtimeSync({
     
     // Create the subscription
     const channel = supabase
-      .channel(channelName)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
+      .channel(channelName);
+    
+    // Add event handlers
+    if (onInsert) {
+      channel.on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
         table: table,
-        filter: filter ? { filter } : undefined
+        filter: filter ? { filter } : undefined 
       }, (payload) => {
         console.log(`New ${table} record inserted:`, payload.new);
-        if (onInsert) onInsert(payload.new);
-      })
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
+        onInsert(payload.new);
+      });
+    }
+    
+    if (onUpdate) {
+      channel.on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
         table: table,
-        filter: filter ? { filter } : undefined
+        filter: filter ? { filter } : undefined 
       }, (payload) => {
         console.log(`${table} record updated:`, payload.new);
-        if (onUpdate) onUpdate(payload.new);
-      })
-      .on('postgres_changes', {
-        event: 'DELETE',
-        schema: 'public',
+        onUpdate(payload.new);
+      });
+    }
+    
+    if (onDelete) {
+      channel.on('postgres_changes', { 
+        event: 'DELETE', 
+        schema: 'public', 
         table: table,
-        filter: filter ? { filter } : undefined
+        filter: filter ? { filter } : undefined 
       }, (payload) => {
         console.log(`${table} record deleted:`, payload.old);
-        if (onDelete) onDelete(payload.old);
-      })
-      .subscribe();
+        onDelete(payload.old);
+      });
+    }
+    
+    // Subscribe to the channel
+    channel.subscribe();
       
     // Clean up the subscription when component unmounts
     return () => {

@@ -25,8 +25,8 @@ export function sortAccounts(accounts: SfdAccountDisplay[]): SfdAccountDisplay[]
     }
     
     // Default accounts come next
-    if (a.isDefault && !b.isDefault) return -1;
-    if (!a.isDefault && b.isDefault) return 1;
+    if (a.is_default && !b.is_default) return -1;
+    if (!a.is_default && b.is_default) return 1;
     
     // Then verified accounts
     if (a.isVerified && !b.isVerified) return -1;
@@ -43,5 +43,5 @@ export function sortAccounts(accounts: SfdAccountDisplay[]): SfdAccountDisplay[]
  */
 export function canDisplayBalance(account: SfdAccountDisplay): boolean {
   // Only show balance for verified accounts or default accounts
-  return account.isVerified || account.isDefault || account.status === 'validated';
+  return account.isVerified || account.is_default || account.status === 'validated';
 }
