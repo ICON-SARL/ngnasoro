@@ -1,107 +1,140 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
-export interface RealtimeEvent<T = any> {
-  table: string;
-  schema: string;
-  event: 'INSERT' | 'UPDATE' | 'DELETE';
-  new: T;
-  old: T;
-}
-
-export type TableSubscription = {
-  table: string;
-  event: 'INSERT' | 'UPDATE' | 'DELETE' | '*';
-  filter?: string;
-};
-
-/**
- * Hook for global real-time updates across multiple tables
- */
-export function useGlobalRealtime(subscriptions: TableSubscription[] = []) {
-  const [events, setEvents] = useState<RealtimeEvent[]>([]);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const { user, activeSfdId } = useAuth();
+export function useGlobalRealtime() {
+  const { user } = useAuth();
   const { toast } = useToast();
-
-  // Handle real-time events
-  const handleRealtimeEvent = useCallback((payload: RealtimeEvent) => {
-    // Add the event to our list of events
-    setEvents(prevEvents => [payload, ...prevEvents].slice(0, 50)); // Keep only last 50 events
-    setLastUpdated(new Date());
-    
-    // Log the event for debugging
-    console.log(`[Realtime] ${payload.event} on ${payload.schema}.${payload.table}`, payload);
-  }, []);
-
-  // Subscribe to real-time updates
+  const [isConnected, setIsConnected] = useState(false);
+  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
+  
+  // Initial channel setup
   useEffect(() => {
-    if (!user?.id || subscriptions.length === 0) return;
-
-    // Create a channel for all subscriptions
-    const channel: RealtimeChannel = supabase.channel('global-realtime');
+    if (!user) return;
     
-    // Add all subscriptions to the channel
-    subscriptions.forEach(subscription => {
-      let filter = subscription.filter || '';
-      
-      // Add user filter if none specified
-      if (!filter && user?.id) {
-        filter = `user_id=eq.${user.id}`;
+    const setupChannel = async () => {
+      try {
+        // Clean up any existing channel
+        if (channel) {
+          await channel.unsubscribe();
+        }
+        
+        // Set up a new channel for the user
+        const newChannel = supabase.channel(`user-${user.id}`, {
+          config: {
+            broadcast: { self: true }
+          }
+        });
+        
+        // Set up event handlers
+        newChannel
+          .on('presence', { event: 'sync' }, () => {
+            console.log('Presence sync event received');
+            setIsConnected(true);
+          })
+          .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+            console.log('Presence join:', key, newPresences);
+          })
+          .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+            console.log('Presence leave:', key, leftPresences);
+          })
+          .on('broadcast', { event: 'notification' }, (payload) => {
+            console.log('Received notification:', payload);
+            handleNotification(payload);
+          });
+        
+        // Subscribe to the channel
+        newChannel.subscribe((status) => {
+          console.log(`Channel status: ${status}`);
+          if (status === 'SUBSCRIBED') {
+            setIsConnected(true);
+          } else {
+            setIsConnected(false);
+          }
+        });
+        
+        // Setup database change subscription
+        // NOTE: Fixing the error by using correct channel type syntax
+        supabase
+          .channel('schema-db-changes')
+          .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`
+          }, (payload) => {
+            console.log('Database change detected:', payload);
+            if (payload.new && payload.new.user_id === user.id) {
+              handleDatabaseNotification(payload.new);
+            }
+          })
+          .subscribe();
+          
+        setChannel(newChannel);
+      } catch (error) {
+        console.error('Error setting up realtime channel:', error);
       }
-      
-      // Add SFD filter if available
-      if (activeSfdId && !filter.includes('sfd_id')) {
-        filter = filter ? `${filter}&sfd_id=eq.${activeSfdId}` : `sfd_id=eq.${activeSfdId}`;
-      }
-      
-      // Use the correct format for subscribing to postgres changes
-      // The event type needs to match the parameter format expected by supabase-js
-      channel.on(
-        'postgres_changes', 
-        { 
-          event: subscription.event, 
-          schema: 'public',
-          table: subscription.table,
-          filter: filter || undefined
-        } as any, 
-        handleRealtimeEvent
-      );
-    });
+    };
     
-    // Track channel status using subscription callback
-    channel.subscribe((status) => {
-      console.log(`[Realtime] Subscription status: ${status}`);
-      if (status === 'SUBSCRIBED') {
-        setIsConnected(true);
-        console.log('[Realtime] Connected to global channel');
-      } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-        setIsConnected(false);
-        console.log('[Realtime] Disconnected from global channel');
-      }
-    });
+    setupChannel();
     
     // Cleanup on unmount
     return () => {
-      console.log('[Realtime] Cleaning up global channel');
-      supabase.removeChannel(channel);
+      if (channel) {
+        channel.unsubscribe();
+      }
     };
-  }, [user?.id, activeSfdId, handleRealtimeEvent, subscriptions]);
-
-  // Method to clear events
-  const clearEvents = useCallback(() => {
-    setEvents([]);
-  }, []);
-
+  }, [user]);
+  
+  // Handle notifications received via broadcast
+  const handleNotification = useCallback((payload: any) => {
+    const { title, message, type } = payload;
+    if (title && message) {
+      toast({
+        title,
+        description: message,
+        variant: type === 'error' ? 'destructive' : type === 'success' ? 'default' : 'secondary'
+      });
+    }
+  }, [toast]);
+  
+  // Handle notifications from database changes
+  const handleDatabaseNotification = useCallback((notification: any) => {
+    if (notification && notification.title) {
+      toast({
+        title: notification.title,
+        description: notification.message || notification.description,
+        variant: notification.type === 'error' ? 'destructive' : 
+                notification.type === 'success' ? 'default' : 'secondary'
+      });
+    }
+  }, [toast]);
+  
+  // Send a broadcast message to the channel
+  const sendBroadcast = useCallback((event: string, payload: any) => {
+    if (!channel || !isConnected) {
+      console.warn('Cannot send broadcast: channel not connected');
+      return false;
+    }
+    
+    try {
+      channel.send({
+        type: 'broadcast',
+        event,
+        payload
+      });
+      return true;
+    } catch (error) {
+      console.error('Error sending broadcast:', error);
+      return false;
+    }
+  }, [channel, isConnected]);
+  
   return {
-    events,
-    lastUpdated,
     isConnected,
-    clearEvents
+    sendBroadcast
   };
 }
