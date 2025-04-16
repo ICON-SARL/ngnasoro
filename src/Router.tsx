@@ -19,7 +19,8 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import ClientLoginPage from './pages/ClientLoginPage';
 
 // Import the components that actually exist in the project
-import LoanPlansPage from './pages/mobile/LoanPlansPage';
+// Fixing the import path for LoanPlansPage
+import LoanPlansPage from './components/mobile/loan/LoanPlansPage';
 import PaymentPage from './pages/mobile/PaymentPage';
 import AccountPage from './pages/mobile/AccountPage';
 import MobileLoansPage from './pages/mobile/MobileLoansPage';
