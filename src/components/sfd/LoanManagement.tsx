@@ -9,7 +9,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SfdActivationAlert } from './SfdActivationAlert';
 
-export function LoanManagement() {
+export interface LoanManagementProps {
+  onRefresh?: () => void;
+}
+
+export function LoanManagement({ onRefresh }: LoanManagementProps = {}) {
   const [activeTab, setActiveTab] = useState('plans');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [planToEdit, setPlanToEdit] = useState<any | null>(null);
@@ -78,6 +82,11 @@ export function LoanManagement() {
 
   const handleDialogClose = () => {
     setIsDialogOpen(false);
+    
+    // Call the onRefresh callback if provided
+    if (onRefresh) {
+      onRefresh();
+    }
   };
 
   const handleSfdActivated = () => {

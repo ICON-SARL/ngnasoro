@@ -12,6 +12,9 @@ export interface LoanStatus {
     status: string;
   }[];
   status?: 'pending' | 'approved' | 'disbursed' | 'completed' | 'rejected';
+  disbursement_status?: string;
+  next_payment_date?: string;
+  last_payment_date?: string;
   progress: number;
   lateFees: number;
   disbursed: boolean;

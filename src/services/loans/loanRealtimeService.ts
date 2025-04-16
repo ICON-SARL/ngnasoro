@@ -24,7 +24,7 @@ export function setupLoanRealtimeSubscription(onUpdate: LoanUpdateCallback, loan
       (payload) => {
         console.log('Received loan status update:', payload);
         if (payload.new) {
-          const updatedLoan = payload.new;
+          const updatedLoan = payload.new as any;
           // Extract relevant loan status information
           const statusUpdate: Partial<LoanStatus> = {
             status: updatedLoan.status,
