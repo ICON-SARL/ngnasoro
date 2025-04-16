@@ -1,5 +1,4 @@
 
-# This file defines the configuration for your Supabase project.
 project_id = "xnqysvnychmsockivqhb"
 
 [api]
@@ -9,25 +8,22 @@ schemas = ["public", "storage", "graphql_public"]
 
 [db]
 port = 54322
-shadow_port = 54320
-major_version = 14
 
 [studio]
 enabled = true
 port = 54323
-api_url = "http://localhost:54321"
+api_url = "http://127.0.0.1"
+
+[inbucket]
+enabled = true
+port = 54324
+
+[auth]
+enabled = true
+port = 54325
 
 [storage]
 enabled = true
-file_size_limit = "50MiB"
 
-[auth]
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://localhost:3000"]
-jwt_expiry = 3600
-enable_signup = true
-
-[functions]
-[functions.meref-daily-sync]
-verify_jwt = false
-schedule = "@daily"  # Run the function daily at midnight
+[edge_functions]
+enabled = true

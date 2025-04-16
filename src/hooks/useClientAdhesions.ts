@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -35,7 +34,6 @@ export function useClientAdhesions() {
     try {
       console.log(`Fetching adhesion requests for SFD: ${activeSfdId}`);
       
-      // Appel à l'Edge Function via la méthode invoke
       const { data, error } = await supabase.functions.invoke('fetch-client-adhesions', {
         body: { userId: user.id, sfdId: activeSfdId }
       });
@@ -43,7 +41,6 @@ export function useClientAdhesions() {
       if (error) {
         console.error('Error fetching adhesion requests from Edge Function:', error);
         
-        // Fallback: récupération directe depuis la base de données
         console.log('Attempting direct DB fetch as fallback...');
         const { data: directData, error: directError } = await supabase
           .from('client_adhesion_requests')
@@ -58,7 +55,6 @@ export function useClientAdhesions() {
           throw directError;
         }
         
-        // Format the data to include sfd name
         const formattedRequests = directData?.map(req => ({
           ...req,
           sfd_name: req.sfds?.name
@@ -83,7 +79,6 @@ export function useClientAdhesions() {
     }
   }, [user?.id, activeSfdId, toast]);
   
-  // Fonction pour récupérer les demandes d'adhésion d'un utilisateur
   const fetchUserAdhesionRequests = useCallback(async () => {
     if (!user?.id) return;
     
@@ -98,7 +93,6 @@ export function useClientAdhesions() {
       
       if (error) throw error;
       
-      // Format the data to include sfd name
       const formattedRequests = data?.map(req => ({
         ...req,
         sfd_name: req.sfds?.name
@@ -118,32 +112,29 @@ export function useClientAdhesions() {
     }
   }, [user?.id, toast]);
   
-  // Fonction pour refetch les demandes d'adhésion (utilisé par le bouton Refresh)
   const refetchAdhesionRequests = useCallback(async () => {
     await fetchAdhesionRequests();
   }, [fetchAdhesionRequests]);
   
-  // Fonction pour refetch les demandes d'adhésion d'un utilisateur
   const refetchUserAdhesionRequests = useCallback(async () => {
     await fetchUserAdhesionRequests();
   }, [fetchUserAdhesionRequests]);
   
-  // Chargement initial des demandes
   useEffect(() => {
     fetchAdhesionRequests();
   }, [fetchAdhesionRequests]);
   
-  // Chargement initial des demandes d'un utilisateur
   useEffect(() => {
     fetchUserAdhesionRequests();
   }, [fetchUserAdhesionRequests]);
   
-  // Approuver une demande d'adhésion
   const approveAdhesionRequest = useCallback(async (requestId: string, notes?: string) => {
     if (!user?.id) return false;
     
     try {
-      const { error } = await supabase
+      console.log(`Approving adhesion request: ${requestId} with notes: ${notes || 'none'}`);
+      
+      const { error: updateError } = await supabase
         .from('client_adhesion_requests')
         .update({
           status: 'approved',
@@ -153,14 +144,16 @@ export function useClientAdhesions() {
         })
         .eq('id', requestId);
       
-      if (error) throw error;
+      if (updateError) {
+        console.error('Error updating adhesion request:', updateError);
+        throw updateError;
+      }
       
       toast({
         title: 'Demande approuvée',
         description: 'La demande d\'adhésion a été approuvée avec succès',
       });
       
-      // Refresh list
       await fetchAdhesionRequests();
       return true;
     } catch (error) {
@@ -174,7 +167,6 @@ export function useClientAdhesions() {
     }
   }, [user?.id, toast, fetchAdhesionRequests]);
   
-  // Rejeter une demande d'adhésion
   const rejectAdhesionRequest = useCallback(async (requestId: string, notes?: string) => {
     if (!user?.id) return false;
     
@@ -196,7 +188,6 @@ export function useClientAdhesions() {
         description: 'La demande d\'adhésion a été rejetée',
       });
       
-      // Refresh list
       await fetchAdhesionRequests();
       return true;
     } catch (error) {
@@ -210,7 +201,6 @@ export function useClientAdhesions() {
     }
   }, [user?.id, toast, fetchAdhesionRequests]);
   
-  // Submit adhesion request
   const submitAdhesionRequest = useCallback(async (sfdId: string, input: AdhesionRequestInput) => {
     try {
       if (!user) {

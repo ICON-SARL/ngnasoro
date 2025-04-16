@@ -18,6 +18,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader } from '@/components/ui/loader';
 import { AdhesionActionDialog } from './AdhesionActionDialog';
 import { ClientAdhesionRequest } from '@/types/adhesionTypes';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 export function ClientAdhesionRequests() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,13 +28,13 @@ export function ClientAdhesionRequests() {
   const [selectedRequest, setSelectedRequest] = useState<ClientAdhesionRequest | null>(null);
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
   const [notes, setNotes] = useState('');
+  const { toast } = useToast();
+  const { user } = useAuth();
   
   const { 
     adhesionRequests, 
     isLoadingAdhesionRequests,
-    refetchAdhesionRequests,
-    approveAdhesionRequest,
-    rejectAdhesionRequest
+    refetchAdhesionRequests
   } = useClientAdhesions();
 
   useEffect(() => {
@@ -84,14 +87,54 @@ export function ClientAdhesionRequests() {
   };
 
   const handleConfirmAction = async (notes?: string) => {
-    if (!selectedRequest) return;
+    if (!selectedRequest || !user) return;
 
     console.log(`Confirming ${actionType} action for request:`, selectedRequest.id);
     
-    if (actionType === 'approve') {
-      await approveAdhesionRequest(selectedRequest.id, notes);
-    } else if (actionType === 'reject') {
-      await rejectAdhesionRequest(selectedRequest.id, notes);
+    try {
+      if (actionType === 'approve') {
+        // Utiliser l'Edge Function pour l'approbation
+        const { data, error } = await supabase.functions.invoke('approve-adhesion-request', {
+          body: { 
+            adhesionId: selectedRequest.id, 
+            userId: user.id,
+            notes 
+          }
+        });
+        
+        if (error) {
+          console.error('Edge function error:', error);
+          throw new Error(error.message || 'Erreur lors de l\'approbation');
+        }
+        
+        toast({
+          title: 'Demande approuvée',
+          description: 'La demande d\'adhésion a été approuvée avec succès',
+        });
+      } else if (actionType === 'reject') {
+        // Utiliser la fonction du hook pour le rejet
+        await supabase
+          .from('client_adhesion_requests')
+          .update({
+            status: 'rejected',
+            processed_by: user.id,
+            processed_at: new Date().toISOString(),
+            notes: notes
+          })
+          .eq('id', selectedRequest.id);
+          
+        toast({
+          title: 'Demande rejetée',
+          description: 'La demande d\'adhésion a été rejetée',
+        });
+      }
+    } catch (error) {
+      console.error('Error during confirmation action:', error);
+      toast({
+        title: 'Erreur',
+        description: error instanceof Error ? error.message : 'Une erreur s\'est produite',
+        variant: 'destructive'
+      });
     }
 
     handleCloseDialog();
