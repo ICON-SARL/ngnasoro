@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Plus, CreditCard, ArrowUpDown, Wallet, LineChart, Menu } from 'lucide-react';
+import { ArrowRight, Plus, CreditCard, ArrowUpDown, Wallet, Menu } from 'lucide-react';
 import { Account } from '@/types/transactions';
 import { Transaction } from '@/types/transactions';
 import TransactionList from '../TransactionList';
@@ -36,9 +36,14 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   return (
     <div className="pb-20">
       <div className="bg-[#0D6A51] text-white p-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-xl font-bold">Tableau de Bord</h1>
-          <Button variant="ghost" className="text-white" onClick={handleOpenMenu}>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-medium italic">Votre partenaire financier de confiance</h2>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="text-white hover:bg-white/10" 
+            onClick={() => setMenuOpen(true)}
+          >
             <Menu className="h-5 w-5" />
           </Button>
         </div>
@@ -142,7 +147,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 
       <MobileDrawerMenu 
         isOpen={menuOpen}
-        onClose={handleCloseMenu}
+        onClose={() => setMenuOpen(false)}
       />
 
       <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden">
