@@ -1,4 +1,3 @@
-
 export interface Loan {
   id: string;
   client_id: string;
@@ -124,7 +123,6 @@ export interface LoanApplication {
   supporting_documents?: string[];
 }
 
-// Add an interface for LoanPlan that includes is_published property
 export interface LoanPlan {
   id: string;
   name: string;

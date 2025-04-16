@@ -456,6 +456,60 @@ export type Database = {
           },
         ]
       }
+      loan_payment_reminders: {
+        Row: {
+          amount: number
+          client_id: string | null
+          created_at: string | null
+          id: string
+          is_sent: boolean | null
+          loan_id: string | null
+          payment_date: string
+          payment_number: number
+          reminder_date: string
+          sent_at: string | null
+        }
+        Insert: {
+          amount: number
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_sent?: boolean | null
+          loan_id?: string | null
+          payment_date: string
+          payment_number: number
+          reminder_date: string
+          sent_at?: string | null
+        }
+        Update: {
+          amount?: number
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_sent?: boolean | null
+          loan_id?: string | null
+          payment_date?: string
+          payment_number?: number
+          reminder_date?: string
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_payment_reminders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_payment_reminders_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loan_payments: {
         Row: {
           amount: number
@@ -1142,6 +1196,7 @@ export type Database = {
           id: string
           interest_rate: number
           is_active: boolean | null
+          is_published: boolean | null
           max_amount: number
           max_duration: number
           min_amount: number
@@ -1158,6 +1213,7 @@ export type Database = {
           id?: string
           interest_rate?: number
           is_active?: boolean | null
+          is_published?: boolean | null
           max_amount?: number
           max_duration?: number
           min_amount?: number
@@ -1174,6 +1230,7 @@ export type Database = {
           id?: string
           interest_rate?: number
           is_active?: boolean | null
+          is_published?: boolean | null
           max_amount?: number
           max_duration?: number
           min_amount?: number
