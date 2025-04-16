@@ -49,6 +49,9 @@ const LoanDetailsPage: React.FC = () => {
     return <div>Loan not found.</div>;
   }
 
+  // Extract SFD name safely
+  const sfdName = loan.sfd_name || 'N/A';
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white p-4 shadow-sm">
@@ -76,7 +79,7 @@ const LoanDetailsPage: React.FC = () => {
           <CardContent className="grid gap-4">
             <div>
               <p className="text-sm text-gray-500">SFD</p>
-              <p className="font-medium">{loan.sfds?.name || 'N/A'}</p>
+              <p className="font-medium">{sfdName}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Montant</p>

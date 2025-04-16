@@ -59,7 +59,7 @@ export function ClientAdhesionForm({ sfdId, onSuccess }: ClientAdhesionFormProps
 
   const onSubmit = async (values: AdhesionFormValues) => {
     try {
-      // Ensure we're passing all required fields with proper types
+      // Create the adhesion data from form values
       const adhesionData: AdhesionRequestInput = {
         full_name: values.full_name,
         profession: values.profession,
@@ -76,7 +76,7 @@ export function ClientAdhesionForm({ sfdId, onSuccess }: ClientAdhesionFormProps
         form.reset();
         if (onSuccess) onSuccess();
         
-        // Rediriger vers la page principale après soumission réussie
+        // Redirect to main page after successful submission
         setTimeout(() => {
           navigate('/mobile-flow/main');
         }, 3000);

@@ -35,7 +35,9 @@ export function ClientAdhesionRequests() {
   const { 
     adhesionRequests, 
     isLoadingAdhesionRequests,
-    refetchAdhesionRequests 
+    refetchAdhesionRequests,
+    approveAdhesionRequest,
+    rejectAdhesionRequest 
   } = useClientAdhesions();
 
   useEffect(() => {
@@ -71,27 +73,23 @@ export function ClientAdhesionRequests() {
   };
 
   const handleApproveRequest = async () => {
-    if (!selectedRequest || !user) return;
-    
+    if (!selectedRequest) return;
     setIsProcessing(true);
     
     try {
-      const { data, error } = await edgeFunctionApi.callFunction('approve-adhesion-request', {
-        adhesionRequestId: selectedRequest.id,
-        adminUserId: user.id,
-        notes: actionNotes
-      });
+      const success = await approveAdhesionRequest(selectedRequest.id, actionNotes);
       
-      if (error) throw error;
-      
-      toast({
-        title: "Demande approuvée",
-        description: "La demande d'adhésion a été approuvée avec succès.",
-      });
+      if (success) {
+        toast({
+          title: "Demande approuvée",
+          description: "La demande d'adhésion a été approuvée avec succès.",
+        });
+      } else {
+        throw new Error("Échec de l'approbation");
+      }
       
       refetchAdhesionRequests();
       handleCloseActionDialog();
-      
     } catch (error) {
       console.error('Erreur lors de l\'approbation de la demande:', error);
       toast({
@@ -105,32 +103,23 @@ export function ClientAdhesionRequests() {
   };
 
   const handleRejectRequest = async () => {
-    if (!selectedRequest || !user) return;
-    
+    if (!selectedRequest) return;
     setIsProcessing(true);
     
     try {
-      const { error } = await supabase
-        .from('client_adhesion_requests')
-        .update({
-          status: 'rejected',
-          processed_by: user.id,
-          processed_at: new Date().toISOString(),
-          notes: actionNotes,
-          rejection_reason: actionNotes
-        })
-        .eq('id', selectedRequest.id);
+      const success = await rejectAdhesionRequest(selectedRequest.id, actionNotes);
       
-      if (error) throw error;
-      
-      toast({
-        title: "Demande rejetée",
-        description: "La demande d'adhésion a été rejetée.",
-      });
+      if (success) {
+        toast({
+          title: "Demande rejetée",
+          description: "La demande d'adhésion a été rejetée.",
+        });
+      } else {
+        throw new Error("Échec du rejet");
+      }
       
       refetchAdhesionRequests();
       handleCloseActionDialog();
-      
     } catch (error) {
       console.error('Erreur lors du rejet de la demande:', error);
       toast({

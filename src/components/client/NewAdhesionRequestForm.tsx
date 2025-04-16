@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -57,8 +56,7 @@ export const NewAdhesionRequestForm: React.FC<NewAdhesionRequestFormProps> = ({
 
   const onSubmit = async (values: FormValues) => {
     try {
-      // Since our form values are validated by zod, we can create a properly typed object
-      // that satisfies the AdhesionRequestInput interface
+      // Create the properly typed adhesion data
       const adhesionData: AdhesionRequestInput = {
         full_name: values.full_name,
         profession: values.profession,
