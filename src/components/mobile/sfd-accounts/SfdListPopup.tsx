@@ -81,8 +81,45 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
 
   const handleSelectSfd = (sfdId: string) => {
     // Rediriger directement vers la page de sélection SFD avec le paramètre
-    navigate('/sfd-selector', { state: { selectedSfdId: sfdId } });
+    navigate('/mobile-flow/sfd-adhesion/' + sfdId);
     onClose();
+  };
+  
+  const handleRetry = async (sfdId: string) => {
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour réessayer",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // Supprimer l'ancienne demande rejetée
+      const { error: deleteError } = await supabase
+        .from('client_adhesion_requests')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('sfd_id', sfdId)
+        .eq('status', 'rejected');
+        
+      if (deleteError) {
+        console.error('Erreur lors de la suppression de l\'ancienne demande:', deleteError);
+        throw deleteError;
+      }
+      
+      // Rediriger vers la page d'adhésion
+      navigate('/mobile-flow/sfd-adhesion/' + sfdId);
+      onClose();
+    } catch (err) {
+      console.error('Error handling retry:', err);
+      toast({
+        title: "Erreur",
+        description: "Impossible de traiter votre demande. Veuillez réessayer.",
+        variant: "destructive"
+      });
+    }
   };
 
   const renderButton = (sfd: Sfd) => {
@@ -99,7 +136,7 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
     } else if (isRejected) {
       return (
         <span className="px-3 py-1 bg-red-100 text-red-800 rounded-md text-sm cursor-pointer"
-              onClick={() => handleSelectSfd(sfd.id)}>
+              onClick={() => handleRetry(sfd.id)}>
           Réessayer
         </span>
       );

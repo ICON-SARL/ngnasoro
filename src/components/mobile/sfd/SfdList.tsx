@@ -68,6 +68,7 @@ const SfdList: React.FC<SfdListProps> = ({
           throw deleteError;
         }
         
+        console.log('Demande rejetée supprimée avec succès, redirection vers adhésion');
         // Rediriger vers la page d'adhésion pour créer une nouvelle demande
         navigate(`/mobile-flow/sfd-adhesion/${sfd.id}`);
       }
@@ -113,7 +114,8 @@ const SfdList: React.FC<SfdListProps> = ({
       if (onSelectSfd) {
         onSelectSfd(sfd.id);
       } else {
-        // Si aucun gestionnaire externe n'est fourni, naviguer directement vers la page d'adhésion
+        console.log('Redirection vers la page d\'adhésion SFD');
+        // Navigation directe vers la page d'adhésion
         navigate(`/mobile-flow/sfd-adhesion/${sfd.id}`);
       }
     } catch (error) {

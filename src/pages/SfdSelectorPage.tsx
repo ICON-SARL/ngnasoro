@@ -117,6 +117,7 @@ const SfdSelectorPage = () => {
     } catch (err) {
       console.error('Error handling join request:', err);
       handleError(err);
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -147,6 +148,8 @@ const SfdSelectorPage = () => {
         throw deleteError;
       }
       
+      console.log('Rejected request successfully deleted, refreshing UI...');
+      
       // Mettre à jour la liste des demandes existantes
       setExistingRequests(existingRequests.filter(req => !(req.sfd_id === sfdId && req.status === 'rejected')));
       
@@ -157,6 +160,7 @@ const SfdSelectorPage = () => {
     } catch (err) {
       console.error('Error handling retry request:', err);
       handleError(err);
+    } finally {
       setIsSubmitting(false);
     }
   };
