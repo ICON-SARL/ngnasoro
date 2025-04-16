@@ -10,6 +10,6 @@ export interface Sfd {
   phone?: string;
   legal_document_url?: string | null;
   description?: string;
-  created_at: string; // Changed from optional to required to match admin type
+  created_at: string; 
   updated_at?: string;
 }
