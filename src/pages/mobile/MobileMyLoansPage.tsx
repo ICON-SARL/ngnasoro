@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,10 +6,27 @@ import { useSfdLoans } from '@/hooks/useSfdLoans';
 import MobileNavigation from '@/components/MobileNavigation';
 import { ArrowLeft, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useToast } from '@/hooks/use-toast';
 
 const MobileMyLoansPage: React.FC = () => {
   const navigate = useNavigate();
   const { data: loans, isLoading } = useSfdLoans();
+  const { user } = useAuth();
+  const { hasPermission } = usePermissions();
+  const { toast } = useToast();
+
+  React.useEffect(() => {
+    if (!hasPermission('view_loans')) {
+      toast({
+        title: "Accès refusé",
+        description: "Vous n'avez pas la permission de voir les prêts",
+        variant: "destructive",
+      });
+      navigate('/mobile-flow/main');
+    }
+  }, [hasPermission, navigate, toast]);
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('fr-FR', {
@@ -113,4 +129,3 @@ const MobileMyLoansPage: React.FC = () => {
 };
 
 export default MobileMyLoansPage;
-

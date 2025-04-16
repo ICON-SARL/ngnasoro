@@ -1,4 +1,3 @@
-
 export enum UserRole {
   SUPER_ADMIN = 'admin',
   ADMIN = 'admin',
@@ -40,6 +39,11 @@ export const PERMISSIONS = {
   REQUEST_ADHESION: 'request_adhesion',
   REQUEST_LOAN: 'request_loan',
   REPAY_LOAN: 'repay_loan',
+  
+  // Loan-specific permissions
+  VIEW_LOANS: 'view_loans',
+  MANAGE_LOAN_REPAYMENTS: 'manage_loan_repayments',
+  VIEW_LOAN_DETAILS: 'view_loan_details',
   
   // Shared/Common permissions
   MANAGE_CLIENTS: 'manage_clients',
@@ -102,7 +106,9 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     PERMISSIONS.VIEW_LOAN_HISTORY,
     PERMISSIONS.ACCESS_CLIENT_DASHBOARD,
     PERMISSIONS.REQUEST_ADHESION,
-    PERMISSIONS.REQUEST_LOAN,
+    PERMISSIONS.VIEW_LOANS,
+    PERMISSIONS.MANAGE_LOAN_REPAYMENTS,
+    PERMISSIONS.VIEW_LOAN_DETAILS,
     PERMISSIONS.REPAY_LOAN,
   ],
   

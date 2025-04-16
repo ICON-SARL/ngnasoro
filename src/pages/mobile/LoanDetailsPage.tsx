@@ -1,143 +1,102 @@
-
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useLoanDetails } from '@/hooks/useLoanDetails';
-import LoanTrackingTab from '@/components/mobile/loan/LoanTrackingTab';
-import LoanDetailsTab from '@/components/mobile/loan/LoanDetailsTab';
-import LoanRepaymentTab from '@/components/mobile/loan/LoanRepaymentTab';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Dialog } from '@/components/ui/dialog';
-import QRCodePaymentDialog from '@/components/mobile/loan/QRCodePaymentDialog';
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
-import { LoanStatus, LoanDetails } from '@/types/loans';
+import { useSfdLoan } from '@/hooks/useSfdLoan';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft } from 'lucide-react';
+import MobileNavigation from '@/components/MobileNavigation';
 
 const LoanDetailsPage: React.FC = () => {
+  const { loanId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
+  const { user } = useAuth();
+  const { hasPermission } = usePermissions();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('tracking');
-  const [qrDialogOpen, setQrDialogOpen] = useState(false);
-  const [isWithdrawal, setIsWithdrawal] = useState(false);
-  
-  // Get loanId from location state
-  const loanId = location.state?.loanId;
-  
-  // Fetch loan details
-  const { loanStatus, loanDetails, isLoading, refetch } = useLoanDetails(loanId);
-  
-  useEffect(() => {
-    if (!loanId) {
+  const { data: loan, isLoading } = useSfdLoan(loanId || '');
+
+  React.useEffect(() => {
+    if (!hasPermission('view_loan_details')) {
       toast({
-        title: "Erreur",
-        description: "Identifiant de prêt manquant",
+        title: "Accès refusé",
+        description: "Vous n'avez pas la permission de voir les détails des prêts",
         variant: "destructive",
       });
       navigate('/mobile-flow/my-loans');
     }
-  }, [loanId, navigate, toast]);
-  
-  const handleBack = () => {
-    navigate('/mobile-flow/my-loans');
-  };
-  
-  const handleMobileMoneyPayment = (isWithdrawal = false) => {
-    setIsWithdrawal(isWithdrawal);
-    setQrDialogOpen(true);
-  };
-  
-  const handlePaymentComplete = () => {
-    setQrDialogOpen(false);
-    toast({
-      title: isWithdrawal ? "Retrait effectué" : "Paiement effectué",
-      description: isWithdrawal 
-        ? "Le montant a été envoyé à votre mobile money" 
-        : "Votre paiement a bien été reçu et enregistré",
-      className: 'border-[#0D6A51] bg-[#0D6A51]/10'
+  }, [hasPermission, navigate, toast]);
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
     });
-    refetch();
   };
-  
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
-        <div className="animate-spin h-8 w-8 border-4 border-[#0D6A51] border-t-transparent rounded-full"></div>
-      </div>
-    );
+
+  if (!loanId) {
+    return <div>Invalid loan ID.</div>;
   }
-  
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!loan) {
+    return <div>Loan not found.</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="p-4 bg-white shadow-sm">
-        <div className="flex items-center mb-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="p-0 mr-2 text-[#0D6A51]" 
-            onClick={handleBack}
+      <div className="bg-white p-4 shadow-sm">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mr-2 p-0"
+            onClick={() => navigate('/mobile-flow/my-loans')}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-bold text-[#0D6A51]">Détails du prêt</h1>
-            <p className="text-gray-500 text-sm">{loanDetails.loanPurpose}</p>
+            <h1 className="text-xl font-bold">Détails du prêt</h1>
+            <p className="text-gray-500 text-sm">Informations complètes sur votre prêt</p>
           </div>
         </div>
       </div>
-      
-      <div className="p-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="bg-gray-100 rounded-full p-1 mb-6">
-            <TabsTrigger value="tracking" className="rounded-full px-6 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
-              Suivi
-            </TabsTrigger>
-            <TabsTrigger value="details" className="rounded-full px-6 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
-              Détails
-            </TabsTrigger>
-            <TabsTrigger value="repayment" className="rounded-full px-6 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
-              Remboursement
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="tracking">
-            <LoanTrackingTab loanStatus={loanStatus} />
-          </TabsContent>
-          
-          <TabsContent value="details">
-            <LoanDetailsTab 
-              totalAmount={loanDetails.totalAmount}
-              loanType={loanDetails.loanType}
-              loanPurpose={loanDetails.loanPurpose}
-              disbursalDate={loanDetails.disbursalDate}
-              endDate={loanDetails.endDate}
-              interestRate={loanDetails.interestRate}
-              status={loanDetails.status}
-              disbursed={loanDetails.disbursed}
-              withdrawn={loanDetails.withdrawn}
-              onWithdraw={() => handleMobileMoneyPayment(true)}
-            />
-          </TabsContent>
 
-          <TabsContent value="repayment">
-            <LoanRepaymentTab 
-              nextPaymentDue={loanStatus.nextPaymentDue}
-              paymentHistory={loanStatus.paymentHistory}
-              onMobileMoneyPayment={() => handleMobileMoneyPayment(false)}
-              loanId={loanId}
-            />
-          </TabsContent>
-        </Tabs>
-        
-        <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
-          <QRCodePaymentDialog 
-            onClose={() => setQrDialogOpen(false)} 
-            onComplete={handlePaymentComplete}
-            amount={isWithdrawal ? loanStatus.totalAmount : loanStatus.remainingAmount} 
-            isWithdrawal={isWithdrawal} 
-          />
-        </Dialog>
+      <div className="p-4">
+        <Card className="p-4">
+          <CardHeader>
+            <CardTitle>{loan.purpose}</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div>
+              <p className="text-sm text-gray-500">SFD</p>
+              <p className="font-medium">{loan.sfds?.name || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Montant</p>
+              <p className="font-medium">{loan.amount.toLocaleString('fr-FR')} FCFA</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Durée</p>
+              <p className="font-medium">{loan.duration_months} mois</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Date de création</p>
+              <p className="font-medium">{formatDate(loan.created_at)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Statut</p>
+              <p className="font-medium">{loan.status}</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+      <MobileNavigation />
     </div>
   );
 };

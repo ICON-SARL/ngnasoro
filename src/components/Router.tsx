@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
@@ -17,6 +16,7 @@ import LoanPlansPage from '@/pages/mobile/LoanPlansPage';
 import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
 import LoanDetailsPage from '@/pages/mobile/LoanDetailsPage';
 import SplashScreen from '@/components/mobile/SplashScreen';
+import RoleGuard from '@/components/RoleGuard';
 
 export const MobileRouter = () => {
   return (
@@ -30,8 +30,22 @@ export const MobileRouter = () => {
       <Route path="/sfd-connection" element={<SfdConnectionPage />} />
       <Route path="/funds-management" element={<FundsManagementPage />} />
       <Route path="/loan-plans" element={<LoanPlansPage />} />
-      <Route path="/my-loans" element={<MobileMyLoansPage />} />
-      <Route path="/loan-details/:loanId" element={<LoanDetailsPage />} />
+      <Route 
+        path="/my-loans" 
+        element={
+          <RoleGuard requiredRole={UserRole.CLIENT}>
+            <MobileMyLoansPage />
+          </RoleGuard>
+        } 
+      />
+      <Route 
+        path="/loan-details/:loanId" 
+        element={
+          <RoleGuard requiredRole={UserRole.CLIENT}>
+            <LoanDetailsPage />
+          </RoleGuard>
+        } 
+      />
       <Route path="*" element={<div>Mobile Page Not Found</div>} />
     </Routes>
   );
