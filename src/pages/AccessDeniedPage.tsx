@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Shield, ArrowLeft, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { UserRole } from '@/hooks/auth/types';
 
 const AccessDeniedPage = () => {
   const location = useLocation();
@@ -32,7 +32,7 @@ const AccessDeniedPage = () => {
 
   // Déterminer si l'utilisateur est un simple utilisateur tentant d'accéder à une zone client
   const isUserTryingClientAccess = userRole === 'user' && 
-    (requiredRole === 'client' || requiredRole === UserRole.Client);
+    (requiredRole === UserRole.Client || requiredRole === 'client');
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
