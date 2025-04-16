@@ -69,7 +69,8 @@ export function useAvailableSfds(userId?: string) {
     fetchData();
   }, [userId, toast]);
 
-  const requestSfdAccess = async (sfdId: string) => {
+  // Updated to accept an optional phone number parameter
+  const requestSfdAccess = async (sfdId: string, phoneNumber?: string) => {
     if (!userId) {
       toast({
         title: 'Erreur',
@@ -80,6 +81,8 @@ export function useAvailableSfds(userId?: string) {
     }
     
     try {
+      // If we have a phone number, we can pass it to the server
+      console.log(`Requesting access to SFD ${sfdId}${phoneNumber ? ` with phone ${phoneNumber}` : ''}`);
       // Rediriger vers la page d'adhésion
       return true;
     } catch (error) {

@@ -21,6 +21,19 @@ export interface SfdAccount {
   is_default?: boolean;
 }
 
+export interface SfdAccountDisplay {
+  id: string;
+  name: string;
+  balance: number;
+  currency: string;
+  code?: string;
+  region?: string;
+  logoUrl?: string | null;
+  isDefault?: boolean;
+  isVerified?: boolean;
+  status?: string;
+}
+
 export interface SfdClientRequest {
   id: string;
   sfd_id: string;
