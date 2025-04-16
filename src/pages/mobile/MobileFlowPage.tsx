@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
 import FloatingMenuButton from '@/components/mobile/FloatingMenuButton';
 import MobileFlowRoutes from '@/components/mobile/routes/MobileFlowRoutes';
+import MobileNavigation from '@/components/mobile/MobileNavigation';
 
 const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
@@ -88,12 +89,19 @@ const MobileFlowPage: React.FC = () => {
     // Implement payment submission logic
   };
 
+  // Skip navigation on specific routes
+  const shouldSkipNavigation = () => {
+    // Add routes that shouldn't display the bottom navigation here
+    const noNavRoutes = ['/mobile-flow/splash', '/mobile-flow/welcome'];
+    return noNavRoutes.some(route => location.pathname.includes(route));
+  };
+
   if (loading) {
     return <div className="p-8 text-center">Chargement...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white pb-16">
       <FloatingMenuButton onClick={toggleMenu} />
       <MobileDrawerMenu 
         isOpen={menuOpen} 
@@ -110,6 +118,7 @@ const MobileFlowPage: React.FC = () => {
         setShowWelcome={setShowWelcome}
         handlePaymentSubmit={handlePaymentSubmit}
       />
+      {!shouldSkipNavigation() && <MobileNavigation />}
     </div>
   );
 };

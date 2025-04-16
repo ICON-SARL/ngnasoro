@@ -4,12 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { LoanPlansTabs } from '@/components/mobile/loan/sections/LoanPlansTabs';
+import MobileNavigation from '@/components/mobile/MobileNavigation';
 
 const MobileLoanPlansPage: React.FC = () => {
   const navigate = useNavigate();
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-16">
       <div className="bg-white p-4 shadow-sm flex items-center">
         <Button 
           variant="ghost" 
@@ -32,6 +33,8 @@ const MobileLoanPlansPage: React.FC = () => {
           <LoanPlansTabs />
         </div>
       </div>
+      
+      <MobileNavigation />
     </div>
   );
 };

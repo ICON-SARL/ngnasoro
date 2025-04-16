@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import MainDashboard from '@/components/mobile/MainDashboard';
 import Footer from '@/components/Footer';
+import MobileNavigation from '@/components/mobile/MobileNavigation';
 
 const MobileMainPage: React.FC = () => {
   const navigate = useNavigate();
@@ -40,9 +41,10 @@ const MobileMainPage: React.FC = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-16">
       <MainDashboard onAction={handleAction} />
       <Footer />
+      <MobileNavigation />
     </div>
   );
 };

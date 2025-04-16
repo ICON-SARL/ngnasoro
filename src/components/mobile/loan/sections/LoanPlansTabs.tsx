@@ -1,28 +1,23 @@
 
-import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React, { useState } from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import LoanPlansDisplay from '../LoanPlansDisplay';
 
-export const LoanPlansTabs = () => {
+export const LoanPlansTabs: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('standard');
+  
   return (
-    <Tabs defaultValue="public" className="w-full">
-      <TabsList className="grid w-full grid-cols-2 mb-4">
-        <TabsTrigger value="public">Prêts standards</TabsTrigger>
-        <TabsTrigger value="subsidized">Prêts subventionnés</TabsTrigger>
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <TabsList className="w-full mb-4">
+        <TabsTrigger value="standard" className="flex-1">Standards</TabsTrigger>
+        <TabsTrigger value="subsidized" className="flex-1">Subventionnés</TabsTrigger>
       </TabsList>
       
-      <TabsContent value="public" className="mt-0">
+      <TabsContent value="standard">
         <LoanPlansDisplay />
       </TabsContent>
       
-      <TabsContent value="subsidized" className="mt-0">
-        <div className="bg-amber-50 p-4 rounded-lg mb-4 border border-amber-200">
-          <h3 className="font-medium text-amber-800">Prêts subventionnés</h3>
-          <p className="text-sm text-amber-700 mt-1">
-            Les prêts subventionnés bénéficient d'un taux d'intérêt réduit grâce à une subvention de l'État ou d'un partenaire.
-          </p>
-        </div>
-        
+      <TabsContent value="subsidized">
         <LoanPlansDisplay subsidizedOnly={true} />
       </TabsContent>
     </Tabs>
