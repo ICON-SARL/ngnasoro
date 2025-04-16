@@ -78,10 +78,11 @@ export function useClientAdhesions() {
       
       const formattedRequests = data.map(req => ({
         ...req,
-        sfd_name: req.sfds?.name
+        sfd_name: req.sfds?.name,
+        status: req.status as 'pending' | 'approved' | 'rejected' // Type assertion to fix type error
       }));
       
-      setUserAdhesionRequests(formattedRequests || []);
+      setUserAdhesionRequests(formattedRequests);
     } catch (error) {
       console.error('Error fetching user adhesion requests:', error);
       toast({

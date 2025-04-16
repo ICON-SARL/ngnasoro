@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -15,10 +14,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader } from '@/components/ui/loader';
-import { useClientAdhesions, AdhesionRequestInput } from '@/hooks/useClientAdhesions';
+import { useClientAdhesions } from '@/hooks/useClientAdhesions.tsx';
 import { useAuth } from '@/hooks/useAuth';
 
-// Schéma de validation pour le formulaire d'adhésion
+// Schema definition
 const adhesionSchema = z.object({
   full_name: z.string().min(3, "Le nom complet est requis"),
   profession: z.string().min(2, "La profession est requise"),
@@ -28,6 +27,9 @@ const adhesionSchema = z.object({
   email: z.string().email("Email invalide").optional().or(z.literal('')),
   address: z.string().min(3, "L'adresse est requise"),
 });
+
+// Match the expected input type from useClientAdhesions.tsx
+type AdhesionFormInput = z.infer<typeof adhesionSchema>;
 
 interface NewAdhesionRequestFormProps {
   sfdId: string;
@@ -42,7 +44,7 @@ export const NewAdhesionRequestForm: React.FC<NewAdhesionRequestFormProps> = ({
   const { submitAdhesionRequest, isCreatingRequest } = useClientAdhesions();
   
   // Initialiser le formulaire avec react-hook-form et zod
-  const form = useForm<z.infer<typeof adhesionSchema>>({
+  const form = useForm<AdhesionFormInput>({
     resolver: zodResolver(adhesionSchema),
     defaultValues: {
       full_name: user?.user_metadata?.full_name || '',
@@ -55,8 +57,8 @@ export const NewAdhesionRequestForm: React.FC<NewAdhesionRequestFormProps> = ({
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof adhesionSchema>) => {
-    const result = await submitAdhesionRequest(sfdId, values as AdhesionRequestInput);
+  const onSubmit = async (values: AdhesionFormInput) => {
+    const result = await submitAdhesionRequest(sfdId, values);
     
     if (result.success && onSuccess) {
       onSuccess();
