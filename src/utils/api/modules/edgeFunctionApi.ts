@@ -11,7 +11,7 @@ export const edgeFunctionApi = {
    * @param payload Données à envoyer à la fonction
    * @returns Réponse de la fonction
    */
-  callFunction: async <T = any>(functionName: string, payload: any): Promise<{ data: T | null; error: Error | null }> => {
+  callFunction: async <T = any>(functionName: string, payload: any): Promise<{ data: T | null; error: Error | null; success?: boolean; message?: string }> => {
     try {
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: payload
@@ -19,10 +19,22 @@ export const edgeFunctionApi = {
       
       if (error) throw error;
       
-      return { data, error: null };
+      // Standardize response format to include success and message properties
+      // that might be expected by consumers
+      return { 
+        data, 
+        error: null,
+        success: data?.success !== undefined ? data.success : true,
+        message: data?.message || null
+      };
     } catch (error: any) {
       console.error(`Erreur lors de l'appel à la fonction ${functionName}:`, error);
-      return { data: null, error };
+      return { 
+        data: null, 
+        error,
+        success: false,
+        message: error.message || "Une erreur s'est produite"
+      };
     }
   },
   

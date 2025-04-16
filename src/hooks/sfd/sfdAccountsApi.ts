@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
+import { LoanPaymentParams, SyncResult } from './types';
 
 export interface SfdAccount {
   id: string;
@@ -13,6 +14,71 @@ export interface SfdAccount {
   isDefault: boolean;
   balance: number;
   currency: string;
+}
+
+/**
+ * Synchronize accounts with SFD backend
+ */
+export async function synchronizeAccounts(userId: string): Promise<SyncResult> {
+  try {
+    const { data, error, success } = await edgeFunctionApi.callFunction('synchronize-sfd-accounts', {
+      userId,
+      forceSync: true
+    });
+    
+    if (error) {
+      throw error;
+    }
+    
+    return {
+      success: success || false,
+      message: data?.message || 'Synchronization completed',
+      updates: data?.updates || []
+    };
+  } catch (error: any) {
+    console.error('Error synchronizing accounts:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to synchronize accounts',
+      updates: []
+    };
+  }
+}
+
+/**
+ * Process a loan payment
+ */
+export async function processLoanPayment(
+  userId: string,
+  sfdId: string,
+  params: LoanPaymentParams
+): Promise<SyncResult> {
+  try {
+    const { data, error, success } = await edgeFunctionApi.callFunction('process-repayment', {
+      userId,
+      sfdId,
+      loanId: params.loanId,
+      amount: params.amount,
+      paymentMethod: params.paymentMethod
+    });
+    
+    if (error) {
+      throw error;
+    }
+    
+    return {
+      success: success || false,
+      message: data?.message || 'Payment processed successfully',
+      updates: data?.updates || []
+    };
+  } catch (error: any) {
+    console.error('Error processing loan payment:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to process payment',
+      updates: []
+    };
+  }
 }
 
 export function useSfdAccountsApi() {

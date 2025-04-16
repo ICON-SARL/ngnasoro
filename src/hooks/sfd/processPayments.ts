@@ -1,3 +1,4 @@
+
 import { SyncResult, LoanPaymentParams } from './types';
 
 /**
@@ -62,10 +63,10 @@ export async function processMobileMoneyPayment(
       payload.loanId = loanId;
     }
     
-    const result = await apiClient.callEdgeFunction('mobile-money-payment', payload);
+    const response = await apiClient.callEdgeFunction('mobile-money-payment', payload);
     
-    if (!result || !result.success) {
-      throw new Error(result?.error || 'Échec du paiement mobile money');
+    if (!response || !response.success) {
+      throw new Error(response?.message || 'Échec du paiement mobile money');
     }
     
     return { 
@@ -77,8 +78,8 @@ export async function processMobileMoneyPayment(
         newBalance: 0 // Mobile money doesn't directly update SFD balance
       }]
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to process mobile money payment:', error);
-    throw new Error('Échec du paiement mobile money');
+    throw new Error(typeof error === 'string' ? error : error.message || 'Échec du paiement mobile money');
   }
 }

@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,7 +14,6 @@ export function useRealtimeSynchronization() {
   const { user, activeSfdId } = useAuth();
   const syncInProgressRef = useRef(false);
   
-  // Reset retry count when SFD changes
   useEffect(() => {
     setRetryCount(0);
     setSyncError(null);
@@ -28,7 +26,6 @@ export function useRealtimeSynchronization() {
       return false;
     }
     
-    // Prevent concurrent synchronization calls
     if (syncInProgressRef.current) {
       console.log("Synchronization already in progress, skipping");
       return false;
@@ -41,11 +38,10 @@ export function useRealtimeSynchronization() {
     try {
       console.log(`Synchronizing accounts for user ${user.id}${activeSfdId ? ` with active SFD ${activeSfdId}` : ''}`);
       
-      // Direct call to the supabase functions API for more control
-      const { data: functionResponse, error: functionError } = await supabase.functions.invoke('synchronize-sfd-accounts', {
+      const { data: functionResponse, error: functionError, success } = await supabase.functions.invoke('synchronize-sfd-accounts', {
         body: {
           userId: user.id,
-          sfdId: activeSfdId || null, // Send null instead of empty string
+          sfdId: activeSfdId || null,
           forceSync: true
         }
       });
@@ -55,15 +51,14 @@ export function useRealtimeSynchronization() {
         throw new Error(`Erreur de communication avec le serveur: ${functionError.message}`);
       }
       
-      if (!functionResponse.success) {
+      if (!success && functionResponse && !functionResponse.success) {
         throw new Error(functionResponse.message || "Échec de la synchronisation");
       }
       
       setLastSynced(new Date());
-      setRetryCount(0); // Reset retry count on success
+      setRetryCount(0);
       
-      if (functionResponse.updates && functionResponse.updates.length > 0) {
-        // Show success toast only if there were actual updates
+      if (functionResponse && functionResponse.updates && functionResponse.updates.length > 0) {
         toast({
           title: "Synchronisation réussie",
           description: "Vos comptes SFD ont été mis à jour",
@@ -75,13 +70,10 @@ export function useRealtimeSynchronization() {
     } catch (error: any) {
       console.error("Error synchronizing with SFD:", error);
       
-      // Set the error message
       setSyncError(error.message || "Impossible de synchroniser vos comptes pour le moment");
       
-      // Increment retry count for exponential backoff
       setRetryCount(prev => prev + 1);
       
-      // Report error to admin backend if we have an activeSfdId
       if (activeSfdId) {
         try {
           await adminCommunicationApi.reportSyncError(
@@ -91,12 +83,10 @@ export function useRealtimeSynchronization() {
             error.stack
           );
         } catch (reportError) {
-          // Silent failure for error reporting
           console.error("Failed to report error:", reportError);
         }
       }
       
-      // Show a more user-friendly error message based on retry count
       if (retryCount > 2) {
         toast({
           title: "Problème de connexion persistant",
@@ -118,7 +108,6 @@ export function useRealtimeSynchronization() {
     }
   }, [user, activeSfdId, toast, retryCount]);
 
-  // Test connection function
   const testConnection = useCallback(async () => {
     if (!user || !activeSfdId) return false;
     
