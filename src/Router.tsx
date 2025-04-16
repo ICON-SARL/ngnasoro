@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
@@ -17,6 +16,13 @@ import MobileFlowPage from './pages/MobileFlowPage';
 import MobileWelcomePage from './pages/MobileWelcomePage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import ClientLoginPage from './pages/ClientLoginPage';
+import MobileMainPage from './pages/MobileMainPage';
+import MobileLoansPage from './pages/MobileLoansPage';
+import LoanPlansPage from './pages/LoanPlansPage';
+import MobileMyLoansPage from './pages/MobileMyLoansPage';
+import PaymentPage from './pages/PaymentPage';
+import AccountPage from './pages/AccountPage';
+import SfdAdhesionPage from './pages/SfdAdhesionPage';
 
 const Router = () => {
   return (
@@ -30,9 +36,23 @@ const Router = () => {
           <Route path="/client-login" element={<ClientLoginPage />} />
           <Route path="/access-denied" element={<AccessDeniedPage />} />
           
-          {/* Permission Test Page - Accessible to anyone for testing */}
+          {/* Permission Test Page */}
           <Route path="/permission-test" element={<PermissionTestPage />} />
           
+          {/* Mobile Flow Routes */}
+          <Route path="/mobile-flow" element={<ProtectedRoute><MobileFlowPage /></ProtectedRoute>}>
+            <Route path="welcome" element={<MobileWelcomePage />} />
+            <Route path="main" element={<MobileMainPage />} />
+            <Route path="loans" element={<MobileLoansPage />} />
+            <Route path="loan-plans" element={<LoanPlansPage />} />
+            <Route path="my-loans" element={<MobileMyLoansPage />} />
+            <Route path="loan-details/:id" element={<LoanDetailsPage />} />
+            <Route path="payment" element={<PaymentPage />} />
+            <Route path="account" element={<AccountPage />} />
+            <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
+            <Route path="*" element={<Navigate to="main" replace />} />
+          </Route>
+
           {/* Protected Routes */}
           <Route path="/" element={<ProtectedRoute><SfdDashboard /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><SfdDashboard /></ProtectedRoute>} />
@@ -42,12 +62,8 @@ const Router = () => {
           <Route path="/sfd-clients" element={<ProtectedRoute><SfdClientsPage /></ProtectedRoute>} />
           <Route path="/client/:clientId" element={<ProtectedRoute><ClientDetailsPage /></ProtectedRoute>} />
           
-          {/* Mobile Flow */}
-          <Route path="/mobile-flow/welcome" element={<ProtectedRoute><MobileWelcomePage /></ProtectedRoute>} />
-          <Route path="/mobile-flow/*" element={<ProtectedRoute><MobileFlowPage /></ProtectedRoute>} />
-          
           {/* Catch-all route */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/auth" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

@@ -1,11 +1,10 @@
-
 import React from 'react';
-import MobileNavigation from '@/components/mobile/MobileNavigation';
 import { useNavigate } from 'react-router-dom';
+import MobileLayout from '@/components/mobile/layout/MobileLayout';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CreditCard, Plus, Building, BadgePercent } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 
 const LoanTypeCard: React.FC<{ 
   title: string;
@@ -26,12 +25,11 @@ const LoanTypeCard: React.FC<{
   </Card>
 );
 
-const MobileLoansPage: React.FC = () => {
+const MobileLoansPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <MobileLayout>
       <div className="bg-white p-4 shadow-sm">
         <h1 className="text-xl font-bold">Prêts</h1>
         <p className="text-gray-500 text-sm">Découvrez les options de financement</p>
@@ -62,18 +60,16 @@ const MobileLoansPage: React.FC = () => {
           />
         </div>
         
-        <div className="mt-8 mb-4 flex justify-center">
+        <div className="mt-8 mb-4">
           <Button 
             onClick={() => navigate('/mobile-flow/my-loans')}
-            className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 flex items-center gap-2"
+            className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
           >
             Voir mes prêts
           </Button>
         </div>
       </div>
-      
-      <MobileNavigation />
-    </div>
+    </MobileLayout>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import { MobileMenuSection, MobileNavItem } from '@/types/navigation';
 
 // Navigation principale (footer)
@@ -6,32 +5,26 @@ export const mobileNavItems: MobileNavItem[] = [
   {
     id: 'home',
     label: 'Accueil',
-    icon: 'home',
+    icon: 'Home',
     route: '/mobile-flow/main'
   },
   {
     id: 'loans',
     label: 'Prêts',
-    icon: 'credit-card',
-    route: '/mobile-flow/loan-application'
+    icon: 'CreditCard',
+    route: '/mobile-flow/loans'
   },
   {
-    id: 'loan-activity',
+    id: 'my-loans',
     label: 'Mes prêts',
-    icon: 'file-text',
-    route: '/mobile-flow/loan-activity'
+    icon: 'FileText',
+    route: '/mobile-flow/my-loans'
   },
   {
-    id: 'funds',
-    label: 'Mes fonds',
-    icon: 'piggy-bank',
-    route: '/mobile-flow/funds-management'
-  },
-  {
-    id: 'profile',
-    label: 'Profil',
-    icon: 'user',
-    route: '/mobile-flow/profile'
+    id: 'account',
+    label: 'Compte',
+    icon: 'User',
+    route: '/mobile-flow/account'
   }
 ];
 
