@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
@@ -5,7 +6,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import PermissionTestPage from '@/pages/PermissionTestPage';
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
-import { UserRole } from '@/utils/auth/roleTypes';
+import { UserRole } from '@/hooks/auth/types';
 import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 
 export const MobileRouter = () => {

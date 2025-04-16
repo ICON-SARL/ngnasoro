@@ -2,7 +2,7 @@
 import { useAuth as useAuthOriginal } from './auth/AuthContext';
 import { User, AuthContextProps, UserRole } from './auth/types';
 
-// Re-export the hook with the same name
+// Export the hook directly
 export const useAuth = useAuthOriginal;
 
 // Re-export types to maintain backward compatibility

@@ -18,7 +18,7 @@ interface Sfd {
 interface SfdListProps {
   sfds: Sfd[];
   existingRequests: { sfd_id: string; status: string }[];
-  isSubmitting: boolean;
+  isSubmitting?: boolean;
   onSelectSfd?: (sfdId: string) => void;
 }
 

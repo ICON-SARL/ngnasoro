@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
@@ -17,18 +16,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [authInitialized, setAuthInitialized] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
-  // Check if user has admin, sfd_admin, or client role
   const isAdmin = userRole === UserRole.SuperAdmin || userRole === 'admin';
   const isSfdAdmin = userRole === UserRole.SfdAdmin || userRole === 'sfd_admin';
   const isClient = userRole === UserRole.Client || userRole === 'client' || userRole === 'user';
 
-  // Function to adapt Supabase user to our extended User type
   const adaptUser = (sbUser: any): User | null => {
     if (!sbUser) return null;
     
     return {
       ...sbUser,
-      // Map metadata fields to top-level properties for backward compatibility
       full_name: sbUser.user_metadata?.full_name,
       avatar_url: sbUser.user_metadata?.avatar_url,
       phone: sbUser.user_metadata?.phone,
@@ -41,21 +37,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         console.log('Initializing auth context...');
         
-        // Set up auth state listener FIRST
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event, newSession) => {
             console.log('Auth state change event:', event);
             
-            // Simple synchronous state updates in callback
             setSession(newSession);
-            // Adapt user object
             setUser(adaptUser(newSession?.user));
             
             const role = newSession?.user?.app_metadata?.role || 'user';
             setUserRole(role);
             console.log('Auth state changed - User role:', role);
             
-            // Log auth events
             if (event === 'SIGNED_IN' && newSession?.user) {
               setTimeout(() => {
                 logAuditEvent(
@@ -90,19 +82,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         );
 
-        // Add a timeout to prevent infinite loading
         const sessionTimeout = setTimeout(() => {
           if (loading) {
             console.log('Session check timed out, defaulting to not authenticated');
             setLoading(false);
             setAuthInitialized(true);
           }
-        }, 5000); // 5 second timeout
-        
-        // THEN check for existing session
+        }, 5000);
+
         const { data, error } = await supabase.auth.getSession();
         
-        // Clear the timeout as the request has completed
         clearTimeout(sessionTimeout);
         
         if (error) {
@@ -117,7 +106,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(adaptUser(data.session.user));
           setUserRole(data.session.user.app_metadata?.role || 'user');
           
-          // Debug log
           console.log('Loaded user data:', {
             id: data.session.user.id,
             email: data.session.user.email,
@@ -125,7 +113,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             metadata: data.session.user.app_metadata,
           });
           
-          // Load biometric settings
           const { data: securityData } = await supabase
             .from('security_settings')
             .select('biometric_auth')
@@ -280,13 +267,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }, { onConflict: 'user_id' });
     } catch (error) {
       console.error('Error updating biometric settings:', error);
-      // Revert state on error
       setBiometricEnabled(!newValue);
       throw error;
     }
   };
 
-  // Only render the app once auth is initialized
   if (!authInitialized) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white">
