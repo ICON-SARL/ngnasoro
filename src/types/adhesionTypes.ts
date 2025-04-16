@@ -1,4 +1,3 @@
-
 export interface ClientAdhesionRequest {
   id: string;
   user_id?: string;
@@ -21,6 +20,7 @@ export interface ClientAdhesionRequest {
   source_of_income?: string;
   monthly_income?: number;
   rejection_reason?: string;
+  verification_stage?: 'id_verification' | 'selfie_verification' | 'completed';
 }
 
 export interface MobileMoneyWebhook {

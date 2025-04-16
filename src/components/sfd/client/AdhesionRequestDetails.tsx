@@ -56,6 +56,9 @@ export function AdhesionRequestDetails({
     return <div>Chargement...</div>;
   }
 
+  // Use a default verification stage if not provided
+  const verificationStage = request.verification_stage || 'id_verification';
+
   return (
     <div className="space-y-6">
       {/* Client Information */}
@@ -93,7 +96,7 @@ export function AdhesionRequestDetails({
 
       {/* Verification Process */}
       <VerificationSteps
-        currentStage={request.verification_stage}
+        currentStage={verificationStage}
         onVerify={handleVerify}
         onReject={handleReject}
         documents={{
@@ -107,12 +110,12 @@ export function AdhesionRequestDetails({
         <DocumentPreview
           documentUrl={getDocumentData('id_card')?.url}
           documentType="id_card"
-          isVerifying={request.verification_stage === 'id_verification'}
+          isVerifying={verificationStage === 'id_verification'}
         />
         <DocumentPreview
           documentUrl={getDocumentData('selfie')?.url}
           documentType="selfie"
-          isVerifying={request.verification_stage === 'selfie_verification'}
+          isVerifying={verificationStage === 'selfie_verification'}
         />
       </div>
 
@@ -126,7 +129,7 @@ export function AdhesionRequestDetails({
       )}
 
       {/* Action Buttons */}
-      {request.verification_stage === 'completed' && (
+      {verificationStage === 'completed' && (
         <div className="flex justify-end space-x-4">
           <Button
             variant="outline"
