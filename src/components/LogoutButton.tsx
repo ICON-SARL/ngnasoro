@@ -21,7 +21,7 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
   className = '',
   text = 'Déconnexion',
   iconOnly = false,
-  redirectPath = '/'
+  redirectPath = '/auth'
 }) => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
@@ -50,8 +50,8 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
         description: "Vous avez été déconnecté avec succès"
       });
       
-      // Force a full page reload to clear any remaining state
-      window.location.href = redirectPath;
+      // Redirect directly to the auth page instead of forcing a full page reload
+      navigate(redirectPath);
     } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
       setIsLoggingOut(false);

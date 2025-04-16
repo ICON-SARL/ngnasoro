@@ -7,6 +7,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Sun, Moon, Database, Trash2, AlertTriangle, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import LogoutButton from '@/components/LogoutButton';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,8 +27,7 @@ interface AdvancedSettingsSectionProps {
 
 const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => {
   const { toast } = useToast();
-  const { signOut } = useAuth();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const handleThemeChange = (value: string) => {
@@ -45,43 +46,6 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
     });
   };
   
-  const handleLogout = async () => {
-    if (isLoggingOut) return;
-    
-    try {
-      setIsLoggingOut(true);
-      
-      toast({
-        title: "Déconnexion en cours",
-        description: "Veuillez patienter..."
-      });
-      
-      // Use the provided onLogout function or fall back to signOut
-      if (onLogout) {
-        await onLogout();
-      } else {
-        const { error } = await signOut();
-        if (error) throw error;
-      }
-      
-      toast({
-        title: "Déconnexion réussie",
-        description: "Vous avez été déconnecté avec succès"
-      });
-      
-      // Force reload to clear state and go to splash screen
-      window.location.href = '/';
-    } catch (error: any) {
-      console.error('Erreur lors de la déconnexion:', error);
-      setIsLoggingOut(false);
-      toast({
-        title: "Erreur de déconnexion",
-        description: error.message || "Une erreur s'est produite lors de la déconnexion",
-        variant: "destructive"
-      });
-    }
-  };
-  
   const handleDeleteAccount = () => {
     // In a real app, this would delete the user's account after confirmation
     toast({
@@ -89,7 +53,8 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
       description: "Votre compte a été supprimé avec succès",
       variant: "destructive",
     });
-    handleLogout();
+    // Redirect to auth page after account deletion
+    navigate('/auth');
   };
 
   return (
@@ -129,19 +94,11 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
           </div>
           
           <div className="pt-4 border-t border-gray-200 mt-4">
-            <Button 
+            <LogoutButton 
               variant="outline" 
               className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-            >
-              {isLoggingOut ? (
-                <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-red-500 animate-spin mr-2" />
-              ) : (
-                <LogOut className="h-4 w-4 mr-2" />
-              )}
-              Se déconnecter
-            </Button>
+              redirectPath="/auth"
+            />
             
             <AlertDialog>
               <AlertDialogTrigger asChild>
