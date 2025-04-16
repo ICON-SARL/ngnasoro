@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
@@ -18,8 +17,6 @@ import MobileWelcomePage from './pages/MobileWelcomePage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import ClientLoginPage from './pages/ClientLoginPage';
 
-// Import the components that actually exist in the project
-// Fixing the import path for LoanPlansPage
 import LoanPlansPage from './components/mobile/loan/LoanPlansPage';
 import PaymentPage from './pages/mobile/PaymentPage';
 import AccountPage from './pages/mobile/AccountPage';
@@ -34,20 +31,16 @@ const Router = () => {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Auth Pages */}
           <Route path="/auth" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/admin-login" element={<AdminLoginPage />} />
           <Route path="/client-login" element={<ClientLoginPage />} />
           <Route path="/access-denied" element={<AccessDeniedPage />} />
           
-          {/* Permission Test Page */}
           <Route path="/permission-test" element={<PermissionTestPage />} />
           
-          {/* SFD Setup Page - Adding this route */}
           <Route path="/sfd-setup" element={<ProtectedRoute><SfdSetupPage /></ProtectedRoute>} />
           
-          {/* Mobile Flow Routes */}
           <Route path="/mobile-flow" element={<ProtectedRoute><MobileFlowPage /></ProtectedRoute>}>
             <Route path="welcome" element={<MobileWelcomePage />} />
             <Route path="main" element={<MobileMainPage />} />
@@ -61,7 +54,6 @@ const Router = () => {
             <Route path="*" element={<Navigate to="main" replace />} />
           </Route>
 
-          {/* Protected Routes */}
           <Route path="/" element={<ProtectedRoute><SfdDashboard /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><SfdDashboard /></ProtectedRoute>} />
           <Route path="/loans" element={<ProtectedRoute><LoansPage /></ProtectedRoute>} />
@@ -70,7 +62,6 @@ const Router = () => {
           <Route path="/sfd-clients" element={<ProtectedRoute><SfdClientsPage /></ProtectedRoute>} />
           <Route path="/client/:clientId" element={<ProtectedRoute><ClientDetailsPage /></ProtectedRoute>} />
           
-          {/* Catch-all route */}
           <Route path="*" element={<Navigate to="/auth" replace />} />
         </Routes>
       </AuthProvider>
