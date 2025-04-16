@@ -1,9 +1,8 @@
-
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 // Define types for table subscriptions
 export type TableSubscription = {
@@ -47,37 +46,36 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
         // Set up a new channel for the user
         const newChannel = supabase.channel(`user-${user.id}`, {
           config: {
-            broadcast: { self: true }
+            broadcast: { self: true },
+            presence: {
+              key: user.id,
+            },
           }
         });
         
-        // Set up event handlers
+        // Set up presence handlers
         newChannel
           .on('presence', { event: 'sync' }, () => {
-            console.log('Presence sync event received');
             setIsConnected(true);
           })
-          .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-            console.log('Presence join:', key, newPresences);
+          .on('presence', { event: 'join' }, ({ key }) => {
+            console.log('Presence join:', key);
           })
-          .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-            console.log('Presence leave:', key, leftPresences);
+          .on('presence', { event: 'leave' }, ({ key }) => {
+            console.log('Presence leave:', key);
           });
-          
-        // Add broadcast handler separately
-        newChannel.on(
-          'broadcast', 
-          { event: 'notification' }, 
-          (payload: NotificationPayload) => {
-            console.log('Received notification:', payload);
-            handleNotification(payload);
-          }
-        );
         
-        // Subscribe to the channel
-        newChannel.subscribe((status) => {
-          console.log(`Channel status: ${status}`);
+        // Add broadcast handler
+        newChannel.subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
+            await newChannel.send({
+              type: 'broadcast',
+              event: 'notification',
+              payload: {
+                type: 'default',
+                message: 'Channel subscribed successfully'
+              }
+            });
             setIsConnected(true);
           } else {
             setIsConnected(false);
@@ -86,46 +84,38 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
         
         // Setup database change subscription if table subscriptions are provided
         if (tableSubscriptions && tableSubscriptions.length > 0) {
-          const dbChannel = supabase.channel('schema-db-changes');
+          const dbChannel = supabase.channel('db-changes');
           
           // Add a listener for each table subscription
           tableSubscriptions.forEach(sub => {
-            // Fix: Register postgres_changes event properly
-            dbChannel.on(
-              'postgres_changes',
-              { 
-                event: sub.event, 
-                schema: 'public',
-                table: sub.table,
-                filter: sub.filter || `user_id=eq.${user.id}`
-              }, 
-              (payload) => {
-                console.log(`Database change detected in ${sub.table}:`, payload);
-                
-                // Type guard to check if payload.new exists and has a user_id property
-                if (payload.new && typeof payload.new === 'object') {
-                  const payloadData = payload.new as Record<string, any>;
-                  // Check if the payload is related to the current user before adding to events
-                  if (!('user_id' in payloadData) || payloadData.user_id === user.id) {
-                    setEvents(prev => [...prev, {
-                      table: sub.table,
-                      event: payload.eventType as any,
-                      payload: payload.new
-                    }]);
-                    
-                    // If notifications table updated, handle it specially
-                    if (sub.table === 'notifications') {
-                      handleDatabaseNotification(payload.new);
-                    }
+            dbChannel.on('postgres_changes', {
+              event: sub.event,
+              schema: 'public',
+              table: sub.table,
+              filter: sub.filter || `user_id=eq.${user.id}`
+            }, (payload: RealtimePostgresChangesPayload<any>) => {
+              console.log(`Database change detected in ${sub.table}:`, payload);
+              
+              if (payload.new && typeof payload.new === 'object') {
+                const payloadData = payload.new as Record<string, any>;
+                if (!('user_id' in payloadData) || payloadData.user_id === user.id) {
+                  setEvents(prev => [...prev, {
+                    table: sub.table,
+                    event: payload.eventType as any,
+                    payload: payload.new
+                  }]);
+                  
+                  if (sub.table === 'notifications') {
+                    handleDatabaseNotification(payload.new);
                   }
                 }
               }
-            );
+            });
           });
           
           dbChannel.subscribe();
         }
-          
+        
         setChannel(newChannel);
       } catch (error) {
         console.error('Error setting up realtime channel:', error);
@@ -134,7 +124,6 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
     
     setupChannel();
     
-    // Cleanup on unmount
     return () => {
       if (channel) {
         channel.unsubscribe();
