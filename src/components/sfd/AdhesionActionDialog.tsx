@@ -41,7 +41,7 @@ export function AdhesionActionDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={isProcessing ? undefined : onClose}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
             {action === 'approve' ? 'Approuver' : 'Rejeter'} la demande d'adhésion
@@ -63,7 +63,12 @@ export function AdhesionActionDialog({
             {errorMessage && (
               <Alert variant="destructive" className="my-2">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{errorMessage}</AlertDescription>
+                <AlertDescription>
+                  <div className="space-y-2">
+                    <p>{errorMessage}</p>
+                    <p className="text-xs">Veuillez contacter l'administrateur si l'erreur persiste.</p>
+                  </div>
+                </AlertDescription>
               </Alert>
             )}
 
@@ -83,7 +88,7 @@ export function AdhesionActionDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 sm:justify-end">
           <Button 
             variant="outline" 
             onClick={onClose}

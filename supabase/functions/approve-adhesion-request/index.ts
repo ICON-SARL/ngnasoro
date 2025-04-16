@@ -103,9 +103,9 @@ serve(async (req) => {
     
     console.log('Successfully created SFD client');
     
-    // 3. Create a client account - making sure we don't include sfd_id
+    // 3. Create a client account - check if user already has an account
     if (adhesion.user_id) {
-      console.log(`Creating account for user ${adhesion.user_id}`);
+      console.log(`Checking for existing account for user ${adhesion.user_id}`);
       
       // Check if the user already has an account
       const { data: existingAccount, error: checkError } = await supabase
@@ -121,18 +121,21 @@ serve(async (req) => {
       
       // Only create account if user doesn't already have one
       if (!existingAccount) {
-        const { error: accountError } = await supabase
+        console.log(`Creating new account for user ${adhesion.user_id}`);
+        
+        const { data: newAccount, error: accountError } = await supabase
           .from('accounts')
           .insert({
             user_id: adhesion.user_id,
             balance: 0,
             currency: 'FCFA'
+            // Note: We're not including sfd_id here as it seems it doesn't exist in the table schema
           });
         
         if (accountError) {
           console.error('Error creating account:', accountError);
-          // Don't throw error here, we want to continue even if account creation fails
-          // The SFD admin can create the account manually if needed
+          // Log the error but don't fail the entire process
+          console.log('Will continue despite account creation error');
         } else {
           console.log('Successfully created account');
         }
@@ -195,7 +198,12 @@ serve(async (req) => {
     console.error('Error processing adhesion approval:', error);
     
     return new Response(
-      JSON.stringify({ success: false, error: error.message || "Unknown error" }),
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || "Unknown error",
+        stack: error.stack || "No stack trace available",
+        details: "Please check the Edge Function logs for more details" 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }

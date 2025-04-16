@@ -21,6 +21,7 @@ import { ClientAdhesionRequest } from '@/types/adhesionTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 
 export function ClientAdhesionRequests() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -105,33 +106,32 @@ export function ClientAdhesionRequests() {
       if (actionType === 'approve') {
         console.log(`Confirming ${actionType} action for request:`, selectedRequest.id);
         
-        // Utiliser l'Edge Function pour l'approbation
-        console.log('Calling approve-adhesion-request with params:', { 
-          adhesionId: selectedRequest.id, 
-          userId: user.id,
-          notes 
-        });
-        
-        const { data, error } = await supabase.functions.invoke('approve-adhesion-request', {
-          body: { 
-            adhesionId: selectedRequest.id, 
+        // Using edgeFunctionApi for better error handling
+        try {
+          const response = await edgeFunctionApi.callEdgeFunction('approve-adhesion-request', {
+            adhesionId: selectedRequest.id,
             userId: user.id,
-            notes 
-          }
-        });
-        
-        if (error) {
-          console.error('Edge function error:', error);
-          setErrorMessage(error.message || 'Erreur lors de l\'approbation');
-          throw new Error(error.message || 'Erreur lors de l\'approbation');
+            notes
+          }, {
+            timeout: 30000, // 30 seconds timeout
+            maxRetries: 1   // Just retry once
+          });
+          
+          console.log('Edge function response:', response);
+          
+          toast({
+            title: 'Demande approuvée',
+            description: 'La demande d\'adhésion a été approuvée avec succès',
+          });
+          
+          await refetchAdhesionRequests();
+          handleCloseDialog();
+          return;
+        } catch (edgeError: any) {
+          console.error('Edge function error:', edgeError);
+          setErrorMessage(edgeError.message || 'Erreur lors de l\'approbation via edge function');
+          throw edgeError;
         }
-        
-        console.log('Edge function response:', data);
-        
-        toast({
-          title: 'Demande approuvée',
-          description: 'La demande d\'adhésion a été approuvée avec succès',
-        });
       } else if (actionType === 'reject') {
         // Utiliser la fonction du hook pour le rejet
         const { error } = await supabase
@@ -154,11 +154,10 @@ export function ClientAdhesionRequests() {
           title: 'Demande rejetée',
           description: 'La demande d\'adhésion a été rejetée',
         });
+        
+        await refetchAdhesionRequests();
+        handleCloseDialog();
       }
-      
-      // Actualiser la liste après l'action
-      await refetchAdhesionRequests();
-      handleCloseDialog();
     } catch (error) {
       console.error('Error during confirmation action:', error);
       const errorMsg = error instanceof Error ? error.message : 'Une erreur s\'est produite';
