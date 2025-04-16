@@ -13,7 +13,7 @@ const ClientLoginPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <LoginForm userType="client" />
+          <LoginForm />
         </CardContent>
       </Card>
     </div>

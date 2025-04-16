@@ -6,7 +6,7 @@ import MobileHeader from '@/components/mobile/MobileHeader';
 const PaymentPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <MobileHeader title="Paiement" />
+      <MobileHeader />
       <div className="container mx-auto p-4">
         <Card>
           <CardContent className="p-4">

@@ -15,7 +15,7 @@ import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 const MobileFlowPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <MobileHeader title="Services Mobile" />
+      <MobileHeader />
       <div className="container mx-auto p-4">
         <Routes>
           <Route path="/" element={<Navigate to="main" replace />} />
