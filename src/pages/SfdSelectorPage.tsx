@@ -111,41 +111,8 @@ const SfdSelectorPage = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    
-    try {
-      const { data, error } = await supabase
-        .from('sfd_clients')
-        .insert({
-          user_id: user.id,
-          sfd_id: sfdId,
-          status: 'pending',
-          full_name: user.user_metadata?.full_name || '',
-          kyc_level: 0
-        })
-        .select();
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Demande envoyée",
-        description: "Votre demande a été envoyée avec succès. Vous serez notifié lorsqu'elle sera traitée.",
-      });
-      
-      // Update the local state to prevent duplicate requests
-      setExistingRequests(prev => [...prev, {sfd_id: sfdId, status: 'pending'}]);
-      
-      navigate('/mobile-flow/profile');
-    } catch (error: any) {
-      console.error('Erreur lors de la soumission de la demande:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'envoyer votre demande. Veuillez réessayer plus tard.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Si pas de demande existante, naviguez vers la page d'adhésion
+    navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
   };
 
   return (

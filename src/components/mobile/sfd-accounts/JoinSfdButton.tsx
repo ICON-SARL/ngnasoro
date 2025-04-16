@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { ArrowRight } from 'lucide-react';
 
 export const JoinSfdButton = ({ sfdId, sfdName }: { sfdId: string; sfdName: string }) => {
   const { user } = useAuth();
@@ -39,7 +40,7 @@ export const JoinSfdButton = ({ sfdId, sfdName }: { sfdId: string; sfdName: stri
       onClick={handleJoinRequest}
       className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
     >
-      Demander l'adhésion
+      Demander l'adhésion <ArrowRight className="ml-2 h-4 w-4" />
     </Button>
   );
 };

@@ -1,78 +1,59 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
-import { Building } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { SfdListItem } from './SfdListItem';
-
-interface Sfd {
-  id: string;
-  name: string;
-  code: string;
-  region?: string;
-  status: string;
-  logo_url?: string;
-}
+import { Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface SfdListProps {
-  sfds: Sfd[];
-  existingRequests: { sfd_id: string; status: string }[];
-  isSubmitting?: boolean;
+  sfds: any[];
+  existingRequests: { sfd_id: string, status: string }[];
+  isSubmitting: boolean;
   onSelectSfd?: (sfdId: string) => void;
 }
 
-const SfdList: React.FC<SfdListProps> = ({
+const SfdList: React.FC<SfdListProps> = ({ 
   sfds,
   existingRequests,
-  onSelectSfd,
+  isSubmitting,
+  onSelectSfd
 }) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  const handleSfdClick = (sfd: Sfd) => {
-    const existingRequest = existingRequests.find(req => req.sfd_id === sfd.id);
-    
-    if (existingRequest) {
-      if (existingRequest.status === 'pending') {
-        toast({
-          title: "Demande en cours",
-          description: "Vous avez déjà une demande en attente pour cette SFD",
-        });
-      } else if (onSelectSfd) {
-        onSelectSfd(sfd.id);
-      }
-      return;
+  const handleSfdSelect = (sfdId: string) => {
+    if (onSelectSfd) {
+      onSelectSfd(sfdId);
+    } else {
+      // Direct navigation as a fallback
+      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
     }
-    
-    navigate(`/mobile-flow/sfd-adhesion/${sfd.id}`);
   };
 
-  if (sfds.length === 0) {
+  if (!sfds || sfds.length === 0) {
     return (
-      <div className="text-center p-6 bg-gray-50 rounded-lg">
-        <Building className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+      <div className="text-center py-8 bg-gray-50 rounded-lg">
         <p className="text-gray-600">Aucune SFD disponible pour le moment</p>
       </div>
     );
   }
 
   return (
-    <div className="grid gap-4">
-      {sfds.map((sfd) => (
-        <Card 
-          key={sfd.id}
-          className="cursor-pointer hover:bg-gray-50 transition-colors"
-        >
-          <SfdListItem
-            sfd={sfd}
-            isPending={existingRequests.some(
-              req => req.sfd_id === sfd.id && req.status === 'pending'
-            )}
-            onClick={() => handleSfdClick(sfd)}
-          />
-        </Card>
-      ))}
+    <div className="space-y-3">
+      {sfds.map(sfd => {
+        const isPending = existingRequests.some(req => 
+          req.sfd_id === sfd.id && req.status === 'pending'
+        );
+        
+        return (
+          <Card key={sfd.id} className="overflow-hidden">
+            <SfdListItem
+              sfd={sfd}
+              isPending={isPending || isSubmitting}
+              onClick={() => handleSfdSelect(sfd.id)}
+            />
+          </Card>
+        );
+      })}
     </div>
   );
 };
