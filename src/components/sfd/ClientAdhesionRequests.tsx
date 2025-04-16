@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -90,6 +91,11 @@ export function ClientAdhesionRequests() {
     }
 
     handleCloseDialog();
+    refetchAdhesionRequests();
+  };
+
+  // Définition de la fonction handleRefresh qui était manquante
+  const handleRefresh = () => {
     refetchAdhesionRequests();
   };
 
