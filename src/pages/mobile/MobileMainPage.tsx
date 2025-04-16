@@ -56,8 +56,15 @@ const MobileMainPage: React.FC = () => {
     }
   };
   
-  const handleManualSync = async () => {
-    await synchronizeWithSfd();
+  // Fixed: Make the handleManualSync function return Promise<boolean> instead of Promise<void>
+  const handleManualSync = async (): Promise<boolean> => {
+    try {
+      const result = await synchronizeWithSfd();
+      return result;
+    } catch (error) {
+      console.error('Sync error:', error);
+      return false;
+    }
   };
   
   return (
