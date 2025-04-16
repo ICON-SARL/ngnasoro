@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -89,7 +88,6 @@ export function useClientAdhesions() {
       console.log(`Success: Found ${data?.length || 0} adhesion requests`);
       console.log('Adhesion requests data:', data);
       
-      // Ensure status is of the correct type
       const typedData = data?.map(item => ({
         ...item,
         status: item.status as 'pending' | 'approved' | 'rejected'

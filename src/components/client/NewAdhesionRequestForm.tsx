@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -14,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader } from '@/components/ui/loader';
-import { useClientAdhesions } from '@/hooks/useClientAdhesions.tsx';
+import { useClientAdhesions, AdhesionRequestInput } from '@/hooks/useClientAdhesions.tsx';
 import { useAuth } from '@/hooks/useAuth';
 
 // Schema definition
@@ -58,7 +59,18 @@ export const NewAdhesionRequestForm: React.FC<NewAdhesionRequestFormProps> = ({
   });
 
   const onSubmit = async (values: AdhesionFormInput) => {
-    const result = await submitAdhesionRequest(sfdId, values);
+    // Ensure full_name is always provided as it's required by AdhesionRequestInput
+    const adhesionData: AdhesionRequestInput = {
+      full_name: values.full_name,
+      profession: values.profession,
+      monthly_income: values.monthly_income,
+      source_of_income: values.source_of_income,
+      phone: values.phone,
+      email: values.email,
+      address: values.address,
+    };
+    
+    const result = await submitAdhesionRequest(sfdId, adhesionData);
     
     if (result.success && onSuccess) {
       onSuccess();

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useClientAdhesions } from '@/hooks/useClientAdhesions.tsx';
+import { useClientAdhesions, AdhesionRequestInput } from '@/hooks/useClientAdhesions.tsx';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { UserCircle2, Loader2 } from 'lucide-react';
@@ -58,8 +59,8 @@ export function ClientAdhesionForm({ sfdId, onSuccess }: ClientAdhesionFormProps
 
   const onSubmit = async (values: AdhesionFormValues) => {
     try {
-      // Create the adhesion data from form values
-      const adhesionData = {
+      // Create the adhesion data from form values with proper typing
+      const adhesionData: AdhesionRequestInput = {
         full_name: values.full_name,
         profession: values.profession,
         monthly_income: values.monthly_income,
