@@ -8,6 +8,7 @@ import FloatingMenuButton from '@/components/mobile/FloatingMenuButton';
 import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 import SfdSelectorPage from '@/pages/SfdSelectorPage';
 import FundsManagementPage from '@/pages/mobile/FundsManagementPage';
+import { MobileRouter } from '@/components/Router';
 
 const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
