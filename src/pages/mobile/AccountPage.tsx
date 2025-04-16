@@ -1,145 +1,173 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, User, Bell, Shield, Info, ChevronRight, Building } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import MobileMenu from '@/components/mobile/MobileMenu';
+import { 
+  User, 
+  Settings, 
+  LogOut, 
+  CreditCard, 
+  Wallet,
+  Building,
+  Shield 
+} from 'lucide-react';
+import MobileLayout from '@/components/mobile/layout/MobileLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import SfdAdhesionSection from '@/components/mobile/account/SfdAdhesionSection';
-import LogoutButton from '@/components/LogoutButton';
 
-const AccountPage: React.FC = () => {
+const AccountPage = () => {
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [accountBalance, setAccountBalance] = useState<number | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   
-  const handleMenuToggle = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  const handleMenuClose = () => {
-    setIsMenuOpen(false);
-  };
-
-  const handleNavigate = (path: string) => {
-    navigate(path);
-    handleMenuClose();
+  // Récupérer le solde du compte de l'utilisateur
+  useEffect(() => {
+    const fetchUserBalance = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoadingBalance(true);
+        const { data, error } = await supabase
+          .from('accounts')
+          .select('balance')
+          .eq('user_id', user.id)
+          .maybeSingle();
+          
+        if (error) throw error;
+        
+        if (data) {
+          setAccountBalance(data.balance);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération du solde:', error);
+      } finally {
+        setIsLoadingBalance(false);
+      }
+    };
+    
+    fetchUserBalance();
+  }, [user]);
+  
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de vous déconnecter',
+        variant: 'destructive'
+      });
+    }
   };
   
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="px-4 py-4">
-        <div className="flex items-center mb-6">
-          <Button variant="ghost" className="p-1" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-semibold ml-2">Mon Compte</h1>
-          <Button variant="ghost" className="ml-auto" onClick={handleMenuToggle}>
-            <User className="h-5 w-5" />
-          </Button>
-        </div>
-        
-        {/* Profile Card */}
-        <Card className="mb-6">
+    <MobileLayout>
+      <div className="bg-white p-4 shadow-sm">
+        <h1 className="text-xl font-bold">Mon compte</h1>
+        <p className="text-gray-500 text-sm">Gérer votre profil et vos paramètres</p>
+      </div>
+      
+      <div className="p-4 space-y-4">
+        {/* Profil utilisateur */}
+        <Card>
           <CardContent className="p-4 flex items-center">
-            <Avatar className="h-16 w-16 bg-[#0D6A51]">
-              <AvatarFallback className="text-white">
-                {user?.email?.charAt(0).toUpperCase() || 'U'}
+            <Avatar className="h-16 w-16 mr-4">
+              <AvatarImage src="/placeholder-avatar.png" alt="Avatar" />
+              <AvatarFallback>
+                {user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
               </AvatarFallback>
-              <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.email || 'Utilisateur'} />
             </Avatar>
-            <div className="ml-4 flex-1">
-              <h3 className="font-medium text-lg">{user?.email || 'client@test.com'}</h3>
-              <p className="text-gray-500">Client</p>
+            <div>
+              <p className="font-semibold text-lg">{user?.user_metadata?.full_name || 'Utilisateur'}</p>
+              <p className="text-gray-500">{user?.email}</p>
             </div>
-            <Button variant="outline" size="sm" className="whitespace-nowrap" onClick={() => navigate('/mobile-flow/account/profile')}>
-              Modifier
-            </Button>
           </CardContent>
         </Card>
         
-        {/* SFD Adhesion Section */}
+        {/* Solde du compte */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center">
+              <Wallet className="h-5 w-5 mr-2 text-[#0D6A51]" />
+              Mon solde
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoadingBalance ? (
+              <div className="flex justify-center py-2">
+                <div className="h-6 w-6 border-2 border-t-transparent border-[#0D6A51] rounded-full animate-spin"></div>
+              </div>
+            ) : accountBalance !== null ? (
+              <div className="py-2">
+                <p className="text-2xl font-bold">{accountBalance.toLocaleString()} FCFA</p>
+                <p className="text-sm text-gray-500">Solde disponible</p>
+              </div>
+            ) : (
+              <div className="py-2">
+                <p className="text-sm text-gray-500">
+                  Vous n'avez pas encore de compte d'épargne. Adhérez à une SFD pour en créer un.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Section d'adhésion SFD */}
         <SfdAdhesionSection />
         
-        <h2 className="text-xl font-semibold mb-4 mt-6">Paramètres</h2>
-        
-        <div className="space-y-4">
-          {/* Notifications */}
-          <Card className="border cursor-pointer" onClick={() => navigate('/mobile-flow/account/notifications')}>
-            <CardContent className="p-4 flex items-center">
-              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <Bell className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-4 flex-1">
-                <h3 className="font-medium">Notifications</h3>
-                <p className="text-sm text-gray-500">Gérer les notifications</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
-            </CardContent>
-          </Card>
-          
-          {/* Security */}
-          <Card className="border cursor-pointer" onClick={() => navigate('/mobile-flow/account/security')}>
-            <CardContent className="p-4 flex items-center">
-              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                <Shield className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-4 flex-1">
-                <h3 className="font-medium">Sécurité</h3>
-                <p className="text-sm text-gray-500">Paramètres de sécurité</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
-            </CardContent>
-          </Card>
-          
-          {/* SFD Accounts */}
-          <Card className="border cursor-pointer" onClick={() => navigate('/sfd-setup')}>
-            <CardContent className="p-4 flex items-center">
-              <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center">
-                <Building className="h-6 w-6 text-indigo-600" />
-              </div>
-              <div className="ml-4 flex-1">
-                <h3 className="font-medium">Comptes SFD</h3>
-                <p className="text-sm text-gray-500">Gérer vos comptes SFD</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
-            </CardContent>
-          </Card>
-          
-          {/* About */}
-          <Card className="border cursor-pointer" onClick={() => navigate('/mobile-flow/account/about')}>
-            <CardContent className="p-4 flex items-center">
-              <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-                <Info className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="ml-4 flex-1">
-                <h3 className="font-medium">À propos</h3>
-                <p className="text-sm text-gray-500">Informations sur l'application</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
-            </CardContent>
-          </Card>
-          
-          <LogoutButton 
-            variant="destructive" 
-            className="w-full mt-6"
-            text="Se déconnecter"
-            redirectPath="/auth"
-          />
-        </div>
+        {/* Options de compte */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Options</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Button
+              variant="ghost"
+              className="w-full justify-start py-6 rounded-none border-b"
+              onClick={() => navigate('/mobile-flow/my-loans')}
+            >
+              <CreditCard className="mr-3 h-5 w-5 text-gray-600" />
+              Mes prêts
+            </Button>
+            
+            <Button
+              variant="ghost"
+              className="w-full justify-start py-6 rounded-none border-b"
+              onClick={() => navigate('/mobile-flow/settings')}
+            >
+              <Settings className="mr-3 h-5 w-5 text-gray-600" />
+              Paramètres
+            </Button>
+            
+            <Button
+              variant="ghost"
+              className="w-full justify-start py-6 rounded-none border-b"
+              onClick={() => navigate('/mobile-flow/security')}
+            >
+              <Shield className="mr-3 h-5 w-5 text-gray-600" />
+              Sécurité
+            </Button>
+            
+            <Button
+              variant="ghost"
+              className="w-full justify-start py-6 rounded-none text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={handleSignOut}
+            >
+              <LogOut className="mr-3 h-5 w-5" />
+              Déconnexion
+            </Button>
+          </CardContent>
+        </Card>
       </div>
-      
-      <MobileMenu 
-        isOpen={isMenuOpen}
-        onClose={handleMenuClose}
-        onNavigate={handleNavigate}
-      />
-    </div>
+    </MobileLayout>
   );
 };
 
