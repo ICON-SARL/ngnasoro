@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
-import { useClientAdhesions } from '@/hooks/useClientAdhesions';
+import { useClientAdhesions, AdhesionRequestInput } from '@/hooks/useClientAdhesions';
 import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
@@ -57,9 +57,19 @@ export const NewAdhesionRequestForm: React.FC<NewAdhesionRequestFormProps> = ({
 
   const onSubmit = async (values: FormValues) => {
     try {
-      // Since our form values are now guaranteed to have all required fields
-      // thanks to zod validation, we can safely pass them to submitAdhesionRequest
-      const { success } = await submitAdhesionRequest(sfdId, values);
+      // Since our form values are validated by zod, we can create a properly typed object
+      // that satisfies the AdhesionRequestInput interface
+      const adhesionData: AdhesionRequestInput = {
+        full_name: values.full_name,
+        profession: values.profession,
+        monthly_income: values.monthly_income,
+        source_of_income: values.source_of_income,
+        phone: values.phone,
+        email: values.email,
+        address: values.address,
+      };
+      
+      const { success } = await submitAdhesionRequest(sfdId, adhesionData);
       if (success && onSuccess) {
         onSuccess();
       }
