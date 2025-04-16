@@ -103,18 +103,15 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
           
           // Add a listener for each table subscription
           tableSubscriptions.forEach(sub => {
-            // Create the subscription configuration
-            const config = {
-              event: sub.event,
-              schema: 'public',
-              table: sub.table,
-              filter: sub.filter || `user_id=eq.${user.id}`
-            };
-            
-            // Subscribe to database changes
+            // Subscribe to database changes using correct syntax
             dbChannel.on(
               'postgres_changes',
-              config,
+              {
+                event: sub.event,
+                schema: 'public',
+                table: sub.table,
+                filter: sub.filter || `user_id=eq.${user.id}`
+              },
               (payload) => {
                 console.log(`Database change detected in ${sub.table}:`, payload);
                 
