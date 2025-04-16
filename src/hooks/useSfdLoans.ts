@@ -55,7 +55,6 @@ export function useSfdLoans() {
     }
   });
 
-  // Create loan mutation
   const createLoan = useMutation({
     mutationFn: sfdLoanApi.createLoan,
     onSuccess: () => {
@@ -74,7 +73,6 @@ export function useSfdLoans() {
     }
   });
 
-  // Approve loan mutation
   const approveLoan = useMutation({
     mutationFn: (loanId: string) => sfdLoanApi.approveLoan(loanId, user?.id || ''),
     onSuccess: () => {
@@ -86,7 +84,6 @@ export function useSfdLoans() {
     }
   });
 
-  // Reject loan mutation
   const rejectLoan = useMutation({
     mutationFn: (loanId: string) => sfdLoanApi.rejectLoan(loanId, user?.id || ''),
     onSuccess: () => {
@@ -98,7 +95,6 @@ export function useSfdLoans() {
     }
   });
 
-  // Disburse loan mutation
   const disburseLoan = useMutation({
     mutationFn: (loanId: string) => sfdLoanApi.disburseLoan(loanId, user?.id || ''),
     onSuccess: () => {
@@ -110,7 +106,6 @@ export function useSfdLoans() {
     }
   });
 
-  // Record payment mutation - fix the argument count here
   const recordPayment = useMutation({
     mutationFn: ({ loanId, amount, paymentMethod }: { loanId: string, amount: number, paymentMethod: string }) => 
       sfdLoanApi.recordLoanPayment(loanId, amount, paymentMethod),
@@ -124,9 +119,9 @@ export function useSfdLoans() {
   });
 
   return {
-    data: query.data,
-    isLoading: query.isLoading,
-    error: query.error,
+    data,
+    isLoading,
+    error,
     createLoan,
     approveLoan,
     rejectLoan,
