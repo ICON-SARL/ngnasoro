@@ -4,213 +4,104 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
-export interface AdhesionRequestInput {
+export interface AdhesionRequest {
+  id: string;
   full_name: string;
   email?: string;
   phone?: string;
   address?: string;
-  profession?: string;
-  monthly_income?: string;
-  source_of_income?: string;
-}
-
-export interface AdhesionRequest {
-  id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  processed_at?: string;
+  processed_by?: string;
+  notes?: string;
   sfd_id: string;
   sfd_name?: string;
   user_id: string;
-  full_name: string;
-  email?: string;
-  phone?: string;
-  status: string;
-  created_at: string;
-  notes?: string;
 }
 
 export function useClientAdhesions() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isLoadingUserAdhesionRequests, setIsLoadingUserAdhesionRequests] = useState(false);
+  const [adhesionRequests, setAdhesionRequests] = useState<AdhesionRequest[]>([]);
   const [userAdhesionRequests, setUserAdhesionRequests] = useState<AdhesionRequest[]>([]);
-  const [isCreatingRequest, setIsCreatingRequest] = useState(false);
-  const [isLoadingAdhesionRequests, setIsLoadingAdhesionRequests] = useState(false);
-  const [adhesionRequests, setAdhesionRequests] = useState<any[]>([]);
+  const [isLoadingAdhesionRequests, setIsLoadingAdhesionRequests] = useState(true);
   
-  // Fetch user's adhesion requests
-  const fetchUserAdhesionRequests = useCallback(async () => {
+  const fetchAdhesionRequests = useCallback(async () => {
     if (!user) return;
     
+    setIsLoadingAdhesionRequests(true);
     try {
-      setIsLoadingUserAdhesionRequests(true);
+      console.log('Fetching adhesion requests...');
       
-      const { data, error } = await supabase
-        .from('client_adhesion_requests')
-        .select(`
-          *,
-          sfds:sfd_id (name)
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-        
+      // Utilisez la fonction Edge pour récupérer les données
+      const { data, error } = await supabase.functions.invoke('fetch-client-adhesions', {
+        body: { userId: user.id }
+      });
+      
       if (error) {
         console.error('Error fetching adhesion requests:', error);
-        toast({
-          title: 'Erreur',
-          description: "Impossible de récupérer vos demandes d'adhésion",
-          variant: 'destructive',
-        });
-        return;
+        throw error;
       }
       
-      // Format the requests with SFD name
-      const formattedRequests = data.map(req => ({
-        ...req,
-        sfd_name: req.sfds?.name
-      }));
-      
-      setUserAdhesionRequests(formattedRequests);
-      console.log(`Found ${formattedRequests.length} user adhesion requests`);
-    } catch (error) {
-      console.error('Error in fetchUserAdhesionRequests:', error);
-    } finally {
-      setIsLoadingUserAdhesionRequests(false);
-    }
-  }, [user, toast]);
-  
-  // Fetch all adhesion requests for admin
-  const fetchAdhesionRequests = useCallback(async (sfdId?: string) => {
-    if (!user) return;
-    
-    try {
-      setIsLoadingAdhesionRequests(true);
-      console.log(`Fetching adhesion requests for SFD: ${sfdId || 'all'}`);
-      
-      // We can use metadata to get the admin's SFD ID if not specified
-      const adminSfdId = sfdId || user.user_metadata?.sfd_id;
-      
-      if (!adminSfdId) {
-        console.error('No SFD ID available for admin');
-        toast({
-          title: 'Erreur',
-          description: "Impossible de déterminer votre SFD",
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      const { data, error } = await supabase
-        .from('client_adhesion_requests')
-        .select('*')
-        .eq('sfd_id', adminSfdId)
-        .order('created_at', { ascending: false });
-        
-      if (error) {
-        console.error('Error fetching adhesion requests for admin:', error);
-        toast({
-          title: 'Erreur',
-          description: "Impossible de récupérer les demandes d'adhésion",
-          variant: 'destructive',
-        });
-        return;
-      }
-      
+      console.log('Adhesion requests received:', data);
       setAdhesionRequests(data || []);
-      console.log(`Success: Found ${data?.length} adhesion requests`);
     } catch (error) {
-      console.error('Error in fetchAdhesionRequests:', error);
+      console.error('Error fetching adhesion requests:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de récupérer les demandes d\'adhésion',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoadingAdhesionRequests(false);
     }
   }, [user, toast]);
   
-  // Submit a new adhesion request
-  const submitAdhesionRequest = async (sfdId: string, data: AdhesionRequestInput) => {
-    if (!user) {
-      toast({
-        title: 'Erreur',
-        description: "Vous devez être connecté pour soumettre une demande d'adhésion",
-        variant: 'destructive',
-      });
-      return { success: false };
-    }
+  const fetchUserAdhesionRequests = useCallback(async () => {
+    if (!user) return;
     
     try {
-      setIsCreatingRequest(true);
+      console.log('Fetching user adhesion requests...');
       
-      // Parse monthly_income as a number, default to 0 if invalid
-      const monthlyIncome = data.monthly_income 
-        ? parseFloat(data.monthly_income) 
-        : undefined;
-      
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('client_adhesion_requests')
-        .insert({
-          sfd_id: sfdId,
-          user_id: user.id,
-          full_name: data.full_name,
-          email: data.email,
-          phone: data.phone,
-          address: data.address,
-          profession: data.profession,
-          monthly_income: monthlyIncome,
-          source_of_income: data.source_of_income,
-          status: 'pending'
-        });
-        
+        .select('*, sfds:sfd_id(name)')
+        .eq('user_id', user.id);
+      
       if (error) {
-        console.error('Error submitting adhesion request:', error);
-        toast({
-          title: 'Erreur',
-          description: "Impossible de soumettre votre demande d'adhésion",
-          variant: 'destructive',
-        });
-        return { success: false };
+        console.error('Error fetching user adhesion requests:', error);
+        throw error;
       }
       
-      toast({
-        title: 'Demande envoyée',
-        description: "Votre demande d'adhésion a été soumise avec succès",
-      });
+      console.log(`Found ${data.length} user adhesion requests`);
       
-      // Refresh user's requests
-      await fetchUserAdhesionRequests();
+      const formattedRequests = data.map(req => ({
+        ...req,
+        sfd_name: req.sfds?.name
+      }));
       
-      return { success: true };
+      setUserAdhesionRequests(formattedRequests || []);
     } catch (error) {
-      console.error('Error in submitAdhesionRequest:', error);
+      console.error('Error fetching user adhesion requests:', error);
       toast({
         title: 'Erreur',
-        description: "Une erreur est survenue lors de la soumission de votre demande",
+        description: 'Impossible de récupérer vos demandes d\'adhésion',
         variant: 'destructive',
       });
-      return { success: false };
-    } finally {
-      setIsCreatingRequest(false);
     }
-  };
-  
-  // Initial data loading
+  }, [user, toast]);
+
   useEffect(() => {
-    if (user) {
-      fetchUserAdhesionRequests();
-    }
-  }, [user, fetchUserAdhesionRequests]);
-  
+    fetchAdhesionRequests();
+    fetchUserAdhesionRequests();
+  }, [fetchAdhesionRequests, fetchUserAdhesionRequests]);
+
   return {
-    // User adhesion requests
-    userAdhesionRequests,
-    isLoadingUserAdhesionRequests,
-    fetchUserAdhesionRequests,
-    refetchUserAdhesionRequests: fetchUserAdhesionRequests,
-    
-    // Admin adhesion requests
     adhesionRequests,
+    userAdhesionRequests,
     isLoadingAdhesionRequests,
-    fetchAdhesionRequests,
     refetchAdhesionRequests: fetchAdhesionRequests,
-    
-    // Actions
-    submitAdhesionRequest,
-    isCreatingRequest
+    refetchUserAdhesionRequests: fetchUserAdhesionRequests
   };
 }

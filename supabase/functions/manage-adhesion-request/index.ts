@@ -66,21 +66,21 @@ serve(async (req) => {
     }
 
     // If approved, create a client record and account
+    let clientId = null;
     if (action === 'approve') {
       // Create SFD client record
       const { data: client, error: clientError } = await supabase
         .from('sfd_clients')
         .insert({
-          user_id: adhesionRequest.user_id,
-          sfd_id: adhesionRequest.sfd_id,
           full_name: adhesionRequest.full_name,
           email: adhesionRequest.email,
           phone: adhesionRequest.phone,
           address: adhesionRequest.address,
-          status: 'validated',
+          sfd_id: adhesionRequest.sfd_id,
+          status: 'active',
           validated_by: adminId,
           validated_at: new Date().toISOString(),
-          notes: notes || null
+          user_id: adhesionRequest.user_id
         })
         .select()
         .single();
@@ -93,97 +93,78 @@ serve(async (req) => {
         );
       }
 
-      // Create user-SFD association
-      const { error: assocError } = await supabase
+      clientId = client.id;
+
+      // Create user_sfds entry to associate the user with the SFD
+      const { error: userSfdError } = await supabase
         .from('user_sfds')
         .insert({
           user_id: adhesionRequest.user_id,
           sfd_id: adhesionRequest.sfd_id,
-          is_default: false
-        })
-        .select();
+          is_default: true
+        });
 
-      if (assocError) {
-        console.error('Error creating user-SFD association:', assocError);
-        // Continue anyway, this is not critical
+      if (userSfdError) {
+        console.error('Error creating user_sfds entry:', userSfdError);
+        // Continue anyway, as the client was already created
       }
-
-      // Create account for the client
+      
+      // Create an account for the client
       const { error: accountError } = await supabase
         .from('accounts')
         .insert({
           user_id: adhesionRequest.user_id,
           balance: 0,
-          currency: 'FCFA',
-          sfd_id: adhesionRequest.sfd_id
+          currency: 'FCFA'
         });
 
       if (accountError) {
-        console.error('Error creating client account:', accountError);
-        // Continue anyway, this is not critical
+        console.error('Error creating account:', accountError);
+        // Continue anyway, as the client was already created
       }
-
-      // Send notification to the user
+      
+      // Create notification for the user
       const { error: notifError } = await supabase
         .from('admin_notifications')
         .insert({
           title: 'Demande d\'adhésion approuvée',
-          message: `Votre demande d'adhésion a été approuvée. Bienvenue!`,
+          message: 'Votre demande d\'adhésion a été approuvée. Bienvenue!',
           type: 'adhesion_approved',
           recipient_id: adhesionRequest.user_id,
-          sender_id: adminId,
-          action_link: '/mobile-flow/sfd-accounts'
+          sender_id: adminId
         });
 
       if (notifError) {
-        console.error('Error sending notification to user:', notifError);
-        // Continue anyway, this is not critical
+        console.error('Error creating notification:', notifError);
+        // Continue anyway, as this is not critical
       }
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: `La demande d'adhésion a été approuvée.`,
-          clientId: client.id,
-          status: 'approved'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } 
-    else if (action === 'reject') {
-      // Send notification to the user
+    } else if (action === 'reject') {
+      // Create notification for rejection
       const { error: notifError } = await supabase
         .from('admin_notifications')
         .insert({
-          title: 'Demande d\'adhésion rejetée',
-          message: notes ? `Votre demande d'adhésion a été rejetée: ${notes}` : 'Votre demande d\'adhésion a été rejetée.',
+          title: 'Demande d\'adhésion refusée',
+          message: notes ? `Votre demande a été refusée: ${notes}` : 'Votre demande d\'adhésion a été refusée.',
           type: 'adhesion_rejected',
           recipient_id: adhesionRequest.user_id,
           sender_id: adminId
         });
 
       if (notifError) {
-        console.error('Error sending notification to user:', notifError);
-        // Continue anyway, this is not critical
+        console.error('Error creating rejection notification:', notifError);
+        // Continue anyway, as this is not critical
       }
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: `La demande d'adhésion a été rejetée.`,
-          status: 'rejected'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
 
     return new Response(
       JSON.stringify({ 
-        success: true, 
-        message: `La demande d'adhésion a été traitée.`,
-        status: newStatus
+        status: newStatus, 
+        clientId,
+        message: action === 'approve' 
+          ? 'La demande a été approuvée avec succès.' 
+          : 'La demande a été rejetée.'
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
     console.error('Server error:', error);

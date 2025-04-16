@@ -13,3 +13,5 @@ project_id = "xnqysvnychmsockivqhb"
     verify_jwt = true
   [functions.manage-adhesion-request]
     verify_jwt = true
+  [functions.fetch-client-adhesions]
+    verify_jwt = true
