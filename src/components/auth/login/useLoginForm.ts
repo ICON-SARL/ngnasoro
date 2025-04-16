@@ -48,6 +48,7 @@ export const useLoginForm = (
     setErrorMessage(null);
     
     try {
+      console.log('Tentative de connexion avec:', { email, adminMode, isSfdAdmin });
       const result = await signIn(email, password);
       
       if (result.error) {
@@ -66,9 +67,13 @@ export const useLoginForm = (
           startCooldown(30);
         }
         
-        // Specific error for admin login
+        // Specific error handling based on mode
         if (adminMode && result.error.message && result.error.message.includes('Invalid login')) {
           setErrorMessage("Accès refusé. Ce compte n'a pas les droits administrateur nécessaires.");
+        }
+        
+        if (isSfdAdmin && result.error.message && result.error.message.includes('Invalid login')) {
+          setErrorMessage("Accès refusé. Ce compte n'a pas les droits d'administrateur SFD nécessaires.");
         }
       } else if (result.data) {
         console.log('Login successful:', result.data);
@@ -82,11 +87,23 @@ export const useLoginForm = (
           description: "Vous êtes maintenant connecté.",
         });
         
-        // Redirect based on user role
-        if (adminMode && userRole === 'admin') {
-          navigate('/super-admin-dashboard');
-        } else if (isSfdAdmin && userRole === 'sfd_admin') {
-          navigate('/agency-dashboard');
+        // Redirect based on mode and user role
+        if (adminMode) {
+          if (userRole === 'admin') {
+            navigate('/super-admin-dashboard');
+          } else {
+            setErrorMessage("Accès refusé. Ce compte n'a pas les droits administrateur nécessaires.");
+            if (onError) onError("Accès refusé. Ce compte n'a pas les droits administrateur nécessaires.");
+            return;
+          }
+        } else if (isSfdAdmin) {
+          if (userRole === 'sfd_admin') {
+            navigate('/agency-dashboard');
+          } else {
+            setErrorMessage("Accès refusé. Ce compte n'a pas les droits d'administrateur SFD nécessaires.");
+            if (onError) onError("Accès refusé. Ce compte n'a pas les droits d'administrateur SFD nécessaires.");
+            return;
+          }
         } else {
           navigate('/mobile-flow/main');
         }

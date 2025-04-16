@@ -18,6 +18,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import AuthRedirectPage from '@/pages/AuthRedirectPage';
 import AdminLoginPage from '@/pages/AdminLoginPage';
 import ClientLoginPage from '@/pages/ClientLoginPage';
+import SfdLoginPage from '@/pages/SfdLoginPage';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import AgencyDashboard from '@/pages/AgencyDashboard';
 import SfdSubsidyRequestsPage from '@/pages/SfdSubsidyRequestsPage';
@@ -60,7 +61,7 @@ function App() {
                   <Route path="/login" element={<AuthRedirectPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                   <Route path="/admin/auth" element={<AdminLoginPage />} />
-                  <Route path="/sfd/auth" element={<LoginPage isSfdAdmin={true} />} />
+                  <Route path="/sfd/auth" element={<SfdLoginPage />} />
                   <Route path="/client/auth" element={<ClientLoginPage />} />
                   <Route path="/access-denied" element={<AccessDeniedPage />} />
                   

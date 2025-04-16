@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Logo from './Logo';
-import LoginForm from './login/LoginForm';
+import LoginForm from './auth/login/LoginForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
 
@@ -12,6 +12,7 @@ const SfdAuthUI = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   
   useEffect(() => {
     const hash = location.hash;
@@ -31,14 +32,22 @@ const SfdAuthUI = () => {
       console.log("SfdAuthUI - User detected:", user);
       console.log("SfdAuthUI - User role:", user.app_metadata?.role);
       
-      if (user.app_metadata?.role === 'sfd_admin') {
+      // Verifier le rôle directement depuis les métadonnées
+      const userRole = user.app_metadata?.role;
+      
+      if (userRole === 'sfd_admin') {
         navigate('/agency-dashboard');
       } else {
-        // Rediriger les utilisateurs non-SFD vers leur page appropriée
-        if (user.app_metadata?.role === 'admin') {
-          navigate('/admin/auth');
+        // Si on a un rôle mais pas celui de sfd_admin, on affiche une erreur
+        if (userRole) {
+          setAuthError(`Accès refusé. Vous n'avez pas le rôle d'administrateur SFD (rôle actuel: ${userRole}).`);
         } else {
-          navigate('/auth');
+          // Si pas de rôle défini, rediriger vers l'auth appropriée
+          if (userRole === 'admin') {
+            navigate('/admin/auth');
+          } else {
+            navigate('/auth');
+          }
         }
       }
     }
@@ -74,14 +83,21 @@ const SfdAuthUI = () => {
             </h2>
           </div>
           
+          {authError && (
+            <div className="p-4 bg-red-50 text-red-800 text-sm">
+              <p>{authError}</p>
+            </div>
+          )}
+          
           <LoginForm 
             adminMode={false} 
             isSfdAdmin={true}
+            onError={setAuthError}
           />
           
           <div className="mt-4 text-center pb-6 flex flex-col gap-2">
             <Link 
-              to="/login"
+              to="/auth"
               className="text-blue-600 hover:underline font-medium"
             >
               Changer de type de connexion
