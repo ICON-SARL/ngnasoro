@@ -9,6 +9,7 @@ import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 import SfdSelectorPage from '@/pages/SfdSelectorPage';
 import FundsManagementPage from '@/pages/mobile/FundsManagementPage';
 import { MobileRouter } from '@/components/Router';
+import MobileNavigation from '@/components/MobileNavigation';
 
 const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
@@ -87,7 +88,7 @@ const MobileFlowPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white pb-16">
       <FloatingMenuButton onClick={toggleMenu} />
       <MobileDrawerMenu 
         isOpen={menuOpen} 
@@ -100,6 +101,7 @@ const MobileFlowPage: React.FC = () => {
         <Route path="funds-management" element={<FundsManagementPage />} />
         <Route path="*" element={<MobileRouter />} />
       </Routes>
+      <MobileNavigation />
     </div>
   );
 };

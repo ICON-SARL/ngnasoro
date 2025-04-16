@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-// Correctly importing MobileRouter as a named export
 import { MobileRouter } from '@/components/Router';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
 import FloatingMenuButton from '@/components/mobile/FloatingMenuButton';
+import MobileNavigation from '@/components/MobileNavigation';
 
 const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
@@ -81,7 +81,7 @@ const MobileFlowPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white pb-16">
       <FloatingMenuButton onClick={toggleMenu} />
       <MobileDrawerMenu 
         isOpen={menuOpen} 
@@ -89,6 +89,7 @@ const MobileFlowPage: React.FC = () => {
         onLogout={handleLogout} 
       />
       <MobileRouter />
+      <MobileNavigation />
     </div>
   );
 };

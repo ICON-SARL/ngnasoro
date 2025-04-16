@@ -12,6 +12,7 @@ import SfdSelectorPage from '@/pages/SfdSelectorPage';
 import { LoanActivityPage } from '@/pages/mobile/LoanActivityPage';
 import ProfilePage from '@/components/mobile/profile/ProfilePage';
 import SfdConnectionPage from '@/pages/mobile/SfdConnectionPage';
+import FundsManagementPage from '@/pages/mobile/FundsManagementPage';
 
 export const MobileRouter = () => {
   return (
@@ -23,6 +24,7 @@ export const MobileRouter = () => {
       <Route path="/sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
       <Route path="/sfd-selector" element={<SfdSelectorPage />} />
       <Route path="/sfd-connection" element={<SfdConnectionPage />} />
+      <Route path="/funds-management" element={<FundsManagementPage />} />
       <Route path="*" element={<div>Mobile Page Not Found</div>} />
     </Routes>
   );
