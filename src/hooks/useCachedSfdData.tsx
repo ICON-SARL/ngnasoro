@@ -1,7 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { sfdCache } from '@/utils/cacheUtils';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Hook to fetch and cache SFD data
@@ -10,6 +11,13 @@ import { sfdCache } from '@/utils/cacheUtils';
 export function useCachedSfdData(sfdId: string | undefined, queryKey: string, fetchFunction: () => Promise<any>) {
   const queryClient = useQueryClient();
   const [isCacheHit, setIsCacheHit] = useState(false);
+  const { toast } = useToast();
+  
+  // Debug function to check cache state
+  const debugCache = useCallback(() => {
+    console.log(`[useCachedSfdData] Debug cache for ${queryKey}`);
+    sfdCache.debug();
+  }, [queryKey]);
   
   // Check cache before fetching
   useEffect(() => {
@@ -18,8 +26,14 @@ export function useCachedSfdData(sfdId: string | undefined, queryKey: string, fe
     const cachedData = sfdCache.get(sfdId, queryKey);
     if (cachedData) {
       // If data is in cache, update React Query cache
+      console.log(`[useCachedSfdData] Cache hit for ${queryKey} in SFD ${sfdId}`, {
+        ttl: sfdCache.ttl(sfdId, queryKey)
+      });
       queryClient.setQueryData([queryKey, sfdId], cachedData);
       setIsCacheHit(true);
+    } else {
+      console.log(`[useCachedSfdData] Cache miss for ${queryKey} in SFD ${sfdId}`);
+      setIsCacheHit(false);
     }
   }, [sfdId, queryKey, queryClient]);
   
@@ -34,6 +48,7 @@ export function useCachedSfdData(sfdId: string | undefined, queryKey: string, fe
       onQuerySuccess: (data: any) => {
         // Update our cache on successful fetch
         if (sfdId) {
+          console.log(`[useCachedSfdData] Updating cache for ${queryKey} in SFD ${sfdId}`);
           sfdCache.set(sfdId, queryKey, data);
         }
       }
@@ -53,15 +68,32 @@ export function useCachedSfdData(sfdId: string | undefined, queryKey: string, fe
     // Force refetch and update cache
     forceRefresh: async () => {
       if (!sfdId) return null;
+      
+      toast({
+        title: "Actualisation des données",
+        description: "Les données sont en cours d'actualisation...",
+      });
+      
+      console.log(`[useCachedSfdData] Forcing refresh for ${queryKey} in SFD ${sfdId}`);
       setIsCacheHit(false);
+      sfdCache.refresh(sfdId, queryKey);
       const data = await query.refetch();
+      
+      toast({
+        title: "Données actualisées",
+        description: "Les données ont été rafraîchies avec succès",
+      });
+      
       return data.data;
     },
     // Clear cache for this query
     clearCache: () => {
       if (!sfdId) return;
+      console.log(`[useCachedSfdData] Clearing cache for ${queryKey} in SFD ${sfdId}`);
       sfdCache.delete(sfdId, queryKey);
       setIsCacheHit(false);
-    }
+    },
+    // Debug cache state
+    debugCache
   };
 }
