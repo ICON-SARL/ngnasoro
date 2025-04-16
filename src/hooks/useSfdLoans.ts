@@ -1,16 +1,18 @@
-
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { sfdLoanApi } from '@/utils/sfdLoanApi';
+import { Loan } from '@/types/sfdClients';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { sfdLoanApi } from '@/utils/sfdLoanApi';
+import { useCachedSfdData } from '@/hooks/useCachedSfdData';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useSfdLoans() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const query = useQuery({
+  
+  const { data, isLoading, error } = useQuery({
     queryKey: ['sfd-loans', user?.id],
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -108,10 +110,10 @@ export function useSfdLoans() {
     }
   });
 
-  // Record payment mutation
+  // Record payment mutation - fix the argument count here
   const recordPayment = useMutation({
     mutationFn: ({ loanId, amount, paymentMethod }: { loanId: string, amount: number, paymentMethod: string }) => 
-      sfdLoanApi.recordLoanPayment(loanId, amount, paymentMethod, user?.id || ''),
+      sfdLoanApi.recordLoanPayment(loanId, amount, paymentMethod),
     onSuccess: () => {
       toast({
         title: "Paiement enregistré",
@@ -123,7 +125,6 @@ export function useSfdLoans() {
 
   return {
     data: query.data,
-    loans: query.data, // Add this for backward compatibility
     isLoading: query.isLoading,
     error: query.error,
     createLoan,

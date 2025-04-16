@@ -11,7 +11,7 @@ import {
   recordLoanPayment,
   getLoanPayments,
   sendPaymentReminder
-} from "@/services/loans/loanService";
+} from "@/services/loans";
 
 // Export everything from the new modular API
 export const loanService = {
