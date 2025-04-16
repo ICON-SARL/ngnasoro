@@ -43,6 +43,25 @@ export const useClientAdhesions = () => {
     enabled: !!user?.id
   });
 
+  // Fetch SFD adhesion requests (for SFD admins)
+  const {
+    data: adhesionRequests = [],
+    isLoading: isLoadingAdhesionRequests,
+    refetch: refetchAdhesionRequests
+  } = useQuery({
+    queryKey: ['adhesionRequests'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('client_adhesion_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      return data as ClientAdhesionRequest[];
+    },
+    enabled: !!user?.id
+  });
+
   // Submit adhesion request
   const submitAdhesionRequest = async (sfdId: string, input: AdhesionRequestInput) => {
     try {
@@ -86,11 +105,71 @@ export const useClientAdhesions = () => {
     }
   };
 
+  // Approve adhesion request
+  const approveAdhesionRequest = async (adhesionId: string, notes?: string) => {
+    try {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error } = await supabase
+        .from('client_adhesion_requests')
+        .update({
+          status: 'approved',
+          processed_at: new Date().toISOString(),
+          processed_by: user.id,
+          notes: notes
+        })
+        .eq('id', adhesionId);
+
+      if (error) throw error;
+      
+      await queryClient.invalidateQueries({ queryKey: ['adhesionRequests'] });
+      return true;
+    } catch (error) {
+      console.error('Error approving adhesion request:', error);
+      return false;
+    }
+  };
+
+  // Reject adhesion request
+  const rejectAdhesionRequest = async (adhesionId: string, notes?: string) => {
+    try {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error } = await supabase
+        .from('client_adhesion_requests')
+        .update({
+          status: 'rejected',
+          processed_at: new Date().toISOString(),
+          processed_by: user.id,
+          notes: notes
+        })
+        .eq('id', adhesionId);
+
+      if (error) throw error;
+      
+      await queryClient.invalidateQueries({ queryKey: ['adhesionRequests'] });
+      return true;
+    } catch (error) {
+      console.error('Error rejecting adhesion request:', error);
+      return false;
+    }
+  };
+
   return {
     userAdhesionRequests: userAdhesionRequests || [],
     isLoadingUserAdhesionRequests,
     refetchUserAdhesionRequests,
     submitAdhesionRequest,
-    isCreatingRequest
+    isCreatingRequest,
+    // Add these properties to fix the errors
+    adhesionRequests: adhesionRequests || [],
+    isLoadingAdhesionRequests,
+    approveAdhesionRequest,
+    rejectAdhesionRequest,
+    refetchAdhesionRequests
   };
 };

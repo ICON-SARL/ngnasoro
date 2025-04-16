@@ -12,7 +12,8 @@ export interface User extends SupabaseUser {
 export enum UserRole {
   SuperAdmin = 'admin',
   SfdAdmin = 'sfd_admin',
-  Client = 'client'
+  Client = 'client',
+  User = 'user'
 }
 
 export interface AuthContextProps {
@@ -31,4 +32,18 @@ export interface AuthContextProps {
   refreshSession: () => Promise<void>;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
+}
+
+// Define the SFD Association types
+export interface AssociateSfdParams {
+  userId: string;
+  sfdId: string;
+  isDefault?: boolean;
+  makeDefault?: boolean;
+}
+
+export interface AssociateSfdResult {
+  success: boolean;
+  error?: string;
+  userSfd?: any;
 }
