@@ -61,7 +61,7 @@ export function useGlobalRealtime(subscriptions: TableSubscription[] = []) {
       
       // Use the correct structure for subscribing to postgres changes
       channel.on(
-        'postgres_changes', 
+        'postgres_changes',
         { 
           event: subscription.event,
           schema: 'public',
