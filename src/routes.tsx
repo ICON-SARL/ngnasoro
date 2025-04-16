@@ -13,6 +13,7 @@ import PrivateLayout from './components/layouts/PrivateLayout';
 import AdminLoginPage from './pages/AdminLoginPage';
 import SfdLoginPage from './pages/SfdLoginPage';
 import ClientLoginPage from './pages/ClientLoginPage';
+import MobileFlowPage from './pages/MobileFlowPage';
 
 const AppRoutes = () => {
   return (

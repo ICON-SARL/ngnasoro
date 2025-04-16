@@ -1,16 +1,17 @@
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import MobileNavigation from '../components/MobileNavigation';
+import { MobileRouter } from '../components/Router';
 
 const MobileFlowPage = () => {
   return (
-    <Routes>
-      <Route path="/" element={<div>Accueil Mobile</div>} />
-      <Route path="/main" element={<div>Tableau de bord principal</div>} />
-      <Route path="/loans" element={<div>Mes prêts</div>} />
-      <Route path="/profile" element={<div>Mon profil</div>} />
-      <Route path="*" element={<div>Page mobile non trouvée</div>} />
-    </Routes>
+    <div className="min-h-screen bg-white">
+      <div className="pb-20"> {/* Add padding at the bottom for the navigation bar */}
+        <MobileRouter />
+      </div>
+      <MobileNavigation />
+    </div>
   );
 };
 
