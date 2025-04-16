@@ -10,8 +10,11 @@ interface LoginPageProps {
 const LoginPage: React.FC<LoginPageProps> = ({ isSfdAdmin = false }) => {
   const location = useLocation();
   
+  // Check if we're coming from splash screen
+  const fromSplash = location.state?.fromSplash === true;
+  
   // If user directly accesses /auth without seeing splash, redirect to splash
-  if (location.state?.fromSplash !== true) {
+  if (!fromSplash) {
     return <Navigate to="/" replace />;
   }
 

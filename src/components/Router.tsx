@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
@@ -16,11 +16,12 @@ import FundsManagementPage from '@/pages/mobile/FundsManagementPage';
 import LoanPlansPage from '@/pages/mobile/LoanPlansPage';
 import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
 import LoanDetailsPage from '@/pages/mobile/LoanDetailsPage';
+import SplashScreen from '@/components/mobile/SplashScreen';
 
 export const MobileRouter = () => {
   return (
     <Routes>
-      <Route path="/" element={<div>Mobile Home</div>} />
+      <Route path="/" element={<SplashScreen />} />
       <Route path="/main" element={<div>Mobile Main</div>} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/loan-activity" element={<LoanActivityPage />} />
@@ -40,6 +41,7 @@ const Router = () => {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<SplashScreen />} />
         <Route path="/auth" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/access-denied" element={<AccessDeniedPage />} />

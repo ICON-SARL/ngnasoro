@@ -1,21 +1,24 @@
+
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+
 interface SplashScreenProps {
   onComplete?: () => void;
   duration?: number;
 }
+
 const SplashScreen: React.FC<SplashScreenProps> = ({
   onComplete,
   duration = 3000
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [progress, setProgress] = useState(0);
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress(prev => {
@@ -26,6 +29,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
         return prev + 2;
       });
     }, duration / 50);
+
     const timer = setTimeout(() => {
       if (onComplete) {
         onComplete();
@@ -35,14 +39,18 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
       if (user) {
         navigate('/mobile-flow/main');
       } else {
-        navigate('/auth');
+        // Pass state to indicate this redirect is from splash screen
+        // This prevents a potential infinite loop between splash and auth
+        navigate('/auth', { state: { fromSplash: true } });
       }
     }, duration);
+
     return () => {
       clearInterval(interval);
       clearTimeout(timer);
     };
   }, [onComplete, navigate, duration, user]);
+
   return <div className="h-screen w-full overflow-hidden">
       <div className="relative h-full w-full bg-gradient-to-b from-[#0D6A51] to-[#064335] flex flex-col items-center justify-center px-6">
         {/* Logo container with animation */}
@@ -143,4 +151,5 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
       </div>
     </div>;
 };
+
 export default SplashScreen;

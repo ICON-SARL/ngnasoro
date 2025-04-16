@@ -69,8 +69,8 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
         description: "Vous avez été déconnecté avec succès"
       });
       
-      // Force reload to clear state
-      window.location.href = '/auth';
+      // Force reload to clear state and go to splash screen
+      window.location.href = '/';
     } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
       setIsLoggingOut(false);
