@@ -10,18 +10,6 @@ export const mobileNavItems: MobileNavItem[] = [
     route: '/mobile-flow/main'
   },
   {
-    id: 'loans',
-    label: 'Prêts',
-    icon: 'credit-card',
-    route: '/mobile-flow/loan-application'
-  },
-  {
-    id: 'loan-activity',
-    label: 'Mes prêts',
-    icon: 'file-text',
-    route: '/mobile-flow/loan-activity'
-  },
-  {
     id: 'funds',
     label: 'Mes fonds',
     icon: 'piggy-bank',
@@ -70,42 +58,6 @@ export const mobileMenuSections: MobileMenuSection[] = [
         icon: 'shield-check',
         route: '/mobile-flow/secure-layer',
         color: '#0D6A51',
-        coming: true
-      }
-    ]
-  },
-  {
-    id: 'loans',
-    title: 'Prêts et financements',
-    color: '#FFAB2E',
-    items: [
-      {
-        id: 'loan-application',
-        label: 'Demander un prêt',
-        icon: 'hand-coins',
-        route: '/mobile-flow/loan-application',
-        color: '#FFAB2E'
-      },
-      {
-        id: 'loan-activity',
-        label: 'Mes prêts',
-        icon: 'file-text',
-        route: '/mobile-flow/loan-activity',
-        color: '#FFAB2E'
-      },
-      {
-        id: 'funds',
-        label: 'Mes fonds',
-        icon: 'wallet',
-        route: '/mobile-flow/funds-management',
-        color: '#FFAB2E'
-      },
-      {
-        id: 'late-payment-alerts',
-        label: 'Alertes retards',
-        icon: 'bell',
-        route: '/mobile-flow/late-payments',
-        color: '#FFAB2E',
         coming: true
       }
     ]

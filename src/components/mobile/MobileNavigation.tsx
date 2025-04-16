@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, CreditCard, FileText, PiggyBank, User } from 'lucide-react';
 import { mobileNavItems } from '@/config/mobileNavigation';
 import * as Icons from 'lucide-react';
 
@@ -45,7 +44,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
           onClick={() => handleNavigation(item.route, `Navigate to ${item.label}`)}
         >
           <div className={`p-2 rounded-full ${isActive(item.route) ? 'bg-[#0D6A51]/10' : ''}`}>
-            {getIcon(item.icon, "h-5 w-5")}
+            {getIcon(item.icon)}
           </div>
           <span className="text-xs mt-1">{item.label}</span>
         </div>
