@@ -114,7 +114,7 @@ export function ClientAdhesionRequests() {
             notes
           }, {
             timeout: 30000, // 30 seconds timeout
-            maxRetries: 1   // Just retry once
+            maxRetries: 2   // Try up to 2 times
           });
           
           console.log('Edge function response:', response);

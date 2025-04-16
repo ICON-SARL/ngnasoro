@@ -50,10 +50,13 @@ serve(async (req) => {
       throw new Error("Adhesion request not found");
     }
     
+    if (!adhesion.user_id) {
+      throw new Error("Adhesion request has no user ID associated");
+    }
+    
     console.log(`Found adhesion request for user ${adhesion.user_id} to SFD ${adhesion.sfd_id}`);
     
     // Begin transaction steps - we'll use separate steps instead of a transaction
-    // because Edge Functions don't support true transactions
     
     // 1. Update adhesion request to 'approved'
     const { error: updateError } = await supabase
@@ -103,45 +106,42 @@ serve(async (req) => {
     
     console.log('Successfully created SFD client');
     
-    // 3. Create a client account - check if user already has an account
-    if (adhesion.user_id) {
-      console.log(`Checking for existing account for user ${adhesion.user_id}`);
+    // 3. Check if the user already has an account before creating a new one
+    console.log(`Checking for existing account for user ${adhesion.user_id}`);
+    
+    const { data: existingAccount, error: checkError } = await supabase
+      .from('accounts')
+      .select('id')
+      .eq('user_id', adhesion.user_id)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error('Error checking for existing account:', checkError);
+      // Continue execution, don't throw error here
+    }
+    
+    // Only create account if user doesn't already have one
+    if (!existingAccount) {
+      console.log(`Creating new account for user ${adhesion.user_id}`);
       
-      // Check if the user already has an account
-      const { data: existingAccount, error: checkError } = await supabase
+      const { data: newAccount, error: accountError } = await supabase
         .from('accounts')
-        .select('id')
-        .eq('user_id', adhesion.user_id)
-        .maybeSingle();
+        .insert({
+          user_id: adhesion.user_id,
+          balance: 0,
+          currency: 'FCFA'
+          // Note: We're not including sfd_id as it appears to not exist in the table schema
+        });
       
-      if (checkError) {
-        console.error('Error checking for existing account:', checkError);
-        // Continue execution, don't throw error here
-      }
-      
-      // Only create account if user doesn't already have one
-      if (!existingAccount) {
-        console.log(`Creating new account for user ${adhesion.user_id}`);
-        
-        const { data: newAccount, error: accountError } = await supabase
-          .from('accounts')
-          .insert({
-            user_id: adhesion.user_id,
-            balance: 0,
-            currency: 'FCFA'
-            // Note: We're not including sfd_id here as it seems it doesn't exist in the table schema
-          });
-        
-        if (accountError) {
-          console.error('Error creating account:', accountError);
-          // Log the error but don't fail the entire process
-          console.log('Will continue despite account creation error');
-        } else {
-          console.log('Successfully created account');
-        }
+      if (accountError) {
+        console.error('Error creating account:', accountError);
+        // Log the error but don't fail the entire process
+        console.log('Will continue despite account creation error');
       } else {
-        console.log(`User ${adhesion.user_id} already has an account, skipping creation`);
+        console.log('Successfully created account');
       }
+    } else {
+      console.log(`User ${adhesion.user_id} already has an account, skipping creation`);
     }
     
     // 4. Create audit log entry

@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react';
 import { ClientAdhesionRequest } from '@/types/adhesionTypes';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface AdhesionActionDialogProps {
   request: ClientAdhesionRequest | null;
@@ -63,6 +63,7 @@ export function AdhesionActionDialog({
             {errorMessage && (
               <Alert variant="destructive" className="my-2">
                 <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Une erreur s'est produite</AlertTitle>
                 <AlertDescription>
                   <div className="space-y-2">
                     <p>{errorMessage}</p>
