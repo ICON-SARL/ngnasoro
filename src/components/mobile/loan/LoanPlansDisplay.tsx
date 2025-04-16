@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,7 +21,7 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
     const fetchLoanPlans = async () => {
       setIsLoading(true);
       try {
-        // Determine whether to filter by sfd_id
+        // Get only published plans
         let query = supabase
           .from('sfd_loan_plans')
           .select(`
@@ -32,29 +31,18 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
               logo_url
             )
           `)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .eq('is_published', true);
           
         // Filter by SFD if specified
         if (sfdId) {
           query = query.eq('sfd_id', sfdId);
-        } else if (user?.id) {
-          // Get the user's connected SFDs
-          const { data: userSfds } = await supabase
-            .from('user_sfds')
-            .select('sfd_id')
-            .eq('user_id', user.id);
-            
-          if (userSfds?.length) {
-            const sfdIds = userSfds.map(item => item.sfd_id);
-            query = query.in('sfd_id', sfdIds);
-          }
         }
         
         const { data, error } = await query.order('created_at', { ascending: false });
         
         if (error) throw error;
         
-        // Cast the data to the correct type
         const typedData = data as unknown as LoanPlan[];
         setLoanPlans(typedData || []);
       } catch (error) {
