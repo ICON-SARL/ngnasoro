@@ -16,7 +16,7 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle, A
+  DialogTitle,
   DialogFooter 
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
