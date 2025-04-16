@@ -78,20 +78,22 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
         );
         
         // Subscribe to the channel
-        const status = await newChannel.subscribe();
-        if (status === 'SUBSCRIBED') {
-          await newChannel.send({
-            type: 'broadcast',
-            event: 'notification',
-            payload: {
-              type: 'default',
-              message: 'Channel subscribed successfully'
-            }
-          });
-          setIsConnected(true);
-        } else {
-          setIsConnected(false);
-        }
+        newChannel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            // Successfully subscribed
+            setIsConnected(true);
+            newChannel.send({
+              type: 'broadcast',
+              event: 'notification',
+              payload: {
+                type: 'default',
+                message: 'Channel subscribed successfully'
+              }
+            });
+          } else {
+            setIsConnected(false);
+          }
+        });
         
         setChannel(newChannel);
         
@@ -101,6 +103,7 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
           
           // Add a listener for each table subscription
           tableSubscriptions.forEach(sub => {
+            // Use the correct method to subscribe to postgres changes
             dbChannel.on(
               'postgres_changes',
               {
@@ -109,7 +112,7 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
                 table: sub.table,
                 filter: sub.filter || `user_id=eq.${user.id}`
               },
-              (payload: RealtimePostgresChangesPayload<any>) => {
+              (payload) => {
                 console.log(`Database change detected in ${sub.table}:`, payload);
                 
                 if (payload.new && typeof payload.new === 'object') {
@@ -130,6 +133,7 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
             );
           });
           
+          // Subscribe to the database changes channel
           dbChannel.subscribe();
         }
       } catch (error) {
