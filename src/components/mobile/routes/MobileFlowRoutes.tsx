@@ -14,6 +14,7 @@ import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage'
 import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
 import MobileLoanDetailsPage from '@/pages/mobile/MobileLoanDetailsPage';
 import SfdConnectionPage from '@/pages/mobile/SfdConnectionPage';
+import EmptySfdState from '../EmptySfdState';
 
 interface MobileFlowRoutesProps {
   onAction: (action: string, data?: any) => void;
@@ -61,7 +62,7 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       <Route path="profile" element={
         <ProfilePage />
       } />
-      
+
       <Route path="sfd-selector" element={
         <SfdSelectorPage />
       } />
@@ -70,11 +71,14 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
         <SfdConnectionPage />
       } />
       
+      <Route path="empty-sfd" element={
+        <EmptySfdState />
+      } />
+      
       <Route path="funds-management" element={
         <FundsManagementView />
       } />
       
-      {/* Routes de prêt */}
       <Route path="loans" element={
         <MobileLoansPage />
       } />
@@ -99,10 +103,8 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
         <MobileLoanDetailsPage />
       } />
       
-      {/* Default route - redirect to main dashboard */}
       <Route index element={<Navigate to="main" replace />} />
       
-      {/* Catch-all route - fallback to main dashboard */}
       <Route path="*" element={<Navigate to="main" replace />} />
     </Routes>
   );

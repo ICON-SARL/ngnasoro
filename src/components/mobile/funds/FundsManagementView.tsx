@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { useTransactions } from '@/hooks/transactions';
 import { useAuth } from '@/hooks/useAuth';
+import EmptySfdState from '../EmptySfdState';
 
 const FundsManagementView = () => {
   const navigate = useNavigate();
@@ -30,16 +31,18 @@ const FundsManagementView = () => {
     const loadSfdData = async () => {
       try {
         const sfdData = await getActiveSfdData();
-        if (sfdData) {
-          setActiveSfdId(sfdData.id);
+        if (!sfdData) {
+          navigate('/mobile-flow/empty-sfd');
+          return;
         }
+        setActiveSfdId(sfdData.id);
       } catch (error) {
         console.error("Error loading SFD data:", error);
       }
     };
     
     loadSfdData();
-  }, [getActiveSfdData]);
+  }, [getActiveSfdData, navigate]);
 
   useEffect(() => {
     if (activeSfdId && user?.id) {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building, Plus } from 'lucide-react';
@@ -29,7 +28,6 @@ const SfdAdhesionSection: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Récupérer les SFDs disponibles
         const { data: sfds, error: sfdsError } = await supabase
           .from('sfds')
           .select('id, name, code, region, status, logo_url, description')
@@ -37,7 +35,6 @@ const SfdAdhesionSection: React.FC = () => {
         
         if (sfdsError) throw sfdsError;
         
-        // Récupérer les demandes de l'utilisateur
         const { data: requests, error: requestsError } = await supabase
           .from('sfd_clients')
           .select('id, sfd_id, status, created_at, sfds(name)')
@@ -45,7 +42,6 @@ const SfdAdhesionSection: React.FC = () => {
         
         if (requestsError) throw requestsError;
         
-        // Formatter les données des demandes
         const formattedRequests: SfdClientRequest[] = requests.map(request => ({
           id: request.id,
           sfd_id: request.sfd_id,
@@ -72,7 +68,6 @@ const SfdAdhesionSection: React.FC = () => {
   }, [user, toast]);
   
   const handleOpenSfdDialog = (sfd: AvailableSfd) => {
-    // Vérifier si l'utilisateur a déjà une demande en cours pour cette SFD
     const existingRequest = userRequests.find(req => req.sfd_id === sfd.id);
     
     if (existingRequest) {
@@ -96,7 +91,6 @@ const SfdAdhesionSection: React.FC = () => {
       return;
     }
     
-    // Au lieu d'ouvrir la boîte de dialogue, naviguer vers la page d'adhésion SFD
     navigate(`/mobile-flow/sfd-adhesion/${sfd.id}`);
   };
   
@@ -133,101 +127,100 @@ const SfdAdhesionSection: React.FC = () => {
     return null;
   };
   
-  // Fonction pour empêcher les redirections non désirées
   const handleContainerClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
   };
   
   return (
-    <>
-      <Card className="mb-6" onClick={handleContainerClick}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center">
-            <Building className="h-5 w-5 mr-2 text-[#0D6A51]" />
-            Comptes SFD
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-4">
-              <Loader size="md" />
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {userRequests.length > 0 ? (
-                <div className="space-y-3">
-                  <p className="text-sm font-medium">Vos demandes d'adhésion</p>
-                  {userRequests.map(request => (
-                    <div key={request.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
-                      <div>
-                        <p className="font-medium">{request.sfd_name}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(request.created_at).toLocaleDateString('fr-FR')}
-                        </p>
-                      </div>
-                      {renderRequestStatus(request)}
+    <Card className="mb-6" onClick={handleContainerClick}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg flex items-center">
+          <Building className="h-5 w-5 mr-2 text-[#0D6A51]" />
+          Comptes SFD
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex justify-center py-4">
+            <Loader size="md" />
+          </div>
+        ) : userRequests.length === 0 && availableSfds.length === 0 ? (
+          <EmptySfdState />
+        ) : (
+          <div className="space-y-4">
+            {userRequests.length > 0 ? (
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Vos demandes d'adhésion</p>
+                {userRequests.map(request => (
+                  <div key={request.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+                    <div>
+                      <p className="font-medium">{request.sfd_name}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(request.created_at).toLocaleDateString('fr-FR')}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              ) : null}
-              
-              <div className="pt-2">
-                <Button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleGoToSfdSetup();
-                  }}
-                  className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-                >
-                  <Building className="h-4 w-4 mr-2" />
-                  Gérer mes comptes SFD
-                </Button>
-                
-                {availableSfds.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium mb-2">SFDs disponibles</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {availableSfds.slice(0, 4).map(sfd => (
-                        <Button 
-                          key={sfd.id}
-                          variant="outline" 
-                          className="flex flex-col h-auto items-center justify-center p-3 text-center"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenSfdDialog(sfd);
-                          }}
-                        >
-                          <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center mb-1">
-                            <Building className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <span className="text-xs font-medium">{sfd.name}</span>
-                        </Button>
-                      ))}
-                      {availableSfds.length > 4 && (
-                        <Button 
-                          variant="outline" 
-                          className="flex flex-col h-auto items-center justify-center p-3"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleGoToSfdSetup();
-                          }}
-                        >
-                          <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center mb-1">
-                            <Plus className="h-4 w-4 text-gray-600" />
-                          </div>
-                          <span className="text-xs font-medium">Voir plus</span>
-                        </Button>
-                      )}
-                    </div>
+                    {renderRequestStatus(request)}
                   </div>
-                )}
+                ))}
               </div>
+            ) : null}
+            
+            <div className="pt-2">
+              <Button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleGoToSfdSetup();
+                }}
+                className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+              >
+                <Building className="h-4 w-4 mr-2" />
+                Gérer mes comptes SFD
+              </Button>
+              
+              {availableSfds.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium mb-2">SFDs disponibles</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {availableSfds.slice(0, 4).map(sfd => (
+                      <Button 
+                        key={sfd.id}
+                        variant="outline" 
+                        className="flex flex-col h-auto items-center justify-center p-3 text-center"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenSfdDialog(sfd);
+                        }}
+                      >
+                        <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center mb-1">
+                          <Building className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <span className="text-xs font-medium">{sfd.name}</span>
+                      </Button>
+                    ))}
+                    {availableSfds.length > 4 && (
+                      <Button 
+                        variant="outline" 
+                        className="flex flex-col h-auto items-center justify-center p-3"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleGoToSfdSetup();
+                        }}
+                      >
+                        <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center mb-1">
+                          <Plus className="h-4 w-4 text-gray-600" />
+                        </div>
+                        <span className="text-xs font-medium">Voir plus</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
