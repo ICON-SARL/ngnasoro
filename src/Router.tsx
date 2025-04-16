@@ -29,6 +29,9 @@ const Router = () => {
           <Route path="/client-login" element={<ClientLoginPage />} />
           <Route path="/access-denied" element={<AccessDeniedPage />} />
           
+          {/* Permission Test Page - Accessible to anyone for testing */}
+          <Route path="/permission-test" element={<PermissionTestPage />} />
+          
           {/* Protected Routes */}
           <Route path="/" element={<ProtectedRoute><SfdDashboard /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><SfdDashboard /></ProtectedRoute>} />
@@ -40,9 +43,6 @@ const Router = () => {
           
           {/* Mobile Flow */}
           <Route path="/mobile-flow/*" element={<ProtectedRoute><MobileFlowPage /></ProtectedRoute>} />
-          
-          {/* Permission Test Page */}
-          <Route path="/permission-test" element={<PermissionTestPage />} />
           
           {/* Catch-all route */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

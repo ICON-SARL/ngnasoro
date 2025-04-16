@@ -1,0 +1,3 @@
+
+[functions.test-roles]
+verify_jwt = false
