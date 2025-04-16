@@ -5,7 +5,7 @@ import MobileLayout from '@/components/mobile/layout/MobileLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CreditCard, Plus, Building, BadgePercent } from 'lucide-react';
+import { CreditCard, Plus, Building, BadgePercent, FileText } from 'lucide-react';
 
 const LoanTypeCard: React.FC<{ 
   title: string;
@@ -28,6 +28,7 @@ const LoanTypeCard: React.FC<{
 
 const MobileLoansPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <MobileLayout>
@@ -58,6 +59,13 @@ const MobileLoansPage = () => {
             description="Financement pour l'achat d'équipements agricoles"
             icon={<Building className="h-6 w-6" />}
             onClick={() => navigate('/mobile-flow/loan-plans')}
+          />
+          
+          <LoanTypeCard
+            title="Processus de prêt"
+            description="Comprendre les étapes du processus d'obtention d'un prêt"
+            icon={<FileText className="h-6 w-6" />}
+            onClick={() => navigate('/mobile-flow/loan-process-flow')}
           />
         </div>
         

@@ -60,7 +60,8 @@ export function useGlobalRealtime(subscriptions: TableSubscription[] = []) {
         filter = filter ? `${filter}&sfd_id=eq.${activeSfdId}` : `sfd_id=eq.${activeSfdId}`;
       }
       
-      // Use the correct method signature with proper types
+      // Use the correct format for subscribing to postgres changes
+      // The event type needs to match the parameter format expected by supabase-js
       channel.on(
         'postgres_changes', 
         { 
@@ -68,7 +69,7 @@ export function useGlobalRealtime(subscriptions: TableSubscription[] = []) {
           schema: 'public',
           table: subscription.table,
           filter: filter || undefined
-        }, 
+        } as any, 
         handleRealtimeEvent
       );
     });
