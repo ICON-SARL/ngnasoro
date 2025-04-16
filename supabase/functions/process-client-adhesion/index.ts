@@ -1,151 +1,147 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // Get the request body
-    const { userId, sfdId, adhesionData } = await req.json();
-    
+    // Récupérer les données d'entrée
+    const { userId, sfdId, adhesionData } = await req.json()
+
     if (!userId || !sfdId) {
       return new Response(
-        JSON.stringify({ error: 'User ID and SFD ID are required' }),
+        JSON.stringify({ 
+          success: false, 
+          message: 'User ID and SFD ID are required' 
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
+      )
     }
 
-    // Create a Supabase client with the Auth context of the logged in user
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Vérifier si une demande existe déjà pour cet utilisateur et cette SFD
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') as string
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Get user profile data
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('full_name, email')
-      .eq('id', userId)
-      .single();
-
-    if (profileError) {
-      console.error('Error fetching user profile:', profileError);
-      return new Response(
-        JSON.stringify({ error: 'Error fetching user profile', details: profileError.message }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
-    }
-
-    // Get SFD data
-    const { data: sfdData, error: sfdError } = await supabase
-      .from('sfds')
-      .select('name')
-      .eq('id', sfdId)
-      .single();
-
-    if (sfdError) {
-      console.error('Error fetching SFD data:', sfdError);
-      return new Response(
-        JSON.stringify({ error: 'Error fetching SFD data', details: sfdError.message }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
-    }
-
-    // Check if a request already exists
     const { data: existingRequest, error: checkError } = await supabase
       .from('client_adhesion_requests')
-      .select('id, status')
+      .select('*')
       .eq('user_id', userId)
       .eq('sfd_id', sfdId)
-      .not('status', 'eq', 'rejected')
-      .maybeSingle();
+      .eq('status', 'pending')
+      .maybeSingle()
 
     if (checkError) {
-      console.error('Error checking existing requests:', checkError);
+      console.error('Error checking existing request:', checkError)
       return new Response(
-        JSON.stringify({ error: 'Error checking existing requests', details: checkError.message }),
+        JSON.stringify({ 
+          success: false, 
+          message: 'Error checking existing request' 
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
+      )
     }
 
-    // If request exists and is still pending or approved
     if (existingRequest) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: `Vous avez déjà une demande ${existingRequest.status === 'pending' ? 'en attente' : 'approuvée'} pour cette SFD.`,
-          requestId: existingRequest.id,
-          status: existingRequest.status
+          message: 'Une demande d\'adhésion est déjà en cours pour cette SFD' 
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
     }
 
-    // Create a new adhesion request
-    const { data: newRequest, error: insertError } = await supabase
+    // Get user details if we need additional info
+    const { data: userData, error: userError } = await supabase
+      .auth.admin.getUserById(userId)
+
+    if (userError) {
+      console.error('Error fetching user data:', userError)
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Could not fetch user data' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+
+    // Generate a reference number
+    const referenceNumber = `ADH-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
+
+    // Créer la demande d'adhésion
+    const requestData = {
+      user_id: userId,
+      sfd_id: sfdId,
+      status: 'pending',
+      reference_number: referenceNumber,
+      kyc_status: 'pending',
+      full_name: adhesionData?.full_name || userData.user?.user_metadata?.full_name || '',
+      email: adhesionData?.email || userData.user?.email || '',
+      phone: adhesionData?.phone || userData.user?.phone || '',
+      address: adhesionData?.address || '',
+      profession: adhesionData?.profession || '',
+      monthly_income: adhesionData?.monthly_income ? parseFloat(adhesionData.monthly_income) : null,
+      source_of_income: adhesionData?.source_of_income || '',
+      created_at: new Date().toISOString(),
+    }
+
+    const { data: request, error: insertError } = await supabase
       .from('client_adhesion_requests')
-      .insert({
-        user_id: userId,
-        sfd_id: sfdId,
-        full_name: profileData.full_name || adhesionData?.full_name || 'Client',
-        email: profileData.email || adhesionData?.email,
-        phone: adhesionData?.phone,
-        address: adhesionData?.address,
-        profession: adhesionData?.profession,
-        monthly_income: adhesionData?.monthly_income ? parseFloat(adhesionData.monthly_income) : null,
-        source_of_income: adhesionData?.source_of_income,
-        status: 'pending'
-      })
+      .insert([requestData])
       .select()
-      .single();
+      .single()
 
     if (insertError) {
-      console.error('Error creating adhesion request:', insertError);
+      console.error('Error creating adhesion request:', insertError)
       return new Response(
-        JSON.stringify({ error: 'Error creating adhesion request', details: insertError.message }),
+        JSON.stringify({ 
+          success: false, 
+          message: 'Error creating adhesion request' 
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
+      )
     }
 
     // Create notification for SFD admins
-    const { error: notifError } = await supabase
+    await supabase
       .from('admin_notifications')
-      .insert({
+      .insert([{
         title: 'Nouvelle demande d\'adhésion',
-        message: `${profileData.full_name || 'Un utilisateur'} souhaite adhérer à votre SFD.`,
+        message: `Nouvelle demande d'adhésion de ${requestData.full_name}`,
         type: 'adhesion_request',
         recipient_role: 'sfd_admin',
-        sender_id: userId,
-        action_link: '/sfd-adhesion-requests'
-      });
-
-    if (notifError) {
-      console.error('Error sending notification to SFD admin:', notifError);
-      // We continue anyway as this is not critical
-    }
+        action_link: '/sfd-adhesion-requests',
+        created_at: new Date().toISOString()
+      }])
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Votre demande d'adhésion à ${sfdData.name} a été envoyée avec succès.`,
-        requestId: newRequest.id,
-        status: 'pending'
+        message: 'Demande d\'adhésion créée avec succès', 
+        requestId: request.id 
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+    )
   } catch (error) {
-    console.error('Server error:', error);
+    console.error('Server error:', error)
     return new Response(
-      JSON.stringify({ error: 'Server error', details: error.message }),
+      JSON.stringify({ 
+        success: false, 
+        error: 'Server error', 
+        details: error.message 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    );
+    )
   }
-});
+})

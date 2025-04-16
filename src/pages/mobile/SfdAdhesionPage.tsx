@@ -21,8 +21,8 @@ const SfdAdhesionPage: React.FC = () => {
   const { toast } = useToast();
   const { 
     userAdhesionRequests, 
-    isLoadingAdhesionRequests: isLoadingUserAdhesionRequests,
-    refetchUserAdhesionRequests
+    isLoadingUserAdhesionRequests,
+    refetchUserAdhesionRequests 
   } = useClientAdhesions();
   
   const [sfdInfo, setSfdInfo] = useState<{ name: string; region?: string } | null>(null);

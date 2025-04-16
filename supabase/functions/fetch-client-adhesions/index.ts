@@ -29,8 +29,8 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Vérifier les rôles de l'utilisateur
-    const { data: roles, error: rolesError } = await supabase
+    // Vérifier si l'utilisateur a un rôle admin
+    const { data: userRoles, error: rolesError } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
@@ -43,8 +43,33 @@ serve(async (req) => {
       )
     }
 
-    const isAdmin = roles.some(r => r.role === 'admin')
-    const isSfdAdmin = roles.some(r => r.role === 'sfd_admin')
+    const isAdmin = userRoles && userRoles.some(r => r.role === 'admin')
+    const isSfdAdmin = userRoles && userRoles.some(r => r.role === 'sfd_admin')
+
+    // Si ce n'est ni un admin ni un admin SFD, on retourne les demandes de l'utilisateur
+    if (!isAdmin && !isSfdAdmin) {
+      const { data: userRequests, error: userReqError } = await supabase
+        .from('client_adhesion_requests')
+        .select(`
+          *,
+          sfds:sfd_id(name)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (userReqError) {
+        console.error('Error fetching user adhesion requests:', userReqError)
+        return new Response(
+          JSON.stringify({ error: 'Failed to fetch user adhesion requests' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        )
+      }
+
+      return new Response(
+        JSON.stringify(userRequests),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
+    }
 
     // Pour les admins SFD, vérifier qu'ils ont accès à cette SFD
     let canAccessSfd = isAdmin // Super admin peut tout voir
@@ -54,12 +79,13 @@ serve(async (req) => {
         .from('user_sfds')
         .select('sfd_id')
         .eq('user_id', userId)
-        .eq('sfd_id', sfdId)
 
-      canAccessSfd = !sfdError && userSfds && userSfds.length > 0
+      if (!sfdError && userSfds) {
+        canAccessSfd = userSfds.some(us => us.sfd_id === sfdId)
+      }
     }
 
-    if (!canAccessSfd && !isAdmin && !isSfdAdmin) {
+    if (!canAccessSfd && !isAdmin) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized access to adhesion requests' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }

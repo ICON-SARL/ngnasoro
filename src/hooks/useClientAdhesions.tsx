@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -109,6 +110,26 @@ export function useClientAdhesions() {
     if (!user?.id) return [];
 
     try {
+      // Essayer d'abord avec l'Edge Function
+      try {
+        const { data, error } = await supabase.functions.invoke('fetch-client-adhesions', {
+          body: { userId: user.id }
+        });
+        
+        if (!error && data) {
+          console.log(`Found ${data.length} user adhesion requests via Edge Function`);
+          
+          return data.map(item => ({
+            ...item,
+            status: item.status as 'pending' | 'approved' | 'rejected'
+          })) as AdhesionRequest[];
+        }
+      } catch (edgeFnError) {
+        console.error('Edge function error:', edgeFnError);
+        // Fallback to direct DB query
+      }
+      
+      // Fallback: requête directe à la base de données
       const { data, error } = await supabase
         .from('client_adhesion_requests')
         .select('*, sfds:sfd_id(name)')
@@ -146,76 +167,6 @@ export function useClientAdhesions() {
     queryKey: ['user-adhesion-requests', user?.id],
     queryFn: fetchUserAdhesionRequests,
     enabled: !!user?.id,
-  });
-
-  const approveAdhesionRequest = useMutation({
-    mutationFn: async ({ adhesionId, notes }: { adhesionId: string; notes?: string }) => {
-      if (!user?.id) throw new Error("Utilisateur non connecté");
-
-      const { data, error } = await supabase
-        .from('client_adhesion_requests')
-        .update({
-          status: 'approved',
-          processed_at: new Date().toISOString(),
-          processed_by: user.id,
-          notes: notes
-        })
-        .eq('id', adhesionId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as AdhesionRequest;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adhesion-requests'] });
-      toast({
-        title: "Demande approuvée",
-        description: "La demande d'adhésion a été approuvée avec succès",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur",
-        description: `Impossible d'approuver la demande: ${error.message}`,
-        variant: "destructive",
-      });
-    }
-  });
-
-  const rejectAdhesionRequest = useMutation({
-    mutationFn: async ({ adhesionId, notes }: { adhesionId: string; notes?: string }) => {
-      if (!user?.id) throw new Error("Utilisateur non connecté");
-
-      const { data, error } = await supabase
-        .from('client_adhesion_requests')
-        .update({
-          status: 'rejected',
-          processed_at: new Date().toISOString(),
-          processed_by: user.id,
-          notes: notes
-        })
-        .eq('id', adhesionId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as AdhesionRequest;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adhesion-requests'] });
-      toast({
-        title: "Demande rejetée",
-        description: "La demande d'adhésion a été rejetée",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur",
-        description: `Impossible de rejeter la demande: ${error.message}`,
-        variant: "destructive",
-      });
-    }
   });
 
   const submitAdhesionRequestMutation = useMutation({
@@ -276,27 +227,11 @@ export function useClientAdhesions() {
   return {
     userAdhesionRequests: userAdhesionRequestsQuery.data || [],
     isLoadingUserAdhesionRequests: userAdhesionRequestsQuery.isLoading,
-    refetchUserAdhesionRequests: () => queryClient.invalidateQueries({ queryKey: ['user-adhesion-requests'] }),
+    refetchUserAdhesionRequests: userAdhesionRequestsQuery.refetch,
     submitAdhesionRequest,
     isCreatingRequest: submitAdhesionRequestMutation.isPending,
     adhesionRequests: adhesionRequestsQuery.data || [],
     isLoadingAdhesionRequests: adhesionRequestsQuery.isLoading,
-    approveAdhesionRequest: async (requestId: string, notes?: string) => {
-      try {
-        await approveAdhesionRequest.mutateAsync({ adhesionId: requestId, notes });
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    rejectAdhesionRequest: async (requestId: string, notes?: string) => {
-      try {
-        await rejectAdhesionRequest.mutateAsync({ adhesionId: requestId, notes });
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    refetchAdhesionRequests: () => queryClient.invalidateQueries({ queryKey: ['adhesion-requests'] }),
+    refetchAdhesionRequests: adhesionRequestsQuery.refetch,
   };
 }
