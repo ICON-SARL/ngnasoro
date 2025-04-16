@@ -2,7 +2,7 @@
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './routes';
-import { AuthProvider } from './hooks/auth';
+import { AuthProvider } from './hooks/auth/AuthContext';
 import { Toaster } from './components/ui/toaster';
 
 function App() {
