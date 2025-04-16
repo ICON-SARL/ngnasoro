@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Bell, Check, Trash2 } from 'lucide-react';
-import MobileNavigation from '@/components/mobile/MobileNavigation';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Bell, ArrowLeft, CheckCircle, AlertCircle, Clock, Info } from 'lucide-react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { useGlobalRealtime, TableSubscription } from '@/hooks/useGlobalRealtime';
 
 interface Notification {
@@ -14,230 +13,143 @@ interface Notification {
   message: string;
   created_at: string;
   read: boolean;
-  type: string;
-  action_link?: string;
+  type: 'info' | 'success' | 'warning' | 'error';
 }
 
 const MobileNotificationsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Set up realtime updates for notifications
+  // Set up real-time listener for notifications
   const tableSubscriptions: TableSubscription[] = [
-    { table: 'admin_notifications', event: 'INSERT' },
-    { table: 'admin_notifications', event: 'UPDATE' }
+    { table: 'notifications', event: 'INSERT' }
   ];
   
   const { isConnected } = useGlobalRealtime(tableSubscriptions);
   
   useEffect(() => {
-    const fetchNotifications = async () => {
-      setIsLoading(true);
-      try {
-        // In a real app, we would fetch from the database
-        // This is mock data for demonstration purposes
-        const mockNotifications: Notification[] = [
-          {
-            id: '1',
-            title: 'Prêt approuvé',
-            message: 'Votre demande de prêt a été approuvée. Le décaissement sera effectué prochainement.',
-            created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            read: false,
-            type: 'loan_approved'
-          },
-          {
-            id: '2',
-            title: 'Paiement reçu',
-            message: 'Un paiement de 50,000 FCFA a été reçu sur votre compte.',
-            created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-            read: true,
-            type: 'payment_received'
-          },
-          {
-            id: '3',
-            title: 'Rappel de remboursement',
-            message: 'Votre prochain remboursement de prêt est prévu pour le 15 avril. Veuillez vous assurer que votre compte est suffisamment approvisionné.',
-            created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            read: false,
-            type: 'payment_reminder'
-          }
-        ];
-        
-        setNotifications(mockNotifications);
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-        toast({
-          title: 'Erreur',
-          description: 'Impossible de charger les notifications',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
+    // Mock notifications for demo
+    setNotifications([
+      {
+        id: '1',
+        title: 'Paiement reçu',
+        message: 'Votre paiement de 15 000 FCFA a été reçu avec succès',
+        created_at: new Date().toISOString(),
+        read: false,
+        type: 'success'
+      },
+      {
+        id: '2',
+        title: 'Demande de prêt en cours d\'examen',
+        message: 'Votre demande de prêt est en cours d\'examen par notre équipe',
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+        read: false,
+        type: 'info'
+      },
+      {
+        id: '3',
+        title: 'Échéance de remboursement',
+        message: 'Rappel: Vous avez une échéance de remboursement prévue pour demain',
+        created_at: new Date(Date.now() - 172800000).toISOString(),
+        read: true,
+        type: 'warning'
       }
-    };
-    
-    if (user?.id) {
-      fetchNotifications();
-    }
-  }, [user?.id, toast]);
+    ]);
+    setIsLoading(false);
+  }, []);
   
   const markAsRead = (id: string) => {
     setNotifications(prevNotifications => 
       prevNotifications.map(notification => 
-        notification.id === id 
-          ? { ...notification, read: true } 
-          : notification
+        notification.id === id ? { ...notification, read: true } : notification
       )
     );
-    
-    // In a real app, we would update the database
-    toast({
-      title: 'Notification lue',
-      description: 'La notification a été marquée comme lue',
-    });
-  };
-  
-  const deleteNotification = (id: string) => {
-    setNotifications(prevNotifications => 
-      prevNotifications.filter(notification => notification.id !== id)
-    );
-    
-    // In a real app, we would update the database
-    toast({
-      title: 'Notification supprimée',
-      description: 'La notification a été supprimée',
-    });
-  };
-  
-  const markAllAsRead = () => {
-    setNotifications(prevNotifications => 
-      prevNotifications.map(notification => ({ ...notification, read: true }))
-    );
-    
-    // In a real app, we would update the database
-    toast({
-      title: 'Toutes lues',
-      description: 'Toutes les notifications ont été marquées comme lues',
-    });
   };
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-    
-    if (diffMins < 60) {
-      return `Il y a ${diffMins} minute${diffMins > 1 ? 's' : ''}`;
-    } else if (diffHours < 24) {
-      return `Il y a ${diffHours} heure${diffHours > 1 ? 's' : ''}`;
-    } else {
-      return `Il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+    return format(date, 'dd MMMM yyyy à HH:mm', { locale: fr });
+  };
+  
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'success':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'warning':
+        return <Clock className="h-5 w-5 text-amber-500" />;
+      case 'error':
+        return <AlertCircle className="h-5 w-5 text-red-500" />;
+      default:
+        return <Info className="h-5 w-5 text-blue-500" />;
     }
   };
   
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
-      <div className="bg-white p-4 shadow-sm flex items-center justify-between">
+      <div className="bg-white p-4 shadow-sm">
         <div className="flex items-center">
           <Button 
             variant="ghost" 
             size="sm" 
-            className="mr-2 p-0" 
+            className="mr-2 p-0"
             onClick={() => navigate('/mobile-flow/main')}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
             <h1 className="text-xl font-bold">Notifications</h1>
-            <p className="text-gray-500 text-sm">Vos alertes et mises à jour</p>
+            <p className="text-gray-500 text-sm">Vos alertes et messages récents</p>
           </div>
         </div>
-        
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={markAllAsRead}
-          disabled={notifications.every(n => n.read)}
-        >
-          <Check className="h-4 w-4 mr-1" />
-          Tout marquer comme lu
-        </Button>
       </div>
       
-      <div className="p-4 space-y-3">
+      <div className="p-4">
         {isLoading ? (
-          <div className="py-8 text-center text-gray-500">
-            Chargement des notifications...
+          <div className="flex justify-center py-8">
+            <div className="animate-spin h-8 w-8 border-4 border-[#0D6A51] border-t-transparent rounded-full"></div>
           </div>
-        ) : notifications.length > 0 ? (
-          notifications.map(notification => (
-            <Card 
-              key={notification.id} 
-              className={`border ${notification.read ? 'border-gray-200' : 'border-[#0D6A51]'} mb-3`}
-            >
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-start space-x-3">
-                    <div className={`p-2 rounded-full ${notification.read ? 'bg-gray-100' : 'bg-[#0D6A51]/10'}`}>
-                      <Bell className={`h-5 w-5 ${notification.read ? 'text-gray-500' : 'text-[#0D6A51]'}`} />
-                    </div>
-                    <div>
-                      <h3 className={`font-medium ${notification.read ? 'text-gray-700' : 'text-black'}`}>
+        ) : notifications.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
+              <Bell className="h-6 w-6 text-gray-400" />
+            </div>
+            <h3 className="mt-4 text-lg font-medium">Aucune notification</h3>
+            <p className="mt-2 text-sm text-gray-500">
+              Vous n'avez pas encore reçu de notifications.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {notifications.map((notification) => (
+              <div 
+                key={notification.id} 
+                className={`bg-white rounded-lg shadow p-4 ${!notification.read ? 'border-l-4 border-[#0D6A51]' : ''}`}
+                onClick={() => markAsRead(notification.id)}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="mt-1">
+                    {getNotificationIcon(notification.type)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <h3 className={`font-medium ${!notification.read ? 'text-[#0D6A51]' : ''}`}>
                         {notification.title}
                       </h3>
-                      <p className={`text-sm mt-1 ${notification.read ? 'text-gray-500' : 'text-gray-700'}`}>
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-2">
-                        {formatDate(notification.created_at)}
-                      </p>
+                      {!notification.read && (
+                        <span className="bg-[#0D6A51] h-2 w-2 rounded-full"></span>
+                      )}
                     </div>
-                  </div>
-                  
-                  <div className="flex space-x-1">
-                    {!notification.read && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-gray-500"
-                        onClick={() => markAsRead(notification.id)}
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 text-gray-500"
-                      onClick={() => deleteNotification(notification.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                    <p className="text-xs text-gray-400 mt-2">{formatDate(notification.created_at)}</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <div className="py-8 text-center">
-            <div className="bg-gray-100 rounded-full p-4 w-16 h-16 mx-auto flex items-center justify-center">
-              <Bell className="h-8 w-8 text-gray-400" />
-            </div>
-            <h3 className="mt-4 font-medium">Aucune notification</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              Vous n'avez pas de notifications pour le moment
-            </p>
+              </div>
+            ))}
           </div>
         )}
       </div>
-      
-      <MobileNavigation />
     </div>
   );
 };

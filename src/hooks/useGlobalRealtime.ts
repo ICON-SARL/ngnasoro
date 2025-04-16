@@ -63,7 +63,7 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
           .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
             console.log('Presence leave:', key, leftPresences);
           })
-          .on('broadcast', { event: 'notification' }, (payload) => {
+          .on('broadcast', { event: 'notification' }, (payload: NotificationPayload) => {
             console.log('Received notification:', payload);
             handleNotification(payload);
           });
@@ -99,7 +99,7 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
                 if (payload.new && typeof payload.new === 'object') {
                   const payloadData = payload.new as Record<string, any>;
                   // Check if the payload is related to the current user before adding to events
-                  if ('user_id' in payloadData && payloadData.user_id === user.id) {
+                  if (!('user_id' in payloadData) || payloadData.user_id === user.id) {
                     setEvents(prev => [...prev, {
                       table: sub.table,
                       event: payload.eventType as any,
