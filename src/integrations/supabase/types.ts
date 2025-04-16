@@ -36,6 +36,47 @@ export type Database = {
         }
         Relationships: []
       }
+      adhesion_verification_steps: {
+        Row: {
+          adhesion_request_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          status: string
+          step_name: string
+        }
+        Insert: {
+          adhesion_request_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          step_name: string
+        }
+        Update: {
+          adhesion_request_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          step_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adhesion_verification_steps_adhesion_request_id_fkey"
+            columns: ["adhesion_request_id"]
+            isOneToOne: false
+            referencedRelation: "client_adhesion_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_notifications: {
         Row: {
           action_link: string | null
@@ -231,6 +272,7 @@ export type Database = {
           source_of_income: string | null
           status: string
           user_id: string | null
+          verification_stage: string | null
         }
         Insert: {
           address?: string | null
@@ -253,6 +295,7 @@ export type Database = {
           source_of_income?: string | null
           status?: string
           user_id?: string | null
+          verification_stage?: string | null
         }
         Update: {
           address?: string | null
@@ -275,6 +318,7 @@ export type Database = {
           source_of_income?: string | null
           status?: string
           user_id?: string | null
+          verification_stage?: string | null
         }
         Relationships: [
           {
@@ -449,6 +493,60 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "loan_disbursements_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loan_payment_reminders: {
+        Row: {
+          amount: number
+          client_id: string | null
+          created_at: string | null
+          id: string
+          is_sent: boolean | null
+          loan_id: string | null
+          payment_date: string
+          payment_number: number
+          reminder_date: string
+          sent_at: string | null
+        }
+        Insert: {
+          amount: number
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_sent?: boolean | null
+          loan_id?: string | null
+          payment_date: string
+          payment_number: number
+          reminder_date: string
+          sent_at?: string | null
+        }
+        Update: {
+          amount?: number
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_sent?: boolean | null
+          loan_id?: string | null
+          payment_date?: string
+          payment_number?: number
+          reminder_date?: string
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_payment_reminders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_payment_reminders_loan_id_fkey"
             columns: ["loan_id"]
             isOneToOne: false
             referencedRelation: "sfd_loans"
@@ -1037,6 +1135,41 @@ export type Database = {
           },
         ]
       }
+      sfd_administrators: {
+        Row: {
+          created_at: string
+          id: string
+          sfd_id: string
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          sfd_id: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          sfd_id?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sfd_administrators_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sfd_clients: {
         Row: {
           address: string | null
@@ -1107,6 +1240,7 @@ export type Database = {
           id: string
           interest_rate: number
           is_active: boolean | null
+          is_published: boolean | null
           max_amount: number
           max_duration: number
           min_amount: number
@@ -1123,6 +1257,7 @@ export type Database = {
           id?: string
           interest_rate?: number
           is_active?: boolean | null
+          is_published?: boolean | null
           max_amount?: number
           max_duration?: number
           min_amount?: number
@@ -1139,6 +1274,7 @@ export type Database = {
           id?: string
           interest_rate?: number
           is_active?: boolean | null
+          is_published?: boolean | null
           max_amount?: number
           max_duration?: number
           min_amount?: number
@@ -1277,6 +1413,44 @@ export type Database = {
           },
         ]
       }
+      sfd_roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          permissions: Json
+          sfd_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          permissions?: Json
+          sfd_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          permissions?: Json
+          sfd_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sfd_roles_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sfd_stats: {
         Row: {
           id: string
@@ -1352,6 +1526,48 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "sfd_subsidies_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sfd_user_roles: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          role_id: string
+          sfd_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role_id: string
+          sfd_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role_id?: string
+          sfd_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sfd_user_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sfd_user_roles_sfd_id_fkey"
             columns: ["sfd_id"]
             isOneToOne: false
             referencedRelation: "sfds"
@@ -1798,6 +2014,50 @@ export type Database = {
           },
         ]
       }
+      verification_documents: {
+        Row: {
+          adhesion_request_id: string
+          created_at: string
+          document_type: string
+          document_url: string
+          id: string
+          verification_notes: string | null
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          adhesion_request_id: string
+          created_at?: string
+          document_type: string
+          document_url: string
+          id?: string
+          verification_notes?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          adhesion_request_id?: string
+          created_at?: string
+          document_type?: string
+          document_url?: string
+          id?: string
+          verification_notes?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_documents_adhesion_request_id_fkey"
+            columns: ["adhesion_request_id"]
+            isOneToOne: false
+            referencedRelation: "client_adhesion_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       unread_messages_count: {
@@ -1859,6 +2119,10 @@ export type Database = {
           _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
         }
+        Returns: boolean
+      }
+      has_sfd_role: {
+        Args: { _user_id: string; _sfd_id: string; _role_name: string }
         Returns: boolean
       }
       is_admin: {
