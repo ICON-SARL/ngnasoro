@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -41,16 +40,12 @@ const SfdList: React.FC<SfdListProps> = ({
           title: "Demande en cours",
           description: "Vous avez déjà une demande en attente pour cette SFD",
         });
-      } else {
-        // If onSelectSfd is provided, use it, otherwise navigate
-        if (onSelectSfd) {
-          onSelectSfd(sfd.id);
-        }
+      } else if (onSelectSfd) {
+        onSelectSfd(sfd.id);
       }
       return;
     }
     
-    // Navigate to adhesion request page
     navigate(`/mobile-flow/sfd-adhesion/${sfd.id}`);
   };
 
