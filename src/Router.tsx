@@ -19,13 +19,14 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import ClientLoginPage from './pages/ClientLoginPage';
 
 // Import the components that actually exist in the project
-import LoanPlansPage from './components/mobile/loan/LoanPlansPage';
+import LoanPlansPage from './pages/mobile/LoanPlansPage';
 import PaymentPage from './pages/mobile/PaymentPage';
 import AccountPage from './pages/mobile/AccountPage';
 import MobileLoansPage from './pages/mobile/MobileLoansPage';
 import MobileMyLoansPage from './pages/mobile/MobileMyLoansPage';
 import MobileMainPage from './pages/mobile/MobileMainPage';
 import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
+import SfdSetupPage from './pages/SfdSetupPage';
 
 const Router = () => {
   return (
@@ -41,6 +42,9 @@ const Router = () => {
           
           {/* Permission Test Page */}
           <Route path="/permission-test" element={<PermissionTestPage />} />
+          
+          {/* SFD Setup Page - Adding this route */}
+          <Route path="/sfd-setup" element={<ProtectedRoute><SfdSetupPage /></ProtectedRoute>} />
           
           {/* Mobile Flow Routes */}
           <Route path="/mobile-flow" element={<ProtectedRoute><MobileFlowPage /></ProtectedRoute>}>

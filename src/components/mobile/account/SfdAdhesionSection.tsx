@@ -106,7 +106,9 @@ const SfdAdhesionSection: React.FC = () => {
   };
   
   const handleGoToSfdSetup = () => {
-    navigate('/sfd-setup');
+    // Simplify this to an external navigation rather than a mobile flow route
+    console.log("Navigating to SFD setup page");
+    navigate('/sfd-setup', { replace: false });
   };
   
   const renderRequestStatus = (request: SfdClientRequest) => {
@@ -175,6 +177,7 @@ const SfdAdhesionSection: React.FC = () => {
               <div className="pt-2">
                 <Button 
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     handleGoToSfdSetup();
                   }}
@@ -194,6 +197,7 @@ const SfdAdhesionSection: React.FC = () => {
                           variant="outline" 
                           className="flex flex-col h-auto items-center justify-center p-3 text-center"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             handleOpenSfdDialog(sfd);
                           }}
@@ -209,6 +213,7 @@ const SfdAdhesionSection: React.FC = () => {
                           variant="outline" 
                           className="flex flex-col h-auto items-center justify-center p-3"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             handleGoToSfdSetup();
                           }}
