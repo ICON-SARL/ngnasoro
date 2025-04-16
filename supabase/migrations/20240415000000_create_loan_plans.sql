@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.sfd_loan_plans (
   fees numeric NOT NULL DEFAULT 1.0,
   requirements text[] DEFAULT '{}',
   is_active boolean DEFAULT true,
+  is_published boolean DEFAULT false,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now()
 );

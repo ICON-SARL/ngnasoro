@@ -19,6 +19,7 @@ export function useSfdLoanPlans() {
           )
         `)
         .eq('is_active', true)
+        .eq('is_published', true)
         .order('created_at', { ascending: false });
 
       if (error) {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus, Edit, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Edit, ToggleLeft, ToggleRight, Eye, EyeOff } from 'lucide-react';
 
 interface LoanPlan {
   id: string;
@@ -22,6 +21,7 @@ interface LoanPlan {
   interest_rate: number;
   fees: number;
   is_active: boolean;
+  is_published: boolean;
   requirements: string[];
   sfd_id: string;
 }
@@ -90,7 +90,31 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
     }
   };
 
-  // Format currency display (FCFA)
+  const togglePlanPublication = async (plan: LoanPlan) => {
+    try {
+      const { error } = await supabase
+        .from('sfd_loan_plans')
+        .update({ is_published: !plan.is_published })
+        .eq('id', plan.id);
+
+      if (error) throw error;
+      
+      toast({
+        title: plan.is_published ? "Plan retiré" : "Plan publié",
+        description: `Le plan "${plan.name}" a été ${plan.is_published ? 'retiré de la publication' : 'publié'}`
+      });
+      
+      fetchLoanPlans();
+    } catch (error) {
+      console.error('Error toggling plan publication:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier la publication du plan",
+        variant: "destructive"
+      });
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
   };
@@ -121,6 +145,7 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
                   <TableHead>Durée</TableHead>
                   <TableHead>Taux</TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead>Publication</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -152,6 +177,17 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
                       )}
                     </TableCell>
                     <TableCell>
+                      {plan.is_published ? (
+                        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-300">
+                          Publié
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-300">
+                          Non publié
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center space-x-2">
                         <Button 
                           variant="ghost" 
@@ -169,6 +205,17 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
                             <ToggleRight className="h-4 w-4 text-green-600" />
                           ) : (
                             <ToggleLeft className="h-4 w-4 text-gray-400" />
+                          )}
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => togglePlanPublication(plan)}
+                        >
+                          {plan.is_published ? (
+                            <Eye className="h-4 w-4 text-blue-600" />
+                          ) : (
+                            <EyeOff className="h-4 w-4 text-gray-400" />
                           )}
                         </Button>
                       </div>
