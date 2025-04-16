@@ -1,23 +1,29 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { SfdHeader } from '@/components/sfd/SfdHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Search, Filter, Plus, Calendar, 
-  DollarSign, Clock, CheckCircle, XCircle 
-} from 'lucide-react';
+import { LoanTable } from '@/components/sfd/loans/LoanTable';
+import { Search, Filter, Plus, Calendar, DollarSign, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
+import { useLoanStats } from '@/hooks/useLoanStats';
+import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 const SfdLoansPage = () => {
   const { isAdmin } = useAuth();
+  const { stats, loading: statsLoading } = useLoanStats();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [periodFilter, setPeriodFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState('all');
+  
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('fr-FR') + ' FCFA';
+  };
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -32,7 +38,7 @@ const SfdLoansPage = () => {
             </p>
           </div>
           
-          <Button className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">
+          <Button className="bg-[#0D6A51] hover:bg-[#0D6A51]/90" onClick={() => navigate('/sfd/loans/new')}>
             <Plus className="mr-2 h-4 w-4" />
             Nouveau Prêt
           </Button>
@@ -50,6 +56,8 @@ const SfdLoansPage = () => {
                     id="search"
                     placeholder="Numéro, client ou montant..."
                     className="pl-10"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
                   <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
                 </div>
@@ -62,8 +70,10 @@ const SfdLoansPage = () => {
                 <select
                   id="status-filter"
                   className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                  value={periodFilter}
+                  onChange={(e) => setPeriodFilter(e.target.value)}
                 >
-                  <option value="">Tous</option>
+                  <option value="all">Tous</option>
                   <option value="this-month">Ce mois</option>
                   <option value="last-month">Mois dernier</option>
                   <option value="this-year">Cette année</option>
@@ -75,7 +85,7 @@ const SfdLoansPage = () => {
               </Button>
             </div>
             
-            <Tabs defaultValue="all">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid grid-cols-4 mb-4">
                 <TabsTrigger value="all" className="flex items-center justify-center">
                   <DollarSign className="h-4 w-4 mr-2" />
@@ -95,20 +105,12 @@ const SfdLoansPage = () => {
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="all">
-                <LoanTable />
-              </TabsContent>
-              
-              <TabsContent value="pending">
-                <LoanTable status="pending" />
-              </TabsContent>
-              
-              <TabsContent value="active">
-                <LoanTable status="active" />
-              </TabsContent>
-              
-              <TabsContent value="closed">
-                <LoanTable status="closed" />
+              <TabsContent value={activeTab}>
+                <LoanTable 
+                  status={activeTab} 
+                  searchQuery={searchQuery} 
+                  periodFilter={periodFilter} 
+                />
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -120,8 +122,12 @@ const SfdLoansPage = () => {
               <CardTitle className="text-lg">Prêts en cours</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">42</div>
-              <p className="text-muted-foreground">Total: 12,500,000 FCFA</p>
+              <div className={cn("text-3xl font-bold", statsLoading && "animate-pulse")}>
+                {statsLoading ? "-" : stats.activeLoans}
+              </div>
+              <p className="text-muted-foreground">
+                Total: {statsLoading ? "-" : formatCurrency(stats.totalActiveAmount)}
+              </p>
             </CardContent>
           </Card>
           
@@ -130,8 +136,12 @@ const SfdLoansPage = () => {
               <CardTitle className="text-lg">Taux de remboursement</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">87%</div>
-              <p className="text-muted-foreground">+2% depuis le mois dernier</p>
+              <div className={cn("text-3xl font-bold", statsLoading && "animate-pulse")}>
+                {statsLoading ? "-" : `${stats.repaymentRate}%`}
+              </div>
+              <p className="text-muted-foreground">
+                {statsLoading ? "-" : `${stats.repaymentChange > 0 ? '+' : ''}${stats.repaymentChange}% depuis le mois dernier`}
+              </p>
             </CardContent>
           </Card>
           
@@ -140,123 +150,16 @@ const SfdLoansPage = () => {
               <CardTitle className="text-lg">Prêts en retard</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-red-500">7</div>
-              <p className="text-muted-foreground">Total: 1,200,000 FCFA</p>
+              <div className={cn("text-3xl font-bold text-red-500", statsLoading && "animate-pulse")}>
+                {statsLoading ? "-" : stats.lateLoans}
+              </div>
+              <p className="text-muted-foreground">
+                Total: {statsLoading ? "-" : formatCurrency(stats.lateAmount)}
+              </p>
             </CardContent>
           </Card>
         </div>
       </div>
-    </div>
-  );
-};
-
-const LoanTable = ({ status = 'all' }) => {
-  // Données fictives pour la démonstration
-  const loans = [
-    {
-      id: 'L-2023-001',
-      client: 'Amadou Diallo',
-      amount: 500000,
-      status: 'active',
-      startDate: '2023-05-15',
-      endDate: '2023-11-15',
-      interestRate: 5.5,
-      remainingAmount: 250000
-    },
-    {
-      id: 'L-2023-002',
-      client: 'Fatou Camara',
-      amount: 1000000,
-      status: 'pending',
-      startDate: '2023-06-01',
-      endDate: '2024-06-01',
-      interestRate: 6.0,
-      remainingAmount: 1000000
-    },
-    {
-      id: 'L-2023-003',
-      client: 'Ibrahim Touré',
-      amount: 750000,
-      status: 'closed',
-      startDate: '2023-02-10',
-      endDate: '2023-08-10',
-      interestRate: 5.0,
-      remainingAmount: 0
-    },
-    {
-      id: 'L-2023-004',
-      client: 'Aïssatou Bah',
-      amount: 300000,
-      status: 'active',
-      startDate: '2023-04-20',
-      endDate: '2023-10-20',
-      interestRate: 5.5,
-      remainingAmount: 100000
-    }
-  ];
-  
-  // Filtrer les prêts selon le statut sélectionné
-  const filteredLoans = status === 'all' 
-    ? loans 
-    : loans.filter(loan => loan.status === status);
-  
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">En attente</Badge>;
-      case 'active':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Actif</Badge>;
-      case 'closed':
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Clôturé</Badge>;
-      default:
-        return <Badge variant="outline">Inconnu</Badge>;
-    }
-  };
-  
-  return (
-    <div className="border rounded-md">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Référence</TableHead>
-            <TableHead>Client</TableHead>
-            <TableHead>Montant</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead>Date début</TableHead>
-            <TableHead>Date fin</TableHead>
-            <TableHead>Taux</TableHead>
-            <TableHead>Restant</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredLoans.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={9} className="h-24 text-center">
-                Aucun prêt trouvé
-              </TableCell>
-            </TableRow>
-          ) : (
-            filteredLoans.map((loan) => (
-              <TableRow key={loan.id}>
-                <TableCell className="font-medium">{loan.id}</TableCell>
-                <TableCell>{loan.client}</TableCell>
-                <TableCell>{loan.amount.toLocaleString()} FCFA</TableCell>
-                <TableCell>{getStatusBadge(loan.status)}</TableCell>
-                <TableCell>{new Date(loan.startDate).toLocaleDateString()}</TableCell>
-                <TableCell>{new Date(loan.endDate).toLocaleDateString()}</TableCell>
-                <TableCell>{loan.interestRate}%</TableCell>
-                <TableCell>{loan.remainingAmount.toLocaleString()} FCFA</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="outline" size="sm">
-                    Détails
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
     </div>
   );
 };
