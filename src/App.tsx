@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -21,6 +20,7 @@ import SfdClientsPage from '@/pages/SfdClientsPage';
 import SfdAdhesionRequestsPage from '@/pages/SfdAdhesionRequestsPage';
 import SfdTransactionsPage from '@/pages/SfdTransactionsPage';
 import SfdSubsidyRequestsPage from '@/pages/SfdSubsidyRequestsPage';
+import SfdAdminDashboard from '@/components/sfd/SfdAdminDashboard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -94,10 +94,10 @@ function App() {
                   
                   {/* SFD Admin Routes */}
                   <Route
-                    path="/agency-dashboard/*"
+                    path="/agency-dashboard"
                     element={
                       <RoleGuard requiredRole={UserRole.SFD_ADMIN}>
-                        <AgencyManagementPage />
+                        <SfdAdminDashboard />
                       </RoleGuard>
                     }
                   />
