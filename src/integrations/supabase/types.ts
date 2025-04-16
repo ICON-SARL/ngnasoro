@@ -36,6 +36,47 @@ export type Database = {
         }
         Relationships: []
       }
+      adhesion_verification_steps: {
+        Row: {
+          adhesion_request_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          status: string
+          step_name: string
+        }
+        Insert: {
+          adhesion_request_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          step_name: string
+        }
+        Update: {
+          adhesion_request_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          step_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adhesion_verification_steps_adhesion_request_id_fkey"
+            columns: ["adhesion_request_id"]
+            isOneToOne: false
+            referencedRelation: "client_adhesion_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_notifications: {
         Row: {
           action_link: string | null
@@ -231,6 +272,7 @@ export type Database = {
           source_of_income: string | null
           status: string
           user_id: string | null
+          verification_stage: string | null
         }
         Insert: {
           address?: string | null
@@ -253,6 +295,7 @@ export type Database = {
           source_of_income?: string | null
           status?: string
           user_id?: string | null
+          verification_stage?: string | null
         }
         Update: {
           address?: string | null
@@ -275,6 +318,7 @@ export type Database = {
           source_of_income?: string | null
           status?: string
           user_id?: string | null
+          verification_stage?: string | null
         }
         Relationships: [
           {
@@ -1966,6 +2010,50 @@ export type Database = {
             columns: ["sfd_id"]
             isOneToOne: false
             referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      verification_documents: {
+        Row: {
+          adhesion_request_id: string
+          created_at: string
+          document_type: string
+          document_url: string
+          id: string
+          verification_notes: string | null
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          adhesion_request_id: string
+          created_at?: string
+          document_type: string
+          document_url: string
+          id?: string
+          verification_notes?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          adhesion_request_id?: string
+          created_at?: string
+          document_type?: string
+          document_url?: string
+          id?: string
+          verification_notes?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_documents_adhesion_request_id_fkey"
+            columns: ["adhesion_request_id"]
+            isOneToOne: false
+            referencedRelation: "client_adhesion_requests"
             referencedColumns: ["id"]
           },
         ]
