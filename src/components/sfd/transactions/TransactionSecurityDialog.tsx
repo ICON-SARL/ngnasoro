@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,19 +5,10 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { FormGroup } from '@/components/FormGroup';
 import { Shield, Lock, AlertTriangle, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-interface TransactionSecurityDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-export const TransactionSecurityDialog: React.FC<TransactionSecurityDialogProps> = ({
-  isOpen,
-  onClose
-}) => {
+export const TransactionSecurityDialog = ({ isOpen, onClose }) => {
   const { toast } = useToast();
   const [enableRollback, setEnableRollback] = useState(true);
   const [enableAuditLogging, setEnableAuditLogging] = useState(true);
@@ -127,7 +117,7 @@ export const TransactionSecurityDialog: React.FC<TransactionSecurityDialogProps>
               Limites pour contrôler les montants des transactions.
             </p>
             
-            <FormGroup className="flex flex-col space-y-1.5">
+            <div className="flex flex-col space-y-1.5">
               <Label htmlFor="daily-limit">Limite Quotidienne de Retrait (FCFA)</Label>
               <Input
                 id="daily-limit"
@@ -135,7 +125,7 @@ export const TransactionSecurityDialog: React.FC<TransactionSecurityDialogProps>
                 onChange={(e) => setDailyWithdrawalLimit(parseInt(e.target.value) || 0)}
                 type="number"
               />
-            </FormGroup>
+            </div>
           </Card>
           
           <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm flex items-start">
