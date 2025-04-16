@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight } from 'lucide-react';
+import { handleError } from '@/utils/errorHandler';
 
 export const JoinSfdButton = ({ sfdId, sfdName }: { sfdId: string; sfdName: string }) => {
   const { user } = useAuth();
@@ -22,16 +23,12 @@ export const JoinSfdButton = ({ sfdId, sfdName }: { sfdId: string; sfdName: stri
         return;
       }
 
-      // Navigate to the SFD adhesion page
+      // Naviguer directement vers la page d'adhésion SFD avec l'ID de la SFD
       navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
       
     } catch (err) {
       console.error('Error handling join request:', err);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de traiter votre demande d\'adhésion',
-        variant: 'destructive',
-      });
+      handleError(err);
     }
   };
 

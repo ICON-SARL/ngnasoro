@@ -3,7 +3,6 @@ import React from 'react';
 import { Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
 
 interface SfdListItemProps {
   sfd: {
@@ -22,17 +21,6 @@ export const SfdListItem: React.FC<SfdListItemProps> = ({
   isPending,
   onClick,
 }) => {
-  const navigate = useNavigate();
-  
-  const handleClick = () => {
-    if (onClick) {
-      onClick();
-    } else {
-      // Fallback direct navigation to adhesion page
-      navigate(`/mobile-flow/sfd-adhesion/${sfd.id}`);
-    }
-  };
-  
   return (
     <CardContent className="p-4 flex items-center justify-between">
       <div className="flex items-center space-x-4">
@@ -58,7 +46,7 @@ export const SfdListItem: React.FC<SfdListItemProps> = ({
         variant="secondary" 
         className="ml-4"
         disabled={isPending}
-        onClick={handleClick}
+        onClick={onClick}
       >
         {isPending ? 'Demande en cours' : 'Rejoindre'}
       </Button>

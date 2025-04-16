@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, Building, Loader2 } from 'lucide-react';
 import SfdList from '@/components/mobile/sfd/SfdList';
 import { supabase } from '@/integrations/supabase/client';
+import { handleError } from '@/utils/errorHandler';
 
 interface LocationState {
   selectedSfdId?: string;
@@ -58,24 +59,20 @@ const SfdSelectorPage = () => {
         console.log(`Loaded ${sfdsData.length} SFDs from Edge function`);
         setSfds(sfdsData);
         
-        // 2. Récupérer les demandes existantes
-        console.log('Fetching existing SFD client requests');
+        // 2. Récupérer les demandes existantes (adhesion requests plutôt que sfd_clients)
+        console.log('Fetching existing client adhesion requests');
         const { data: existingReqs, error: requestsError } = await supabase
-          .from('sfd_clients')
+          .from('client_adhesion_requests')
           .select('sfd_id, status')
           .eq('user_id', user.id);
           
         if (requestsError) throw requestsError;
         
         setExistingRequests(existingReqs || []);
-        console.log(`Found ${existingReqs?.length || 0} existing SFD client requests`);
+        console.log(`Found ${existingReqs?.length || 0} existing client adhesion requests`);
       } catch (err) {
         console.error('Error loading data:', err);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les données. Veuillez réessayer plus tard.",
-          variant: "destructive",
-        });
+        handleError(err);
       } finally {
         setIsLoading(false);
       }
@@ -94,10 +91,10 @@ const SfdSelectorPage = () => {
       return;
     }
 
-    // Check if user already has a request for this SFD
+    // Vérifier si l'utilisateur a déjà une demande pour cette SFD
     const existingRequest = existingRequests.find(req => req.sfd_id === sfdId);
     if (existingRequest) {
-      if (existingRequest.status === 'validated') {
+      if (existingRequest.status === 'approved') {
         toast({
           title: "Information",
           description: "Vous êtes déjà client de cette SFD",
@@ -111,7 +108,7 @@ const SfdSelectorPage = () => {
       return;
     }
 
-    // Si pas de demande existante, naviguez vers la page d'adhésion
+    // Rediriger vers la page d'adhésion SFD
     navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
   };
 

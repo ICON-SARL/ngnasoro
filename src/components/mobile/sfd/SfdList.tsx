@@ -3,7 +3,6 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { SfdListItem } from './SfdListItem';
 import { Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface SfdListProps {
   sfds: any[];
@@ -18,17 +17,6 @@ const SfdList: React.FC<SfdListProps> = ({
   isSubmitting,
   onSelectSfd
 }) => {
-  const navigate = useNavigate();
-
-  const handleSfdSelect = (sfdId: string) => {
-    if (onSelectSfd) {
-      onSelectSfd(sfdId);
-    } else {
-      // Direct navigation as a fallback
-      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
-    }
-  };
-
   if (!sfds || sfds.length === 0) {
     return (
       <div className="text-center py-8 bg-gray-50 rounded-lg">
@@ -49,7 +37,7 @@ const SfdList: React.FC<SfdListProps> = ({
             <SfdListItem
               sfd={sfd}
               isPending={isPending || isSubmitting}
-              onClick={() => handleSfdSelect(sfd.id)}
+              onClick={() => onSelectSfd && onSelectSfd(sfd.id)}
             />
           </Card>
         );
