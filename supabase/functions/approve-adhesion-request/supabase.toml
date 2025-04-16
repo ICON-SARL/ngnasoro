@@ -1,0 +1,3 @@
+
+[functions.approve-adhesion-request]
+verify_jwt = true

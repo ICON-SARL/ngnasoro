@@ -16,7 +16,6 @@ import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 import { AdhesionRequestsTable } from '@/components/sfd/AdhesionRequestsTable';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader } from '@/components/ui/loader';
-import { AdhesionActionDialog } from './AdhesionActionDialog';
 import { ClientAdhesionRequest } from '@/types/adhesionTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,229 +27,182 @@ export function ClientAdhesionRequests() {
   const [activeTab, setActiveTab] = useState('pending');
   const [selectedRequest, setSelectedRequest] = useState<ClientAdhesionRequest | null>(null);
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
-  const [notes, setNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [actionNotes, setActionNotes] = useState('');
+  const [showActionDialog, setShowActionDialog] = useState(false);
   const { user } = useAuth();
-  
+  const { toast } = useToast();
+
   const { 
     adhesionRequests, 
     isLoadingAdhesionRequests,
-    refetchAdhesionRequests
+    refetchAdhesionRequests 
   } = useClientAdhesions();
 
   useEffect(() => {
-    console.info('Adhesion Requests Component:', {
-      requestsCount: adhesionRequests.length,
-      requests: adhesionRequests,
-      isLoading: isLoadingAdhesionRequests
-    });
-  }, [adhesionRequests, isLoadingAdhesionRequests]);
+    // Charger les demandes dès que le composant est monté
+    refetchAdhesionRequests();
+  }, [refetchAdhesionRequests]);
 
-  // Filtre les demandes en attente (status: 'pending' ou 'pending_validation')
-  const pendingRequests = adhesionRequests.filter(r => 
-    (r.status === 'pending' || r.status === 'pending_validation') &&
-    (r.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     r.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     r.phone?.includes(searchTerm))
-  );
-  
-  // Filtre les demandes approuvées
-  const approvedRequests = adhesionRequests.filter(r => 
-    r.status === 'approved' &&
-    (r.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     r.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     r.phone?.includes(searchTerm))
-  );
-  
-  // Filtre les demandes rejetées
-  const rejectedRequests = adhesionRequests.filter(r => 
-    r.status === 'rejected' &&
-    (r.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     r.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     r.phone?.includes(searchTerm))
+  // Filtrer les demandes par terme de recherche
+  const filteredRequests = adhesionRequests.filter(request => 
+    request.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.phone?.includes(searchTerm)
   );
 
-  const handleApprove = (request: ClientAdhesionRequest) => {
-    console.log('Approving request:', request);
-    setSelectedRequest(request);
-    setActionType('approve');
-    setNotes('');
-    setErrorMessage(null);
+  // Grouper les demandes par statut
+  const pendingRequests = filteredRequests.filter(r => r.status === 'pending');
+  const approvedRequests = filteredRequests.filter(r => r.status === 'approved');
+  const rejectedRequests = filteredRequests.filter(r => r.status === 'rejected');
+
+  const handleRefresh = () => {
+    refetchAdhesionRequests();
   };
 
-  const handleReject = (request: ClientAdhesionRequest) => {
-    console.log('Rejecting request:', request);
+  // Fonction pour ouvrir la boîte de dialogue d'action
+  const handleOpenActionDialog = (request: ClientAdhesionRequest, action: 'approve' | 'reject') => {
     setSelectedRequest(request);
-    setActionType('reject');
-    setNotes('');
-    setErrorMessage(null);
+    setActionType(action);
+    setActionNotes('');
+    setShowActionDialog(true);
   };
 
-  const handleCloseDialog = () => {
+  // Fonction pour fermer la boîte de dialogue d'action
+  const handleCloseActionDialog = () => {
+    setShowActionDialog(false);
     setSelectedRequest(null);
     setActionType(null);
-    setNotes('');
-    setIsProcessing(false);
-    setErrorMessage(null);
+    setActionNotes('');
   };
 
-  const handleConfirmAction = async (notes?: string) => {
-    if (!selectedRequest || !user || isProcessing) return;
-
+  // Fonction pour approuver une demande
+  const handleApproveRequest = async () => {
+    if (!selectedRequest || !user) return;
+    
     setIsProcessing(true);
-    setErrorMessage(null);
     
     try {
-      if (actionType === 'approve') {
-        console.log(`Confirming ${actionType} action for request:`, selectedRequest.id);
-        
-        // Using direct Supabase Function invoke for better debugging
-        try {
-          const { data, error } = await supabase.functions.invoke('approve-adhesion-request', {
-            body: {
-              adhesionId: selectedRequest.id,
-              userId: user.id,
-              notes
-            }
-          });
-          
-          if (error) {
-            console.error('Supabase function error:', error);
-            setErrorMessage(error.message || 'Erreur lors de l\'approbation');
-            throw error;
-          }
-          
-          console.log('Direct function response:', data);
-          
-          toast({
-            title: 'Demande approuvée',
-            description: 'La demande d\'adhésion a été approuvée avec succès',
-          });
-          
-          await refetchAdhesionRequests();
-          handleCloseDialog();
-          return;
-        } catch (functionError: any) {
-          console.error('Function direct call error:', functionError);
-          setErrorMessage(functionError.message || 'Erreur lors de l\'approbation via fonction');
-          throw functionError;
-        }
-      } else if (actionType === 'reject') {
-        // Utiliser la fonction du hook pour le rejet
-        const { error } = await supabase
-          .from('client_adhesion_requests')
-          .update({
-            status: 'rejected',
-            processed_by: user.id,
-            processed_at: new Date().toISOString(),
-            notes: notes || ''
-          })
-          .eq('id', selectedRequest.id);
-          
-        if (error) {
-          console.error('Error rejecting request:', error);
-          setErrorMessage(error.message || 'Erreur lors du rejet');
-          throw new Error(error.message || 'Erreur lors du rejet');
-        }
-          
-        toast({
-          title: 'Demande rejetée',
-          description: 'La demande d\'adhésion a été rejetée',
-        });
-        
-        await refetchAdhesionRequests();
-        handleCloseDialog();
-      }
-    } catch (error) {
-      console.error('Error during confirmation action:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Une erreur s\'est produite';
+      // Utiliser la fonction edge pour approuver la demande
+      const { data, error } = await edgeFunctionApi.callFunction('approve-adhesion-request', {
+        adhesionRequestId: selectedRequest.id,
+        adminUserId: user.id,
+        notes: actionNotes
+      });
       
-      setErrorMessage(errorMsg);
+      if (error) throw error;
       
       toast({
-        title: 'Erreur',
-        description: errorMsg,
-        variant: 'destructive'
+        title: "Demande approuvée",
+        description: "La demande d'adhésion a été approuvée avec succès.",
+      });
+      
+      // Actualiser les demandes
+      refetchAdhesionRequests();
+      handleCloseActionDialog();
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'approbation de la demande:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'approbation de la demande.",
+        variant: "destructive"
       });
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleRefresh = () => {
-    refetchAdhesionRequests();
-    setErrorMessage(null);
+  // Fonction pour rejeter une demande
+  const handleRejectRequest = async () => {
+    if (!selectedRequest || !user) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      // Mettre à jour le statut de la demande
+      const { error } = await supabase
+        .from('client_adhesion_requests')
+        .update({
+          status: 'rejected',
+          processed_by: user.id,
+          processed_at: new Date().toISOString(),
+          notes: actionNotes,
+          rejection_reason: actionNotes
+        })
+        .eq('id', selectedRequest.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Demande rejetée",
+        description: "La demande d'adhésion a été rejetée.",
+      });
+      
+      // Actualiser les demandes
+      refetchAdhesionRequests();
+      handleCloseActionDialog();
+      
+    } catch (error) {
+      console.error('Erreur lors du rejet de la demande:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors du rejet de la demande.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Handler pour confirmer l'action (approuver ou rejeter)
+  const handleConfirmAction = () => {
+    if (actionType === 'approve') {
+      handleApproveRequest();
+    } else if (actionType === 'reject') {
+      handleRejectRequest();
+    }
   };
 
   if (isLoadingAdhesionRequests) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <Loader size="lg" className="mb-4" />
-        <p className="text-gray-500">Chargement des demandes d'adhésion...</p>
+      <div className="flex justify-center items-center p-8">
+        <Loader size="lg" />
       </div>
     );
   }
 
   if (adhesionRequests.length === 0) {
     return (
-      <div className="space-y-4">
-        <div className="flex justify-end">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Actualiser
-          </Button>
-        </div>
-        
-        <Alert className="bg-amber-50 border-amber-200">
-          <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertTitle className="text-amber-800">Aucune demande d'adhésion</AlertTitle>
-          <AlertDescription className="text-amber-700">
-            Il n'y a actuellement aucune demande d'adhésion pour cette SFD.
-          </AlertDescription>
-        </Alert>
-      </div>
+      <Alert className="bg-gray-50">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Aucune demande d'adhésion</AlertTitle>
+        <AlertDescription>
+          Il n'y a actuellement aucune demande d'adhésion à traiter.
+        </AlertDescription>
+      </Alert>
     );
   }
 
-  console.log('Rendering tabs with pendingRequests:', pendingRequests.length);
-
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Search className="h-4 w-4 text-gray-500" />
-          <Input
-            placeholder="Rechercher par nom, email ou téléphone"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
-          />
-        </div>
+      <div className="flex items-center space-x-2">
+        <Search className="h-4 w-4 text-gray-500" />
+        <Input
+          placeholder="Rechercher par nom, email ou téléphone"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-sm"
+        />
         <Button 
           variant="outline" 
           size="sm" 
           onClick={handleRefresh}
-          className="flex items-center gap-2"
         >
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCw className="h-4 w-4 mr-2" />
           Actualiser
         </Button>
       </div>
-
-      {errorMessage && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Erreur</AlertTitle>
-          <AlertDescription>{errorMessage}</AlertDescription>
-        </Alert>
-      )}
 
       <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -272,8 +224,8 @@ export function ClientAdhesionRequests() {
           <AdhesionRequestsTable 
             requests={pendingRequests}
             isLoading={isLoadingAdhesionRequests}
-            onApprove={handleApprove}
-            onReject={handleReject}
+            onApprove={(request) => handleOpenActionDialog(request, 'approve')}
+            onReject={(request) => handleOpenActionDialog(request, 'reject')}
           />
         </TabsContent>
 
@@ -281,6 +233,7 @@ export function ClientAdhesionRequests() {
           <AdhesionRequestsTable 
             requests={approvedRequests}
             isLoading={isLoadingAdhesionRequests}
+            hideActions
           />
         </TabsContent>
 
@@ -288,21 +241,61 @@ export function ClientAdhesionRequests() {
           <AdhesionRequestsTable 
             requests={rejectedRequests}
             isLoading={isLoadingAdhesionRequests}
+            hideActions
           />
         </TabsContent>
       </Tabs>
 
-      <AdhesionActionDialog
-        request={selectedRequest}
-        isOpen={!!selectedRequest && !!actionType}
-        action={actionType}
-        onClose={handleCloseDialog}
-        onConfirm={handleConfirmAction}
-        notes={notes}
-        onNotesChange={setNotes}
-        isProcessing={isProcessing}
-        errorMessage={errorMessage}
-      />
+      {/* Boîte de dialogue pour l'approbation/rejet */}
+      {showActionDialog && selectedRequest && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-medium mb-4">
+              {actionType === 'approve' ? 'Approuver la demande' : 'Rejeter la demande'}
+            </h3>
+            <p className="mb-4">
+              {actionType === 'approve' 
+                ? `Êtes-vous sûr de vouloir approuver la demande de ${selectedRequest.full_name} ?` 
+                : `Êtes-vous sûr de vouloir rejeter la demande de ${selectedRequest.full_name} ?`}
+            </p>
+            
+            {/* Champ pour les notes */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                {actionType === 'approve' ? 'Notes (optionnel)' : 'Raison du rejet'}
+              </label>
+              <textarea 
+                className="w-full p-2 border border-gray-300 rounded-md"
+                value={actionNotes}
+                onChange={(e) => setActionNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={handleCloseActionDialog}
+                disabled={isProcessing}
+              >
+                Annuler
+              </Button>
+              <Button 
+                onClick={handleConfirmAction}
+                disabled={isProcessing || (actionType === 'reject' && !actionNotes)}
+                variant={actionType === 'approve' ? 'default' : 'destructive'}
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Traitement...
+                  </>
+                ) : actionType === 'approve' ? 'Approuver' : 'Rejeter'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
