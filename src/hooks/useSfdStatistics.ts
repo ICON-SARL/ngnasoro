@@ -96,7 +96,7 @@ export const useSfdStatistics = (sfdId?: string) => {
         console.error('Error fetching SFD statistics:', error);
         toast({
           title: "Erreur",
-          description: `Impossible de récupérer les statistiques: ${error.message}`,
+          description: "Impossible de récupérer les statistiques",
           variant: "destructive",
         });
         throw error;
