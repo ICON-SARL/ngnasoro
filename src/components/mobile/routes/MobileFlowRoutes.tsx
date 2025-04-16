@@ -7,6 +7,7 @@ import WelcomeScreen from '../WelcomeScreen';
 import ProfilePage from '../profile/ProfilePage';
 import SplashScreen from '../SplashScreen';
 import SfdSelectorPage from '@/pages/SfdSelectorPage';
+import SfdSetupPage from '@/pages/SfdSetupPage';
 import MobileLoansPage from '@/pages/mobile/MobileLoansPage';
 import MobileLoanPlansPage from '@/pages/mobile/MobileLoanPlansPage';
 import MobileLoanSimulatorPage from '@/pages/mobile/MobileLoanSimulatorPage';
@@ -64,6 +65,10 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       
       <Route path="sfd-selector" element={
         <SfdSelectorPage />
+      } />
+      
+      <Route path="sfd-setup" element={
+        <SfdSetupPage />
       } />
       
       <Route path="sfd-connection" element={

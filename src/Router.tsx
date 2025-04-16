@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
@@ -26,6 +27,19 @@ import MobileMainPage from './pages/mobile/MobileMainPage';
 import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
 import SfdSetupPage from './pages/SfdSetupPage';
 
+// Creating a MobileRouter component that can be exported
+export const MobileRouter = () => {
+  return (
+    <Routes>
+      {/* Mobile routes can be defined here */}
+      <Route path="/" element={<div>Mobile Home</div>} />
+      <Route path="/main" element={<div>Mobile Main</div>} />
+      <Route path="/loan-activity" element={<div>Loan Activity</div>} />
+      <Route path="*" element={<div>Mobile Page Not Found</div>} />
+    </Routes>
+  );
+};
+
 const Router = () => {
   return (
     <BrowserRouter>
@@ -39,6 +53,7 @@ const Router = () => {
           
           <Route path="/permission-test" element={<PermissionTestPage />} />
           
+          {/* Route spéciale qui ne nécessite pas une vérification stricte des rôles */}
           <Route path="/sfd-setup" element={<ProtectedRoute><SfdSetupPage /></ProtectedRoute>} />
           
           <Route path="/mobile-flow" element={<ProtectedRoute><MobileFlowPage /></ProtectedRoute>}>
@@ -51,6 +66,7 @@ const Router = () => {
             <Route path="payment" element={<PaymentPage />} />
             <Route path="account" element={<AccountPage />} />
             <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
+            <Route path="sfd-setup" element={<SfdSetupPage />} />
             <Route path="*" element={<Navigate to="main" replace />} />
           </Route>
 

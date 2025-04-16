@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building, Plus } from 'lucide-react';
@@ -29,7 +28,6 @@ const SfdAdhesionSection: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Récupérer les SFDs disponibles
         const { data: sfds, error: sfdsError } = await supabase
           .from('sfds')
           .select('id, name, code, region, status, logo_url, description')
@@ -37,7 +35,6 @@ const SfdAdhesionSection: React.FC = () => {
         
         if (sfdsError) throw sfdsError;
         
-        // Récupérer les demandes de l'utilisateur
         const { data: requests, error: requestsError } = await supabase
           .from('sfd_clients')
           .select('id, sfd_id, status, created_at, sfds(name)')
@@ -45,7 +42,6 @@ const SfdAdhesionSection: React.FC = () => {
         
         if (requestsError) throw requestsError;
         
-        // Formatter les données des demandes
         const formattedRequests: SfdClientRequest[] = requests.map(request => ({
           id: request.id,
           sfd_id: request.sfd_id,
@@ -72,7 +68,6 @@ const SfdAdhesionSection: React.FC = () => {
   }, [user, toast]);
   
   const handleOpenSfdDialog = (sfd: AvailableSfd) => {
-    // Vérifier si l'utilisateur a déjà une demande en cours pour cette SFD
     const existingRequest = userRequests.find(req => req.sfd_id === sfd.id);
     
     if (existingRequest) {
@@ -96,7 +91,6 @@ const SfdAdhesionSection: React.FC = () => {
       return;
     }
     
-    // Au lieu d'ouvrir la boîte de dialogue, naviguer vers la page d'adhésion SFD
     navigate(`/mobile-flow/sfd-adhesion/${sfd.id}`);
   };
   
@@ -106,9 +100,7 @@ const SfdAdhesionSection: React.FC = () => {
   };
   
   const handleGoToSfdSetup = () => {
-    // Simplify this to an external navigation rather than a mobile flow route
-    console.log("Navigating to SFD setup page");
-    navigate('/sfd-setup', { replace: false });
+    navigate('/mobile-flow/sfd-setup');
   };
   
   const renderRequestStatus = (request: SfdClientRequest) => {
@@ -135,7 +127,6 @@ const SfdAdhesionSection: React.FC = () => {
     return null;
   };
   
-  // Fonction pour empêcher les redirections non désirées
   const handleContainerClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
