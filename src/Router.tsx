@@ -1,86 +1,37 @@
 
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+// Removing imports for non-existent pages and using the ones available
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import PermissionTestPage from '@/pages/PermissionTestPage';
 import ProtectedRoute from '@/components/routes/ProtectedRoute';
-import { AuthProvider } from '@/hooks/auth/AuthContext';
-import SfdDashboard from './pages/SfdDashboard';
-import LoanDetailsPage from './pages/LoanDetailsPage';
-import LoansPage from './pages/LoansPage';
-import ClientsPage from './pages/ClientsPage';
-import SfdClientsPage from './pages/SfdClientsPage';
-import ClientDetailsPage from './pages/ClientDetailsPage';
-import MobileFlowPage from './pages/MobileFlowPage';
-import MobileWelcomePage from './pages/MobileWelcomePage';
-import AdminLoginPage from './pages/AdminLoginPage';
-import ClientLoginPage from './pages/ClientLoginPage';
-
-import LoanPlansPage from './components/mobile/loan/LoanPlansPage';
-import PaymentPage from './pages/mobile/PaymentPage';
-import AccountPage from './pages/mobile/AccountPage';
-import MobileLoansPage from './pages/mobile/MobileLoansPage';
-import MobileMyLoansPage from './pages/mobile/MobileMyLoansPage';
-import MobileMainPage from './pages/mobile/MobileMainPage';
-import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
-import SfdSetupPage from './pages/SfdSetupPage';
-
-// Creating a MobileRouter component that can be exported
-export const MobileRouter = () => {
-  return (
-    <Routes>
-      {/* Mobile routes can be defined here */}
-      <Route path="/" element={<div>Mobile Home</div>} />
-      <Route path="/main" element={<div>Mobile Main</div>} />
-      <Route path="/loan-activity" element={<div>Loan Activity</div>} />
-      <Route path="*" element={<div>Mobile Page Not Found</div>} />
-    </Routes>
-  );
-};
+import { UserRole } from '@/utils/auth/roleTypes';
+import MobileFlowPage from '@/pages/mobile/MobileFlowPage';
+import SfdSetupPage from '@/pages/SfdSetupPage';
 
 const Router = () => {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/auth" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/admin-login" element={<AdminLoginPage />} />
-          <Route path="/client-login" element={<ClientLoginPage />} />
-          <Route path="/access-denied" element={<AccessDeniedPage />} />
-          
-          <Route path="/permission-test" element={<PermissionTestPage />} />
-          
-          {/* Route spéciale qui ne nécessite pas une vérification stricte des rôles */}
-          <Route path="/sfd-setup" element={<ProtectedRoute><SfdSetupPage /></ProtectedRoute>} />
-          
-          <Route path="/mobile-flow" element={<ProtectedRoute><MobileFlowPage /></ProtectedRoute>}>
-            <Route path="welcome" element={<MobileWelcomePage />} />
-            <Route path="main" element={<MobileMainPage />} />
-            <Route path="loans" element={<MobileLoansPage />} />
-            <Route path="loan-plans" element={<LoanPlansPage />} />
-            <Route path="my-loans" element={<MobileMyLoansPage />} />
-            <Route path="loan-details/:id" element={<LoanDetailsPage />} />
-            <Route path="payment" element={<PaymentPage />} />
-            <Route path="account" element={<AccountPage />} />
-            <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
-            <Route path="sfd-setup" element={<SfdSetupPage />} />
-            <Route path="*" element={<Navigate to="main" replace />} />
-          </Route>
-
-          <Route path="/" element={<ProtectedRoute><SfdDashboard /></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><SfdDashboard /></ProtectedRoute>} />
-          <Route path="/loans" element={<ProtectedRoute><LoansPage /></ProtectedRoute>} />
-          <Route path="/loan/:loanId" element={<ProtectedRoute><LoanDetailsPage /></ProtectedRoute>} />
-          <Route path="/clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
-          <Route path="/sfd-clients" element={<ProtectedRoute><SfdClientsPage /></ProtectedRoute>} />
-          <Route path="/client/:clientId" element={<ProtectedRoute><ClientDetailsPage /></ProtectedRoute>} />
-          
-          <Route path="*" element={<Navigate to="/auth" replace />} />
-        </Routes>
-      </AuthProvider>
+      <Routes>
+        {/* Auth Page */}
+        <Route path="/auth" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/access-denied" element={<AccessDeniedPage />} />
+        
+        {/* Permission Test Page */}
+        <Route path="/permission-test" element={<PermissionTestPage />} />
+        
+        {/* Route spéciale qui ne nécessite pas une vérification stricte des rôles */}
+        <Route path="/sfd-setup" element={<ProtectedRoute><SfdSetupPage /></ProtectedRoute>} />
+        
+        {/* Mobile Flow Routes */}
+        <Route path="/mobile-flow/*" element={<ProtectedRoute><MobileFlowPage /></ProtectedRoute>} />
+        
+        {/* Catch-all route */}
+        <Route path="*" element={<Navigate to="/auth" replace />} />
+      </Routes>
     </BrowserRouter>
   );
 };
