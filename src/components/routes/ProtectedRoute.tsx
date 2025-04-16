@@ -18,7 +18,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, loading, isAdmin, isSfdAdmin } = useAuth();
   const location = useLocation();
   
-  // Afficher un indicateur de chargement pendant la vérification de l'authentification
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -28,30 +27,26 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Rediriger vers la page d'authentification si l'utilisateur n'est pas connecté
   if (!user) {
-    // Rediriger vers le type d'authentification approprié en fonction des exigences
-    let redirectPath = '/auth';
-    
+    // Redirect to appropriate auth page based on requirements
     if (requireAdmin) {
-      redirectPath = '/admin/auth';
+      return <Navigate to="/admin/auth" state={{ from: location }} replace />;
     } else if (requireSfdAdmin) {
-      redirectPath = '/sfd/auth';
+      return <Navigate to="/sfd/auth" state={{ from: location }} replace />;
+    } else {
+      return <Navigate to="/auth" state={{ from: location }} replace />;
     }
-    
-    return <Navigate to={redirectPath} state={{ from: location.pathname }} replace />;
   }
   
-  // Vérifier les autorisations basées sur les rôles
+  // Check role-based permissions
   if (requireAdmin && !isAdmin) {
-    return <Navigate to="/access-denied" state={{ from: location.pathname, requiredRole: 'admin' }} replace />;
+    return <Navigate to="/access-denied" state={{ from: location, requiredRole: 'admin' }} replace />;
   }
   
   if (requireSfdAdmin && !isSfdAdmin) {
-    return <Navigate to="/access-denied" state={{ from: location.pathname, requiredRole: 'sfd_admin' }} replace />;
+    return <Navigate to="/access-denied" state={{ from: location, requiredRole: 'sfd_admin' }} replace />;
   }
 
-  // Si l'utilisateur est authentifié et a les autorisations nécessaires, afficher le contenu protégé
   return <>{children}</>;
 };
 

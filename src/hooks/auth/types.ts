@@ -5,7 +5,7 @@ export enum UserRole {
   SuperAdmin = 'admin',
   SfdAdmin = 'sfd_admin',
   Client = 'client',
-  User = 'user'
+  User = 'user' // Adding User role that was referenced but missing
 }
 
 export interface User extends SupabaseUser {
@@ -39,7 +39,7 @@ export interface AuthContextProps {
   toggleBiometricAuth: () => Promise<void>;
 }
 
-// Interface pour associer un SFD à un utilisateur
+// Adding the missing interfaces
 export interface AssociateSfdParams {
   userId: string;
   sfdId: string;

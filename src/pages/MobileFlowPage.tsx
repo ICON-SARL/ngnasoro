@@ -1,16 +1,131 @@
+import React, { useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import Footer from '@/components/Footer';
+import FundsManagementPage from '@/components/mobile/funds-management/FundsManagementPage';
+import ProfilePage from '@/components/mobile/profile/ProfilePage';
+import AccountPage from '@/pages/mobile/AccountPage';
+import NotificationsPage from '@/pages/mobile/account/NotificationsPage';
+import SecurityPage from '@/pages/mobile/account/SecurityPage';
+import AboutPage from '@/pages/mobile/account/AboutPage';
+import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import MobileNavigation from '../components/MobileNavigation';
-import { MobileRouter } from '../components/Router';
+const MobileFlowPage: React.FC = () => {
+  const { user, loading, isAdmin, isSfdAdmin } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+      
+      if (isAdmin) {
+        toast({
+          title: "Accès refusé",
+          description: "Les administrateurs ne peuvent pas accéder à l'interface mobile.",
+          variant: "destructive",
+        });
+        navigate('/super-admin-dashboard');
+        return;
+      } 
+      
+      if (isSfdAdmin) {
+        toast({
+          title: "Accès refusé",
+          description: "Les administrateurs SFD ne peuvent pas accéder à l'interface mobile.",
+          variant: "destructive",
+        });
+        navigate('/agency-dashboard');
+        return;
+      }
+    }
+  }, [user, loading, navigate, toast, isAdmin, isSfdAdmin]);
 
-const MobileFlowPage = () => {
+  if (loading) {
+    return <div className="p-4 flex items-center justify-center h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <span className="ml-2">Chargement...</span>
+    </div>;
+  }
+
+  if (isAdmin || isSfdAdmin) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen bg-white">
-      <div className="pb-20"> {/* Add padding at the bottom for the navigation bar */}
-        <MobileRouter />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="flex-grow">
+        <Routes>
+          <Route path="main" element={
+            <div className="pb-20">
+              <div className="p-4 bg-[#0D6A51] text-white">
+                <h1 className="text-xl font-bold">Dashboard principal</h1>
+                <p className="text-sm">Bienvenue sur votre espace client</p>
+              </div>
+              <div className="p-4">
+                <div className="bg-white rounded-lg p-4 shadow mb-4">
+                  <h2 className="text-lg font-semibold mb-2">Votre compte</h2>
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <p className="font-medium">Solde disponible</p>
+                    <p className="text-2xl font-bold">0 FCFA</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  <button 
+                    className="bg-white p-4 rounded-lg shadow text-center"
+                    onClick={() => navigate('/mobile-flow/savings')}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                        <span className="text-green-600">💰</span>
+                      </div>
+                      <span className="text-sm font-medium">Mes fonds</span>
+                    </div>
+                  </button>
+                  
+                  <button 
+                    className="bg-white p-4 rounded-lg shadow text-center"
+                    onClick={() => navigate('/mobile-flow/loans')}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                        <span className="text-blue-600">💳</span>
+                      </div>
+                      <span className="text-sm font-medium">Prêts</span>
+                    </div>
+                  </button>
+                </div>
+                
+                <button 
+                  className="w-full bg-[#0D6A51] text-white py-3 px-4 rounded-lg font-medium"
+                  onClick={() => navigate('/mobile-flow/profile')}
+                >
+                  Voir mon profil
+                </button>
+              </div>
+            </div>
+          } />
+          
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="savings" element={<FundsManagementPage />} />
+          <Route path="loans" element={<div className="p-4">Prêts (À venir)</div>} />
+          <Route path="transactions" element={<div className="p-4">Transactions (À venir)</div>} />
+          
+          <Route path="account" element={<AccountPage />} />
+          <Route path="account/notifications" element={<NotificationsPage />} />
+          <Route path="account/security" element={<SecurityPage />} />
+          <Route path="account/about" element={<AboutPage />} />
+          <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
+          
+          <Route path="*" element={<Navigate to="main" replace />} />
+        </Routes>
       </div>
-      <MobileNavigation />
+      <Footer />
     </div>
   );
 };
