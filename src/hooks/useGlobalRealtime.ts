@@ -62,11 +62,17 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
           })
           .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
             console.log('Presence leave:', key, leftPresences);
-          })
-          .on('broadcast', { event: 'notification' }, (payload: NotificationPayload) => {
+          });
+          
+        // Add broadcast handler separately
+        newChannel.on(
+          'broadcast', 
+          { event: 'notification' }, 
+          (payload: NotificationPayload) => {
             console.log('Received notification:', payload);
             handleNotification(payload);
-          });
+          }
+        );
         
         // Subscribe to the channel
         newChannel.subscribe((status) => {
@@ -84,6 +90,7 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
           
           // Add a listener for each table subscription
           tableSubscriptions.forEach(sub => {
+            // Fix: Register postgres_changes event properly
             dbChannel.on(
               'postgres_changes',
               { 
