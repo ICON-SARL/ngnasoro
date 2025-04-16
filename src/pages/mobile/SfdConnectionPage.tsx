@@ -7,6 +7,7 @@ import { AvailableSfdCard } from '@/components/mobile/sfd-accounts/AvailableSfdC
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { Sfd } from '@/types/sfd-types';
 
 export default function SfdConnectionPage() {
   const navigate = useNavigate();
@@ -28,11 +29,11 @@ export default function SfdConnectionPage() {
         }
         
         if (directData && directData.length > 0) {
-          return directData;
+          return directData as Sfd[];
         }
         
         // Return empty array if no SFDs found
-        return [];
+        return [] as Sfd[];
       } catch (error) {
         console.error('Failed to fetch SFDs:', error);
         throw error;
