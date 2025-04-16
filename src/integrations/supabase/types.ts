@@ -500,6 +500,53 @@ export type Database = {
           },
         ]
       }
+      loan_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          document_url: string
+          id: string
+          loan_id: string
+          uploaded_at: string
+          uploaded_by: string
+          verified: boolean | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          document_url: string
+          id?: string
+          loan_id: string
+          uploaded_at?: string
+          uploaded_by: string
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          document_url?: string
+          id?: string
+          loan_id?: string
+          uploaded_at?: string
+          uploaded_by?: string
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_documents_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loan_payment_reminders: {
         Row: {
           amount: number
@@ -588,6 +635,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "loan_payments_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loan_requirements_verification: {
+        Row: {
+          created_at: string
+          id: string
+          loan_id: string
+          notes: string | null
+          requirement_type: string
+          status: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          loan_id: string
+          notes?: string | null
+          requirement_type: string
+          status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          loan_id?: string
+          notes?: string | null
+          requirement_type?: string
+          status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_requirements_verification_loan_id_fkey"
             columns: ["loan_id"]
             isOneToOne: false
             referencedRelation: "sfd_loans"
@@ -1309,9 +1397,13 @@ export type Database = {
           id: string
           interest_rate: number
           last_payment_date: string | null
+          loan_plan_id: string | null
           monthly_payment: number
           next_payment_date: string | null
+          processed_at: string | null
+          processed_by: string | null
           purpose: string
+          rejection_reason: string | null
           sfd_id: string
           status: string
           subsidy_amount: number | null
@@ -1331,9 +1423,13 @@ export type Database = {
           id?: string
           interest_rate: number
           last_payment_date?: string | null
+          loan_plan_id?: string | null
           monthly_payment: number
           next_payment_date?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
           purpose: string
+          rejection_reason?: string | null
           sfd_id: string
           status?: string
           subsidy_amount?: number | null
@@ -1353,9 +1449,13 @@ export type Database = {
           id?: string
           interest_rate?: number
           last_payment_date?: string | null
+          loan_plan_id?: string | null
           monthly_payment?: number
           next_payment_date?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
           purpose?: string
+          rejection_reason?: string | null
           sfd_id?: string
           status?: string
           subsidy_amount?: number | null
@@ -1367,6 +1467,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "sfd_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sfd_loans_loan_plan_id_fkey"
+            columns: ["loan_plan_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_loan_plans"
             referencedColumns: ["id"]
           },
           {

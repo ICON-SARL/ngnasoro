@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
@@ -16,6 +15,9 @@ export const MobileRouter = () => {
       <Route path="/" element={<div>Mobile Home</div>} />
       <Route path="/main" element={<div>Mobile Main</div>} />
       <Route path="/loan-activity" element={<div>Loan Activity</div>} />
+      <Route path="/loan-application/:sfdId" element={<LoanApplicationForm />} />
+      <Route path="/sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
+      <Route path="/sfd-selector" element={<SfdSelectorPage />} />
       <Route path="*" element={<div>Mobile Page Not Found</div>} />
     </Routes>
   );
