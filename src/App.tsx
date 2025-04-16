@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -35,6 +34,7 @@ import { UserRole } from '@/hooks/auth/types';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import SfdAdhesionRequestsPage from '@/pages/SfdAdhesionRequestsPage';
 import RoleTestingPage from '@/pages/RoleTestingPage';
+import SplashScreen from '@/components/mobile/SplashScreen';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,9 +54,8 @@ function App() {
             <div className="flex flex-col min-h-screen">
               <div className="flex-grow">
                 <Routes>
-                  <Route path="/" element={<Navigate to="/auth" replace />} />
+                  <Route path="/" element={<SplashScreen onComplete={() => null} />} />
                   
-                  {/* Authentication Routes */}
                   <Route path="/auth" element={<LoginPage />} />
                   <Route path="/login" element={<AuthRedirectPage />} />
                   <Route path="/register" element={<RegisterPage />} />
@@ -65,7 +64,6 @@ function App() {
                   <Route path="/client/auth" element={<ClientLoginPage />} />
                   <Route path="/access-denied" element={<AccessDeniedPage />} />
                   
-                  {/* Admin Routes */}
                   <Route path="/super-admin-dashboard/*" element={
                     <ProtectedRoute requireAdmin={true}>
                       <RoleGuard requiredRole={UserRole.SuperAdmin}>
@@ -90,14 +88,12 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-                  {/* Credit Approval page accessible to both Super Admin and SFD Admin */}
                   <Route path="/credit-approval" element={
                     <ProtectedRoute>
                       <CreditApprovalPage />
                     </ProtectedRoute>
                   } />
                   
-                  {/* SFD Admin Routes */}
                   <Route path="/agency-dashboard/*" element={
                     <ProtectedRoute requireSfdAdmin={true}>
                       <RoleGuard requiredRole={UserRole.SfdAdmin}>
@@ -154,7 +150,6 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-                  {/* Client/User Routes - MODIFICATION: Allow access to both clients AND users */}
                   <Route path="/mobile-flow/main" element={
                     <ProtectedRoute>
                       <RoleGuard requiredRole={UserRole.Client}>
@@ -206,7 +201,6 @@ function App() {
                   } />
                   <Route path="/mobile-flow/sfd-adhesion/:sfdId" element={
                     <ProtectedRoute>
-                      {/* Cette route devrait être accessible aux utilisateurs 'user' ET 'client' */}
                       <MobileFlowPage />
                     </ProtectedRoute>
                   } />
@@ -216,7 +210,6 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-                  {/* New role testing route */}
                   <Route path="/role-testing" element={
                     <ProtectedRoute requireAdmin={true}>
                       <RoleGuard requiredRole={UserRole.SuperAdmin}>
@@ -225,7 +218,6 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-                  {/* Fallback Route */}
                   <Route path="*" element={<Navigate to="/auth" replace />} />
                 </Routes>
                 <Toaster />

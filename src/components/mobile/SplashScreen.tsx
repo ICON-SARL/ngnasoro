@@ -1,8 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SplashScreenProps {
   onComplete?: () => void;
@@ -15,6 +15,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
 }) => {
   const navigate = useNavigate();
   const [progress, setProgress] = useState(0);
+  const { user } = useAuth();
   
   useEffect(() => {
     const interval = setInterval(() => {
@@ -30,8 +31,13 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
     const timer = setTimeout(() => {
       if (onComplete) {
         onComplete();
+      }
+      
+      // Navigate based on authentication status
+      if (user) {
+        navigate('/mobile-flow/main');
       } else {
-        navigate('/mobile-flow/welcome');
+        navigate('/auth');
       }
     }, duration);
     
@@ -39,7 +45,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
       clearInterval(interval);
       clearTimeout(timer);
     };
-  }, [onComplete, navigate, duration]);
+  }, [onComplete, navigate, duration, user]);
   
   return (
     <div className="h-screen w-full overflow-hidden">

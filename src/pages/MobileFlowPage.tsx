@@ -1,7 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
-// Correctly importing MobileRouter as a named export
 import { MobileRouter } from '@/components/Router';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,12 +12,10 @@ const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showWelcome, setShowWelcome] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   
   const { user, loading, signOut, userRole } = useAuth();
 
-  // Check if user is authenticated
   useEffect(() => {
     if (!loading) {
       if (!user) {
@@ -32,7 +28,6 @@ const MobileFlowPage: React.FC = () => {
         return;
       }
       
-      // Get the user role and redirect if needed
       const role = user.app_metadata?.role;
       
       if (role === 'admin') {
@@ -53,19 +48,16 @@ const MobileFlowPage: React.FC = () => {
         return;
       }
 
-      // Si c'est un nouvel utilisateur sans accès au flux client, l'orienter vers l'adhésion
       if (role === 'user' && location.pathname === '/mobile-flow/main') {
         toast({
           title: "Bienvenue",
           description: "Pour accéder à toutes les fonctionnalités, vous devez d'abord adhérer à une SFD.",
         });
-        // Rediriger vers la sélection de SFD pour adhésion
         navigate('/mobile-flow/sfd-selector');
       }
     }
   }, [user, loading, navigate, toast, location.pathname]);
 
-  // Handle logout
   const handleLogout = async () => {
     try {
       await signOut();
@@ -101,10 +93,8 @@ const MobileFlowPage: React.FC = () => {
         onLogout={handleLogout} 
       />
       <Routes>
-        {/* Route pour la page d'adhésion SFD - accessible aux utilisateurs 'user' */}
         <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
         <Route path="sfd-selector" element={<SfdSelectorPage />} />
-        {/* Autres routes MobileFlow */}
         <Route path="*" element={<MobileRouter />} />
       </Routes>
     </div>

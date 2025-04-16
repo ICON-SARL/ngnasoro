@@ -1,13 +1,17 @@
 
 import React from 'react';
 import AuthUI from '@/components/AuthUI';
+import { useLocation, Navigate } from 'react-router-dom';
 
-interface LoginPageProps {
-  isSfdAdmin?: boolean;
-}
+const LoginPage = () => {
+  const location = useLocation();
+  
+  // If user directly accesses /auth without seeing splash, redirect to splash
+  if (location.state?.fromSplash !== true) {
+    return <Navigate to="/" replace />;
+  }
 
-const LoginPage: React.FC<LoginPageProps> = ({ isSfdAdmin = false }) => {
-  return <AuthUI initialMode={isSfdAdmin ? 'sfd_admin' : 'default'} />;
+  return <AuthUI />;
 };
 
 export default LoginPage;
