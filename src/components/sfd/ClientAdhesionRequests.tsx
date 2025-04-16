@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,17 +15,24 @@ import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 import { AdhesionRequestsTable } from '@/components/sfd/AdhesionRequestsTable';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader } from '@/components/ui/loader';
+import { AdhesionActionDialog } from './AdhesionActionDialog';
+import { ClientAdhesionRequest } from '@/types/adhesionTypes';
 
 export function ClientAdhesionRequests() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('pending');
+  const [selectedRequest, setSelectedRequest] = useState<ClientAdhesionRequest | null>(null);
+  const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
+  const [notes, setNotes] = useState('');
+  
   const { 
     adhesionRequests, 
     isLoadingAdhesionRequests,
-    refetchAdhesionRequests 
+    refetchAdhesionRequests,
+    approveAdhesionRequest,
+    rejectAdhesionRequest
   } = useClientAdhesions();
 
-  // Detailed logging to debug
   useEffect(() => {
     console.info('Adhesion Requests Component:', {
       requestsCount: adhesionRequests.length,
@@ -35,7 +41,6 @@ export function ClientAdhesionRequests() {
     });
   }, [adhesionRequests, isLoadingAdhesionRequests]);
 
-  // Fixed TypeScript comparison issue by using type guard
   const pendingRequests = adhesionRequests.filter(r => 
     (r.status === 'pending' || r.status === 'pending_validation') &&
     (r.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -57,7 +62,34 @@ export function ClientAdhesionRequests() {
      r.phone?.includes(searchTerm))
   );
 
-  const handleRefresh = () => {
+  const handleApprove = (request: ClientAdhesionRequest) => {
+    setSelectedRequest(request);
+    setActionType('approve');
+    setNotes('');
+  };
+
+  const handleReject = (request: ClientAdhesionRequest) => {
+    setSelectedRequest(request);
+    setActionType('reject');
+    setNotes('');
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedRequest(null);
+    setActionType(null);
+    setNotes('');
+  };
+
+  const handleConfirmAction = async (notes?: string) => {
+    if (!selectedRequest) return;
+
+    if (actionType === 'approve') {
+      await approveAdhesionRequest(selectedRequest.id, notes);
+    } else if (actionType === 'reject') {
+      await rejectAdhesionRequest(selectedRequest.id, notes);
+    }
+
+    handleCloseDialog();
     refetchAdhesionRequests();
   };
 
@@ -139,6 +171,8 @@ export function ClientAdhesionRequests() {
           <AdhesionRequestsTable 
             requests={pendingRequests}
             isLoading={isLoadingAdhesionRequests}
+            onApprove={handleApprove}
+            onReject={handleReject}
           />
         </TabsContent>
 
@@ -156,6 +190,16 @@ export function ClientAdhesionRequests() {
           />
         </TabsContent>
       </Tabs>
+
+      <AdhesionActionDialog
+        request={selectedRequest}
+        isOpen={!!selectedRequest && !!actionType}
+        action={actionType}
+        onClose={handleCloseDialog}
+        onConfirm={handleConfirmAction}
+        notes={notes}
+        onNotesChange={setNotes}
+      />
     </div>
   );
 }

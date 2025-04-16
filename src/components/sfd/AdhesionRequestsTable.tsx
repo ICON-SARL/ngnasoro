@@ -1,4 +1,3 @@
-
 import { 
   Table,
   TableBody,
@@ -14,7 +13,9 @@ import {
   User,
   Mail,
   Phone,
-  Calendar
+  Calendar,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { formatDate } from '@/utils/formatters';
 import { ClientAdhesionRequest } from '@/types/adhesionTypes';
@@ -23,9 +24,16 @@ import { Loader } from '@/components/ui/loader';
 interface AdhesionRequestsTableProps {
   requests: ClientAdhesionRequest[];
   isLoading: boolean;
+  onApprove?: (request: ClientAdhesionRequest) => void;
+  onReject?: (request: ClientAdhesionRequest) => void;
 }
 
-export function AdhesionRequestsTable({ requests, isLoading }: AdhesionRequestsTableProps) {
+export function AdhesionRequestsTable({ 
+  requests, 
+  isLoading,
+  onApprove,
+  onReject
+}: AdhesionRequestsTableProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-48">
@@ -95,10 +103,30 @@ export function AdhesionRequestsTable({ requests, isLoading }: AdhesionRequestsT
             </TableCell>
             <TableCell>{getStatusBadge(request.status)}</TableCell>
             <TableCell className="text-right">
-              <Button variant="ghost" size="sm">
-                <Eye className="h-4 w-4 mr-1" />
-                Détails
-              </Button>
+              <div className="flex justify-end gap-2">
+                {request.status === 'pending' && onApprove && onReject && (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-green-600 border-green-200 hover:bg-green-50"
+                      onClick={() => onApprove(request)}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Approuver
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                      onClick={() => onReject(request)}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Rejeter
+                    </Button>
+                  </>
+                )}
+              </div>
             </TableCell>
           </TableRow>
         ))}

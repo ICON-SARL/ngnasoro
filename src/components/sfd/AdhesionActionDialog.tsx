@@ -1,0 +1,96 @@
+
+import React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { CheckCircle, XCircle } from 'lucide-react';
+import { ClientAdhesionRequest } from '@/types/adhesionTypes';
+
+interface AdhesionActionDialogProps {
+  request: ClientAdhesionRequest | null;
+  isOpen: boolean;
+  action: 'approve' | 'reject' | null;
+  onClose: () => void;
+  onConfirm: (notes?: string) => void;
+  notes: string;
+  onNotesChange: (value: string) => void;
+}
+
+export function AdhesionActionDialog({
+  request,
+  isOpen,
+  action,
+  onClose,
+  onConfirm,
+  notes,
+  onNotesChange,
+}: AdhesionActionDialogProps) {
+  if (!request || !action) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {action === 'approve' ? 'Approuver' : 'Rejeter'} la demande d'adhésion
+          </DialogTitle>
+          <DialogDescription>
+            {action === 'approve'
+              ? 'Êtes-vous sûr de vouloir approuver cette demande ? Un compte client sera créé automatiquement.'
+              : 'Êtes-vous sûr de vouloir rejeter cette demande ?'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="py-3">
+          <div className="space-y-4">
+            <div>
+              <p className="font-medium">Client</p>
+              <p className="text-sm text-gray-500">{request.full_name}</p>
+            </div>
+            <div>
+              <label htmlFor="notes" className="text-sm font-medium">
+                Notes (optionnel)
+              </label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => onNotesChange(e.target.value)}
+                placeholder="Ajouter des notes ou commentaires..."
+                className="mt-1"
+              />
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button
+            onClick={() => onConfirm(notes)}
+            className={action === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+          >
+            {action === 'approve' ? (
+              <>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Approuver
+              </>
+            ) : (
+              <>
+                <XCircle className="h-4 w-4 mr-2" />
+                Rejeter
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
