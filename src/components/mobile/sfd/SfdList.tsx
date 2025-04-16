@@ -28,16 +28,22 @@ const SfdList: React.FC<SfdListProps> = ({
   return (
     <div className="space-y-3">
       {sfds.map(sfd => {
+        // Vérifier si une demande est en cours pour cette SFD spécifique
         const isPending = existingRequests.some(req => 
-          req.sfd_id === sfd.id && req.status === 'pending'
+          req.sfd_id === sfd.id && (req.status === 'pending' || req.status === 'pending_validation')
         );
         
         return (
           <Card key={sfd.id} className="overflow-hidden">
             <SfdListItem
               sfd={sfd}
-              isPending={isPending || isSubmitting}
-              onClick={() => onSelectSfd && onSelectSfd(sfd.id)}
+              isPending={isPending || (isSubmitting && isPending)}
+              onClick={() => {
+                console.log(`Clicking on SFD: ${sfd.id}, isPending: ${isPending}`);
+                if (!isPending && onSelectSfd) {
+                  onSelectSfd(sfd.id);
+                }
+              }}
             />
           </Card>
         );

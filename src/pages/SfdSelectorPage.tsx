@@ -59,7 +59,7 @@ const SfdSelectorPage = () => {
         console.log(`Loaded ${sfdsData.length} SFDs from Edge function`);
         setSfds(sfdsData);
         
-        // 2. Récupérer les demandes existantes (adhesion requests plutôt que sfd_clients)
+        // 2. Récupérer les demandes existantes
         console.log('Fetching existing client adhesion requests');
         const { data: existingReqs, error: requestsError } = await supabase
           .from('client_adhesion_requests')
@@ -68,6 +68,7 @@ const SfdSelectorPage = () => {
           
         if (requestsError) throw requestsError;
         
+        console.log('Existing adhesion requests:', existingReqs);
         setExistingRequests(existingReqs || []);
         console.log(`Found ${existingReqs?.length || 0} existing client adhesion requests`);
       } catch (err) {
@@ -91,25 +92,29 @@ const SfdSelectorPage = () => {
       return;
     }
 
-    // Vérifier si l'utilisateur a déjà une demande pour cette SFD
-    const existingRequest = existingRequests.find(req => req.sfd_id === sfdId);
-    if (existingRequest) {
-      if (existingRequest.status === 'approved') {
-        toast({
-          title: "Information",
-          description: "Vous êtes déjà client de cette SFD",
-        });
-      } else {
+    try {
+      // Vérifier si une demande existe déjà pour cette SFD
+      const existingRequest = existingRequests.find(req => 
+        req.sfd_id === sfdId && (req.status === 'pending' || req.status === 'pending_validation')
+      );
+      
+      if (existingRequest) {
+        console.log('Existing request found:', existingRequest);
         toast({
           title: "Information",
           description: "Vous avez déjà une demande en cours pour cette SFD",
         });
+        return;
       }
-      return;
+      
+      console.log(`Redirecting to adhesion page for SFD: ${sfdId}`);
+      // Rediriger vers la page d'adhésion SFD
+      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
+      
+    } catch (err) {
+      console.error('Error handling join request:', err);
+      handleError(err);
     }
-
-    // Rediriger vers la page d'adhésion SFD
-    navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
   };
 
   return (
