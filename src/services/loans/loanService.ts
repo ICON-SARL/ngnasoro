@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Loan, CreateLoanInput } from '@/types/sfdClients';
 import { calculateLoanDetails } from './loanCalculations';
@@ -141,13 +140,23 @@ export const disburseLoan = async (loanId: string, disburserId: string): Promise
  */
 export const getSfdLoans = async (sfdId: string): Promise<Loan[]> => {
   try {
+    console.log('Fetching loans for SFD ID:', sfdId);
+    
+    if (!sfdId) {
+      console.warn('No SFD ID provided to getSfdLoans');
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from('sfd_loans')
       .select('*, sfd_clients(full_name)')
       .eq('sfd_id', sfdId)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error in getSfdLoans:', error);
+      throw error;
+    }
 
     // Format the response to include client_name
     return data.map(loan => ({
@@ -156,7 +165,7 @@ export const getSfdLoans = async (sfdId: string): Promise<Loan[]> => {
     }));
   } catch (error) {
     console.error('Error fetching SFD loans:', error);
-    throw error;
+    return []; // Return empty array instead of throwing error
   }
 };
 

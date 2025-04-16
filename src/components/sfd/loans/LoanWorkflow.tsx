@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,6 +18,7 @@ export const LoanWorkflow = () => {
   const [isAddingLoan, setIsAddingLoan] = useState(false);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { user, activeSfdId } = useAuth();
@@ -31,10 +31,22 @@ export const LoanWorkflow = () => {
   const fetchLoans = async () => {
     try {
       setLoading(true);
-      const fetchedLoans = await loanService.getSfdLoans(activeSfdId || '');
+      setError(null);
+      
+      if (!activeSfdId) {
+        console.warn('No active SFD ID found in useAuth');
+        setError("Aucune SFD active n'a été trouvée. Veuillez sélectionner une SFD.");
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Fetching loans with SFD ID:', activeSfdId);
+      const fetchedLoans = await loanService.getSfdLoans(activeSfdId);
+      console.log('Fetched loans:', fetchedLoans);
       setLoans(fetchedLoans);
-    } catch (error) {
-      console.error('Error fetching loans:', error);
+    } catch (err: any) {
+      console.error('Error in fetchLoans:', err);
+      setError("Impossible de charger les prêts. Veuillez réessayer plus tard.");
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les prêts',
@@ -115,6 +127,13 @@ export const LoanWorkflow = () => {
           {loading ? (
             <div className="h-64 flex items-center justify-center">
               <LoadingSpinner />
+            </div>
+          ) : error ? (
+            <div className="h-64 flex items-center justify-center flex-col gap-4">
+              <div className="bg-red-100 text-red-800 p-4 rounded-md">
+                <p className="font-medium">{error}</p>
+              </div>
+              <Button onClick={fetchLoans}>Réessayer</Button>
             </div>
           ) : (
             <div className="border rounded-lg">

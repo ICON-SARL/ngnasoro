@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sfdLoanApi } from '@/utils/sfdLoanApi';
@@ -12,43 +13,54 @@ export function useSfdLoans() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['sfd-loans', user?.id],
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
+      console.log('Fetching SFD loans for user:', user.id);
 
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('sfd_clients')
-        .select('id')
-        .eq('user_id', user.id);
+      try {
+        const { data: clientsData, error: clientsError } = await supabase
+          .from('sfd_clients')
+          .select('id')
+          .eq('user_id', user.id);
 
-      if (clientsError) {
-        throw new Error('Failed to fetch client data');
+        if (clientsError) {
+          console.error('Error fetching client data:', clientsError);
+          throw new Error('Failed to fetch client data');
+        }
+
+        if (!clientsData?.length) {
+          console.log('No client records found for user');
+          return [];
+        }
+
+        const clientIds = clientsData.map(client => client.id);
+        console.log('Found client IDs:', clientIds);
+
+        const { data: loans, error: loansError } = await supabase
+          .from('sfd_loans')
+          .select(`
+            *,
+            sfds:sfd_id (
+              name,
+              logo_url
+            )
+          `)
+          .in('client_id', clientIds)
+          .order('created_at', { ascending: false });
+
+        if (loansError) {
+          console.error('Error fetching loans:', loansError);
+          throw loansError;
+        }
+
+        console.log('Successfully fetched loans:', loans?.length || 0);
+        return loans || [];
+      } catch (err) {
+        console.error('Error in useSfdLoans query:', err);
+        throw err;
       }
-
-      if (!clientsData?.length) {
-        return [];
-      }
-
-      const clientIds = clientsData.map(client => client.id);
-
-      const { data: loans, error: loansError } = await supabase
-        .from('sfd_loans')
-        .select(`
-          *,
-          sfds:sfd_id (
-            name,
-            logo_url
-          )
-        `)
-        .in('client_id', clientIds)
-        .order('created_at', { ascending: false });
-
-      if (loansError) {
-        throw loansError;
-      }
-
-      return loans || [];
     },
     meta: {
       errorMessage: "Impossible de charger vos prêts"
@@ -122,6 +134,7 @@ export function useSfdLoans() {
     data,
     isLoading,
     error,
+    refetch,
     createLoan,
     approveLoan,
     rejectLoan,
