@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Building, CreditCard, Users, FileText, Landmark } from 'lucide-react';
 
 export interface SfdNavigationItem {
@@ -35,3 +36,32 @@ export const sfdNavigationItems: SfdNavigationItem[] = [
     icon: <Landmark className="h-4 w-4 mr-2" />
   }
 ];
+
+export const SfdNavigation: React.FC = () => {
+  const location = useLocation();
+  
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+  
+  return (
+    <nav className="flex overflow-x-auto mb-6 pb-2">
+      <div className="flex space-x-1">
+        {sfdNavigationItems.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`flex items-center px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap ${
+              isActive(item.path) 
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            {item.icon}
+            <span className="ml-2">{item.label}</span>
+          </Link>
+        ))}
+      </div>
+    </nav>
+  );
+};

@@ -8,7 +8,7 @@ import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import SfdSetupPage from './pages/SfdSetupPage';
 import SfdSelectorPage from './pages/SfdSelectorPage';
-import SfdManagementPage from './pages/admin/SfdManagementPage';
+import SfdManagementPage from './pages/SfdManagementPage';
 import ProtectedRoute from './components/routes/ProtectedRoute';
 import PrivateLayout from './components/layouts/PrivateLayout';
 import LoansPage from './pages/LoansPage';

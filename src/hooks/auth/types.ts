@@ -40,10 +40,13 @@ export interface AuthContextProps {
 export interface AssociateSfdParams {
   userId: string;
   sfdId: string;
+  isDefault?: boolean;
+  makeDefault?: boolean;
 }
 
 // Result of associating a user with an SFD
 export interface AssociateSfdResult {
   success: boolean;
   error?: string;
+  userSfd?: any;
 }

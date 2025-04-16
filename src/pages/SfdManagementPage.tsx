@@ -4,7 +4,7 @@ import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { SfdManagement } from '@/components/admin/SfdManagement';
 import { Footer } from '@/components';
 
-export default function SfdManagementPage() {
+const SfdManagementPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <SuperAdminHeader />
@@ -25,4 +25,6 @@ export default function SfdManagementPage() {
       <Footer />
     </div>
   );
-}
+};
+
+export default SfdManagementPage;
