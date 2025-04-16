@@ -29,6 +29,7 @@ export function useClientAdhesions() {
     try {
       console.log(`Fetching adhesion requests for SFD: ${sfdId}`);
       
+      // Use edge function for better security and filtering
       const { data, error } = await supabase.functions.invoke('fetch-client-adhesions', {
         body: { userId: user.id, sfdId }
       });
@@ -36,6 +37,7 @@ export function useClientAdhesions() {
       if (error) {
         console.error('Error fetching adhesion requests from Edge Function:', error);
         
+        // Fallback to direct query if edge function fails
         console.log('Attempting direct DB fetch as fallback...');
         const { data: directData, error: directError } = await supabase
           .from('client_adhesion_requests')
@@ -60,7 +62,6 @@ export function useClientAdhesions() {
       }
       
       console.log(`Success: Found ${data?.length || 0} adhesion requests`);
-      console.log('Adhesion requests data:', data);
       return data as ClientAdhesionRequest[];
     } catch (error) {
       console.error('Error in fetchAdhesionRequests:', error);
@@ -119,19 +120,37 @@ export function useClientAdhesions() {
     mutationFn: async ({ adhesionId, notes }: { adhesionId: string; notes?: string }) => {
       if (!user?.id) throw new Error("Utilisateur non connecté");
 
-      const { data, error } = await supabase
-        .from('client_adhesion_requests')
-        .update({
-          status: 'approved',
-          processed_at: new Date().toISOString(),
-          processed_by: user.id,
-          notes: notes
-        })
-        .eq('id', adhesionId)
-        .select()
-        .single();
+      // Utiliser une fonction Edge sécurisée pour l'approbation
+      const { data, error } = await supabase.functions.invoke('approve-adhesion-request', {
+        body: { 
+          adhesionId,
+          notes,
+          adminId: user.id
+        }
+      });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      // Fallback à l'update direct si nécessaire
+      if (!data) {
+        const { data: updateData, error: updateError } = await supabase
+          .from('client_adhesion_requests')
+          .update({
+            status: 'approved',
+            processed_at: new Date().toISOString(),
+            processed_by: user.id,
+            notes: notes
+          })
+          .eq('id', adhesionId)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
+        return updateData as ClientAdhesionRequest;
+      }
+
       return data as ClientAdhesionRequest;
     },
     onSuccess: () => {
@@ -185,6 +204,7 @@ export function useClientAdhesions() {
     }
   });
 
+  // Correction importante: statut 'pending' au lieu de 'approved' pour la demande initiale
   const submitAdhesionRequestMutation = useMutation({
     mutationFn: async ({ sfdId, input }: { sfdId: string, input: AdhesionRequestInput }) => {
       if (!user) {
@@ -203,9 +223,8 @@ export function useClientAdhesions() {
           phone: input.phone,
           email: input.email,
           address: input.address,
-          status: 'pending',
-          processed_by: null,
-          processed_at: null
+          status: 'pending', // Statut initial: en attente
+          reference_number: `ADH-${Date.now().toString().slice(-6)}`
         })
         .select()
         .single();
@@ -217,7 +236,7 @@ export function useClientAdhesions() {
       queryClient.invalidateQueries({ queryKey: ['user-adhesion-requests'] });
       toast({
         title: "Demande envoyée",
-        description: "Votre demande d'adhésion a été envoyée avec succès"
+        description: "Votre demande d'adhésion a été envoyée avec succès. Elle sera examinée par un administrateur."
       });
     },
     onError: (error: any) => {

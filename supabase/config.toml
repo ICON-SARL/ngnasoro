@@ -1,29 +1,73 @@
 
+# A string used to distinguish different Supabase projects on the same host. You must set this
+# to a random string when running Supabase locally. This has no effect when running remotely.
 project_id = "xnqysvnychmsockivqhb"
 
 [api]
 enabled = true
 port = 54321
 schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
 
 [db]
 port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[realtime]
+enabled = true
+server_side_subscriptions = true
 
 [studio]
 enabled = true
 port = 54323
-api_url = "http://127.0.0.1"
+api_url = "http://localhost"
 
 [inbucket]
 enabled = true
 port = 54324
-
-[auth]
-enabled = true
-port = 54325
+smtp_port = 54325
+pop3_port = 54326
 
 [storage]
 enabled = true
+file_size_limit = "50MiB"
 
-[edge_functions]
+[auth]
 enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000", "https://www.example.com/success"]
+jwt_expiry = 28800
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = true
+
+[functions]
+enabled = true
+
+[functions.approve-adhesion-request]
+verify_jwt = true
+
+[functions.fetch-client-adhesions]
+verify_jwt = true
+
+[analytics]
+enabled = false
+port = 54327
+vector_port = 54328
+backend = "postgres"

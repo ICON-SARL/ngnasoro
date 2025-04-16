@@ -20,12 +20,13 @@ export const JoinSfdButton = ({ sfdId, sfdName }: { sfdId: string; sfdName: stri
           description: 'Vous devez être connecté pour envoyer une demande d\'adhésion',
           variant: 'destructive',
         });
+        navigate('/auth');
         return;
       }
 
       console.log(`Navigating to adhesion page for SFD: ${sfdId} (${sfdName})`);
       
-      // Naviguer directement vers la page d'adhésion SFD avec l'ID de la SFD en préservant le préfixe mobile-flow
+      // Naviguer vers la page d'adhésion SFD avec l'ID de la SFD
       navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
       
     } catch (err) {
@@ -39,7 +40,7 @@ export const JoinSfdButton = ({ sfdId, sfdName }: { sfdId: string; sfdName: stri
       onClick={handleJoinRequest}
       className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
     >
-      Demander l'adhésion <ArrowRight className="ml-2 h-4 w-4" />
+      Rejoindre <ArrowRight className="ml-2 h-4 w-4" />
     </Button>
   );
 };
