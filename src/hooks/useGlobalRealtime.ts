@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -65,22 +66,34 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
             console.log('Presence leave:', key);
           });
         
-        // Add broadcast handler
-        newChannel.subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await newChannel.send({
-              type: 'broadcast',
-              event: 'notification',
-              payload: {
-                type: 'default',
-                message: 'Channel subscribed successfully'
-              }
-            });
-            setIsConnected(true);
-          } else {
-            setIsConnected(false);
+        // Add broadcast handler for notifications
+        newChannel.on(
+          'broadcast',
+          { event: 'notification' },
+          (payload) => {
+            if (payload.payload && typeof payload.payload === 'object') {
+              handleNotification(payload.payload);
+            }
           }
-        });
+        );
+        
+        // Subscribe to the channel
+        const status = await newChannel.subscribe();
+        if (status === 'SUBSCRIBED') {
+          await newChannel.send({
+            type: 'broadcast',
+            event: 'notification',
+            payload: {
+              type: 'default',
+              message: 'Channel subscribed successfully'
+            }
+          });
+          setIsConnected(true);
+        } else {
+          setIsConnected(false);
+        }
+        
+        setChannel(newChannel);
         
         // Setup database change subscription if table subscriptions are provided
         if (tableSubscriptions && tableSubscriptions.length > 0) {
@@ -88,35 +101,37 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
           
           // Add a listener for each table subscription
           tableSubscriptions.forEach(sub => {
-            dbChannel.on('postgres_changes', {
-              event: sub.event,
-              schema: 'public',
-              table: sub.table,
-              filter: sub.filter || `user_id=eq.${user.id}`
-            }, (payload: RealtimePostgresChangesPayload<any>) => {
-              console.log(`Database change detected in ${sub.table}:`, payload);
-              
-              if (payload.new && typeof payload.new === 'object') {
-                const payloadData = payload.new as Record<string, any>;
-                if (!('user_id' in payloadData) || payloadData.user_id === user.id) {
-                  setEvents(prev => [...prev, {
-                    table: sub.table,
-                    event: payload.eventType as any,
-                    payload: payload.new
-                  }]);
-                  
-                  if (sub.table === 'notifications') {
-                    handleDatabaseNotification(payload.new);
+            dbChannel.on(
+              'postgres_changes',
+              {
+                event: sub.event,
+                schema: 'public',
+                table: sub.table,
+                filter: sub.filter || `user_id=eq.${user.id}`
+              },
+              (payload: RealtimePostgresChangesPayload<any>) => {
+                console.log(`Database change detected in ${sub.table}:`, payload);
+                
+                if (payload.new && typeof payload.new === 'object') {
+                  const payloadData = payload.new as Record<string, any>;
+                  if (!('user_id' in payloadData) || payloadData.user_id === user.id) {
+                    setEvents(prev => [...prev, {
+                      table: sub.table,
+                      event: payload.eventType as any,
+                      payload: payload.new
+                    }]);
+                    
+                    if (sub.table === 'notifications') {
+                      handleDatabaseNotification(payload.new);
+                    }
                   }
                 }
               }
-            });
+            );
           });
           
           dbChannel.subscribe();
         }
-        
-        setChannel(newChannel);
       } catch (error) {
         console.error('Error setting up realtime channel:', error);
       }
