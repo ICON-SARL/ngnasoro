@@ -79,7 +79,10 @@ serve(async (req) => {
         // Now fetch adhesion requests for this SFD
         const { data: requests, error: requestsError } = await supabase
           .from('client_adhesion_requests')
-          .select('*')
+          .select(`
+            *,
+            sfds:sfd_id(name)
+          `)
           .eq('sfd_id', anySfd.sfd_id)
           .order('created_at', { ascending: false });
           
@@ -88,10 +91,16 @@ serve(async (req) => {
           throw requestsError;
         }
         
-        console.log(`Found ${requests?.length || 0} client adhesion requests for SFD ${anySfd.sfd_id}`);
+        // Format the data to include sfd name
+        const formattedRequests = requests?.map(req => ({
+          ...req,
+          sfd_name: req.sfds?.name
+        })) || [];
+        
+        console.log(`Found ${formattedRequests.length || 0} client adhesion requests for SFD ${anySfd.sfd_id}`);
         
         return new Response(
-          JSON.stringify(requests || []),
+          JSON.stringify(formattedRequests),
           { 
             status: 200, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -104,7 +113,10 @@ serve(async (req) => {
       // Fetch adhesion requests for the default SFD
       const { data: requests, error: requestsError } = await supabase
         .from('client_adhesion_requests')
-        .select('*')
+        .select(`
+          *,
+          sfds:sfd_id(name)
+        `)
         .eq('sfd_id', userSfds.sfd_id)
         .order('created_at', { ascending: false });
         
@@ -113,10 +125,16 @@ serve(async (req) => {
         throw requestsError;
       }
       
-      console.log(`Found ${requests?.length || 0} client adhesion requests for default SFD ${userSfds.sfd_id}`);
+      // Format the data to include sfd name
+      const formattedRequests = requests?.map(req => ({
+        ...req,
+        sfd_name: req.sfds?.name
+      })) || [];
+      
+      console.log(`Found ${formattedRequests.length || 0} client adhesion requests for default SFD ${userSfds.sfd_id}`);
       
       return new Response(
-        JSON.stringify(requests || []),
+        JSON.stringify(formattedRequests),
         { 
           status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -128,7 +146,10 @@ serve(async (req) => {
       
       const { data: requests, error: requestsError } = await supabase
         .from('client_adhesion_requests')
-        .select('*')
+        .select(`
+          *,
+          sfds:sfd_id(name)
+        `)
         .eq('sfd_id', sfdId)
         .order('created_at', { ascending: false });
         
@@ -137,10 +158,16 @@ serve(async (req) => {
         throw requestsError;
       }
       
-      console.log(`Found ${requests?.length || 0} client adhesion requests for SFD ${sfdId}`);
+      // Format the data to include sfd name
+      const formattedRequests = requests?.map(req => ({
+        ...req,
+        sfd_name: req.sfds?.name
+      })) || [];
+      
+      console.log(`Found ${formattedRequests.length || 0} client adhesion requests for SFD ${sfdId}`);
       
       return new Response(
-        JSON.stringify(requests || []),
+        JSON.stringify(formattedRequests),
         { 
           status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

@@ -35,10 +35,12 @@ import {
   Phone, 
   Search,
   Clock,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { formatDate } from '@/utils/formatters';
 import { ClientAdhesionRequest } from '@/types/adhesionTypes';
+import { supabase } from '@/integrations/supabase/client';
 
 export function ClientAdhesionRequests() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,6 +49,7 @@ export function ClientAdhesionRequests() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [processingNotes, setProcessingNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const { activeSfdId } = useSfdDataAccess();
   const { 
@@ -62,12 +65,34 @@ export function ClientAdhesionRequests() {
     console.log('Adhesion Requests Component:', {
       activeSfdId,
       requestsCount: adhesionRequests.length,
+      requests: adhesionRequests,
       isLoading: isLoadingAdhesionRequests
     });
   }, [activeSfdId, adhesionRequests, isLoadingAdhesionRequests]);
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchAdhesionRequests();
+      
+      // Force direct fetch from Supabase pour vérifier
+      const { data, error } = await supabase
+        .from('client_adhesion_requests')
+        .select('*')
+        .eq('sfd_id', activeSfdId);
+      
+      if (error) throw error;
+      
+      console.log('Direct fetch from Supabase:', data);
+    } catch (err) {
+      console.error('Error refreshing:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const filteredRequests = adhesionRequests.filter(request => 
-    request.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (request.email && request.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (request.phone && request.phone.includes(searchTerm))
   );
@@ -130,8 +155,18 @@ export function ClientAdhesionRequests() {
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           <span>Demandes d'adhésion client</span>
-          <Button variant="outline" size="sm" onClick={() => refetchAdhesionRequests()} className="h-8">
-            <RefreshCw className="h-4 w-4 mr-1" />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh} 
+            className="h-8"
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-1" />
+            )}
             Actualiser
           </Button>
         </CardTitle>
@@ -348,7 +383,11 @@ interface RequestsTableProps {
 
 function RequestsTable({ requests, onViewRequest, isLoading, getStatusBadge }: RequestsTableProps) {
   if (isLoading) {
-    return <div className="text-center py-8">Chargement des demandes...</div>;
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-[#0D6A51]" />
+      </div>
+    );
   }
   
   if (requests.length === 0) {
