@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -69,7 +70,7 @@ const SfdAdhesionPage: React.FC = () => {
     
     fetchSfdInfo();
     refetchUserAdhesionRequests();
-  }, [sfdId, toast, refetchUserAdhesionRequests, navigate]);
+  }, [sfdId, toast, refetchUserAdhesionRequests, navigate, user]);
 
   if (!sfdId) {
     return (

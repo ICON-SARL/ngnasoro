@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useClientAdhesions, AdhesionRequestInput } from '@/hooks/useClientAdhesions';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { UserCircle2 } from 'lucide-react';
+import { UserCircle2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // Schema definition for adhesion request form
@@ -207,7 +207,12 @@ export function ClientAdhesionForm({ sfdId, onSuccess }: ClientAdhesionFormProps
           />
 
           <Button type="submit" className="w-full" disabled={isCreatingRequest}>
-            {isCreatingRequest ? 'Envoi en cours...' : 'Soumettre la demande d\'adhésion'}
+            {isCreatingRequest ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Envoi en cours...
+              </>
+            ) : 'Soumettre la demande d\'adhésion'}
           </Button>
         </form>
       </Form>
