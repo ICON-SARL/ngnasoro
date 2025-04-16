@@ -19,6 +19,13 @@ export type RealtimeEvent = {
   payload: any;
 };
 
+interface NotificationPayload {
+  title: string;
+  message?: string;
+  description?: string;
+  type?: 'default' | 'destructive';
+}
+
 export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -77,32 +84,36 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
           
           // Add a listener for each table subscription
           tableSubscriptions.forEach(sub => {
-            dbChannel.on('postgres_changes', { 
-              event: sub.event, 
-              schema: 'public',
-              table: sub.table,
-              filter: sub.filter || `user_id=eq.${user.id}`
-            }, (payload) => {
-              console.log(`Database change detected in ${sub.table}:`, payload);
-              
-              // Type guard to check if payload.new exists and has a user_id property
-              if (payload.new && typeof payload.new === 'object') {
-                // Check if the payload is related to the current user before adding to events
-                const payloadUserId = (payload.new as any).user_id;
-                if (payloadUserId === user.id) {
-                  setEvents(prev => [...prev, {
-                    table: sub.table,
-                    event: payload.eventType as any,
-                    payload: payload.new
-                  }]);
-                  
-                  // If notifications table updated, handle it specially
-                  if (sub.table === 'notifications') {
-                    handleDatabaseNotification(payload.new);
+            dbChannel.on(
+              'postgres_changes',
+              { 
+                event: sub.event, 
+                schema: 'public',
+                table: sub.table,
+                filter: sub.filter || `user_id=eq.${user.id}`
+              }, 
+              (payload) => {
+                console.log(`Database change detected in ${sub.table}:`, payload);
+                
+                // Type guard to check if payload.new exists and has a user_id property
+                if (payload.new && typeof payload.new === 'object') {
+                  const payloadData = payload.new as Record<string, any>;
+                  // Check if the payload is related to the current user before adding to events
+                  if ('user_id' in payloadData && payloadData.user_id === user.id) {
+                    setEvents(prev => [...prev, {
+                      table: sub.table,
+                      event: payload.eventType as any,
+                      payload: payload.new
+                    }]);
+                    
+                    // If notifications table updated, handle it specially
+                    if (sub.table === 'notifications') {
+                      handleDatabaseNotification(payload.new);
+                    }
                   }
                 }
               }
-            });
+            );
           });
           
           dbChannel.subscribe();
@@ -125,13 +136,13 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
   }, [user, tableSubscriptions]);
   
   // Handle notifications received via broadcast
-  const handleNotification = useCallback((payload: any) => {
+  const handleNotification = useCallback((payload: NotificationPayload) => {
     const { title, message, type } = payload;
-    if (title && message) {
+    if (title && (message || payload.description)) {
       toast({
         title,
-        description: message,
-        variant: type === 'error' ? 'destructive' : 'default'
+        description: message || payload.description,
+        variant: type || 'default'
       });
     }
   }, [toast]);
@@ -142,7 +153,7 @@ export function useGlobalRealtime(tableSubscriptions?: TableSubscription[]) {
       toast({
         title: notification.title,
         description: notification.message || notification.description,
-        variant: notification.type === 'error' ? 'destructive' : 'default'
+        variant: (notification.type === 'error' ? 'destructive' : 'default')
       });
     }
   }, [toast]);
