@@ -6,7 +6,7 @@ import { ClientAdhesionRequest } from '@/types/adhesionTypes';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
-// Update the interface definition to make properties consistent
+// Define the type for the form values based on the schema
 export interface AdhesionRequestInput {
   full_name: string;
   profession: string;
