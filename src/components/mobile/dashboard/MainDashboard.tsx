@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ArrowUpDown, Wallet, Menu } from 'lucide-react';
+import { ArrowRight, ArrowUpDown, Wallet, Menu } from 'lucide-react'; // Added Menu import
 import { Account } from '@/types/transactions';
 import { Transaction } from '@/types/transactions';
 import TransactionList from '../TransactionList';
