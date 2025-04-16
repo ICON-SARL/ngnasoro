@@ -1,19 +1,89 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Wallet, ArrowUpDown } from 'lucide-react';
+import { ArrowLeft, Wallet, ArrowUpDown, RefreshCw } from 'lucide-react';
 import MobileMoneyModal from '../loan/MobileMoneyModal';
 import { Dialog } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+import { useTransactions } from '@/hooks/transactions';
 
 const FundsManagementView = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const { getActiveSfdData } = useSfdDataAccess();
+  const [balance, setBalance] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  
+  // Get transactions functionality from our hooks
+  const { getBalance, fetchTransactions, transactions } = useTransactions(
+    userId,
+    activeSfdId
+  );
+
+  // Fetch active SFD data and user on mount
+  useEffect(() => {
+    const loadSfdData = async () => {
+      try {
+        const sfdData = await getActiveSfdData();
+        if (sfdData) {
+          setActiveSfdId(sfdData.id);
+          setUserId(sfdData.userId || null);
+        }
+      } catch (error) {
+        console.error("Error loading SFD data:", error);
+      }
+    };
+    
+    loadSfdData();
+  }, [getActiveSfdData]);
+
+  // Fetch balance when sfdId and userId are available
+  useEffect(() => {
+    if (activeSfdId && userId) {
+      fetchBalanceData();
+    }
+  }, [activeSfdId, userId]);
+
+  const fetchBalanceData = async () => {
+    if (!activeSfdId || !userId) return;
+    
+    setIsLoading(true);
+    try {
+      // Get balance from our transactions hook
+      const currentBalance = await getBalance();
+      setBalance(currentBalance);
+      
+      // Also fetch transactions to ensure we have the latest data
+      await fetchTransactions();
+    } catch (error) {
+      console.error("Error fetching balance:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer votre solde. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleBack = () => {
     navigate('/mobile-flow/main');
+  };
+
+  const handleRefresh = () => {
+    fetchBalanceData();
+    toast({
+      title: "Actualisation",
+      description: "Actualisation des données en cours...",
+    });
   };
 
   return (
@@ -35,8 +105,19 @@ const FundsManagementView = () => {
           <CardContent className="p-4">
             <div className="flex justify-between items-center mb-1">
               <span className="text-sm opacity-90">Solde disponible</span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleRefresh}
+                disabled={isLoading}
+                className="h-6 w-6 text-white hover:bg-white/10"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
-            <div className="text-2xl font-bold mb-4">25,000 FCFA</div>
+            <div className="text-2xl font-bold mb-4">
+              {isLoading ? '...' : `${balance.toLocaleString('fr-FR')} FCFA`}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -75,18 +156,51 @@ const FundsManagementView = () => {
             </div>
           </CardContent>
         </Card>
+        
+        {transactions && transactions.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">Transactions récentes</h2>
+            <Card className="border">
+              <CardContent className="p-4">
+                <ul className="space-y-3">
+                  {transactions.slice(0, 3).map((tx) => (
+                    <li key={tx.id} className="flex justify-between items-center border-b pb-2 last:border-0">
+                      <div>
+                        <p className="font-medium">{tx.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(tx.date).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className={`font-semibold ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString('fr-FR')} FCFA
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
 
       <Dialog open={showDepositModal} onOpenChange={setShowDepositModal}>
         <MobileMoneyModal 
-          onClose={() => setShowDepositModal(false)}
+          onClose={() => {
+            setShowDepositModal(false);
+            // Refresh data after modal closes to show updated balance
+            fetchBalanceData();
+          }}
           isWithdrawal={false}
         />
       </Dialog>
 
       <Dialog open={showWithdrawModal} onOpenChange={setShowWithdrawModal}>
         <MobileMoneyModal 
-          onClose={() => setShowWithdrawModal(false)}
+          onClose={() => {
+            setShowWithdrawModal(false);
+            // Refresh data after modal closes to show updated balance
+            fetchBalanceData();
+          }}
           isWithdrawal={true}
         />
       </Dialog>
