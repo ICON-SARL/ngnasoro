@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import LoanPlansDisplay from '@/components/mobile/loan/LoanPlansDisplay';
+import { LoanPlansTabs } from '@/components/mobile/loan/sections/LoanPlansTabs';
 
 const MobileLoanPlansPage: React.FC = () => {
   const navigate = useNavigate();
@@ -29,13 +29,7 @@ const MobileLoanPlansPage: React.FC = () => {
         {/* Section pour les prêts standards */}
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-3">Prêts standards</h2>
-          <LoanPlansDisplay />
-        </div>
-        
-        {/* Section pour les prêts subventionnés */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-3">Prêts subventionnés</h2>
-          <LoanPlansDisplay subsidizedOnly={true} />
+          <LoanPlansTabs />
         </div>
       </div>
     </div>

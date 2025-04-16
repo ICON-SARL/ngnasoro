@@ -53,7 +53,6 @@ export function useSfdLoanPlans() {
     meta: {
       errorMessage: "Impossible de charger les plans de prêt"
     },
-    // Ensure we refetch when the active SFD changes
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes - Changed from cacheTime to gcTime
   });

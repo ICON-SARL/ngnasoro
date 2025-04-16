@@ -1,12 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
 import { BadgePercent } from 'lucide-react';
 import { LoanPlanCard } from './LoanPlanCard';
-import { LoanPlan } from '@/types/sfdClients';
+import { useSfdLoanPlans } from '@/hooks/useSfdLoanPlans';
 
 interface LoanPlansDisplayProps {
   subsidizedOnly?: boolean;
@@ -14,51 +12,10 @@ interface LoanPlansDisplayProps {
 }
 
 export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: LoanPlansDisplayProps) {
-  const [loanPlans, setLoanPlans] = useState<LoanPlan[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
-  
-  useEffect(() => {
-    const fetchLoanPlans = async () => {
-      setIsLoading(true);
-      try {
-        // Determine whether to filter by sfd_id
-        let query = supabase
-          .from('sfd_loan_plans')
-          .select(`
-            *,
-            sfds:sfd_id (
-              name,
-              logo_url
-            )
-          `)
-          .eq('is_active', true)
-          .eq('is_published', true);
-          
-        // Filter by SFD if specified
-        if (sfdId) {
-          query = query.eq('sfd_id', sfdId);
-        }
-        
-        const { data, error } = await query.order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        // Cast the data to the correct type
-        const typedData = data as unknown as LoanPlan[];
-        setLoanPlans(typedData || []);
-      } catch (error) {
-        console.error('Erreur lors du chargement des plans de prêt:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchLoanPlans();
-  }, [user, sfdId]);
+  const { data: loanPlans, isLoading } = useSfdLoanPlans();
   
   // Filter plans based on whether they're subsidized
-  const filteredPlans = loanPlans.filter(plan => {
+  const filteredPlans = loanPlans?.filter(plan => {
     if (subsidizedOnly) {
       return plan.name.toLowerCase().includes('subvention') || 
              plan.description?.toLowerCase().includes('subvention');
@@ -66,7 +23,7 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
       return !plan.name.toLowerCase().includes('subvention') && 
              !plan.description?.toLowerCase().includes('subvention');
     }
-  });
+  }) || [];
 
   return (
     <div className="space-y-4">
