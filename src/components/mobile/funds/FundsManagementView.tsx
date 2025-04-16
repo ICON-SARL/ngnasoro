@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { useTransactions } from '@/hooks/transactions';
+import { useAuth } from '@/hooks/useAuth';
 
 const FundsManagementView = () => {
   const navigate = useNavigate();
@@ -19,22 +19,19 @@ const FundsManagementView = () => {
   const [balance, setBalance] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  
-  // Get transactions functionality from our hooks
+  const { user } = useAuth();
+
   const { getBalance, fetchTransactions, transactions } = useTransactions(
-    userId,
+    user?.id || null,
     activeSfdId
   );
 
-  // Fetch active SFD data and user on mount
   useEffect(() => {
     const loadSfdData = async () => {
       try {
         const sfdData = await getActiveSfdData();
         if (sfdData) {
           setActiveSfdId(sfdData.id);
-          setUserId(sfdData.userId || null);
         }
       } catch (error) {
         console.error("Error loading SFD data:", error);
@@ -44,23 +41,20 @@ const FundsManagementView = () => {
     loadSfdData();
   }, [getActiveSfdData]);
 
-  // Fetch balance when sfdId and userId are available
   useEffect(() => {
-    if (activeSfdId && userId) {
+    if (activeSfdId && user?.id) {
       fetchBalanceData();
     }
-  }, [activeSfdId, userId]);
+  }, [activeSfdId, user?.id]);
 
   const fetchBalanceData = async () => {
-    if (!activeSfdId || !userId) return;
+    if (!activeSfdId || !user?.id) return;
     
     setIsLoading(true);
     try {
-      // Get balance from our transactions hook
       const currentBalance = await getBalance();
       setBalance(currentBalance);
       
-      // Also fetch transactions to ensure we have the latest data
       await fetchTransactions();
     } catch (error) {
       console.error("Error fetching balance:", error);
@@ -187,7 +181,6 @@ const FundsManagementView = () => {
         <MobileMoneyModal 
           onClose={() => {
             setShowDepositModal(false);
-            // Refresh data after modal closes to show updated balance
             fetchBalanceData();
           }}
           isWithdrawal={false}
@@ -198,7 +191,6 @@ const FundsManagementView = () => {
         <MobileMoneyModal 
           onClose={() => {
             setShowWithdrawModal(false);
-            // Refresh data after modal closes to show updated balance
             fetchBalanceData();
           }}
           isWithdrawal={true}
