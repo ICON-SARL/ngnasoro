@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Building } from 'lucide-react';
@@ -5,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader } from '@/components/ui/loader';
+import { useToast } from '@/hooks/use-toast';
 
 interface SfdListPopupProps {
   isOpen: boolean;
@@ -23,6 +25,7 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchActiveSfds = async () => {
@@ -32,26 +35,52 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
       setError(null);
 
       try {
-        const { data, error } = await supabase
+        console.log('Fetching active SFDs for popup display');
+        
+        // Option 1: Direct database query
+        const { data: directData, error: directError } = await supabase
           .from('sfds')
           .select('id, name, region, logo_url')
           .eq('status', 'active')
           .order('name');
-
-        if (error) throw error;
-        setSfds(data || []);
+          
+        if (directError) throw directError;
+        
+        if (directData && directData.length > 0) {
+          setSfds(directData);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Option 2: Edge function as fallback
+        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('fetch-sfds');
+        
+        if (edgeError) throw edgeError;
+        
+        if (Array.isArray(edgeData)) {
+          console.log(`Fetched ${edgeData.length} active SFDs from Edge function`);
+          setSfds(edgeData);
+        } else {
+          throw new Error('Aucune SFD active trouvée');
+        }
       } catch (err: any) {
         console.error('Erreur lors du chargement des SFDs:', err);
         setError('Impossible de charger la liste des SFDs. Veuillez réessayer plus tard.');
+        toast({
+          title: "Erreur de chargement",
+          description: "Impossible de récupérer les SFDs disponibles",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchActiveSfds();
-  }, [isOpen]);
+  }, [isOpen, toast]);
 
   const handleSelectSfd = (sfdId: string) => {
+    // Rediriger directement vers la page de sélection SFD avec le paramètre
     navigate('/sfd-selector', { state: { selectedSfdId: sfdId } });
     onClose();
   };

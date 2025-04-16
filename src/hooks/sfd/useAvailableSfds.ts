@@ -76,10 +76,7 @@ export function useAvailableSfds(userId?: string) {
       // Cast the response to the correct type
       setPendingRequests(pendingRequestsWithNames || []);
       
-      // Get IDs of SFDs that user has pending requests for
-      const pendingSfdIds = pendingRequestsWithNames?.map(request => request.sfd_id) || [];
-      
-      // Pour ce problème spécifique, affichons toutes les SFDs actives
+      // Pour ce problème spécifique, affichons toutes les SFDs actives même si l'utilisateur a déjà des demandes en cours
       setAvailableSfds(allSfds || []);
       
     } catch (err: any) {
@@ -110,7 +107,10 @@ export function useAvailableSfds(userId?: string) {
       setIsLoading(true);
       
       // Check if user already has a pending request for this SFD
-      const existingRequest = pendingRequests.find(req => req.sfd_id === sfdId);
+      const existingRequest = pendingRequests.find(req => 
+        req.sfd_id === sfdId && ['pending', 'pending_validation'].includes(req.status)
+      );
+      
       if (existingRequest) {
         toast({
           title: 'Demande déjà envoyée',
@@ -119,38 +119,49 @@ export function useAvailableSfds(userId?: string) {
         return false;
       }
       
+      // Try to get user profile data first
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name, email, avatar_url')
+        .eq('id', userId)
+        .single();
+      
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error fetching user profile:', profileError);
+      }
+      
+      // Try to get auth user data as fallback
+      const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('Error fetching auth user:', userError);
+      }
+      
       // Create a client adhesion request entry
       const { data, error } = await supabase
         .from('client_adhesion_requests')
         .insert({
           user_id: userId,
           sfd_id: sfdId,
-          full_name: '', // Will be updated from user profile
+          full_name: profile?.full_name || authUser?.user_metadata?.name || '',
+          email: authUser?.email || '',
           phone: phoneNumber || null,
           status: 'pending',
+          reference_number: `ADH-${crypto.randomUUID().slice(0, 8)}`
         })
         .select();
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating adhesion request:', error);
+        throw error;
+      }
       
-      // Update the client with user profile data
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, avatar_url')
-        .eq('id', userId)
-        .single();
-        
-      if (profile) {
-        await supabase
-          .from('client_adhesion_requests')
-          .update({ 
-            full_name: profile.full_name || 'Client' 
-          })
-          .eq('id', data[0].id);
+      if (!data || data.length === 0) {
+        throw new Error('Aucune donnée retournée après création de la demande');
       }
       
       // Refresh the pending requests list
-      fetchAvailableSfds();
+      await fetchAvailableSfds();
       
       toast({
         title: 'Demande envoyée',

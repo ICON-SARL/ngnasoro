@@ -93,6 +93,8 @@ const SfdSelectorPage = () => {
     }
 
     try {
+      setIsSubmitting(true);
+      
       // Vérifier si une demande existe déjà pour cette SFD
       const existingRequest = existingRequests.find(req => 
         req.sfd_id === sfdId && (req.status === 'pending' || req.status === 'pending_validation')
@@ -104,6 +106,7 @@ const SfdSelectorPage = () => {
           title: "Information",
           description: "Vous avez déjà une demande en cours pour cette SFD",
         });
+        setIsSubmitting(false);
         return;
       }
       
@@ -114,6 +117,7 @@ const SfdSelectorPage = () => {
     } catch (err) {
       console.error('Error handling join request:', err);
       handleError(err);
+      setIsSubmitting(false);
     }
   };
 
