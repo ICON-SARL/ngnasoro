@@ -37,6 +37,7 @@ const SfdList: React.FC<SfdListProps> = ({
 
   // Fonction pour gérer le clic sur le bouton Réessayer
   const handleRetryClick = async (sfd: SfdProps, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation(); // Empêcher la propagation du clic
     
     if (!user) {
@@ -48,9 +49,9 @@ const SfdList: React.FC<SfdListProps> = ({
       return;
     }
     
+    console.log(`Réessayer pour SFD: ${sfd.id}`);
+    
     try {
-      console.log(`Réessayer pour SFD: ${sfd.id}`);
-      
       // Si une fonction de rappel pour réessayer est fournie, l'utiliser
       if (onRetry) {
         onRetry(sfd.id);
@@ -84,6 +85,7 @@ const SfdList: React.FC<SfdListProps> = ({
 
   // Fonction pour gérer le clic sur le bouton Rejoindre
   const handleJoinClick = async (sfd: SfdProps, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation(); // Empêcher la propagation du clic
     
     if (!user) {
@@ -109,7 +111,7 @@ const SfdList: React.FC<SfdListProps> = ({
         return;
       }
       
-      console.log(`Clicking on SFD: ${sfd.id}, isPending: ${isPending}`);
+      console.log(`Joining SFD: ${sfd.id}, isPending: ${isPending}`);
       
       if (onSelectSfd) {
         onSelectSfd(sfd.id);

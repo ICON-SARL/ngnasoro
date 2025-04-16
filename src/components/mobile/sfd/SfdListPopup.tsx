@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, ChevronRight, Building, FileCheck } from 'lucide-react';
+import { ChevronRight, Building, FileCheck } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +28,7 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userAdhesionRequests } = useClientAdhesions();
+  const { userAdhesionRequests, refetchUserAdhesionRequests } = useClientAdhesions();
 
   useEffect(() => {
     const fetchActiveSfds = async () => {
@@ -71,7 +71,10 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
     };
 
     fetchActiveSfds();
-  }, [isOpen, user?.id]);
+    if (isOpen) {
+      refetchUserAdhesionRequests();
+    }
+  }, [isOpen, user?.id, refetchUserAdhesionRequests]);
 
   const sortPrioritySfds = (sfds: Sfd[]): Sfd[] => {
     const prioritySfdNames = ["rmcr", "meref", "premier sfd"];
@@ -94,9 +97,80 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
     onClose();
   };
   
+  const handleRetry = async (sfdId: string) => {
+    if (!user) {
+      return;
+    }
+    
+    try {
+      console.log("Handling retry for SFD:", sfdId);
+      
+      // Supprimer l'ancienne demande rejetée
+      const { error: deleteError } = await supabase
+        .from('client_adhesion_requests')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('sfd_id', sfdId)
+        .eq('status', 'rejected');
+        
+      if (deleteError) {
+        console.error('Erreur lors de la suppression de l\'ancienne demande:', deleteError);
+        throw deleteError;
+      }
+      
+      console.log('Demande rejetée supprimée avec succès');
+      
+      // Rediriger vers la page d'adhésion
+      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
+      onClose();
+    } catch (err) {
+      console.error('Error handling retry:', err);
+    }
+  };
+  
   const getSfdRequestStatus = (sfdId: string) => {
     const request = userAdhesionRequests.find(r => r.sfd_id === sfdId);
     return request?.status || null;
+  };
+
+  const renderButton = (sfd: Sfd) => {
+    const status = getSfdRequestStatus(sfd.id);
+    
+    if (status === 'pending' || status === 'pending_validation') {
+      return (
+        <Badge variant="outline" className="bg-amber-100 border-amber-200 text-amber-700 px-3 py-1">
+          En attente
+        </Badge>
+      );
+    } else if (status === 'rejected') {
+      return (
+        <Button 
+          variant="destructive" 
+          size="sm"
+          className="bg-red-100 hover:bg-red-200 text-red-800 border-red-200"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRetry(sfd.id);
+          }}
+        >
+          Réessayer
+        </Button>
+      );
+    } else {
+      return (
+        <Button 
+          variant="default" 
+          size="sm"
+          className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleSelectSfd(sfd.id);
+          }}
+        >
+          Rejoindre
+        </Button>
+      );
+    }
   };
 
   return (
@@ -149,42 +223,41 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
                 return (
                   <div 
                     key={sfd.id}
-                    className="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => handleSelectSfd(sfd.id)}
+                    className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => status !== 'pending' && status !== 'pending_validation' && handleSelectSfd(sfd.id)}
                   >
-                    <div className="h-12 w-12 flex-shrink-0 bg-gray-100 rounded-md flex items-center justify-center mr-3 overflow-hidden">
-                      {sfd.logo_url ? (
-                        <img 
-                          src={sfd.logo_url} 
-                          alt={sfd.name} 
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-lg font-bold text-gray-500">
-                          {sfd.name.charAt(0)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <h3 className="font-medium text-gray-800">{sfd.name}</h3>
-                        {status === 'pending' && (
-                          <Badge variant="outline" className="bg-amber-100 border-amber-200 text-amber-700 text-xs">
-                            En attente
-                          </Badge>
-                        )}
-                        {status === 'approved' && (
-                          <Badge variant="outline" className="bg-green-100 border-green-200 text-green-700 text-xs">
-                            <FileCheck className="h-3 w-3 mr-1" />
-                            Approuvée
-                          </Badge>
+                    <div className="flex items-center flex-1">
+                      <div className="h-12 w-12 flex-shrink-0 bg-gray-100 rounded-md flex items-center justify-center mr-3 overflow-hidden">
+                        {sfd.logo_url ? (
+                          <img 
+                            src={sfd.logo_url} 
+                            alt={sfd.name} 
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <Building className="h-6 w-6 text-gray-500" />
                         )}
                       </div>
-                      {sfd.region && (
-                        <p className="text-sm text-gray-500">{sfd.region}</p>
-                      )}
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-medium text-gray-800">{sfd.name}</h3>
+                          {status === 'approved' && (
+                            <Badge variant="outline" className="bg-green-100 border-green-200 text-green-700 text-xs">
+                              <FileCheck className="h-3 w-3 mr-1" />
+                              Approuvée
+                            </Badge>
+                          )}
+                        </div>
+                        {sfd.region && (
+                          <p className="text-sm text-gray-500">{sfd.region}</p>
+                        )}
+                      </div>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                    
+                    <div className="flex items-center space-x-2">
+                      {renderButton(sfd)}
+                      <ChevronRight className="h-5 w-5 text-gray-400" />
+                    </div>
                   </div>
                 );
               })}

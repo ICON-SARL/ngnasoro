@@ -148,7 +148,7 @@ const SfdSelectorPage = () => {
         throw deleteError;
       }
       
-      console.log('Rejected request successfully deleted, refreshing UI...');
+      console.log('Rejected request successfully deleted');
       
       // Mettre à jour la liste des demandes existantes
       setExistingRequests(existingRequests.filter(req => !(req.sfd_id === sfdId && req.status === 'rejected')));
@@ -203,11 +203,11 @@ const SfdSelectorPage = () => {
           </div>
         ) : (
           <SfdList 
-            onSelectSfd={handleSendRequest}
-            onRetry={handleRetryRequest}
+            sfds={sfds}
             existingRequests={existingRequests}
             isSubmitting={isSubmitting}
-            sfds={sfds}
+            onSelectSfd={handleSendRequest}
+            onRetry={handleRetryRequest}
           />
         )}
       </main>
