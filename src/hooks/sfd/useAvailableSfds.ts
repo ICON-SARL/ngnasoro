@@ -69,7 +69,7 @@ export function useAvailableSfds(userId?: string) {
     fetchData();
   }, [userId, toast]);
 
-  // Updated to accept an optional phone number parameter
+  // Accept phone number as optional parameter
   const requestSfdAccess = async (sfdId: string, phoneNumber?: string) => {
     if (!userId) {
       toast({
@@ -81,9 +81,30 @@ export function useAvailableSfds(userId?: string) {
     }
     
     try {
-      // If we have a phone number, we can pass it to the server
       console.log(`Requesting access to SFD ${sfdId}${phoneNumber ? ` with phone ${phoneNumber}` : ''}`);
-      // Rediriger vers la page d'adhésion
+      
+      // Create the adhesion request in the database
+      const { data, error } = await supabase
+        .from('client_adhesion_requests')
+        .insert({
+          user_id: userId,
+          sfd_id: sfdId,
+          status: 'pending',
+          phone: phoneNumber || null
+        })
+        .select();
+        
+      if (error) {
+        console.error('Error creating adhesion request:', error);
+        throw error;
+      }
+      
+      toast({
+        title: 'Demande envoyée',
+        description: 'Votre demande d\'adhésion a été envoyée avec succès',
+      });
+      
+      // Return true to indicate success
       return true;
     } catch (error) {
       console.error('Error requesting SFD access:', error);

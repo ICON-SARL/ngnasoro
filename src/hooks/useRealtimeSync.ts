@@ -1,64 +1,64 @@
 
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
-interface RealtimeSyncConfig {
+interface RealtimeSyncProps {
   table: string;
-  onInsert?: (payload: any) => void;
-  onUpdate?: (payload: any) => void;
-  onDelete?: (payload: any) => void;
   filter?: string;
+  onInsert?: (newRecord: any) => void;
+  onUpdate?: (updatedRecord: any) => void;
+  onDelete?: (deletedRecord: any) => void;
 }
 
-export function useRealtimeSync(config: RealtimeSyncConfig) {
-  const { toast } = useToast();
-
+export function useRealtimeSync({
+  table,
+  filter,
+  onInsert,
+  onUpdate,
+  onDelete
+}: RealtimeSyncProps) {
   useEffect(() => {
-    console.log(`Setting up realtime sync for ${config.table}`);
-
+    // Build the channel topic with optional filter
+    let topic = `realtime:public:${table}`;
+    if (filter) {
+      topic += `:${filter}`;
+    }
+    
+    // Create the subscription
     const channel = supabase
-      .channel('db-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: config.table,
-          filter: config.filter
-        },
-        (payload) => {
-          console.log(`Realtime event received for ${config.table}:`, payload);
-
-          switch (payload.eventType) {
-            case 'INSERT':
-              config.onInsert?.(payload.new);
-              break;
-            case 'UPDATE':
-              config.onUpdate?.(payload.new);
-              break;
-            case 'DELETE':
-              config.onDelete?.(payload.old);
-              break;
-          }
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log(`Realtime subscription active for ${config.table}`);
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error(`Realtime subscription error for ${config.table}`);
-          toast({
-            title: "Erreur de synchronisation",
-            description: "La mise à jour en temps réel n'est pas disponible actuellement",
-            variant: "destructive"
-          });
-        }
-      });
-
+      .channel(topic)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: table,
+        filter: filter ? { filter } : undefined
+      }, (payload) => {
+        console.log(`New ${table} record inserted:`, payload.new);
+        if (onInsert) onInsert(payload.new);
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: table,
+        filter: filter ? { filter } : undefined
+      }, (payload) => {
+        console.log(`${table} record updated:`, payload.new);
+        if (onUpdate) onUpdate(payload.new);
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: table,
+        filter: filter ? { filter } : undefined
+      }, (payload) => {
+        console.log(`${table} record deleted:`, payload.old);
+        if (onDelete) onDelete(payload.old);
+      })
+      .subscribe();
+      
+    // Clean up the subscription when component unmounts
     return () => {
-      console.log(`Cleaning up realtime sync for ${config.table}`);
       supabase.removeChannel(channel);
     };
-  }, [config.table, config.filter]);
+  }, [table, filter, onInsert, onUpdate, onDelete]);
 }

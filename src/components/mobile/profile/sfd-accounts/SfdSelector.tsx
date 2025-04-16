@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAvailableSfds } from '@/hooks/sfd/useAvailableSfds';
@@ -59,7 +60,8 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ userId, onRequestSent }) => {
     setIsSending(true);
     
     try {
-      const success = await requestSfdAccess(selectedSfd);
+      // Pass phone number to the requestSfdAccess function
+      const success = await requestSfdAccess(selectedSfd, phoneNumber);
       if (success && onRequestSent) {
         onRequestSent();
         setSelectedSfd(null);
