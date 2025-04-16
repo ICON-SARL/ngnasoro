@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { ClientAdhesionRequest } from '@/types/adhesionTypes';
 
 interface AdhesionActionDialogProps {
@@ -21,6 +21,7 @@ interface AdhesionActionDialogProps {
   onConfirm: (notes?: string) => void;
   notes: string;
   onNotesChange: (value: string) => void;
+  isProcessing?: boolean;
 }
 
 export function AdhesionActionDialog({
@@ -31,11 +32,12 @@ export function AdhesionActionDialog({
   onConfirm,
   notes,
   onNotesChange,
+  isProcessing = false,
 }: AdhesionActionDialogProps) {
   if (!request || !action) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={isProcessing ? undefined : onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
@@ -64,20 +66,31 @@ export function AdhesionActionDialog({
                 onChange={(e) => onNotesChange(e.target.value)}
                 placeholder="Ajouter des notes ou commentaires..."
                 className="mt-1"
+                disabled={isProcessing}
               />
             </div>
           </div>
         </div>
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+            disabled={isProcessing}
+          >
             Annuler
           </Button>
           <Button
             onClick={() => onConfirm(notes)}
             className={action === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+            disabled={isProcessing}
           >
-            {action === 'approve' ? (
+            {isProcessing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Traitement en cours...
+              </>
+            ) : action === 'approve' ? (
               <>
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Approuver

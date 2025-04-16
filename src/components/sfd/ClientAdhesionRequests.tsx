@@ -28,6 +28,7 @@ export function ClientAdhesionRequests() {
   const [selectedRequest, setSelectedRequest] = useState<ClientAdhesionRequest | null>(null);
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
   const [notes, setNotes] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -45,6 +46,7 @@ export function ClientAdhesionRequests() {
     });
   }, [adhesionRequests, isLoadingAdhesionRequests]);
 
+  // Filtre les demandes en attente (status: 'pending' ou 'pending_validation')
   const pendingRequests = adhesionRequests.filter(r => 
     (r.status === 'pending' || r.status === 'pending_validation') &&
     (r.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -52,6 +54,7 @@ export function ClientAdhesionRequests() {
      r.phone?.includes(searchTerm))
   );
   
+  // Filtre les demandes approuvées
   const approvedRequests = adhesionRequests.filter(r => 
     r.status === 'approved' &&
     (r.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -59,6 +62,7 @@ export function ClientAdhesionRequests() {
      r.phone?.includes(searchTerm))
   );
   
+  // Filtre les demandes rejetées
   const rejectedRequests = adhesionRequests.filter(r => 
     r.status === 'rejected' &&
     (r.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,16 +88,24 @@ export function ClientAdhesionRequests() {
     setSelectedRequest(null);
     setActionType(null);
     setNotes('');
+    setIsProcessing(false);
   };
 
   const handleConfirmAction = async (notes?: string) => {
-    if (!selectedRequest || !user) return;
+    if (!selectedRequest || !user || isProcessing) return;
 
+    setIsProcessing(true);
     console.log(`Confirming ${actionType} action for request:`, selectedRequest.id);
     
     try {
       if (actionType === 'approve') {
         // Utiliser l'Edge Function pour l'approbation
+        console.log('Calling approve-adhesion-request with params:', { 
+          adhesionId: selectedRequest.id, 
+          userId: user.id,
+          notes 
+        });
+        
         const { data, error } = await supabase.functions.invoke('approve-adhesion-request', {
           body: { 
             adhesionId: selectedRequest.id, 
@@ -106,6 +118,8 @@ export function ClientAdhesionRequests() {
           console.error('Edge function error:', error);
           throw new Error(error.message || 'Erreur lors de l\'approbation');
         }
+        
+        console.log('Edge function response:', data);
         
         toast({
           title: 'Demande approuvée',
@@ -128,6 +142,9 @@ export function ClientAdhesionRequests() {
           description: 'La demande d\'adhésion a été rejetée',
         });
       }
+      
+      // Actualiser la liste après l'action
+      await refetchAdhesionRequests();
     } catch (error) {
       console.error('Error during confirmation action:', error);
       toast({
@@ -135,10 +152,10 @@ export function ClientAdhesionRequests() {
         description: error instanceof Error ? error.message : 'Une erreur s\'est produite',
         variant: 'destructive'
       });
+    } finally {
+      handleCloseDialog();
+      setIsProcessing(false);
     }
-
-    handleCloseDialog();
-    refetchAdhesionRequests();
   };
 
   const handleRefresh = () => {
@@ -253,6 +270,7 @@ export function ClientAdhesionRequests() {
         onConfirm={handleConfirmAction}
         notes={notes}
         onNotesChange={setNotes}
+        isProcessing={isProcessing}
       />
     </div>
   );

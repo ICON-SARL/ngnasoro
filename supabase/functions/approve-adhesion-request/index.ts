@@ -45,6 +45,12 @@ serve(async (req) => {
       console.error('Error fetching adhesion request:', getError);
       throw getError;
     }
+
+    if (!adhesion) {
+      throw new Error("Adhesion request not found");
+    }
+    
+    console.log(`Found adhesion request for user ${adhesion.user_id} to SFD ${adhesion.sfd_id}`);
     
     // Begin transaction by updating the status of the adhesion request
     // 1. Update adhesion request to 'approved'
@@ -54,7 +60,7 @@ serve(async (req) => {
         status: 'approved',
         processed_by: userId,
         processed_at: new Date().toISOString(),
-        notes: notes
+        notes: notes || ''
       })
       .eq('id', adhesionId);
     
@@ -63,22 +69,28 @@ serve(async (req) => {
       throw updateError;
     }
     
+    console.log('Successfully updated adhesion request status to approved');
+    
     // 2. Create an SFD client
+    const clientData = {
+      full_name: adhesion.full_name,
+      email: adhesion.email,
+      phone: adhesion.phone,
+      address: adhesion.address || '',
+      id_number: adhesion.id_number || '',
+      id_type: adhesion.id_type || 'ID',
+      sfd_id: adhesion.sfd_id,
+      user_id: adhesion.user_id,
+      status: 'validated',
+      validated_by: userId,
+      validated_at: new Date().toISOString()
+    };
+    
+    console.log('Creating SFD client with data:', clientData);
+    
     const { data: client, error: clientError } = await supabase
       .from('sfd_clients')
-      .insert({
-        full_name: adhesion.full_name,
-        email: adhesion.email,
-        phone: adhesion.phone,
-        address: adhesion.address,
-        id_number: adhesion.id_number,
-        id_type: adhesion.id_type,
-        sfd_id: adhesion.sfd_id,
-        user_id: adhesion.user_id,
-        status: 'validated',
-        validated_by: userId,
-        validated_at: new Date().toISOString()
-      })
+      .insert(clientData)
       .select()
       .single();
     
@@ -87,23 +99,32 @@ serve(async (req) => {
       throw clientError;
     }
     
+    console.log('Successfully created SFD client');
+    
     // 3. Create a client account
     if (adhesion.user_id) {
+      console.log(`Creating account for user ${adhesion.user_id} in SFD ${adhesion.sfd_id}`);
+      
       const { error: accountError } = await supabase
         .from('accounts')
         .insert({
           user_id: adhesion.user_id,
           balance: 0,
-          currency: 'FCFA'
+          currency: 'FCFA',
+          sfd_id: adhesion.sfd_id
         });
       
       if (accountError) {
         console.error('Error creating account:', accountError);
         throw accountError;
       }
+      
+      console.log('Successfully created account');
     }
     
     // 4. Create audit log entry
+    console.log('Creating audit log entry');
+    
     await supabase
       .from('audit_logs')
       .insert({
@@ -121,6 +142,8 @@ serve(async (req) => {
     
     // 5. Create notification for the client
     if (adhesion.user_id) {
+      console.log(`Creating notification for user ${adhesion.user_id}`);
+      
       await supabase
         .from('admin_notifications')
         .insert({
@@ -132,8 +155,10 @@ serve(async (req) => {
         });
     }
     
+    console.log('Adhesion request approval completed successfully');
+    
     return new Response(
-      JSON.stringify({ success: true, message: "Adhesion request approved successfully" }),
+      JSON.stringify({ success: true, message: "Adhesion request approved successfully", client }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
     
@@ -141,7 +166,7 @@ serve(async (req) => {
     console.error('Error processing adhesion approval:', error);
     
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: error.message || "Unknown error" }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
