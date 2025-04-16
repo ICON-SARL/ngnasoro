@@ -15,12 +15,19 @@ import { ClientAdhesionRequest } from '@/types/adhesionTypes';
 import { formatDate } from '@/utils/formatters';
 
 interface AdhesionRequestsTableProps {
-  requests: ClientAdhesionRequest[];
+  requests: Array<{
+    id: string;
+    full_name: string;
+    email: string | null;
+    phone: string | null;
+    created_at: string;
+    status: string;
+  }>;
   isLoading: boolean;
   hideActions?: boolean;
-  onApprove?: (request: ClientAdhesionRequest) => void;
-  onReject?: (request: ClientAdhesionRequest) => void;
-  onViewDetails?: (request: ClientAdhesionRequest) => void;
+  onApprove?: (request: any) => void;
+  onReject?: (request: any) => void;
+  onViewDetails?: (request: any) => void;
 }
 
 export function AdhesionRequestsTable({
@@ -50,18 +57,21 @@ export function AdhesionRequestsTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHeader>Nom complet</TableHeader>
-            <TableHeader>Email</TableHeader>
-            <TableHeader>Téléphone</TableHeader>
-            <TableHeader>Date de demande</TableHeader>
-            <TableHeader>Statut</TableHeader>
-            {!hideActions && <TableHeader className="text-right">Actions</TableHeader>}
+            <TableHead>Nom complet</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Téléphone</TableHead>
+            <TableHead>Date de demande</TableHead>
+            <TableHead>Statut</TableHead>
+            {!hideActions && <TableHead className="text-right">Actions</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {requests.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={hideActions ? 5 : 6} className="text-center py-8 text-muted-foreground">
+              <TableCell 
+                colSpan={hideActions ? 5 : 6} 
+                className="text-center py-8 text-muted-foreground"
+              >
                 Aucune demande d'adhésion à afficher
               </TableCell>
             </TableRow>
