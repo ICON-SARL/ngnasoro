@@ -70,7 +70,8 @@ export function useTransactionOperations(userId?: string, sfdId?: string) {
       
       // Generate receipt
       try {
-        await transactionService.getTransactionReceipt(result.id);
+        // Convert result.id to string to fix the type error
+        await transactionService.getTransactionReceipt(String(result.id));
       } catch (err) {
         console.warn('Receipt generation failed but transaction was successful:', err);
       }
@@ -144,7 +145,8 @@ export function useTransactionOperations(userId?: string, sfdId?: string) {
       
       // Generate receipt
       try {
-        await transactionService.getTransactionReceipt(result.id);
+        // Convert result.id to string to fix the type error
+        await transactionService.getTransactionReceipt(String(result.id));
       } catch (err) {
         console.warn('Receipt generation failed but transaction was successful:', err);
       }
@@ -205,7 +207,8 @@ export function useTransactionOperations(userId?: string, sfdId?: string) {
       
       // Generate receipt
       try {
-        await transactionService.getTransactionReceipt(result.id);
+        // Convert result.id to string to fix the type error
+        await transactionService.getTransactionReceipt(String(result.id));
       } catch (err) {
         console.warn('Receipt generation failed but transaction was successful:', err);
       }

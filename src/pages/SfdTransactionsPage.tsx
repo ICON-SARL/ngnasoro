@@ -155,7 +155,10 @@ const SfdTransactionsPage: React.FC = () => {
                           .map(transaction => (
                             <tr key={transaction.id} className="border-b hover:bg-gray-50">
                               <td className="py-3 px-4">
-                                {transaction.reference_id || transaction.id.substring(0, 8)}
+                                {transaction.reference_id || 
+                                  (typeof transaction.id === 'string' 
+                                    ? transaction.id.substring(0, 8) 
+                                    : String(transaction.id))}
                               </td>
                               <td className="py-3 px-4 capitalize">
                                 {transaction.type.replace('_', ' ')}
@@ -170,7 +173,7 @@ const SfdTransactionsPage: React.FC = () => {
                                 <span className={`px-2 py-1 rounded-full text-xs ${
                                   transaction.status === 'success' ? 'bg-green-100 text-green-800' :
                                   transaction.status === 'failed' ? 'bg-red-100 text-red-800' :
-                                  transaction.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                                  transaction.status === 'pending' ? 'bg-blue-100 text-blue-800' :
                                   transaction.status === 'reversed' ? 'bg-amber-100 text-amber-800' :
                                   'bg-gray-100 text-gray-800'
                                 }`}>
@@ -181,10 +184,10 @@ const SfdTransactionsPage: React.FC = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleGenerateReceipt(transaction.id)}
-                                  disabled={isGeneratingReceipt && selectedTransactionId === transaction.id}
+                                  onClick={() => handleGenerateReceipt(String(transaction.id))}
+                                  disabled={isGeneratingReceipt && selectedTransactionId === String(transaction.id)}
                                 >
-                                  {isGeneratingReceipt && selectedTransactionId === transaction.id ? (
+                                  {isGeneratingReceipt && selectedTransactionId === String(transaction.id) ? (
                                     <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2" />
                                   ) : (
                                     <FileText className="h-4 w-4 mr-2" />
