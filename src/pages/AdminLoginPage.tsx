@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LoginForm } from '@/components/auth/login/LoginForm';
+import LoginForm from '@/components/auth/login/LoginForm';
 import { Shield } from 'lucide-react';
 
 const AdminLoginPage = () => {
@@ -19,7 +19,7 @@ const AdminLoginPage = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <LoginForm userType="admin" />
+          <LoginForm adminMode={true} />
         </CardContent>
       </Card>
     </div>

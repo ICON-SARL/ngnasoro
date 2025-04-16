@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LoginForm } from '@/components/auth/login/LoginForm';
+import LoginForm from '@/components/auth/login/LoginForm';
 
 const ClientLoginPage = () => {
   return (

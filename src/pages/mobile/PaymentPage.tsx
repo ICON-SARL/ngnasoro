@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { MobileHeader } from '@/components/mobile/MobileHeader';
+import MobileHeader from '@/components/mobile/MobileHeader';
 
 const PaymentPage = () => {
   return (

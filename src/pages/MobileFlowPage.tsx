@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { MobileHeader } from '@/components/mobile/MobileHeader';
+import MobileHeader from '@/components/mobile/MobileHeader';
 import MobileMainPage from '@/components/mobile/MobileMainPage';
 import TransferPage from '@/pages/mobile/TransferPage';
 import MobileLoansPage from '@/pages/mobile/MobileLoansPage';
