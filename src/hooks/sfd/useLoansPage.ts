@@ -16,7 +16,7 @@ export function useLoansPage() {
     setIsLoading(true);
     try {
       // Use the updated way to access sfd_id
-      const sfdId = user?.sfd_id || user?.app_metadata?.sfd_id;
+      const sfdId = user?.user_metadata?.sfd_id || user?.app_metadata?.sfd_id;
 
       if (!sfdId) {
         setError('SFD ID is missing from user data.');

@@ -4,41 +4,52 @@ import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, CreditCard, DollarSign, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Export the navigation items so they can be reused in other components
+export const sfdNavigationItems = [
+  {
+    title: 'Tableau de Bord',
+    icon: <LayoutDashboard className="w-5 h-5" />,
+    href: '/agency-dashboard',
+    path: '/agency-dashboard',
+    label: 'Tableau de Bord'
+  },
+  {
+    title: 'Clients',
+    icon: <Users className="w-5 h-5" />,
+    href: '/sfd-clients',
+    path: '/sfd-clients',
+    label: 'Clients'
+  },
+  {
+    title: 'Prêts',
+    icon: <CreditCard className="w-5 h-5" />,
+    href: '/sfd-loans',
+    path: '/sfd-loans',
+    label: 'Prêts'
+  },
+  {
+    title: 'Transactions',
+    icon: <DollarSign className="w-5 h-5" />,
+    href: '/sfd-transactions',
+    path: '/sfd-transactions',
+    label: 'Transactions'
+  },
+  {
+    title: 'Demandes d\'Adhésion',
+    icon: <FileText className="w-5 h-5" />,
+    href: '/sfd-adhesion-requests',
+    path: '/sfd-adhesion-requests',
+    label: 'Demandes d\'Adhésion'
+  }
+];
+
 export const SfdNavigation = () => {
   const location = useLocation();
 
-  const navItems = [
-    {
-      title: 'Tableau de Bord',
-      icon: <LayoutDashboard className="w-5 h-5" />,
-      href: '/agency-dashboard',
-      active: location.pathname === '/agency-dashboard'
-    },
-    {
-      title: 'Clients',
-      icon: <Users className="w-5 h-5" />,
-      href: '/sfd-clients',
-      active: location.pathname === '/sfd-clients'
-    },
-    {
-      title: 'Prêts',
-      icon: <CreditCard className="w-5 h-5" />,
-      href: '/sfd-loans',
-      active: location.pathname === '/sfd-loans'
-    },
-    {
-      title: 'Transactions',
-      icon: <DollarSign className="w-5 h-5" />,
-      href: '/sfd-transactions',
-      active: location.pathname === '/sfd-transactions'
-    },
-    {
-      title: 'Demandes d\'Adhésion',
-      icon: <FileText className="w-5 h-5" />,
-      href: '/sfd-adhesion-requests',
-      active: location.pathname === '/sfd-adhesion-requests'
-    }
-  ];
+  const navItems = sfdNavigationItems.map(item => ({
+    ...item,
+    active: location.pathname === item.href
+  }));
 
   return (
     <nav className="flex overflow-x-auto mb-6 pb-2">

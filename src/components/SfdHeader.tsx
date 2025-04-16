@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import LogoutButton from '@/components/LogoutButton';
-import { sfdNavigationItems } from './sfd/SfdNavigation';
+import { sfdNavigationItems } from '@/components/sfd/SfdNavigation';
 
 export function SfdHeader() {
   const { user } = useAuth();
@@ -28,7 +27,6 @@ export function SfdHeader() {
   const { toast } = useToast();
   const { activeSfdId, sfdData } = useSfdDataAccess();
   
-  // Trouver les informations de la SFD active
   const activeSfd = sfdData.find(sfd => sfd.id === activeSfdId);
   const sfdName = activeSfd?.name || 'SFD non sélectionnée';
   
@@ -45,7 +43,6 @@ export function SfdHeader() {
             <span className="font-semibold hidden md:block">N'GNA SÔRÔ SFD</span>
           </Link>
           
-          {/* Affichage du nom de la SFD active */}
           <Badge variant="outline" className="bg-primary/10 text-primary flex items-center gap-1 px-3 py-1 hidden md:flex">
             <Building className="h-3.5 w-3.5 mr-1" />
             {sfdName}
@@ -81,7 +78,6 @@ export function SfdHeader() {
         </div>
         
         <div className="flex items-center gap-3">
-          {/* Badge SFD pour mobile */}
           <Badge variant="outline" className="bg-primary/10 text-primary px-2 py-1 md:hidden">
             <Building className="h-3 w-3 mr-1" />
             {sfdName.length > 10 ? `${sfdName.substring(0, 10)}...` : sfdName}

@@ -21,6 +21,9 @@ export const AgencyHeader = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
+  // Get user name from user metadata or email
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'SFD User';
+  
   return (
     <header className="bg-white border-b border-gray-200">
       <div className="container mx-auto px-4 py-3">
@@ -100,9 +103,9 @@ export const AgencyHeader = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder-avatar.jpg" alt={user?.full_name || 'User'} />
+                    <AvatarImage src="/placeholder-avatar.jpg" alt={userName} />
                     <AvatarFallback className="bg-[#0D6A51] text-white">
-                      {user?.full_name?.charAt(0) || 'U'}
+                      {userName.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -110,7 +113,7 @@ export const AgencyHeader = () => {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user?.full_name || 'SFD User'}</p>
+                    <p className="text-sm font-medium leading-none">{userName}</p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user?.email || 'sfd@example.com'}
                     </p>
