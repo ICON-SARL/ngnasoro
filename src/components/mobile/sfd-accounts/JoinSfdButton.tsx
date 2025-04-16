@@ -17,7 +17,7 @@ export const JoinSfdButton = ({ sfdId, sfdName }: { sfdId: string; sfdName: stri
       if (!user) {
         toast({
           title: 'Erreur',
-          description: 'Vous devez être connecté pour envoyer une demande d\'adhésion',
+          description: "Vous devez être connecté pour envoyer une demande d'adhésion",
           variant: 'destructive',
         });
         navigate('/auth');

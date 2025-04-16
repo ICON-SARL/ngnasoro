@@ -184,7 +184,7 @@ export const NewAdhesionRequestForm: React.FC<NewAdhesionRequestFormProps> = ({
                   <Loader size="sm" className="mr-2" /> Envoi en cours...
                 </>
               ) : (
-                'Soumettre la demande d'adhésion'
+                "Soumettre la demande d'adhésion"
               )}
             </Button>
           </form>
