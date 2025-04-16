@@ -39,133 +39,99 @@ serve(async (req) => {
     if (fetchError) {
       console.error('Error fetching adhesion request:', fetchError);
       return new Response(
-        JSON.stringify({ error: 'Error fetching adhesion request', details: fetchError.message }),
+        JSON.stringify({ error: 'Error retrieving adhesion request' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
 
-    // Update the adhesion request status
-    const newStatus = action === 'approve' ? 'approved' : 'rejected';
-    const { error: updateError } = await supabase
-      .from('client_adhesion_requests')
-      .update({ 
-        status: newStatus,
-        processed_by: adminId,
-        processed_at: new Date().toISOString(),
-        notes: notes || null,
-        rejection_reason: action === 'reject' ? notes : null
-      })
-      .eq('id', requestId);
-
-    if (updateError) {
-      console.error('Error updating adhesion request:', updateError);
-      return new Response(
-        JSON.stringify({ error: 'Error updating adhesion request', details: updateError.message }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
-    }
-
-    // If approved, create a client record and account
-    let clientId = null;
     if (action === 'approve') {
-      // Create SFD client record
-      const { data: client, error: clientError } = await supabase
+      // Update adhesion request status to approved
+      const { error: updateError } = await supabase
+        .from('client_adhesion_requests')
+        .update({
+          status: 'approved',
+          processed_at: new Date().toISOString(),
+          processed_by: adminId,
+          notes: notes
+        })
+        .eq('id', requestId);
+
+      if (updateError) {
+        console.error('Error updating adhesion request:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Error approving adhesion request' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      }
+
+      // Create a client record in sfd_clients
+      const { data: clientData, error: clientError } = await supabase
         .from('sfd_clients')
         .insert({
+          user_id: adhesionRequest.user_id,
+          sfd_id: adhesionRequest.sfd_id,
           full_name: adhesionRequest.full_name,
           email: adhesionRequest.email,
           phone: adhesionRequest.phone,
           address: adhesionRequest.address,
-          sfd_id: adhesionRequest.sfd_id,
           status: 'active',
-          validated_by: adminId,
           validated_at: new Date().toISOString(),
-          user_id: adhesionRequest.user_id
+          validated_by: adminId
         })
         .select()
         .single();
 
       if (clientError) {
-        console.error('Error creating SFD client:', clientError);
+        console.error('Error creating client record:', clientError);
         return new Response(
-          JSON.stringify({ error: 'Error creating SFD client', details: clientError.message }),
+          JSON.stringify({ error: 'Error creating client record' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         );
       }
 
-      clientId = client.id;
-
-      // Create user_sfds entry to associate the user with the SFD
-      const { error: userSfdError } = await supabase
-        .from('user_sfds')
-        .insert({
-          user_id: adhesionRequest.user_id,
-          sfd_id: adhesionRequest.sfd_id,
-          is_default: true
-        });
-
-      if (userSfdError) {
-        console.error('Error creating user_sfds entry:', userSfdError);
-        // Continue anyway, as the client was already created
-      }
-      
-      // Create an account for the client
-      const { error: accountError } = await supabase
-        .from('accounts')
-        .insert({
-          user_id: adhesionRequest.user_id,
-          balance: 0,
-          currency: 'FCFA'
-        });
-
-      if (accountError) {
-        console.error('Error creating account:', accountError);
-        // Continue anyway, as the client was already created
-      }
-      
-      // Create notification for the user
-      const { error: notifError } = await supabase
-        .from('admin_notifications')
-        .insert({
-          title: 'Demande d\'adhésion approuvée',
-          message: 'Votre demande d\'adhésion a été approuvée. Bienvenue!',
-          type: 'adhesion_approved',
-          recipient_id: adhesionRequest.user_id,
-          sender_id: adminId
-        });
-
-      if (notifError) {
-        console.error('Error creating notification:', notifError);
-        // Continue anyway, as this is not critical
-      }
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Adhesion request approved successfully',
+          status: 'approved',
+          clientId: clientData.id
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
     } else if (action === 'reject') {
-      // Create notification for rejection
-      const { error: notifError } = await supabase
-        .from('admin_notifications')
-        .insert({
-          title: 'Demande d\'adhésion refusée',
-          message: notes ? `Votre demande a été refusée: ${notes}` : 'Votre demande d\'adhésion a été refusée.',
-          type: 'adhesion_rejected',
-          recipient_id: adhesionRequest.user_id,
-          sender_id: adminId
-        });
+      // Update adhesion request status to rejected
+      const { error: updateError } = await supabase
+        .from('client_adhesion_requests')
+        .update({
+          status: 'rejected',
+          processed_at: new Date().toISOString(),
+          processed_by: adminId,
+          notes: notes
+        })
+        .eq('id', requestId);
 
-      if (notifError) {
-        console.error('Error creating rejection notification:', notifError);
-        // Continue anyway, as this is not critical
+      if (updateError) {
+        console.error('Error updating adhesion request:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Error rejecting adhesion request' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
       }
-    }
 
-    return new Response(
-      JSON.stringify({ 
-        status: newStatus, 
-        clientId,
-        message: action === 'approve' 
-          ? 'La demande a été approuvée avec succès.' 
-          : 'La demande a été rejetée.'
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-    );
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Adhesion request rejected successfully',
+          status: 'rejected'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    } else {
+      return new Response(
+        JSON.stringify({ error: 'Invalid action. Must be approve or reject' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
   } catch (error) {
     console.error('Server error:', error);
     return new Response(

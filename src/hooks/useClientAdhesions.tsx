@@ -1,18 +1,46 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
 import { useSfdDataAccess } from './useSfdDataAccess';
-import { ClientAdhesionRequest } from '@/types/adhesionTypes';
+
+export interface AdhesionRequest {
+  id: string;
+  full_name: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  processed_at?: string | null;
+  processed_by?: string | null;
+  notes?: string | null;
+  sfd_id: string;
+  sfd_name?: string;
+  user_id: string;
+  id_type?: string | null;
+  id_number?: string | null;
+  monthly_income?: number | null;
+  kyc_status?: string | null;
+  verification_stage?: string | null;
+  profession?: string | null;
+  source_of_income?: string | null;
+  reference_number?: string | null;
+  sfds?: {
+    name: string;
+    logo_url?: string;
+  };
+}
 
 export interface AdhesionRequestInput {
   full_name: string;
-  profession: string;
-  monthly_income: string;
-  source_of_income: string;
-  phone: string;
-  email: string;
-  address: string;
+  profession?: string;
+  monthly_income?: string;
+  source_of_income?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
 }
 
 export function useClientAdhesions() {
@@ -21,7 +49,7 @@ export function useClientAdhesions() {
   const queryClient = useQueryClient();
   const { activeSfdId } = useSfdDataAccess();
 
-  const fetchAdhesionRequests = async (sfdId: string): Promise<ClientAdhesionRequest[]> => {
+  const fetchAdhesionRequests = async (sfdId: string): Promise<AdhesionRequest[]> => {
     if (!sfdId || !user?.id) return [];
 
     try {
@@ -50,16 +78,24 @@ export function useClientAdhesions() {
         
         const formattedRequests = directData?.map(req => ({
           ...req,
-          sfd_name: req.sfds?.name
+          sfd_name: req.sfds?.name,
+          status: req.status as 'pending' | 'approved' | 'rejected'
         })) || [];
         
         console.log(`Fallback: Found ${formattedRequests.length} adhesion requests`);
-        return formattedRequests as ClientAdhesionRequest[];
+        return formattedRequests as AdhesionRequest[];
       }
       
       console.log(`Success: Found ${data?.length || 0} adhesion requests`);
       console.log('Adhesion requests data:', data);
-      return data as ClientAdhesionRequest[];
+      
+      // Ensure status is of the correct type
+      const typedData = data?.map(item => ({
+        ...item,
+        status: item.status as 'pending' | 'approved' | 'rejected'
+      })) || [];
+      
+      return typedData as AdhesionRequest[];
     } catch (error) {
       console.error('Error in fetchAdhesionRequests:', error);
       toast({
@@ -71,7 +107,7 @@ export function useClientAdhesions() {
     }
   };
 
-  const fetchUserAdhesionRequests = async (): Promise<ClientAdhesionRequest[]> => {
+  const fetchUserAdhesionRequests = async (): Promise<AdhesionRequest[]> => {
     if (!user?.id) return [];
 
     try {
@@ -85,11 +121,12 @@ export function useClientAdhesions() {
       
       const formattedRequests = data?.map(req => ({
         ...req,
-        sfd_name: req.sfds?.name
+        sfd_name: req.sfds?.name,
+        status: req.status as 'pending' | 'approved' | 'rejected'
       })) || [];
       
       console.log(`Found ${formattedRequests.length} user adhesion requests`);
-      return formattedRequests as ClientAdhesionRequest[];
+      return formattedRequests as AdhesionRequest[];
     } catch (error) {
       console.error('Error fetching user adhesion requests:', error);
       toast({
@@ -130,7 +167,7 @@ export function useClientAdhesions() {
         .single();
 
       if (error) throw error;
-      return data as ClientAdhesionRequest;
+      return data as AdhesionRequest;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adhesion-requests'] });
@@ -165,7 +202,7 @@ export function useClientAdhesions() {
         .single();
 
       if (error) throw error;
-      return data as ClientAdhesionRequest;
+      return data as AdhesionRequest;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adhesion-requests'] });
@@ -196,15 +233,13 @@ export function useClientAdhesions() {
           user_id: user.id,
           full_name: input.full_name,
           profession: input.profession,
-          monthly_income: parseFloat(input.monthly_income),
+          monthly_income: input.monthly_income ? parseFloat(input.monthly_income) : null,
           source_of_income: input.source_of_income,
           phone: input.phone,
           email: input.email,
           address: input.address,
-          status: 'approved',
-          kyc_status: 'validated',
-          processed_by: user.id,
-          processed_at: new Date().toISOString()
+          status: 'pending',
+          kyc_status: 'pending'
         })
         .select()
         .single();
@@ -216,7 +251,7 @@ export function useClientAdhesions() {
       queryClient.invalidateQueries({ queryKey: ['user-adhesion-requests'] });
       toast({
         title: "Demande envoyée",
-        description: "Votre demande d'adhésion a été approuvée avec succès"
+        description: "Votre demande d'adhésion a été envoyée avec succès"
       });
     },
     onError: (error: any) => {

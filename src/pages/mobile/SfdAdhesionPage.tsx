@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,7 @@ const SfdAdhesionPage: React.FC = () => {
   const { toast } = useToast();
   const { 
     userAdhesionRequests, 
-    isLoadingUserAdhesionRequests, 
+    isLoadingUserAdhesionRequests,
     refetchUserAdhesionRequests
   } = useClientAdhesions();
   

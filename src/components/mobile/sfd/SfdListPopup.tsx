@@ -136,7 +136,7 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
   const renderButton = (sfd: Sfd) => {
     const status = getSfdRequestStatus(sfd.id);
     
-    if (status === 'pending' || status === 'pending_validation') {
+    if (status === 'pending') {
       return (
         <Badge variant="outline" className="bg-amber-100 border-amber-200 text-amber-700 px-3 py-1">
           En attente
@@ -224,7 +224,7 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
                   <div 
                     key={sfd.id}
                     className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => status !== 'pending' && status !== 'pending_validation' && handleSelectSfd(sfd.id)}
+                    onClick={() => status !== 'pending' && handleSelectSfd(sfd.id)}
                   >
                     <div className="flex items-center flex-1">
                       <div className="h-12 w-12 flex-shrink-0 bg-gray-100 rounded-md flex items-center justify-center mr-3 overflow-hidden">
