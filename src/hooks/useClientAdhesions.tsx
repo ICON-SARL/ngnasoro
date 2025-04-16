@@ -24,16 +24,49 @@ export function useClientAdhesions() {
 
   // Récupérer toutes les demandes d'adhésion pour une SFD
   const fetchAdhesionRequests = async (sfdId: string): Promise<ClientAdhesionRequest[]> => {
-    if (!sfdId) return [];
+    if (!sfdId || !user?.id) return [];
 
-    const { data, error } = await supabase
-      .from('client_adhesion_requests')
-      .select('*')
-      .eq('sfd_id', sfdId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching adhesion requests:', error);
+    try {
+      console.log(`Fetching adhesion requests for SFD: ${sfdId}`);
+      
+      // Appel à l'Edge Function via la méthode invoke
+      const { data, error } = await supabase.functions.invoke('fetch-client-adhesions', {
+        body: { userId: user.id, sfdId }
+      });
+      
+      if (error) {
+        console.error('Error fetching adhesion requests from Edge Function:', error);
+        
+        // Fallback: récupération directe depuis la base de données
+        console.log('Attempting direct DB fetch as fallback...');
+        const { data: directData, error: directError } = await supabase
+          .from('client_adhesion_requests')
+          .select(`
+            *,
+            sfds:sfd_id(name)
+          `)
+          .eq('sfd_id', sfdId)
+          .order('created_at', { ascending: false });
+          
+        if (directError) {
+          throw directError;
+        }
+        
+        // Format the data to include sfd name
+        const formattedRequests = directData?.map(req => ({
+          ...req,
+          sfd_name: req.sfds?.name
+        })) || [];
+        
+        console.log(`Fallback: Found ${formattedRequests.length} adhesion requests`);
+        return formattedRequests as ClientAdhesionRequest[];
+      }
+      
+      console.log(`Success: Found ${data?.length || 0} adhesion requests`);
+      console.log('Adhesion requests data:', data);
+      return data as ClientAdhesionRequest[];
+    } catch (error) {
+      console.error('Error in fetchAdhesionRequests:', error);
       toast({
         title: "Erreur",
         description: "Impossible de récupérer les demandes d'adhésion",
@@ -41,21 +74,30 @@ export function useClientAdhesions() {
       });
       return [];
     }
-
-    return data as ClientAdhesionRequest[];
   };
 
   // Récupérer les demandes d'adhésion pour un utilisateur
   const fetchUserAdhesionRequests = async (): Promise<ClientAdhesionRequest[]> => {
     if (!user?.id) return [];
 
-    const { data, error } = await supabase
-      .from('client_adhesion_requests')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('client_adhesion_requests')
+        .select('*, sfds:sfd_id(name)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-    if (error) {
+      if (error) throw error;
+      
+      // Format the data to include sfd name
+      const formattedRequests = data?.map(req => ({
+        ...req,
+        sfd_name: req.sfds?.name
+      })) || [];
+      
+      console.log(`Found ${formattedRequests.length} user adhesion requests`);
+      return formattedRequests as ClientAdhesionRequest[];
+    } catch (error) {
       console.error('Error fetching user adhesion requests:', error);
       toast({
         title: "Erreur",
@@ -64,15 +106,13 @@ export function useClientAdhesions() {
       });
       return [];
     }
-
-    return data as ClientAdhesionRequest[];
   };
 
   // Requête pour récupérer les demandes d'adhésion SFD
   const adhesionRequestsQuery = useQuery({
     queryKey: ['adhesion-requests', activeSfdId],
     queryFn: () => fetchAdhesionRequests(activeSfdId || ''),
-    enabled: !!activeSfdId,
+    enabled: !!activeSfdId && !!user?.id,
   });
 
   // Requête pour récupérer les demandes d'adhésion utilisateur
@@ -80,56 +120,6 @@ export function useClientAdhesions() {
     queryKey: ['user-adhesion-requests', user?.id],
     queryFn: fetchUserAdhesionRequests,
     enabled: !!user?.id,
-  });
-
-  // Mutation pour créer une demande d'adhésion
-  const createAdhesionRequest = useMutation({
-    mutationFn: async (data: {
-      sfd_id: string;
-      full_name: string;
-      email?: string;
-      phone?: string;
-      address?: string;
-      id_number?: string;
-      id_type?: string;
-      notes?: string;
-    }) => {
-      if (!user?.id) throw new Error("Utilisateur non connecté");
-
-      const { data: result, error } = await supabase
-        .from('client_adhesion_requests')
-        .insert({
-          user_id: user.id,
-          sfd_id: data.sfd_id,
-          full_name: data.full_name,
-          email: data.email,
-          phone: data.phone,
-          address: data.address,
-          id_number: data.id_number,
-          id_type: data.id_type,
-          notes: data.notes,
-          status: 'pending_validation'
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return result as ClientAdhesionRequest;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-adhesion-requests'] });
-      toast({
-        title: "Demande envoyée",
-        description: "Votre demande d'adhésion a été envoyée avec succès",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur",
-        description: `Impossible d'envoyer la demande: ${error.message}`,
-        variant: "destructive",
-      });
-    }
   });
 
   // Mutation pour approuver une demande
