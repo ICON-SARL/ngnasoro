@@ -61,7 +61,17 @@ export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestF
         return;
       }
       
-      const result = await submitAdhesionRequest(sfdId, values as AdhesionRequestInput);
+      const input: AdhesionRequestInput = {
+        full_name: values.full_name,
+        profession: values.profession,
+        monthly_income: values.monthly_income,
+        source_of_income: values.source_of_income,
+        phone: values.phone,
+        email: values.email,
+        address: values.address
+      };
+      
+      const result = await submitAdhesionRequest(sfdId, input);
       
       if (result.success) {
         form.reset();

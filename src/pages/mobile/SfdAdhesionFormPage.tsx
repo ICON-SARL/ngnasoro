@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { NewAdhesionRequestForm } from '@/components/client/NewAdhesionRequestForm';
 import { useToast } from '@/hooks/use-toast';
-import { useClientAdhesions } from '@/hooks/useClientAdhesions';
+import { useSfdAdhesionRequests } from '@/hooks/useSfdAdhesionRequests';
 
 const SfdAdhesionFormPage: React.FC = () => {
   const { sfdId } = useParams<{ sfdId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { submitAdhesionRequest } = useClientAdhesions();
+  const { submitAdhesionRequest } = useSfdAdhesionRequests();
 
   const handleSuccess = () => {
     toast({
