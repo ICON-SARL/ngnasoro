@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 import { AdhesionRequestsTable } from './AdhesionRequestsTable';
@@ -31,7 +30,6 @@ export function ClientAdhesionRequests() {
   const approvedRequests = filteredRequests.filter(r => r.status === 'approved');
   const rejectedRequests = filteredRequests.filter(r => r.status === 'rejected');
   
-  // Automatically refresh the data every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       refetchAdhesionRequests();
