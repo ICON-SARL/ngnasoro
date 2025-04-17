@@ -56,46 +56,29 @@ export function useClientAdhesions() {
     try {
       console.log(`Fetching adhesion requests for SFD: ${sfdId}`);
       
-      const { data, error } = await supabase.functions.invoke('fetch-client-adhesions', {
-        body: { userId: user.id, sfdId }
-      });
-      
-      if (error) {
-        console.error('Error fetching adhesion requests from Edge Function:', error);
+      // Try the direct database query approach first
+      const { data: directData, error: directError } = await supabase
+        .from('client_adhesion_requests')
+        .select(`
+          *,
+          sfds:sfd_id(name, logo_url)
+        `)
+        .eq('sfd_id', sfdId)
+        .order('created_at', { ascending: false });
         
-        console.log('Attempting direct DB fetch as fallback...');
-        const { data: directData, error: directError } = await supabase
-          .from('client_adhesion_requests')
-          .select(`
-            *,
-            sfds:sfd_id(name)
-          `)
-          .eq('sfd_id', sfdId)
-          .order('created_at', { ascending: false });
-          
-        if (directError) {
-          throw directError;
-        }
-        
-        const formattedRequests = directData?.map(req => ({
-          ...req,
-          sfd_name: req.sfds?.name,
-          status: req.status as 'pending' | 'approved' | 'rejected'
-        })) || [];
-        
-        console.log(`Fallback: Found ${formattedRequests.length} adhesion requests`);
-        return formattedRequests as AdhesionRequest[];
+      if (directError) {
+        console.error('Error fetching adhesion requests directly:', directError);
+        throw directError;
       }
       
-      console.log(`Success: Found ${data?.length || 0} adhesion requests`);
-      console.log('Adhesion requests data:', data);
-      
-      const typedData = data?.map(item => ({
-        ...item,
-        status: item.status as 'pending' | 'approved' | 'rejected'
+      const formattedRequests = directData?.map(req => ({
+        ...req,
+        sfd_name: req.sfds?.name,
+        status: req.status as 'pending' | 'approved' | 'rejected'
       })) || [];
       
-      return typedData as AdhesionRequest[];
+      console.log(`Found ${formattedRequests.length} adhesion requests directly`);
+      return formattedRequests as AdhesionRequest[];
     } catch (error) {
       console.error('Error in fetchAdhesionRequests:', error);
       toast({
@@ -111,29 +94,10 @@ export function useClientAdhesions() {
     if (!user?.id) return [];
 
     try {
-      // Essayer d'abord avec l'Edge Function
-      try {
-        const { data, error } = await supabase.functions.invoke('fetch-client-adhesions', {
-          body: { userId: user.id }
-        });
-        
-        if (!error && data) {
-          console.log(`Found ${data.length} user adhesion requests via Edge Function`);
-          
-          return data.map(item => ({
-            ...item,
-            status: item.status as 'pending' | 'approved' | 'rejected'
-          })) as AdhesionRequest[];
-        }
-      } catch (edgeFnError) {
-        console.error('Edge function error:', edgeFnError);
-        // Fallback to direct DB query
-      }
-      
-      // Fallback: requête directe à la base de données
+      // Direct database query approach
       const { data, error } = await supabase
         .from('client_adhesion_requests')
-        .select('*, sfds:sfd_id(name)')
+        .select('*, sfds:sfd_id(name, logo_url)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -176,18 +140,27 @@ export function useClientAdhesions() {
         throw new Error('User not authenticated');
       }
 
-      const { data, error } = await supabase.functions.invoke('process-client-adhesion', {
-        body: { 
-          userId: user.id, 
-          sfdId, 
-          adhesionData: input 
-        }
-      });
+      // Direct database approach
+      const { data, error } = await supabase
+        .from('client_adhesion_requests')
+        .insert({
+          sfd_id: sfdId,
+          user_id: user.id,
+          full_name: input.full_name,
+          email: input.email || null,
+          phone: input.phone || null,
+          address: input.address || null,
+          profession: input.profession || null,
+          monthly_income: input.monthly_income ? parseFloat(input.monthly_income) : null,
+          source_of_income: input.source_of_income || null,
+          status: 'pending',
+          reference_number: `ADH-${Date.now().toString().substring(6)}`
+        })
+        .select()
+        .single();
 
       if (error) throw error;
-      if (!data.success) throw new Error(data.message || 'Failed to submit adhesion request');
-      
-      return data;
+      return { success: true, data };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-adhesion-requests'] });

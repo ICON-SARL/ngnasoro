@@ -38,13 +38,16 @@ serve(async (req) => {
     if (rolesError) {
       console.error('Error fetching user roles:', rolesError)
       return new Response(
-        JSON.stringify({ error: 'Failed to verify user permissions' }),
+        JSON.stringify({ error: 'Failed to verify user permissions', details: rolesError }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
 
     const isAdmin = userRoles?.some(r => r.role === 'admin')
     const isSfdAdmin = userRoles?.some(r => r.role === 'sfd_admin')
+
+    console.log(`User roles: ${JSON.stringify(userRoles)}`)
+    console.log(`Is admin: ${isAdmin}, Is SFD admin: ${isSfdAdmin}`)
 
     // Si ce n'est ni un admin ni un admin SFD, on retourne uniquement les demandes de l'utilisateur
     if (!isAdmin && !isSfdAdmin) {
@@ -60,7 +63,7 @@ serve(async (req) => {
       if (userReqError) {
         console.error('Error fetching user adhesion requests:', userReqError)
         return new Response(
-          JSON.stringify({ error: 'Failed to fetch user adhesion requests' }),
+          JSON.stringify({ error: 'Failed to fetch user adhesion requests', details: userReqError }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         )
       }
@@ -86,8 +89,17 @@ serve(async (req) => {
         .select('sfd_id')
         .eq('user_id', userId)
 
-      if (!sfdError && userSfds) {
+      if (sfdError) {
+        console.error('Error fetching user SFDs:', sfdError)
+        return new Response(
+          JSON.stringify({ error: 'Failed to verify SFD access permissions', details: sfdError }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        )
+      }
+
+      if (userSfds) {
         canAccessSfd = userSfds.some(us => us.sfd_id === sfdId)
+        console.log(`User can access SFD ${sfdId}: ${canAccessSfd}`)
       }
     }
 
@@ -120,7 +132,7 @@ serve(async (req) => {
       if (accessError) {
         console.error('Error fetching accessible SFDs:', accessError)
         return new Response(
-          JSON.stringify({ error: 'Failed to fetch accessible SFDs' }),
+          JSON.stringify({ error: 'Failed to fetch accessible SFDs', details: accessError }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         )
       }
@@ -142,7 +154,7 @@ serve(async (req) => {
     if (error) {
       console.error('Error fetching adhesion requests:', error)
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch adhesion requests' }),
+        JSON.stringify({ error: 'Failed to fetch adhesion requests', details: error }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
