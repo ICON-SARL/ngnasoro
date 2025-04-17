@@ -5,11 +5,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
+export type AdhesionRequestInput = {
+  full_name: string;
+  profession?: string;
+  monthly_income?: string;
+  source_of_income?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+}
+
 export function useSfdAdhesionRequests() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Process adhesion request (approve or reject)
   const processAdhesionRequest = async (
@@ -60,7 +71,7 @@ export function useSfdAdhesionRequests() {
       // Create notification for the client
       const { data: requestData } = await supabase
         .from('client_adhesion_requests')
-        .select('user_id, full_name')
+        .select('user_id, full_name, sfd_id')
         .eq('id', requestId)
         .single();
 
@@ -78,21 +89,21 @@ export function useSfdAdhesionRequests() {
       }
 
       // If approved, create client entry (this would be handled by a trigger in production)
-      if (action === 'approve') {
+      if (action === 'approve' && requestData) {
         // Check if the client entry already exists
         const { data: existingClient } = await supabase
           .from('sfd_clients')
           .select('id')
-          .eq('user_id', requestData?.user_id)
+          .eq('user_id', requestData.user_id)
           .maybeSingle();
 
         if (!existingClient) {
           await supabase
             .from('sfd_clients')
             .insert({
-              full_name: requestData?.full_name,
-              sfd_id: requestData?.sfd_id,
-              user_id: requestData?.user_id,
+              full_name: requestData.full_name,
+              sfd_id: requestData.sfd_id,
+              user_id: requestData.user_id,
               status: 'active',
               validated_by: user.id,
               validated_at: new Date().toISOString()
@@ -114,8 +125,62 @@ export function useSfdAdhesionRequests() {
     }
   };
 
+  // Submit new adhesion request
+  const submitAdhesionRequest = async (sfdId: string, input: AdhesionRequestInput) => {
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Create the adhesion request
+      const { data, error } = await supabase
+        .from('client_adhesion_requests')
+        .insert({
+          sfd_id: sfdId,
+          user_id: user.id,
+          full_name: input.full_name,
+          email: input.email || null,
+          phone: input.phone || null,
+          address: input.address || null,
+          profession: input.profession || null,
+          monthly_income: input.monthly_income ? parseFloat(input.monthly_income) : null,
+          source_of_income: input.source_of_income || null,
+          status: 'pending',
+          reference_number: `ADH-${Date.now().toString().substring(6)}`
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Log the action
+      await supabase.from('audit_logs').insert({
+        user_id: user.id,
+        action: 'adhesion_request_submitted',
+        category: 'CLIENT_MANAGEMENT',
+        status: 'success',
+        severity: 'info',
+        target_resource: `client_adhesion_requests/${data.id}`,
+        details: { sfdId, clientName: input.full_name }
+      });
+
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('Error submitting adhesion request:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Une erreur est survenue lors de la soumission de la demande' 
+      };
+    } finally {
+      setIsSubmitting(true);
+    }
+  };
+
   return {
     processAdhesionRequest,
-    isProcessing
+    isProcessing,
+    submitAdhesionRequest,
+    isSubmitting
   };
 }

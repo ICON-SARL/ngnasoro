@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import AdhesionRequestForm from '@/components/mobile/sfd/AdhesionRequestForm';
-import { useSfdAdhesionRequests } from '@/hooks/useSfdAdhesionRequests';
+import { useSfdAdhesionRequests, AdhesionRequestInput } from '@/hooks/useSfdAdhesionRequests';
 
 export default function SfdAdhesionFormPage() {
   const { sfdId } = useParams<{ sfdId: string }>();
@@ -56,7 +56,7 @@ export default function SfdAdhesionFormPage() {
     fetchSfdInfo();
   }, [sfdId]);
   
-  const handleSubmit = async (formData: any) => {
+  const handleSubmit = async (formData: AdhesionRequestInput) => {
     if (!sfdId) return;
     
     const result = await submitAdhesionRequest(sfdId, formData);
