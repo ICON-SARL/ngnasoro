@@ -1,5 +1,4 @@
-
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
@@ -54,15 +53,12 @@ export function useClientAdhesions() {
   const { activeSfdId } = useSfdDataAccess();
   const [retryCount, setRetryCount] = useState(0);
 
-  // Fonction pour récupérer les demandes d'adhésion avec une approche hybride
-  // Essaie d'abord la fonction edge, puis revient à une requête directe si nécessaire
   const fetchAdhesionRequests = async (sfdId: string): Promise<AdhesionRequest[]> => {
     if (!sfdId || !user?.id) return [];
 
     console.log(`Fetching adhesion requests for SFD: ${sfdId}`);
     
     try {
-      // Essayer d'abord d'utiliser la fonction Edge (pour avoir la vérification des rôles complète)
       const { data: edgeData, error: edgeError, success } = await edgeFunctionApi.callFunction<AdhesionRequest[]>(
         'fetch-client-adhesions', 
         { userId: user.id, sfdId }
@@ -73,10 +69,8 @@ export function useClientAdhesions() {
         return edgeData;
       }
       
-      // Si la fonction Edge échoue, essayer une requête directe à la base de données
       console.log('Edge function failed, falling back to direct database query');
       
-      // Récupérer toutes les demandes pour cet SFD (si admin SFD)
       const { data: directData, error: directError } = await supabase
         .from('client_adhesion_requests')
         .select(`
@@ -103,7 +97,6 @@ export function useClientAdhesions() {
       console.error('Error fetching adhesion requests:', error);
       setRetryCount(prev => prev + 1);
       
-      // Essayer une dernière approche simple comme fallback ultime
       try {
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('client_adhesion_requests')
@@ -127,7 +120,6 @@ export function useClientAdhesions() {
     }
   };
 
-  // Fonction pour récupérer les demandes d'adhésion de l'utilisateur actuel
   const fetchUserAdhesionRequests = async (): Promise<AdhesionRequest[]> => {
     if (!user?.id) return [];
 
@@ -177,7 +169,6 @@ export function useClientAdhesions() {
         throw new Error('User not authenticated');
       }
 
-      // Approche directe par base de données
       const { data, error } = await supabase
         .from('client_adhesion_requests')
         .insert({

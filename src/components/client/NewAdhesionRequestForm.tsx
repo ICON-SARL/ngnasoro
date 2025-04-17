@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
+import { AdhesionRequestInput } from '@/hooks/useClientAdhesions';
 
 interface NewAdhesionRequestFormProps {
   sfdId: string;
@@ -51,7 +52,16 @@ export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestF
 
   const onSubmit = async (values: FormValues) => {
     try {
-      const result = await submitAdhesionRequest(sfdId, values);
+      // Ensure full_name is not empty - it's required in the AdhesionRequestInput type
+      if (!values.full_name) {
+        form.setError('full_name', { 
+          type: 'manual', 
+          message: 'Le nom complet est requis' 
+        });
+        return;
+      }
+      
+      const result = await submitAdhesionRequest(sfdId, values as AdhesionRequestInput);
       
       if (result.success) {
         form.reset();

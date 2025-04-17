@@ -4,16 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-
-export type AdhesionRequestInput = {
-  full_name: string;
-  profession?: string;
-  monthly_income?: string;
-  source_of_income?: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-}
+import { AdhesionRequestInput } from '@/hooks/useClientAdhesions';
 
 export function useSfdAdhesionRequests() {
   const { user } = useAuth();
