@@ -7,17 +7,31 @@ import { useAuth } from '@/hooks/useAuth';
 export interface AdhesionRequest {
   id: string;
   full_name: string;
-  email?: string;
-  phone?: string;
-  address?: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
-  processed_at?: string;
-  processed_by?: string;
-  notes?: string;
+  processed_at?: string | null;
+  processed_by?: string | null;
+  notes?: string | null;
   sfd_id: string;
   sfd_name?: string;
   user_id: string;
+  // Adding missing properties
+  reference_number?: string | null;
+  profession?: string | null;
+  monthly_income?: number | null;
+  source_of_income?: string | null;
+  id_type?: string | null;
+  id_number?: string | null;
+  kyc_status?: string | null;
+  verification_stage?: string | null;
+  rejection_reason?: string | null;
+  sfds?: {
+    name: string;
+    logo_url?: string;
+  };
 }
 
 export function useClientAdhesions() {
@@ -26,6 +40,7 @@ export function useClientAdhesions() {
   const [adhesionRequests, setAdhesionRequests] = useState<AdhesionRequest[]>([]);
   const [userAdhesionRequests, setUserAdhesionRequests] = useState<AdhesionRequest[]>([]);
   const [isLoadingAdhesionRequests, setIsLoadingAdhesionRequests] = useState(true);
+  const [isLoadingUserAdhesionRequests, setIsLoadingUserAdhesionRequests] = useState(true);
   
   const fetchAdhesionRequests = useCallback(async () => {
     if (!user) return;
@@ -61,6 +76,7 @@ export function useClientAdhesions() {
   const fetchUserAdhesionRequests = useCallback(async () => {
     if (!user) return;
     
+    setIsLoadingUserAdhesionRequests(true);
     try {
       console.log('Fetching user adhesion requests...');
       
@@ -90,6 +106,8 @@ export function useClientAdhesions() {
         description: 'Impossible de récupérer vos demandes d\'adhésion',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoadingUserAdhesionRequests(false);
     }
   }, [user, toast]);
 
@@ -102,6 +120,7 @@ export function useClientAdhesions() {
     adhesionRequests,
     userAdhesionRequests,
     isLoadingAdhesionRequests,
+    isLoadingUserAdhesionRequests, // Make sure to include this property
     refetchAdhesionRequests: fetchAdhesionRequests,
     refetchUserAdhesionRequests: fetchUserAdhesionRequests
   };

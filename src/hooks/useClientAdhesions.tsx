@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +27,7 @@ export interface AdhesionRequest {
   profession?: string | null;
   source_of_income?: string | null;
   reference_number?: string | null;
+  rejection_reason?: string | null;
   sfds?: {
     name: string;
     logo_url?: string;
