@@ -27,170 +27,248 @@ serve(async (req) => {
       )
     }
 
-    // Vérifier que l'action est valide
+    // Valider l'action
     if (action !== 'approve' && action !== 'reject') {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: 'Invalid action. Must be "approve" or "reject"' 
+          message: 'Action must be either "approve" or "reject"' 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
 
-    // Créer un client Supabase
+    // Créer un client Supabase avec la clé d'API
     const supabaseUrl = Deno.env.get('SUPABASE_URL') as string
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Récupérer la demande
-    const { data: request, error: fetchError } = await supabase
-      .from('client_adhesion_requests')
-      .select('*')
-      .eq('id', requestId)
-      .single()
+    // Vérifier que l'administrateur a les bonnes permissions
+    const { data: adminRoles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', adminId)
 
-    if (fetchError || !request) {
-      console.error('Error fetching request:', fetchError)
+    if (rolesError) {
+      console.error('Error fetching admin roles:', rolesError)
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: 'Request not found' 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
-      )
-    }
-
-    // Vérifier que la demande est en attente
-    if (request.status !== 'pending') {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: `Request cannot be ${action}d because it is already ${request.status}` 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      )
-    }
-
-    // Mettre à jour la demande
-    const newStatus = action === 'approve' ? 'approved' : 'rejected'
-    const { data: updatedRequest, error: updateError } = await supabase
-      .from('client_adhesion_requests')
-      .update({
-        status: newStatus,
-        processed_by: adminId,
-        processed_at: new Date().toISOString(),
-        notes: notes || null
-      })
-      .eq('id', requestId)
-      .select()
-      .single()
-
-    if (updateError) {
-      console.error('Error updating request:', updateError)
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'Error updating request status' 
+          message: 'Failed to verify admin permissions' 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
 
-    // Si la demande est approuvée, créer un client SFD
-    let clientId = null
-    if (action === 'approve') {
-      try {
-        const { data: client, error: clientError } = await supabase
-          .from('sfd_clients')
-          .insert({
-            sfd_id: request.sfd_id,
-            full_name: request.full_name,
-            email: request.email,
-            phone: request.phone,
-            address: request.address,
-            id_number: request.id_number,
-            id_type: request.id_type,
-            user_id: request.user_id,
-            profession: request.profession,
-            monthly_income: request.monthly_income,
-            status: 'active',
-            validated_by: adminId,
-            validated_at: new Date().toISOString()
-          })
-          .select()
-          .single()
+    const isAdmin = adminRoles?.some(r => r.role === 'admin')
+    const isSfdAdmin = adminRoles?.some(r => r.role === 'sfd_admin')
 
-        if (clientError) {
-          console.error('Error creating client:', clientError)
-        } else {
-          clientId = client.id
+    if (!isAdmin && !isSfdAdmin) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Unauthorized: Only admins can manage adhesion requests' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      )
+    }
 
-          // Créer un compte pour le client
-          const { error: accountError } = await supabase
-            .from('sfd_accounts')
-            .insert({
-              sfd_id: request.sfd_id,
-              client_id: clientId,
-              account_type: 'savings',
-              account_number: `SAV-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-              balance: 0,
-              currency: 'FCFA',
-              status: 'active'
-            })
+    // Récupérer la demande d'adhésion
+    const { data: request, error: requestError } = await supabase
+      .from('client_adhesion_requests')
+      .select('*, sfds:sfd_id(name)')
+      .eq('id', requestId)
+      .single()
 
-          if (accountError) {
-            console.error('Error creating account:', accountError)
-          }
+    if (requestError) {
+      console.error('Error fetching adhesion request:', requestError)
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Failed to fetch adhesion request' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
 
-          // Création du compte utilisateur associé
-          const { error: userAccountError } = await supabase
-            .from('accounts')
-            .insert({
-              user_id: request.user_id,
-              balance: 0,
-              currency: 'FCFA',
-              sfd_id: request.sfd_id
-            })
+    // Vérifier que la demande n'a pas déjà été traitée
+    if (request.status !== 'pending') {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'This request has already been processed' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
 
-          if (userAccountError) {
-            console.error('Error creating user account:', userAccountError)
-          }
-        }
-      } catch (error) {
-        console.error('Error in client creation process:', error)
+    // Si c'est un admin SFD, vérifier qu'il a accès à cette SFD
+    if (isSfdAdmin && !isAdmin) {
+      const { data: adminSfds, error: sfdsError } = await supabase
+        .from('user_sfds')
+        .select('sfd_id')
+        .eq('user_id', adminId)
+        .eq('sfd_id', request.sfd_id)
+
+      if (sfdsError) {
+        console.error('Error checking admin SFD access:', sfdsError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Failed to verify SFD access' 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        )
+      }
+
+      if (!adminSfds || adminSfds.length === 0) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Unauthorized: You do not have access to this SFD' 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+        )
       }
     }
 
-    // Envoyer une notification à l'utilisateur
-    const notificationTitle = action === 'approve' 
-      ? 'Demande d\'adhésion approuvée'
-      : 'Demande d\'adhésion rejetée'
-      
-    const notificationMessage = action === 'approve'
-      ? 'Votre demande d\'adhésion a été approuvée. Bienvenue!'
-      : `Votre demande d'adhésion a été rejetée${notes ? `: ${notes}` : '.'}`
+    // Mettre à jour le statut de la demande
+    const updateData = {
+      status: action === 'approve' ? 'approved' : 'rejected',
+      processed_by: adminId,
+      processed_at: new Date().toISOString(),
+      notes: notes || null,
+      rejection_reason: action === 'reject' ? notes : null
+    }
+
+    const { error: updateError } = await supabase
+      .from('client_adhesion_requests')
+      .update(updateData)
+      .eq('id', requestId)
+
+    if (updateError) {
+      console.error('Error updating adhesion request:', updateError)
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Failed to update adhesion request' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+
+    let clientId = null;
+
+    // Si la demande est approuvée, créer un client SFD et un compte
+    if (action === 'approve') {
+      // Créer un client SFD
+      const { data: client, error: clientError } = await supabase
+        .from('sfd_clients')
+        .insert({
+          sfd_id: request.sfd_id,
+          user_id: request.user_id,
+          full_name: request.full_name,
+          email: request.email,
+          phone: request.phone,
+          address: request.address,
+          id_type: request.id_type,
+          id_number: request.id_number,
+          status: 'validated',
+          validated_by: adminId,
+          validated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (clientError) {
+        console.error('Error creating SFD client:', clientError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Failed to create SFD client' 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        )
+      }
+
+      clientId = client.id;
+
+      // Créer un compte pour le client
+      const { error: accountError } = await supabase
+        .from('accounts')
+        .insert({
+          user_id: request.user_id,
+          sfd_id: request.sfd_id,
+          balance: 0,
+          currency: 'FCFA'
+        })
+
+      if (accountError) {
+        console.error('Error creating client account:', accountError)
+        // Continue even if account creation fails
+      }
+
+      // Créer une association utilisateur-SFD
+      const { error: userSfdError } = await supabase
+        .from('user_sfds')
+        .insert({
+          user_id: request.user_id,
+          sfd_id: request.sfd_id,
+          is_default: false
+        })
+        .select()
+
+      if (userSfdError) {
+        console.error('Error creating user-SFD association:', userSfdError)
+        // Continue even if association creation fails
+      }
+    }
+
+    // Créer une notification pour l'utilisateur
+    const notificationMessage = action === 'approve' 
+      ? `Votre demande d'adhésion à ${request.sfds.name} a été approuvée.` 
+      : `Votre demande d'adhésion à ${request.sfds.name} a été rejetée.${notes ? ' Raison: ' + notes : ''}`;
 
     const { error: notifError } = await supabase
       .from('admin_notifications')
       .insert({
-        title: notificationTitle,
+        title: action === 'approve' ? 'Demande d\'adhésion approuvée' : 'Demande d\'adhésion rejetée',
         message: notificationMessage,
         type: action === 'approve' ? 'adhesion_approved' : 'adhesion_rejected',
         recipient_id: request.user_id,
         sender_id: adminId,
-        created_at: new Date().toISOString()
+        action_link: action === 'approve' ? '/mobile-flow/main' : '/mobile-flow/account'
       })
 
     if (notifError) {
-      console.error('Error creating notification:', notifError)
+      console.error('Error creating user notification:', notifError)
+      // Continue even if notification creation fails
     }
+
+    // Créer une entrée d'audit
+    await supabase
+      .from('audit_logs')
+      .insert({
+        user_id: adminId,
+        action: action === 'approve' ? 'client_adhesion_approved' : 'client_adhesion_rejected',
+        category: 'USER_MANAGEMENT',
+        status: 'success',
+        target_resource: `client_adhesion_requests/${requestId}`,
+        details: {
+          sfd_id: request.sfd_id,
+          client_id: request.user_id,
+          client_name: request.full_name,
+          notes: notes
+        }
+      })
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Request ${action}d successfully`,
-        status: newStatus,
+        message: action === 'approve' 
+          ? 'Adhesion request approved successfully' 
+          : 'Adhesion request rejected successfully',
+        status: action === 'approve' ? 'approved' : 'rejected',
         clientId
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }

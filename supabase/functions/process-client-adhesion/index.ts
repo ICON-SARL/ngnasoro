@@ -76,6 +76,24 @@ serve(async (req) => {
       )
     }
 
+    // Récupérer les infos de la SFD
+    const { data: sfdData, error: sfdError } = await supabase
+      .from('sfds')
+      .select('name')
+      .eq('id', sfdId)
+      .single()
+
+    if (sfdError) {
+      console.error('Error fetching SFD data:', sfdError)
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Could not fetch SFD data' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+
     // Generate a reference number
     const referenceNumber = `ADH-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
 
@@ -96,6 +114,7 @@ serve(async (req) => {
       created_at: new Date().toISOString(),
     }
 
+    // Insérer la demande dans la base de données
     const { data: request, error: insertError } = await supabase
       .from('client_adhesion_requests')
       .insert([requestData])
@@ -113,23 +132,85 @@ serve(async (req) => {
       )
     }
 
-    // Create notification for SFD admins
-    await supabase
-      .from('admin_notifications')
-      .insert([{
+    // Trouver les administrateurs SFD qui doivent recevoir la notification
+    const { data: sfdAdmins, error: adminsError } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'sfd_admin')
+
+    if (adminsError) {
+      console.error('Error fetching SFD admins:', adminsError)
+      // Continuer même si nous ne pouvons pas récupérer les administrateurs
+    }
+
+    // Récupérer les administrateurs spécifiquement associés à cette SFD
+    const { data: sfdSpecificAdmins, error: specificAdminsError } = await supabase
+      .from('user_sfds')
+      .select('user_id')
+      .eq('sfd_id', sfdId)
+      .filter('user_id', 'in', `(${sfdAdmins?.map(admin => admin.user_id).join(',')})`)
+
+    if (specificAdminsError) {
+      console.error('Error fetching SFD-specific admins:', specificAdminsError)
+      // Continuer même si nous ne pouvons pas récupérer les administrateurs spécifiques
+    }
+
+    // Créer des notifications pour les administrateurs SFD
+    if (sfdSpecificAdmins && sfdSpecificAdmins.length > 0) {
+      const notificationData = sfdSpecificAdmins.map(admin => ({
         title: 'Nouvelle demande d\'adhésion',
-        message: `Nouvelle demande d'adhésion de ${requestData.full_name}`,
+        message: `Nouvelle demande d'adhésion de ${requestData.full_name} pour ${sfdData.name}`,
         type: 'adhesion_request',
-        recipient_role: 'sfd_admin',
+        recipient_id: admin.user_id,
         action_link: '/sfd-adhesion-requests',
         created_at: new Date().toISOString()
+      }))
+
+      // Insérer les notifications pour les administrateurs spécifiques à la SFD
+      const { error: notificationError } = await supabase
+        .from('admin_notifications')
+        .insert(notificationData)
+
+      if (notificationError) {
+        console.error('Error creating admin notifications:', notificationError)
+        // Continuer même si les notifications échouent
+      }
+    } else {
+      // Fallback: notifier tous les admins SFD si aucun admin spécifique n'est trouvé
+      await supabase
+        .from('admin_notifications')
+        .insert([{
+          title: 'Nouvelle demande d\'adhésion',
+          message: `Nouvelle demande d'adhésion de ${requestData.full_name} pour ${sfdData.name}`,
+          type: 'adhesion_request',
+          recipient_role: 'sfd_admin',
+          action_link: '/sfd-adhesion-requests',
+          created_at: new Date().toISOString()
+        }])
+    }
+
+    // Créer une entrée d'audit
+    await supabase
+      .from('audit_logs')
+      .insert([{
+        user_id: userId,
+        action: 'client_adhesion_requested',
+        category: 'USER_MANAGEMENT',
+        status: 'success',
+        target_resource: `client_adhesion_requests/${request.id}`,
+        details: {
+          sfd_id: sfdId,
+          sfd_name: sfdData.name,
+          reference_number: referenceNumber
+        }
       }])
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Demande d\'adhésion créée avec succès', 
-        requestId: request.id 
+        requestId: request.id,
+        reference: referenceNumber
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
