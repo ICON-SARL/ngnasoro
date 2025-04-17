@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 import { AdhesionRequestsTable } from './AdhesionRequestsTable';
@@ -5,12 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Search, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { RefreshCw, Search, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
 export function ClientAdhesionRequests() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('pending');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  const { toast } = useToast();
   
   const { 
     adhesionRequests, 
@@ -38,24 +43,59 @@ export function ClientAdhesionRequests() {
     return () => clearInterval(interval);
   }, [refetchAdhesionRequests]);
 
-  const handleManualRefresh = () => {
-    refetchAdhesionRequests();
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchAdhesionRequests();
+      toast({
+        title: "Données actualisées",
+        description: "Les demandes d'adhésion ont été rafraîchies",
+      });
+    } catch (error) {
+      toast({
+        title: "Échec de l'actualisation",
+        description: "Impossible de récupérer les demandes. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
   
   if (retryCount > 2) {
     return (
       <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-5 w-5" />
         <AlertTitle>Problème de connexion aux données</AlertTitle>
         <AlertDescription className="space-y-4">
-          <p>Nous rencontrons des difficultés pour récupérer les demandes d'adhésion. Veuillez vérifier votre connexion et les permissions de votre compte.</p>
+          <p>
+            Nous rencontrons des difficultés pour récupérer les demandes d'adhésion. 
+            Cela peut être dû à l'une des raisons suivantes :
+          </p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Un problème de connexion internet</li>
+            <li>Des permissions insuffisantes sur votre compte</li>
+            <li>Une maintenance temporaire du serveur</li>
+          </ul>
+          <p>Veuillez vérifier votre connexion et les permissions de votre compte, puis réessayez.</p>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={handleManualRefresh}
+            disabled={isRefreshing}
             className="mt-2"
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Réessayer
+            {isRefreshing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Actualisation en cours...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Réessayer
+              </>
+            )}
           </Button>
         </AlertDescription>
       </Alert>
@@ -79,10 +119,20 @@ export function ClientAdhesionRequests() {
           variant="outline" 
           size="sm" 
           onClick={handleManualRefresh}
+          disabled={isRefreshing}
           className="ml-auto"
         >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Actualiser
+          {isRefreshing ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Actualisation...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Actualiser
+            </>
+          )}
         </Button>
       </div>
       

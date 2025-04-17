@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    // Récupérer les données d'entrée
+    // Get input data
     const { userId, sfdId } = await req.json()
 
     if (!userId) {
@@ -28,16 +28,35 @@ serve(async (req) => {
       )
     }
 
-    // Créer un client Supabase avec la clé d'API
+    // Create a Supabase client with the API key
     const supabaseUrl = Deno.env.get('SUPABASE_URL') as string
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Log pour le débogage
+    // Debug log
     console.log(`Processing request for user: ${userId}, SFD: ${sfdId || 'Not specified'}`)
 
-    // Vérifier les rôles et permissions de l'utilisateur
+    // Check user roles and app metadata for permissions
     try {
+      // First check user's app_metadata which might contain the role
+      const { data: userData, error: userError } = await supabase
+        .auth.admin.getUserById(userId)
+      
+      if (userError) {
+        console.error('Error fetching user data:', userError)
+        return new Response(
+          JSON.stringify({ 
+            error: 'Failed to fetch user data', 
+            details: userError,
+            success: false 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        )
+      }
+
+      console.log('User data retrieved:', JSON.stringify(userData?.user?.app_metadata))
+      
+      // Get user roles from the database as well
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('role')
@@ -55,14 +74,26 @@ serve(async (req) => {
         )
       }
 
-      // Vérifier si l'utilisateur est un admin ou admin SFD
-      const isAdmin = userRoles?.some(r => r.role === 'admin')
-      const isSfdAdmin = userRoles?.some(r => r.role === 'sfd_admin')
+      // Get user_sfds associations to determine which SFDs this user can access
+      const { data: userSfds, error: userSfdsError } = await supabase
+        .from('user_sfds')
+        .select('sfd_id')
+        .eq('user_id', userId)
 
-      console.log(`User roles: ${JSON.stringify(userRoles)}`)
+      if (userSfdsError) {
+        console.error('Error fetching user SFDs:', userSfdsError)
+      }
+
+      // Check if the user is an admin or SFD admin
+      const roles = userRoles?.map(r => r.role) || []
+      const isAdmin = roles.includes('admin') || userData?.user?.app_metadata?.role === 'admin'
+      const isSfdAdmin = roles.includes('sfd_admin') || userData?.user?.app_metadata?.role === 'sfd_admin'
+      
+      console.log(`User roles from database: ${JSON.stringify(roles)}`)
+      console.log(`App metadata role: ${userData?.user?.app_metadata?.role}`)
       console.log(`Is admin: ${isAdmin}, Is SFD admin: ${isSfdAdmin}`)
 
-      // Si ce n'est ni un admin ni un admin SFD, on retourne uniquement les demandes de l'utilisateur
+      // If the user is a regular user (not admin/sfd_admin), return only their requests
       if (!isAdmin && !isSfdAdmin) {
         const { data: userRequests, error: userReqError } = await supabase
           .from('client_adhesion_requests')
@@ -85,7 +116,7 @@ serve(async (req) => {
           )
         }
 
-        // Formater les données
+        // Format the results
         const formattedRequests = userRequests.map(req => ({
           ...req,
           sfd_name: req.sfds?.name
@@ -97,44 +128,61 @@ serve(async (req) => {
         )
       }
 
-      // Pour les admins SFD, vérifier qu'ils ont accès à cette SFD
-      let canAccessSfd = isAdmin // Super admin peut tout voir
+      // For SFD admins, check which SFDs they have access to
+      let accessibleSfdIds: string[] = []
       
-      if (!canAccessSfd && isSfdAdmin && sfdId) {
-        const { data: userSfds, error: sfdError } = await supabase
-          .from('user_sfds')
+      if (!isAdmin && isSfdAdmin) {
+        // Get the SFDs this admin has access to from user metadata
+        const metadataSfdId = userData?.user?.user_metadata?.sfd_id
+        
+        if (metadataSfdId) {
+          accessibleSfdIds.push(metadataSfdId)
+        }
+        
+        // Also check the user_sfds table
+        if (userSfds && userSfds.length > 0) {
+          accessibleSfdIds = [...accessibleSfdIds, ...userSfds.map(s => s.sfd_id)]
+        }
+        
+        // Check if admin is assigned directly in sfd_administrators table
+        const { data: adminSfds, error: adminSfdsError } = await supabase
+          .from('sfd_administrators')
           .select('sfd_id')
           .eq('user_id', userId)
-
-        if (sfdError) {
-          console.error('Error fetching user SFDs:', sfdError)
-          return new Response(
-            JSON.stringify({ 
-              error: 'Failed to verify SFD access permissions', 
-              details: sfdError,
-              success: false 
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-          )
+        
+        if (!adminSfdsError && adminSfds && adminSfds.length > 0) {
+          accessibleSfdIds = [...accessibleSfdIds, ...adminSfds.map(s => s.sfd_id)]
         }
-
-        if (userSfds) {
-          canAccessSfd = userSfds.some(us => us.sfd_id === sfdId)
-          console.log(`User can access SFD ${sfdId}: ${canAccessSfd}`)
-        }
+        
+        console.log(`SFD Admin accessible SFDs: ${JSON.stringify(accessibleSfdIds)}`)
       }
 
-      if (!canAccessSfd && !isAdmin) {
+      // For regular admins (and super admins), they can see all SFDs
+      if (isAdmin) {
+        // No filtering needed, they can see all
+        accessibleSfdIds = [] // Empty means no filter
+      }
+      
+      // Check if specific SFD was requested and admin has access to it
+      let canAccessRequestedSfd = isAdmin // Super admins can access any SFD
+      
+      if (!canAccessRequestedSfd && isSfdAdmin && sfdId) {
+        canAccessRequestedSfd = accessibleSfdIds.includes(sfdId)
+        console.log(`SFD Admin requested SFD ${sfdId}, can access: ${canAccessRequestedSfd}`)
+      }
+      
+      // If SFD admin doesn't have access to requested SFD
+      if (isSfdAdmin && sfdId && !canAccessRequestedSfd) {
         return new Response(
           JSON.stringify({ 
-            error: 'Unauthorized access to adhesion requests',
+            error: `Unauthorized access to SFD ${sfdId}`,
             success: false
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
         )
       }
 
-      // Récupérer les demandes d'adhésion avec filtrage approprié
+      // Build query based on permissions
       let query = supabase
         .from('client_adhesion_requests')
         .select(`
@@ -143,40 +191,17 @@ serve(async (req) => {
         `)
         .order('created_at', { ascending: false })
 
-      // Si c'est un admin SFD et pas un super admin, et qu'un sfdId est spécifié, filtrer par SFD
-      if (isSfdAdmin && !isAdmin && sfdId) {
+      // Apply SFD filtering based on permissions
+      if (sfdId) {
+        // If specific SFD requested, filter by it
         query = query.eq('sfd_id', sfdId)
-      } else if (isSfdAdmin && !isAdmin && !sfdId) {
-        // Si c'est un admin SFD sans sfdId spécifié, récupérer tous les SFDs auxquels il a accès
-        const { data: accessibleSfds, error: accessError } = await supabase
-          .from('user_sfds')
-          .select('sfd_id')
-          .eq('user_id', userId)
-
-        if (accessError) {
-          console.error('Error fetching accessible SFDs:', accessError)
-          return new Response(
-            JSON.stringify({ 
-              error: 'Failed to fetch accessible SFDs', 
-              details: accessError,
-              success: false 
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-          )
-        }
-
-        if (accessibleSfds && accessibleSfds.length > 0) {
-          const sfdIds = accessibleSfds.map(s => s.sfd_id)
-          query = query.in('sfd_id', sfdIds)
-        } else {
-          // Si aucun SFD accessible, retourner un tableau vide
-          return new Response(
-            JSON.stringify({ data: [], success: true }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-          )
-        }
+      } else if (isSfdAdmin && !isAdmin && accessibleSfdIds.length > 0) {
+        // If SFD admin and no specific SFD requested, filter by all accessible SFDs
+        query = query.in('sfd_id', accessibleSfdIds)
       }
+      // If admin with no specific SFD, no filtering needed
 
+      // Execute the query
       const { data, error } = await query
 
       if (error) {
@@ -191,7 +216,7 @@ serve(async (req) => {
         )
       }
 
-      // Formater les données
+      // Format the results
       const formattedRequests = data.map(req => ({
         ...req,
         sfd_name: req.sfds?.name
