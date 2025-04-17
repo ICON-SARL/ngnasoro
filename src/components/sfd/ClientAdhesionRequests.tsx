@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Search, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function ClientAdhesionRequests() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,7 +16,8 @@ export function ClientAdhesionRequests() {
   const { 
     adhesionRequests, 
     isLoadingAdhesionRequests, 
-    refetchAdhesionRequests 
+    refetchAdhesionRequests,
+    retryCount
   } = useClientAdhesions();
   
   const filteredRequests = adhesionRequests.filter(request => 
@@ -37,6 +39,30 @@ export function ClientAdhesionRequests() {
     
     return () => clearInterval(interval);
   }, [refetchAdhesionRequests]);
+
+  const handleManualRefresh = () => {
+    refetchAdhesionRequests();
+  };
+  
+  if (retryCount > 2) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertTitle>Problème de connexion aux données</AlertTitle>
+        <AlertDescription className="space-y-4">
+          <p>Nous rencontrons des difficultés pour récupérer les demandes d'adhésion. Veuillez vérifier votre connexion et les permissions de votre compte.</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleManualRefresh}
+            className="mt-2"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Réessayer
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
   
   return (
     <div className="space-y-4">
@@ -54,7 +80,7 @@ export function ClientAdhesionRequests() {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={() => refetchAdhesionRequests()}
+          onClick={handleManualRefresh}
           className="ml-auto"
         >
           <RefreshCw className="h-4 w-4 mr-2" />

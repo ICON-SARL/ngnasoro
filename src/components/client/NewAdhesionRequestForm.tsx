@@ -1,9 +1,10 @@
 
-import React from 'react';
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
+import React, { useState } from 'react';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
+import { useSfdAdhesionRequests } from '@/hooks/useSfdAdhesionRequests';
 import {
   Form,
   FormControl,
@@ -13,197 +14,176 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Loader } from '@/components/ui/loader';
-import { useClientAdhesions, AdhesionRequestInput } from '@/hooks/useClientAdhesions.tsx';
-import { useAuth } from '@/hooks/useAuth';
-
-// Schema definition
-const adhesionSchema = z.object({
-  full_name: z.string().min(3, "Le nom complet est requis"),
-  profession: z.string().min(2, "La profession est requise"),
-  monthly_income: z.string().min(1, "Le revenu mensuel est requis"),
-  source_of_income: z.string().min(2, "La source de revenu est requise"),
-  phone: z.string().min(8, "Le numéro de téléphone est requis"),
-  email: z.string().email("Email invalide").optional().or(z.literal('')),
-  address: z.string().min(3, "L'adresse est requise"),
-});
-
-// Match the expected input type from useClientAdhesions.tsx
-type AdhesionFormInput = z.infer<typeof adhesionSchema>;
+import { Loader2 } from 'lucide-react';
 
 interface NewAdhesionRequestFormProps {
   sfdId: string;
   onSuccess?: () => void;
 }
 
-export const NewAdhesionRequestForm: React.FC<NewAdhesionRequestFormProps> = ({ 
-  sfdId,
-  onSuccess 
-}) => {
-  const { user } = useAuth();
-  const { submitAdhesionRequest, isCreatingRequest } = useClientAdhesions();
+const formSchema = z.object({
+  full_name: z.string().min(3, 'Le nom complet est requis'),
+  profession: z.string().optional(),
+  monthly_income: z.string().optional(),
+  source_of_income: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email('Email invalide').optional().or(z.literal('')),
+  address: z.string().optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestFormProps) {
+  const { submitAdhesionRequest, isSubmitting } = useSfdAdhesionRequests();
   
-  // Initialiser le formulaire avec react-hook-form et zod
-  const form = useForm<AdhesionFormInput>({
-    resolver: zodResolver(adhesionSchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      full_name: user?.user_metadata?.full_name || '',
+      full_name: '',
       profession: '',
       monthly_income: '',
       source_of_income: '',
-      phone: user?.phone || '',
-      email: user?.email || '',
+      phone: '',
+      email: '',
       address: '',
     },
   });
 
-  const onSubmit = async (values: AdhesionFormInput) => {
-    // Ensure full_name is always provided as it's required by AdhesionRequestInput
-    const adhesionData: AdhesionRequestInput = {
-      full_name: values.full_name,
-      profession: values.profession,
-      monthly_income: values.monthly_income,
-      source_of_income: values.source_of_income,
-      phone: values.phone,
-      email: values.email,
-      address: values.address,
-    };
-    
-    const result = await submitAdhesionRequest(sfdId, adhesionData);
-    
-    if (result.success && onSuccess) {
-      onSuccess();
+  const onSubmit = async (values: FormValues) => {
+    try {
+      const result = await submitAdhesionRequest(sfdId, values);
+      
+      if (result.success) {
+        form.reset();
+        if (onSuccess) onSuccess();
+      }
+    } catch (error) {
+      console.error('Error submitting adhesion request:', error);
     }
   };
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="full_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nom complet</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Votre nom complet" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="profession"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Profession</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Votre profession" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="monthly_income"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Revenu mensuel (FCFA)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="100000" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="source_of_income"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Source de revenu</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Salaire, Business, etc." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Téléphone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="+223 XX XX XX XX" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email (optionnel)</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="votre@email.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Adresse</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Votre adresse" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90" 
-              disabled={isCreatingRequest}
-            >
-              {isCreatingRequest ? (
-                <>
-                  <Loader size="sm" className="mr-2" /> Envoi en cours...
-                </>
-              ) : (
-                "Soumettre la demande d'adhésion"
-              )}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="full_name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nom complet *</FormLabel>
+              <FormControl>
+                <Input placeholder="Votre nom complet" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Téléphone</FormLabel>
+                <FormControl>
+                  <Input placeholder="Numéro de téléphone" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input placeholder="Adresse email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="profession"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Profession</FormLabel>
+              <FormControl>
+                <Input placeholder="Votre profession" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="monthly_income"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Revenu mensuel (FCFA)</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: 150000" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="source_of_income"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Source de revenu</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: Salaire, Commerce..." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Adresse</FormLabel>
+              <FormControl>
+                <Input placeholder="Votre adresse" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="pt-4">
+          <Button 
+            type="submit" 
+            className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                Envoi en cours...
+              </>
+            ) : (
+              'Soumettre la demande'
+            )}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
-};
+}

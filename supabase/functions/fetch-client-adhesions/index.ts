@@ -18,8 +18,12 @@ serve(async (req) => {
     const { userId, sfdId } = await req.json()
 
     if (!userId) {
+      console.log('User ID missing in request')
       return new Response(
-        JSON.stringify({ error: 'User ID is required' }),
+        JSON.stringify({ 
+          error: 'User ID is required',
+          success: false
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
@@ -28,6 +32,9 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') as string
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
     const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // Log pour le débogage
+    console.log(`Processing request for user: ${userId}, SFD: ${sfdId || 'Not specified'}`)
 
     // Vérifier les rôles et permissions de l'utilisateur
     try {
@@ -39,11 +46,16 @@ serve(async (req) => {
       if (rolesError) {
         console.error('Error fetching user roles:', rolesError)
         return new Response(
-          JSON.stringify({ error: 'Failed to verify user permissions', details: rolesError }),
+          JSON.stringify({ 
+            error: 'Failed to verify user permissions', 
+            details: rolesError,
+            success: false 
+          }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         )
       }
 
+      // Vérifier si l'utilisateur est un admin ou admin SFD
       const isAdmin = userRoles?.some(r => r.role === 'admin')
       const isSfdAdmin = userRoles?.some(r => r.role === 'sfd_admin')
 
@@ -64,7 +76,11 @@ serve(async (req) => {
         if (userReqError) {
           console.error('Error fetching user adhesion requests:', userReqError)
           return new Response(
-            JSON.stringify({ error: 'Failed to fetch user adhesion requests', details: userReqError }),
+            JSON.stringify({ 
+              error: 'Failed to fetch user adhesion requests', 
+              details: userReqError,
+              success: false 
+            }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
           )
         }
@@ -76,7 +92,7 @@ serve(async (req) => {
         }))
 
         return new Response(
-          JSON.stringify(formattedRequests),
+          JSON.stringify({ data: formattedRequests, success: true }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         )
       }
@@ -93,7 +109,11 @@ serve(async (req) => {
         if (sfdError) {
           console.error('Error fetching user SFDs:', sfdError)
           return new Response(
-            JSON.stringify({ error: 'Failed to verify SFD access permissions', details: sfdError }),
+            JSON.stringify({ 
+              error: 'Failed to verify SFD access permissions', 
+              details: sfdError,
+              success: false 
+            }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
           )
         }
@@ -106,7 +126,10 @@ serve(async (req) => {
 
       if (!canAccessSfd && !isAdmin) {
         return new Response(
-          JSON.stringify({ error: 'Unauthorized access to adhesion requests' }),
+          JSON.stringify({ 
+            error: 'Unauthorized access to adhesion requests',
+            success: false
+          }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
         )
       }
@@ -133,7 +156,11 @@ serve(async (req) => {
         if (accessError) {
           console.error('Error fetching accessible SFDs:', accessError)
           return new Response(
-            JSON.stringify({ error: 'Failed to fetch accessible SFDs', details: accessError }),
+            JSON.stringify({ 
+              error: 'Failed to fetch accessible SFDs', 
+              details: accessError,
+              success: false 
+            }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
           )
         }
@@ -144,7 +171,7 @@ serve(async (req) => {
         } else {
           // Si aucun SFD accessible, retourner un tableau vide
           return new Response(
-            JSON.stringify([]),
+            JSON.stringify({ data: [], success: true }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
           )
         }
@@ -155,7 +182,11 @@ serve(async (req) => {
       if (error) {
         console.error('Error fetching adhesion requests:', error)
         return new Response(
-          JSON.stringify({ error: 'Failed to fetch adhesion requests', details: error }),
+          JSON.stringify({ 
+            error: 'Failed to fetch adhesion requests', 
+            details: error,
+            success: false 
+          }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         )
       }
@@ -167,20 +198,28 @@ serve(async (req) => {
       }))
 
       return new Response(
-        JSON.stringify(formattedRequests),
+        JSON.stringify({ data: formattedRequests, success: true }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     } catch (permError) {
       console.error('Error checking permissions:', permError)
       return new Response(
-        JSON.stringify({ error: 'Failed to check user permissions', details: permError.message }),
+        JSON.stringify({ 
+          error: 'Failed to check user permissions', 
+          details: permError.message,
+          success: false 
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
   } catch (error) {
     console.error('Server error:', error)
     return new Response(
-      JSON.stringify({ error: 'Server error', details: error.message }),
+      JSON.stringify({ 
+        error: 'Server error', 
+        details: error.message,
+        success: false 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }

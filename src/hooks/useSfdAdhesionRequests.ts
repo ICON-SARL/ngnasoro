@@ -88,7 +88,7 @@ export function useSfdAdhesionRequests() {
         });
       }
 
-      // If approved, create client entry (this would be handled by a trigger in production)
+      // If approved, create client entry
       if (action === 'approve' && requestData) {
         // Check if the client entry already exists
         const { data: existingClient } = await supabase
@@ -173,7 +173,7 @@ export function useSfdAdhesionRequests() {
         error: error.message || 'Une erreur est survenue lors de la soumission de la demande' 
       };
     } finally {
-      setIsSubmitting(false);  // Fixed: Changed from true to false
+      setIsSubmitting(false);
     }
   };
 

@@ -1,9 +1,12 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
 import { useSfdDataAccess } from './useSfdDataAccess';
+import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
+import ErrorState from '@/components/mobile/sfd-savings/ErrorState';
+import { useState } from 'react';
 
 export interface AdhesionRequest {
   id: string;
@@ -49,105 +52,102 @@ export function useClientAdhesions() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { activeSfdId } = useSfdDataAccess();
+  const [retryCount, setRetryCount] = useState(0);
 
+  // Fonction pour récupérer les demandes d'adhésion avec une approche hybride
+  // Essaie d'abord la fonction edge, puis revient à une requête directe si nécessaire
   const fetchAdhesionRequests = async (sfdId: string): Promise<AdhesionRequest[]> => {
     if (!sfdId || !user?.id) return [];
 
+    console.log(`Fetching adhesion requests for SFD: ${sfdId}`);
+    
     try {
-      console.log(`Fetching adhesion requests for SFD: ${sfdId}`);
+      // Essayer d'abord d'utiliser la fonction Edge (pour avoir la vérification des rôles complète)
+      const { data: edgeData, error: edgeError, success } = await edgeFunctionApi.callFunction<AdhesionRequest[]>(
+        'fetch-client-adhesions', 
+        { userId: user.id, sfdId }
+      );
       
-      // Approche directe par base de données
+      if (!edgeError && success && edgeData) {
+        console.log(`Found ${edgeData.length} adhesion requests via edge function`);
+        return edgeData;
+      }
+      
+      // Si la fonction Edge échoue, essayer une requête directe à la base de données
+      console.log('Edge function failed, falling back to direct database query');
+      
+      // Récupérer toutes les demandes pour cet SFD (si admin SFD)
+      const { data: directData, error: directError } = await supabase
+        .from('client_adhesion_requests')
+        .select(`
+          *,
+          sfds:sfd_id(name, logo_url)
+        `)
+        .eq('sfd_id', sfdId)
+        .order('created_at', { ascending: false });
+      
+      if (directError) {
+        console.error('Error in direct database query:', directError);
+        throw directError;
+      }
+      
+      const formattedRequests = directData?.map(req => ({
+        ...req,
+        sfd_name: req.sfds?.name,
+        status: req.status as 'pending' | 'approved' | 'rejected'
+      })) || [];
+      
+      console.log(`Found ${formattedRequests.length} adhesion requests via direct query`);
+      return formattedRequests as AdhesionRequest[];
+    } catch (error) {
+      console.error('Error fetching adhesion requests:', error);
+      setRetryCount(prev => prev + 1);
+      
+      // Essayer une dernière approche simple comme fallback ultime
       try {
-        const { data: directData, error: directError } = await supabase
-          .from('client_adhesion_requests')
-          .select(`
-            *,
-            sfds:sfd_id(name, logo_url)
-          `)
-          .eq('sfd_id', sfdId)
-          .order('created_at', { ascending: false });
-          
-        if (directError) {
-          console.error('Error fetching adhesion requests directly:', directError);
-          throw directError;
-        }
-        
-        const formattedRequests = directData?.map(req => ({
-          ...req,
-          sfd_name: req.sfds?.name,
-          status: req.status as 'pending' | 'approved' | 'rejected'
-        })) || [];
-        
-        console.log(`Found ${formattedRequests.length} adhesion requests directly`);
-        return formattedRequests as AdhesionRequest[];
-      } catch (dbError) {
-        console.error('Database query failed, trying alternative method:', dbError);
-        
-        // Si l'approche directe échoue, essayons une requête plus simple
-        const { data: simpleData, error: simpleError } = await supabase
+        const { data: fallbackData, error: fallbackError } = await supabase
           .from('client_adhesion_requests')
           .select('*')
           .eq('sfd_id', sfdId)
           .order('created_at', { ascending: false });
           
-        if (simpleError) {
-          console.error('Simple query also failed:', simpleError);
-          throw simpleError;
-        }
+        if (fallbackError) throw fallbackError;
         
-        console.log(`Found ${simpleData?.length || 0} adhesion requests with simple query`);
-        return (simpleData || []) as AdhesionRequest[];
+        console.log(`Found ${fallbackData?.length || 0} adhesion requests with fallback query`);
+        return (fallbackData || []) as AdhesionRequest[];
+      } catch (finalError) {
+        console.error('All attempts to fetch adhesion requests failed:', finalError);
+        toast({
+          title: "Erreur de chargement",
+          description: "Impossible de récupérer les demandes d'adhésion",
+          variant: "destructive",
+        });
+        return [];
       }
-    } catch (error) {
-      console.error('Error in fetchAdhesionRequests:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de récupérer les demandes d'adhésion",
-        variant: "destructive",
-      });
-      return [];
     }
   };
 
+  // Fonction pour récupérer les demandes d'adhésion de l'utilisateur actuel
   const fetchUserAdhesionRequests = async (): Promise<AdhesionRequest[]> => {
     if (!user?.id) return [];
 
     try {
-      // Approche directe par base de données
-      try {
-        const { data, error } = await supabase
-          .from('client_adhesion_requests')
-          .select('*, sfds:sfd_id(name, logo_url)')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('client_adhesion_requests')
+        .select('*, sfds:sfd_id(name, logo_url)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        
-        const formattedRequests = data?.map(req => ({
-          ...req,
-          sfd_name: req.sfds?.name,
-          status: req.status as 'pending' | 'approved' | 'rejected'
-        })) || [];
-        
-        console.log(`Found ${formattedRequests.length} user adhesion requests`);
-        return formattedRequests as AdhesionRequest[];
-      } catch (dbError) {
-        console.error('Database query failed for user requests, trying simple query:', dbError);
-        
-        // Si l'approche avec join échoue, essayons une requête plus simple
-        const { data: simpleData, error: simpleError } = await supabase
-          .from('client_adhesion_requests')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        if (simpleError) {
-          console.error('Simple query also failed for user requests:', simpleError);
-          throw simpleError;
-        }
-        
-        return (simpleData || []) as AdhesionRequest[];
-      }
+      if (error) throw error;
+      
+      const formattedRequests = data?.map(req => ({
+        ...req,
+        sfd_name: req.sfds?.name,
+        status: req.status as 'pending' | 'approved' | 'rejected'
+      })) || [];
+      
+      console.log(`Found ${formattedRequests.length} user adhesion requests`);
+      return formattedRequests as AdhesionRequest[];
     } catch (error) {
       console.error('Error fetching user adhesion requests:', error);
       toast({
@@ -236,5 +236,6 @@ export function useClientAdhesions() {
     adhesionRequests: adhesionRequestsQuery.data || [],
     isLoadingAdhesionRequests: adhesionRequestsQuery.isLoading,
     refetchAdhesionRequests: adhesionRequestsQuery.refetch,
+    retryCount,
   };
 }

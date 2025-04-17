@@ -6,9 +6,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 
 const SfdAdhesionRequestsPage = () => {
   const { hasPermission } = usePermissions();
+  const { adhesionRequests, isLoadingAdhesionRequests, refetchAdhesionRequests } = useClientAdhesions();
   const canViewAdhesions = hasPermission('view_client_adhesions');
   
   if (!canViewAdhesions) {
