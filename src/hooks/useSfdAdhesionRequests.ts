@@ -173,7 +173,7 @@ export function useSfdAdhesionRequests() {
         error: error.message || 'Une erreur est survenue lors de la soumission de la demande' 
       };
     } finally {
-      setIsSubmitting(true);
+      setIsSubmitting(false);  // Fixed: Changed from true to false
     }
   };
 

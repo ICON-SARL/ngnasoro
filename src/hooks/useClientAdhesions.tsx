@@ -56,29 +56,48 @@ export function useClientAdhesions() {
     try {
       console.log(`Fetching adhesion requests for SFD: ${sfdId}`);
       
-      // Try the direct database query approach first
-      const { data: directData, error: directError } = await supabase
-        .from('client_adhesion_requests')
-        .select(`
-          *,
-          sfds:sfd_id(name, logo_url)
-        `)
-        .eq('sfd_id', sfdId)
-        .order('created_at', { ascending: false });
+      // Approche directe par base de données
+      try {
+        const { data: directData, error: directError } = await supabase
+          .from('client_adhesion_requests')
+          .select(`
+            *,
+            sfds:sfd_id(name, logo_url)
+          `)
+          .eq('sfd_id', sfdId)
+          .order('created_at', { ascending: false });
+          
+        if (directError) {
+          console.error('Error fetching adhesion requests directly:', directError);
+          throw directError;
+        }
         
-      if (directError) {
-        console.error('Error fetching adhesion requests directly:', directError);
-        throw directError;
+        const formattedRequests = directData?.map(req => ({
+          ...req,
+          sfd_name: req.sfds?.name,
+          status: req.status as 'pending' | 'approved' | 'rejected'
+        })) || [];
+        
+        console.log(`Found ${formattedRequests.length} adhesion requests directly`);
+        return formattedRequests as AdhesionRequest[];
+      } catch (dbError) {
+        console.error('Database query failed, trying alternative method:', dbError);
+        
+        // Si l'approche directe échoue, essayons une requête plus simple
+        const { data: simpleData, error: simpleError } = await supabase
+          .from('client_adhesion_requests')
+          .select('*')
+          .eq('sfd_id', sfdId)
+          .order('created_at', { ascending: false });
+          
+        if (simpleError) {
+          console.error('Simple query also failed:', simpleError);
+          throw simpleError;
+        }
+        
+        console.log(`Found ${simpleData?.length || 0} adhesion requests with simple query`);
+        return (simpleData || []) as AdhesionRequest[];
       }
-      
-      const formattedRequests = directData?.map(req => ({
-        ...req,
-        sfd_name: req.sfds?.name,
-        status: req.status as 'pending' | 'approved' | 'rejected'
-      })) || [];
-      
-      console.log(`Found ${formattedRequests.length} adhesion requests directly`);
-      return formattedRequests as AdhesionRequest[];
     } catch (error) {
       console.error('Error in fetchAdhesionRequests:', error);
       toast({
@@ -94,23 +113,41 @@ export function useClientAdhesions() {
     if (!user?.id) return [];
 
     try {
-      // Direct database query approach
-      const { data, error } = await supabase
-        .from('client_adhesion_requests')
-        .select('*, sfds:sfd_id(name, logo_url)')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      // Approche directe par base de données
+      try {
+        const { data, error } = await supabase
+          .from('client_adhesion_requests')
+          .select('*, sfds:sfd_id(name, logo_url)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      const formattedRequests = data?.map(req => ({
-        ...req,
-        sfd_name: req.sfds?.name,
-        status: req.status as 'pending' | 'approved' | 'rejected'
-      })) || [];
-      
-      console.log(`Found ${formattedRequests.length} user adhesion requests`);
-      return formattedRequests as AdhesionRequest[];
+        if (error) throw error;
+        
+        const formattedRequests = data?.map(req => ({
+          ...req,
+          sfd_name: req.sfds?.name,
+          status: req.status as 'pending' | 'approved' | 'rejected'
+        })) || [];
+        
+        console.log(`Found ${formattedRequests.length} user adhesion requests`);
+        return formattedRequests as AdhesionRequest[];
+      } catch (dbError) {
+        console.error('Database query failed for user requests, trying simple query:', dbError);
+        
+        // Si l'approche avec join échoue, essayons une requête plus simple
+        const { data: simpleData, error: simpleError } = await supabase
+          .from('client_adhesion_requests')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+          
+        if (simpleError) {
+          console.error('Simple query also failed for user requests:', simpleError);
+          throw simpleError;
+        }
+        
+        return (simpleData || []) as AdhesionRequest[];
+      }
     } catch (error) {
       console.error('Error fetching user adhesion requests:', error);
       toast({
@@ -140,7 +177,7 @@ export function useClientAdhesions() {
         throw new Error('User not authenticated');
       }
 
-      // Direct database approach
+      // Approche directe par base de données
       const { data, error } = await supabase
         .from('client_adhesion_requests')
         .insert({
