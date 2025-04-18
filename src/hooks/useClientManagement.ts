@@ -4,27 +4,37 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { generateTempPassword } from '@/utils/passwordUtils';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+
+type ClientData = {
+  full_name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  id_type?: string;
+  id_number?: string;
+};
 
 export function useClientManagement() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { activeSfdId } = useSfdDataAccess();
 
-  const createClientWithAccount = async (clientData: {
-    full_name: string;
-    email: string;
-    phone?: string;
-    address?: string;
-    id_type?: string;
-    id_number?: string;
-  }) => {
+  const createClientWithAccount = async (clientData: ClientData) => {
     setIsLoading(true);
     try {
+      // Vérifier que l'ID SFD est disponible
+      if (!activeSfdId) {
+        throw new Error("Aucune SFD active sélectionnée");
+      }
+
       // 1. Créer le client SFD
       const { data: clientResult, error: clientError } = await supabase
         .from('sfd_clients')
         .insert([{
           ...clientData,
+          sfd_id: activeSfdId,
           status: 'validated' // Le client est automatiquement validé
         }])
         .select()

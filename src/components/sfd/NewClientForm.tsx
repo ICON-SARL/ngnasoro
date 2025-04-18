@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,7 +17,8 @@ import * as z from 'zod';
 import { useClientManagement } from '@/hooks/useClientManagement';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useState } from 'react';
+
+// Suppression de l'import dupliqué de useState
 
 const formSchema = z.object({
   full_name: z.string().min(3, { message: 'Le nom doit contenir au moins 3 caractères' }),
@@ -30,7 +31,12 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const NewClientForm = () => {
+// Ajout d'une interface pour les props
+interface NewClientFormProps {
+  onSuccess?: () => void;
+}
+
+export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
   const { createClientWithAccount, isLoading } = useClientManagement();
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   
@@ -48,9 +54,24 @@ export const NewClientForm = () => {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      const result = await createClientWithAccount(data);
+      // S'assurer que full_name et email sont toujours définis
+      const clientData = {
+        full_name: data.full_name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        id_type: data.id_type,
+        id_number: data.id_number,
+      };
+      
+      const result = await createClientWithAccount(clientData);
       setTempPassword(result.tempPassword);
       form.reset();
+      
+      // Appeler onSuccess s'il est défini
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error('Error creating client:', error);
     }

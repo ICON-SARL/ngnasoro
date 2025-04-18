@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +31,7 @@ export function ClientManagement() {
   const [selectedClient, setSelectedClient] = useState<SfdClient | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-  
+
   // Simuler une demande de refresh des statistiques du tableau de bord
   // quand ce composant est monté via useQueryClient
   React.useEffect(() => {
@@ -87,6 +86,7 @@ export function ClientManagement() {
   return (
     <Card>
       <CardContent className="p-6">
+        {/* ... keep existing code (main JSX) the same ... */}
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Gestion des Clients</h2>
