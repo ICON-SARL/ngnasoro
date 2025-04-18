@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 import { AdhesionRequestsTable } from './AdhesionRequestsTable';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Search, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Search, Clock, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
