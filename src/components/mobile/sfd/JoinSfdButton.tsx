@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Edit2, RefreshCw } from 'lucide-react';
 import { handleError } from '@/utils/errorHandler';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -12,9 +12,10 @@ interface JoinSfdButtonProps {
   sfdId: string;
   sfdName: string;
   isRetry?: boolean;
+  isEdit?: boolean;
 }
 
-export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButtonProps) => {
+export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false, isEdit = false }: JoinSfdButtonProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -31,9 +32,16 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
         return;
       }
 
-      // If it's a retry, we need to delete the old rejected request first
+      // Si c'est une modification ou édition, naviguer directement sans supprimer la demande
+      if (isEdit) {
+        console.log(`Édition de la demande pour SFD: ${sfdId}`);
+        navigate(`/mobile-flow/sfd-adhesion/${sfdId}?mode=edit`);
+        return;
+      }
+
+      // Si c'est une nouvelle tentative après un rejet, supprimer l'ancienne demande
       if (isRetry) {
-        console.log(`Deleting previous rejected request for SFD: ${sfdId}`);
+        console.log(`Suppression de la demande rejetée pour SFD: ${sfdId}`);
         
         const { error: deleteError } = await supabase
           .from('client_adhesion_requests')
@@ -43,7 +51,7 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
           .eq('status', 'rejected');
           
         if (deleteError) {
-          console.error('Error deleting previous request:', deleteError);
+          console.error('Erreur lors de la suppression de la demande précédente:', deleteError);
           toast({
             title: 'Erreur',
             description: "Impossible de réinitialiser votre demande précédente",
@@ -58,13 +66,11 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
         });
       }
       
-      console.log(`Navigating to adhesion page for SFD: ${sfdId} (${sfdName})`);
-      
-      // Correction: utiliser le chemin complet et s'assurer qu'il est correctement formé
+      console.log(`Navigation vers la page d'adhésion pour SFD: ${sfdId} (${sfdName})`);
       navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
       
     } catch (err) {
-      console.error('Error handling join request:', err);
+      console.error('Erreur lors du traitement de la demande:', err);
       handleError(err);
     }
   };
@@ -72,9 +78,25 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
   return (
     <Button 
       onClick={handleJoinRequest}
-      className={`w-full ${isRetry ? 'bg-red-600 hover:bg-red-700' : 'bg-[#0D6A51] hover:bg-[#0D6A51]/90'}`}
+      className={`w-full ${isRetry 
+        ? 'bg-red-600 hover:bg-red-700' 
+        : isEdit 
+          ? 'bg-amber-600 hover:bg-amber-700'
+          : 'bg-[#0D6A51] hover:bg-[#0D6A51]/90'}`}
     >
-      {isRetry ? 'Réessayer' : 'Rejoindre'} <ArrowRight className="ml-2 h-4 w-4" />
+      {isRetry ? (
+        <>
+          <RefreshCw className="mr-2 h-4 w-4" /> Réessayer
+        </>
+      ) : isEdit ? (
+        <>
+          <Edit2 className="mr-2 h-4 w-4" /> Modifier
+        </>
+      ) : (
+        <>
+          Rejoindre <ArrowRight className="ml-2 h-4 w-4" />
+        </>
+      )}
     </Button>
   );
 };

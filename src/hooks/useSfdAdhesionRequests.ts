@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -156,10 +157,64 @@ export function useSfdAdhesionRequests() {
     }
   };
 
+  const updateAdhesionRequest = async (requestId: string, input: AdhesionRequestInput) => {
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase
+        .from('client_adhesion_requests')
+        .update({
+          full_name: input.full_name,
+          email: input.email || null,
+          phone: input.phone || null,
+          address: input.address || null,
+          profession: input.profession || null,
+          monthly_income: input.monthly_income ? parseFloat(input.monthly_income) : null,
+          source_of_income: input.source_of_income || null,
+          // Si une demande a été rejetée et qu'on la modifie, on la remet en statut "en attente"
+          status: 'pending',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', requestId)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await supabase.from('audit_logs').insert({
+        user_id: user.id,
+        action: 'adhesion_request_updated',
+        category: 'CLIENT_MANAGEMENT',
+        status: 'success',
+        severity: 'info',
+        target_resource: `client_adhesion_requests/${requestId}`,
+        details: { requestId, clientName: input.full_name }
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['user-adhesion-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['adhesion-requests'] });
+
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('Error updating adhesion request:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Une erreur est survenue lors de la mise à jour de la demande' 
+      };
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return {
     processAdhesionRequest,
     isProcessing,
     submitAdhesionRequest,
+    updateAdhesionRequest,
     isSubmitting
   };
 }

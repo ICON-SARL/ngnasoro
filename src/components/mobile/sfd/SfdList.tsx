@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { JoinSfdButton } from './JoinSfdButton';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Sfd {
   id: string;
@@ -24,6 +25,7 @@ interface SfdListProps {
   isSubmitting?: boolean;
   onSelectSfd?: (sfdId: string) => void;
   onRetry?: (sfdId: string) => void;
+  onEdit?: (sfdId: string) => void;
 }
 
 const SfdList: React.FC<SfdListProps> = ({ 
@@ -31,7 +33,8 @@ const SfdList: React.FC<SfdListProps> = ({
   existingRequests = [],
   isSubmitting,
   onSelectSfd,
-  onRetry
+  onRetry,
+  onEdit
 }) => {
   const getRequestStatus = (sfdId: string): ExistingRequest | undefined => {
     return existingRequests.find(req => req.sfd_id === sfdId);
@@ -102,14 +105,28 @@ const SfdList: React.FC<SfdListProps> = ({
                     <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
                   </div>
                 ) : requestStatus?.status === 'rejected' ? (
-                  <JoinSfdButton
-                    sfdId={sfd.id}
-                    sfdName={sfd.name}
-                    isRetry={true}
-                  />
+                  <div className="grid grid-cols-2 gap-2 p-2">
+                    <JoinSfdButton
+                      sfdId={sfd.id}
+                      sfdName={sfd.name}
+                      isRetry={true}
+                    />
+                    <JoinSfdButton
+                      sfdId={sfd.id}
+                      sfdName={sfd.name}
+                      isEdit={true}
+                    />
+                  </div>
                 ) : requestStatus?.status === 'pending' ? (
-                  <div className="bg-amber-50 text-amber-800 py-3 px-4 text-center text-sm">
-                    Demande en cours de traitement
+                  <div className="flex justify-between items-center">
+                    <div className="bg-amber-50 text-amber-800 py-3 px-4 text-center text-sm flex-1">
+                      Demande en cours de traitement
+                    </div>
+                    <JoinSfdButton
+                      sfdId={sfd.id}
+                      sfdName={sfd.name}
+                      isEdit={true}
+                    />
                   </div>
                 ) : onSelectSfd ? (
                   <button

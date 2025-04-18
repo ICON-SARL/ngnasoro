@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -19,6 +20,8 @@ import { AdhesionRequestInput } from '@/hooks/useClientAdhesions';
 interface NewAdhesionRequestFormProps {
   sfdId: string;
   onSuccess?: () => void;
+  initialData?: any;
+  isEdit?: boolean;
 }
 
 const formSchema = z.object({
@@ -33,8 +36,8 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestFormProps) {
-  const { submitAdhesionRequest, isSubmitting } = useSfdAdhesionRequests();
+export function NewAdhesionRequestForm({ sfdId, onSuccess, initialData, isEdit = false }: NewAdhesionRequestFormProps) {
+  const { submitAdhesionRequest, updateAdhesionRequest, isSubmitting } = useSfdAdhesionRequests();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -48,6 +51,20 @@ export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestF
       address: '',
     },
   });
+  
+  useEffect(() => {
+    if (initialData && isEdit) {
+      form.reset({
+        full_name: initialData.full_name || '',
+        profession: initialData.profession || '',
+        monthly_income: initialData.monthly_income ? String(initialData.monthly_income) : '',
+        source_of_income: initialData.source_of_income || '',
+        phone: initialData.phone || '',
+        email: initialData.email || '',
+        address: initialData.address || '',
+      });
+    }
+  }, [initialData, isEdit, form]);
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -69,7 +86,15 @@ export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestF
         address: values.address
       };
       
-      const result = await submitAdhesionRequest(sfdId, input);
+      let result;
+      
+      if (isEdit && initialData?.id) {
+        // Update existing request
+        result = await updateAdhesionRequest(initialData.id, input);
+      } else {
+        // Create new request
+        result = await submitAdhesionRequest(sfdId, input);
+      }
       
       if (result.success) {
         form.reset();
@@ -194,10 +219,10 @@ export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestF
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                Envoi en cours...
+                {isEdit ? 'Mise à jour en cours...' : 'Envoi en cours...'}
               </>
             ) : (
-              'Soumettre la demande'
+              isEdit ? 'Mettre à jour la demande' : 'Soumettre la demande'
             )}
           </Button>
         </div>

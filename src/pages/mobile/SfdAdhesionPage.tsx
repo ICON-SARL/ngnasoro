@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Clock, CheckCircle, XCircle, Building } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle, XCircle, Building, Edit2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { NewAdhesionRequestForm } from '@/components/client/NewAdhesionRequestForm';
@@ -16,6 +17,7 @@ import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 const SfdAdhesionPage: React.FC = () => {
   const { sfdId } = useParams<{ sfdId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const { 
@@ -27,6 +29,15 @@ const SfdAdhesionPage: React.FC = () => {
   const [sfdInfo, setSfdInfo] = useState<{ name: string; region?: string } | null>(null);
   const [isLoadingSfd, setIsLoadingSfd] = useState(false);
   const [sfdError, setSfdError] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [existingData, setExistingData] = useState<any>(null);
+  
+  // Check if we're in edit mode from the URL
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const mode = searchParams.get('mode');
+    setIsEditMode(mode === 'edit');
+  }, [location.search]);
   
   useEffect(() => {
     if (!user) return;
@@ -68,9 +79,34 @@ const SfdAdhesionPage: React.FC = () => {
       }
     };
     
+    const fetchExistingRequest = async () => {
+      if (!sfdId || !user?.id || !isEditMode) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('client_adhesion_requests')
+          .select('*')
+          .eq('sfd_id', sfdId)
+          .eq('user_id', user.id)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching existing request:', error);
+          return;
+        }
+        
+        if (data) {
+          setExistingData(data);
+        }
+      } catch (error) {
+        console.error('Error in fetchExistingRequest:', error);
+      }
+    };
+    
     fetchSfdInfo();
+    fetchExistingRequest();
     refetchUserAdhesionRequests();
-  }, [sfdId, toast, refetchUserAdhesionRequests, navigate, user]);
+  }, [sfdId, toast, refetchUserAdhesionRequests, navigate, user, isEditMode]);
 
   useRealtimeSync({
     table: 'client_adhesion_requests',
@@ -134,7 +170,10 @@ const SfdAdhesionPage: React.FC = () => {
                 Chargement... <Loader className="ml-2" />
               </span>
             ) : (
-              <>Demande d'adhésion {sfdInfo && <span className="text-[#0D6A51]">{sfdInfo.name}</span>}</>
+              <>
+                {isEditMode ? 'Modification de la demande' : 'Demande d\'adhésion'} 
+                {sfdInfo && <span className="text-[#0D6A51]"> {sfdInfo.name}</span>}
+              </>
             )}
           </CardTitle>
         </CardHeader>
@@ -160,7 +199,7 @@ const SfdAdhesionPage: React.FC = () => {
                 </Button>
               </AlertDescription>
             </Alert>
-          ) : existingRequest ? (
+          ) : existingRequest && !isEditMode ? (
             <div>
               {existingRequest.status === 'pending' && (
                 <Alert className="bg-amber-50 border-amber-200">
@@ -169,14 +208,24 @@ const SfdAdhesionPage: React.FC = () => {
                   <AlertDescription className="text-amber-700">
                     <p>Votre demande d'adhésion est en cours d'examen.</p> 
                     <p className="mt-1 text-sm">Soumise le {formatDate(existingRequest.created_at)}</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="mt-3 bg-white text-amber-600 border-amber-300 hover:bg-amber-50"
-                      onClick={() => navigate('/mobile-flow/account')}
-                    >
-                      Voir mes demandes
-                    </Button>
+                    <div className="mt-3 flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="bg-white text-amber-600 border-amber-300 hover:bg-amber-50"
+                        onClick={() => navigate('/mobile-flow/account')}
+                      >
+                        Voir mes demandes
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="bg-white text-blue-600 border-blue-300 hover:bg-blue-50"
+                        onClick={() => setIsEditMode(true)}
+                      >
+                        <Edit2 className="h-3 w-3 mr-1" /> Modifier
+                      </Button>
+                    </div>
                   </AlertDescription>
                 </Alert>
               )}
@@ -210,22 +259,50 @@ const SfdAdhesionPage: React.FC = () => {
                         <strong>Raison du rejet:</strong> {existingRequest.notes}
                       </div>
                     )}
+                    <div className="mt-3 flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="bg-white text-red-600 border-red-300 hover:bg-red-50"
+                        onClick={() => setIsEditMode(true)}
+                      >
+                        <Edit2 className="h-3 w-3 mr-1" /> Modifier et réessayer
+                      </Button>
+                    </div>
                   </AlertDescription>
                 </Alert>
               )}
             </div>
           ) : (
             sfdInfo ? (
-              <NewAdhesionRequestForm 
-                sfdId={sfdId} 
-                onSuccess={() => {
-                  toast({
-                    title: "Demande envoyée",
-                    description: "Votre demande d'adhésion a été envoyée avec succès"
-                  });
-                  refetchUserAdhesionRequests();
-                }}
-              />
+              <div>
+                {isEditMode && existingRequest && (
+                  <Alert className="mb-4 bg-blue-50 border-blue-200">
+                    <Edit2 className="h-4 w-4 text-blue-600" />
+                    <AlertTitle className="text-blue-800">Mode modification</AlertTitle>
+                    <AlertDescription className="text-blue-700">
+                      Vous modifiez votre demande existante. Mettez à jour les informations nécessaires et soumettez à nouveau.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                <NewAdhesionRequestForm 
+                  sfdId={sfdId}
+                  initialData={existingData}
+                  isEdit={isEditMode} 
+                  onSuccess={() => {
+                    toast({
+                      title: isEditMode ? "Demande mise à jour" : "Demande envoyée",
+                      description: isEditMode 
+                        ? "Votre demande d'adhésion a été mise à jour avec succès" 
+                        : "Votre demande d'adhésion a été envoyée avec succès"
+                    });
+                    refetchUserAdhesionRequests();
+                    if (isEditMode) {
+                      setIsEditMode(false);
+                    }
+                  }}
+                />
+              </div>
             ) : (
               <Alert>
                 <AlertTitle>Impossible de charger la SFD</AlertTitle>
