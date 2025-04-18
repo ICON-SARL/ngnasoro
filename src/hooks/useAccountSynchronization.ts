@@ -1,99 +1,83 @@
-import { useCallback, useState } from 'react';
+
+import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 
 export function useAccountSynchronization() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const { toast } = useToast();
-  const { user, activeSfdId } = useAuth();
 
   /**
-   * Synchronize client accounts with user application accounts
-   * This can be called manually or automatically on schedule
+   * Synchronize client accounts with user accounts
+   * @param clientId Optional client ID to synchronize specific client
+   * @returns 
    */
-  const synchronizeAccounts = useCallback(async (clientId?: string) => {
-    if (!activeSfdId) {
-      console.error("No active SFD found");
-      return false;
-    }
-
-    setIsLoading(true);
-    
+  const synchronizeAccounts = useCallback(async (clientId?: string): Promise<boolean> => {
     try {
-      // If clientId is provided, sync only that client account
-      // Otherwise sync all client accounts in the SFD
-      const { data, error } = await supabase.functions.invoke('sync-client-accounts', {
-        body: { 
-          sfdId: activeSfdId,
-          clientId: clientId || null
+      // Si un clientId est fourni, synchroniser seulement ce client
+      if (clientId) {
+        const { data: clientData, error: clientError } = await supabase
+          .from('sfd_clients')
+          .select('id, sfd_id, user_id')
+          .eq('id', clientId)
+          .single();
+        
+        if (clientError || !clientData.user_id) {
+          console.error('Client not found or no user_id:', clientError);
+          return false;
         }
-      });
-      
-      if (error) throw error;
-      
-      setLastSynced(new Date());
-      
-      toast({
-        title: "Synchronisation réussie",
-        description: clientId 
-          ? "Le compte client a été synchronisé avec succès" 
-          : "Tous les comptes clients ont été synchronisés avec succès",
-      });
-      
-      return true;
+
+        // Vérifier si le compte existe déjà
+        const { data: accountData, error: accountError } = await supabase
+          .from('accounts')
+          .select('*')
+          .eq('user_id', clientData.user_id)
+          .maybeSingle();
+
+        // Si le compte n'existe pas, le créer
+        if (!accountData) {
+          const { error: insertError } = await supabase
+            .from('accounts')
+            .insert({
+              user_id: clientData.user_id,
+              sfd_id: clientData.sfd_id,
+              balance: 0,
+              currency: 'FCFA'
+            });
+          
+          if (insertError) {
+            console.error('Error creating account:', insertError);
+            return false;
+          }
+        }
+        
+        return true;
+      } else {
+        // Synchroniser tous les comptes via la fonction RPC (backend)
+        const { data: result, error } = await supabase
+          .rpc('sync_client_accounts');
+        
+        if (error) {
+          console.error('Error synchronizing accounts:', error);
+          toast({
+            title: "Erreur de synchronisation",
+            description: "Impossible de synchroniser les comptes",
+            variant: "destructive",
+          });
+          return false;
+        }
+        
+        return true;
+      }
     } catch (error: any) {
-      console.error("Error synchronizing accounts:", error);
+      console.error('Error in account synchronization:', error);
       toast({
-        title: "Erreur de synchronisation",
-        description: error.message || "Une erreur s'est produite lors de la synchronisation",
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de la synchronisation",
         variant: "destructive",
       });
       return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeSfdId, toast]);
-
-  /**
-   * Propagate a specific transaction from a client account to a user application account
-   */
-  const propagateTransaction = useCallback(async (transactionId: string) => {
-    setIsLoading(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('propagate-transaction', {
-        body: { 
-          transactionId: transactionId
-        }
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Transaction propagée",
-        description: "La transaction a été enregistrée dans le compte utilisateur",
-      });
-      
-      return true;
-    } catch (error: any) {
-      console.error("Error propagating transaction:", error);
-      toast({
-        title: "Erreur de propagation",
-        description: error.message || "Une erreur s'est produite lors de la propagation de la transaction",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
     }
   }, [toast]);
 
-  return {
-    synchronizeAccounts,
-    propagateTransaction,
-    isLoading,
-    lastSynced
-  };
+  return { synchronizeAccounts };
 }

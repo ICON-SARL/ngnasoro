@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { SfdClient, ClientDocument, ClientActivity } from "@/types/sfdClients";
 import { useToast } from "@/hooks/use-toast";
@@ -220,6 +219,41 @@ export const sfdClientApi = {
     } catch (error) {
       console.error('Error uploading client document:', error);
       throw error;
+    }
+  },
+  
+  // Create client savings account
+  async createClientSavingsAccount(clientId: string, sfdId: string, initialBalance: number = 0) {
+    try {
+      const { data, error } = await supabase
+        .rpc('create_client_savings_account', {
+          p_client_id: clientId,
+          p_sfd_id: sfdId,
+          p_initial_balance: initialBalance
+        });
+        
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating client savings account:', error);
+      throw error;
+    }
+  },
+  
+  // Get client account balance
+  async getClientAccountBalance(clientId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('accounts')
+        .select('balance, currency')
+        .eq('user_id', clientId)
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching client account balance:', error);
+      return { balance: 0, currency: 'FCFA' };
     }
   }
 };

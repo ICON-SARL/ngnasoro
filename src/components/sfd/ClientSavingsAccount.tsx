@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useClientSavingsAccount } from '@/hooks/useClientSavingsAccount';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -41,24 +40,27 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
     refreshData
   } = useClientSavingsAccount(clientId);
   
-  // Handle deposit submission
   const handleDeposit = async () => {
     if (!user?.id || !amount || parseFloat(amount) <= 0) return;
     
     const success = await processDeposit(parseFloat(amount), description);
     
     if (success) {
-      // Reset form
       setAmount('');
       setDescription('');
       setIsDepositDialogOpen(false);
     }
   };
   
-  // Handle account creation if it doesn't exist
   const handleCreateAccount = async () => {
     if (!user?.id) return;
-    await createAccount(0);
+    const success = await createAccount(0);
+    if (success) {
+      toast({
+        title: "Compte créé",
+        description: "Le compte d'épargne a été créé avec succès",
+      });
+    }
   };
   
   if (isLoading) {
@@ -73,7 +75,6 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
     );
   }
   
-  // If account doesn't exist, show creation option
   if (!account) {
     return (
       <Card>
@@ -115,7 +116,6 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
       
       <CardContent>
         <div className="space-y-4">
-          {/* Account Summary */}
           <div className="rounded-md bg-[#F8F9FC] p-4">
             <div className="mb-2 text-sm font-medium">Solde actuel</div>
             <div className="text-2xl font-semibold text-[#0D6A51]">
@@ -126,7 +126,6 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
             </div>
           </div>
           
-          {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3">
             <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
               <DialogTrigger asChild>
@@ -195,7 +194,6 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
             </Dialog>
           </div>
           
-          {/* Transaction History */}
           <Tabs defaultValue="transactions" className="mt-6">
             <TabsList className="grid w-full grid-cols-1">
               <TabsTrigger value="transactions">Historique des transactions</TabsTrigger>
@@ -255,7 +253,6 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, s
   );
 };
 
-// Helper function to get transaction type label
 function getTransactionType(type: string): string {
   const types: Record<string, string> = {
     'deposit': 'Dépôt',

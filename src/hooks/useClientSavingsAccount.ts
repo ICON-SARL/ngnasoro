@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAccountSynchronization } from './useAccountSynchronization';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ClientAccount {
   id: string;
@@ -28,6 +29,7 @@ export function useClientSavingsAccount(clientId: string) {
   const [isTransactionLoading, setIsTransactionLoading] = useState(false);
   const { toast } = useToast();
   const { synchronizeAccounts } = useAccountSynchronization();
+  const { activeSfdId } = useAuth();
 
   // Fetch account data
   const fetchAccountData = useCallback(async () => {
@@ -205,10 +207,10 @@ export function useClientSavingsAccount(clientId: string) {
 
   // Create a new account if it doesn't exist
   const createAccount = useCallback(async (initialBalance: number = 0) => {
-    if (!clientId) {
+    if (!clientId || !activeSfdId) {
       toast({
         title: "Erreur",
-        description: "ID client invalide",
+        description: "ID client ou SFD invalide",
         variant: "destructive",
       });
       return false;
@@ -216,36 +218,18 @@ export function useClientSavingsAccount(clientId: string) {
     
     setIsLoading(true);
     try {
-      // Check if account already exists
-      const { data: existingAccount, error: checkError } = await supabase
-        .from('accounts')
-        .select('*')
-        .eq('user_id', clientId)
-        .single();
-      
-      if (existingAccount) {
-        toast({
-          title: "Compte existant",
-          description: "Un compte existe déjà pour ce client",
-        });
-        setAccount(existingAccount);
-        return true;
-      }
-      
-      // Create new account
+      // Utilisez la RPC pour créer le compte (fonction SQL sécurisée)
       const { data, error } = await supabase
-        .from('accounts')
-        .insert({
-          user_id: clientId,
-          balance: initialBalance,
-          currency: 'FCFA'
-        })
-        .select()
-        .single();
+        .rpc('create_client_savings_account', {
+          p_client_id: clientId,
+          p_sfd_id: activeSfdId,
+          p_initial_balance: initialBalance
+        });
       
       if (error) throw error;
       
-      setAccount(data);
+      // Récupérer les détails du compte créé
+      await fetchAccountData();
       
       toast({
         title: "Compte créé",
@@ -276,14 +260,14 @@ export function useClientSavingsAccount(clientId: string) {
       console.error('Error creating account:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de créer le compte client",
+        description: `Impossible de créer le compte client: ${error.message}`,
         variant: "destructive",
       });
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [clientId, toast, fetchTransactionHistory, synchronizeAccounts]);
+  }, [clientId, activeSfdId, toast, fetchAccountData, fetchTransactionHistory, synchronizeAccounts]);
 
   // Synchronize account with user application account
   const syncAccount = useCallback(async () => {
