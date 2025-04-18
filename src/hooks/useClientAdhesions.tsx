@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -220,7 +219,6 @@ export function useClientAdhesions() {
     }
   };
 
-  // Add retryCount to the return object
   return {
     userAdhesionRequests: userAdhesionRequestsQuery.data || [],
     isLoadingUserAdhesionRequests: userAdhesionRequestsQuery.isLoading,
@@ -230,6 +228,6 @@ export function useClientAdhesions() {
     adhesionRequests: adhesionRequestsQuery.data || [],
     isLoadingAdhesionRequests: adhesionRequestsQuery.isLoading,
     refetchAdhesionRequests: adhesionRequestsQuery.refetch,
-    retryCount, // Added the missing retryCount property
+    retryCount,
   };
 }
