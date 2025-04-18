@@ -51,7 +51,6 @@ export function NewAdhesionRequestForm({ sfdId, onSuccess }: NewAdhesionRequestF
 
   const onSubmit = async (values: FormValues) => {
     try {
-      // Ensure full_name is not empty - it's required in the AdhesionRequestInput type
       if (!values.full_name) {
         form.setError('full_name', { 
           type: 'manual', 

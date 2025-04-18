@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -34,6 +33,16 @@ export interface AdhesionRequest {
   };
 }
 
+export interface AdhesionRequestInput {
+  full_name: string;
+  profession?: string;
+  monthly_income?: string;
+  source_of_income?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+}
+
 export function useClientAdhesions() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -41,6 +50,7 @@ export function useClientAdhesions() {
   const [userAdhesionRequests, setUserAdhesionRequests] = useState<AdhesionRequest[]>([]);
   const [isLoadingAdhesionRequests, setIsLoadingAdhesionRequests] = useState(true);
   const [isLoadingUserAdhesionRequests, setIsLoadingUserAdhesionRequests] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
   
   const fetchAdhesionRequests = useCallback(async () => {
     if (!user) return;
@@ -49,7 +59,6 @@ export function useClientAdhesions() {
     try {
       console.log('Fetching adhesion requests...');
       
-      // Utilisez la fonction Edge pour récupérer les données
       const { data, error } = await supabase.functions.invoke('fetch-client-adhesions', {
         body: { userId: user.id }
       });
@@ -95,7 +104,7 @@ export function useClientAdhesions() {
       const formattedRequests = data.map(req => ({
         ...req,
         sfd_name: req.sfds?.name,
-        status: req.status as 'pending' | 'approved' | 'rejected' // Type assertion to fix type error
+        status: req.status as 'pending' | 'approved' | 'rejected'
       }));
       
       setUserAdhesionRequests(formattedRequests);
@@ -120,8 +129,9 @@ export function useClientAdhesions() {
     adhesionRequests,
     userAdhesionRequests,
     isLoadingAdhesionRequests,
-    isLoadingUserAdhesionRequests, // Make sure to include this property
+    isLoadingUserAdhesionRequests,
     refetchAdhesionRequests: fetchAdhesionRequests,
-    refetchUserAdhesionRequests: fetchUserAdhesionRequests
+    refetchUserAdhesionRequests: fetchUserAdhesionRequests,
+    retryCount
   };
 }
