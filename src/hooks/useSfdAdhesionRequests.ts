@@ -12,7 +12,6 @@ export function useSfdAdhesionRequests() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Process adhesion request (approve or reject)
   const processAdhesionRequest = async (
     requestId: string,
     action: 'approve' | 'reject',
@@ -31,7 +30,6 @@ export function useSfdAdhesionRequests() {
         processed_at: new Date().toISOString()
       };
 
-      // For rejections, include the reason
       if (action === 'reject' && notes) {
         updateData.notes = notes;
         updateData.rejection_reason = notes;
@@ -39,7 +37,6 @@ export function useSfdAdhesionRequests() {
         updateData.notes = notes;
       }
 
-      // Update the adhesion request
       const { error } = await supabase
         .from('client_adhesion_requests')
         .update(updateData)
@@ -47,7 +44,6 @@ export function useSfdAdhesionRequests() {
 
       if (error) throw error;
 
-      // Log action
       await supabase.from('audit_logs').insert({
         user_id: user.id,
         action: `adhesion_request_${action}ed`,
@@ -58,7 +54,6 @@ export function useSfdAdhesionRequests() {
         details: { requestId, action, notes }
       });
 
-      // Create notification for the client
       const { data: requestData } = await supabase
         .from('client_adhesion_requests')
         .select('user_id, full_name, sfd_id')
@@ -78,9 +73,7 @@ export function useSfdAdhesionRequests() {
         });
       }
 
-      // If approved, create client entry
       if (action === 'approve' && requestData) {
-        // Check if the client entry already exists
         const { data: existingClient } = await supabase
           .from('sfd_clients')
           .select('id')
@@ -101,7 +94,6 @@ export function useSfdAdhesionRequests() {
         }
       }
 
-      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['adhesion-requests'] });
       return { success: true };
     } catch (error: any) {
@@ -115,7 +107,6 @@ export function useSfdAdhesionRequests() {
     }
   };
 
-  // Submit new adhesion request
   const submitAdhesionRequest = async (sfdId: string, input: AdhesionRequestInput) => {
     if (!user) {
       return { success: false, error: "User not authenticated" };
@@ -123,7 +114,6 @@ export function useSfdAdhesionRequests() {
 
     setIsSubmitting(true);
     try {
-      // Create the adhesion request
       const { data, error } = await supabase
         .from('client_adhesion_requests')
         .insert({
@@ -144,7 +134,6 @@ export function useSfdAdhesionRequests() {
 
       if (error) throw error;
 
-      // Log the action
       await supabase.from('audit_logs').insert({
         user_id: user.id,
         action: 'adhesion_request_submitted',
