@@ -1898,6 +1898,38 @@ export type Database = {
           },
         ]
       }
+      temp_auth_credentials: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          id: string
+          temp_password: string
+          used_at: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          temp_password: string
+          used_at?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          temp_password?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "temp_auth_credentials_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "sfd_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transaction_disputes: {
         Row: {
           created_at: string
@@ -2212,6 +2244,10 @@ export type Database = {
       create_sfd_with_admin_and_accounts: {
         Args: { sfd_data: Json; admin_data: Json; account_types?: string[] }
         Returns: Json
+      }
+      create_user_from_client: {
+        Args: { client_id: string; temp_password: string }
+        Returns: string
       }
       get_sfd_admins: {
         Args: { sfd_id_param: string }
