@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { JoinSfdButton } from './JoinSfdButton';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface Sfd {
   id: string;
@@ -36,8 +37,40 @@ const SfdList: React.FC<SfdListProps> = ({
   onRetry,
   onEdit
 }) => {
+  const navigate = useNavigate();
+  
   const getRequestStatus = (sfdId: string): ExistingRequest | undefined => {
     return existingRequests.find(req => req.sfd_id === sfdId);
+  };
+
+  const handleRetryClick = (sfdId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onRetry) {
+      onRetry(sfdId);
+    } else {
+      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
+    }
+  };
+
+  const handleEditClick = (sfdId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onEdit) {
+      onEdit(sfdId);
+    } else {
+      navigate(`/mobile-flow/sfd-adhesion/${sfdId}?mode=edit`);
+    }
+  };
+
+  const handleJoinClick = (sfdId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onSelectSfd) {
+      onSelectSfd(sfdId);
+    } else {
+      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
+    }
   };
 
   if (sfds.length === 0) {
@@ -106,40 +139,45 @@ const SfdList: React.FC<SfdListProps> = ({
                   </div>
                 ) : requestStatus?.status === 'rejected' ? (
                   <div className="grid grid-cols-2 gap-2 p-2">
-                    <JoinSfdButton
-                      sfdId={sfd.id}
-                      sfdName={sfd.name}
-                      isRetry={true}
-                    />
-                    <JoinSfdButton
-                      sfdId={sfd.id}
-                      sfdName={sfd.name}
-                      isEdit={true}
-                    />
+                    <Button
+                      onClick={(e) => handleRetryClick(sfd.id, e)}
+                      className="w-full bg-red-600 hover:bg-red-700"
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" /> Réessayer
+                    </Button>
+                    <Button
+                      onClick={(e) => handleEditClick(sfd.id, e)}
+                      className="w-full bg-amber-600 hover:bg-amber-700"
+                    >
+                      <Edit2 className="mr-2 h-4 w-4" /> Modifier
+                    </Button>
                   </div>
                 ) : requestStatus?.status === 'pending' ? (
                   <div className="flex justify-between items-center">
                     <div className="bg-amber-50 text-amber-800 py-3 px-4 text-center text-sm flex-1">
                       Demande en cours de traitement
                     </div>
-                    <JoinSfdButton
-                      sfdId={sfd.id}
-                      sfdName={sfd.name}
-                      isEdit={true}
-                    />
+                    <Button
+                      onClick={(e) => handleEditClick(sfd.id, e)}
+                      className="bg-amber-600 hover:bg-amber-700"
+                    >
+                      <Edit2 className="mr-2 h-4 w-4" /> Modifier
+                    </Button>
                   </div>
                 ) : onSelectSfd ? (
                   <button
-                    onClick={() => onSelectSfd(sfd.id)}
+                    onClick={(e) => handleJoinClick(sfd.id, e)}
                     className="w-full py-3 px-4 text-center hover:bg-gray-50 transition-colors"
                   >
                     Rejoindre
                   </button>
                 ) : (
-                  <JoinSfdButton
-                    sfdId={sfd.id}
-                    sfdName={sfd.name}
-                  />
+                  <Button
+                    onClick={(e) => handleJoinClick(sfd.id, e)}
+                    className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+                  >
+                    Rejoindre <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 )}
               </div>
             </CardContent>

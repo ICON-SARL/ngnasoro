@@ -82,7 +82,7 @@ const SfdSelectorPage = () => {
     fetchData();
   }, [user?.id, toast]);
 
-  const handleSendRequest = async (sfdId: string) => {
+  const handleSendRequest = (sfdId: string) => {
     if (!user) {
       toast({
         title: "Erreur",
@@ -122,47 +122,14 @@ const SfdSelectorPage = () => {
     }
   };
 
-  const handleRetryRequest = async (sfdId: string) => {
-    if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour réessayer une demande",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleRetryRequest = (sfdId: string) => {
+    console.log(`Handling retry request for SFD: ${sfdId}`);
+    navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
+  };
 
-    try {
-      setIsSubmitting(true);
-      
-      // Supprimer l'ancienne demande rejetée
-      const { error: deleteError } = await supabase
-        .from('client_adhesion_requests')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('sfd_id', sfdId)
-        .eq('status', 'rejected');
-        
-      if (deleteError) {
-        console.error('Erreur lors de la suppression de l\'ancienne demande:', deleteError);
-        throw deleteError;
-      }
-      
-      console.log('Rejected request successfully deleted');
-      
-      // Mettre à jour la liste des demandes existantes
-      setExistingRequests(existingRequests.filter(req => !(req.sfd_id === sfdId && req.status === 'rejected')));
-      
-      // Rediriger vers la page d'adhésion pour créer une nouvelle demande
-      console.log(`Redirecting to adhesion page for retry SFD: ${sfdId}`);
-      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
-      
-    } catch (err) {
-      console.error('Error handling retry request:', err);
-      handleError(err);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleEditRequest = (sfdId: string) => {
+    console.log(`Handling edit request for SFD: ${sfdId}`);
+    navigate(`/mobile-flow/sfd-adhesion/${sfdId}?mode=edit`);
   };
 
   return (
@@ -208,6 +175,7 @@ const SfdSelectorPage = () => {
             isSubmitting={isSubmitting}
             onSelectSfd={handleSendRequest}
             onRetry={handleRetryRequest}
+            onEdit={handleEditRequest}
           />
         )}
       </main>

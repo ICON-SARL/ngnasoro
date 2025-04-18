@@ -13,15 +13,26 @@ interface JoinSfdButtonProps {
   sfdName: string;
   isRetry?: boolean;
   isEdit?: boolean;
+  onClick?: () => void;
 }
 
-export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false, isEdit = false }: JoinSfdButtonProps) => {
+export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false, isEdit = false, onClick }: JoinSfdButtonProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const handleJoinRequest = async () => {
+  const handleJoinRequest = async (e: React.MouseEvent) => {
+    // Empêcher la propagation de l'événement pour éviter les déclenchements indésirables
+    e.preventDefault();
+    e.stopPropagation();
+    
     try {
+      // Si un gestionnaire onClick personnalisé est fourni, l'utiliser à la place
+      if (onClick) {
+        onClick();
+        return;
+      }
+      
       if (!user) {
         toast({
           title: 'Erreur',

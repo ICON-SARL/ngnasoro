@@ -36,6 +36,7 @@ const SfdAdhesionPage: React.FC = () => {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const mode = searchParams.get('mode');
+    console.log('URL mode parameter:', mode);
     setIsEditMode(mode === 'edit');
   }, [location.search]);
   
@@ -80,15 +81,16 @@ const SfdAdhesionPage: React.FC = () => {
     };
     
     const fetchExistingRequest = async () => {
-      if (!sfdId || !user?.id || !isEditMode) return;
+      if (!sfdId || !user?.id) return;
       
       try {
+        console.log('Fetching existing request for SFD:', sfdId, 'and user:', user.id);
         const { data, error } = await supabase
           .from('client_adhesion_requests')
           .select('*')
           .eq('sfd_id', sfdId)
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
           
         if (error) {
           console.error('Error fetching existing request:', error);
@@ -96,7 +98,10 @@ const SfdAdhesionPage: React.FC = () => {
         }
         
         if (data) {
+          console.log('Existing request found:', data);
           setExistingData(data);
+        } else {
+          console.log('No existing request found');
         }
       } catch (error) {
         console.error('Error in fetchExistingRequest:', error);
@@ -106,7 +111,7 @@ const SfdAdhesionPage: React.FC = () => {
     fetchSfdInfo();
     fetchExistingRequest();
     refetchUserAdhesionRequests();
-  }, [sfdId, toast, refetchUserAdhesionRequests, navigate, user, isEditMode]);
+  }, [sfdId, toast, refetchUserAdhesionRequests, navigate, user]);
 
   useRealtimeSync({
     table: 'client_adhesion_requests',
@@ -133,10 +138,14 @@ const SfdAdhesionPage: React.FC = () => {
     }
   });
 
+  const handleBackClick = () => {
+    navigate('/mobile-flow/sfd-selector');
+  };
+
   if (!sfdId) {
     return (
       <div className="container max-w-md mx-auto py-4 px-4">
-        <Button variant="ghost" onClick={() => navigate(-1)}>
+        <Button variant="ghost" onClick={handleBackClick}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Retour
         </Button>
         <Alert className="mt-4">
@@ -156,7 +165,7 @@ const SfdAdhesionPage: React.FC = () => {
       <Button 
         variant="ghost" 
         className="mb-4" 
-        onClick={() => navigate('/mobile-flow/account')}
+        onClick={handleBackClick}
       >
         <ArrowLeft className="h-4 w-4 mr-2" /> Retour
       </Button>
@@ -193,9 +202,9 @@ const SfdAdhesionPage: React.FC = () => {
                   variant="outline" 
                   size="sm" 
                   className="mt-3 bg-white text-red-600 border-red-300 hover:bg-red-50"
-                  onClick={() => navigate('/mobile-flow/account')}
+                  onClick={handleBackClick}
                 >
-                  Retour au compte
+                  Retour à la liste
                 </Button>
               </AlertDescription>
             </Alert>
@@ -300,6 +309,7 @@ const SfdAdhesionPage: React.FC = () => {
                     if (isEditMode) {
                       setIsEditMode(false);
                     }
+                    navigate('/mobile-flow/sfd-selector');
                   }}
                 />
               </div>
