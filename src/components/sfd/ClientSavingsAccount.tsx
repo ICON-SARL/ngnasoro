@@ -4,15 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,6 +20,7 @@ interface ClientSavingsAccountProps {
 
 const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, sfdId }) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [amount, setAmount] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);

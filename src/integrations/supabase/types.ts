@@ -2233,6 +2233,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      create_client_savings_account: {
+        Args: {
+          p_client_id: string
+          p_sfd_id: string
+          p_initial_balance?: number
+        }
+        Returns: string
+      }
       create_sample_transactions: {
         Args: Record<PropertyKey, never>
         Returns: undefined

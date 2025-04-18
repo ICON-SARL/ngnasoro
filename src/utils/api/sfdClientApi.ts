@@ -225,12 +225,26 @@ export const sfdClientApi = {
   // Create client savings account
   async createClientSavingsAccount(clientId: string, sfdId: string, initialBalance: number = 0) {
     try {
+      const { data: client, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+        
+      if (clientError || !client?.user_id) {
+        throw new Error('Client not found or no user account');
+      }
+      
       const { data, error } = await supabase
-        .rpc('create_client_savings_account', {
-          p_client_id: clientId,
-          p_sfd_id: sfdId,
-          p_initial_balance: initialBalance
-        });
+        .from('accounts')
+        .insert({
+          user_id: client.user_id,
+          sfd_id: sfdId,
+          balance: initialBalance,
+          currency: 'FCFA'
+        })
+        .select()
+        .single();
         
       if (error) throw error;
       return data;

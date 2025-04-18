@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -218,18 +217,28 @@ export function useClientSavingsAccount(clientId: string) {
     
     setIsLoading(true);
     try {
-      // Utilisez la RPC pour créer le compte (fonction SQL sécurisée)
+      const { data: client } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+
+      if (!client?.user_id) {
+        throw new Error("Le client n'a pas de compte utilisateur associé");
+      }
+
       const { data, error } = await supabase
-        .rpc('create_client_savings_account', {
-          p_client_id: clientId,
-          p_sfd_id: activeSfdId,
-          p_initial_balance: initialBalance
-        });
+        .from('accounts')
+        .insert({
+          user_id: client.user_id,
+          sfd_id: activeSfdId,
+          balance: initialBalance,
+          currency: 'FCFA'
+        })
+        .select()
+        .single();
       
       if (error) throw error;
-      
-      // Récupérer les détails du compte créé
-      await fetchAccountData();
       
       toast({
         title: "Compte créé",
@@ -241,19 +250,20 @@ export function useClientSavingsAccount(clientId: string) {
         await supabase
           .from('transactions')
           .insert({
-            user_id: clientId,
+            user_id: client.user_id,
+            sfd_id: activeSfdId,
             amount: initialBalance,
+            type: 'deposit',
             name: 'Dépôt initial',
             description: 'Dépôt initial lors de la création du compte',
-            type: 'deposit',
-            status: 'success',
+            status: 'success'
           });
           
         await fetchTransactionHistory();
       }
       
-      // Synchronize with user app account
-      await synchronizeAccounts(clientId);
+      // Fetch updated account data
+      await fetchAccountData();
       
       return true;
     } catch (error: any) {
@@ -267,7 +277,7 @@ export function useClientSavingsAccount(clientId: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [clientId, activeSfdId, toast, fetchAccountData, fetchTransactionHistory, synchronizeAccounts]);
+  }, [clientId, activeSfdId, toast, fetchAccountData, fetchTransactionHistory]);
 
   // Synchronize account with user application account
   const syncAccount = useCallback(async () => {
