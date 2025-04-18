@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { JoinSfdButton } from './JoinSfdButton';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw, Edit2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
@@ -189,3 +189,4 @@ const SfdList: React.FC<SfdListProps> = ({
 };
 
 export default SfdList;
+
