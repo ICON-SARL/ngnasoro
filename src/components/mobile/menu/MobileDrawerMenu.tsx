@@ -1,125 +1,136 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Drawer, 
-  DrawerContent, 
-  DrawerHeader, 
-  DrawerTitle, 
-  DrawerClose 
-} from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
-import { mobileMenuSections } from '@/config/mobileNavigation';
-import * as Icons from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { 
+  X, 
+  Home, 
+  CreditCard, 
+  User, 
+  Settings, 
+  LogOut,
+  Wallet,
+  Building
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface MobileDrawerMenuProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogout?: () => Promise<void>;
+  onLogout: () => void;
 }
 
-const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({ 
-  isOpen = false, 
-  onClose, 
-  onLogout 
-}) => {
+const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({ isOpen, onClose, onLogout }) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { signOut } = useAuth();
-
-  const navigateAndClose = (path: string) => {
+  const { user } = useAuth();
+  
+  const menuItems = [
+    { 
+      label: 'Accueil', 
+      icon: <Home className="h-5 w-5 mr-3" />, 
+      path: '/mobile-flow/main',
+      divider: false
+    },
+    { 
+      label: 'Prêts', 
+      icon: <CreditCard className="h-5 w-5 mr-3" />, 
+      path: '/mobile-flow/loans',
+      divider: false
+    },
+    { 
+      label: 'Fonds', 
+      icon: <Wallet className="h-5 w-5 mr-3" />, 
+      path: '/mobile-flow/funds-management',
+      divider: false
+    },
+    { 
+      label: 'Sélectionner SFD', 
+      icon: <Building className="h-5 w-5 mr-3" />, 
+      path: '/mobile-flow/sfd-selector',
+      divider: true
+    },
+    { 
+      label: 'Profil', 
+      icon: <User className="h-5 w-5 mr-3" />, 
+      path: '/mobile-flow/profile',
+      divider: false
+    },
+    { 
+      label: 'Paramètres', 
+      icon: <Settings className="h-5 w-5 mr-3" />, 
+      path: '/settings',
+      divider: true
+    }
+  ];
+  
+  const handleNavigation = (path: string) => {
     navigate(path);
     onClose();
   };
-
-  const handleLogout = async () => {
-    try {
-      onClose();
-      toast({
-        title: "Déconnexion en cours",
-        description: "Veuillez patienter..."
-      });
-      
-      if (onLogout) {
-        await onLogout();
-      } else {
-        await signOut();
-        
-        toast({
-          title: "Déconnexion réussie",
-          description: "Vous avez été déconnecté avec succès"
-        });
-        
-        window.location.href = '/auth';
-      }
-    } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
-      toast({
-        title: "Erreur de déconnexion",
-        description: "Une erreur s'est produite lors de la déconnexion",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Fonction pour obtenir dynamiquement l'icône de Lucide
-  const getIcon = (iconName: string, className: string = "h-5 w-5 mr-2") => {
-    const IconComponent = (Icons as any)[iconName] || Icons.CircleDot;
-    return <IconComponent className={className} />;
-  };
-
-  if (!isOpen) return null;
-
+  
   return (
-    <Drawer open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DrawerContent className="h-[85vh] max-h-[85vh] overflow-y-auto">
-        <DrawerHeader className="border-b pb-4">
-          <div className="flex justify-between items-center">
-            <DrawerTitle className="text-xl font-bold">Menu principal</DrawerTitle>
-            <DrawerClose asChild>
-              <Button variant="ghost" size="icon" onClick={onClose}>
-                <X className="h-5 w-5" />
-                <span className="sr-only">Fermer</span>
-              </Button>
-            </DrawerClose>
+    <>
+      {/* Backdrop */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-50"
+          onClick={onClose}
+        />
+      )}
+      
+      {/* Drawer */}
+      <div 
+        className={`fixed top-0 right-0 h-full w-4/5 max-w-xs bg-white z-50 shadow-xl transform transition-transform duration-300 ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          <div className="p-4 flex justify-between items-center border-b">
+            <div>
+              <h2 className="font-bold">Menu</h2>
+              {user && (
+                <p className="text-sm text-gray-500">{user.email}</p>
+              )}
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onClose}
+            >
+              <X className="h-5 w-5" />
+            </Button>
           </div>
-        </DrawerHeader>
-        
-        <div className="px-4 py-2">
-          <div className="space-y-6">
-            {mobileMenuSections.map((section) => (
-              <div key={section.id} className="flex flex-col space-y-1">
-                <h3 className="text-sm font-medium text-gray-500 mb-2">{section.title}</h3>
-                {section.items.map((item) => (
-                  <Button 
-                    key={item.id}
-                    variant="ghost" 
-                    className="justify-start"
-                    onClick={() => navigateAndClose(item.route)}
-                    disabled={item.coming}
+          
+          <div className="flex-1 overflow-y-auto">
+            <div className="py-2">
+              {menuItems.map((item, index) => (
+                <React.Fragment key={index}>
+                  <div 
+                    className="px-4 py-3 flex items-center hover:bg-gray-100 cursor-pointer"
+                    onClick={() => handleNavigation(item.path)}
                   >
-                    {getIcon(item.icon, `h-5 w-5 mr-2 ${item.color ? `text-[${item.color}]` : ""}`)} 
-                    <span className="flex-1">{item.label}</span>
-                    {item.coming && (
-                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Bientôt</span>
-                    )}
-                  </Button>
-                ))}
-              </div>
-            ))}
-            
-            <div className="pt-4 border-t border-gray-200">
-              <Button variant="ghost" className="justify-start w-full" onClick={handleLogout}>
-                {getIcon('LogOut')} Déconnexion
-              </Button>
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </div>
+                  {item.divider && <div className="mx-4 my-2 border-t" />}
+                </React.Fragment>
+              ))}
             </div>
           </div>
+          
+          <div className="p-4 border-t">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={onLogout}
+            >
+              <LogOut className="h-5 w-5 mr-3" />
+              Déconnexion
+            </Button>
+          </div>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </div>
+    </>
   );
 };
 

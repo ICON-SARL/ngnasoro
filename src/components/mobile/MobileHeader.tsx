@@ -1,41 +1,50 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
-import SfdSelector from './SfdSelector';
+import { useAuth } from '@/hooks/useAuth';
 
-const MobileHeader = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface MobileHeaderProps {
+  title: string;
+  onMenuToggle?: () => void;
+  showBackButton?: boolean;
+  onBackClick?: () => void;
+}
+
+const MobileHeader: React.FC<MobileHeaderProps> = ({ 
+  title, 
+  onMenuToggle,
+  showBackButton,
+  onBackClick
+}) => {
+  const { user } = useAuth();
+  
   return (
-    <div className="bg-white">
-      <div className="bg-[#0D6A51] px-4 py-3 rounded-b-2xl shadow-md">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm">
-              <img 
-                alt="N'GNA SÔRÔ! Logo" 
-                src="/lovable-uploads/90c4efc4-a4a5-4961-a8b7-e5ee8eab2649.png" 
-                className="h-10 w-10 object-contain" 
-              />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-white">
-                N'GNA <span className="text-[#fcb040]">SÔRÔ!</span>
-              </h1>
-            </div>
-          </div>
-          
-          <button 
-            className="text-white p-2 hover:bg-white/10 rounded-full transition-colors" 
-            onClick={() => setIsOpen(!isOpen)}
+    <div className="bg-white p-4 shadow-sm flex items-center justify-between">
+      <div className="flex items-center">
+        {showBackButton && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onBackClick}
+            className="mr-2"
           >
-            <Menu className="h-5 w-5" />
-          </button>
-        </div>
-        
-        {/* SFD Selector added at the bottom */}
-        <div className="mt-2 px-2 pb-2">
-          <SfdSelector />
-        </div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          </Button>
+        )}
+        <h1 className="text-xl font-bold">{title}</h1>
+      </div>
+      
+      <div className="flex items-center">
+        {user && onMenuToggle && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onMenuToggle}
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
+        )}
       </div>
     </div>
   );
