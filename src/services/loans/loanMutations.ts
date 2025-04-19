@@ -9,9 +9,10 @@ import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTyp
  */
 export const createLoan = async (loanData: CreateLoanInput): Promise<Loan | null> => {
   try {
+    // Ensure we're inserting a single object, not an array
     const { data, error } = await supabase
       .from('sfd_loans')
-      .insert([loanData])
+      .insert(loanData)
       .select()
       .single();
     

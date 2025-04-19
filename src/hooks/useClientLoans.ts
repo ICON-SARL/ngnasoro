@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,19 +56,23 @@ export function useClientLoans() {
         return [
           {
             id: '1',
+            client_id: user.id,
             title: 'Prêt approuvé',
             message: 'Votre demande de prêt a été approuvée',
             type: 'loan_approved',
             created_at: '2023-06-05T10:00:00Z',
+            is_read: false,
             read: false,
             action_link: '/my-loans'
           },
           {
             id: '2',
+            client_id: user.id,
             title: 'Paiement reçu',
             message: 'Nous avons reçu votre paiement de 5300 FCFA',
             type: 'payment_received',
             created_at: '2023-05-15T10:00:00Z',
+            is_read: true,
             read: true
           }
         ];
@@ -115,7 +118,13 @@ export function useClientLoans() {
 
   // Apply for a loan
   const applyForLoan = useMutation({
-    mutationFn: async (application: LoanApplication) => {
+    mutationFn: async (applicationData: {
+      sfd_id: string;
+      amount: number;
+      duration_months: number;
+      purpose: string;
+      supporting_documents?: string[];
+    }) => {
       if (!user?.id) throw new Error("Utilisateur non authentifié");
       
       setIsUploading(true);
@@ -126,12 +135,12 @@ export function useClientLoans() {
           .from('sfd_loans')
           .insert({
             client_id: user.id,
-            sfd_id: application.sfd_id,
-            amount: application.amount,
-            duration_months: application.duration_months,
-            interest_rate: application.interest_rate || 5,
-            monthly_payment: application.amount / application.duration_months * 1.05,
-            purpose: application.purpose,
+            sfd_id: applicationData.sfd_id,
+            amount: applicationData.amount,
+            duration_months: applicationData.duration_months,
+            interest_rate: 5, // Default interest rate
+            monthly_payment: applicationData.amount / applicationData.duration_months * 1.05,
+            purpose: applicationData.purpose,
             status: 'pending',
             created_at: new Date().toISOString()
           })
@@ -165,7 +174,7 @@ export function useClientLoans() {
   });
 
   // Manual refetch function
-  const refetchLoans = useCallback(() => {
+  const refreshLoans = useCallback(() => {
     return loansQuery.refetch();
   }, [loansQuery]);
 
@@ -175,7 +184,7 @@ export function useClientLoans() {
     isUploading,
     uploadDocument,
     applyForLoan,
-    refetchLoans,
+    refetchLoans: refreshLoans,
     notifications: notificationsQuery.data || [],
     notificationsLoading: notificationsQuery.isLoading,
     markNotificationAsRead,

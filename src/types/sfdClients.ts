@@ -1,4 +1,5 @@
 
+
 export interface SfdClient {
   id: string;
   full_name: string;
@@ -45,6 +46,7 @@ export interface Loan {
   rejection_reason?: string;
   processed_at?: string;
   processed_by?: string;
+  updated_at?: string;
 }
 
 export interface LoanWithSfd extends Loan {
@@ -132,6 +134,9 @@ export interface ClientActivity {
   activity_type: string;
   details: string;
   created_at: string;
+  description?: string;
+  performed_at?: string;
+  performed_by?: string;
 }
 
 export interface ClientNotification {
@@ -160,3 +165,4 @@ export interface SfdSubsidy {
   remaining_amount?: number;
   end_date?: string;
 }
+

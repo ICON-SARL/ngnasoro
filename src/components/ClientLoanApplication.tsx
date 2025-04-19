@@ -10,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { useClientLoans } from '@/hooks/useClientLoans';
-import { LoanApplication } from '@/types/sfdClients';
 
 const ClientLoanApplication: React.FC = () => {
   const navigate = useNavigate();
@@ -18,12 +17,12 @@ const ClientLoanApplication: React.FC = () => {
   const { toast } = useToast();
   const { applyForLoan, isUploading } = useClientLoans();
   
-  const [formData, setFormData] = useState<LoanApplication>({
+  const [formData, setFormData] = useState({
     sfd_id: '',
     amount: 0,
     duration_months: 0,
     purpose: '',
-    supporting_documents: []
+    supporting_documents: [] as string[]
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -70,7 +69,13 @@ const ClientLoanApplication: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      await applyForLoan.mutateAsync(formData);
+      await applyForLoan.mutateAsync({
+        sfd_id: formData.sfd_id,
+        amount: formData.amount,
+        duration_months: formData.duration_months,
+        purpose: formData.purpose,
+        supporting_documents: formData.supporting_documents
+      });
       
       toast({
         title: "Demande envoyée",
