@@ -20,7 +20,7 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
   const navigate = useNavigate();
   
   const handleJoinRequest = async (e: React.MouseEvent) => {
-    // Empêcher la propagation de l'événement pour éviter les déclenchements indésirables
+    // Prevent event propagation to avoid unwanted triggers
     e.preventDefault();
     e.stopPropagation();
     
@@ -35,9 +35,9 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
         return;
       }
 
-      // Si c'est une nouvelle tentative après un rejet, supprimer l'ancienne demande
+      // If retrying after rejection, delete the old request
       if (isRetry) {
-        console.log(`Suppression de la demande rejetée pour SFD: ${sfdId}`);
+        console.log(`Deleting rejected request for SFD: ${sfdId}`);
         
         const { error: deleteError } = await supabase
           .from('client_adhesion_requests')
@@ -47,7 +47,7 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
           .eq('status', 'rejected');
           
         if (deleteError) {
-          console.error('Erreur lors de la suppression de la demande précédente:', deleteError);
+          console.error('Error deleting previous request:', deleteError);
           toast({
             title: 'Erreur',
             description: "Impossible de réinitialiser votre demande précédente",
@@ -62,9 +62,9 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
         });
       }
       
-      console.log(`Navigation vers la page d'adhésion pour SFD: ${sfdId} (${sfdName})`);
+      console.log(`Navigating to adhesion page for SFD: ${sfdId} (${sfdName})`);
       
-      // Utiliser navigate avec un objet state pour s'assurer que le contexte est bien préservé
+      // Navigate with state to ensure context is preserved
       navigate(`/mobile-flow/sfd-adhesion/${sfdId}`, {
         state: { 
           sfdId: sfdId,
@@ -73,7 +73,7 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
       });
       
     } catch (err) {
-      console.error('Erreur lors du traitement de la demande:', err);
+      console.error('Error processing request:', err);
       handleError(err);
     }
   };
