@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { SfdClient, ClientDocument, ClientActivity } from "@/types/sfdClients";
 import { useToast } from "@/hooks/use-toast";
@@ -235,6 +236,7 @@ export const sfdClientApi = {
         throw new Error('Client not found or no user account');
       }
       
+      // Instead of calling the RPC, we'll directly insert into the accounts table
       const { data, error } = await supabase
         .from('accounts')
         .insert({
