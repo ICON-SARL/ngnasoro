@@ -18,6 +18,14 @@ import LoanPlansPage from '@/pages/mobile/LoanPlansPage';
 import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
 import LoanDetailsPage from '@/pages/mobile/LoanDetailsPage';
 import SplashScreen from '@/components/mobile/SplashScreen';
+import AdminLoginPage from '@/pages/AdminLoginPage';
+import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
+import SfdAdminDashboardPage from '@/pages/SfdAdminDashboardPage';
+import CreditApprovalPage from '@/pages/CreditApprovalPage';
+import AuditLogsPage from '@/pages/AuditLogsPage';
+import AdminMerefFundingPage from '@/pages/AdminMerefFundingPage';
+import UsersManagementPage from '@/pages/UsersManagementPage';
+import RoleTestingPage from '@/pages/RoleTestingPage';
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient();
@@ -34,6 +42,18 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/access-denied" element={<AccessDeniedPage />} />
             <Route path="/permission-test" element={<PermissionTestPage />} />
+            
+            {/* Admin Auth Routes */}
+            <Route path="/admin/auth" element={<AdminLoginPage />} />
+            <Route path="/sfd/auth" element={<AdminLoginPage />} />
+            
+            {/* Admin Dashboard Routes */}
+            <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
+            <Route path="/credit-approval" element={<CreditApprovalPage />} />
+            <Route path="/audit-logs" element={<AuditLogsPage />} />
+            <Route path="/sfd-management" element={<AdminMerefFundingPage />} />
+            <Route path="/admin/users" element={<UsersManagementPage />} />
+            <Route path="/role-testing" element={<RoleTestingPage />} />
             
             {/* Mobile Flow Routes */}
             <Route path="/mobile-flow/*" element={<MobileFlowPage />} />

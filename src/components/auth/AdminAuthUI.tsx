@@ -14,18 +14,26 @@ const AdminAuthUI = () => {
   const [authSuccess, setAuthSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // Check if this is the SFD admin login page
+  const isSfdAdminPage = location.pathname.includes('/sfd/auth');
+  
   useEffect(() => {
     const hash = location.hash;
     if (hash && hash.includes('access_token')) {
       setAuthSuccess(true);
       
       const timer = setTimeout(() => {
-        navigate('/super-admin-dashboard');
+        // Redirect based on login page type
+        if (isSfdAdminPage) {
+          navigate('/agency-dashboard');
+        } else {
+          navigate('/super-admin-dashboard');
+        }
       }, 2000);
       
       return () => clearTimeout(timer);
     }
-  }, [location, navigate]);
+  }, [location, navigate, isSfdAdminPage]);
   
   useEffect(() => {
     if (user && !loading) {
@@ -34,13 +42,11 @@ const AdminAuthUI = () => {
       
       if (user.app_metadata?.role === 'admin') {
         navigate('/super-admin-dashboard');
+      } else if (user.app_metadata?.role === 'sfd_admin') {
+        navigate('/agency-dashboard');
       } else {
-        // Rediriger les utilisateurs non-admin vers leur page appropriée
-        if (user.app_metadata?.role === 'sfd_admin') {
-          navigate('/sfd/auth');
-        } else {
-          navigate('/auth');
-        }
+        // Redirect non-admin users to appropriate page
+        navigate('/auth');
       }
     }
   }, [user, loading, navigate]);
@@ -71,7 +77,7 @@ const AdminAuthUI = () => {
         <div className="auth-card">
           <div className="p-4 bg-amber-50 border-b border-amber-100">
             <h2 className="text-amber-800 font-medium text-center">
-              Connexion Administration MEREF
+              {isSfdAdminPage ? "Connexion Administration SFD" : "Connexion Administration MEREF"}
             </h2>
           </div>
           
@@ -79,7 +85,9 @@ const AdminAuthUI = () => {
             <Shield className="h-5 w-5 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium">
-                Accès réservé aux administrateurs MEREF
+                {isSfdAdminPage 
+                  ? "Accès réservé aux administrateurs SFD" 
+                  : "Accès réservé aux administrateurs MEREF"}
               </p>
               <p className="text-xs mt-1">
                 Cette interface est uniquement destinée aux administrateurs système. 
@@ -90,11 +98,19 @@ const AdminAuthUI = () => {
           
           <LoginForm 
             adminMode={true} 
-            isSfdAdmin={false} 
+            isSfdAdmin={isSfdAdminPage} 
             onError={(errorMessage) => setError(errorMessage)}
           />
           
           <div className="mt-4 text-center pb-6 flex flex-col gap-2">
+            <Link 
+              to={isSfdAdminPage ? "/admin/auth" : "/sfd/auth"}
+              className="text-amber-600 hover:underline font-medium"
+            >
+              {isSfdAdminPage 
+                ? "Accéder à la connexion administrateur MEREF" 
+                : "Accéder à la connexion administrateur SFD"}
+            </Link>
             <Link 
               to="/login"
               className="text-amber-600 hover:underline font-medium"
