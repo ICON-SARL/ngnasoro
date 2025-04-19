@@ -1,5 +1,4 @@
 
-
 export interface SfdClient {
   id: string;
   full_name: string;
@@ -109,8 +108,8 @@ export interface CreateLoanInput {
   duration_months: number;
   purpose?: string;
   repayment_frequency?: string;
-  // Add missing property for loan mutations
-  monthly_payment?: number;
+  // Add missing property for loan mutations - making it required
+  monthly_payment: number;
 }
 
 export interface ClientDocument {
@@ -165,4 +164,3 @@ export interface SfdSubsidy {
   remaining_amount?: number;
   end_date?: string;
 }
-
