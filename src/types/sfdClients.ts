@@ -17,7 +17,6 @@ export interface SfdClient {
   notes?: string;
 }
 
-// Add the types referenced in the errors
 export interface Loan {
   id: string;
   client_id: string;
@@ -32,6 +31,20 @@ export interface Loan {
   created_at: string;
   purpose?: string;
   repayment_frequency?: string;
+  // Add missing properties
+  monthly_payment?: number;
+  next_payment_date?: string;
+  subsidy_amount?: number;
+  reference?: string;
+  client_name?: string;
+  disbursement_reference?: string;
+  disbursement_status?: string;
+  last_payment_date?: string;
+  subsidy_rate?: number;
+  loan_plan_id?: string;
+  rejection_reason?: string;
+  processed_at?: string;
+  processed_by?: string;
 }
 
 export interface LoanWithSfd extends Loan {
@@ -51,6 +64,10 @@ export interface LoanApplication {
   approved_at?: string;
   rejected_at?: string;
   rejection_reason?: string;
+  // Add missing properties
+  duration_months?: number;
+  interest_rate?: number;
+  supporting_documents?: string[];
 }
 
 export interface LoanPlan {
@@ -67,6 +84,8 @@ export interface LoanPlan {
   requirements: string[];
   is_active: boolean;
   created_at: string;
+  // Add missing property
+  fees: number;
 }
 
 export interface LoanPayment {
@@ -88,18 +107,23 @@ export interface CreateLoanInput {
   duration_months: number;
   purpose?: string;
   repayment_frequency?: string;
+  // Add missing property for loan mutations
+  monthly_payment?: number;
 }
 
 export interface ClientDocument {
   id: string;
   client_id: string;
   document_type: string;
+  // Add missing properties
   file_name: string;
   file_url: string;
   status: string;
   uploaded_at: string;
   verified_at?: string;
   verified_by?: string;
+  document_url?: string;
+  verified?: boolean;
 }
 
 export interface ClientActivity {
@@ -117,6 +141,10 @@ export interface ClientNotification {
   message: string;
   is_read: boolean;
   created_at: string;
+  // Add missing properties
+  read?: boolean;
+  type?: string;
+  action_link?: string;
 }
 
 export interface SfdSubsidy {
@@ -127,4 +155,8 @@ export interface SfdSubsidy {
   status: string;
   allocated_at: string;
   allocated_by: string;
+  // Add missing properties
+  used_amount?: number;
+  remaining_amount?: number;
+  end_date?: string;
 }
