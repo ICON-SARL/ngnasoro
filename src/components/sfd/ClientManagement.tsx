@@ -5,24 +5,21 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Pagination } from '@/components/ui/pagination';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { ClientList } from './ClientList';
 import { useSfdClients } from '@/hooks/useSfdClients';
 import { NewClientForm } from './NewClientForm';
 import ClientDetails from './ClientDetails';
-import { useQueryClient } from '@tanstack/react-query';
+import { useClientAdhesions } from '@/hooks/useClientAdhesions';
+import { AdhesionRequestsTable } from './AdhesionRequestsTable';
 import { 
-  User, Search, Plus, Eye, Phone, Mail, 
-  Clock, CheckCircle, XCircle, Filter 
+  User, 
+  Search, 
+  Plus, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  Filter 
 } from 'lucide-react';
-import { SfdClient } from '@/types/sfdClients';
 
 export function ClientManagement() {
   const queryClient = useQueryClient();
@@ -32,44 +29,39 @@ export function ClientManagement() {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
 
-  // Simuler une demande de refresh des statistiques du tableau de bord
-  // quand ce composant est monté via useQueryClient
   React.useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ['sfd-dashboard-stats'] });
   }, [queryClient]);
 
-  // Récupérer les données des clients depuis Supabase via le hook useSfdClients
   const { clients, isLoading, validateClient, rejectClient } = useSfdClients();
+  const { 
+    adhesionRequests, 
+    isLoadingAdhesionRequests 
+  } = useClientAdhesions();
 
-  // Filtrer les clients selon le terme de recherche
   const filteredClients = clients.filter(client => 
     client.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (client.phone && client.phone.includes(searchTerm))
   );
 
-  // Filtrer les clients selon l'onglet actif
   const displayedClients = activeTab === 'all' 
     ? filteredClients 
     : filteredClients.filter(client => client.status === activeTab);
 
-  // Afficher les détails d'un client
   const handleViewClient = (client: SfdClient) => {
     setSelectedClient(client);
     setIsDetailsDialogOpen(true);
   };
 
-  // Valider un compte client
   const handleValidateClient = (clientId: string) => {
     validateClient.mutate({ clientId });
   };
 
-  // Rejeter un compte client
   const handleRejectClient = (clientId: string) => {
     rejectClient.mutate({ clientId });
   };
 
-  // Obtenir un badge visuel selon le statut du client
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -86,15 +78,14 @@ export function ClientManagement() {
   return (
     <Card>
       <CardContent className="p-6">
-        {/* ... keep existing code (main JSX) the same ... */}
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Gestion des Clients</h2>
+            <h2 className="text-2xl font-bold">Gestion des Clients</h2>
             <Button 
               onClick={() => setIsNewClientDialogOpen(true)}
               className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 mr-1" />
               Nouveau Client
             </Button>
           </div>
@@ -118,8 +109,17 @@ export function ClientManagement() {
             </Button>
           </div>
           
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mt-4">
-            <TabsList className="grid grid-cols-4 mb-4">
+          <Tabs defaultValue="adhesions" className="mt-4">
+            <TabsList className="grid grid-cols-5 mb-4">
+              <TabsTrigger value="adhesions" className="flex items-center justify-center">
+                <Clock className="h-4 w-4 mr-2" />
+                Adhésions
+                {adhesionRequests.filter(r => r.status === 'pending').length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {adhesionRequests.filter(r => r.status === 'pending').length}
+                  </Badge>
+                )}
+              </TabsTrigger>
               <TabsTrigger value="all" className="flex items-center justify-center">
                 <User className="h-4 w-4 mr-2" />
                 Tous
@@ -138,60 +138,48 @@ export function ClientManagement() {
               </TabsTrigger>
             </TabsList>
             
+            <TabsContent value="adhesions" className="mt-0">
+              <AdhesionRequestsTable 
+                requests={adhesionRequests} 
+                isLoading={isLoadingAdhesionRequests}
+              />
+            </TabsContent>
+            
             <TabsContent value="all" className="mt-0">
-              <ClientsTable 
-                clients={displayedClients} 
+              <ClientList 
+                filteredClients={displayedClients} 
                 isLoading={isLoading} 
                 onViewClient={handleViewClient}
-                onValidateClient={handleValidateClient}
-                onRejectClient={handleRejectClient}
-                getStatusBadge={getStatusBadge}
               />
             </TabsContent>
             
             <TabsContent value="pending" className="mt-0">
-              <ClientsTable 
-                clients={displayedClients} 
+              <ClientList 
+                filteredClients={displayedClients} 
                 isLoading={isLoading} 
                 onViewClient={handleViewClient}
-                onValidateClient={handleValidateClient}
-                onRejectClient={handleRejectClient}
-                getStatusBadge={getStatusBadge}
               />
             </TabsContent>
             
             <TabsContent value="validated" className="mt-0">
-              <ClientsTable 
-                clients={displayedClients} 
+              <ClientList 
+                filteredClients={displayedClients} 
                 isLoading={isLoading} 
                 onViewClient={handleViewClient}
-                onValidateClient={handleValidateClient}
-                onRejectClient={handleRejectClient}
-                getStatusBadge={getStatusBadge}
               />
             </TabsContent>
             
             <TabsContent value="rejected" className="mt-0">
-              <ClientsTable 
-                clients={displayedClients} 
+              <ClientList 
+                filteredClients={displayedClients} 
                 isLoading={isLoading} 
                 onViewClient={handleViewClient}
-                onValidateClient={handleValidateClient}
-                onRejectClient={handleRejectClient}
-                getStatusBadge={getStatusBadge}
               />
             </TabsContent>
           </Tabs>
-          
-          {filteredClients.length > 10 && (
-            <div className="flex justify-center mt-4">
-              <Pagination />
-            </div>
-          )}
         </div>
       </CardContent>
       
-      {/* Dialogue Nouveau Client */}
       <Dialog open={isNewClientDialogOpen} onOpenChange={setIsNewClientDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -201,7 +189,6 @@ export function ClientManagement() {
         </DialogContent>
       </Dialog>
       
-      {/* Dialogue Détails Client */}
       {selectedClient && (
         <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
           <DialogContent className="max-w-3xl">
@@ -219,114 +206,4 @@ export function ClientManagement() {
   );
 }
 
-interface ClientsTableProps {
-  clients: SfdClient[];
-  isLoading: boolean;
-  onViewClient: (client: SfdClient) => void;
-  onValidateClient: (clientId: string) => void;
-  onRejectClient: (clientId: string) => void;
-  getStatusBadge: (status: string) => React.ReactNode;
-}
-
-const ClientsTable: React.FC<ClientsTableProps> = ({ 
-  clients, 
-  isLoading, 
-  onViewClient, 
-  onValidateClient, 
-  onRejectClient,
-  getStatusBadge 
-}) => {
-  if (isLoading) {
-    return (
-      <div className="flex justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0D6A51]"></div>
-      </div>
-    );
-  }
-
-  if (clients.length === 0) {
-    return (
-      <div className="text-center p-10 border border-dashed rounded-md">
-        <User className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-        <p className="text-muted-foreground mb-2">Aucun client trouvé</p>
-        <p className="text-xs text-muted-foreground">Essayez de modifier vos filtres ou ajoutez un nouveau client</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="border rounded-md">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nom complet</TableHead>
-            <TableHead>Contact</TableHead>
-            <TableHead>Date d'ajout</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {clients.map((client) => (
-            <TableRow key={client.id}>
-              <TableCell className="font-medium">{client.full_name}</TableCell>
-              <TableCell>
-                <div className="flex flex-col">
-                  {client.phone && (
-                    <div className="flex items-center text-sm">
-                      <Phone className="h-3 w-3 mr-1 text-gray-500" />
-                      <span>{client.phone}</span>
-                    </div>
-                  )}
-                  {client.email && (
-                    <div className="flex items-center text-sm">
-                      <Mail className="h-3 w-3 mr-1 text-gray-500" />
-                      <span>{client.email}</span>
-                    </div>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>{new Date(client.created_at).toLocaleDateString()}</TableCell>
-              <TableCell>{getStatusBadge(client.status)}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  {client.status === 'pending' && (
-                    <>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-7 px-2 text-red-600 border-red-200 hover:bg-red-50"
-                        onClick={() => onRejectClient(client.id)}
-                      >
-                        <XCircle className="h-3.5 w-3.5 mr-1" />
-                        Rejeter
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-7 px-2 text-green-600 border-green-200 hover:bg-green-50"
-                        onClick={() => onValidateClient(client.id)}
-                      >
-                        <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                        Valider
-                      </Button>
-                    </>
-                  )}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-7 px-2"
-                    onClick={() => onViewClient(client)}
-                  >
-                    <Eye className="h-3.5 w-3.5 mr-1" />
-                    Détails
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-};
+export default ClientManagement;
