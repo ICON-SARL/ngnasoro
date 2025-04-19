@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -33,15 +33,15 @@ import {
 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useState } from 'react';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 
-interface AdhesionRequestsTableProps {
+export interface AdhesionRequestsTableProps {
   requests: ClientAdhesionRequest[];
   isLoading: boolean;
+  onRefresh?: () => void;
 }
 
-export function AdhesionRequestsTable({ requests, isLoading }: AdhesionRequestsTableProps) {
+export function AdhesionRequestsTable({ requests, isLoading, onRefresh }: AdhesionRequestsTableProps) {
   const [selectedRequest, setSelectedRequest] = useState<ClientAdhesionRequest | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [notes, setNotes] = useState('');
@@ -57,6 +57,10 @@ export function AdhesionRequestsTable({ requests, isLoading }: AdhesionRequestsT
       action,
       notes: notes.trim() || undefined
     });
+
+    if (onRefresh) {
+      onRefresh();
+    }
 
     setIsDialogOpen(false);
     setSelectedRequest(null);

@@ -50,7 +50,9 @@ export const useClientAdhesions = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [retryCount, setRetryCount] = useState(0);
 
+  // Fetch adhesion requests for an SFD admin
   const {
     data: adhesionRequests = [],
     isLoading: isLoadingAdhesionRequests,
@@ -70,6 +72,33 @@ export const useClientAdhesions = () => {
           variant: 'destructive',
         });
         throw error;
+      }
+
+      return data as ClientAdhesionRequest[];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch adhesion requests for a specific user
+  const {
+    data: userAdhesionRequests = [],
+    isLoading: isLoadingUserAdhesionRequests,
+    refetch: refetchUserAdhesionRequests,
+  } = useQuery({
+    queryKey: ['user-adhesion-requests'],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('client_adhesion_requests')
+        .select('*, sfds:sfd_id(name, logo_url)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching user adhesion requests:', error);
+        setRetryCount(prev => prev + 1);
+        return [];
       }
 
       return data as ClientAdhesionRequest[];
@@ -109,6 +138,7 @@ export const useClientAdhesions = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-adhesions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-adhesion-requests'] });
       toast({
         title: 'Succès',
         description: 'La demande d\'adhésion a été traitée',
@@ -124,9 +154,16 @@ export const useClientAdhesions = () => {
   });
 
   return {
+    // Propriétés pour les SFD admins
     adhesionRequests,
     isLoadingAdhesionRequests,
     refetchAdhesionRequests,
     processAdhesion,
+    // Propriétés pour les clients
+    userAdhesionRequests,
+    isLoadingUserAdhesionRequests,
+    refetchUserAdhesionRequests,
+    // État de retry pour la gestion des erreurs
+    retryCount,
   };
 };
