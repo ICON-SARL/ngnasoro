@@ -26,6 +26,7 @@ import AuditLogsPage from '@/pages/AuditLogsPage';
 import AdminMerefFundingPage from '@/pages/AdminMerefFundingPage';
 import UsersManagementPage from '@/pages/UsersManagementPage';
 import RoleTestingPage from '@/pages/RoleTestingPage';
+import AgencyDashboardPage from '@/pages/AgencyDashboardPage';
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient();
@@ -54,6 +55,10 @@ function App() {
             <Route path="/sfd-management" element={<AdminMerefFundingPage />} />
             <Route path="/admin/users" element={<UsersManagementPage />} />
             <Route path="/role-testing" element={<RoleTestingPage />} />
+            
+            {/* SFD Admin Routes */}
+            <Route path="/agency-dashboard" element={<AgencyDashboardPage />} />
+            <Route path="/sfd-admin-dashboard" element={<SfdAdminDashboardPage />} />
             
             {/* Mobile Flow Routes */}
             <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
