@@ -21,6 +21,7 @@ interface Sfd {
   region?: string;
   status: string;
   logo_url?: string;
+  description?: string;
 }
 
 const SfdSelectorPage = () => {
@@ -42,11 +43,12 @@ const SfdSelectorPage = () => {
       setIsLoading(true);
       
       try {
-        // 1. Récupérer les SFDs via la fonction Edge
-        console.log('Fetching SFDs from Edge function');
-        const { data: sfdsData, error: sfdsError } = await supabase.functions.invoke('fetch-sfds', {
-          body: { userId: user.id }
-        });
+        // 1. Récupérer les SFDs via la fonction Edge ou directement
+        console.log('Fetching SFDs...');
+        const { data: sfdsData, error: sfdsError } = await supabase
+          .from('sfds')
+          .select('id, name, code, region, status, logo_url, description')
+          .eq('status', 'active');
         
         if (sfdsError) throw sfdsError;
         
@@ -56,7 +58,7 @@ const SfdSelectorPage = () => {
           throw new Error('Format de données SFD invalide');
         }
         
-        console.log(`Loaded ${sfdsData.length} SFDs from Edge function`);
+        console.log(`Loaded ${sfdsData.length} SFDs`);
         setSfds(sfdsData);
         
         // 2. Récupérer les demandes existantes
@@ -110,9 +112,17 @@ const SfdSelectorPage = () => {
         return;
       }
       
+      // Trouver les informations de la SFD pour les passer à la page d'adhésion
+      const selectedSfd = sfds.find(sfd => sfd.id === sfdId);
+      
       console.log(`Redirecting to adhesion page for SFD: ${sfdId}`);
-      // Rediriger vers la page d'adhésion SFD
-      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
+      // Rediriger vers la page d'adhésion SFD avec le contexte nécessaire
+      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`, {
+        state: { 
+          sfdId: sfdId,
+          sfdName: selectedSfd?.name
+        }
+      });
       
     } catch (err) {
       console.error('Error handling join request:', err);
@@ -124,12 +134,28 @@ const SfdSelectorPage = () => {
 
   const handleRetryRequest = (sfdId: string) => {
     console.log(`Handling retry request for SFD: ${sfdId}`);
-    navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
+    // Trouver les informations de la SFD pour les passer à la page d'adhésion
+    const selectedSfd = sfds.find(sfd => sfd.id === sfdId);
+    
+    navigate(`/mobile-flow/sfd-adhesion/${sfdId}`, {
+      state: { 
+        sfdId: sfdId,
+        sfdName: selectedSfd?.name
+      }
+    });
   };
 
   const handleEditRequest = (sfdId: string) => {
     console.log(`Handling edit request for SFD: ${sfdId}`);
-    navigate(`/mobile-flow/sfd-adhesion/${sfdId}?mode=edit`);
+    // Trouver les informations de la SFD pour les passer à la page d'adhésion
+    const selectedSfd = sfds.find(sfd => sfd.id === sfdId);
+    
+    navigate(`/mobile-flow/sfd-adhesion/${sfdId}?mode=edit`, {
+      state: { 
+        sfdId: sfdId,
+        sfdName: selectedSfd?.name
+      }
+    });
   };
 
   return (

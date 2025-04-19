@@ -78,7 +78,14 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false, isEdit = false,
       }
       
       console.log(`Navigation vers la page d'adhésion pour SFD: ${sfdId} (${sfdName})`);
-      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
+      
+      // Utiliser navigate avec un objet state pour s'assurer que le contexte est bien préservé
+      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`, {
+        state: { 
+          sfdId: sfdId,
+          sfdName: sfdName
+        }
+      });
       
     } catch (err) {
       console.error('Erreur lors du traitement de la demande:', err);

@@ -19,7 +19,11 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const handleJoinRequest = async () => {
+  const handleJoinRequest = async (e: React.MouseEvent) => {
+    // Empêcher la propagation de l'événement pour éviter les déclenchements indésirables
+    e.preventDefault();
+    e.stopPropagation();
+    
     try {
       if (!user) {
         toast({
@@ -31,9 +35,9 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
         return;
       }
 
-      // If it's a retry, we need to delete the old rejected request first
+      // Si c'est une nouvelle tentative après un rejet, supprimer l'ancienne demande
       if (isRetry) {
-        console.log(`Deleting previous rejected request for SFD: ${sfdId}`);
+        console.log(`Suppression de la demande rejetée pour SFD: ${sfdId}`);
         
         const { error: deleteError } = await supabase
           .from('client_adhesion_requests')
@@ -43,7 +47,7 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
           .eq('status', 'rejected');
           
         if (deleteError) {
-          console.error('Error deleting previous request:', deleteError);
+          console.error('Erreur lors de la suppression de la demande précédente:', deleteError);
           toast({
             title: 'Erreur',
             description: "Impossible de réinitialiser votre demande précédente",
@@ -58,13 +62,18 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
         });
       }
       
-      console.log(`Navigating to adhesion page for SFD: ${sfdId} (${sfdName})`);
+      console.log(`Navigation vers la page d'adhésion pour SFD: ${sfdId} (${sfdName})`);
       
-      // Navigate to the SFD adhesion page with the SFD ID
-      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
+      // Utiliser navigate avec un objet state pour s'assurer que le contexte est bien préservé
+      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`, {
+        state: { 
+          sfdId: sfdId,
+          sfdName: sfdName
+        }
+      });
       
     } catch (err) {
-      console.error('Error handling join request:', err);
+      console.error('Erreur lors du traitement de la demande:', err);
       handleError(err);
     }
   };

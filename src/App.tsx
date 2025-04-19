@@ -1,235 +1,285 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
-import Footer from '@/components/Footer';
-import MobileMainPage from '@/components/mobile/MobileMainPage';
-import TransferPage from '@/pages/mobile/TransferPage';
-import MobileLoansPage from '@/pages/mobile/MobileLoansPage';
-import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
-import LoanDetailsPage from '@/pages/mobile/LoanDetailsPage';
-import PaymentPage from '@/pages/mobile/PaymentPage';
-import AccountPage from '@/pages/mobile/AccountPage';
-import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
-import MobileFlowPage from '@/pages/MobileFlowPage';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/hooks/auth/AuthContext';
-import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
-import AuthRedirectPage from '@/pages/AuthRedirectPage';
-import AdminLoginPage from '@/pages/AdminLoginPage';
-import ClientLoginPage from '@/pages/ClientLoginPage';
-import SfdLoginPage from '@/pages/SfdLoginPage';
-import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
-import AgencyDashboard from '@/pages/AgencyDashboard';
-import SfdSubsidyRequestsPage from '@/pages/SfdSubsidyRequestsPage';
-import ClientsPage from '@/pages/ClientsPage';
-import TransactionsPage from '@/pages/TransactionsPage';
-import SfdLoansPage from '@/pages/SfdLoansPage';
-import SfdMerefRequestPage from '@/pages/SfdMerefRequestPage';
-import CreditApprovalPage from '@/pages/CreditApprovalPage';
-import SfdManagementPage from '@/pages/SfdManagementPage';
-import AuditLogsPage from '@/pages/AuditLogsPage';
-import ProtectedRoute from '@/components/routes/ProtectedRoute';
-import RoleGuard from '@/components/RoleGuard';
+import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/hooks/auth/types';
+import RoleGuard from '@/components/RoleGuard';
+import PageLoader from '@/components/PageLoader';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
-import SfdAdhesionRequestsPage from '@/pages/SfdAdhesionRequestsPage';
-import RoleTestingPage from '@/pages/RoleTestingPage';
-import SplashScreen from '@/components/mobile/SplashScreen';
+import SFDSelector from '@/pages/SFDSelector';
+import SfdSelectorPage from '@/pages/SfdSelectorPage';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1
-    },
-  },
-});
+// Import the SfdAdhesionForm component
+import SfdAdhesionForm from './components/mobile/sfd-adhesion/SfdAdhesionForm';
 
-function App() {
-  return (
-    <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Router>
-            <div className="flex flex-col min-h-screen">
-              <div className="flex-grow">
-                <Routes>
-                  <Route path="/" element={<SplashScreen onComplete={() => null} />} />
-                  
-                  <Route path="/auth" element={<LoginPage />} />
-                  <Route path="/login" element={<AuthRedirectPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/admin/auth" element={<AdminLoginPage />} />
-                  <Route path="/sfd/auth" element={<SfdLoginPage />} />
-                  <Route path="/client/auth" element={<ClientLoginPage />} />
-                  <Route path="/access-denied" element={<AccessDeniedPage />} />
-                  
-                  <Route path="/super-admin-dashboard/*" element={
-                    <ProtectedRoute requireAdmin={true}>
-                      <RoleGuard requiredRole={UserRole.SuperAdmin}>
-                        <SuperAdminDashboard />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/sfd-management" element={
-                    <ProtectedRoute requireAdmin={true}>
-                      <RoleGuard requiredRole={UserRole.SuperAdmin}>
-                        <SfdManagementPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/audit-logs" element={
-                    <ProtectedRoute requireAdmin={true}>
-                      <RoleGuard requiredRole={UserRole.SuperAdmin}>
-                        <AuditLogsPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/credit-approval" element={
-                    <ProtectedRoute>
-                      <CreditApprovalPage />
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/agency-dashboard/*" element={
-                    <ProtectedRoute requireSfdAdmin={true}>
-                      <RoleGuard requiredRole={UserRole.SfdAdmin}>
-                        <AgencyDashboard />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/sfd-loans" element={
-                    <ProtectedRoute requireSfdAdmin={true}>
-                      <RoleGuard requiredRole={UserRole.SfdAdmin}>
-                        <SfdLoansPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/sfd-clients" element={
-                    <ProtectedRoute requireSfdAdmin={true}>
-                      <RoleGuard requiredRole={UserRole.SfdAdmin}>
-                        <ClientsPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/sfd-adhesion-requests" element={
-                    <ProtectedRoute requireSfdAdmin={true}>
-                      <RoleGuard requiredRole={UserRole.SfdAdmin}>
-                        <SfdAdhesionRequestsPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/sfd-transactions" element={
-                    <ProtectedRoute requireSfdAdmin={true}>
-                      <RoleGuard requiredRole={UserRole.SfdAdmin}>
-                        <TransactionsPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/sfd-subsidy-requests" element={
-                    <ProtectedRoute requireSfdAdmin={true}>
-                      <RoleGuard requiredRole={UserRole.SfdAdmin}>
-                        <SfdSubsidyRequestsPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/sfd-meref-request" element={
-                    <ProtectedRoute requireSfdAdmin={true}>
-                      <RoleGuard requiredRole={UserRole.SfdAdmin}>
-                        <SfdMerefRequestPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/mobile-flow/main" element={
-                    <ProtectedRoute>
-                      <RoleGuard requiredRole={UserRole.Client}>
-                        <MobileMainPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/mobile-flow/transfer" element={
-                    <ProtectedRoute>
-                      <RoleGuard requiredRole={UserRole.Client}>
-                        <TransferPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/mobile-flow/loans" element={
-                    <ProtectedRoute>
-                      <RoleGuard requiredRole={UserRole.Client}>
-                        <MobileLoansPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/mobile-flow/my-loans" element={
-                    <ProtectedRoute>
-                      <RoleGuard requiredRole={UserRole.Client}>
-                        <MobileMyLoansPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/mobile-flow/loan-details" element={
-                    <ProtectedRoute>
-                      <RoleGuard requiredRole={UserRole.Client}>
-                        <LoanDetailsPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/mobile-flow/payment" element={
-                    <ProtectedRoute>
-                      <RoleGuard requiredRole={UserRole.Client}>
-                        <PaymentPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/mobile-flow/account" element={
-                    <ProtectedRoute>
-                      <RoleGuard requiredRole={UserRole.Client}>
-                        <AccountPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/mobile-flow/sfd-adhesion/:sfdId" element={
-                    <ProtectedRoute>
-                      <MobileFlowPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/mobile-flow/*" element={
-                    <ProtectedRoute>
-                      <MobileFlowPage />
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/role-testing" element={
-                    <ProtectedRoute requireAdmin={true}>
-                      <RoleGuard requiredRole={UserRole.SuperAdmin}>
-                        <RoleTestingPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="*" element={<Navigate to="/auth" replace />} />
-                </Routes>
-                <Toaster />
-              </div>
-              <Footer />
-            </div>
-          </Router>
-        </AuthProvider>
-      </QueryClientProvider>
-    </React.StrictMode>
-  );
-}
-
-export default App;
+const AdminDashboard = React.lazy(() => import('@/pages/admin/AdminDashboard'));
+const SFDDashboard = React.lazy(() => import('@/pages/sfd/SFDDashboard'));
+const ClientDashboard = React.lazy(() => import('@/pages/client/ClientDashboard'));
+const Auth = React.lazy(() => import('@/pages/Auth'));
+const ProfilePage = React.lazy(() => import('@/pages/ProfilePage'));
+const MobileFlow = React.lazy(() => import('@/pages/MobileFlow'));
+const SfdClientsPage = React.lazy(() => import('@/pages/sfd/SfdClientsPage'));
+const SfdClientDetailsPage = React.lazy(() => import('@/pages/sfd/SfdClientDetailsPage'));
+const SfdAdhesionRequestsPage = React.lazy(() => import('@/pages/sfd/SfdAdhesionRequestsPage'));
+const SfdLoansPage = React.lazy(() => import('@/pages/sfd/SfdLoansPage'));
+const SfdLoanDetailsPage = React.lazy(() => import('@/pages/sfd/SfdLoanDetailsPage'));
+const SfdNewLoanPage = React.lazy(() => import('@/pages/sfd/SfdNewLoanPage'));
+const SfdSettingsPage = React.lazy(() => import('@/pages/sfd/SfdSettingsPage'));
+const SfdEditLoanPage = React.lazy(() => import('@/pages/sfd/SfdEditLoanPage'));
+const SfdNewClientPage = React.lazy(() => import('@/pages/sfd/SfdNewClientPage'));
+const SfdEditClientPage = React.lazy(() => import('@/pages/sfd/SfdEditClientPage'));
+const SfdClientDocumentsPage = React.lazy(() => import('@/pages/sfd/SfdClientDocumentsPage'));
+const SfdClientActivitiesPage = React.lazy(() => import('@/pages/sfd/SfdClientActivitiesPage'));
+const SfdClientSavingsPage = React.lazy(() => import('@/pages/sfd/SfdClientSavingsPage'));
+const SfdLoanProductsPage = React.lazy(() => import('@/pages/sfd/SfdLoanProductsPage'));
+const SfdLoanProductDetailsPage = React.lazy(() => import('@/pages/sfd/SfdLoanProductDetailsPage'));
+const SfdNewLoanProductPage = React.lazy(() => import('@/pages/sfd/SfdNewLoanProductPage'));
+const SfdEditLoanProductPage = React.lazy(() => import('@/pages/sfd/SfdEditLoanProductPage'));
+const SfdTransactionsPage = React.lazy(() => import('@/pages/sfd/SfdTransactionsPage'));
+const SfdAccountSettingsPage = React.lazy(() => import('@/pages/sfd/SfdAccountSettingsPage'));
+const SfdAccountProfilePage = React.lazy(() => import('@/pages/sfd/SfdAccountProfilePage'));
+const SfdAccountNotificationsPage = React.lazy(() => import('@/pages/sfd/SfdAccountNotificationsPage'));
+const SfdAccountSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityPage'));
+const SfdAccountBillingPage = React.lazy(() => import('@/pages/sfd/SfdAccountBillingPage'));
+const SfdAccountTeamPage = React.lazy(() => import('@/pages/sfd/SfdAccountTeamPage'));
+const SfdAccountIntegrationsPage = React.lazy(() => import('@/pages/sfd/SfdAccountIntegrationsPage'));
+const SfdAccountAppearancePage = React.lazy(() => import('@/pages/sfd/SfdAccountAppearancePage'));
+const SfdAccountAPIKeysPage = React.lazy(() => import('@/pages/sfd/SfdAccountAPIKeysPage'));
+const SfdAccountWebhooksPage = React.lazy(() => import('@/pages/sfd/SfdAccountWebhooksPage'));
+const SfdAccountAuditLogsPage = React.lazy(() => import('@/pages/sfd/SfdAccountAuditLogsPage'));
+const SfdAccountDataManagementPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataManagementPage'));
+const SfdAccountCompliancePage = React.lazy(() => import('@/pages/sfd/SfdAccountCompliancePage'));
+const SfdAccountSupportPage = React.lazy(() => import('@/pages/sfd/SfdAccountSupportPage'));
+const SfdAccountFeedbackPage = React.lazy(() => import('@/pages/sfd/SfdAccountFeedbackPage'));
+const SfdAccountRoadmapPage = React.lazy(() => import('@/pages/sfd/SfdAccountRoadmapPage'));
+const SfdAccountCommunityPage = React.lazy(() => import('@/pages/sfd/SfdAccountCommunityPage'));
+const SfdAccountBlogPage = React.lazy(() => import('@/pages/sfd/SfdAccountBlogPage'));
+const SfdAccountCareersPage = React.lazy(() => import('@/pages/sfd/SfdAccountCareersPage'));
+const SfdAccountPressPage = React.lazy(() => import('@/pages/sfd/SfdAccountPressPage'));
+const SfdAccountTermsPage = React.lazy(() => import('@/pages/sfd/SfdAccountTermsPage'));
+const SfdAccountPrivacyPage = React.lazy(() => import('@/pages/sfd/SfdAccountPrivacyPage'));
+const SfdAccountSecurityVulnerabilityReportPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityVulnerabilityReportPage'));
+const SfdAccountCookiePolicyPage = React.lazy(() => import('@/pages/sfd/SfdAccountCookiePolicyPage'));
+const SfdAccountAccessibilityStatementPage = React.lazy(() => import('@/pages/sfd/SfdAccountAccessibilityStatementPage'));
+const SfdAccountSitemapPage = React.lazy(() => import('@/pages/sfd/SfdAccountSitemapPage'));
+const SfdAccountContactPage = React.lazy(() => import('@/pages/sfd/SfdAccountContactPage'));
+const SfdAccountFAQPage = React.lazy(() => import('@/pages/sfd/SfdAccountFAQPage'));
+const SfdAccountDocumentationPage = React.lazy(() => import('@/pages/sfd/SfdAccountDocumentationPage'));
+const SfdAccountAPIReferencePage = React.lazy(() => import('@/pages/sfd/SfdAccountAPIReferencePage'));
+const SfdAccountSDKsPage = React.lazy(() => import('@/pages/sfd/SfdAccountSDKsPage'));
+const SfdAccountPluginsPage = React.lazy(() => import('@/pages/sfd/SfdAccountPluginsPage'));
+const SfdAccountIntegrationsDirectoryPage = React.lazy(() => import('@/pages/sfd/SfdAccountIntegrationsDirectoryPage'));
+const SfdAccountMarketplacePage = React.lazy(() => import('@/pages/sfd/SfdAccountMarketplacePage'));
+const SfdAccountEnterpriseSolutionsPage = React.lazy(() => import('@/pages/sfd/SfdAccountEnterpriseSolutionsPage'));
+const SfdAccountPricingPage = React.lazy(() => import('@/pages/sfd/SfdAccountPricingPage'));
+const SfdAccountPlansPage = React.lazy(() => import('@/pages/sfd/SfdAccountPlansPage'));
+const SfdAccountComparePlansPage = React.lazy(() => import('@/pages/sfd/SfdAccountComparePlansPage'));
+const SfdAccountFreeTrialPage = React.lazy(() => import('@/pages/sfd/SfdAccountFreeTrialPage'));
+const SfdAccountDemoPage = React.lazy(() => import('@/pages/sfd/SfdAccountDemoPage'));
+const SfdAccountCaseStudiesPage = React.lazy(() => import('@/pages/sfd/SfdAccountCaseStudiesPage'));
+const SfdAccountTestimonialsPage = React.lazy(() => import('@/pages/sfd/SfdAccountTestimonialsPage'));
+const SfdAccountCustomersPage = React.lazy(() => import('@/pages/sfd/SfdAccountCustomersPage'));
+const SfdAccountPartnersPage = React.lazy(() => import('@/pages/sfd/SfdAccountPartnersPage'));
+const SfdAccountResellersPage = React.lazy(() => import('@/pages/sfd/SfdAccountResellersPage'));
+const SfdAccountAffiliatesPage = React.lazy(() => import('@/pages/sfd/SfdAccountAffiliatesPage'));
+const SfdAccountDevelopersPage = React.lazy(() => import('@/pages/sfd/SfdAccountDevelopersPage'));
+const SfdAccountAPIStatusPage = React.lazy(() => import('@/pages/sfd/SfdAccountAPIStatusPage'));
+const SfdAccountIncidentsPage = React.lazy(() => import('@/pages/sfd/SfdAccountIncidentsPage'));
+const SfdAccountMaintenancePage = React.lazy(() => import('@/pages/sfd/SfdAccountMaintenancePage'));
+const SfdAccountReleaseNotesPage = React.lazy(() => import('@/pages/sfd/SfdAccountReleaseNotesPage'));
+const SfdAccountChangelogPage = React.lazy(() => import('@/pages/sfd/SfdAccountChangelogPage'));
+const SfdAccountSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityPage'));
+const SfdAccountVulnerabilityDisclosureProgramPage = React.lazy(() => import('@/pages/sfd/SfdAccountVulnerabilityDisclosureProgramPage'));
+const SfdAccountResponsibleDisclosurePage = React.lazy(() => import('@/pages/sfd/SfdAccountResponsibleDisclosurePage'));
+const SfdAccountBugBountyPage = React.lazy(() => import('@/pages/sfd/SfdAccountBugBountyPage'));
+const SfdAccountGDPRCompliancePage = React.lazy(() => import('@/pages/sfd/SfdAccountGDPRCompliancePage'));
+const SfdAccountCCPACompliancePage = React.lazy(() => import('@/pages/sfd/SfdAccountCCPACompliancePage'));
+const SfdAccountHIPAACompliancePage = React.lazy(() => import('@/pages/sfd/SfdAccountHIPAACompliancePage'));
+const SfdAccountPCICompliancePage = React.lazy(() => import('@/pages/sfd/SfdAccountPCICompliancePage'));
+const SfdAccountSOC2CompliancePage = React.lazy(() => import('@/pages/sfd/SfdAccountSOC2CompliancePage'));
+const SfdAccountISO27001CompliancePage = React.lazy(() => import('@/pages/sfd/SfdAccountISO27001CompliancePage'));
+const SfdAccountFedRAMPCompliancePage = React.lazy(() => import('@/pages/sfd/SfdAccountFedRAMPCompliancePage'));
+const SfdAccountCybersecurityFrameworkCompliancePage = React.lazy(() => import('@/pages/sfd/SfdAccountCybersecurityFrameworkCompliancePage'));
+const SfdAccountDataResidencyPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataResidencyPage'));
+const SfdAccountDataEncryptionPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataEncryptionPage'));
+const SfdAccountDataBackupPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataBackupPage'));
+const SfdAccountDisasterRecoveryPage = React.lazy(() => import('@/pages/sfd/SfdAccountDisasterRecoveryPage'));
+const SfdAccountBusinessContinuityPage = React.lazy(() => import('@/pages/sfd/SfdAccountBusinessContinuityPage'));
+const SfdAccountRiskManagementPage = React.lazy(() => import('@/pages/sfd/SfdAccountRiskManagementPage'));
+const SfdAccountVendorRiskManagementPage = React.lazy(() => import('@/pages/sfd/SfdAccountVendorRiskManagementPage'));
+const SfdAccountThirdPartyRiskManagementPage = React.lazy(() => import('@/pages/sfd/SfdAccountThirdPartyRiskManagementPage'));
+const SfdAccountIncidentResponsePage = React.lazy(() => import('@/pages/sfd/SfdAccountIncidentResponsePage'));
+const SfdAccountSecurityAwarenessTrainingPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityAwarenessTrainingPage'));
+const SfdAccountPenetrationTestingPage = React.lazy(() => import('@/pages/sfd/SfdAccountPenetrationTestingPage'));
+const SfdAccountVulnerabilityScanningPage = React.lazy(() => import('@/pages/sfd/SfdAccountVulnerabilityScanningPage'));
+const SfdAccountThreatIntelligencePage = React.lazy(() => import('@/pages/sfd/SfdAccountThreatIntelligencePage'));
+const SfdAccountSecurityAuditsPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityAuditsPage'));
+const SfdAccountComplianceAuditsPage = React.lazy(() => import('@/pages/sfd/SfdAccountComplianceAuditsPage'));
+const SfdAccountDataLossPreventionPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataLossPreventionPage'));
+const SfdAccountIdentityAndAccessManagementPage = React.lazy(() => import('@/pages/sfd/SfdAccountIdentityAndAccessManagementPage'));
+const SfdAccountMultiFactorAuthenticationPage = React.lazy(() => import('@/pages/sfd/SfdAccountMultiFactorAuthenticationPage'));
+const SfdAccountSingleSignOnPage = React.lazy(() => import('@/pages/sfd/SfdAccountSingleSignOnPage'));
+const SfdAccountRoleBasedAccessControlPage = React.lazy(() => import('@/pages/sfd/SfdAccountRoleBasedAccessControlPage'));
+const SfdAccountLeastPrivilegeAccessPage = React.lazy(() => import('@/pages/sfd/SfdAccountLeastPrivilegeAccessPage'));
+const SfdAccountNetworkSegmentationPage = React.lazy(() => import('@/pages/sfd/SfdAccountNetworkSegmentationPage'));
+const SfdAccountFirewallManagementPage = React.lazy(() => import('@/pages/sfd/SfdAccountFirewallManagementPage'));
+const SfdAccountIntrusionDetectionAndPreventionPage = React.lazy(() => import('@/pages/sfd/SfdAccountIntrusionDetectionAndPreventionPage'));
+const SfdAccountSecurityInformationAndEventManagementPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityInformationAndEventManagementPage'));
+const SfdAccountEndpointDetectionAndResponsePage = React.lazy(() => import('@/pages/sfd/SfdAccountEndpointDetectionAndResponsePage'));
+const SfdAccountCloudSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountCloudSecurityPage'));
+const SfdAccountContainerSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountContainerSecurityPage'));
+const SfdAccountServerlessSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountServerlessSecurityPage'));
+const SfdAccountDevSecOpsPage = React.lazy(() => import('@/pages/sfd/SfdAccountDevSecOpsPage'));
+const SfdAccountSecureCodingPracticesPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecureCodingPracticesPage'));
+const SfdAccountStaticApplicationSecurityTestingPage = React.lazy(() => import('@/pages/sfd/SfdAccountStaticApplicationSecurityTestingPage'));
+const SfdAccountDynamicApplicationSecurityTestingPage = React.lazy(() => import('@/pages/sfd/SfdAccountDynamicApplicationSecurityTestingPage'));
+const SfdAccountInteractiveApplicationSecurityTestingPage = React.lazy(() => import('@/pages/sfd/SfdAccountInteractiveApplicationSecurityTestingPage'));
+const SfdAccountMobileApplicationSecurityTestingPage = React.lazy(() => import('@/pages/sfd/SfdAccountMobileApplicationSecurityTestingPage'));
+const SfdAccountAPISecurityTestingPage = React.lazy(() => import('@/pages/sfd/SfdAccountAPISecurityTestingPage'));
+const SfdAccountSoftwareCompositionAnalysisPage = React.lazy(() => import('@/pages/sfd/SfdAccountSoftwareCompositionAnalysisPage'));
+const SfdAccountInfrastructureAsCodeSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountInfrastructureAsCodeSecurityPage'));
+const SfdAccountRuntimeApplicationSelfProtectionPage = React.lazy(() => import('@/pages/sfd/SfdAccountRuntimeApplicationSelfProtectionPage'));
+const SfdAccountWebApplicationFirewallPage = React.lazy(() => import('@/pages/sfd/SfdAccountWebApplicationFirewallPage'));
+const SfdAccountBotManagementPage = React.lazy(() => import('@/pages/sfd/SfdAccountBotManagementPage'));
+const SfdAccountDDOSProtectionPage = React.lazy(() => import('@/pages/sfd/SfdAccountDDOSProtectionPage'));
+const SfdAccountContentDeliveryNetworkPage = React.lazy(() => import('@/pages/sfd/SfdAccountContentDeliveryNetworkPage'));
+const SfdAccountEdgeComputingPage = React.lazy(() => import('@/pages/sfd/SfdAccountEdgeComputingPage'));
+const SfdAccountZeroTrustSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountZeroTrustSecurityPage'));
+const SfdAccountMicrosegmentationPage = React.lazy(() => import('@/pages/sfd/SfdAccountMicrosegmentationPage'));
+const SfdAccountSoftwareDefinedPerimeterPage = React.lazy(() => import('@/pages/sfd/SfdAccountSoftwareDefinedPerimeterPage'));
+const SfdAccountDataClassificationPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataClassificationPage'));
+const SfdAccountDataMaskingPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataMaskingPage'));
+const SfdAccountDataTokenizationPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataTokenizationPage'));
+const SfdAccountDataEncryptionAtRestPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataEncryptionAtRestPage'));
+const SfdAccountDataEncryptionInTransitPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataEncryptionInTransitPage'));
+const SfdAccountDataLossPreventionPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataLossPreventionPage'));
+const SfdAccountDataGovernancePage = React.lazy(() => import('@/pages/sfd/SfdAccountDataGovernancePage'));
+const SfdAccountDataRetentionPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataRetentionPage'));
+const SfdAccountDataDestructionPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataDestructionPage'));
+const SfdAccountDataBreachResponsePage = React.lazy(() => import('@/pages/sfd/SfdAccountDataBreachResponsePage'));
+const SfdAccountDataPrivacyPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataPrivacyPage'));
+const SfdAccountDataSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataSecurityPage'));
+const SfdAccountDataCompliancePage = React.lazy(() => import('@/pages/sfd/SfdAccountDataCompliancePage'));
+const SfdAccountDataEthicsPage = React.lazy(() => import('@/pages/sfd/SfdAccountDataEthicsPage'));
+const SfdAccountArtificialIntelligenceSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountArtificialIntelligenceSecurityPage'));
+const SfdAccountMachineLearningSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountMachineLearningSecurityPage'));
+const SfdAccountDeepLearningSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountDeepLearningSecurityPage'));
+const SfdAccountNeuralNetworkSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountNeuralNetworkSecurityPage'));
+const SfdAccountRoboticsSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountRoboticsSecurityPage'));
+const SfdAccountInternetOfThingsSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountInternetOfThingsSecurityPage'));
+const SfdAccountIndustrialControlSystemsSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountIndustrialControlSystemsSecurityPage'));
+const SfdAccountOperationalTechnologySecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountOperationalTechnologySecurityPage'));
+const SfdAccountCriticalInfrastructureSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountCriticalInfrastructureSecurityPage'));
+const SfdAccountSmartCitySecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountSmartCitySecurityPage'));
+const SfdAccountAutonomousVehiclesSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountAutonomousVehiclesSecurityPage'));
+const SfdAccountDronesSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountDronesSecurityPage'));
+const SfdAccountSpaceSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountSpaceSecurityPage'));
+const SfdAccountQuantumComputingSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountQuantumComputingSecurityPage'));
+const SfdAccountPostQuantumCryptographyPage = React.lazy(() => import('@/pages/sfd/SfdAccountPostQuantumCryptographyPage'));
+const SfdAccountHomomorphicEncryptionPage = React.lazy(() => import('@/pages/sfd/SfdAccountHomomorphicEncryptionPage'));
+const SfdAccountFederatedLearningSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountFederatedLearningSecurityPage'));
+const SfdAccountDifferentialPrivacyPage = React.lazy(() => import('@/pages/sfd/SfdAccountDifferentialPrivacyPage'));
+const SfdAccountSecureMultiPartyComputationPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecureMultiPartyComputationPage'));
+const SfdAccountBlockchainSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountBlockchainSecurityPage'));
+const SfdAccountCryptocurrencySecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountCryptocurrencySecurityPage'));
+const SfdAccountDecentralizedFinanceSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountDecentralizedFinanceSecurityPage'));
+const SfdAccountNonFungibleTokenSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountNonFungibleTokenSecurityPage'));
+const SfdAccountMetaverseSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountMetaverseSecurityPage'));
+const SfdAccountExtendedRealitySecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountExtendedRealitySecurityPage'));
+const SfdAccountVirtualRealitySecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountVirtualRealitySecurityPage'));
+const SfdAccountAugmentedRealitySecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountAugmentedRealitySecurityPage'));
+const SfdAccountMixedRealitySecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountMixedRealitySecurityPage'));
+const SfdAccountDigitalTwinsSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountDigitalTwinsSecurityPage'));
+const SfdAccountDigitalTransformationSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountDigitalTransformationSecurityPage'));
+const SfdAccountInnovationSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountInnovationSecurityPage'));
+const SfdAccountFutureOfWorkSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountFutureOfWorkSecurityPage'));
+const SfdAccountCyberPhysicalSystemsSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountCyberPhysicalSystemsSecurityPage'));
+const SfdAccountHumanMachineInterfaceSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountHumanMachineInterfaceSecurityPage'));
+const SfdAccountHumanCenteredSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountHumanCenteredSecurityPage'));
+const SfdAccountUsableSecurityPage = React.lazy(() => import('@/pages/sfd/SfdAccountUsableSecurityPage'));
+const SfdAccountSecurityEngineeringPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityEngineeringPage'));
+const SfdAccountSecurityArchitecturePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityArchitecturePage'));
+const SfdAccountSecurityOperationsPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityOperationsPage'));
+const SfdAccountSecurityIntelligencePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityIntelligencePage'));
+const SfdAccountThreatHuntingPage = React.lazy(() => import('@/pages/sfd/SfdAccountThreatHuntingPage'));
+const SfdAccountRedTeamingPage = React.lazy(() => import('@/pages/sfd/SfdAccountRedTeamingPage'));
+const SfdAccountBlueTeamingPage = React.lazy(() => import('@/pages/sfd/SfdAccountBlueTeamingPage'));
+const SfdAccountPurpleTeamingPage = React.lazy(() => import('@/pages/sfd/SfdAccountPurpleTeamingPage'));
+const SfdAccountSecurityAutomationPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityAutomationPage'));
+const SfdAccountOrchestrationPage = React.lazy(() => import('@/pages/sfd/SfdAccountOrchestrationPage'));
+const SfdAccountResponsePage = React.lazy(() => import('@/pages/sfd/SfdAccountResponsePage'));
+const SfdAccountSecurityAnalyticsPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityAnalyticsPage'));
+const SfdAccountSecurityVisualizationPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityVisualizationPage'));
+const SfdAccountSecurityMetricsPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityMetricsPage'));
+const SfdAccountSecurityReportingPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityReportingPage'));
+const SfdAccountSecurityAwarenessPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityAwarenessPage'));
+const SfdAccountSecurityCulturePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityCulturePage'));
+const SfdAccountSecurityLeadershipPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityLeadershipPage'));
+const SfdAccountSecurityGovernancePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityGovernancePage'));
+const SfdAccountSecurityRiskManagementPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityRiskManagementPage'));
+const SfdAccountSecurityCompliancePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityCompliancePage'));
+const SfdAccountSecurityAuditPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityAuditPage'));
+const SfdAccountSecurityCertificationPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityCertificationPage'));
+const SfdAccountSecurityFrameworkPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityFrameworkPage'));
+const SfdAccountSecurityStandardPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityStandardPage'));
+const SfdAccountSecurityPolicyPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityPolicyPage'));
+const SfdAccountSecurityProcedurePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityProcedurePage'));
+const SfdAccountSecurityGuidelinePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityGuidelinePage'));
+const SfdAccountSecurityBestPracticePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityBestPracticePage'));
+const SfdAccountSecurityTrainingPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityTrainingPage'));
+const SfdAccountSecurityEducationPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityEducationPage'));
+const SfdAccountSecurityCareerPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityCareerPage'));
+const SfdAccountSecurityJobPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityJobPage'));
+const SfdAccountSecurityInternshipPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityInternshipPage'));
+const SfdAccountSecurityScholarshipPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityScholarshipPage'));
+const SfdAccountSecurityGrantPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityGrantPage'));
+const SfdAccountSecurityAwardPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityAwardPage'));
+const SfdAccountSecurityConferencePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityConferencePage'));
+const SfdAccountSecurityWorkshopPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityWorkshopPage'));
+const SfdAccountSecurityWebinarPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityWebinarPage'));
+const SfdAccountSecurityPodcastPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityPodcastPage'));
+const SfdAccountSecurityBlogPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityBlogPage'));
+const SfdAccountSecurityArticlePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityArticlePage'));
+const SfdAccountSecurityBookPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityBookPage'));
+const SfdAccountSecurityCoursePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityCoursePage'));
+const SfdAccountSecurityCertificationPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityCertificationPage'));
+const SfdAccountSecurityToolPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityToolPage'));
+const SfdAccountSecurityVendorPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityVendorPage'));
+const SfdAccountSecurityServicePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityServicePage'));
+const SfdAccountSecurityProductPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityProductPage'));
+const SfdAccountSecuritySolutionPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecuritySolutionPage'));
+const SfdAccountSecurityFrameworkPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityFrameworkPage'));
+const SfdAccountSecurityStandardPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityStandardPage'));
+const SfdAccountSecurityPolicyPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityPolicyPage'));
+const SfdAccountSecurityProcedurePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityProcedurePage'));
+const SfdAccountSecurityGuidelinePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityGuidelinePage'));
+const SfdAccountSecurityBestPracticePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityBestPracticePage'));
+const SfdAccountSecurityChecklistPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityChecklistPage'));
+const SfdAccountSecurityTemplatePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityTemplatePage'));
+const SfdAccountSecurityExamplePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityExamplePage'));
+const SfdAccountSecurityResourcePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityResourcePage'));
+const SfdAccountSecurityCommunityPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityCommunityPage'));
+const SfdAccountSecurityForumPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityForumPage'));
+const SfdAccountSecurityGroupPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityGroupPage'));
+const SfdAccountSecurityEventPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityEventPage'));
+const SfdAccountSecurityNewsPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityNewsPage'));
+const SfdAccountSecurityAlertPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityAlertPage'));
+const SfdAccountSecurityAdvisoryPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityAdvisoryPage'));
+const SfdAccountSecurityVulnerabilityPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityVulnerabilityPage'));
+const SfdAccountSecurityExploitPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityExploitPage'));
+const SfdAccountSecurityPatchPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityPatchPage'));
+const SfdAccountSecurityUpdatePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityUpdatePage'));
+const SfdAccountSecurityFixPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityFixPage'));
+const SfdAccountSecurityMitigationPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityMitigationPage'));
+const SfdAccountSecurityCountermeasurePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityCountermeasurePage'));
+const SfdAccountSecurityControlPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityControlPage'));
+const SfdAccountSecuritySafeguardPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecuritySafeguardPage'));
+const SfdAccountSecurityDefensePage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityDefensePage'));
+const SfdAccountSecurityProtectionPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityProtectionPage'));
+const SfdAccountSecurityPreventionPage = React.lazy(() => import('@/pages/sfd/SfdAccountSecurityPreventionPage'));
+const SfdAccountDetectionPage = React.lazy(() => import('@/pages/sfd/SfdAccountDetectionPage'));
+const SfdAccountResponsePage = React.lazy(() => import('@/pages/sfd/SfdAccountResponsePage'));
+const SfdAccountRecoveryPage = React.lazy(() => import('@/pages/sfd/SfdAccountRecoveryPage'));
+const SfdAccountRemediationPage = React.lazy(() => import('@/pages/sfd/SfdAccountRemediationPage'));
+const SfdAccountInvestigationPage = React.lazy(() => import('@/pages/sfd/SfdAccountInvestigationPage'));
+const SfdAccountForensicsPage = React.lazy(() => import('@/pages/sfd/SfdAccountForensicsPage'));
