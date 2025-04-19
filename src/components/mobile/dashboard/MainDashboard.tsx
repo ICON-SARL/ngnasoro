@@ -34,6 +34,15 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     setMenuOpen(false);
   };
 
+  const handleLogout = () => {
+    // Implement a simple logout handler that can be improved later
+    console.log('Logout triggered from MainDashboard');
+    // You could navigate to login page or trigger auth logout here
+    if (onAction) {
+      onAction('Logout');
+    }
+  };
+
   return (
     <div className="pb-20">
       <div className="bg-[#0D6A51] text-white p-4">
@@ -113,6 +122,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
       <MobileDrawerMenu 
         isOpen={menuOpen}
         onClose={handleCloseMenu}
+        onLogout={handleLogout}
       />
 
       <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden">
