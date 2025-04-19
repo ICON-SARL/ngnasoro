@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/hooks/auth/AuthContext';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
@@ -18,37 +19,42 @@ import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
 import LoanDetailsPage from '@/pages/mobile/LoanDetailsPage';
 import SplashScreen from '@/components/mobile/SplashScreen';
 
+// Create a new QueryClient instance
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          {/* Auth Routes */}
-          <Route path="/" element={<SplashScreen />} />
-          <Route path="/auth" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/access-denied" element={<AccessDeniedPage />} />
-          <Route path="/permission-test" element={<PermissionTestPage />} />
-          
-          {/* Mobile Flow Routes */}
-          <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
-          
-          {/* Direct Mobile Routes */}
-          <Route path="/sfd-selector" element={<SfdSelectorPage />} />
-          <Route path="/sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
-          <Route path="/sfd-connection" element={<SfdConnectionPage />} />
-          <Route path="/loan-activity" element={<LoanActivityPage />} />
-          <Route path="/funds-management" element={<FundsManagementPage />} />
-          <Route path="/loan-plans" element={<LoanPlansPage />} />
-          <Route path="/my-loans" element={<MobileMyLoansPage />} />
-          <Route path="/loan-details/:loanId" element={<LoanDetailsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          
-          {/* Catch all route */}
-          <Route path="*" element={<div>Page Not Found</div>} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            {/* Auth Routes */}
+            <Route path="/" element={<SplashScreen />} />
+            <Route path="/auth" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/access-denied" element={<AccessDeniedPage />} />
+            <Route path="/permission-test" element={<PermissionTestPage />} />
+            
+            {/* Mobile Flow Routes */}
+            <Route path="/mobile-flow/*" element={<MobileFlowPage />} />
+            
+            {/* Direct Mobile Routes */}
+            <Route path="/sfd-selector" element={<SfdSelectorPage />} />
+            <Route path="/sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
+            <Route path="/sfd-connection" element={<SfdConnectionPage />} />
+            <Route path="/loan-activity" element={<LoanActivityPage />} />
+            <Route path="/funds-management" element={<FundsManagementPage />} />
+            <Route path="/loan-plans" element={<LoanPlansPage />} />
+            <Route path="/my-loans" element={<MobileMyLoansPage />} />
+            <Route path="/loan-details/:loanId" element={<LoanDetailsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            
+            {/* Catch all route */}
+            <Route path="*" element={<div>Page Not Found</div>} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 
