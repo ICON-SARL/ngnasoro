@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,6 @@ import { NewClientForm } from './NewClientForm';
 import ClientDetails from './ClientDetails';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 import { AdhesionRequestsTable } from './AdhesionRequestsTable';
-import { useQueryClient } from '@tanstack/react-query';
 import { 
   User, 
   Search, 
@@ -22,9 +20,8 @@ import {
   XCircle, 
   Filter 
 } from 'lucide-react';
-
-// Importons le type SfdClient depuis useSfdClients pour résoudre ce problème
-import type { SfdClient } from '@/types/sfdClients'; // Ajustez le chemin d'importation si nécessaire
+import { useQueryClient } from '@tanstack/react-query';
+import type { SfdClient } from '@/types/sfdClients';
 
 export function ClientManagement() {
   const queryClient = useQueryClient();
@@ -34,6 +31,7 @@ export function ClientManagement() {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
 
+  // Effect to invalidate dashboard stats when component mounts
   React.useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ['sfd-dashboard-stats'] });
   }, [queryClient]);
