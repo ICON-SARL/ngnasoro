@@ -9,16 +9,31 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, UserPlus, RefreshCw } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import LoadingIndicator from '@/components/ui/loading-indicator';
 
 export default function ClientsPage() {
-  const { clients, isLoading, refetch } = useSfdClients();
+  const { clients = [], isLoading, refetch } = useSfdClients();
   const [searchTerm, setSearchTerm] = useState('');
   
-  const filteredClients = clients.filter(client => 
+  // Safely filter clients with null check
+  const filteredClients = clients ? clients.filter(client => 
     client.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone?.includes(searchTerm)
-  );
+    (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (client.phone && client.phone.includes(searchTerm))
+  ) : [];
+  
+  if (isLoading) {
+    return (
+      <SfdAdminLayout>
+        <div className="p-6">
+          <LoadingIndicator message="Chargement des clients..." />
+        </div>
+      </SfdAdminLayout>
+    );
+  }
+
+  // Log debugging information
+  console.log('Clients data:', clients);
   
   return (
     <SfdAdminLayout>
@@ -57,11 +72,7 @@ export default function ClientsPage() {
               </div>
             </div>
             
-            {isLoading ? (
-              <div className="flex justify-center items-center h-40">
-                <p>Chargement des clients...</p>
-              </div>
-            ) : filteredClients.length === 0 ? (
+            {filteredClients.length === 0 ? (
               <div className="text-center p-8 text-muted-foreground">
                 <p>Aucun client trouvé</p>
               </div>
