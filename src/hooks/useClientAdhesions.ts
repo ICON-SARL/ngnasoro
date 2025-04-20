@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -6,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ClientAdhesionRequest, AdhesionRequestInput } from '@/types/adhesionTypes';
 
+// Export the AdhesionRequestInput interface to make it available to consumers of this hook
 export { AdhesionRequestInput };
 
 export function useClientAdhesions() {

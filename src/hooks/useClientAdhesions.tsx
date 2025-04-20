@@ -1,23 +1,14 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
 import { useSfdDataAccess } from './useSfdDataAccess';
 import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
-import { ClientAdhesionRequest } from '@/types/adhesionTypes';
+import { ClientAdhesionRequest, AdhesionRequestInput } from '@/types/adhesionTypes';
 import { useState } from 'react';
 
-// Export the AdhesionRequestInput interface to fix the error
-export interface AdhesionRequestInput {
-  full_name: string;
-  profession?: string;
-  monthly_income?: string;
-  source_of_income?: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-}
+// Export the AdhesionRequestInput interface
+export { AdhesionRequestInput };
 
 export function useClientAdhesions() {
   const { user } = useAuth();
@@ -132,7 +123,6 @@ export function useClientAdhesions() {
     }
   });
 
-  // Add the missing submitAdhesionRequest function
   const submitAdhesionRequest = async (sfdId: string, data: AdhesionRequestInput) => {
     if (!user?.id) {
       return { success: false, error: "User not authenticated" };
@@ -189,7 +179,6 @@ export function useClientAdhesions() {
     refetchAdhesionRequests: adhesionRequestsQuery.refetch,
     processAdhesion,
     retryCount,
-    // Add the missing functions
     submitAdhesionRequest,
     isCreatingRequest
   };
