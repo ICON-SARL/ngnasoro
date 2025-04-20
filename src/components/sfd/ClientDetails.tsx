@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,15 +15,17 @@ import { useSfdClientDetails } from '@/hooks/useSfdClientDetails';
 import ClientProfileEdit from './ClientProfileEdit';
 import { SfdClient } from '@/types/sfdClients';
 
-interface ClientDetailsProps {
+export interface ClientDetailsProps {
   clientId: string;
-  onClose: () => void;
-  onClientUpdated: () => void;
+  onDeleted?: () => void;
+  onClose?: () => void;
+  onClientUpdated?: () => void;
 }
 
 const ClientDetails: React.FC<ClientDetailsProps> = ({ 
   clientId, 
   onClose, 
+  onDeleted,
   onClientUpdated 
 }) => {
   const { toast } = useToast();
@@ -76,7 +79,7 @@ const ClientDetails: React.FC<ClientDetailsProps> = ({
   const handleClientSaved = () => {
     setIsEditing(false);
     refetch();
-    onClientUpdated();
+    if (onClientUpdated) onClientUpdated();
   };
 
   if (isLoading) {

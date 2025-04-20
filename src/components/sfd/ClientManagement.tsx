@@ -30,7 +30,7 @@ export function ClientManagement() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewClientDialogOpen, setIsNewClientDialogOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<SfdClient | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
 
@@ -55,7 +55,7 @@ export function ClientManagement() {
     : filteredClients.filter(client => client.status === activeTab);
 
   const handleViewClient = (client: SfdClient) => {
-    setSelectedClient(client);
+    setSelectedClientId(client.id);
     setIsDetailsDialogOpen(true);
   };
 
@@ -194,15 +194,16 @@ export function ClientManagement() {
         </DialogContent>
       </Dialog>
       
-      {selectedClient && (
+      {selectedClientId && (
         <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle>Détails du client</DialogTitle>
             </DialogHeader>
             <ClientDetails 
-              client={selectedClient} 
+              clientId={selectedClientId} 
               onDeleted={() => setIsDetailsDialogOpen(false)} 
+              onClientUpdated={() => queryClient.invalidateQueries({ queryKey: ['sfd-clients'] })}
             />
           </DialogContent>
         </Dialog>

@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,13 +33,20 @@ export function useClientLoans() {
         throw error;
       }
       
-      return data.map(loan => ({
-        ...loan,
-        purpose: loan.purpose || loan.sfds?.name || 'Prêt',
-        monthly_payment: loan.monthly_payment || (loan.amount / loan.duration_months * (1 + loan.interest_rate/100)),
-        reference: loan.disbursement_reference || '',
-        client_name: user.user_metadata?.full_name || ''
-      }));
+      // Process and convert to Loan type
+      return data.map(loan => {
+        // Ensure status is one of the allowed values
+        const status = loan.status as Loan['status'];
+        
+        return {
+          ...loan,
+          purpose: loan.purpose || loan.sfds?.name || 'Prêt',
+          monthly_payment: loan.monthly_payment || (loan.amount / loan.duration_months * (1 + loan.interest_rate/100)),
+          reference: loan.disbursement_reference || '',
+          client_name: user.user_metadata?.full_name || '',
+          status: status || 'pending' // Default to pending if status is invalid
+        } as Loan;
+      });
     },
     refetchOnWindowFocus: false
   });

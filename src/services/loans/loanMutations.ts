@@ -1,8 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Loan, CreateLoanInput } from '@/types/sfdClients';
-import { logAuditEvent } from '@/utils/audit';
-import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 
 /**
  * Creates a new loan
@@ -11,34 +8,31 @@ export const createLoan = async (loanData: CreateLoanInput): Promise<Loan | null
   try {
     const { data, error } = await supabase
       .from('sfd_loans')
-      .insert([loanData])
+      .insert({
+        client_id: loanData.client_id,
+        sfd_id: loanData.sfd_id,
+        amount: loanData.amount,
+        duration_months: loanData.duration_months,
+        interest_rate: loanData.interest_rate,
+        monthly_payment: (loanData.amount / loanData.duration_months) * (1 + loanData.interest_rate / 100),
+        purpose: loanData.purpose,
+        status: 'pending',
+        loan_plan_id: loanData.loan_plan_id,
+        subsidy_amount: loanData.subsidy_amount || 0,
+        subsidy_rate: loanData.subsidy_rate || 0
+      })
       .select()
       .single();
-    
+
     if (error) {
       console.error('Error creating loan:', error);
-      return null;
+      throw new Error(error.message);
     }
-    
-    // Log loan creation
-    await logAuditEvent({
-      action: "loan_created",
-      category: AuditLogCategory.LOAN_OPERATIONS,
-      severity: AuditLogSeverity.INFO,
-      status: 'success',
-      user_id: data.client_id,
-      target_resource: `loan:${data.id}`,
-      details: { 
-        loan_id: data.id, 
-        client_id: data.client_id,
-        sfd_id: data.sfd_id, 
-        amount: data.amount 
-      }
-    });
-    
+
+    // Cast to ensure the type is correct
     return data as Loan;
   } catch (error) {
-    console.error('Error creating loan:', error);
+    console.error('Error in createLoan:', error);
     return null;
   }
 };

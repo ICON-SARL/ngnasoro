@@ -34,23 +34,27 @@ export function useLoansPage() {
       }
 
       // Map the raw data to include client_name and ensure all required fields are present
-      const formattedLoans: Loan[] = (data || []).map(loan => ({
-        ...loan,
-        client_name: loan.sfd_clients?.full_name || 'Client #' + loan.client_id.substring(0, 4),
-        reference: loan.id.substring(0, 8), // Create a reference from the ID if it doesn't exist
-        subsidy_amount: loan.subsidy_amount || 0,
-        subsidy_rate: loan.subsidy_rate || 0,
-        id: loan.id,
-        client_id: loan.client_id,
-        sfd_id: loan.sfd_id,
-        amount: loan.amount,
-        duration_months: loan.duration_months,
-        interest_rate: loan.interest_rate,
-        monthly_payment: loan.monthly_payment,
-        purpose: loan.purpose,
-        status: (loan.status as Loan['status']) || 'pending',
-        created_at: loan.created_at,
-      }));
+      const formattedLoans: Loan[] = (data || []).map(loan => {
+        const loanStatus = loan.status as Loan['status']; // Type assertion for status
+        
+        return {
+          ...loan,
+          client_name: loan.sfd_clients?.full_name || 'Client #' + loan.client_id.substring(0, 4),
+          reference: loan.id.substring(0, 8), // Create a reference from the ID if it doesn't exist
+          subsidy_amount: loan.subsidy_amount || 0,
+          subsidy_rate: loan.subsidy_rate || 0,
+          id: loan.id,
+          client_id: loan.client_id,
+          sfd_id: loan.sfd_id,
+          amount: loan.amount,
+          duration_months: loan.duration_months,
+          interest_rate: loan.interest_rate,
+          monthly_payment: loan.monthly_payment,
+          purpose: loan.purpose,
+          status: loanStatus || 'pending',
+          created_at: loan.created_at,
+        };
+      });
 
       setLoans(formattedLoans);
     } catch (error: any) {

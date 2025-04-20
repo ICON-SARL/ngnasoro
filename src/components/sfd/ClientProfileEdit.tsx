@@ -26,7 +26,7 @@ const ClientProfileEdit: React.FC<ClientProfileEditProps> = ({ clientId, onSaved
     address: string;
     id_type: string;
     id_number: string;
-    kyc_level: 'none' | 'basic' | 'full';
+    kyc_level: 'none' | 'basic' | 'full' | number;
     notes: string;
   }>({
     full_name: '',
@@ -51,14 +51,16 @@ const ClientProfileEdit: React.FC<ClientProfileEditProps> = ({ clientId, onSaved
 
         if (error) throw error;
 
-        // Convert numeric kyc_level to string for the UI
-        let kycLevel: 'none' | 'basic' | 'full' = 'none';
+        // Handle kyc_level
+        let kycLevel: 'none' | 'basic' | 'full' | number = data.kyc_level;
         if (typeof data.kyc_level === 'number') {
-          if (data.kyc_level === 0) kycLevel = 'none';
-          else if (data.kyc_level === 1) kycLevel = 'basic';
-          else if (data.kyc_level >= 2) kycLevel = 'full';
+          // Keep as number
+          kycLevel = data.kyc_level;
+        } else if (typeof data.kyc_level === 'string') {
+          // Keep as string
+          kycLevel = data.kyc_level as 'none' | 'basic' | 'full';
         } else {
-          kycLevel = data.kyc_level || 'none';
+          kycLevel = 0; // Default to 0 if undefined
         }
 
         setClient({
@@ -106,11 +108,13 @@ const ClientProfileEdit: React.FC<ClientProfileEditProps> = ({ clientId, onSaved
     setIsLoading(true);
 
     try {
-      // Convert string kyc_level to number for the database
-      let kycLevelNumeric = 0;
-      if (client.kyc_level === 'none') kycLevelNumeric = 0;
-      else if (client.kyc_level === 'basic') kycLevelNumeric = 1;
-      else if (client.kyc_level === 'full') kycLevelNumeric = 2;
+      // Convert string kyc_level to number for the database if needed
+      let kycLevelToSave: number | string = client.kyc_level;
+      
+      // If the kyc_level is a string, convert it to a number
+      if (client.kyc_level === 'none') kycLevelToSave = 0;
+      else if (client.kyc_level === 'basic') kycLevelToSave = 1;
+      else if (client.kyc_level === 'full') kycLevelToSave = 2;
 
       const { error } = await supabase
         .from('sfd_clients')
@@ -121,7 +125,7 @@ const ClientProfileEdit: React.FC<ClientProfileEditProps> = ({ clientId, onSaved
           address: client.address || null,
           id_type: client.id_type || null,
           id_number: client.id_number || null,
-          kyc_level: kycLevelNumeric,
+          kyc_level: kycLevelToSave,
           notes: client.notes || null
         })
         .eq('id', clientId);

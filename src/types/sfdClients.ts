@@ -7,7 +7,7 @@ export interface SfdClient {
   address?: string | null;
   created_at: string;
   status: 'pending' | 'active' | 'rejected' | 'suspended' | 'validated';
-  kyc_level: 'none' | 'basic' | 'full' | number;
+  kyc_level: number | 'none' | 'basic' | 'full';
   sfd_id: string;
   profession?: string | null;
   monthly_income?: number | null;
@@ -16,6 +16,8 @@ export interface SfdClient {
   id_number?: string | null;
   notes?: string | null;
   validated_at?: string | null;
+  user_id?: string | null;
+  validated_by?: string | null;
 }
 
 export interface Loan {
@@ -43,7 +45,6 @@ export interface Loan {
   withdrawn?: boolean;
   disbursed?: boolean;
   last_payment_date?: string;
-  // Add missing properties
   subsidy_amount?: number;
   subsidy_rate?: number;
   approved_by?: string;
@@ -61,6 +62,18 @@ export interface LoanApplication {
   purpose: string;
   interest_rate?: number;
   supporting_documents?: any[];
+}
+
+export interface CreateLoanInput {
+  client_id: string;
+  sfd_id: string;
+  amount: number;
+  duration_months: number;
+  interest_rate: number;
+  purpose: string;
+  loan_plan_id?: string;
+  subsidy_amount?: number;
+  subsidy_rate?: number;
 }
 
 export interface LoanPlan {
@@ -118,9 +131,31 @@ export interface ClientDocument {
   uploaded_at: string;
   status: string;
   verified: boolean;
+  verified_at?: string;
+  verified_by?: string;
 }
 
-// Add mobile money interfaces
+export interface ClientActivity {
+  id: string;
+  client_id: string;
+  activity_type: string;
+  description?: string;
+  performed_at: string;
+  performed_by?: string;
+}
+
+export interface LoanPayment {
+  id: string;
+  loan_id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: string;
+  status: string;
+  transaction_id?: string;
+  created_at: string;
+}
+
+// Mobile money interfaces
 export interface MobileMoneySettings {
   id: string;
   provider: string;
@@ -130,6 +165,7 @@ export interface MobileMoneySettings {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  user_id?: string;
 }
 
 export interface MobileMoneyWebhook {

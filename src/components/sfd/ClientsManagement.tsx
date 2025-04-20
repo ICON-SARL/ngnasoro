@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,7 @@ import {
 const ClientsManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewClientDialogOpen, setIsNewClientDialogOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   
@@ -50,7 +51,7 @@ const ClientsManagement = () => {
     : filteredClients.filter(client => client.status === activeTab);
 
   const handleViewClient = (client) => {
-    setSelectedClient(client);
+    setSelectedClientId(client.id);
     setIsDetailsDialogOpen(true);
   };
 
@@ -154,14 +155,14 @@ const ClientsManagement = () => {
       </Dialog>
       
       {/* Dialogue Détails Client */}
-      {selectedClient && (
+      {selectedClientId && (
         <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle>Détails du client</DialogTitle>
             </DialogHeader>
             <ClientDetails 
-              client={selectedClient} 
+              clientId={selectedClientId} 
               onDeleted={() => setIsDetailsDialogOpen(false)} 
             />
           </DialogContent>

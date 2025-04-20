@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -34,7 +35,7 @@ export function useMobileMoneySettings() {
 
   // Mettre à jour les paramètres du mobile money
   const updateMobileMoneySettings = useMutation({
-    mutationFn: async (settings: MobileMoneySettings) => {
+    mutationFn: async (settings: Partial<MobileMoneySettings> & { id: string }) => {
       const { data, error } = await supabase
         .from('mobile_money_settings')
         .update(settings)

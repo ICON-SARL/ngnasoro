@@ -21,8 +21,11 @@ const LoanStatusTabs: React.FC<LoanStatusTabsProps> = ({
   // Filter loans based on active tab
   const filteredLoans = loans.filter(loan => {
     if (activeTab === 'all') return true;
-    // Special handling for defaulted status
-    if (activeTab === 'defaulted') return loan.status === 'defaulted';
+    
+    // Handle special case for defaulted status
+    if (activeTab === 'defaulted' && loan.status === 'defaulted') return true;
+    
+    // For other statuses, directly match the status
     return loan.status === activeTab;
   });
   

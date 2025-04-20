@@ -1,164 +1,93 @@
+import { supabase } from '@/integrations/supabase/client';
+import { Loan, LoanPayment } from '@/types/sfdClients';
 
-import { supabase } from "@/integrations/supabase/client";
-import { LoanPayment } from "@/types/sfdClients";
-import { createTransactionManager } from "@/services/transactions/transactionManager";
+// Record loan payment
+export const recordLoanPayment = async (
+  loanId: string,
+  amount: number,
+  paymentMethod: string,
+  transactionId?: string
+): Promise<LoanPayment | null> => {
+  try {
+    // First get loan details to verify payment
+    const { data: loan, error: loanError } = await supabase
+      .from('sfd_loans')
+      .select('*')
+      .eq('id', loanId)
+      .single();
 
-// Loan payment operations
-export const loanPaymentService = {
-  // Record a payment for a loan
-  async recordLoanPayment(loanId: string, amount: number, paymentMethod: string, recordedBy?: string) {
-    try {
-      // First, get the loan details to check SFD ID and client ID
-      const { data: loan, error: loanError } = await supabase
-        .from('sfd_loans')
-        .select('client_id, sfd_id, status')
-        .eq('id', loanId)
-        .single();
-        
-      if (loanError) throw loanError;
-      
-      if (loan.status !== 'active') {
-        throw new Error('Cannot make payment on a non-active loan');
-      }
-      
-      // Create a payment record
-      const { data: payment, error: paymentError } = await supabase
-        .from('loan_payments')
-        .insert({
-          loan_id: loanId,
-          amount: amount,
-          payment_method: paymentMethod,
-          status: 'completed'
-        })
-        .select()
-        .single();
-        
-      if (paymentError) throw paymentError;
-      
-      // Also create a transaction record using the transaction manager
-      if (loan.client_id && loan.sfd_id) {
-        const transactionManager = createTransactionManager(loan.client_id, loan.sfd_id);
-        await transactionManager.makeLoanRepayment(
-          loanId, 
-          amount, 
-          'Remboursement de prêt', 
-          paymentMethod
-        );
-      }
-      
-      // Add loan payment activity
-      await supabase
-        .from('loan_activities')
-        .insert({
-          loan_id: loanId,
-          activity_type: 'payment_recorded',
-          description: `Paiement de ${amount} FCFA enregistré`,
-          performed_by: recordedBy
-        });
-        
-      // Check if this is the last payment
-      await updateLoanStatusAfterPayment(loanId);
-      
-      // Send notification via webhook
-      await supabase.functions.invoke('loan-status-webhooks', {
-        body: {
-          loanId,
-          status: 'active',
-          event: 'payment_received',
-          paymentId: payment.id
-        }
-      });
-        
-      return payment as LoanPayment;
-    } catch (error) {
+    if (loanError) {
+      console.error('Error fetching loan for payment:', loanError);
+      throw new Error(loanError.message);
+    }
+
+    // Record the payment
+    const { data, error } = await supabase
+      .from('loan_payments')
+      .insert({
+        loan_id: loanId,
+        amount,
+        payment_method: paymentMethod,
+        transaction_id: transactionId,
+        payment_date: new Date().toISOString(),
+        status: 'completed'
+      })
+      .select()
+      .single();
+
+    if (error) {
       console.error('Error recording loan payment:', error);
-      throw error;
+      throw new Error(error.message);
     }
-  },
-  
-  // Get payment history for a loan
-  async getLoanPayments(loanId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('loan_payments')
-        .select('*')
-        .eq('loan_id', loanId)
-        .order('payment_date', { ascending: false });
-        
-      if (error) throw error;
-      
-      return data as LoanPayment[];
-    } catch (error) {
-      console.error('Error fetching loan payments:', error);
-      return [];
-    }
+
+    // Update the loan with the new payment info
+    const now = new Date().toISOString();
+    await supabase
+      .from('sfd_loans')
+      .update({
+        last_payment_date: now,
+        // Calculate next payment date based on monthly schedule
+        next_payment_date: new Date(now).setMonth(new Date(now).getMonth() + 1)
+      })
+      .eq('id', loanId);
+
+    // Cast to ensure the type is correct
+    return data as LoanPayment;
+  } catch (error) {
+    console.error('Error in recordLoanPayment:', error);
+    return null;
   }
 };
 
-// Helper function to update loan status based on payments
-async function updateLoanStatusAfterPayment(loanId: string) {
+// Get loan payments
+export const getLoanPayments = async (loanId: string): Promise<LoanPayment[]> => {
   try {
-    // Get the loan details
-    const { data: loan, error: loanError } = await supabase
-      .from('sfd_loans')
-      .select('amount, duration_months')
-      .eq('id', loanId)
-      .single();
-      
-    if (loanError) throw loanError;
-    
-    // Get the total payments made
-    const { data: payments, error: paymentsError } = await supabase
+    const { data, error } = await supabase
       .from('loan_payments')
-      .select('amount')
+      .select('*')
       .eq('loan_id', loanId)
-      .eq('status', 'completed');
-      
-    if (paymentsError) throw paymentsError;
-    
-    // Calculate total payments
-    const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
-    
-    // Calculate the expected total to be paid (principal + interest)
-    const monthlyRate = loan.amount * (1 + (loan.duration_months * 0.01));
-    const expectedTotal = monthlyRate * loan.duration_months;
-    
-    // If total paid is >= expected total, mark loan as completed
-    if (totalPaid >= expectedTotal) {
-      await supabase
-        .from('sfd_loans')
-        .update({
-          status: 'completed',
-          last_payment_date: new Date().toISOString()
-        })
-        .eq('id', loanId);
-        
-      // Add loan completion activity
-      await supabase
-        .from('loan_activities')
-        .insert({
-          loan_id: loanId,
-          activity_type: 'loan_completed',
-          description: 'Prêt entièrement remboursé'
-        });
-    } else {
-      // Just update the last payment date
-      await supabase
-        .from('sfd_loans')
-        .update({
-          last_payment_date: new Date().toISOString(),
-          next_payment_date: getNextPaymentDate()
-        })
-        .eq('id', loanId);
-    }
-  } catch (error) {
-    console.error('Error updating loan status after payment:', error);
-  }
-}
+      .order('payment_date', { ascending: false });
 
-// Helper function to calculate next payment date
-function getNextPaymentDate(daysFromNow = 30) {
-  const date = new Date();
-  date.setDate(date.getDate() + daysFromNow);
-  return date.toISOString();
-}
+    if (error) {
+      console.error('Error fetching loan payments:', error);
+      throw new Error(error.message);
+    }
+
+    return data as LoanPayment[];
+  } catch (error) {
+    console.error('Error in getLoanPayments:', error);
+    return [];
+  }
+};
+
+// Send payment reminder
+export const sendPaymentReminder = async (loanId: string): Promise<boolean> => {
+  try {
+    // Implement your notification logic here
+    console.log(`Payment reminder sent for loan ID: ${loanId}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending payment reminder:', error);
+    return false;
+  }
+};

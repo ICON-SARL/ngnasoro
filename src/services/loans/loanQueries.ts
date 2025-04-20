@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Loan } from '@/types/sfdClients';
 
@@ -45,23 +44,51 @@ export const fetchLoanById = async (loanId: string): Promise<Loan | null> => {
 /**
  * Fetches all loans for an SFD
  */
-export const getSfdLoans = async (): Promise<Loan[]> => {
-  const { data, error } = await supabase
-    .from('sfd_loans')
-    .select('*, sfd_clients(full_name, email)')
-    .order('created_at', { ascending: false });
-  
-  if (error) {
-    console.error('Error fetching loans:', error);
+export const getSfdLoans = async (sfdId?: string): Promise<Loan[]> => {
+  try {
+    // If no SFD ID is provided, attempt to get it from the user session
+    if (!sfdId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      sfdId = session?.user?.user_metadata?.sfd_id;
+      
+      if (!sfdId) {
+        console.error('No SFD ID provided or found in session');
+        return [];
+      }
+    }
+    
+    const { data, error } = await supabase
+      .from('sfd_loans')
+      .select(`
+        *,
+        sfd_clients (
+          full_name,
+          email,
+          phone
+        )
+      `)
+      .eq('sfd_id', sfdId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching SFD loans:', error);
+      throw error;
+    }
+    
+    // Process the data to ensure it conforms to the Loan type
+    return data.map(loan => {
+      // Ensure status is one of the allowed values
+      const status = loan.status as Loan['status']; 
+      
+      return {
+        ...loan,
+        client_name: loan.sfd_clients?.full_name || 'Client #' + loan.client_id.substring(0, 4),
+        status: status || 'pending', // Default to pending if status is invalid
+        // ...other derived fields
+      } as Loan;
+    });
+  } catch (error) {
+    console.error('Error in getSfdLoans:', error);
     return [];
   }
-  
-  return data.map(loan => ({
-    ...loan,
-    client_name: loan.sfd_clients?.full_name || 'Unknown Client',
-    reference: '',
-    updated_at: loan.created_at,
-    subsidy_amount: loan.subsidy_amount || 0,
-    subsidy_rate: loan.subsidy_rate || 0
-  })) as Loan[];
 };
