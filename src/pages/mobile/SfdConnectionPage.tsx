@@ -43,7 +43,7 @@ export default function SfdConnectionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <MobileHeader title="Connexion SFD" />
+      <MobileHeader />
       
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6">

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -20,9 +21,9 @@ const SfdAdhesionPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { 
-    adhesionRequests, 
-    isLoadingAdhesionRequests,
-    refetchAdhesionRequests 
+    userAdhesionRequests, 
+    isLoadingUserAdhesionRequests,
+    refetchUserAdhesionRequests 
   } = useClientAdhesions();
   
   const [sfdInfo, setSfdInfo] = useState<{ name: string; region?: string } | null>(null);
@@ -109,22 +110,16 @@ const SfdAdhesionPage: React.FC = () => {
     
     fetchSfdInfo();
     fetchExistingRequest();
-    refetchAdhesionRequests();
-  }, [sfdId, toast, refetchAdhesionRequests, navigate, user]);
+    refetchUserAdhesionRequests();
+  }, [sfdId, toast, refetchUserAdhesionRequests, navigate, user]);
 
-  // Recherche de la demande d'adhésion existante dans les adhésions
-  const existingRequest = adhesionRequests.find(
-    request => request.sfd_id === sfdId && request.user_id === user?.id
-  );
-
-  // useRealtimeSync hook to listen for changes to the client_adhesion_requests table
   useRealtimeSync({
     table: 'client_adhesion_requests',
     filter: sfdId ? `sfd_id=eq.${sfdId}` : undefined,
     onUpdate: (updatedRequest) => {
       if (updatedRequest.user_id === user?.id) {
         console.log('Adhesion request updated:', updatedRequest);
-        refetchAdhesionRequests();
+        refetchUserAdhesionRequests();
         
         // Notifications pour les changements de statut
         if (updatedRequest.status === 'approved') {
@@ -161,6 +156,10 @@ const SfdAdhesionPage: React.FC = () => {
     );
   }
   
+  const existingRequest = userAdhesionRequests.find(
+    request => request.sfd_id === sfdId
+  );
+  
   return (
     <div className="container max-w-md mx-auto py-4 px-4">
       <Button 
@@ -189,7 +188,7 @@ const SfdAdhesionPage: React.FC = () => {
         </CardHeader>
         
         <CardContent className="pb-6">
-          {isLoadingAdhesionRequests || isLoadingSfd ? (
+          {isLoadingUserAdhesionRequests || isLoadingSfd ? (
             <div className="flex justify-center py-8">
               <Loader size="lg" />
             </div>
@@ -306,7 +305,7 @@ const SfdAdhesionPage: React.FC = () => {
                         ? "Votre demande d'adhésion a été mise à jour avec succès" 
                         : "Votre demande d'adhésion a été envoyée avec succès"
                     });
-                    refetchAdhesionRequests();
+                    refetchUserAdhesionRequests();
                     if (isEditMode) {
                       setIsEditMode(false);
                     }

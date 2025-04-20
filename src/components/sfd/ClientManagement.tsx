@@ -20,8 +20,6 @@ import {
   XCircle, 
   Filter 
 } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
-import type { SfdClient } from '@/types/sfdClients';
 
 export function ClientManagement() {
   const queryClient = useQueryClient();
@@ -31,7 +29,6 @@ export function ClientManagement() {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
 
-  // Effect to invalidate dashboard stats when component mounts
   React.useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ['sfd-dashboard-stats'] });
   }, [queryClient]);

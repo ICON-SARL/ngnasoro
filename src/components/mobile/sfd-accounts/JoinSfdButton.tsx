@@ -19,11 +19,7 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const handleJoinRequest = async (e: React.MouseEvent) => {
-    // Prevent event propagation to avoid unwanted triggers
-    e.preventDefault();
-    e.stopPropagation();
-    
+  const handleJoinRequest = async () => {
     try {
       if (!user) {
         toast({
@@ -35,9 +31,9 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
         return;
       }
 
-      // If retrying after rejection, delete the old request
+      // If it's a retry, we need to delete the old rejected request first
       if (isRetry) {
-        console.log(`Deleting rejected request for SFD: ${sfdId}`);
+        console.log(`Deleting previous rejected request for SFD: ${sfdId}`);
         
         const { error: deleteError } = await supabase
           .from('client_adhesion_requests')
@@ -64,16 +60,11 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false }: JoinSfdButton
       
       console.log(`Navigating to adhesion page for SFD: ${sfdId} (${sfdName})`);
       
-      // Navigate with state to ensure context is preserved
-      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`, {
-        state: { 
-          sfdId: sfdId,
-          sfdName: sfdName
-        }
-      });
+      // Navigate to the SFD adhesion page with the SFD ID
+      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
       
     } catch (err) {
-      console.error('Error processing request:', err);
+      console.error('Error handling join request:', err);
       handleError(err);
     }
   };

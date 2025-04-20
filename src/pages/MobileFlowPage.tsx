@@ -8,14 +8,8 @@ import FloatingMenuButton from '@/components/mobile/FloatingMenuButton';
 import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 import SfdSelectorPage from '@/pages/SfdSelectorPage';
 import FundsManagementPage from '@/pages/mobile/FundsManagementPage';
-import MobileMainPage from '@/components/mobile/MobileMainPage';
-import HomeLoanPage from '@/components/mobile/loan/HomeLoanPage';
-import LoanPlansPage from '@/components/mobile/loan/LoanPlansPage';
-import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
-import LoanDetailsPage from '@/pages/mobile/LoanDetailsPage';
-import ProfilePage from '@/components/mobile/profile/ProfilePage';
+import { MobileRouter } from '@/components/Router';
 import MobileNavigation from '@/components/MobileNavigation';
-import { LoanActivityPage } from '@/pages/mobile/LoanActivityPage';
 
 const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
@@ -56,8 +50,16 @@ const MobileFlowPage: React.FC = () => {
         navigate('/agency-dashboard');
         return;
       }
+
+      if (role === 'user' && location.pathname === '/mobile-flow/main') {
+        toast({
+          title: "Bienvenue",
+          description: "Pour accéder à toutes les fonctionnalités, vous devez d'abord adhérer à une SFD.",
+        });
+        navigate('/mobile-flow/sfd-selector');
+      }
     }
-  }, [user, loading, navigate, toast]);
+  }, [user, loading, navigate, toast, location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -94,17 +96,10 @@ const MobileFlowPage: React.FC = () => {
         onLogout={handleLogout} 
       />
       <Routes>
-        <Route path="/" element={<MobileMainPage />} />
-        <Route path="main" element={<MobileMainPage />} />
-        <Route path="loans" element={<HomeLoanPage />} />
-        <Route path="loan-plans" element={<LoanPlansPage />} />
-        <Route path="my-loans" element={<MobileMyLoansPage />} />
-        <Route path="loan-details/:loanId" element={<LoanDetailsPage />} />
-        <Route path="loan-activity" element={<LoanActivityPage />} />
         <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
         <Route path="sfd-selector" element={<SfdSelectorPage />} />
         <Route path="funds-management" element={<FundsManagementPage />} />
-        <Route path="profile" element={<ProfilePage />} />
+        <Route path="*" element={<MobileRouter />} />
       </Routes>
       <MobileNavigation />
     </div>

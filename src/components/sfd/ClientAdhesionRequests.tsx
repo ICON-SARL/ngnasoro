@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 import { AdhesionRequestsTable } from './AdhesionRequestsTable';
@@ -156,6 +155,7 @@ export function ClientAdhesionRequests() {
           <AdhesionRequestsTable 
             requests={pendingRequests}
             isLoading={isLoadingAdhesionRequests}
+            onRefresh={refetchAdhesionRequests}
           />
         </TabsContent>
         
@@ -163,6 +163,7 @@ export function ClientAdhesionRequests() {
           <AdhesionRequestsTable 
             requests={approvedRequests}
             isLoading={isLoadingAdhesionRequests}
+            onRefresh={refetchAdhesionRequests}
           />
         </TabsContent>
         
@@ -170,6 +171,7 @@ export function ClientAdhesionRequests() {
           <AdhesionRequestsTable 
             requests={rejectedRequests}
             isLoading={isLoadingAdhesionRequests}
+            onRefresh={refetchAdhesionRequests}
           />
         </TabsContent>
       </Tabs>

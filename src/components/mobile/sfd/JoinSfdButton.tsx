@@ -22,12 +22,12 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false, isEdit = false,
   const navigate = useNavigate();
   
   const handleJoinRequest = async (e: React.MouseEvent) => {
-    // Prevent event propagation to avoid unwanted triggers
+    // Empêcher la propagation de l'événement pour éviter les déclenchements indésirables
     e.preventDefault();
     e.stopPropagation();
     
     try {
-      // If a custom onClick handler is provided, use it instead
+      // Si un gestionnaire onClick personnalisé est fourni, l'utiliser à la place
       if (onClick) {
         onClick();
         return;
@@ -43,21 +43,16 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false, isEdit = false,
         return;
       }
 
-      // If it's an edit/modification, navigate directly without deleting the request
+      // Si c'est une modification ou édition, naviguer directement sans supprimer la demande
       if (isEdit) {
-        console.log(`Editing request for SFD: ${sfdId}`);
-        navigate(`/mobile-flow/sfd-adhesion/${sfdId}?mode=edit`, {
-          state: { 
-            sfdId: sfdId,
-            sfdName: sfdName
-          }
-        });
+        console.log(`Édition de la demande pour SFD: ${sfdId}`);
+        navigate(`/mobile-flow/sfd-adhesion/${sfdId}?mode=edit`);
         return;
       }
 
-      // If retrying after rejection, delete the old request
+      // Si c'est une nouvelle tentative après un rejet, supprimer l'ancienne demande
       if (isRetry) {
-        console.log(`Deleting rejected request for SFD: ${sfdId}`);
+        console.log(`Suppression de la demande rejetée pour SFD: ${sfdId}`);
         
         const { error: deleteError } = await supabase
           .from('client_adhesion_requests')
@@ -67,7 +62,7 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false, isEdit = false,
           .eq('status', 'rejected');
           
         if (deleteError) {
-          console.error('Error deleting previous request:', deleteError);
+          console.error('Erreur lors de la suppression de la demande précédente:', deleteError);
           toast({
             title: 'Erreur',
             description: "Impossible de réinitialiser votre demande précédente",
@@ -82,18 +77,11 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false, isEdit = false,
         });
       }
       
-      console.log(`Navigating to adhesion page for SFD: ${sfdId} (${sfdName})`);
-      
-      // Navigate with state to ensure context is preserved
-      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`, {
-        state: { 
-          sfdId: sfdId,
-          sfdName: sfdName
-        }
-      });
+      console.log(`Navigation vers la page d'adhésion pour SFD: ${sfdId} (${sfdName})`);
+      navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
       
     } catch (err) {
-      console.error('Error processing request:', err);
+      console.error('Erreur lors du traitement de la demande:', err);
       handleError(err);
     }
   };

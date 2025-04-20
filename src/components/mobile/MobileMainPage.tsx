@@ -1,19 +1,32 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileMenu from './MobileMenu';
+import MobileHeader from './MobileHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Plus, CreditCard, ArrowUpDown, Wallet } from 'lucide-react';
+import TransactionList, { TransactionListItem } from './TransactionList';
 import { useAuth } from '@/hooks/useAuth';
-import MobileNavigation from '@/components/MobileNavigation';
-import MobileHeader from './MobileHeader';
+import { useClientLoans } from '@/hooks/useClientLoans';
+import { useTransactions } from '@/hooks/useTransactions';
+import ActiveLoansSection from './loans/ActiveLoansSection';
+import { formatCurrencyAmount } from '@/utils/transactionUtils';
+import Footer from '@/components/Footer';
+import MobileNavigation from './MobileNavigation';
 
 const MobileMainPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
+  const { loans, isLoading: loansLoading, refetchLoans } = useClientLoans();
+  
+  const { transactions, isLoading: transactionsLoading, fetchTransactions } = useTransactions(user?.id);
+  
+  const activeLoans = loans.filter(loan => 
+    loan.status === 'active' || loan.status === 'approved' || loan.status === 'disbursed'
+  );
+
   const handleMenuToggle = () => {
     setIsMenuOpen(!isMenuOpen);
   };
@@ -26,10 +39,21 @@ const MobileMainPage: React.FC = () => {
     navigate(path);
     handleMenuClose();
   };
+
+  const formattedTransactions: TransactionListItem[] = transactions.slice(0, 5).map(tx => ({
+    id: tx.id,
+    name: tx.name || (tx.type === 'deposit' ? 'Dépôt' : tx.type === 'withdrawal' ? 'Retrait' : 'Transaction'),
+    type: tx.type,
+    amount: tx.type === 'deposit' || tx.type === 'loan_disbursement' 
+      ? `+${formatCurrencyAmount(tx.amount)}` 
+      : `-${formatCurrencyAmount(Math.abs(tx.amount))}`,
+    date: new Date(tx.date || tx.created_at || '').toLocaleDateString('fr-FR'),
+    avatar: tx.avatar_url,
+  }));
   
   return (
     <div className="pb-16">
-      <MobileHeader title="Accueil" onMenuToggle={handleMenuToggle} />
+      <MobileHeader />
       
       <div className="px-4 py-6">
         <div className="flex justify-between mb-4">
@@ -41,7 +65,7 @@ const MobileMainPage: React.FC = () => {
             <CardContent className="p-3 flex flex-col items-center justify-center">
               <Button
                 className="w-12 h-12 rounded-full bg-[#0D6A51] hover:bg-[#0D6A51]/90 mb-2"
-                onClick={() => navigate('/mobile-flow/funds-management')}
+                onClick={() => navigate('/mobile-flow/transfer')}
               >
                 <ArrowUpDown className="h-5 w-5" />
               </Button>
@@ -62,20 +86,18 @@ const MobileMainPage: React.FC = () => {
           </Card>
         </div>
         
-        <div className="text-center py-10 bg-gray-50 rounded-lg mb-6">
-          <Wallet className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium mb-2">Bienvenue dans votre espace financier</h3>
-          <p className="text-sm text-gray-500 mb-4 px-6">
-            Accédez facilement à vos prêts et gérez vos fonds en toute sécurité.
-          </p>
-          <Button 
-            variant="outline" 
-            className="text-[#0D6A51] border-[#0D6A51]"
-            onClick={() => navigate('/mobile-flow/sfd-selector')}
-          >
-            Explorer les SFD <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
+        <ActiveLoansSection 
+          activeLoans={activeLoans} 
+          isLoading={loansLoading} 
+          onViewAll={() => navigate('/mobile-flow/my-loans')}
+          onNewLoan={() => navigate('/mobile-flow/loans')}
+        />
+        
+        <TransactionList 
+          transactions={formattedTransactions}
+          isLoading={transactionsLoading}
+          onViewAll={() => navigate('/mobile-flow/transactions')}
+        />
       </div>
       
       <MobileMenu 
@@ -83,6 +105,12 @@ const MobileMainPage: React.FC = () => {
         onClose={handleMenuClose}
         onNavigate={handleNavigate}
       />
+      
+      <Footer />
+      
+      <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden">
+        <MobileNavigation />
+      </div>
     </div>
   );
 };

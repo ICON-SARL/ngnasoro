@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface FloatingMenuButtonProps {
   onClick: () => void;
@@ -9,12 +9,15 @@ interface FloatingMenuButtonProps {
 
 const FloatingMenuButton: React.FC<FloatingMenuButtonProps> = ({ onClick }) => {
   return (
-    <Button
-      className="fixed bottom-20 right-4 z-50 rounded-full w-12 h-12 bg-[#0D6A51] shadow-lg"
-      onClick={onClick}
-    >
-      <Menu className="h-5 w-5" />
-    </Button>
+    <div className="fixed top-4 right-4 z-50">
+      <Button 
+        size="icon" 
+        className="h-10 w-10 rounded-full bg-[#0D6A51] shadow-lg"
+        onClick={onClick}
+      >
+        <Menu className="h-5 w-5 text-white" />
+      </Button>
+    </div>
   );
 };
 

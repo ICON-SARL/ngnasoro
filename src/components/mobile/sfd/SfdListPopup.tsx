@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Building, FileCheck } from 'lucide-react';
@@ -27,7 +28,7 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { adhesionRequests } = useClientAdhesions();
+  const { userAdhesionRequests, refetchUserAdhesionRequests } = useClientAdhesions();
 
   useEffect(() => {
     const fetchActiveSfds = async () => {
@@ -39,20 +40,24 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
       try {
         console.log('Fetching active SFDs for popup display');
         
-        // Utiliser la requête directe pour récupérer les SFDs actives
-        const { data, error } = await supabase
-          .from('sfds')
-          .select('id, name, region, logo_url')
-          .eq('status', 'active');
+        // Utiliser la fonction Edge pour récupérer les SFDs actives
+        const { data, error } = await supabase.functions.invoke('fetch-sfds', {
+          body: { userId: user?.id }
+        });
 
         if (error) throw error;
         
-        console.log(`Fetched ${data?.length || 0} active SFDs`);
+        console.log(`Fetched ${data?.length || 0} active SFDs from Edge function`);
+        
+        // Vérifier si la réponse contient une erreur
+        if (data && data.error) {
+          throw new Error(data.error);
+        }
         
         const availableSfds = Array.isArray(data) ? data : [];
         
         if (availableSfds.length === 0) {
-          console.warn('No SFDs returned from query');
+          console.warn('No SFDs returned from Edge function');
         }
         
         const sortedSfds = sortPrioritySfds(availableSfds);
@@ -66,7 +71,10 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
     };
 
     fetchActiveSfds();
-  }, [isOpen, user?.id]);
+    if (isOpen) {
+      refetchUserAdhesionRequests();
+    }
+  }, [isOpen, user?.id, refetchUserAdhesionRequests]);
 
   const sortPrioritySfds = (sfds: Sfd[]): Sfd[] => {
     const prioritySfdNames = ["rmcr", "meref", "premier sfd"];
@@ -121,7 +129,7 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
   };
   
   const getSfdRequestStatus = (sfdId: string) => {
-    const request = adhesionRequests.find(r => r.sfd_id === sfdId);
+    const request = userAdhesionRequests.find(r => r.sfd_id === sfdId);
     return request?.status || null;
   };
 
