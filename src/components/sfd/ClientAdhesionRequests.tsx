@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 import { AdhesionRequestsTable } from './AdhesionRequestsTable';
@@ -19,8 +20,7 @@ export function ClientAdhesionRequests() {
   const { 
     adhesionRequests, 
     isLoadingAdhesionRequests, 
-    refetchAdhesionRequests,
-    retryCount
+    refetchAdhesionRequests
   } = useClientAdhesions();
   
   const filteredRequests = adhesionRequests.filter(request => 
@@ -61,7 +61,9 @@ export function ClientAdhesionRequests() {
     }
   };
   
-  if (retryCount > 2) {
+  const isErrorState = false; // Removed retryCount dependency
+  
+  if (isErrorState) {
     return (
       <Alert variant="destructive" className="mb-4">
         <AlertCircle className="h-5 w-5" />

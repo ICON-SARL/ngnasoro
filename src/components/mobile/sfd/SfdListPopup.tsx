@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 import { Loader2 } from 'lucide-react';
 
 interface SfdListPopupProps {
@@ -22,13 +21,18 @@ interface Sfd {
   logo_url?: string;
 }
 
+interface AdhesionRequest {
+  sfd_id: string;
+  status: string;
+}
+
 const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
   const [sfds, setSfds] = useState<Sfd[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userAdhesionRequests, refetchUserAdhesionRequests } = useClientAdhesions();
+  const [adhesionRequests, setAdhesionRequests] = useState<AdhesionRequest[]>([]);
 
   useEffect(() => {
     const fetchActiveSfds = async () => {
@@ -62,6 +66,20 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
         
         const sortedSfds = sortPrioritySfds(availableSfds);
         setSfds(sortedSfds);
+        
+        // Fetch user's adhesion requests
+        if (user?.id) {
+          const { data: requestsData, error: requestsError } = await supabase
+            .from('client_adhesion_requests')
+            .select('sfd_id, status')
+            .eq('user_id', user.id);
+            
+          if (requestsError) {
+            console.error('Error fetching adhesion requests:', requestsError);
+          } else {
+            setAdhesionRequests(requestsData || []);
+          }
+        }
       } catch (err: any) {
         console.error('Error loading SFDs:', err);
         setError('Impossible de charger la liste des SFDs. Veuillez réessayer plus tard.');
@@ -71,10 +89,7 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
     };
 
     fetchActiveSfds();
-    if (isOpen) {
-      refetchUserAdhesionRequests();
-    }
-  }, [isOpen, user?.id, refetchUserAdhesionRequests]);
+  }, [isOpen, user?.id]);
 
   const sortPrioritySfds = (sfds: Sfd[]): Sfd[] => {
     const prioritySfdNames = ["rmcr", "meref", "premier sfd"];
@@ -129,7 +144,7 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
   };
   
   const getSfdRequestStatus = (sfdId: string) => {
-    const request = userAdhesionRequests.find(r => r.sfd_id === sfdId);
+    const request = adhesionRequests.find(r => r.sfd_id === sfdId);
     return request?.status || null;
   };
 

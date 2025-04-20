@@ -3,9 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 
 export async function GET(request: Request) {
   try {
-    const { user } = await supabase.auth.getUser();
+    const { data: userData, error: userError } = await supabase.auth.getUser();
     
-    if (!user) {
+    if (userError || !userData.user) {
       return new Response(JSON.stringify({ 
         error: 'Unauthorized', 
         data: null 
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase
       .from('user_sfds')
       .select('sfd_id, sfds:sfd_id(id, name, code, logo_url, region)')
-      .eq('user_id', user.id);
+      .eq('user_id', userData.user.id);
     
     if (error) {
       console.error('Error fetching SFDs:', error);

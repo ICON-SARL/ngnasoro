@@ -21,9 +21,9 @@ const SfdAdhesionPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { 
-    userAdhesionRequests, 
-    isLoadingUserAdhesionRequests,
-    refetchUserAdhesionRequests 
+    adhesionRequests, 
+    isLoadingAdhesionRequests,
+    refetchAdhesionRequests 
   } = useClientAdhesions();
   
   const [sfdInfo, setSfdInfo] = useState<{ name: string; region?: string } | null>(null);
@@ -110,8 +110,8 @@ const SfdAdhesionPage: React.FC = () => {
     
     fetchSfdInfo();
     fetchExistingRequest();
-    refetchUserAdhesionRequests();
-  }, [sfdId, toast, refetchUserAdhesionRequests, navigate, user]);
+    refetchAdhesionRequests();
+  }, [sfdId, toast, refetchAdhesionRequests, navigate, user]);
 
   useRealtimeSync({
     table: 'client_adhesion_requests',
@@ -119,7 +119,7 @@ const SfdAdhesionPage: React.FC = () => {
     onUpdate: (updatedRequest) => {
       if (updatedRequest.user_id === user?.id) {
         console.log('Adhesion request updated:', updatedRequest);
-        refetchUserAdhesionRequests();
+        refetchAdhesionRequests();
         
         // Notifications pour les changements de statut
         if (updatedRequest.status === 'approved') {
@@ -156,8 +156,9 @@ const SfdAdhesionPage: React.FC = () => {
     );
   }
   
-  const existingRequest = userAdhesionRequests.find(
-    request => request.sfd_id === sfdId
+  // Find existing request for this SFD
+  const existingRequest = adhesionRequests.find(
+    request => request.sfd_id === sfdId && request.user_id === user?.id
   );
   
   return (
@@ -188,7 +189,7 @@ const SfdAdhesionPage: React.FC = () => {
         </CardHeader>
         
         <CardContent className="pb-6">
-          {isLoadingUserAdhesionRequests || isLoadingSfd ? (
+          {isLoadingAdhesionRequests || isLoadingSfd ? (
             <div className="flex justify-center py-8">
               <Loader size="lg" />
             </div>
@@ -305,7 +306,7 @@ const SfdAdhesionPage: React.FC = () => {
                         ? "Votre demande d'adhésion a été mise à jour avec succès" 
                         : "Votre demande d'adhésion a été envoyée avec succès"
                     });
-                    refetchUserAdhesionRequests();
+                    refetchAdhesionRequests();
                     if (isEditMode) {
                       setIsEditMode(false);
                     }

@@ -10,12 +10,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface SfdSelectorProps {
   compact?: boolean;
+  className?: string;
 }
 
-const SfdSelector: React.FC<SfdSelectorProps> = ({ compact = false }) => {
+const SfdSelector: React.FC<SfdSelectorProps> = ({ compact = false, className }) => {
   const { user, activeSfdId, setActiveSfdId } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [activeSfds, setActiveSfds] = useState<Array<{id: string, name: string}>>([]);
@@ -76,7 +78,7 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ compact = false }) => {
       <Button 
         variant="outline" 
         size="sm" 
-        className={`${compact ? 'h-8 text-xs px-2' : ''} bg-white/80 border-gray-200`}
+        className={cn(`${compact ? 'h-8 text-xs px-2' : ''} bg-white/80 border-gray-200`, className)}
         disabled
       >
         <Loader2 className="h-3 w-3 mr-1 animate-spin" />
@@ -90,7 +92,7 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ compact = false }) => {
       <Button 
         variant="outline" 
         size="sm" 
-        className={`${compact ? 'h-8 text-xs px-2' : ''} bg-white/80 border-gray-200`}
+        className={cn(`${compact ? 'h-8 text-xs px-2' : ''} bg-white/80 border-gray-200`, className)}
         onClick={handleAddSfd}
       >
         Ajouter une SFD
@@ -104,7 +106,7 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ compact = false }) => {
         <Button 
           variant="outline" 
           size="sm" 
-          className={`${compact ? 'h-8 text-xs px-2' : ''} bg-white/80 border-gray-200 flex items-center justify-between`}
+          className={cn(`${compact ? 'h-8 text-xs px-2' : ''} bg-white/80 border-gray-200 flex items-center justify-between`, className)}
         >
           <span className="truncate mr-1 max-w-28">
             {currentSfd?.name || "Sélectionner une SFD"}
@@ -117,7 +119,7 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ compact = false }) => {
           {activeSfds.map(sfd => (
             <Button
               key={sfd.id}
-              variant={activeSfdId === sfd.id ? "subtle" : "ghost"}
+              variant={activeSfdId === sfd.id ? "secondary" : "ghost"}
               size="sm"
               className="w-full justify-start font-normal"
               onClick={() => handleSwitchSfd(sfd.id)}
