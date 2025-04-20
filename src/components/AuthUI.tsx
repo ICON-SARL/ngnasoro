@@ -44,6 +44,7 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
     };
   }, [loading]);
   
+  // Handle hash-based auth
   useEffect(() => {
     const hash = location.hash;
     if (hash && hash.includes('access_token')) {
@@ -57,9 +58,10 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
     }
   }, [location, navigate]);
   
+  // Redirect users based on their role
   useEffect(() => {
     if (user && !loading) {
-      console.log('Authenticated user:', user);
+      console.log('Authenticated user detected:', user);
       console.log('User role from auth context:', userRole);
       
       // Get user role from app_metadata
@@ -68,15 +70,19 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
       
       // Redirect based on role
       if (role === UserRole.SuperAdmin || role === 'admin') {
+        console.log('Redirecting to super admin dashboard');
         navigate('/super-admin-dashboard');
       } else if (role === UserRole.SfdAdmin || role === 'sfd_admin') {
+        console.log('Redirecting to agency dashboard');
         navigate('/agency-dashboard');
       } else {
+        console.log('Redirecting to mobile flow');
         navigate('/mobile-flow/main');
       }
     }
   }, [user, userRole, loading, navigate, location.pathname, toast]);
   
+  // Set authMode based on URL
   useEffect(() => {
     // Check if we're on a specific page to set authentication mode
     if (location.pathname.includes('admin/auth') || location.search.includes('admin=true')) {
@@ -95,6 +101,7 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
     }
   }, [location.pathname, location.search, initialMode]);
   
+  // Handle retry login
   const handleRetry = () => {
     setAuthTimeout(false);
     setAuthError(null);

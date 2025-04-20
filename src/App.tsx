@@ -27,9 +27,18 @@ import AdminMerefFundingPage from '@/pages/AdminMerefFundingPage';
 import UsersManagementPage from '@/pages/UsersManagementPage';
 import RoleTestingPage from '@/pages/RoleTestingPage';
 import AgencyDashboardPage from '@/pages/AgencyDashboardPage';
+import SfdLoginPage from '@/pages/SfdLoginPage';
+import ClientLoginPage from '@/pages/ClientLoginPage';
 
 // Create a new QueryClient instance
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false
+    }
+  }
+});
 
 function App() {
   return (
@@ -37,16 +46,17 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Auth Routes */}
+            {/* Splash and Auth Routes */}
             <Route path="/" element={<SplashScreen />} />
             <Route path="/auth" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/access-denied" element={<AccessDeniedPage />} />
             <Route path="/permission-test" element={<PermissionTestPage />} />
             
-            {/* Admin Auth Routes */}
+            {/* Admin Auth Routes - separate login pages for different admin types */}
             <Route path="/admin/auth" element={<AdminLoginPage />} />
-            <Route path="/sfd/auth" element={<AdminLoginPage />} />
+            <Route path="/sfd/auth" element={<SfdLoginPage />} />
+            <Route path="/client/auth" element={<ClientLoginPage />} />
             
             {/* Admin Dashboard Routes */}
             <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
