@@ -29,6 +29,9 @@ import RoleTestingPage from '@/pages/RoleTestingPage';
 import AgencyDashboardPage from '@/pages/AgencyDashboardPage';
 import SfdLoginPage from '@/pages/SfdLoginPage';
 import ClientLoginPage from '@/pages/ClientLoginPage';
+import ClientsPage from '@/pages/sfd/ClientsPage';
+import LoansPage from '@/pages/sfd/LoansPage';
+import AdhesionRequestsPage from '@/pages/sfd/AdhesionRequestsPage';
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient({
@@ -69,6 +72,9 @@ function App() {
             {/* SFD Admin Routes */}
             <Route path="/agency-dashboard" element={<AgencyDashboardPage />} />
             <Route path="/sfd-admin-dashboard" element={<SfdAdminDashboardPage />} />
+            <Route path="/sfd-clients" element={<ClientsPage />} />
+            <Route path="/sfd-loans" element={<LoansPage />} />
+            <Route path="/sfd-adhesion-requests" element={<AdhesionRequestsPage />} />
             
             {/* Mobile Flow Routes */}
             <Route path="/mobile-flow/*" element={<MobileFlowPage />} />

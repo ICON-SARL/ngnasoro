@@ -1,60 +1,196 @@
 
 import React from 'react';
-import { Settings, Users, CreditCard, Home, FileSpreadsheet, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { LogOut, Menu, Building, Users, CreditCard, FileText, Bell, Settings, HelpCircle } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useAuth } from '@/hooks/useAuth';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface SfdAdminLayoutProps {
   children: React.ReactNode;
 }
 
 export function SfdAdminLayout({ children }: SfdAdminLayoutProps) {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+  
+  const getInitials = (name: string = '') => {
+    return name.split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+  
+  const navItems = [
+    { icon: <Building className="h-5 w-5" />, label: "Tableau de bord", href: "/agency-dashboard" },
+    { icon: <Users className="h-5 w-5" />, label: "Clients", href: "/sfd-clients" },
+    { icon: <CreditCard className="h-5 w-5" />, label: "Prêts", href: "/sfd-loans" },
+    { icon: <FileText className="h-5 w-5" />, label: "Demandes d'adhésion", href: "/sfd-adhesion-requests" },
+  ];
+  
+  const secondaryNavItems = [
+    { icon: <Settings className="h-5 w-5" />, label: "Paramètres", href: "/sfd-settings" },
+    { icon: <HelpCircle className="h-5 w-5" />, label: "Aide", href: "/sfd-help" },
+  ];
+  
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className="hidden md:flex w-64 flex-col bg-white border-r border-gray-200">
-        <div className="p-6 flex items-center">
-          <div className="w-8 h-8 rounded-md bg-[#0D6A51] flex items-center justify-center text-white font-bold">
-            S
-          </div>
-          <span className="ml-3 font-semibold text-xl">SFD Admin</span>
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex flex-col w-64 border-r bg-white">
+        <div className="p-4 border-b">
+          <h1 className="text-xl font-bold">Administration SFD</h1>
         </div>
         
-        <div className="flex-1 flex flex-col py-4">
-          <nav className="flex-1 px-4 space-y-2">
-            <Button variant="ghost" className="w-full justify-start">
-              <Home className="mr-3 h-5 w-5" />
-              Tableau de bord
-            </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <Users className="mr-3 h-5 w-5" />
-              Clients
-            </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <CreditCard className="mr-3 h-5 w-5" />
-              Prêts
-            </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <FileSpreadsheet className="mr-3 h-5 w-5" />
-              Rapports
-            </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <Settings className="mr-3 h-5 w-5" />
-              Paramètres
-            </Button>
+        <ScrollArea className="flex-1">
+          <nav className="p-4 space-y-6">
+            <div className="space-y-1">
+              {navItems.map((item, i) => (
+                <Button
+                  key={i}
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => navigate(item.href)}
+                >
+                  {item.icon}
+                  <span className="ml-2">{item.label}</span>
+                </Button>
+              ))}
+            </div>
+            
+            <Separator />
+            
+            <div className="space-y-1">
+              {secondaryNavItems.map((item, i) => (
+                <Button
+                  key={i}
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => navigate(item.href)}
+                >
+                  {item.icon}
+                  <span className="ml-2">{item.label}</span>
+                </Button>
+              ))}
+            </div>
           </nav>
-        </div>
+        </ScrollArea>
         
-        <div className="p-4 border-t">
-          <Button variant="ghost" className="w-full justify-start text-red-500">
-            <LogOut className="mr-3 h-5 w-5" />
+        <div className="p-4 border-t mt-auto">
+          <div className="flex items-center mb-4">
+            <Avatar className="h-9 w-9 mr-2">
+              <AvatarFallback>{getInitials(user?.user_metadata?.full_name || user?.email)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-sm font-medium">{user?.user_metadata?.full_name || user?.email}</p>
+              <p className="text-xs text-muted-foreground">Administrateur SFD</p>
+            </div>
+          </div>
+          <Button variant="outline" className="w-full" onClick={handleSignOut}>
+            <LogOut className="h-4 w-4 mr-2" />
             Déconnexion
           </Button>
         </div>
-      </div>
+      </aside>
       
-      {/* Main content */}
-      <div className="flex-1 overflow-auto">
-        {children}
+      {/* Mobile layout */}
+      <div className="flex flex-col flex-1">
+        <header className="sticky top-0 z-10 bg-white border-b h-16 flex items-center px-4 md:px-6">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+              <nav className="flex flex-col h-full">
+                <div className="p-4 border-b">
+                  <h2 className="text-lg font-bold">Administration SFD</h2>
+                </div>
+                
+                <ScrollArea className="flex-1">
+                  <div className="p-4 space-y-6">
+                    <div className="space-y-1">
+                      {navItems.map((item, i) => (
+                        <Button
+                          key={i}
+                          variant="ghost"
+                          className="w-full justify-start"
+                          onClick={() => navigate(item.href)}
+                        >
+                          {item.icon}
+                          <span className="ml-2">{item.label}</span>
+                        </Button>
+                      ))}
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="space-y-1">
+                      {secondaryNavItems.map((item, i) => (
+                        <Button
+                          key={i}
+                          variant="ghost"
+                          className="w-full justify-start"
+                          onClick={() => navigate(item.href)}
+                        >
+                          {item.icon}
+                          <span className="ml-2">{item.label}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </ScrollArea>
+                
+                <div className="p-4 border-t mt-auto">
+                  <div className="flex items-center mb-4">
+                    <Avatar className="h-9 w-9 mr-2">
+                      <AvatarFallback>{getInitials(user?.user_metadata?.full_name || user?.email)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium">{user?.user_metadata?.full_name || user?.email}</p>
+                      <p className="text-xs text-muted-foreground">Administrateur SFD</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="w-full" onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Déconnexion
+                  </Button>
+                </div>
+              </nav>
+            </SheetContent>
+          </Sheet>
+          
+          <div className="ml-4 md:ml-0">
+            <h1 className="md:hidden text-xl font-bold">Admin SFD</h1>
+          </div>
+          
+          <div className="ml-auto flex items-center space-x-4">
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              <span className="absolute top-1 right-1 bg-red-500 rounded-full h-2 w-2"></span>
+            </Button>
+            
+            <div className="hidden md:flex items-center gap-2">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback>{getInitials(user?.user_metadata?.full_name || user?.email)}</AvatarFallback>
+              </Avatar>
+            </div>
+          </div>
+        </header>
+        
+        <main className="flex-1">
+          {children}
+        </main>
       </div>
     </div>
   );

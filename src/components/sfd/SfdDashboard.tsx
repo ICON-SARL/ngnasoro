@@ -1,51 +1,28 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowUpRight, ArrowDownRight, Users, CreditCard, FileBarChart } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Users, CreditCard, FileBarChart, Clock, FileText } from 'lucide-react';
+import { SfdDashboardStats } from '@/components/sfd/dashboard/SfdDashboardStats';
+import { useSfdClients } from '@/hooks/useSfdClients';
+import { useLoansPage } from '@/hooks/sfd/useLoansPage';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { formatDate } from '@/lib/utils';
+import LoanList from '../sfd/loans/LoanList';
 
 export function SfdDashboard() {
+  const navigate = useNavigate();
+  const { clients, isLoading: isLoadingClients } = useSfdClients();
+  const { loans, isLoading: isLoadingLoans } = useLoansPage();
+  
+  // Filter recent clients and loans
+  const recentClients = clients?.slice(0, 3) || [];
+  const recentLoans = loans?.slice(0, 3) || [];
+  
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Portefeuille de prêts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">15,500,000 FCFA</div>
-            <div className="flex items-center text-xs text-green-500 mt-2">
-              <ArrowUpRight className="h-4 w-4 mr-1" />
-              <span>+12.5% par rapport au mois dernier</span>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Clients actifs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">234</div>
-            <div className="flex items-center text-xs text-green-500 mt-2">
-              <ArrowUpRight className="h-4 w-4 mr-1" />
-              <span>+5.7% par rapport au mois dernier</span>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Taux de remboursement</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">94.8%</div>
-            <div className="flex items-center text-xs text-red-500 mt-2">
-              <ArrowDownRight className="h-4 w-4 mr-1" />
-              <span>-1.2% par rapport au mois dernier</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="space-y-6 p-6">
+      <SfdDashboardStats />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
@@ -56,17 +33,49 @@ export function SfdDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex justify-between items-center py-2 border-b">
-                  <div>
-                    <div className="font-medium">Client {i}</div>
-                    <div className="text-sm text-muted-foreground">Inscrit le 10/0{i}/2023</div>
+            {isLoadingClients ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex justify-between items-center py-2 border-b">
+                    <div>
+                      <Skeleton className="h-5 w-40 mb-2" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <Skeleton className="h-6 w-16" />
                   </div>
-                  <div className="text-sm bg-blue-50 text-blue-600 px-2 py-1 rounded">Nouveau</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : recentClients.length > 0 ? (
+              <div className="space-y-4">
+                {recentClients.map((client) => (
+                  <div key={client.id} className="flex justify-between items-center py-2 border-b">
+                    <div>
+                      <div className="font-medium">{client.full_name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Inscrit le {formatDate(client.created_at)}
+                      </div>
+                    </div>
+                    <div className="text-sm bg-blue-50 text-blue-600 px-2 py-1 rounded">
+                      {client.status === 'validated' ? 'Actif' : 'En attente'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p>Aucun client récent</p>
+              </div>
+            )}
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full mt-4"
+              onClick={() => navigate('/sfd-clients')}
+            >
+              Voir tous les clients
+            </Button>
           </CardContent>
         </Card>
         
@@ -78,17 +87,57 @@ export function SfdDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex justify-between items-center py-2 border-b">
-                  <div>
-                    <div className="font-medium">Prêt #{i}00{i}</div>
-                    <div className="text-sm text-muted-foreground">{i}00,000 FCFA sur {i*6} mois</div>
+            {isLoadingLoans ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex justify-between items-center py-2 border-b">
+                    <div>
+                      <Skeleton className="h-5 w-40 mb-2" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <Skeleton className="h-6 w-16" />
                   </div>
-                  <div className="text-sm bg-green-50 text-green-600 px-2 py-1 rounded">Actif</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : recentLoans.length > 0 ? (
+              <div className="space-y-4">
+                {recentLoans.map((loan) => (
+                  <div key={loan.id} className="flex justify-between items-center py-2 border-b">
+                    <div>
+                      <div className="font-medium">Prêt #{loan.reference || loan.id.substring(0, 6)}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {loan.amount.toLocaleString()} FCFA sur {loan.duration_months} mois
+                      </div>
+                    </div>
+                    <div className={`text-sm px-2 py-1 rounded
+                      ${loan.status === 'active' ? 'bg-green-50 text-green-600' : 
+                       loan.status === 'pending' ? 'bg-yellow-50 text-yellow-600' :
+                       'bg-gray-50 text-gray-600'}
+                    `}>
+                      {loan.status === 'active' ? 'Actif' : 
+                       loan.status === 'pending' ? 'En attente' : 
+                       loan.status === 'approved' ? 'Approuvé' : 
+                       loan.status === 'completed' ? 'Terminé' : 
+                       loan.status === 'rejected' ? 'Rejeté' : 'Inconnu'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <FileText className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p>Aucun prêt récent</p>
+              </div>
+            )}
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full mt-4"
+              onClick={() => navigate('/sfd-loans')}
+            >
+              Voir tous les prêts
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -96,14 +145,21 @@ export function SfdDashboard() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <FileBarChart className="h-5 w-5 mr-2" />
-            Performance de remboursement
+            <Clock className="h-5 w-5 mr-2" />
+            Prêts en attente d'approbation
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-            Graphique de performance sera affiché ici
-          </div>
+          <LoanList 
+            loans={loans?.filter(loan => loan.status === 'pending')} 
+            loading={isLoadingLoans} 
+          />
+          {!isLoadingLoans && loans?.filter(loan => loan.status === 'pending').length === 0 && (
+            <div className="text-center py-6 text-muted-foreground">
+              <FileText className="h-12 w-12 mx-auto mb-3 opacity-20" />
+              <p>Aucun prêt en attente d'approbation</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
