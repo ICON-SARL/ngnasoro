@@ -13,3 +13,71 @@ export interface SfdClient {
   monthly_income?: number | null;
   reference_number?: string | null;
 }
+
+// Add missing type definitions
+export interface Loan {
+  id: string;
+  client_id: string;
+  sfd_id: string;
+  amount: number;
+  duration_months: number;
+  interest_rate: number;
+  monthly_payment: number;
+  purpose: string;
+  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed';
+  created_at: string;
+  approved_at?: string;
+  disbursed_at?: string;
+  next_payment_date?: string;
+  disbursement_reference?: string;
+  reference?: string;
+  client_name?: string;
+}
+
+export interface LoanApplication {
+  sfd_id: string;
+  amount: number;
+  duration_months: number;
+  purpose: string;
+  interest_rate?: number;
+  supporting_documents?: any[];
+}
+
+export interface LoanPlan {
+  id: string;
+  name: string;
+  description?: string;
+  interest_rate: number;
+  min_amount: number;
+  max_amount: number;
+  min_duration: number;
+  max_duration: number;
+  fees?: number;
+  sfd_id: string;
+  is_active: boolean;
+}
+
+export interface SfdSubsidy {
+  id: string;
+  name: string;
+  amount: number;
+  sponsor_id: string;
+  sfd_id: string;
+  status: 'pending' | 'active' | 'completed';
+  start_date: string;
+  end_date?: string;
+  description?: string;
+  target_population?: string;
+  terms_of_use?: string;
+  created_at: string;
+}
+
+export interface ClientNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  created_at: string;
+  read: boolean;
+  action_link?: string;
+}

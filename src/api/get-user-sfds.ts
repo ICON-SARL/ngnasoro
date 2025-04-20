@@ -5,7 +5,7 @@ export async function GET(request: Request) {
   try {
     const { data: userData, error: userError } = await supabase.auth.getUser();
     
-    if (userError || !userData.user) {
+    if (userError || !userData?.user) {
       return new Response(JSON.stringify({ 
         error: 'Unauthorized', 
         data: null 

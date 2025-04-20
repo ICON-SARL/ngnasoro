@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions';
 import { AdhesionRequestsTable } from './AdhesionRequestsTable';
@@ -9,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, Search, Clock, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { ClientAdhesionRequest } from '@/types/adhesionTypes';
 
 export function ClientAdhesionRequests() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,10 +20,13 @@ export function ClientAdhesionRequests() {
   const { 
     adhesionRequests, 
     isLoadingAdhesionRequests, 
-    refetchAdhesionRequests
+    refetchAdhesionRequests,
+    retryCount
   } = useClientAdhesions();
   
-  const filteredRequests = adhesionRequests.filter(request => 
+  const typedAdhesionRequests = adhesionRequests as unknown as ClientAdhesionRequest[];
+  
+  const filteredRequests = typedAdhesionRequests.filter(request => 
     request.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     request.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     request.phone?.includes(searchTerm) ||
@@ -157,7 +160,7 @@ export function ClientAdhesionRequests() {
           <AdhesionRequestsTable 
             requests={pendingRequests}
             isLoading={isLoadingAdhesionRequests}
-            onRefresh={refetchAdhesionRequests}
+            onRefresh={refetchAdhesionRequests as any}
           />
         </TabsContent>
         
@@ -165,7 +168,7 @@ export function ClientAdhesionRequests() {
           <AdhesionRequestsTable 
             requests={approvedRequests}
             isLoading={isLoadingAdhesionRequests}
-            onRefresh={refetchAdhesionRequests}
+            onRefresh={refetchAdhesionRequests as any}
           />
         </TabsContent>
         
@@ -173,7 +176,7 @@ export function ClientAdhesionRequests() {
           <AdhesionRequestsTable 
             requests={rejectedRequests}
             isLoading={isLoadingAdhesionRequests}
-            onRefresh={refetchAdhesionRequests}
+            onRefresh={refetchAdhesionRequests as any}
           />
         </TabsContent>
       </Tabs>

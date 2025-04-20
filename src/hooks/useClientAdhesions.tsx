@@ -5,8 +5,19 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
 import { useSfdDataAccess } from './useSfdDataAccess';
 import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
-import { AdhesionRequestInput, ClientAdhesionRequest } from '@/types/adhesionTypes';
+import { ClientAdhesionRequest } from '@/types/adhesionTypes';
 import { useState } from 'react';
+
+// Export the AdhesionRequestInput interface to fix the error
+export interface AdhesionRequestInput {
+  full_name: string;
+  profession?: string;
+  monthly_income?: string;
+  source_of_income?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+}
 
 export function useClientAdhesions() {
   const { user } = useAuth();
@@ -14,6 +25,7 @@ export function useClientAdhesions() {
   const queryClient = useQueryClient();
   const { activeSfdId } = useSfdDataAccess();
   const [retryCount, setRetryCount] = useState(0);
+  const [isCreatingRequest, setIsCreatingRequest] = useState(false);
 
   const fetchAdhesionRequests = async (sfdId: string): Promise<ClientAdhesionRequest[]> => {
     if (!sfdId || !user?.id) return [];
@@ -120,11 +132,65 @@ export function useClientAdhesions() {
     }
   });
 
+  // Add the missing submitAdhesionRequest function
+  const submitAdhesionRequest = async (sfdId: string, data: AdhesionRequestInput) => {
+    if (!user?.id) {
+      return { success: false, error: "User not authenticated" };
+    }
+    
+    setIsCreatingRequest(true);
+    try {
+      const { data: response, error } = await supabase
+        .from('client_adhesion_requests')
+        .insert({
+          sfd_id: sfdId,
+          user_id: user.id,
+          full_name: data.full_name,
+          email: data.email || null,
+          phone: data.phone || null,
+          address: data.address || null,
+          profession: data.profession || null,
+          monthly_income: data.monthly_income ? parseFloat(data.monthly_income) : null,
+          source_of_income: data.source_of_income || null,
+          status: 'pending',
+          reference_number: `ADH-${Date.now().toString().substring(6)}`
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ['adhesion-requests'] });
+      
+      toast({
+        title: "Demande soumise",
+        description: "Votre demande d'adhésion a été soumise avec succès",
+      });
+      
+      return { success: true, data: response };
+    } catch (error: any) {
+      console.error('Error submitting adhesion request:', error);
+      
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de la soumission de la demande",
+        variant: "destructive",
+      });
+      
+      return { success: false, error: error.message };
+    } finally {
+      setIsCreatingRequest(false);
+    }
+  };
+
   return {
     adhesionRequests: adhesionRequestsQuery.data || [],
     isLoadingAdhesionRequests: adhesionRequestsQuery.isLoading,
     refetchAdhesionRequests: adhesionRequestsQuery.refetch,
     processAdhesion,
-    retryCount
+    retryCount,
+    // Add the missing functions
+    submitAdhesionRequest,
+    isCreatingRequest
   };
 }
