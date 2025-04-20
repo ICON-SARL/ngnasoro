@@ -7,7 +7,7 @@ export interface SfdClient {
   address?: string | null;
   created_at: string;
   status: 'pending' | 'active' | 'rejected' | 'suspended' | 'validated';
-  kyc_level: 'none' | 'basic' | 'full';
+  kyc_level: 'none' | 'basic' | 'full' | number;
   sfd_id: string;
   profession?: string | null;
   monthly_income?: number | null;
@@ -27,7 +27,7 @@ export interface Loan {
   interest_rate: number;
   monthly_payment: number;
   purpose: string;
-  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'disbursed';
+  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'disbursed' | 'defaulted';
   created_at: string;
   approved_at?: string;
   disbursed_at?: string;
@@ -37,11 +37,21 @@ export interface Loan {
   client_name?: string;
   sfds?: {
     name: string;
+    logo_url?: string;
   };
   disbursement_status?: string;
   withdrawn?: boolean;
   disbursed?: boolean;
   last_payment_date?: string;
+  // Add missing properties
+  subsidy_amount?: number;
+  subsidy_rate?: number;
+  approved_by?: string;
+  disbursement_date?: string;
+  loan_plan_id?: string;
+  rejection_reason?: string;
+  processed_at?: string;
+  processed_by?: string;
 }
 
 export interface LoanApplication {
@@ -108,4 +118,33 @@ export interface ClientDocument {
   uploaded_at: string;
   status: string;
   verified: boolean;
+}
+
+// Add mobile money interfaces
+export interface MobileMoneySettings {
+  id: string;
+  provider: string;
+  api_key?: string;
+  api_url?: string;
+  webhook_secret: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MobileMoneyWebhook {
+  id: string;
+  provider: string;
+  reference_id: string;
+  phone_number: string;
+  amount: number;
+  status: string;
+  transaction_type: string;
+  is_verified: boolean;
+  user_id?: string;
+  account_id?: string;
+  created_at: string;
+  processed_at?: string;
+  raw_payload?: any;
+  signature?: string;
 }

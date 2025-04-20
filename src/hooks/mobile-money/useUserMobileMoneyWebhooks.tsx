@@ -1,14 +1,14 @@
-
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { MobileMoneyWebhook } from '@/types/adhesionTypes';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+import { MobileMoneyWebhook } from '@/types/sfdClients';
 
 export function useUserMobileMoneyWebhooks() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { activeSfdId } = useSfdDataAccess();
 
   // Récupérer les webhooks du mobile money pour un utilisateur
   const fetchUserMobileMoneyWebhooks = async (): Promise<MobileMoneyWebhook[]> => {
@@ -48,6 +48,6 @@ export function useUserMobileMoneyWebhooks() {
     isLoadingUserWebhooks: userMobileMoneyWebhooksQuery.isLoading,
     
     // Rechargement manuel
-    refetchUserWebhooks: () => queryClient.invalidateQueries({ queryKey: ['user-mobile-money-webhooks'] }),
+    refetchUserWebhooks: userMobileMoneyWebhooksQuery.refetch,
   };
 }

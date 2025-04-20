@@ -1,12 +1,13 @@
-
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { MobileMoneyWebhook } from '@/types/adhesionTypes';
+import { useAuth } from '@/hooks/useAuth';
+import { MobileMoneyWebhook } from '@/types/sfdClients';
 
 export function useMobileMoneyWebhooks() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Récupérer tous les webhooks du mobile money
   const fetchMobileMoneyWebhooks = async (): Promise<MobileMoneyWebhook[]> => {

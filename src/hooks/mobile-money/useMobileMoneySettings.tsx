@@ -1,24 +1,29 @@
-
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { MobileMoneySettings } from '@/types/adhesionTypes';
+import { useAuth } from '@/hooks/useAuth';
+import { MobileMoneySettings } from '@/types/sfdClients';
 
 export function useMobileMoneySettings() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Récupérer les paramètres du mobile money
+  // Récupérer les paramètres du mobile money pour un utilisateur
   const fetchMobileMoneySettings = async (): Promise<MobileMoneySettings[]> => {
+    if (!user?.id) return [];
+
     const { data, error } = await supabase
       .from('mobile_money_settings')
-      .select('*');
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching mobile money settings:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de récupérer les paramètres mobile money",
+        description: "Impossible de récupérer vos paramètres mobile money",
         variant: "destructive",
       });
       return [];
@@ -29,49 +34,41 @@ export function useMobileMoneySettings() {
 
   // Mettre à jour les paramètres du mobile money
   const updateMobileMoneySettings = useMutation({
-    mutationFn: async (settings: {
-      id: string;
-      webhook_secret?: string;
-      api_key?: string;
-      api_url?: string;
-      is_active?: boolean;
-    }) => {
+    mutationFn: async (settings: MobileMoneySettings) => {
       const { data, error } = await supabase
         .from('mobile_money_settings')
-        .update({
-          webhook_secret: settings.webhook_secret,
-          api_key: settings.api_key,
-          api_url: settings.api_url,
-          is_active: settings.is_active,
-          updated_at: new Date().toISOString()
-        })
+        .update(settings)
         .eq('id', settings.id)
-        .select()
-        .single();
+        .select();
 
-      if (error) throw error;
-      return data as MobileMoneySettings;
+      if (error) {
+        console.error('Error updating mobile money settings:', error);
+        throw new Error("Impossible de mettre à jour les paramètres mobile money");
+      }
+
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['mobile-money-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['mobile-money-settings', user?.id] });
       toast({
-        title: "Paramètres mis à jour",
-        description: "Les paramètres mobile money ont été mis à jour avec succès",
+        title: "Succès",
+        description: "Paramètres mobile money mis à jour avec succès",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Erreur",
-        description: `Impossible de mettre à jour les paramètres: ${error.message}`,
+        description: error.message || "Une erreur est survenue lors de la mise à jour des paramètres",
         variant: "destructive",
       });
-    }
+    },
   });
 
   // Requête
   const mobileMoneySettingsQuery = useQuery({
-    queryKey: ['mobile-money-settings'],
+    queryKey: ['mobile-money-settings', user?.id],
     queryFn: fetchMobileMoneySettings,
+    enabled: !!user?.id,
   });
 
   return {

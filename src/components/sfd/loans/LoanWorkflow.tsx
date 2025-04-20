@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -31,7 +32,12 @@ export const LoanWorkflow = () => {
     try {
       setLoading(true);
       const fetchedLoans = await loanService.getSfdLoans();
-      setLoans(fetchedLoans);
+      // Ensure loans conform to the Loan type
+      const typedLoans: Loan[] = fetchedLoans.map(loan => ({
+        ...loan,
+        status: (loan.status as any) || 'pending'
+      }));
+      setLoans(typedLoans);
     } catch (error) {
       console.error('Error fetching loans:', error);
       toast({

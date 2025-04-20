@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -233,7 +232,7 @@ const LoanDetailsDialog = ({ isOpen, onClose, loan, onLoanUpdated }: LoanDetails
               </div>
             </div>
             
-            {loan.subsidy_amount > 0 && (
+            {loan.subsidy_amount && loan.subsidy_amount > 0 && (
               <div className="mt-4">
                 <h4 className="text-sm font-medium mb-2">Subvention</h4>
                 <div className="bg-blue-50 p-3 rounded-md">

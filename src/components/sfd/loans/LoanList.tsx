@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { 
   Table, 
@@ -15,7 +14,6 @@ import { useNavigate } from 'react-router-dom';
 import { useLoansPage } from '@/hooks/sfd/useLoansPage';
 import { Loan } from '@/types/sfdClients';
 
-// Define props interface for when receiving loans and loading state from parent
 interface LoanListProps {
   loans?: Loan[];
   loading?: boolean;
@@ -23,15 +21,12 @@ interface LoanListProps {
 
 const LoanList: React.FC<LoanListProps> = (props) => {
   const navigate = useNavigate();
-  // Use provided loans/loading or fetch them with the hook
   const { loans: fetchedLoans, isLoading: fetchLoading, refetch } = useLoansPage();
   
-  // Use props if provided, otherwise use the fetched data
   const loans = props.loans || fetchedLoans;
   const isLoading = props.loading || fetchLoading;
   
   useEffect(() => {
-    // Only fetch if we're not using provided loans
     if (!props.loans) {
       refetch();
     }

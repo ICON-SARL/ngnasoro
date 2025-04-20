@@ -48,7 +48,7 @@ export function useLoansPage() {
         interest_rate: loan.interest_rate,
         monthly_payment: loan.monthly_payment,
         purpose: loan.purpose,
-        status: loan.status || 'pending',
+        status: (loan.status as Loan['status']) || 'pending',
         created_at: loan.created_at,
       }));
 
