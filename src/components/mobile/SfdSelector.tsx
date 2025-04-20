@@ -1,63 +1,141 @@
 
-import React, { useEffect } from 'react';
-import { useSfdSelector } from '@/hooks/useSfdSelector';
-import SfdSelectorLoading from './sfd-selector/SfdSelectorLoading';
-import SfdSelectorEmpty from './sfd-selector/SfdSelectorEmpty';
-import SfdSelectorContent from './sfd-selector/SfdSelectorContent';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Building, AlertCircle } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Loader2 } from 'lucide-react';
 
 interface SfdSelectorProps {
-  className?: string;
-  onEmptySfds?: () => void;
+  compact?: boolean;
 }
 
-const SfdSelector: React.FC<SfdSelectorProps> = ({ className, onEmptySfds }) => {
-  const { activeSfdId, sfdData, isLoading, handleSfdChange } = useSfdSelector(onEmptySfds);
+const SfdSelector: React.FC<SfdSelectorProps> = ({ compact = false }) => {
+  const { user, activeSfdId, setActiveSfdId } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeSfds, setActiveSfds] = useState<Array<{id: string, name: string}>>([]);
   const navigate = useNavigate();
   
+  // Get current active SFD name
+  const currentSfd = activeSfds.find(sfd => sfd.id === activeSfdId);
+  
   useEffect(() => {
-    // Log SFD data for debugging
-    console.log(`Nombre de SFDs actives détecté: ${sfdData.length}`);
-    if (sfdData.length > 0) {
-      sfdData.forEach(sfd => {
-        console.log(`SFD disponible: ${sfd.name} (${sfd.id}) - status: ${sfd.status || 'unknown'}`);
-      });
-    }
-  }, [sfdData]);
+    const fetchActiveSfds = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      console.info('Fetching active SFDs for popup display');
+      
+      try {
+        // Fetch user's SFDs from user_sfds table
+        const { data, error } = await fetch('/api/get-user-sfds').then(res => res.json());
+        
+        if (error) {
+          console.error('Error fetching SFDs:', error);
+          return;
+        }
+        
+        if (Array.isArray(data)) {
+          console.info('Fetched', data.length, 'active SFDs from Edge function');
+          setActiveSfds(data);
+          
+          // If no active SFD is set but we have SFDs, set the first one
+          if (!activeSfdId && data.length > 0) {
+            setActiveSfdId(data[0].id);
+          }
+        } else {
+          console.warn('Unexpected data format for SFDs', data);
+          setActiveSfds([]);
+        }
+      } catch (error) {
+        console.error('Error fetching active SFDs:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchActiveSfds();
+  }, [user, activeSfdId, setActiveSfdId]);
+  
+  const handleSwitchSfd = (sfdId: string) => {
+    if (activeSfdId === sfdId) return;
+    setActiveSfdId(sfdId);
+  };
+  
+  const handleAddSfd = () => {
+    navigate('/sfd-setup');
+  };
   
   if (isLoading) {
-    return <SfdSelectorLoading className={className} />;
+    return (
+      <Button 
+        variant="outline" 
+        size="sm" 
+        className={`${compact ? 'h-8 text-xs px-2' : ''} bg-white/80 border-gray-200`}
+        disabled
+      >
+        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+        Chargement...
+      </Button>
+    );
   }
   
-  if (!sfdData || sfdData.length === 0) {
+  if (activeSfds.length === 0) {
     return (
-      <div className={`${className} p-4`}>
-        <div className="flex flex-col items-center justify-center space-y-3 p-6 text-center bg-amber-50 rounded-lg border border-amber-200">
-          <AlertCircle className="h-10 w-10 text-amber-500" />
-          <h3 className="font-medium text-amber-800">Aucune SFD disponible</h3>
-          <p className="text-amber-700 text-sm">Impossible de récupérer les SFDs actives</p>
-          <Button 
-            variant="outline"
-            onClick={() => navigate('/sfd-selector')}
-            className="mt-2 bg-white border-amber-300 text-amber-700 hover:bg-amber-100"
-          >
-            <Building className="h-4 w-4 mr-2" />
-            Voir toutes les SFDs
-          </Button>
-        </div>
-      </div>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        className={`${compact ? 'h-8 text-xs px-2' : ''} bg-white/80 border-gray-200`}
+        onClick={handleAddSfd}
+      >
+        Ajouter une SFD
+      </Button>
     );
   }
   
   return (
-    <SfdSelectorContent 
-      className={className}
-      activeSfdId={activeSfdId}
-      sfdData={sfdData}
-      onSfdChange={handleSfdChange}
-    />
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className={`${compact ? 'h-8 text-xs px-2' : ''} bg-white/80 border-gray-200 flex items-center justify-between`}
+        >
+          <span className="truncate mr-1 max-w-28">
+            {currentSfd?.name || "Sélectionner une SFD"}
+          </span>
+          <ChevronDown className="h-3 w-3 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-48 p-1">
+        <div className="space-y-1">
+          {activeSfds.map(sfd => (
+            <Button
+              key={sfd.id}
+              variant={activeSfdId === sfd.id ? "subtle" : "ghost"}
+              size="sm"
+              className="w-full justify-start font-normal"
+              onClick={() => handleSwitchSfd(sfd.id)}
+            >
+              {sfd.name}
+            </Button>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start font-normal text-blue-600"
+            onClick={handleAddSfd}
+          >
+            + Ajouter une SFD
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 
