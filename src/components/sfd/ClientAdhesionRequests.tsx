@@ -24,7 +24,7 @@ export function ClientAdhesionRequests() {
     retryCount
   } = useClientAdhesions();
   
-  const typedAdhesionRequests = adhesionRequests as unknown as ClientAdhesionRequest[];
+  const typedAdhesionRequests = adhesionRequests as ClientAdhesionRequest[];
   
   const filteredRequests = typedAdhesionRequests.filter(request => 
     request.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -158,25 +158,22 @@ export function ClientAdhesionRequests() {
         
         <TabsContent value="pending">
           <AdhesionRequestsTable 
-            requests={pendingRequests}
+            requests={pendingRequests as any}
             isLoading={isLoadingAdhesionRequests}
-            onRefresh={refetchAdhesionRequests as any}
           />
         </TabsContent>
         
         <TabsContent value="approved">
           <AdhesionRequestsTable 
-            requests={approvedRequests}
+            requests={approvedRequests as any}
             isLoading={isLoadingAdhesionRequests}
-            onRefresh={refetchAdhesionRequests as any}
           />
         </TabsContent>
         
         <TabsContent value="rejected">
           <AdhesionRequestsTable 
-            requests={rejectedRequests}
+            requests={rejectedRequests as any}
             isLoading={isLoadingAdhesionRequests}
-            onRefresh={refetchAdhesionRequests as any}
           />
         </TabsContent>
       </Tabs>

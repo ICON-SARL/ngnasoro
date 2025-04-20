@@ -22,6 +22,10 @@ export interface ClientAdhesionRequest {
   source_of_income?: string | null;
   reference_number?: string | null;
   rejection_reason?: string | null;
+  sfds?: {
+    name: string;
+    logo_url?: string;
+  };
 }
 
 export interface AdhesionRequestInput {

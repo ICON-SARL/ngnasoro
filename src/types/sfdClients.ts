@@ -6,15 +6,18 @@ export interface SfdClient {
   phone?: string | null;
   address?: string | null;
   created_at: string;
-  status: 'pending' | 'active' | 'rejected' | 'suspended';
+  status: 'pending' | 'active' | 'rejected' | 'suspended' | 'validated';
   kyc_level: 'none' | 'basic' | 'full';
   sfd_id: string;
   profession?: string | null;
   monthly_income?: number | null;
   reference_number?: string | null;
+  id_type?: string | null;
+  id_number?: string | null;
+  notes?: string | null;
+  validated_at?: string | null;
 }
 
-// Add missing type definitions
 export interface Loan {
   id: string;
   client_id: string;
@@ -24,7 +27,7 @@ export interface Loan {
   interest_rate: number;
   monthly_payment: number;
   purpose: string;
-  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed';
+  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'disbursed';
   created_at: string;
   approved_at?: string;
   disbursed_at?: string;
@@ -32,6 +35,13 @@ export interface Loan {
   disbursement_reference?: string;
   reference?: string;
   client_name?: string;
+  sfds?: {
+    name: string;
+  };
+  disbursement_status?: string;
+  withdrawn?: boolean;
+  disbursed?: boolean;
+  last_payment_date?: string;
 }
 
 export interface LoanApplication {
@@ -52,9 +62,14 @@ export interface LoanPlan {
   max_amount: number;
   min_duration: number;
   max_duration: number;
-  fees?: number;
+  fees: number;
   sfd_id: string;
   is_active: boolean;
+  requirements?: string[];
+  sfds?: {
+    name: string;
+    logo_url?: string;
+  };
 }
 
 export interface SfdSubsidy {
@@ -63,13 +78,16 @@ export interface SfdSubsidy {
   amount: number;
   sponsor_id: string;
   sfd_id: string;
-  status: 'pending' | 'active' | 'completed';
+  status: 'pending' | 'active' | 'completed' | 'depleted';
   start_date: string;
   end_date?: string;
   description?: string;
   target_population?: string;
   terms_of_use?: string;
   created_at: string;
+  used_amount?: number;
+  remaining_amount?: number;
+  allocated_at?: string;
 }
 
 export interface ClientNotification {
@@ -80,4 +98,14 @@ export interface ClientNotification {
   created_at: string;
   read: boolean;
   action_link?: string;
+}
+
+export interface ClientDocument {
+  id: string;
+  client_id: string;
+  document_type: string;
+  document_url: string;
+  uploaded_at: string;
+  status: string;
+  verified: boolean;
 }

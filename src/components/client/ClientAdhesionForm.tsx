@@ -14,7 +14,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useClientAdhesions, AdhesionRequestInput } from '@/hooks/useClientAdhesions'; // Fixed import
+import { useClientAdhesions } from '@/hooks/useClientAdhesions';
+import { AdhesionRequestInput } from '@/types/adhesionTypes';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { UserCircle2, Loader2 } from 'lucide-react';
