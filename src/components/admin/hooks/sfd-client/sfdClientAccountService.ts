@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { logAuditEvent } from '@/utils/audit/auditLoggerCore';
@@ -31,7 +30,7 @@ export async function getClientBalance(clientId: string): Promise<{ balance: num
 }
 
 /**
- * Crédite le compte d'un client
+ * Crédite ou débite le compte d'un client
  */
 export async function creditClientAccount(params: {
   clientId: string;
@@ -42,8 +41,8 @@ export async function creditClientAccount(params: {
   try {
     const { clientId, amount, adminId, description } = params;
     
-    if (amount <= 0) {
-      throw new Error("Le montant du crédit doit être supérieur à zéro");
+    if (amount === 0) {
+      throw new Error("Le montant de l'opération ne peut pas être zéro");
     }
 
     // 1. Récupérer le solde actuel
@@ -56,7 +55,12 @@ export async function creditClientAccount(params: {
     if (fetchError) {
       // Vérifier si le compte n'existe pas
       if (fetchError.code === 'PGRST116') {
-        // Créer un nouveau compte si nécessaire
+        // Si c'est un débit et que le compte n'existe pas, on ne peut pas débiter
+        if (amount < 0) {
+          throw new Error("Impossible de débiter un compte inexistant");
+        }
+        
+        // Créer un nouveau compte si nécessaire (pour un crédit)
         const { error: insertError } = await supabase
           .from('accounts')
           .insert({
@@ -70,6 +74,11 @@ export async function creditClientAccount(params: {
         throw fetchError;
       }
     } else {
+      // Vérifier si le solde est suffisant pour un débit
+      if (amount < 0 && (account.balance + amount < 0)) {
+        throw new Error("Solde insuffisant pour effectuer ce débit");
+      }
+      
       // 2. Mettre à jour le solde existant
       const { error: updateError } = await supabase
         .from('accounts')
@@ -80,16 +89,19 @@ export async function creditClientAccount(params: {
     }
     
     // 3. Créer une transaction
+    const operationType = amount > 0 ? 'deposit' : 'withdrawal';
+    const operationName = amount > 0 ? 'Crédit de compte' : 'Débit de compte';
+    
     const { error: transactionError } = await supabase
       .from('transactions')
       .insert({
         user_id: clientId,
-        amount: amount,
-        type: 'deposit',
-        name: description || 'Crédit de compte',
-        description: description || 'Crédit de compte par administrateur SFD',
+        amount: Math.abs(amount), // Toujours positif dans la transaction
+        type: operationType,
+        name: description || operationName,
+        description: description || `${operationName} par administrateur SFD`,
         status: 'success',
-        payment_method: 'admin_credit'
+        payment_method: 'admin_operation'
       });
       
     if (transactionError) throw transactionError;
@@ -97,7 +109,7 @@ export async function creditClientAccount(params: {
     // 4. Journaliser l'événement
     await logAuditEvent({
       category: AuditLogCategory.ADMIN_ACTION,
-      action: 'client_account_credited',
+      action: amount > 0 ? 'client_account_credited' : 'client_account_debited',
       details: {
         clientId,
         amount,
@@ -110,7 +122,7 @@ export async function creditClientAccount(params: {
     
     return true;
   } catch (error: any) {
-    console.error('Échec du crédit de compte:', error);
+    console.error('Échec de l\'opération sur le compte:', error);
     throw error;
   }
 }

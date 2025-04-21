@@ -27,7 +27,7 @@ export function useClientAccountOperations(clientId?: string) {
     enabled: !!clientId
   });
 
-  // Mutation pour créditer le compte client
+  // Mutation pour créditer ou débiter le compte client
   const creditAccount = useMutation({
     mutationFn: async ({ amount, description }: { amount: number; description?: string }) => {
       if (!clientId || !user?.id) {
@@ -42,7 +42,7 @@ export function useClientAccountOperations(clientId?: string) {
           description
         });
       } catch (err: any) {
-        setError(err.message || "Une erreur s'est produite lors du crédit du compte");
+        setError(err.message || "Une erreur s'est produite lors de l'opération sur le compte");
         throw err;
       }
     },
@@ -50,16 +50,11 @@ export function useClientAccountOperations(clientId?: string) {
       queryClient.invalidateQueries({ queryKey: ['client-balance', clientId] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
-      toast({
-        title: "Compte crédité",
-        description: "Le compte du client a été crédité avec succès",
-        variant: "default",
-      });
     },
     onError: (err: Error) => {
       toast({
         title: "Erreur",
-        description: `Impossible de créditer le compte: ${err.message}`,
+        description: `Impossible d'effectuer l'opération: ${err.message}`,
         variant: "destructive",
       });
     }
