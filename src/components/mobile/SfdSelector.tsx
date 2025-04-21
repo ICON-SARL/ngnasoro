@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSfdAdhesion } from '@/hooks/sfd/useSfdAdhesion';
 
 interface SfdSelectorProps {
   compact?: boolean;
@@ -35,23 +36,29 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ compact = false, className })
       
       try {
         // Fetch user's SFDs from user_sfds table
-        const { data, error } = await fetch('/api/get-user-sfds').then(res => res.json());
+        const { data: userSfds, error: userSfdsError } = await supabase
+          .from('user_sfds')
+          .select('sfd_id, sfds:sfd_id(id, name)')
+          .eq('user_id', user.id);
         
-        if (error) {
-          console.error('Error fetching SFDs:', error);
-          return;
-        }
+        if (userSfdsError) throw userSfdsError;
         
-        if (Array.isArray(data)) {
-          console.info('Fetched', data.length, 'active SFDs from Edge function');
-          setActiveSfds(data);
+        if (Array.isArray(userSfds) && userSfds.length > 0) {
+          // Transform data to expected format
+          const sfdsData = userSfds.map(item => ({
+            id: item.sfds.id,
+            name: item.sfds.name
+          }));
+          
+          console.info('Fetched', sfdsData.length, 'active SFDs');
+          setActiveSfds(sfdsData);
           
           // If no active SFD is set but we have SFDs, set the first one
-          if (!activeSfdId && data.length > 0) {
-            setActiveSfdId(data[0].id);
+          if (!activeSfdId && sfdsData.length > 0) {
+            setActiveSfdId(sfdsData[0].id);
           }
         } else {
-          console.warn('Unexpected data format for SFDs', data);
+          console.warn('User has no associated SFDs');
           setActiveSfds([]);
         }
       } catch (error) {

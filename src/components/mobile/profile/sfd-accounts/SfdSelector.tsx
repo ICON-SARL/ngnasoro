@@ -1,11 +1,20 @@
 
 import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useAvailableSfds } from '@/hooks/sfd/useAvailableSfds';
-import { Loader2 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Loader2, Check, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { useSfdAdhesion } from '@/hooks/sfd/useSfdAdhesion';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Badge } from '@/components/ui/badge';
 
 interface SfdSelectorProps {
   userId: string;
@@ -13,188 +22,164 @@ interface SfdSelectorProps {
 }
 
 const SfdSelector: React.FC<SfdSelectorProps> = ({ userId, onRequestSent }) => {
-  const [selectedSfd, setSelectedSfd] = useState<string | null>(null);
-  const [phoneNumber, setPhoneNumber] = useState<string>('');
-  const [isSending, setIsSending] = useState(false);
+  const { availableSfds, userRequests, isLoading, isSubmitting, requestSfdAdhesion } = useSfdAdhesion();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSfdId, setSelectedSfdId] = useState<string | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const { toast } = useToast();
-
-  const {
-    availableSfds,
-    pendingRequests,
-    isLoading,
-    requestSfdAccess
-  } = useAvailableSfds(userId);
   
-  // Function to sort SFDs with priority
-  const sortPrioritySfds = (sfds: any[]) => {
-    const prioritySfdNames = ["premier sfd", "deuxieme", "troisieme"];
-    
-    return [...sfds].sort((a, b) => {
-      const aIsPriority = prioritySfdNames.includes(a.name.toLowerCase());
-      const bIsPriority = prioritySfdNames.includes(b.name.toLowerCase());
-      
-      if (aIsPriority && !bIsPriority) return -1;
-      if (!aIsPriority && bIsPriority) return 1;
-      
-      if (aIsPriority && bIsPriority) {
-        return prioritySfdNames.indexOf(a.name.toLowerCase()) - prioritySfdNames.indexOf(b.name.toLowerCase());
-      }
-      
-      return a.name.localeCompare(b.name);
-    });
+  const filteredSfds = availableSfds.filter(sfd => 
+    sfd.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    sfd.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (sfd.region && sfd.region.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+  
+  const handleRequestAdhesion = async (sfdId: string) => {
+    setSelectedSfdId(sfdId);
+    setIsConfirmOpen(true);
   };
   
-  // Sort availableSfds to prioritize specific SFDs
-  const sortedSfds = sortPrioritySfds(availableSfds);
-  
-  const handleRequestAccess = async () => {
-    if (!selectedSfd) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez sélectionner une SFD",
-        variant: "destructive"
-      });
-      return;
-    }
+  const confirmRequest = async () => {
+    if (!selectedSfdId) return;
     
-    setIsSending(true);
+    const success = await requestSfdAdhesion(selectedSfdId);
     
-    try {
-      // Pass phone number to the requestSfdAccess function
-      const success = await requestSfdAccess(selectedSfd, phoneNumber);
-      if (success && onRequestSent) {
-        onRequestSent();
-        setSelectedSfd(null);
-      }
-    } finally {
-      setIsSending(false);
+    if (success) {
+      setIsConfirmOpen(false);
+      onRequestSent?.();
     }
   };
-
+  
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Chargement des SFDs disponibles...</p>
+      </div>
+    );
+  }
+  
+  if (availableSfds.length === 0 && userRequests.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 bg-muted/20 rounded-lg">
+        <AlertCircle className="h-8 w-8 text-muted-foreground mb-4" />
+        <h3 className="font-medium text-lg mb-2">Aucune SFD disponible</h3>
+        <p className="text-muted-foreground text-center mb-6">
+          Il n'y a actuellement aucune SFD disponible pour l'adhésion.
+        </p>
+      </div>
+    );
+  }
+  
+  const pendingRequests = userRequests.filter(req => req.status === 'pending');
+  
   return (
     <div className="space-y-6">
-      {isLoading ? (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      {pendingRequests.length > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+          <h3 className="font-medium text-lg mb-2 text-yellow-800">Demandes en attente</h3>
+          <p className="text-yellow-700 mb-3">
+            Vous avez {pendingRequests.length} demande(s) d'adhésion en attente d'approbation.
+          </p>
+          <div className="space-y-2">
+            {pendingRequests.map(request => (
+              <div key={request.id} className="flex justify-between items-center p-2 bg-white rounded border border-yellow-100">
+                <span>{request.sfd_name}</span>
+                <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                  En attente
+                </Badge>
+              </div>
+            ))}
+          </div>
         </div>
-      ) : (
+      )}
+      
+      {availableSfds.length > 0 && (
         <>
-          {pendingRequests?.length > 0 && (
-            <div className="mb-6">
-              <h3 className="font-medium text-lg mb-2">Demandes en cours</h3>
-              <div className="space-y-2">
-                {pendingRequests.map(request => (
-                  <Card key={request.id} className="bg-amber-50 border-amber-200">
-                    <CardContent className="p-3 flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">Demande en attente</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(request.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs">
-                          En attente
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
+          <div className="relative">
+            <Input
+              placeholder="Rechercher une SFD..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
+            />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
           
-          {sortedSfds.length === 0 ? (
-            <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <p className="text-gray-600">Aucune SFD disponible pour le moment.</p>
-              <p className="text-sm text-gray-500 mt-1">
-                Toutes les SFDs sont déjà associées à votre compte ou en attente de validation.
+          <div className="grid gap-4">
+            {filteredSfds.length === 0 ? (
+              <p className="text-center text-muted-foreground p-4">
+                Aucune SFD ne correspond à votre recherche
               </p>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-4">
-                <h3 className="font-medium text-lg">SFDs disponibles</h3>
-                <div className="grid gap-3">
-                  {sortedSfds.map(sfd => (
-                    <Card 
-                      key={sfd.id}
-                      className={`cursor-pointer border transition-colors ${
-                        selectedSfd === sfd.id 
-                          ? 'border-primary bg-primary/5' 
-                          : 'hover:bg-gray-50'
-                      }`}
-                      onClick={() => setSelectedSfd(sfd.id)}
+            ) : (
+              filteredSfds.map(sfd => (
+                <Card key={sfd.id} className="p-4 overflow-hidden border-gray-200">
+                  <div className="flex justify-between">
+                    <div>
+                      <h3 className="font-medium">{sfd.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {sfd.code} {sfd.region && `• ${sfd.region}`}
+                      </p>
+                      {sfd.description && (
+                        <p className="text-sm mt-2 line-clamp-2">{sfd.description}</p>
+                      )}
+                    </div>
+                    <Button 
+                      onClick={() => handleRequestAdhesion(sfd.id)}
+                      className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
                     >
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center">
-                          {sfd.logo_url ? (
-                            <img 
-                              src={sfd.logo_url} 
-                              alt={sfd.name} 
-                              className="h-10 w-10 mr-3 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="h-10 w-10 mr-3 rounded-full bg-primary/10 flex items-center justify-center">
-                              <span className="font-bold text-primary">{sfd.name.charAt(0)}</span>
-                            </div>
-                          )}
-                          <div>
-                            <h4 className="font-medium">{sfd.name}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {sfd.region || sfd.code}
-                            </p>
-                          </div>
-                        </div>
-                        <div className={`w-5 h-5 rounded-full border-2 ${
-                          selectedSfd === sfd.id 
-                            ? 'border-primary bg-primary' 
-                            : 'border-gray-300'
-                        }`}/>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-              
-              {selectedSfd && (
-                <div className="mt-6 space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
-                      Numéro de téléphone (facultatif)
-                    </label>
-                    <Input
-                      id="phoneNumber"
-                      type="tel"
-                      placeholder="+223 7X XX XX XX"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Votre numéro aidera la SFD à vous identifier
-                    </p>
+                      Adhérer
+                    </Button>
                   </div>
-                  
-                  <Button
-                    onClick={handleRequestAccess}
-                    disabled={isSending}
-                    className="w-full"
-                  >
-                    {isSending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Envoi en cours...
-                      </>
-                    ) : (
-                      "Envoyer une demande d'accès"
-                    )}
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
+                </Card>
+              ))
+            )}
+          </div>
         </>
       )}
+      
+      <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la demande d'adhésion</DialogTitle>
+            <DialogDescription>
+              Voulez-vous vraiment demander l'adhésion à cette SFD? Après approbation, vous pourrez accéder à vos comptes, prêts et épargnes.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConfirmOpen(false)} disabled={isSubmitting}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={confirmRequest} 
+              disabled={isSubmitting}
+              className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Envoi en cours...
+                </>
+              ) : (
+                'Confirmer'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
