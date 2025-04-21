@@ -130,6 +130,9 @@ const ClientProfileEdit: React.FC<ClientProfileEditProps> = ({ clientId, onSaved
       if (client.kyc_level === 'none') kycLevelToSave = 0;
       else if (client.kyc_level === 'basic') kycLevelToSave = 1;
       else if (client.kyc_level === 'full') kycLevelToSave = 2;
+      
+      // Ensure kycLevelToSave is a number type before sending to database
+      const kycLevelAsNumber = typeof kycLevelToSave === 'string' ? 0 : kycLevelToSave;
 
       const { error } = await supabase
         .from('sfd_clients')
@@ -140,7 +143,7 @@ const ClientProfileEdit: React.FC<ClientProfileEditProps> = ({ clientId, onSaved
           address: client.address || null,
           id_type: client.id_type || null,
           id_number: client.id_number || null,
-          kyc_level: kycLevelToSave,
+          kyc_level: kycLevelAsNumber, // Use the numeric version
           notes: client.notes || null
         })
         .eq('id', clientId);

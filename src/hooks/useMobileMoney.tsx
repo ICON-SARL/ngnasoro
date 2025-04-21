@@ -21,7 +21,7 @@ export function useMobileMoney() {
   const { 
     mobileMoneySettings, 
     isLoadingSettings, 
-    updateSettings,  // Use updateSettings instead of updateMobileMoneySettings
+    updateSettings,  // This is the correct property name
     refetchSettings 
   } = useMobileMoneySettings();
 
@@ -39,7 +39,7 @@ export function useMobileMoney() {
     // Mutations
     markWebhookAsProcessed,
     markWebhookAsFailed,
-    updateSettings,  // Fix: Use the correct property name
+    updateSettings,  // Use the correct property name
     
     // Rechargement manuel
     refetchWebhooks,
