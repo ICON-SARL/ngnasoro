@@ -32,6 +32,46 @@ export async function fetchUserSfds(userId: string) {
       });
     }
 
+    // Vérifier les SFDs associées à cet utilisateur
+    const { data: userSfds, error: userSfdsError } = await supabase
+      .from('user_sfds')
+      .select(`
+        sfd_id,
+        is_default,
+        sfds:sfd_id (
+          id,
+          name,
+          code,
+          region,
+          status,
+          logo_url
+        )
+      `)
+      .eq('user_id', userId);
+      
+    if (userSfdsError) {
+      console.error('Error fetching user SFDs:', userSfdsError);
+    } else if (userSfds && userSfds.length > 0) {
+      console.log(`Found ${userSfds.length} SFDs associated with this user`);
+      
+      // Extract and format SFDs
+      const formattedUserSfds = userSfds
+        .filter(item => item.sfds?.status === 'active')
+        .map(item => ({
+          id: item.sfds.id,
+          name: item.sfds.name,
+          code: item.sfds.code,
+          region: item.sfds.region || '',
+          status: item.sfds.status,
+          logo_url: item.sfds.logo_url,
+          is_default: item.is_default
+        }));
+      
+      if (formattedUserSfds.length > 0) {
+        return formattedUserSfds;
+      }
+    }
+
     // For testing, always return available SFDs regardless of user connections
     // This ensures we can at least see the SFDs in the app
     if (allSfds && allSfds.length > 0) {

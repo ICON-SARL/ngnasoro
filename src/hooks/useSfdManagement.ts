@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sfd } from '../types/sfd-types';
@@ -78,6 +79,7 @@ export function useSfdManagement() {
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['sfds'] });
       queryClient.invalidateQueries({ queryKey: ['active-sfds'] });
+      queryClient.invalidateQueries({ queryKey: ['sfd-status-check'] });
       
       toast({
         title: "SFD Activée",

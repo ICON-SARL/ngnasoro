@@ -20,9 +20,22 @@ export function useSfdStatusCheck() {
         
         console.log(`Nombre de SFDs actives détecté: ${count}`);
         
+        // Vérifions également les SFDs associées aux administrateurs
+        const { data: sfdAdmins, error: adminError } = await supabase
+          .from('sfd_administrators')
+          .select('sfd_id, status')
+          .eq('status', 'active');
+          
+        if (adminError) {
+          console.error('Erreur lors de la vérification des administrateurs SFD:', adminError);
+        } else {
+          console.log(`Nombre d'administrateurs SFD actifs: ${sfdAdmins?.length || 0}`);
+        }
+        
         return {
           activeSfdsCount: count || 0,
-          hasActiveSfds: (count || 0) > 0
+          hasActiveSfds: (count || 0) > 0,
+          sfdAdmins: sfdAdmins || []
         };
       } catch (error: any) {
         console.error('Error checking SFD status:', error);
@@ -33,7 +46,8 @@ export function useSfdStatusCheck() {
         });
         return {
           activeSfdsCount: 0,
-          hasActiveSfds: false
+          hasActiveSfds: false,
+          sfdAdmins: []
         };
       }
     },
