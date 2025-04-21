@@ -89,7 +89,7 @@ export const logAuditEvent = async (
   category?: AuditLogCategory,
   severity: AuditLogSeverity = AuditLogSeverity.INFO,
   details?: AuditLogDetails,
-  userId?: string
+  userId: string = 'system'
 ): Promise<void> => {
   try {
     // Check if first parameter is an object (AuditLogEvent) or a string (action)

@@ -55,8 +55,9 @@ export const createClient = async (clientData: CreateClientInput): Promise<strin
     
     // Log de l'événement
     await logAuditEvent({
+      user_id: senderId, // Adding the required user_id field
       action: "client_adhesion_requested",
-      category: AuditLogCategory.USER_MANAGEMENT, // Fixed: Changed from CLIENT_MANAGEMENT to USER_MANAGEMENT
+      category: AuditLogCategory.USER_MANAGEMENT,
       severity: AuditLogSeverity.INFO,
       status: 'success',
       target_resource: `client_adhesion_requests/${data.id}`,
@@ -148,11 +149,11 @@ export const approveAdhesion = async (clientId: string, adminId: string): Promis
     
     // Log de l'événement
     await logAuditEvent({
+      user_id: adminId, // Adding the required user_id field
       action: "client_adhesion_approved",
-      category: AuditLogCategory.USER_MANAGEMENT, // Fixed: Changed from CLIENT_MANAGEMENT to USER_MANAGEMENT
+      category: AuditLogCategory.USER_MANAGEMENT,
       severity: AuditLogSeverity.INFO,
       status: 'success',
-      user_id: adminId,
       target_resource: `client_adhesion_requests/${clientId}`,
       details: { 
         client_id: client.id,

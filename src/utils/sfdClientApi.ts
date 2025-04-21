@@ -62,11 +62,14 @@ export const sfdClientApi = {
   async updateClient(clientId: string, updates: Partial<SfdClient>) {
     try {
       // Convert kyc_level if needed
-      let dbUpdates = { ...updates };
-      if (typeof updates.kyc_level === 'string') {
+      let dbUpdates: any = { ...updates };
+      
+      // If kyc_level exists in updates and is a string, convert it to number
+      if (updates.kyc_level !== undefined) {
         if (updates.kyc_level === 'none') dbUpdates.kyc_level = 0;
         else if (updates.kyc_level === 'basic') dbUpdates.kyc_level = 1;
         else if (updates.kyc_level === 'full') dbUpdates.kyc_level = 2;
+        // if it's already a number, keep it as is
       }
 
       const { data, error } = await supabase
