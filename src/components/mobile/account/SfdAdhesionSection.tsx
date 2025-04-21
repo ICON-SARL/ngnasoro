@@ -15,7 +15,7 @@ import { AvailableSfd } from '@/components/mobile/profile/sfd-accounts/types/Sfd
 const SfdAdhesionSection: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { availableSfds, userRequests, isLoading } = useSfdAdhesion();
+  const { availableSfds, userRequests, isLoading, requestSfdAdhesion } = useSfdAdhesion();
   
   const handleOpenSfdDialog = (sfd: AvailableSfd) => {
     const existingRequest = userRequests.find(req => req.sfd_id === sfd.id);
@@ -53,6 +53,14 @@ const SfdAdhesionSection: React.FC = () => {
     e.stopPropagation();
   };
   
+  const handleRequestUpdated = () => {
+    // Refresh the data when a request is updated
+    const { refetch } = useSfdAdhesion();
+    if (typeof refetch === 'function') {
+      refetch();
+    }
+  };
+  
   return (
     <Card className="mb-6" onClick={handleContainerClick}>
       <CardHeader className="pb-2">
@@ -70,7 +78,10 @@ const SfdAdhesionSection: React.FC = () => {
           <EmptySfdState />
         ) : (
           <div className="space-y-4">
-            <UserRequestsList requests={userRequests} />
+            <UserRequestsList 
+              requests={userRequests} 
+              onRequestUpdated={handleRequestUpdated}
+            />
             
             <div className="pt-2">
               <Button 
