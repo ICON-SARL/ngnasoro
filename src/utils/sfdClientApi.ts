@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { SfdClient, ClientDocument, ClientActivity } from "@/types/sfdClients";
 import { useToast } from "@/hooks/use-toast";
@@ -62,9 +61,17 @@ export const sfdClientApi = {
   // Update client
   async updateClient(clientId: string, updates: Partial<SfdClient>) {
     try {
+      // Convert kyc_level if needed
+      let dbUpdates = { ...updates };
+      if (typeof updates.kyc_level === 'string') {
+        if (updates.kyc_level === 'none') dbUpdates.kyc_level = 0;
+        else if (updates.kyc_level === 'basic') dbUpdates.kyc_level = 1;
+        else if (updates.kyc_level === 'full') dbUpdates.kyc_level = 2;
+      }
+
       const { data, error } = await supabase
         .from('sfd_clients')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', clientId)
         .select()
         .single();

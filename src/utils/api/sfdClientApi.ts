@@ -100,24 +100,23 @@ export const sfdClientApi = {
   // Update client
   async updateClient(clientId: string, updates: Partial<SfdClient>) {
     try {
-      // Convert kyc_level string values to numbers for database
-      let kycLevel = updates.kyc_level;
-      if (updates.kyc_level === 'none') kycLevel = 0;
-      else if (updates.kyc_level === 'basic') kycLevel = 1;
-      else if (updates.kyc_level === 'full') kycLevel = 2;
+      // Convert kyc_level if needed
+      let dbUpdates = { ...updates };
+      if (typeof updates.kyc_level === 'string') {
+        if (updates.kyc_level === 'none') dbUpdates.kyc_level = 0;
+        else if (updates.kyc_level === 'basic') dbUpdates.kyc_level = 1;
+        else if (updates.kyc_level === 'full') dbUpdates.kyc_level = 2;
+      }
 
       const { data, error } = await supabase
         .from('sfd_clients')
-        .update({
-          ...updates,
-          kyc_level: kycLevel
-        })
+        .update(dbUpdates)
         .eq('id', clientId)
         .select()
         .single();
         
       if (error) throw error;
-      return data as SfdClient;
+      return data;
     } catch (error) {
       console.error('Error updating client:', error);
       throw error;

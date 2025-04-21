@@ -35,6 +35,12 @@ export const loanRequestApi = {
         .single();
 
       if (loanError) throw loanError;
+      
+      // Cast the loan data to ensure it conforms to the Loan type
+      const typedLoan: Loan = {
+        ...loan,
+        status: loan.status || 'pending'
+      };
 
       // Get activities in chronological order
       const { data: activities } = await supabase
@@ -44,11 +50,11 @@ export const loanRequestApi = {
         .order('performed_at', { ascending: true });
 
       return {
-        loan,
+        loan: typedLoan,
         activities: activities || [],
-        nextPayment: loan?.next_payment_date ? {
-          date: loan.next_payment_date,
-          amount: loan.monthly_payment
+        nextPayment: typedLoan.next_payment_date ? {
+          date: typedLoan.next_payment_date,
+          amount: typedLoan.monthly_payment
         } : undefined
       };
     } catch (error) {
