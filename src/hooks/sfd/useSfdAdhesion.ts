@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -35,7 +34,6 @@ export function useSfdAdhesion() {
         
         if (requestsError) throw requestsError;
         
-        // Get user's existing SFD connections
         const { data: userSfds, error: userSfdsError } = await supabase
           .from('user_sfds')
           .select('sfd_id')
@@ -46,7 +44,6 @@ export function useSfdAdhesion() {
         const userSfdIds = userSfds?.map(us => us.sfd_id) || [];
         const requestedSfdIds = requests?.map(req => req.sfd_id) || [];
         
-        // Filter out SFDs the user is already connected to or has requested
         const availableSfdsList = (sfds || []).filter(sfd => 
           !userSfdIds.includes(sfd.id) && 
           !requestedSfdIds.includes(sfd.id)
@@ -77,7 +74,6 @@ export function useSfdAdhesion() {
     fetchData();
   }, [user, toast]);
 
-  // Function to request adhesion to a SFD
   const requestSfdAdhesion = async (sfdId: string) => {
     if (!user) {
       toast({
@@ -91,30 +87,32 @@ export function useSfdAdhesion() {
     setIsSubmitting(true);
     
     try {
-      // Get user profile for full name
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('full_name, email, phone')
+        .select('full_name, email')
         .eq('id', user.id)
         .single();
         
       if (profileError) throw profileError;
+      
+      if (!profile) {
+        throw new Error('Profil utilisateur introuvable');
+      }
       
       const { data, error } = await supabase
         .from('client_adhesion_requests')
         .insert({
           user_id: user.id,
           sfd_id: sfdId,
-          full_name: profile?.full_name || 'Utilisateur sans nom',
-          email: profile?.email,
-          phone: profile?.phone,
+          full_name: profile.full_name || 'Utilisateur sans nom',
+          email: profile.email,
+          phone: null,
           status: 'pending'
         })
         .select();
         
       if (error) throw error;
       
-      // Log audit event
       await logAuditEvent({
         user_id: user.id,
         action: 'sfd_adhesion_requested',
@@ -132,7 +130,6 @@ export function useSfdAdhesion() {
         description: 'Votre demande d\'adhésion a été envoyée avec succès',
       });
       
-      // Update local state to reflect the new request
       const sfd = availableSfds.find(s => s.id === sfdId);
       const newRequest: SfdClientRequest = {
         id: data[0].id,
