@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,65 +15,68 @@ export function useSfdAdhesion() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
     
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const { data: sfds, error: sfdsError } = await supabase
-          .from('sfds')
-          .select('id, name, code, region, status, logo_url, description')
-          .eq('status', 'active');
+    setIsLoading(true);
+    try {
+      const { data: sfds, error: sfdsError } = await supabase
+        .from('sfds')
+        .select('id, name, code, region, status, logo_url, description')
+        .eq('status', 'active');
+      
+      if (sfdsError) throw sfdsError;
+      
+      const { data: requests, error: requestsError } = await supabase
+        .from('client_adhesion_requests')
+        .select('id, sfd_id, status, created_at, sfds:sfd_id(name), full_name, email, phone')
+        .eq('user_id', user.id);
+      
+      if (requestsError) throw requestsError;
+      
+      const { data: userSfds, error: userSfdsError } = await supabase
+        .from('user_sfds')
+        .select('sfd_id')
+        .eq('user_id', user.id);
         
-        if (sfdsError) throw sfdsError;
-        
-        const { data: requests, error: requestsError } = await supabase
-          .from('client_adhesion_requests')
-          .select('id, sfd_id, status, created_at, sfds:sfd_id(name)')
-          .eq('user_id', user.id);
-        
-        if (requestsError) throw requestsError;
-        
-        const { data: userSfds, error: userSfdsError } = await supabase
-          .from('user_sfds')
-          .select('sfd_id')
-          .eq('user_id', user.id);
-          
-        if (userSfdsError) throw userSfdsError;
-        
-        const userSfdIds = userSfds?.map(us => us.sfd_id) || [];
-        const requestedSfdIds = requests?.map(req => req.sfd_id) || [];
-        
-        const availableSfdsList = (sfds || []).filter(sfd => 
-          !userSfdIds.includes(sfd.id) && 
-          !requestedSfdIds.includes(sfd.id)
-        );
-        
-        const formattedRequests: SfdClientRequest[] = (requests || []).map(request => ({
-          id: request.id,
-          sfd_id: request.sfd_id,
-          sfd_name: request.sfds?.name,
-          status: request.status,
-          created_at: request.created_at
-        }));
-        
-        setAvailableSfds(availableSfdsList as AvailableSfd[]);
-        setUserRequests(formattedRequests);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        toast({
-          title: 'Erreur',
-          description: 'Impossible de charger les données des SFD',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
+      if (userSfdsError) throw userSfdsError;
+      
+      const userSfdIds = userSfds?.map(us => us.sfd_id) || [];
+      const requestedSfdIds = requests?.map(req => req.sfd_id) || [];
+      
+      const availableSfdsList = (sfds || []).filter(sfd => 
+        !userSfdIds.includes(sfd.id) && 
+        !requestedSfdIds.includes(sfd.id)
+      );
+      
+      const formattedRequests: SfdClientRequest[] = (requests || []).map(request => ({
+        id: request.id,
+        sfd_id: request.sfd_id,
+        sfd_name: request.sfds?.name,
+        full_name: request.full_name,
+        email: request.email,
+        phone: request.phone,
+        status: request.status as 'pending' | 'approved' | 'rejected',
+        created_at: request.created_at
+      }));
+      
+      setAvailableSfds(availableSfdsList as AvailableSfd[]);
+      setUserRequests(formattedRequests);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de charger les données des SFD',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }, [user, toast]);
+  
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const requestSfdAdhesion = async (sfdId: string) => {
     if (!user) {
@@ -157,11 +160,16 @@ export function useSfdAdhesion() {
     }
   };
 
+  const refetch = useCallback(() => {
+    return fetchData();
+  }, [fetchData]);
+
   return {
     availableSfds,
     userRequests,
     isLoading,
     isSubmitting,
-    requestSfdAdhesion
+    requestSfdAdhesion,
+    refetch
   };
 }

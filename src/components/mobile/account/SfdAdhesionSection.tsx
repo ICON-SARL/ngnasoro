@@ -15,7 +15,7 @@ import { AvailableSfd } from '@/components/mobile/profile/sfd-accounts/types/Sfd
 const SfdAdhesionSection: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { availableSfds, userRequests, isLoading, requestSfdAdhesion } = useSfdAdhesion();
+  const { availableSfds, userRequests, isLoading, requestSfdAdhesion, refetch } = useSfdAdhesion();
   
   const handleOpenSfdDialog = (sfd: AvailableSfd) => {
     const existingRequest = userRequests.find(req => req.sfd_id === sfd.id);
@@ -55,8 +55,7 @@ const SfdAdhesionSection: React.FC = () => {
   
   const handleRequestUpdated = () => {
     // Refresh the data when a request is updated
-    const { refetch } = useSfdAdhesion();
-    if (typeof refetch === 'function') {
+    if (refetch) {
       refetch();
     }
   };
