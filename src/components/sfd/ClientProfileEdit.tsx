@@ -1,5 +1,5 @@
+
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -16,19 +16,23 @@ interface ClientProfileEditProps {
   onCancel: () => void;
 }
 
+type KycLevelType = 'none' | 'basic' | 'full' | number;
+
+interface ClientFormState {
+  full_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  id_type: string;
+  id_number: string;
+  kyc_level: KycLevelType;
+  notes: string;
+}
+
 const ClientProfileEdit: React.FC<ClientProfileEditProps> = ({ clientId, onSaved, onCancel }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [client, setClient] = useState<{
-    full_name: string;
-    email: string;
-    phone: string;
-    address: string;
-    id_type: string;
-    id_number: string;
-    kyc_level: 'none' | 'basic' | 'full' | number;
-    notes: string;
-  }>({
+  const [client, setClient] = useState<ClientFormState>({
     full_name: '',
     email: '',
     phone: '',
@@ -52,7 +56,7 @@ const ClientProfileEdit: React.FC<ClientProfileEditProps> = ({ clientId, onSaved
         if (error) throw error;
 
         // Handle kyc_level
-        let kycLevel: 'none' | 'basic' | 'full' | number = data.kyc_level;
+        let kycLevel: KycLevelType = data.kyc_level;
         if (typeof data.kyc_level === 'number') {
           // Keep as number
           kycLevel = data.kyc_level;
@@ -97,9 +101,20 @@ const ClientProfileEdit: React.FC<ClientProfileEditProps> = ({ clientId, onSaved
   };
 
   const handleKycLevelChange = (value: string) => {
+    let kycValue: KycLevelType;
+    
+    // Convert string values to appropriate type
+    if (value === 'none' || value === 'basic' || value === 'full') {
+      kycValue = value;
+    } else {
+      // Try to parse as number if it's not one of the string constants
+      const numValue = parseInt(value, 10);
+      kycValue = isNaN(numValue) ? 'none' : numValue;
+    }
+    
     setClient(prev => ({
       ...prev,
-      kyc_level: value as 'none' | 'basic' | 'full'
+      kyc_level: kycValue
     }));
   };
 
@@ -111,7 +126,7 @@ const ClientProfileEdit: React.FC<ClientProfileEditProps> = ({ clientId, onSaved
       // Convert string kyc_level to number for the database if needed
       let kycLevelToSave: number | string = client.kyc_level;
       
-      // If the kyc_level is a string, convert it to a number
+      // If the kyc_level is a string, convert it to a number for the database
       if (client.kyc_level === 'none') kycLevelToSave = 0;
       else if (client.kyc_level === 'basic') kycLevelToSave = 1;
       else if (client.kyc_level === 'full') kycLevelToSave = 2;
@@ -148,6 +163,14 @@ const ClientProfileEdit: React.FC<ClientProfileEditProps> = ({ clientId, onSaved
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper function to convert kyc_level to string for the select component
+  const getKycLevelString = (level: KycLevelType): string => {
+    if (level === 0 || level === 'none') return 'none';
+    if (level === 1 || level === 'basic') return 'basic';
+    if (level === 2 || level === 'full') return 'full';
+    return 'none'; // Default
   };
 
   return (
@@ -225,7 +248,10 @@ const ClientProfileEdit: React.FC<ClientProfileEditProps> = ({ clientId, onSaved
             </div>
             <div>
               <Label htmlFor="kyc_level">Niveau KYC</Label>
-              <Select value={client.kyc_level} onValueChange={handleKycLevelChange}>
+              <Select 
+                value={getKycLevelString(client.kyc_level)} 
+                onValueChange={handleKycLevelChange}
+              >
                 <SelectTrigger id="kyc_level">
                   <SelectValue placeholder="Sélectionner un niveau" />
                 </SelectTrigger>

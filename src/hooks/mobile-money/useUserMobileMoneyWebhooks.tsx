@@ -4,7 +4,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
-import { MobileMoneyWebhook } from '@/types/sfdClients';
+
+// Define the interface locally to avoid circular dependencies
+export interface MobileMoneyWebhook {
+  id: string;
+  provider: string;
+  reference_id: string;
+  phone_number: string;
+  amount: number;
+  status: string;
+  transaction_type: string;
+  is_verified: boolean;
+  user_id?: string;
+  account_id?: string;
+  created_at: string;
+  processed_at?: string;
+  raw_payload?: any;
+  signature?: string;
+}
 
 export function useUserMobileMoneyWebhooks() {
   const { user } = useAuth();

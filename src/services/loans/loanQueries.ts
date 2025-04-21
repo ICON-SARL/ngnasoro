@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Loan } from '@/types/sfdClients';
 
@@ -18,7 +19,9 @@ export const fetchLoanById = async (loanId: string): Promise<Loan | null> => {
     return null;
   }
   
-  // Format the loan data with client information
+  // Format the loan data with client information and ensure status conforms to the Loan type
+  const status = data.status as Loan['status'];
+  
   const loan: Loan = {
     ...data,
     client_name: data.sfd_clients?.full_name || 'Unknown Client',
@@ -30,9 +33,9 @@ export const fetchLoanById = async (loanId: string): Promise<Loan | null> => {
     interest_rate: data.interest_rate,
     monthly_payment: data.monthly_payment,
     purpose: data.purpose,
-    status: data.status || 'pending',
+    status: status || 'pending',
     created_at: data.created_at,
-    reference: '',
+    reference: data.id.substring(0, 8),
     updated_at: data.created_at,
     subsidy_amount: data.subsidy_amount || 0,
     subsidy_rate: data.subsidy_rate || 0
@@ -84,7 +87,9 @@ export const getSfdLoans = async (sfdId?: string): Promise<Loan[]> => {
         ...loan,
         client_name: loan.sfd_clients?.full_name || 'Client #' + loan.client_id.substring(0, 4),
         status: status || 'pending', // Default to pending if status is invalid
-        // ...other derived fields
+        reference: loan.id.substring(0, 8),
+        subsidy_amount: loan.subsidy_amount || 0,
+        subsidy_rate: loan.subsidy_rate || 0
       } as Loan;
     });
   } catch (error) {

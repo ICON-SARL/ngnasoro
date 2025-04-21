@@ -1,5 +1,17 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { Loan, LoanPayment } from '@/types/sfdClients';
+import { Loan } from '@/types/sfdClients';
+
+export interface LoanPayment {
+  id: string;
+  loan_id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: string;
+  status: string;
+  transaction_id?: string;
+  created_at: string;
+}
 
 // Record loan payment
 export const recordLoanPayment = async (
@@ -42,12 +54,15 @@ export const recordLoanPayment = async (
 
     // Update the loan with the new payment info
     const now = new Date().toISOString();
+    const nextPaymentDate = new Date();
+    nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+    
     await supabase
       .from('sfd_loans')
       .update({
         last_payment_date: now,
         // Calculate next payment date based on monthly schedule
-        next_payment_date: new Date(now).setMonth(new Date(now).getMonth() + 1)
+        next_payment_date: nextPaymentDate.toISOString()
       })
       .eq('id', loanId);
 

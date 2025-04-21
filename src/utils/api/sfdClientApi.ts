@@ -1,7 +1,45 @@
+import { supabase } from '@/integrations/supabase/client';
+import { SfdClient } from '@/types/sfdClients';
 
-import { supabase } from "@/integrations/supabase/client";
-import { SfdClient, ClientDocument, ClientActivity } from "@/types/sfdClients";
-import { useToast } from "@/hooks/use-toast";
+export interface ClientDocument {
+  id: string;
+  client_id: string;
+  document_type: string;
+  document_url: string;
+  uploaded_at: string;
+  status: string;
+  verified: boolean;
+  verified_at?: string;
+  verified_by?: string;
+}
+
+export interface ClientActivity {
+  id: string;
+  client_id: string;
+  activity_type: string;
+  description?: string;
+  performed_at: string;
+  performed_by?: string;
+}
+
+/**
+ * Get all clients for a specific SFD
+ */
+export const getSfdClients = async (sfdId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('sfd_clients')
+      .select('*')
+      .eq('sfd_id', sfdId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data as SfdClient[];
+  } catch (error) {
+    console.error('Error in getSfdClients:', error);
+    return [];
+  }
+};
 
 // SFD Client Management API functions
 export const sfdClientApi = {
@@ -62,9 +100,18 @@ export const sfdClientApi = {
   // Update client
   async updateClient(clientId: string, updates: Partial<SfdClient>) {
     try {
+      // Convert kyc_level string values to numbers for database
+      let kycLevel = updates.kyc_level;
+      if (updates.kyc_level === 'none') kycLevel = 0;
+      else if (updates.kyc_level === 'basic') kycLevel = 1;
+      else if (updates.kyc_level === 'full') kycLevel = 2;
+
       const { data, error } = await supabase
         .from('sfd_clients')
-        .update(updates)
+        .update({
+          ...updates,
+          kyc_level: kycLevel
+        })
         .eq('id', clientId)
         .select()
         .single();
@@ -130,9 +177,16 @@ export const sfdClientApi = {
         .from('client_documents')
         .select('*')
         .eq('client_id', clientId);
-        
+
       if (error) throw error;
-      return data as ClientDocument[];
+      
+      // Add status field to each document to match ClientDocument interface
+      const documentsWithStatus = data.map(doc => ({
+        ...doc,
+        status: doc.verified ? 'verified' : 'pending'
+      }));
+      
+      return documentsWithStatus as ClientDocument[];
     } catch (error) {
       console.error('Error fetching client documents:', error);
       return [];

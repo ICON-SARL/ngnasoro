@@ -1,5 +1,20 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { Loan, CreateLoanInput } from '@/types/sfdClients';
+import { Loan } from '@/types/sfdClients';
+import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
+import { logAuditEvent } from '@/utils/audit/auditLoggerCore';
+
+export interface CreateLoanInput {
+  client_id: string;
+  sfd_id: string;
+  amount: number;
+  duration_months: number;
+  interest_rate: number;
+  purpose: string;
+  loan_plan_id?: string;
+  subsidy_amount?: number;
+  subsidy_rate?: number;
+}
 
 /**
  * Creates a new loan

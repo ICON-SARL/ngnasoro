@@ -29,7 +29,7 @@ export interface Loan {
   interest_rate: number;
   monthly_payment: number;
   purpose: string;
-  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'disbursed' | 'defaulted';
+  status: 'pending' | 'active' | 'rejected' | 'approved' | 'completed' | 'disbursed' | 'defaulted';
   created_at: string;
   approved_at?: string;
   disbursed_at?: string;
@@ -53,6 +53,7 @@ export interface Loan {
   rejection_reason?: string;
   processed_at?: string;
   processed_by?: string;
+  updated_at?: string;
 }
 
 export interface LoanApplication {
@@ -111,6 +112,7 @@ export interface SfdSubsidy {
   used_amount?: number;
   remaining_amount?: number;
   allocated_at?: string;
+  allocated_by?: string;
 }
 
 export interface ClientNotification {
