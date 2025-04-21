@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -89,7 +90,7 @@ export function useSfdAdhesion() {
     try {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('full_name, email')
+        .select('full_name, email, phone')
         .eq('id', user.id)
         .single();
         
@@ -106,7 +107,7 @@ export function useSfdAdhesion() {
           sfd_id: sfdId,
           full_name: profile.full_name || 'Utilisateur sans nom',
           email: profile.email,
-          phone: null,
+          phone: profile.phone || null,
           status: 'pending'
         })
         .select();
