@@ -1,57 +1,56 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Building, Plus } from 'lucide-react';
+import { ArrowRight, ChevronRight } from 'lucide-react';
 import { AvailableSfd } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 
 interface AvailableSfdsListProps {
   sfds: AvailableSfd[];
   onSfdSelect: (sfd: AvailableSfd) => void;
   onViewMore: () => void;
+  maxItems?: number;
 }
 
 const AvailableSfdsList: React.FC<AvailableSfdsListProps> = ({ 
-  sfds,
-  onSfdSelect,
-  onViewMore
+  sfds, 
+  onSfdSelect, 
+  onViewMore, 
+  maxItems = 2 
 }) => {
-  if (!sfds.length) return null;
-
+  if (sfds.length === 0) {
+    return null;
+  }
+  
+  const displayedSfds = sfds.slice(0, maxItems);
+  const hasMore = sfds.length > maxItems;
+  
   return (
     <div className="mt-4">
-      <p className="text-sm font-medium mb-2">SFDs disponibles</p>
-      <div className="grid grid-cols-2 gap-2">
-        {sfds.slice(0, 4).map(sfd => (
-          <Button 
-            key={sfd.id}
-            variant="outline" 
-            className="flex flex-col h-auto items-center justify-center p-3 text-center"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSfdSelect(sfd);
-            }}
-          >
-            <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center mb-1">
-              <Building className="h-4 w-4 text-blue-600" />
-            </div>
-            <span className="text-xs font-medium">{sfd.name}</span>
-          </Button>
-        ))}
-        {sfds.length > 4 && (
-          <Button 
-            variant="outline" 
-            className="flex flex-col h-auto items-center justify-center p-3"
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewMore();
-            }}
-          >
-            <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center mb-1">
-              <Plus className="h-4 w-4 text-gray-600" />
-            </div>
-            <span className="text-xs font-medium">Voir plus</span>
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="font-medium text-sm">SFDs disponibles</h3>
+        {hasMore && (
+          <Button variant="ghost" size="sm" onClick={onViewMore} className="h-7 px-2 text-xs">
+            Voir plus <ChevronRight className="h-3 w-3 ml-1" />
           </Button>
         )}
+      </div>
+      
+      <div className="space-y-2">
+        {displayedSfds.map(sfd => (
+          <div 
+            key={sfd.id}
+            className="p-3 bg-white border border-gray-200 rounded-md flex justify-between items-center cursor-pointer hover:bg-gray-50"
+            onClick={() => onSfdSelect(sfd)}
+          >
+            <div>
+              <p className="font-medium">{sfd.name}</p>
+              <p className="text-xs text-gray-500">{sfd.region || sfd.code}</p>
+            </div>
+            <Button variant="outline" size="sm" className="h-7">
+              Adhérer <ArrowRight className="h-3 w-3 ml-1" />
+            </Button>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -20,6 +20,8 @@ export function useSfdAdhesion() {
     
     setIsLoading(true);
     try {
+      console.log('Fetching SFD adhesion data for user:', user.id);
+      
       // 1. Get all active SFDs
       const { data: sfds, error: sfdsError } = await supabase
         .from('sfds')
@@ -114,6 +116,7 @@ export function useSfdAdhesion() {
       return false;
     }
     
+    console.log(`Attempting to request adhesion to SFD: ${sfdId}`);
     setIsSubmitting(true);
     
     try {
@@ -133,7 +136,18 @@ export function useSfdAdhesion() {
         throw new Error('Profil utilisateur introuvable');
       }
       
+      console.log('User profile retrieved:', profile);
+      
       // Create the adhesion request
+      console.log('Creating adhesion request with data:', {
+        user_id: user.id,
+        sfd_id: sfdId,
+        full_name: profile.full_name || 'Utilisateur sans nom',
+        email: profile.email,
+        phone: profile.phone || null,
+        status: 'pending'
+      });
+      
       const { data, error } = await supabase
         .from('client_adhesion_requests')
         .insert({
@@ -150,6 +164,12 @@ export function useSfdAdhesion() {
         console.error('Error creating adhesion request:', error);
         throw error;
       }
+      
+      if (!data || data.length === 0) {
+        throw new Error('La demande a été créée mais aucune donnée n\'a été retournée');
+      }
+      
+      console.log('Adhesion request created successfully:', data[0]);
       
       // Log audit event
       await logAuditEvent({
@@ -186,11 +206,11 @@ export function useSfdAdhesion() {
       setAvailableSfds(availableSfds.filter(sfd => sfd.id !== sfdId));
       
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error requesting SFD adhesion:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de soumettre votre demande d\'adhésion',
+        description: error.message || 'Impossible de soumettre votre demande d\'adhésion',
         variant: 'destructive',
       });
       return false;

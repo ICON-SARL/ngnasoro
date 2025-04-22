@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building } from 'lucide-react';
+import { Building, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +15,7 @@ import { AvailableSfd } from '@/components/mobile/profile/sfd-accounts/types/Sfd
 const SfdAdhesionSection: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { availableSfds, userRequests, isLoading, requestSfdAdhesion, refetch } = useSfdAdhesion();
+  const { availableSfds, userRequests, isLoading, refetch } = useSfdAdhesion();
   
   const handleOpenSfdDialog = (sfd: AvailableSfd) => {
     const existingRequest = userRequests.find(req => req.sfd_id === sfd.id);
@@ -44,8 +44,8 @@ const SfdAdhesionSection: React.FC = () => {
     navigate(`/mobile-flow/sfd-adhesion/${sfd.id}`);
   };
   
-  const handleGoToSfdSetup = () => {
-    navigate('/sfd-setup');
+  const handleGoToSfdConnection = () => {
+    navigate('/mobile-flow/sfd-connection');
   };
   
   const handleContainerClick = (e: React.MouseEvent) => {
@@ -86,18 +86,18 @@ const SfdAdhesionSection: React.FC = () => {
               <Button 
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleGoToSfdSetup();
+                  handleGoToSfdConnection();
                 }}
                 className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
               >
-                <Building className="h-4 w-4 mr-2" />
-                Gérer mes comptes SFD
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Rejoindre une SFD
               </Button>
               
               <AvailableSfdsList 
                 sfds={availableSfds}
                 onSfdSelect={handleOpenSfdDialog}
-                onViewMore={handleGoToSfdSetup}
+                onViewMore={handleGoToSfdConnection}
               />
             </div>
           </div>

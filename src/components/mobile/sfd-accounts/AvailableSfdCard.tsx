@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Sfd } from '@/types/sfd-types';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
-import { useAvailableSfds } from '@/hooks/sfd/useAvailableSfds';
+import { useToast } from '@/hooks/use-toast';
+import { useSfdAdhesion } from '@/hooks/sfd/useSfdAdhesion';
 import {
   Dialog,
   DialogContent,
@@ -22,9 +23,9 @@ interface AvailableSfdCardProps {
 export const AvailableSfdCard: React.FC<AvailableSfdCardProps> = ({ sfd }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { requestSfdAccess } = useAvailableSfds(user?.id);
+  const { requestSfdAdhesion, isSubmitting } = useSfdAdhesion();
   
   const handleRequestAccess = async () => {
     if (!user) {
@@ -36,15 +37,23 @@ export const AvailableSfdCard: React.FC<AvailableSfdCardProps> = ({ sfd }) => {
   };
   
   const handleConfirmRequest = async () => {
-    setIsSubmitting(true);
     try {
-      const success = await requestSfdAccess(sfd.id);
+      console.log('Confirming adhesion request for SFD:', sfd.id);
+      const success = await requestSfdAdhesion(sfd.id);
+      
       if (success) {
         setIsConfirmDialogOpen(false);
-        navigate('/mobile-flow/main?adhesion_requested=true');
+        
+        toast({
+          title: 'Demande envoyée',
+          description: 'Votre demande d\'adhésion a été envoyée avec succès. Un administrateur la traitera prochainement.',
+        });
+        
+        // Redirection vers la page principale
+        navigate('/mobile-flow/account?adhesion_requested=true');
       }
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      console.error('Error confirming request:', error);
     }
   };
   
