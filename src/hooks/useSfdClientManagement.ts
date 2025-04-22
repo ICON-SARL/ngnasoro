@@ -22,7 +22,8 @@ export function useSfdClientManagement() {
   const { 
     data: clientsData = { clients: [], totalCount: 0 }, 
     isLoading, 
-    error 
+    error,
+    refetch 
   } = useQuery({
     queryKey: ['sfd-clients', activeSfdId, searchTerm, statusFilter, page, pageSize],
     queryFn: async () => {
@@ -193,6 +194,7 @@ export function useSfdClientManagement() {
     selectedClients,
     toggleClientSelection,
     selectAllClients,
-    hasSelectedClients: selectedClients.length > 0
+    hasSelectedClients: selectedClients.length > 0,
+    refetch // Add the refetch function to the returned object
   };
 }

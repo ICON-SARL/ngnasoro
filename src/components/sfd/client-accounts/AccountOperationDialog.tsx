@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { useClientAccountOperations } from '@/hooks/admin/useClientAccountOperations';
+import { useClientAccountOperations } from '@/hooks/useClientAccountOperations'; // Updated import path
 import { useTransactions } from '@/hooks/transactions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BanknoteIcon, ArrowDownIcon, ArrowUpIcon, ReceiptIcon } from 'lucide-react';
