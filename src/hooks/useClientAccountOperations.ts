@@ -43,17 +43,70 @@ export function useClientAccountOperations(clientId: string) {
       setIsLoading(true);
       
       try {
-        // In a real implementation, this would call an API endpoint
-        // For now, we'll simulate a credit operation
-        const { data, error } = await supabase.rpc('credit_client_account', {
-          p_client_id: clientId,
-          p_amount: amount,
-          p_admin_id: user.id,
-          p_description: description || 'Credit operation'
-        });
+        // First, get the current balance
+        const { data: accountData, error: fetchError } = await supabase
+          .from('accounts')
+          .select('balance')
+          .eq('user_id', clientId)
+          .maybeSingle();
         
-        if (error) throw error;
-        return data;
+        if (fetchError) throw fetchError;
+        
+        // Calculate the new balance
+        const newBalance = (accountData?.balance || 0) + amount;
+        
+        // Update the account with the new balance
+        const { error: updateError } = await supabase
+          .from('accounts')
+          .update({ 
+            balance: newBalance,
+            last_updated: new Date().toISOString()
+          })
+          .eq('user_id', clientId);
+        
+        if (updateError) throw updateError;
+        
+        // Create a transaction record
+        const { error: transactionError } = await supabase
+          .from('transactions')
+          .insert({
+            user_id: clientId,
+            amount: Math.abs(amount),
+            type: amount > 0 ? 'deposit' : 'withdrawal',
+            name: amount > 0 ? 'Crédit de compte' : 'Débit de compte',
+            description: description || (amount > 0 ? 'Crédit manuel' : 'Débit manuel'),
+            payment_method: 'admin_operation',
+            status: 'success',
+            sfd_id: user.sfd_id // Assuming user object has sfd_id property
+          });
+        
+        if (transactionError) throw transactionError;
+        
+        // Log the operation in audit logs if available
+        try {
+          await supabase
+            .from('audit_logs')
+            .insert({
+              user_id: user.id,
+              action: amount > 0 ? 'client_account_credited' : 'client_account_debited',
+              category: 'SFD_OPERATIONS',
+              status: 'success',
+              severity: 'info',
+              target_resource: `accounts/${clientId}`,
+              details: {
+                clientId,
+                amount,
+                previousBalance: accountData?.balance || 0,
+                newBalance,
+                description
+              }
+            });
+        } catch (auditError) {
+          console.error('Error logging to audit:', auditError);
+          // Non-critical error, continue operation
+        }
+        
+        return { success: true, newBalance };
       } finally {
         setIsLoading(false);
       }
