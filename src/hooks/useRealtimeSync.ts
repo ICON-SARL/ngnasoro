@@ -2,12 +2,13 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface RealtimeSyncProps {
+interface RealtimeSyncOptions {
   table: string;
   filter?: string;
-  onInsert?: (newRecord: any) => void;
-  onUpdate?: (updatedRecord: any) => void;
-  onDelete?: (deletedRecord: any) => void;
+  onInsert?: (item: any) => void;
+  onUpdate?: (item: any) => void;
+  onDelete?: (item: any) => void;
+  schema?: string;
 }
 
 export function useRealtimeSync({
@@ -15,73 +16,53 @@ export function useRealtimeSync({
   filter,
   onInsert,
   onUpdate,
-  onDelete
-}: RealtimeSyncProps) {
+  onDelete,
+  schema = 'public'
+}: RealtimeSyncOptions) {
   useEffect(() => {
-    // Build the channel name with optional filter
-    let channelName = `realtime:public:${table}`;
-    if (filter) {
-      channelName += `:${filter}`;
-    }
+    console.log(`Setting up realtime sync for ${schema}.${table}${filter ? ` with filter: ${filter}` : ''}`);
     
-    // Create the subscription
-    const channel = supabase.channel(channelName);
+    // Construire l'ID du canal avec le filtre si présent
+    const channelId = `${table}${filter ? `-${filter}` : ''}`;
     
-    // Add event handlers
-    if (onInsert) {
-      channel.on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: table,
-          filter: filter ? filter : undefined
-        },
-        (payload) => {
-          console.log(`New ${table} record inserted:`, payload.new);
-          onInsert(payload.new);
-        }
-      );
-    }
+    // S'abonner aux notifications du canal
+    const channel = supabase
+      .channel(channelId)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema,
+        table,
+        filter
+      }, (payload) => {
+        console.log('INSERT event received:', payload);
+        onInsert?.(payload.new);
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema,
+        table,
+        filter
+      }, (payload) => {
+        console.log('UPDATE event received:', payload);
+        onUpdate?.(payload.new);
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema,
+        table,
+        filter
+      }, (payload) => {
+        console.log('DELETE event received:', payload);
+        onDelete?.(payload.old);
+      })
+      .subscribe((status) => {
+        console.log(`Realtime subscription status for ${channelId}:`, status);
+      });
     
-    if (onUpdate) {
-      channel.on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: table,
-          filter: filter ? filter : undefined
-        },
-        (payload) => {
-          console.log(`${table} record updated:`, payload.new);
-          onUpdate(payload.new);
-        }
-      );
-    }
-    
-    if (onDelete) {
-      channel.on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: table,
-          filter: filter ? filter : undefined
-        },
-        (payload) => {
-          console.log(`${table} record deleted:`, payload.old);
-          onDelete(payload.old);
-        }
-      );
-    }
-    
-    // Subscribe to the channel
-    channel.subscribe();
-      
-    // Clean up the subscription when component unmounts
+    // Nettoyer l'abonnement quand le composant est démonté
     return () => {
+      console.log(`Cleaning up realtime sync for ${channelId}`);
       supabase.removeChannel(channel);
     };
-  }, [table, filter, onInsert, onUpdate, onDelete]);
+  }, [table, filter, onInsert, onUpdate, onDelete, schema]);
 }

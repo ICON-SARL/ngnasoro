@@ -42,22 +42,16 @@ const SfdSelectorPage = () => {
       setIsLoading(true);
       
       try {
-        // 1. Récupérer les SFDs via la fonction Edge
-        console.log('Fetching SFDs from Edge function');
-        const { data: sfdsData, error: sfdsError } = await supabase.functions.invoke('fetch-sfds', {
-          body: { userId: user.id }
-        });
-        
+        // 1. Récupérer toutes les SFDs actives
+        console.log('Fetching SFDs');
+        const { data: sfdsData, error: sfdsError } = await supabase
+          .from('sfds')
+          .select('id, name, code, region, status, logo_url')
+          .eq('status', 'active');
+          
         if (sfdsError) throw sfdsError;
         
-        // Vérifier les données SFDs
-        if (!Array.isArray(sfdsData)) {
-          console.error('Invalid SFDs data format:', sfdsData);
-          throw new Error('Format de données SFD invalide');
-        }
-        
-        console.log(`Loaded ${sfdsData.length} SFDs from Edge function`);
-        setSfds(sfdsData);
+        console.log(`Fetched ${sfdsData?.length || 0} SFDs from database`);
         
         // 2. Récupérer les demandes existantes
         console.log('Fetching existing client adhesion requests');
@@ -71,6 +65,8 @@ const SfdSelectorPage = () => {
         console.log('Existing adhesion requests:', existingReqs);
         setExistingRequests(existingReqs || []);
         console.log(`Found ${existingReqs?.length || 0} existing client adhesion requests`);
+        
+        setSfds(sfdsData || []);
       } catch (err) {
         console.error('Error loading data:', err);
         handleError(err);

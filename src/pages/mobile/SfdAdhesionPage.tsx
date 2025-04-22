@@ -23,7 +23,8 @@ const SfdAdhesionPage: React.FC = () => {
   const { 
     adhesionRequests, 
     isLoadingAdhesionRequests,
-    refetchAdhesionRequests 
+    refetchAdhesionRequests,
+    submitAdhesionRequest
   } = useClientAdhesions();
   
   const [sfdInfo, setSfdInfo] = useState<{ name: string; region?: string } | null>(null);
@@ -31,6 +32,7 @@ const SfdAdhesionPage: React.FC = () => {
   const [sfdError, setSfdError] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [existingData, setExistingData] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Check if we're in edit mode from the URL
   useEffect(() => {
@@ -140,6 +142,57 @@ const SfdAdhesionPage: React.FC = () => {
 
   const handleBackClick = () => {
     navigate('/mobile-flow/sfd-selector');
+  };
+
+  const handleSubmit = async (formData: any) => {
+    if (!sfdId || !user?.id || isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      console.log('Submitting adhesion request with data:', formData);
+      
+      // Si nous avons une demande existante rejetée, supprimons-la d'abord
+      if (existingData && existingData.status === 'rejected') {
+        console.log('Deleting existing rejected request first');
+        
+        const { error: deleteError } = await supabase
+          .from('client_adhesion_requests')
+          .delete()
+          .eq('id', existingData.id);
+          
+        if (deleteError) {
+          console.error('Error deleting existing request:', deleteError);
+          throw deleteError;
+        }
+      }
+      
+      // Créer ou mettre à jour la demande
+      const { success, error } = await submitAdhesionRequest(sfdId, formData);
+      
+      if (!success) {
+        throw new Error(error || 'Échec de la soumission de la demande');
+      }
+      
+      toast({
+        title: 'Demande soumise',
+        description: 'Votre demande d\'adhésion a été soumise avec succès',
+      });
+      
+      // Rediriger vers la page du compte
+      navigate('/mobile-flow/account');
+      
+    } catch (error: any) {
+      console.error('Error submitting adhesion request:', error);
+      
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Une erreur s\'est produite lors de la soumission de votre demande',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!sfdId) {
@@ -264,19 +317,27 @@ const SfdAdhesionPage: React.FC = () => {
                   <AlertTitle className="text-red-800">Demande rejetée</AlertTitle>
                   <AlertDescription className="text-red-700">
                     <p>Votre demande d'adhésion a été rejetée.</p>
-                    {existingRequest.notes && (
-                      <div className="mt-2 p-2 bg-white/50 rounded-md">
-                        <strong>Raison du rejet:</strong> {existingRequest.notes}
-                      </div>
+                    {existingRequest.rejection_reason && (
+                      <p className="mt-1 text-sm">Raison: {existingRequest.rejection_reason}</p>
                     )}
                     <div className="mt-3 flex gap-2">
                       <Button 
                         variant="outline" 
                         size="sm" 
                         className="bg-white text-red-600 border-red-300 hover:bg-red-50"
-                        onClick={() => setIsEditMode(true)}
+                        onClick={handleBackClick}
                       >
-                        <Edit2 className="h-3 w-3 mr-1" /> Modifier et réessayer
+                        Retour
+                      </Button>
+                      <Button 
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                        size="sm" 
+                        onClick={() => {
+                          setIsEditMode(true);
+                          setExistingData(existingRequest);
+                        }}
+                      >
+                        <RefreshCw className="h-3 w-3 mr-1" /> Réessayer
                       </Button>
                     </div>
                   </AlertDescription>
@@ -284,44 +345,11 @@ const SfdAdhesionPage: React.FC = () => {
               )}
             </div>
           ) : (
-            sfdInfo ? (
-              <div>
-                {isEditMode && existingRequest && (
-                  <Alert className="mb-4 bg-blue-50 border-blue-200">
-                    <Edit2 className="h-4 w-4 text-blue-600" />
-                    <AlertTitle className="text-blue-800">Mode modification</AlertTitle>
-                    <AlertDescription className="text-blue-700">
-                      Vous modifiez votre demande existante. Mettez à jour les informations nécessaires et soumettez à nouveau.
-                    </AlertDescription>
-                  </Alert>
-                )}
-                <NewAdhesionRequestForm 
-                  sfdId={sfdId}
-                  initialData={existingData}
-                  isEdit={isEditMode} 
-                  onSuccess={() => {
-                    toast({
-                      title: isEditMode ? "Demande mise à jour" : "Demande envoyée",
-                      description: isEditMode 
-                        ? "Votre demande d'adhésion a été mise à jour avec succès" 
-                        : "Votre demande d'adhésion a été envoyée avec succès"
-                    });
-                    refetchAdhesionRequests();
-                    if (isEditMode) {
-                      setIsEditMode(false);
-                    }
-                    navigate('/mobile-flow/sfd-selector');
-                  }}
-                />
-              </div>
-            ) : (
-              <Alert>
-                <AlertTitle>Impossible de charger la SFD</AlertTitle>
-                <AlertDescription>
-                  Impossible de charger les informations de cette SFD. Veuillez réessayer ultérieurement.
-                </AlertDescription>
-              </Alert>
-            )
+            <NewAdhesionRequestForm
+              onSubmit={handleSubmit}
+              initialData={isEditMode ? existingData : null}
+              isSubmitting={isSubmitting}
+            />
           )}
         </CardContent>
       </Card>

@@ -67,7 +67,7 @@ export function useSfdAdhesion() {
       
       // Filter out SFDs the user already has or has requested
       const userSfdIds = userSfds?.map(us => us.sfd_id) || [];
-      const requestedSfdIds = requests?.map(req => req.sfd_id) || [];
+      const requestedSfdIds = requests?.filter(req => req.status !== 'rejected').map(req => req.sfd_id) || [];
       
       const availableSfdsList = (sfds || []).filter(sfd => 
         !userSfdIds.includes(sfd.id) && 
