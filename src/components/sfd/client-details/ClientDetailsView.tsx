@@ -67,7 +67,7 @@ const ClientDetailsView: React.FC<ClientDetailsViewProps> = ({ client, onClose }
                 />
                 <ClientSavingsAccount
                   clientId={client.id}
-                  sfdId={client.sfd_id}
+                  clientName={client.full_name}
                 />
               </div>
             </TabsContent>

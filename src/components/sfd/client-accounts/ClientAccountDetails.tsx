@@ -21,7 +21,7 @@ const ClientAccountDetails: React.FC<ClientAccountDetailsProps> = ({
   phone
 }) => {
   const [isOperationDialogOpen, setIsOperationDialogOpen] = useState(false);
-  const { balance, currency, isLoading, refetchBalance } = useClientAccountOperations(clientId);
+  const { balance, currency, isLoading, refetchBalance, creditAccount } = useClientAccountOperations(clientId);
 
   const handleOperationComplete = () => {
     refetchBalance();
