@@ -1,16 +1,15 @@
-
 import React from 'react';
 import { Wallet, SaveAll, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-
 interface TransferOptionsProps {
   onWithdraw: () => void;
   onDeposit: () => void;
 }
-
-const TransferOptions: React.FC<TransferOptionsProps> = ({ onWithdraw, onDeposit }) => {
-  return (
-    <div className="space-y-4">
+const TransferOptions: React.FC<TransferOptionsProps> = ({
+  onWithdraw,
+  onDeposit
+}) => {
+  return <div className="space-y-4">
       <Card className="border hover:border-primary cursor-pointer" onClick={onWithdraw}>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
@@ -19,7 +18,7 @@ const TransferOptions: React.FC<TransferOptionsProps> = ({ onWithdraw, onDeposit
                 <Wallet className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-medium">Mobile Money - Retrait</h3>
+                <h3 className="font-medium">Retrait</h3>
                 <p className="text-xs text-gray-500">Retirez via votre compte mobile money</p>
               </div>
             </div>
@@ -36,7 +35,7 @@ const TransferOptions: React.FC<TransferOptionsProps> = ({ onWithdraw, onDeposit
                 <SaveAll className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-medium">Mobile Money - Dépôt</h3>
+                <h3 className="font-medium">Dépôt</h3>
                 <p className="text-xs text-gray-500">Déposez via votre compte mobile money</p>
               </div>
             </div>
@@ -44,8 +43,6 @@ const TransferOptions: React.FC<TransferOptionsProps> = ({ onWithdraw, onDeposit
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default TransferOptions;
