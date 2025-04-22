@@ -6,7 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { useClientAccountOperations } from '@/components/admin/hooks/sfd-client/useClientAccountOperations';
+import { useClientAccountOperations } from '@/hooks/admin/useClientAccountOperations';
+import { useTransactions } from '@/hooks/transactions';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BanknoteIcon, ArrowDownIcon, ArrowUpIcon, ReceiptIcon } from 'lucide-react';
 
 interface AccountOperationDialogProps {
   isOpen: boolean;
@@ -26,8 +29,19 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
   const [amount, setAmount] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [operationType, setOperationType] = useState<'credit' | 'debit'>('credit');
+  const [activeTab, setActiveTab] = useState<string>('basic');
   const { toast } = useToast();
-  const { creditAccount, isLoading } = useClientAccountOperations(clientId);
+  const { isLoading: isClientAccountLoading } = useClientAccountOperations(clientId);
+  const { makeDeposit, makeWithdrawal, isLoading: isTransactionLoading } = useTransactions(clientId);
+  
+  const isLoading = isClientAccountLoading || isTransactionLoading;
+  
+  const resetForm = () => {
+    setAmount('');
+    setDescription('');
+    setOperationType('credit');
+    setActiveTab('basic');
+  };
   
   const handleSubmit = async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -42,93 +56,145 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
     const amountValue = parseFloat(amount);
     
     try {
-      // For credit, we use positive amount, for debit we use negative amount
-      const operationAmount = operationType === 'credit' ? amountValue : -amountValue;
-      const operationDescription = `${operationType === 'credit' ? 'Crédit' : 'Débit'}: ${description || 'Opération manuelle'}`;
+      if (operationType === 'credit') {
+        await makeDeposit(amountValue, description || 'Dépôt manuel', 'sfd_account');
+        toast({
+          title: "Dépôt réussi",
+          description: `${amountValue.toLocaleString('fr-FR')} FCFA ont été déposés sur le compte client`,
+        });
+      } else {
+        await makeWithdrawal(amountValue, description || 'Retrait manuel', 'sfd_account');
+        toast({
+          title: "Retrait réussi",
+          description: `${amountValue.toLocaleString('fr-FR')} FCFA ont été retirés du compte client`,
+        });
+      }
       
-      await creditAccount.mutateAsync({ 
-        amount: operationAmount, 
-        description: operationDescription 
-      });
-      
-      toast({
-        title: "Opération réussie",
-        description: `Compte ${operationType === 'credit' ? 'crédité' : 'débité'} de ${amount} FCFA`,
-      });
-      
-      setAmount('');
-      setDescription('');
+      resetForm();
       onOperationComplete();
       onClose();
     } catch (error: any) {
       toast({
         title: "Erreur",
-        description: error.message || `Impossible de ${operationType === 'credit' ? 'créditer' : 'débiter'} le compte`,
+        description: error.message || `Impossible d'effectuer l'opération`,
         variant: "destructive",
       });
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={() => {
+      resetForm();
+      onClose();
+    }}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Opération sur le compte de {clientName}</DialogTitle>
           <DialogDescription>
-            Effectuer un crédit ou un débit sur le compte client
+            Effectuer un dépôt ou un retrait sur le compte client
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
-          <RadioGroup 
-            defaultValue="credit" 
-            value={operationType}
-            onValueChange={(value) => setOperationType(value as 'credit' | 'debit')}
-            className="flex space-x-4"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="credit" id="credit" />
-              <Label htmlFor="credit" className="font-medium">Crédit</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="debit" id="debit" />
-              <Label htmlFor="debit" className="font-medium">Débit</Label>
-            </div>
-          </RadioGroup>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-2">
+            <TabsTrigger value="basic">Opération standard</TabsTrigger>
+            <TabsTrigger value="advanced">Options avancées</TabsTrigger>
+          </TabsList>
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="amount" className="text-right">
-              Montant
-            </Label>
-            <div className="col-span-3 relative">
-              <Input
-                id="amount"
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                min="0"
-                className="pr-16"
-                placeholder="0"
-              />
-              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                FCFA
-              </span>
+          <TabsContent value="basic" className="mt-4">
+            <div className="grid gap-4 py-4">
+              <div className="flex justify-around">
+                <Button
+                  type="button"
+                  variant={operationType === 'credit' ? 'default' : 'outline'}
+                  onClick={() => setOperationType('credit')}
+                  className={operationType === 'credit' ? 'bg-[#0D6A51] hover:bg-[#0D6A51]/90' : ''}
+                >
+                  <ArrowDownIcon className="mr-2 h-4 w-4" />
+                  Dépôt
+                </Button>
+                <Button
+                  type="button"
+                  variant={operationType === 'debit' ? 'default' : 'outline'}
+                  onClick={() => setOperationType('debit')}
+                  className={operationType === 'debit' ? 'bg-[#0D6A51] hover:bg-[#0D6A51]/90' : ''}
+                >
+                  <ArrowUpIcon className="mr-2 h-4 w-4" />
+                  Retrait
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="amount" className="text-right">
+                  Montant
+                </Label>
+                <div className="col-span-3 relative">
+                  <Input
+                    id="amount"
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    min="1"
+                    step="100"
+                    className="pr-16"
+                    placeholder="0"
+                  />
+                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    FCFA
+                  </span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  Description
+                </Label>
+                <Input
+                  id="description"
+                  className="col-span-3"
+                  placeholder="Motif de l'opération (optionnel)"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </div>
             </div>
-          </div>
+          </TabsContent>
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="description" className="text-right">
-              Description
-            </Label>
-            <Input
-              id="description"
-              className="col-span-3"
-              placeholder="Motif de l'opération (optionnel)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-        </div>
+          <TabsContent value="advanced" className="mt-4">
+            <div className="grid gap-4 py-4">
+              <RadioGroup 
+                defaultValue="cash" 
+                className="grid grid-cols-2 gap-4"
+              >
+                <div className="flex items-center space-x-2 border rounded-md p-3">
+                  <RadioGroupItem value="cash" id="cash" />
+                  <Label htmlFor="cash" className="flex items-center cursor-pointer">
+                    <BanknoteIcon className="h-4 w-4 mr-2" />
+                    Espèces
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 border rounded-md p-3">
+                  <RadioGroupItem value="mobile" id="mobile" />
+                  <Label htmlFor="mobile" className="flex items-center cursor-pointer">
+                    <ReceiptIcon className="h-4 w-4 mr-2" />
+                    Mobile Money
+                  </Label>
+                </div>
+              </RadioGroup>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="ref-number" className="text-right">
+                  N° Référence
+                </Label>
+                <Input
+                  id="ref-number"
+                  className="col-span-3"
+                  placeholder="Numéro de référence (optionnel)"
+                />
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
         
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
