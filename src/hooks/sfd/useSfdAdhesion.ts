@@ -20,27 +20,50 @@ export function useSfdAdhesion() {
     
     setIsLoading(true);
     try {
+      // 1. Get all active SFDs
       const { data: sfds, error: sfdsError } = await supabase
         .from('sfds')
         .select('id, name, code, region, status, logo_url, description')
         .eq('status', 'active');
       
-      if (sfdsError) throw sfdsError;
+      if (sfdsError) {
+        console.error('Error fetching SFDs:', sfdsError);
+        throw sfdsError;
+      }
       
+      if (!sfds || sfds.length === 0) {
+        console.log('No active SFDs found');
+      } else {
+        console.log(`Found ${sfds.length} active SFDs`);
+      }
+      
+      // 2. Get user's existing requests
       const { data: requests, error: requestsError } = await supabase
         .from('client_adhesion_requests')
         .select('id, sfd_id, status, created_at, sfds:sfd_id(name), full_name, email, phone')
         .eq('user_id', user.id);
       
-      if (requestsError) throw requestsError;
+      if (requestsError) {
+        console.error('Error fetching user requests:', requestsError);
+        throw requestsError;
+      }
       
+      console.log(`Found ${requests?.length || 0} existing client requests`);
+      
+      // 3. Get user's existing SFD associations
       const { data: userSfds, error: userSfdsError } = await supabase
         .from('user_sfds')
         .select('sfd_id')
         .eq('user_id', user.id);
         
-      if (userSfdsError) throw userSfdsError;
+      if (userSfdsError) {
+        console.error('Error fetching user SFDs:', userSfdsError);
+        throw userSfdsError;
+      }
       
+      console.log(`Found ${userSfds?.length || 0} existing user SFD associations`);
+      
+      // Filter out SFDs the user already has or has requested
       const userSfdIds = userSfds?.map(us => us.sfd_id) || [];
       const requestedSfdIds = requests?.map(req => req.sfd_id) || [];
       
@@ -49,6 +72,9 @@ export function useSfdAdhesion() {
         !requestedSfdIds.includes(sfd.id)
       );
       
+      console.log(`After filtering, ${availableSfdsList.length} SFDs are available to join`);
+      
+      // Format the requests data
       const formattedRequests: SfdClientRequest[] = (requests || []).map(request => ({
         id: request.id,
         sfd_id: request.sfd_id,
@@ -91,18 +117,23 @@ export function useSfdAdhesion() {
     setIsSubmitting(true);
     
     try {
+      // Get user profile data for the request
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('full_name, email, phone')
         .eq('id', user.id)
         .single();
         
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        throw profileError;
+      }
       
       if (!profile) {
         throw new Error('Profil utilisateur introuvable');
       }
       
+      // Create the adhesion request
       const { data, error } = await supabase
         .from('client_adhesion_requests')
         .insert({
@@ -115,8 +146,12 @@ export function useSfdAdhesion() {
         })
         .select();
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating adhesion request:', error);
+        throw error;
+      }
       
+      // Log audit event
       await logAuditEvent({
         user_id: user.id,
         action: 'sfd_adhesion_requested',
@@ -134,13 +169,17 @@ export function useSfdAdhesion() {
         description: 'Votre demande d\'adhésion a été envoyée avec succès',
       });
       
+      // Update local state
       const sfd = availableSfds.find(s => s.id === sfdId);
       const newRequest: SfdClientRequest = {
         id: data[0].id,
         sfd_id: sfdId,
         sfd_name: sfd?.name,
         status: 'pending',
-        created_at: data[0].created_at
+        created_at: data[0].created_at,
+        full_name: profile.full_name || 'Utilisateur sans nom',
+        email: profile.email,
+        phone: profile.phone || null
       };
       
       setUserRequests([...userRequests, newRequest]);

@@ -16,6 +16,7 @@ export default function SfdConnectionPage() {
     queryKey: ['active-sfds'],
     queryFn: async () => {
       try {
+        console.log('Fetching active SFDs from database...');
         // First try direct database query
         const { data: directData, error: directError } = await supabase
           .from('sfds')
@@ -29,9 +30,11 @@ export default function SfdConnectionPage() {
         }
         
         if (directData && directData.length > 0) {
+          console.log(`Found ${directData.length} active SFDs`);
           return directData as Sfd[];
         }
         
+        console.log('No active SFDs found');
         // Return empty array if no SFDs found
         return [] as Sfd[];
       } catch (error) {

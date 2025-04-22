@@ -23,6 +23,8 @@ export function useSfdAdhesionRequests() {
     }
 
     setIsProcessing(true);
+    console.log(`Processing adhesion request ${requestId} with action ${action}`);
+    
     try {
       const status = action === 'approve' ? 'approved' : 'rejected';
       const updateData: any = {
@@ -38,13 +40,18 @@ export function useSfdAdhesionRequests() {
         updateData.notes = notes;
       }
 
+      // Update the request status
       const { error } = await supabase
         .from('client_adhesion_requests')
         .update(updateData)
         .eq('id', requestId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating adhesion request:', error);
+        throw error;
+      }
 
+      // Log the action
       await supabase.from('audit_logs').insert({
         user_id: user.id,
         action: `adhesion_request_${action}ed`,
@@ -55,6 +62,7 @@ export function useSfdAdhesionRequests() {
         details: { requestId, action, notes }
       });
 
+      // Get the request data for notifications
       const { data: requestData } = await supabase
         .from('client_adhesion_requests')
         .select('user_id, full_name, sfd_id')
@@ -62,6 +70,7 @@ export function useSfdAdhesionRequests() {
         .single();
 
       if (requestData) {
+        // Create notification for the client
         await supabase.from('admin_notifications').insert({
           recipient_id: requestData.user_id,
           sender_id: user.id,
@@ -74,15 +83,21 @@ export function useSfdAdhesionRequests() {
         });
       }
 
+      // If approved, create client record and account
       if (action === 'approve' && requestData) {
+        console.log(`Creating client record for user ${requestData.user_id} in SFD ${requestData.sfd_id}`);
+        
+        // Check if client already exists
         const { data: existingClient } = await supabase
           .from('sfd_clients')
           .select('id')
           .eq('user_id', requestData.user_id)
+          .eq('sfd_id', requestData.sfd_id)
           .maybeSingle();
 
         if (!existingClient) {
-          await supabase
+          // Create new client record
+          const { error: clientError } = await supabase
             .from('sfd_clients')
             .insert({
               full_name: requestData.full_name,
@@ -92,13 +107,104 @@ export function useSfdAdhesionRequests() {
               validated_by: user.id,
               validated_at: new Date().toISOString()
             });
+            
+          if (clientError) {
+            console.error('Error creating client record:', clientError);
+            throw clientError;
+          }
+          
+          console.log('Client record created successfully');
+          
+          // Create account for the client if it doesn't exist
+          const { data: existingAccount } = await supabase
+            .from('accounts')
+            .select('id')
+            .eq('user_id', requestData.user_id)
+            .maybeSingle();
+            
+          if (!existingAccount) {
+            console.log(`Creating account for user ${requestData.user_id}`);
+            const { error: accountError } = await supabase
+              .from('accounts')
+              .insert({
+                user_id: requestData.user_id,
+                balance: 0,
+                currency: 'FCFA',
+                sfd_id: requestData.sfd_id
+              });
+              
+            if (accountError) {
+              console.error('Error creating client account:', accountError);
+              // Don't throw here, just log the error as the client is already created
+              // We can try to create the account later
+            } else {
+              console.log('Client account created successfully');
+            }
+          } else {
+            console.log(`Account already exists for user ${requestData.user_id}`);
+          }
+          
+          // Create user_sfds relationship
+          const { data: existingUserSfd } = await supabase
+            .from('user_sfds')
+            .select('id')
+            .eq('user_id', requestData.user_id)
+            .eq('sfd_id', requestData.sfd_id)
+            .maybeSingle();
+            
+          if (!existingUserSfd) {
+            console.log(`Creating user_sfds relationship for user ${requestData.user_id} and SFD ${requestData.sfd_id}`);
+            
+            // Count existing user_sfds to determine if this should be default
+            const { count } = await supabase
+              .from('user_sfds')
+              .select('id', { count: 'exact' })
+              .eq('user_id', requestData.user_id);
+              
+            const isDefault = count === 0; // Make default if first SFD
+            
+            const { error: sfdRelError } = await supabase
+              .from('user_sfds')
+              .insert({
+                user_id: requestData.user_id,
+                sfd_id: requestData.sfd_id,
+                is_default: isDefault
+              });
+              
+            if (sfdRelError) {
+              console.error('Error creating user_sfds relationship:', sfdRelError);
+              // Don't throw here, just log the error
+            } else {
+              console.log('User_sfds relationship created successfully');
+            }
+          } else {
+            console.log(`User_sfds relationship already exists for user ${requestData.user_id} and SFD ${requestData.sfd_id}`);
+          }
+        } else {
+          console.log(`Client already exists with ID ${existingClient.id}`);
+          
+          // Update client status to active if it wasn't
+          await supabase
+            .from('sfd_clients')
+            .update({
+              status: 'active',
+              validated_by: user.id,
+              validated_at: new Date().toISOString()
+            })
+            .eq('id', existingClient.id);
         }
       }
 
+      // Invalidate related queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['adhesion-requests'] });
       return { success: true };
     } catch (error: any) {
       console.error('Error processing adhesion request:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Une erreur est survenue lors du traitement de la demande',
+        variant: 'destructive',
+      });
       return { 
         success: false, 
         error: error.message || 'Une erreur est survenue lors du traitement de la demande'
@@ -145,6 +251,7 @@ export function useSfdAdhesionRequests() {
         details: { sfdId, clientName: input.full_name }
       });
 
+      queryClient.invalidateQueries({ queryKey: ['adhesion-requests'] });
       return { success: true, data };
     } catch (error: any) {
       console.error('Error submitting adhesion request:', error);
