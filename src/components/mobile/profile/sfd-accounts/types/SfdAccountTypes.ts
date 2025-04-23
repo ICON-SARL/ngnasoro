@@ -10,6 +10,7 @@ export interface SfdClientRequest {
   created_at: string;
 }
 
+// Updated to match the structure used in useSfdAdhesion.ts
 export interface AvailableSfd {
   id: string;
   name: string;

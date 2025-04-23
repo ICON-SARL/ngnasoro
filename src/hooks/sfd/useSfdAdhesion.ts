@@ -12,6 +12,7 @@ export interface AvailableSfd {
   region?: string;
   description?: string;
   logo_url?: string;
+  status: string; // Added status property to match SfdAccountTypes.AvailableSfd
 }
 
 export function useSfdAdhesion() {
@@ -33,7 +34,7 @@ export function useSfdAdhesion() {
       // 1. Récupérer toutes les SFDs actives
       const { data: sfds, error: sfdsError } = await supabase
         .from('sfds')
-        .select('id, name, code, region, description, logo_url')
+        .select('id, name, code, region, description, logo_url, status')
         .eq('status', 'active');
         
       if (sfdsError) {
@@ -147,7 +148,7 @@ export function useSfdAdhesion() {
         toast({
           title: 'Demande existante',
           description: 'Vous avez déjà une demande pour cette SFD',
-          variant: 'warning',
+          variant: 'destructive',  // Changed from 'warning' to 'destructive'
         });
         return false;
       }
