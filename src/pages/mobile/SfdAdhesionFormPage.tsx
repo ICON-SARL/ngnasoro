@@ -11,7 +11,6 @@ const SfdAdhesionFormPage: React.FC = () => {
   const { sfdId } = useParams<{ sfdId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { submitAdhesionRequest } = useSfdAdhesionRequests();
 
   const handleSuccess = () => {
     toast({
@@ -35,7 +34,7 @@ const SfdAdhesionFormPage: React.FC = () => {
       
       {sfdId ? (
         <NewAdhesionRequestForm 
-          sfdId={sfdId} 
+          sfdId={sfdId}
           onSuccess={handleSuccess}
         />
       ) : (

@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useSfdAdhesionRequests } from '@/hooks/useSfdAdhesionRequests';
 
 // Définir le schéma de validation du formulaire
 const formSchema = z.object({
@@ -42,17 +43,23 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface NewAdhesionRequestFormProps {
-  onSubmit: (data: FormValues) => void;
+export interface NewAdhesionRequestFormProps {
+  sfdId: string; // Added sfdId prop
+  onSubmit?: (data: FormValues) => void;
   initialData?: any;
   isSubmitting?: boolean;
+  onSuccess?: () => void;
 }
 
 export const NewAdhesionRequestForm: React.FC<NewAdhesionRequestFormProps> = ({
+  sfdId,
   onSubmit,
   initialData,
   isSubmitting = false,
+  onSuccess,
 }) => {
+  const { submitAdhesionRequest, isSubmitting: isSubmittingRequest } = useSfdAdhesionRequests();
+
   // Initialiser le formulaire avec react-hook-form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -67,8 +74,20 @@ export const NewAdhesionRequestForm: React.FC<NewAdhesionRequestFormProps> = ({
     },
   });
 
-  const handleSubmit = (values: FormValues) => {
-    onSubmit(values);
+  const handleSubmit = async (values: FormValues) => {
+    if (onSubmit) {
+      onSubmit(values);
+      return;
+    }
+
+    try {
+      const result = await submitAdhesionRequest(sfdId, values);
+      if (result.success && onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error('Error submitting adhesion request:', error);
+    }
   };
 
   return (
@@ -182,8 +201,8 @@ export const NewAdhesionRequestForm: React.FC<NewAdhesionRequestFormProps> = ({
           )}
         />
 
-        <Button type="submit" className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90" disabled={isSubmitting}>
-          {isSubmitting ? (
+        <Button type="submit" className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90" disabled={isSubmitting || isSubmittingRequest}>
+          {isSubmitting || isSubmittingRequest ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Envoi en cours...
             </>

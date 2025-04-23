@@ -3,7 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Clock, CheckCircle, XCircle, Building, Edit2 } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  Building, 
+  Edit2,
+  RefreshCw  // Added missing icon import
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { NewAdhesionRequestForm } from '@/components/client/NewAdhesionRequestForm';

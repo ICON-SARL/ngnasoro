@@ -1,8 +1,8 @@
 
 export interface AdhesionRequestInput {
   full_name: string;
-  email?: string;
-  phone?: string;
+  email: string; // Changed from optional to required to match useClientAdhesions type
+  phone: string; // Changed from optional to required as well for consistency
   address?: string;
   profession?: string;
   monthly_income?: string;
