@@ -1,4 +1,5 @@
 
+
 export interface SfdClientRequest {
   id: string;
   sfd_id: string;
@@ -14,7 +15,7 @@ export interface SfdClientRequest {
 export interface AvailableSfd {
   id: string;
   name: string;
-  code: string;
+  code: string;  // Keep this required for backward compatibility
   region?: string;
   status: string;
   logo_url?: string;
@@ -33,3 +34,4 @@ export interface SfdAccountDisplay {
   isVerified: boolean;
   status?: string;
 }
+

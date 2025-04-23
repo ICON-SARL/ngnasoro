@@ -1,18 +1,18 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ClientAdhesionRequest } from '@/types/adhesionTypes';
+import { AvailableSfd as SfdAccountTypesAvailableSfd } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 
 export interface AvailableSfd {
   id: string;
   name: string;
-  code?: string;
+  code: string;
   region?: string;
   description?: string;
   logo_url?: string;
-  status: string; // Added status property to match SfdAccountTypes.AvailableSfd
+  status: string;
 }
 
 export function useSfdAdhesion() {
@@ -31,7 +31,6 @@ export function useSfdAdhesion() {
     try {
       console.log('Fetching SFD data for user:', user.id);
       
-      // 1. Récupérer toutes les SFDs actives
       const { data: sfds, error: sfdsError } = await supabase
         .from('sfds')
         .select('id, name, code, region, description, logo_url, status')
@@ -42,9 +41,6 @@ export function useSfdAdhesion() {
         throw sfdsError;
       }
       
-      console.log(`Found ${sfds?.length || 0} active SFDs`);
-      
-      // 2. Récupérer les demandes d'adhésion de l'utilisateur
       const { data: requests, error: requestsError } = await supabase
         .from('client_adhesion_requests')
         .select(`
@@ -64,9 +60,6 @@ export function useSfdAdhesion() {
         throw requestsError;
       }
       
-      console.log(`Found ${requests?.length || 0} user requests`);
-      
-      // 3. Récupérer les SFDs auxquelles l'utilisateur est déjà associé
       const { data: userSfds, error: userSfdsError } = await supabase
         .from('user_sfds')
         .select('sfd_id')
@@ -77,12 +70,8 @@ export function useSfdAdhesion() {
         throw userSfdsError;
       }
       
-      console.log(`User has ${userSfds?.length || 0} associated SFDs`);
-      
-      // Filtrer les SFDs déjà associées
       const userSfdIds = userSfds?.map(us => us.sfd_id) || [];
       
-      // Convertir les demandes en objets ClientAdhesionRequest
       const formattedRequests = requests?.map(req => ({
         id: req.id,
         user_id: req.user_id,
@@ -95,9 +84,6 @@ export function useSfdAdhesion() {
         sfds: req.sfds
       })) || [];
       
-      // Inclure toutes les SFDs actives sauf celles déjà associées à l'utilisateur
-      // Noter que nous autorisons maintenant l'affichage d'une SFD même si l'utilisateur a déjà
-      // une demande en cours pour cette SFD, pour permettre de la visualiser
       const filteredSfds = sfds?.filter(sfd => !userSfdIds.includes(sfd.id)) || [];
       
       console.log(`After filtering, ${filteredSfds.length} SFDs are available`);
@@ -135,7 +121,6 @@ export function useSfdAdhesion() {
     try {
       console.log('Requesting adhesion for SFD:', sfdId);
       
-      // Vérifier si une demande existe déjà pour ce SFD et cet utilisateur
       const { data: existingRequest } = await supabase
         .from('client_adhesion_requests')
         .select('id, status')
@@ -143,17 +128,15 @@ export function useSfdAdhesion() {
         .eq('sfd_id', sfdId)
         .maybeSingle();
         
-      // Si une demande existe et n'est pas rejetée, informer l'utilisateur
       if (existingRequest && existingRequest.status !== 'rejected') {
         toast({
           title: 'Demande existante',
           description: 'Vous avez déjà une demande pour cette SFD',
-          variant: 'destructive',  // Changed from 'warning' to 'destructive'
+          variant: 'destructive',
         });
         return false;
       }
       
-      // Si une demande rejetée existe, la supprimer d'abord
       if (existingRequest && existingRequest.status === 'rejected') {
         console.log('Deleting existing rejected request:', existingRequest.id);
         await supabase
@@ -162,14 +145,12 @@ export function useSfdAdhesion() {
           .eq('id', existingRequest.id);
       }
       
-      // Récupérer les informations de profil de l'utilisateur
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name, email')
         .eq('id', user.id)
         .single();
       
-      // Créer une nouvelle demande d'adhésion
       const { data: newRequest, error } = await supabase
         .from('client_adhesion_requests')
         .insert({
@@ -194,7 +175,6 @@ export function useSfdAdhesion() {
         description: 'Votre demande d\'adhésion a été envoyée avec succès',
       });
       
-      // Rafraîchir les données
       await fetchData();
       
       return true;

@@ -10,7 +10,7 @@ export { default as AccountsListContent } from './components/AccountsListContent
 export { default as SfdSelector } from './SfdSelector';
 
 // Types
-export type { SfdAccountDisplay, AvailableSfd } from './types/SfdAccountTypes';
+export type { SfdAccountDisplay, AvailableSfd, SfdClientRequest } from './types/SfdAccountTypes';
 
 // Utils
 export { sortAccounts } from './utils/accountSorter';
