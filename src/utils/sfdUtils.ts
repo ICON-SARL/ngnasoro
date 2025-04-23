@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 /**
@@ -7,24 +8,24 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export const verifySfdHasAdmins = async (sfdId: string): Promise<boolean> => {
   try {
-    // Vérifie les associations dans user_sfds pour les utilisateurs avec rôle sfd_admin
-    const { data, error } = await supabase
+    // Récupère les utilisateurs associés à cette SFD
+    const { data: userSfdsData, error: userSfdsError } = await supabase
       .from('user_sfds')
       .select('user_id')
       .eq('sfd_id', sfdId);
 
-    if (error) {
-      console.error('Error verifying SFD admins:', error);
+    if (userSfdsError) {
+      console.error('Error fetching user-SFD associations:', userSfdsError);
       return false;
     }
 
     // Si aucune association n'est trouvée, retourner false
-    if (!data || data.length === 0) {
+    if (!userSfdsData || userSfdsData.length === 0) {
       return false;
     }
 
-    // Récupérer les IDs des utilisateurs associés pour vérifier leurs rôles
-    const userIds = data.map(item => item.user_id);
+    // Extraire les IDs utilisateur
+    const userIds = userSfdsData.map(item => item.user_id);
     
     if (userIds.length === 0) {
       return false;
@@ -75,24 +76,29 @@ export const fetchActiveSfds = async () => {
 };
 
 /**
- * Récupère toutes les SFDs depuis l'edge function
+ * Récupère toutes les SFDs disponibles pour un utilisateur
+ * @param userId ID de l'utilisateur (optionnel)
  */
 export const fetchSfdsFromEdgeFunction = async (userId?: string) => {
   try {
+    console.log('Fetching SFDs from edge function for user:', userId || 'anonymous');
+    
     const { data, error } = await supabase.functions.invoke('fetch-available-sfds', {
       body: { userId }
     });
     
     if (error) {
       console.error('Error fetching SFDs from edge function:', error);
-      return [];
+      // Si l'edge function échoue, utiliser la méthode directe
+      return fetchActiveSfds();
     }
     
     console.log(`Fetched ${data?.length || 0} SFDs from Edge function`);
     return data || [];
   } catch (error) {
     console.error('Error in fetchSfdsFromEdgeFunction:', error);
-    return [];
+    // En cas d'erreur, utiliser la méthode directe
+    return fetchActiveSfds();
   }
 };
 

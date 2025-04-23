@@ -76,6 +76,17 @@ serve(async (req) => {
       )
     }
 
+    // Get user profile for additional data
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('full_name, email, phone')
+      .eq('id', userId)
+      .maybeSingle()
+      
+    if (profileError) {
+      console.error('Error fetching profile data:', profileError)
+    }
+
     // Récupérer les infos de la SFD
     const { data: sfdData, error: sfdError } = await supabase
       .from('sfds')
@@ -104,15 +115,23 @@ serve(async (req) => {
       status: 'pending',
       reference_number: referenceNumber,
       kyc_status: 'pending',
-      full_name: adhesionData?.full_name || userData.user?.user_metadata?.full_name || '',
-      email: adhesionData?.email || userData.user?.email || '',
-      phone: adhesionData?.phone || userData.user?.phone || '',
+      full_name: adhesionData?.full_name || profileData?.full_name || userData.user?.user_metadata?.full_name || '',
+      email: adhesionData?.email || profileData?.email || userData.user?.email || '',
+      phone: adhesionData?.phone || profileData?.phone || userData.user?.phone || '',
       address: adhesionData?.address || '',
       profession: adhesionData?.profession || '',
       monthly_income: adhesionData?.monthly_income ? parseFloat(adhesionData.monthly_income) : null,
       source_of_income: adhesionData?.source_of_income || '',
       created_at: new Date().toISOString(),
     }
+
+    console.log('Creating adhesion request with data:', {
+      user_id: requestData.user_id,
+      sfd_id: requestData.sfd_id,
+      full_name: requestData.full_name,
+      email: requestData.email,
+      phone: requestData.phone
+    })
 
     // Insérer la demande dans la base de données
     const { data: request, error: insertError } = await supabase
@@ -132,59 +151,98 @@ serve(async (req) => {
       )
     }
 
-    // Trouver les administrateurs SFD qui doivent recevoir la notification
-    const { data: sfdAdmins, error: adminsError } = await supabase
+    console.log('Successfully created adhesion request:', request.id)
+
+    // 1. Trouver tous les utilisateurs avec le rôle sfd_admin
+    const { data: allSfdAdmins, error: roleError } = await supabase
       .from('user_roles')
       .select('user_id')
       .eq('role', 'sfd_admin')
 
-    if (adminsError) {
-      console.error('Error fetching SFD admins:', adminsError)
-      // Continuer même si nous ne pouvons pas récupérer les administrateurs
+    if (roleError) {
+      console.error('Error fetching users with sfd_admin role:', roleError)
+    } else {
+      console.log(`Found ${allSfdAdmins?.length || 0} users with sfd_admin role`)
     }
 
-    // Récupérer les administrateurs spécifiquement associés à cette SFD
-    const { data: sfdSpecificAdmins, error: specificAdminsError } = await supabase
-      .from('user_sfds')
-      .select('user_id')
-      .eq('sfd_id', sfdId)
-      .filter('user_id', 'in', `(${sfdAdmins?.map(admin => admin.user_id).join(',')})`)
+    // 2. Récupérer les administrateurs spécifiquement associés à cette SFD
+    const sfdAdminIds = allSfdAdmins?.map(admin => admin.user_id) || []
+    
+    if (sfdAdminIds.length > 0) {
+      const { data: specificAdmins, error: specificAdminsError } = await supabase
+        .from('user_sfds')
+        .select('user_id')
+        .eq('sfd_id', sfdId)
+        .in('user_id', sfdAdminIds)
 
-    if (specificAdminsError) {
-      console.error('Error fetching SFD-specific admins:', specificAdminsError)
-      // Continuer même si nous ne pouvons pas récupérer les administrateurs spécifiques
-    }
+      if (specificAdminsError) {
+        console.error('Error fetching SFD specific admins:', specificAdminsError)
+      } else {
+        console.log(`Found ${specificAdmins?.length || 0} admins specifically for this SFD`)
+      
+        // 3. Créer des notifications pour les administrateurs SFD spécifiques
+        if (specificAdmins && specificAdmins.length > 0) {
+          const notificationData = specificAdmins.map(admin => ({
+            title: 'Nouvelle demande d\'adhésion',
+            message: `Nouvelle demande d'adhésion de ${requestData.full_name} pour ${sfdData.name}`,
+            type: 'adhesion_request',
+            sender_id: userId,
+            recipient_id: admin.user_id,
+            action_link: '/sfd/adhesion-requests',
+            created_at: new Date().toISOString()
+          }))
 
-    // Créer des notifications pour les administrateurs SFD
-    if (sfdSpecificAdmins && sfdSpecificAdmins.length > 0) {
-      const notificationData = sfdSpecificAdmins.map(admin => ({
-        title: 'Nouvelle demande d\'adhésion',
-        message: `Nouvelle demande d'adhésion de ${requestData.full_name} pour ${sfdData.name}`,
-        type: 'adhesion_request',
-        recipient_id: admin.user_id,
-        action_link: '/sfd-adhesion-requests',
-        created_at: new Date().toISOString()
-      }))
+          const { data: notifs, error: notifError } = await supabase
+            .from('admin_notifications')
+            .insert(notificationData)
+            .select()
 
-      // Insérer les notifications pour les administrateurs spécifiques à la SFD
-      const { error: notificationError } = await supabase
-        .from('admin_notifications')
-        .insert(notificationData)
-
-      if (notificationError) {
-        console.error('Error creating admin notifications:', notificationError)
-        // Continuer même si les notifications échouent
+          if (notifError) {
+            console.error('Error creating SFD admin notifications:', notifError)
+          } else {
+            console.log(`Created ${notifs?.length || 0} notifications for SFD admins`)
+          }
+          
+          // 4. Créer également une notification générale pour tous les admin SFD
+          await supabase
+            .from('admin_notifications')
+            .insert([{
+              title: 'Nouvelle demande d\'adhésion',
+              message: `Nouvelle demande d'adhésion de ${requestData.full_name} pour ${sfdData.name}`,
+              type: 'adhesion_request',
+              sender_id: userId,
+              recipient_role: 'sfd_admin',
+              action_link: '/sfd/adhesion-requests',
+              created_at: new Date().toISOString()
+            }])
+        } else {
+          // 5. Fallback pour notifier tous les SFD admins si aucune association spécifique
+          console.log('No specific SFD-admin associations found, creating general notification')
+          await supabase
+            .from('admin_notifications')
+            .insert([{
+              title: 'Nouvelle demande d\'adhésion',
+              message: `Nouvelle demande d'adhésion de ${requestData.full_name} pour ${sfdData.name}`,
+              type: 'adhesion_request',
+              sender_id: userId,
+              recipient_role: 'sfd_admin',
+              action_link: '/sfd/adhesion-requests',
+              created_at: new Date().toISOString()
+            }])
+        }
       }
     } else {
-      // Fallback: notifier tous les admins SFD si aucun admin spécifique n'est trouvé
+      console.log('No SFD admins found at all, creating general notification')
+      // 6. Fallback si aucun admin SFD n'est trouvé
       await supabase
         .from('admin_notifications')
         .insert([{
           title: 'Nouvelle demande d\'adhésion',
           message: `Nouvelle demande d'adhésion de ${requestData.full_name} pour ${sfdData.name}`,
           type: 'adhesion_request',
+          sender_id: userId,
           recipient_role: 'sfd_admin',
-          action_link: '/sfd-adhesion-requests',
+          action_link: '/sfd/adhesion-requests',
           created_at: new Date().toISOString()
         }])
     }
@@ -197,6 +255,7 @@ serve(async (req) => {
         action: 'client_adhesion_requested',
         category: 'USER_MANAGEMENT',
         status: 'success',
+        severity: 'info',
         target_resource: `client_adhesion_requests/${request.id}`,
         details: {
           sfd_id: sfdId,

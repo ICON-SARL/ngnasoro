@@ -35,7 +35,7 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false, isEdit = false,
       
       if (!user) {
         toast({
-          title: 'Erreur',
+          title: 'Connexion requise',
           description: "Vous devez être connecté pour envoyer une demande d'adhésion",
           variant: 'destructive',
         });
@@ -83,6 +83,11 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false, isEdit = false,
     } catch (err) {
       console.error('Erreur lors du traitement de la demande:', err);
       handleError(err);
+      toast({
+        title: 'Erreur',
+        description: "Un problème est survenu lors du traitement de votre demande",
+        variant: 'destructive',
+      });
     }
   };
 
