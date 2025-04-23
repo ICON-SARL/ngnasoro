@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 /**
@@ -11,10 +10,7 @@ export const verifySfdHasAdmins = async (sfdId: string): Promise<boolean> => {
     // Vérifie les associations dans user_sfds pour les utilisateurs avec rôle sfd_admin
     const { data, error } = await supabase
       .from('user_sfds')
-      .select(`
-        user_id,
-        users:user_id(id)
-      `)
+      .select('user_id')
       .eq('sfd_id', sfdId);
 
     if (error) {
@@ -28,7 +24,7 @@ export const verifySfdHasAdmins = async (sfdId: string): Promise<boolean> => {
     }
 
     // Récupérer les IDs des utilisateurs associés pour vérifier leurs rôles
-    const userIds = data.map(item => item.users?.id).filter(Boolean);
+    const userIds = data.map(item => item.user_id);
     
     if (userIds.length === 0) {
       return false;
