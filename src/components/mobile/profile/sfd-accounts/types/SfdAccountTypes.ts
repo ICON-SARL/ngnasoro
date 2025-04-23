@@ -1,5 +1,4 @@
 
-
 export interface SfdClientRequest {
   id: string;
   sfd_id: string;
@@ -11,11 +10,11 @@ export interface SfdClientRequest {
   created_at: string;
 }
 
-// Updated to match the structure used in useSfdAdhesion.ts
+// Mise à jour pour être compatible avec l'interface utilisée partout
 export interface AvailableSfd {
   id: string;
   name: string;
-  code: string;  // Keep this required for backward compatibility
+  code: string;
   region?: string;
   status: string;
   logo_url?: string;
@@ -34,4 +33,3 @@ export interface SfdAccountDisplay {
   isVerified: boolean;
   status?: string;
 }
-

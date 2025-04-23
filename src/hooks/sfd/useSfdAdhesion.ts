@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,11 +9,11 @@ import { AvailableSfd as SfdAccountTypesAvailableSfd } from '@/components/mobile
 export interface AvailableSfd {
   id: string;
   name: string;
-  code: string;
+  code: string; // Requis pour la compatibilité
   region?: string;
-  description?: string;
+  description?: string; // Ajouté pour correspondre à SfdAccountTypes
   logo_url?: string;
-  status: string;
+  status: string; // Requis pour la compatibilité
 }
 
 export function useSfdAdhesion() {
@@ -31,6 +32,7 @@ export function useSfdAdhesion() {
     try {
       console.log('Fetching SFD data for user:', user.id);
       
+      // Récupérer toutes les SFDs actives
       const { data: sfds, error: sfdsError } = await supabase
         .from('sfds')
         .select('id, name, code, region, description, logo_url, status')
@@ -40,7 +42,30 @@ export function useSfdAdhesion() {
         console.error('Error fetching SFDs:', sfdsError);
         throw sfdsError;
       }
+
+      console.log('SFDs retrieved from database:', sfds?.length || 0, sfds);
       
+      // Si aucune SFD n'est trouvée dans la DB, essayer l'Edge Function
+      let allSfds = sfds || [];
+      if (!allSfds.length) {
+        console.log('No SFDs found in database, trying edge function');
+        try {
+          const { data: edgeData, error: edgeError } = await supabase.functions.invoke('fetch-sfds', {
+            body: { userId: user.id }
+          });
+          
+          if (edgeError) {
+            console.error('Error calling edge function:', edgeError);
+          } else if (edgeData && edgeData.length) {
+            console.log(`Fetched ${edgeData.length} SFDs from edge function`);
+            allSfds = edgeData;
+          }
+        } catch (error) {
+          console.error('Error in edge function call:', error);
+        }
+      }
+      
+      // Récupérer les demandes d'adhésion de l'utilisateur
       const { data: requests, error: requestsError } = await supabase
         .from('client_adhesion_requests')
         .select(`
@@ -60,6 +85,9 @@ export function useSfdAdhesion() {
         throw requestsError;
       }
       
+      console.log('User adhesion requests:', requests?.length || 0, requests);
+      
+      // Récupérer les SFDs déjà associées à l'utilisateur
       const { data: userSfds, error: userSfdsError } = await supabase
         .from('user_sfds')
         .select('sfd_id')
@@ -69,6 +97,8 @@ export function useSfdAdhesion() {
         console.error('Error fetching user SFDs:', userSfdsError);
         throw userSfdsError;
       }
+      
+      console.log('User associated SFDs:', userSfds?.length || 0, userSfds);
       
       const userSfdIds = userSfds?.map(us => us.sfd_id) || [];
       
@@ -84,12 +114,36 @@ export function useSfdAdhesion() {
         sfds: req.sfds
       })) || [];
       
-      const filteredSfds = sfds?.filter(sfd => !userSfdIds.includes(sfd.id)) || [];
+      // Filtrage: supprimer les SFDs déjà associées à l'utilisateur
+      const filteredSfds = allSfds.filter(sfd => !userSfdIds.includes(sfd.id)) || [];
       
       console.log(`After filtering, ${filteredSfds.length} SFDs are available`);
       
       setUserRequests(formattedRequests);
       setAvailableSfds(filteredSfds);
+
+      // Si toujours aucune SFD après filtrage, ajouter des SFDs de test en environnement dev
+      if (filteredSfds.length === 0 && process.env.NODE_ENV !== 'production') {
+        console.log('Adding test SFDs for development');
+        setAvailableSfds([
+          {
+            id: 'test-sfd1',
+            name: 'RMCR (Test)',
+            code: 'RMCR',
+            region: 'Centre',
+            status: 'active',
+            logo_url: null
+          },
+          {
+            id: 'test-sfd2',
+            name: 'NYESIGISO (Test)',
+            code: 'NYESIGISO',
+            region: 'Sud',
+            status: 'active',
+            logo_url: null
+          }
+        ]);
+      }
     } catch (error) {
       console.error('Error in useSfdAdhesion:', error);
       toast({

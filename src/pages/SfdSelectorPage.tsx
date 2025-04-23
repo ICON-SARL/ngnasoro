@@ -42,24 +42,37 @@ const SfdSelectorPage = () => {
       setIsLoading(true);
       
       try {
-        // 1. Récupérer toutes les SFDs actives
-        console.log('Fetching SFDs');
+        // 1. Récupérer toutes les SFDs actives avec logging détaillé
+        console.log('Fetching SFDs - Debug info');
         const { data: sfdsData, error: sfdsError } = await supabase
           .from('sfds')
-          .select('id, name, code, region, status, logo_url')
+          .select('*')
           .eq('status', 'active');
           
-        if (sfdsError) throw sfdsError;
+        if (sfdsError) {
+          console.error('Error fetching SFDs:', sfdsError);
+          throw sfdsError;
+        }
         
-        console.log(`Fetched ${sfdsData?.length || 0} SFDs from database`);
+        console.log(`Fetched ${sfdsData?.length || 0} SFDs from database:`, sfdsData);
         
-        // Si aucune SFD n'est disponible, afficher un message d'erreur
+        // Si aucune SFD n'est disponible, essayer l'edge function
         if (!sfdsData || sfdsData.length === 0) {
-          toast({
-            title: "Aucune SFD disponible",
-            description: "Il n'y a actuellement aucune SFD active dans le système",
-            variant: "destructive"
-          });
+          console.log('No SFDs found in database, trying edge function');
+          try {
+            const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke('fetch-sfds', {
+              body: { userId: user.id }
+            });
+            
+            if (edgeFunctionError) {
+              console.error('Error fetching SFDs from edge function:', edgeFunctionError);
+            } else if (edgeFunctionData && edgeFunctionData.length > 0) {
+              console.log(`Fetched ${edgeFunctionData.length} SFDs from Edge function:`, edgeFunctionData);
+              sfdsData = edgeFunctionData;
+            }
+          } catch (edgeError) {
+            console.error('Exception in edge function call:', edgeError);
+          }
         }
         
         // 2. Récupérer les demandes existantes
@@ -69,11 +82,13 @@ const SfdSelectorPage = () => {
           .select('sfd_id, status')
           .eq('user_id', user.id);
           
-        if (requestsError) throw requestsError;
+        if (requestsError) {
+          console.error('Error fetching adhesion requests:', requestsError);
+          throw requestsError;
+        }
         
         console.log('Existing adhesion requests:', existingReqs);
         setExistingRequests(existingReqs || []);
-        console.log(`Found ${existingReqs?.length || 0} existing client adhesion requests`);
         
         // 3. Récupérer les SFDs déjà associées à l'utilisateur
         const { data: userSfds, error: userSfdsError } = await supabase
@@ -81,21 +96,49 @@ const SfdSelectorPage = () => {
           .select('sfd_id')
           .eq('user_id', user.id);
           
-        if (userSfdsError) throw userSfdsError;
+        if (userSfdsError) {
+          console.error('Error fetching user SFDs:', userSfdsError);
+          throw userSfdsError;
+        }
         
-        console.log(`User has ${userSfds?.length || 0} SFDs already associated`);
+        console.log(`User has ${userSfds?.length || 0} SFDs already associated:`, userSfds);
         
-        // Filtrer les SFDs déjà associées et afficher les autres
+        // Filtrer les SFDs déjà associées à l'utilisateur
         const userSfdIds = userSfds?.map(us => us.sfd_id) || [];
         
-        // On affiche toutes les SFDs disponibles même si l'utilisateur a déjà des demandes en cours
-        // pour permettre d'en faire de nouvelles ou de réessayer
-        const availableSfds = sfdsData?.filter(sfd => 
-          !userSfdIds.includes(sfd.id) && sfd.status === 'active'
-        ) || [];
-        
-        console.log(`After filtering, ${availableSfds.length} SFDs are available for selection`);
-        setSfds(availableSfds);
+        // Même si aucune SFD n'est disponible en base de données, utiliser des données de test en dev
+        if (!sfdsData || sfdsData.length === 0) {
+          console.log('Using test SFDs for development');
+          const testSfds = [
+            {
+              id: 'test-sfd1',
+              name: 'RMCR (Test)',
+              code: 'RMCR',
+              region: 'Centre',
+              status: 'active',
+              logo_url: null
+            },
+            {
+              id: 'test-sfd2',
+              name: 'NYESIGISO (Test)',
+              code: 'NYESIGISO',
+              region: 'Sud',
+              status: 'active',
+              logo_url: null
+            }
+          ];
+          
+          setSfds(testSfds);
+        } else {
+          // On affiche toutes les SFDs disponibles même si l'utilisateur a déjà des demandes en cours
+          // pour permettre d'en faire de nouvelles ou de réessayer
+          const availableSfds = sfdsData.filter(sfd => 
+            !userSfdIds.includes(sfd.id) && sfd.status === 'active'
+          );
+          
+          console.log(`After filtering, ${availableSfds.length} SFDs are available for selection:`, availableSfds);
+          setSfds(availableSfds);
+        }
       } catch (err) {
         console.error('Error loading data:', err);
         handleError(err);

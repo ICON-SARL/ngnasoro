@@ -9,7 +9,7 @@ export { default as AddSfdButton } from './components/AddSfdButton';
 export { default as AccountsListContent } from './components/AccountsListContent';
 export { default as SfdSelector } from './SfdSelector';
 
-// Types
+// Types - export avec nomenclature cohérente
 export type { SfdAccountDisplay, AvailableSfd, SfdClientRequest } from './types/SfdAccountTypes';
 
 // Utils
