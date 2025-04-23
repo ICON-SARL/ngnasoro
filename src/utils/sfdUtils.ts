@@ -13,12 +13,7 @@ export const verifySfdHasAdmins = async (sfdId: string): Promise<boolean> => {
       .from('user_sfds')
       .select(`
         user_id,
-        users:user_id (
-          id,
-          user_roles (
-            role
-          )
-        )
+        users:user_id(id)
       `)
       .eq('sfd_id', sfdId);
 
@@ -27,12 +22,31 @@ export const verifySfdHasAdmins = async (sfdId: string): Promise<boolean> => {
       return false;
     }
 
-    // Vérifier si l'un des utilisateurs a le rôle sfd_admin
-    const hasAdminUser = data?.some(item => 
-      item.users?.user_roles?.some((r: any) => r.role === 'sfd_admin')
-    );
+    // Si aucune association n'est trouvée, retourner false
+    if (!data || data.length === 0) {
+      return false;
+    }
 
-    return !!hasAdminUser;
+    // Récupérer les IDs des utilisateurs associés pour vérifier leurs rôles
+    const userIds = data.map(item => item.users?.id).filter(Boolean);
+    
+    if (userIds.length === 0) {
+      return false;
+    }
+
+    // Vérifier si au moins un des utilisateurs a le rôle sfd_admin
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .in('user_id', userIds)
+      .eq('role', 'sfd_admin');
+
+    if (roleError) {
+      console.error('Error checking user roles:', roleError);
+      return false;
+    }
+
+    return roleData && roleData.length > 0;
   } catch (error) {
     console.error('Exception verifying SFD admins:', error);
     return false;
