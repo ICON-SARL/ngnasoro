@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import {
   XCircle, 
   Building, 
   Edit2,
-  RefreshCw  // Added missing icon import
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -42,7 +41,6 @@ const SfdAdhesionPage: React.FC = () => {
   const [existingData, setExistingData] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Check if we're in edit mode from the URL
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const mode = searchParams.get('mode');
@@ -217,7 +215,6 @@ const SfdAdhesionPage: React.FC = () => {
     );
   }
   
-  // Find existing request for this SFD
   const existingRequest = adhesionRequests.find(
     request => request.sfd_id === sfdId && request.user_id === user?.id
   );
@@ -354,6 +351,7 @@ const SfdAdhesionPage: React.FC = () => {
             </div>
           ) : (
             <NewAdhesionRequestForm
+              sfdId={sfdId}
               onSubmit={handleSubmit}
               initialData={isEditMode ? existingData : null}
               isSubmitting={isSubmitting}

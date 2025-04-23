@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -23,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSfdAdhesionRequests } from '@/hooks/useSfdAdhesionRequests';
+import { AdhesionRequestInput } from '@/types/adhesionTypes';
 
 // Définir le schéma de validation du formulaire
 const formSchema = z.object({
@@ -44,7 +44,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export interface NewAdhesionRequestFormProps {
-  sfdId: string; // Added sfdId prop
+  sfdId: string;
   onSubmit?: (data: FormValues) => void;
   initialData?: any;
   isSubmitting?: boolean;
@@ -81,7 +81,18 @@ export const NewAdhesionRequestForm: React.FC<NewAdhesionRequestFormProps> = ({
     }
 
     try {
-      const result = await submitAdhesionRequest(sfdId, values);
+      // Make sure to construct a valid AdhesionRequestInput object with required fields
+      const adhesionData: AdhesionRequestInput = {
+        full_name: values.full_name,
+        email: values.email,
+        phone: values.phone,
+        address: values.address,
+        profession: values.profession,
+        monthly_income: values.monthly_income,
+        source_of_income: values.source_of_income
+      };
+      
+      const result = await submitAdhesionRequest(sfdId, adhesionData);
       if (result.success && onSuccess) {
         onSuccess();
       }
