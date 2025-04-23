@@ -11,19 +11,20 @@ export function useSfdStatusCheck() {
     queryFn: async () => {
       try {
         // Vérifier s'il y a des SFDs avec le statut 'active'
-        const { count, error } = await supabase
+        const { data: activeSfds, error: sfdsError } = await supabase
           .from('sfds')
-          .select('*', { count: 'exact', head: true })
+          .select('id')
           .eq('status', 'active');
           
-        if (error) throw error;
+        if (sfdsError) throw sfdsError;
         
+        const count = activeSfds?.length || 0;
         console.log(`Nombre de SFDs actives détecté: ${count}`);
         
         // Vérifions également les SFDs associées aux administrateurs
         const { data: sfdAdmins, error: adminError } = await supabase
           .from('sfd_administrators')
-          .select('sfd_id, status')
+          .select('id, sfd_id, status, user_id')
           .eq('status', 'active');
           
         if (adminError) {
@@ -31,11 +32,23 @@ export function useSfdStatusCheck() {
         } else {
           console.log(`Nombre d'administrateurs SFD actifs: ${sfdAdmins?.length || 0}`);
         }
+
+        // Récupérer les associations utilisateur-SFD
+        const { data: userSfds, error: userSfdsError } = await supabase
+          .from('user_sfds')
+          .select('*');
+
+        if (userSfdsError) {
+          console.error('Erreur lors de la vérification des associations user-SFD:', userSfdsError);
+        } else {
+          console.log(`Nombre d'associations utilisateur-SFD: ${userSfds?.length || 0}`);
+        }
         
         return {
-          activeSfdsCount: count || 0,
-          hasActiveSfds: (count || 0) > 0,
-          sfdAdmins: sfdAdmins || []
+          activeSfdsCount: count,
+          hasActiveSfds: count > 0,
+          sfdAdmins: sfdAdmins || [],
+          userSfds: userSfds || []
         };
       } catch (error: any) {
         console.error('Error checking SFD status:', error);
@@ -47,7 +60,8 @@ export function useSfdStatusCheck() {
         return {
           activeSfdsCount: 0,
           hasActiveSfds: false,
-          sfdAdmins: []
+          sfdAdmins: [],
+          userSfds: []
         };
       }
     },

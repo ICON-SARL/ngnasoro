@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Building, Users, CreditCard } from 'lucide-react';
 import { apiClient } from '@/utils/apiClient';
 import { useAuth } from '@/hooks/useAuth';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function SimplifiedMerefDashboard() {
   const { user } = useAuth();
@@ -17,11 +18,12 @@ export function SimplifiedMerefDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        setStats(prevState => ({ ...prevState, isLoading: true }));
         const dashboardStats = await apiClient.getMerefDashboardStats(user?.id || 'system');
         setStats({
-          activeSfds: dashboardStats.activeSfds || 0,
-          activeUsers: dashboardStats.activeSfds * 450 || 0, // Approximate number of users per SFD
-          activeCredits: dashboardStats.pendingRequests * 15 || 0, // Approximate credits based on pending requests
+          activeSfds: dashboardStats.activeSfds,
+          activeUsers: dashboardStats.activeUsers || 0,
+          activeCredits: dashboardStats.pendingRequests || 0,
           isLoading: false
         });
       } catch (error) {
@@ -31,6 +33,11 @@ export function SimplifiedMerefDashboard() {
     };
 
     fetchStats();
+    
+    // Mettre à jour les stats toutes les 30 secondes
+    const intervalId = setInterval(fetchStats, 30000);
+    
+    return () => clearInterval(intervalId);
   }, [user]);
 
   return (
@@ -39,9 +46,13 @@ export function SimplifiedMerefDashboard() {
         <CardHeader className="py-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">Agences SFD actives</CardTitle>
           <div className="flex items-center justify-between">
-            <CardDescription className="text-xl">
-              {stats.isLoading ? '...' : stats.activeSfds}
-            </CardDescription>
+            {stats.isLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <CardDescription className="text-xl">
+                {stats.activeSfds}
+              </CardDescription>
+            )}
             <Building className="h-4 w-4 text-gray-400" />
           </div>
         </CardHeader>
@@ -51,9 +62,13 @@ export function SimplifiedMerefDashboard() {
         <CardHeader className="py-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">Utilisateurs actifs</CardTitle>
           <div className="flex items-center justify-between">
-            <CardDescription className="text-xl">
-              {stats.isLoading ? '...' : stats.activeUsers.toLocaleString('fr-FR')}
-            </CardDescription>
+            {stats.isLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <CardDescription className="text-xl">
+                {stats.activeUsers.toLocaleString('fr-FR')}
+              </CardDescription>
+            )}
             <Users className="h-4 w-4 text-gray-400" />
           </div>
         </CardHeader>
@@ -61,11 +76,15 @@ export function SimplifiedMerefDashboard() {
       
       <Card className="border border-gray-100 shadow-sm">
         <CardHeader className="py-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Crédits actifs</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Demandes en attente</CardTitle>
           <div className="flex items-center justify-between">
-            <CardDescription className="text-xl">
-              {stats.isLoading ? '...' : stats.activeCredits}
-            </CardDescription>
+            {stats.isLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <CardDescription className="text-xl">
+                {stats.activeCredits}
+              </CardDescription>
+            )}
             <CreditCard className="h-4 w-4 text-gray-400" />
           </div>
         </CardHeader>

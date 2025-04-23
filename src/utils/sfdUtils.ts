@@ -83,6 +83,29 @@ export const fetchSfdsFromEdgeFunction = async (userId?: string) => {
   try {
     console.log('Fetching SFDs from edge function for user:', userId || 'anonymous');
     
+    // En mode développement, afficher des SFDs de test si aucun utilisateur n'est fourni
+    if (!userId && process.env.NODE_ENV !== 'production') {
+      console.log('Dev mode: Returning test SFDs');
+      return [
+        {
+          id: 'test-sfd1',
+          name: 'RMCR (Test)',
+          code: 'RMCR',
+          region: 'Centre',
+          status: 'active',
+          logo_url: null
+        },
+        {
+          id: 'test-sfd2',
+          name: 'NYESIGISO (Test)',
+          code: 'NYESIGISO',
+          region: 'Sud',
+          status: 'active',
+          logo_url: null
+        }
+      ];
+    }
+    
     const { data, error } = await supabase.functions.invoke('fetch-available-sfds', {
       body: { userId }
     });
