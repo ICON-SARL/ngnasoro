@@ -44,6 +44,7 @@ const SfdSelectorPage = () => {
       try {
         // 1. Récupérer toutes les SFDs actives avec logging détaillé
         console.log('Fetching SFDs - Debug info');
+        let sfdsList: Sfd[] = [];
         const { data: sfdsData, error: sfdsError } = await supabase
           .from('sfds')
           .select('*')
@@ -56,8 +57,11 @@ const SfdSelectorPage = () => {
         
         console.log(`Fetched ${sfdsData?.length || 0} SFDs from database:`, sfdsData);
         
-        // Si aucune SFD n'est disponible, essayer l'edge function
-        if (!sfdsData || sfdsData.length === 0) {
+        // Si des SFDs sont trouvées dans la base de données, les utiliser
+        if (sfdsData && sfdsData.length > 0) {
+          sfdsList = sfdsData;
+        } else {
+          // Sinon, essayer l'edge function
           console.log('No SFDs found in database, trying edge function');
           try {
             const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke('fetch-sfds', {
@@ -68,7 +72,7 @@ const SfdSelectorPage = () => {
               console.error('Error fetching SFDs from edge function:', edgeFunctionError);
             } else if (edgeFunctionData && edgeFunctionData.length > 0) {
               console.log(`Fetched ${edgeFunctionData.length} SFDs from Edge function:`, edgeFunctionData);
-              sfdsData = edgeFunctionData;
+              sfdsList = edgeFunctionData;
             }
           } catch (edgeError) {
             console.error('Exception in edge function call:', edgeError);
@@ -106,8 +110,8 @@ const SfdSelectorPage = () => {
         // Filtrer les SFDs déjà associées à l'utilisateur
         const userSfdIds = userSfds?.map(us => us.sfd_id) || [];
         
-        // Même si aucune SFD n'est disponible en base de données, utiliser des données de test en dev
-        if (!sfdsData || sfdsData.length === 0) {
+        // Même si aucune SFD n'est disponible, utiliser des données de test en dev si nécessaire
+        if (sfdsList.length === 0) {
           console.log('Using test SFDs for development');
           const testSfds = [
             {
@@ -132,7 +136,7 @@ const SfdSelectorPage = () => {
         } else {
           // On affiche toutes les SFDs disponibles même si l'utilisateur a déjà des demandes en cours
           // pour permettre d'en faire de nouvelles ou de réessayer
-          const availableSfds = sfdsData.filter(sfd => 
+          const availableSfds = sfdsList.filter(sfd => 
             !userSfdIds.includes(sfd.id) && sfd.status === 'active'
           );
           

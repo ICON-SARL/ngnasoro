@@ -15,7 +15,7 @@ export const verifySfdHasAdmins = async (sfdId: string): Promise<boolean> => {
         user_id,
         users:user_id (
           id,
-          roles:user_roles (
+          user_roles!user_roles(
             role
           )
         )
@@ -29,7 +29,7 @@ export const verifySfdHasAdmins = async (sfdId: string): Promise<boolean> => {
 
     // Vérifier si l'un des utilisateurs a le rôle sfd_admin
     const hasAdminUser = data?.some(item => 
-      item.users?.roles?.some((r: any) => r.role === 'sfd_admin')
+      item.users?.user_roles?.some((r: any) => r.role === 'sfd_admin')
     );
 
     return !!hasAdminUser;
