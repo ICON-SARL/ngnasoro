@@ -5,11 +5,12 @@ import MobileHeader from '@/components/mobile/MobileHeader';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AvailableSfdCard } from '@/components/mobile/sfd-accounts/AvailableSfdCard';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sfd } from '@/types/sfd-types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { Card } from '@/components/ui/card';
 
 export default function SfdConnectionPage() {
   const navigate = useNavigate();
@@ -73,17 +74,12 @@ export default function SfdConnectionPage() {
         if (directData && directData.length > 0) {
           console.log(`Found ${directData.length} active SFDs`);
           
-          // Filtrer les SFDs auxquelles l'utilisateur a déjà adhéré ou a des demandes en cours
-          const requestedSfdIds = (userRequests || [])
-            .filter(req => req.status === 'pending' || req.status === 'approved')
-            .map(req => req.sfd_id);
-            
+          // Filtrer les SFDs déjà associées
           const userSfdIds = (userSfds || []).map(us => us.sfd_id);
           
-          // Filtrer les SFDs disponibles
+          // On autorise l'affichage des SFDs même si l'utilisateur a déjà des demandes en cours
           const availableSfds = directData.filter(sfd => 
-            !requestedSfdIds.includes(sfd.id) && 
-            !userSfdIds.includes(sfd.id)
+            !userSfdIds.includes(sfd.id) && sfd.status === 'active'
           );
           
           console.log(`After filtering, ${availableSfds.length} SFDs are available to join`);
@@ -130,20 +126,23 @@ export default function SfdConnectionPage() {
             </Button>
           </div>
         ) : !sfds || sfds.length === 0 ? (
-          <div className="text-center py-12 bg-amber-50 border border-amber-200 rounded-lg">
-            <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
-            <p className="text-lg text-amber-800 mb-2">
-              Aucune SFD active n'est disponible pour le moment.
+          <Card className="text-center py-12 bg-white rounded-lg border">
+            <Building className="h-16 w-16 text-gray-300 mx-auto mb-3" />
+            <p className="text-xl font-medium text-gray-700 mb-2">
+              Aucune SFD disponible
             </p>
-            <p className="text-sm text-amber-700 mb-4">
+            <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
               {sfds?.length === 0 
-                ? "Vous avez déjà demandé l'adhésion à toutes les SFDs disponibles."
+                ? "Il n'y a actuellement aucune SFD disponible pour une nouvelle adhésion."
                 : "Veuillez contacter l'administrateur du système."}
             </p>
-            <Button onClick={() => navigate('/mobile-flow/account')} variant="outline">
+            <Button 
+              onClick={() => navigate('/mobile-flow/account')} 
+              className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 mx-auto"
+            >
               Retour à mon compte
             </Button>
-          </div>
+          </Card>
         ) : (
           <div className="grid gap-4">
             {sfds.map(sfd => (
@@ -154,4 +153,4 @@ export default function SfdConnectionPage() {
       </main>
     </div>
   );
-}
+};

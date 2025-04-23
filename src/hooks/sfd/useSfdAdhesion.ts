@@ -1,58 +1,71 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
-import { AvailableSfd, SfdClientRequest } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
-import { logAuditEvent, AuditLogCategory, AuditLogSeverity } from '@/utils/audit';
+import { ClientAdhesionRequest } from '@/types/adhesionTypes';
+
+export interface AvailableSfd {
+  id: string;
+  name: string;
+  code?: string;
+  region?: string;
+  description?: string;
+  logo_url?: string;
+}
 
 export function useSfdAdhesion() {
+  const [availableSfds, setAvailableSfds] = useState<AvailableSfd[]>([]);
+  const [userRequests, setUserRequests] = useState<ClientAdhesionRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   
-  const [availableSfds, setAvailableSfds] = useState<AvailableSfd[]>([]);
-  const [userRequests, setUserRequests] = useState<SfdClientRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const fetchData = useCallback(async () => {
-    if (!user) return;
+  const fetchData = async () => {
+    if (!user?.id) return;
     
     setIsLoading(true);
+    
     try {
-      console.log('Fetching SFD adhesion data for user:', user.id);
+      console.log('Fetching SFD data for user:', user.id);
       
-      // 1. Get all active SFDs
+      // 1. Récupérer toutes les SFDs actives
       const { data: sfds, error: sfdsError } = await supabase
         .from('sfds')
-        .select('id, name, code, region, status, logo_url, description')
+        .select('id, name, code, region, description, logo_url')
         .eq('status', 'active');
-      
+        
       if (sfdsError) {
         console.error('Error fetching SFDs:', sfdsError);
         throw sfdsError;
       }
       
-      if (!sfds || sfds.length === 0) {
-        console.log('No active SFDs found');
-      } else {
-        console.log(`Found ${sfds.length} active SFDs`);
-      }
+      console.log(`Found ${sfds?.length || 0} active SFDs`);
       
-      // 2. Get user's existing requests
+      // 2. Récupérer les demandes d'adhésion de l'utilisateur
       const { data: requests, error: requestsError } = await supabase
         .from('client_adhesion_requests')
-        .select('id, sfd_id, status, created_at, sfds:sfd_id(name), full_name, email, phone')
+        .select(`
+          id, 
+          user_id,
+          sfd_id,
+          full_name,
+          status,
+          created_at,
+          processed_at,
+          sfds (name, logo_url)
+        `)
         .eq('user_id', user.id);
-      
+        
       if (requestsError) {
         console.error('Error fetching user requests:', requestsError);
         throw requestsError;
       }
       
-      console.log(`Found ${requests?.length || 0} existing client requests`);
+      console.log(`Found ${requests?.length || 0} user requests`);
       
-      // 3. Get user's existing SFD associations
+      // 3. Récupérer les SFDs auxquelles l'utilisateur est déjà associé
       const { data: userSfds, error: userSfdsError } = await supabase
         .from('user_sfds')
         .select('sfd_id')
@@ -63,99 +76,107 @@ export function useSfdAdhesion() {
         throw userSfdsError;
       }
       
-      console.log(`Found ${userSfds?.length || 0} existing user SFD associations`);
+      console.log(`User has ${userSfds?.length || 0} associated SFDs`);
       
-      // Filter out SFDs the user already has or has requested
+      // Filtrer les SFDs déjà associées
       const userSfdIds = userSfds?.map(us => us.sfd_id) || [];
-      const requestedSfdIds = requests?.filter(req => req.status !== 'rejected').map(req => req.sfd_id) || [];
       
-      const availableSfdsList = (sfds || []).filter(sfd => 
-        !userSfdIds.includes(sfd.id) && 
-        !requestedSfdIds.includes(sfd.id)
-      );
+      // Convertir les demandes en objets ClientAdhesionRequest
+      const formattedRequests = requests?.map(req => ({
+        id: req.id,
+        user_id: req.user_id,
+        sfd_id: req.sfd_id,
+        full_name: req.full_name,
+        status: req.status as 'pending' | 'approved' | 'rejected',
+        created_at: req.created_at,
+        processed_at: req.processed_at,
+        sfd_name: req.sfds?.name || '',
+        sfds: req.sfds
+      })) || [];
       
-      console.log(`After filtering, ${availableSfdsList.length} SFDs are available to join`);
+      // Inclure toutes les SFDs actives sauf celles déjà associées à l'utilisateur
+      // Noter que nous autorisons maintenant l'affichage d'une SFD même si l'utilisateur a déjà
+      // une demande en cours pour cette SFD, pour permettre de la visualiser
+      const filteredSfds = sfds?.filter(sfd => !userSfdIds.includes(sfd.id)) || [];
       
-      // Format the requests data
-      const formattedRequests: SfdClientRequest[] = (requests || []).map(request => ({
-        id: request.id,
-        sfd_id: request.sfd_id,
-        sfd_name: request.sfds?.name,
-        full_name: request.full_name,
-        email: request.email,
-        phone: request.phone,
-        status: request.status as 'pending' | 'approved' | 'rejected',
-        created_at: request.created_at
-      }));
+      console.log(`After filtering, ${filteredSfds.length} SFDs are available`);
       
-      setAvailableSfds(availableSfdsList as AvailableSfd[]);
       setUserRequests(formattedRequests);
+      setAvailableSfds(filteredSfds);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error in useSfdAdhesion:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de charger les données des SFD',
+        description: 'Impossible de récupérer les données SFD',
         variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast]);
+  };
   
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
-
-  const requestSfdAdhesion = async (sfdId: string) => {
-    if (!user) {
+  }, [user?.id, toast]);
+  
+  const requestSfdAdhesion = async (sfdId: string, phoneNumber?: string) => {
+    if (!user?.id) {
       toast({
         title: 'Erreur',
-        description: 'Vous devez être connecté pour demander une adhésion',
+        description: 'Vous devez être connecté pour faire une demande d\'adhésion',
         variant: 'destructive',
       });
       return false;
     }
     
-    console.log(`Attempting to request adhesion to SFD: ${sfdId}`);
     setIsSubmitting(true);
     
     try {
-      // Get user profile data for the request
-      const { data: profile, error: profileError } = await supabase
+      console.log('Requesting adhesion for SFD:', sfdId);
+      
+      // Vérifier si une demande existe déjà pour ce SFD et cet utilisateur
+      const { data: existingRequest } = await supabase
+        .from('client_adhesion_requests')
+        .select('id, status')
+        .eq('user_id', user.id)
+        .eq('sfd_id', sfdId)
+        .maybeSingle();
+        
+      // Si une demande existe et n'est pas rejetée, informer l'utilisateur
+      if (existingRequest && existingRequest.status !== 'rejected') {
+        toast({
+          title: 'Demande existante',
+          description: 'Vous avez déjà une demande pour cette SFD',
+          variant: 'warning',
+        });
+        return false;
+      }
+      
+      // Si une demande rejetée existe, la supprimer d'abord
+      if (existingRequest && existingRequest.status === 'rejected') {
+        console.log('Deleting existing rejected request:', existingRequest.id);
+        await supabase
+          .from('client_adhesion_requests')
+          .delete()
+          .eq('id', existingRequest.id);
+      }
+      
+      // Récupérer les informations de profil de l'utilisateur
+      const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, email, phone')
+        .select('full_name, email')
         .eq('id', user.id)
         .single();
-        
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        throw profileError;
-      }
       
-      if (!profile) {
-        throw new Error('Profil utilisateur introuvable');
-      }
-      
-      console.log('User profile retrieved:', profile);
-      
-      // Create the adhesion request
-      console.log('Creating adhesion request with data:', {
-        user_id: user.id,
-        sfd_id: sfdId,
-        full_name: profile.full_name || 'Utilisateur sans nom',
-        email: profile.email,
-        phone: profile.phone || null,
-        status: 'pending'
-      });
-      
-      const { data, error } = await supabase
+      // Créer une nouvelle demande d'adhésion
+      const { data: newRequest, error } = await supabase
         .from('client_adhesion_requests')
         .insert({
           user_id: user.id,
           sfd_id: sfdId,
-          full_name: profile.full_name || 'Utilisateur sans nom',
-          email: profile.email,
-          phone: profile.phone || null,
+          full_name: profile?.full_name || 'Utilisateur',
+          email: profile?.email || user.email,
+          phone: phoneNumber,
           status: 'pending'
         })
         .select();
@@ -165,52 +186,22 @@ export function useSfdAdhesion() {
         throw error;
       }
       
-      if (!data || data.length === 0) {
-        throw new Error('La demande a été créée mais aucune donnée n\'a été retournée');
-      }
-      
-      console.log('Adhesion request created successfully:', data[0]);
-      
-      // Log audit event
-      await logAuditEvent({
-        user_id: user.id,
-        action: 'sfd_adhesion_requested',
-        category: AuditLogCategory.USER_MANAGEMENT,
-        severity: AuditLogSeverity.INFO,
-        status: 'success',
-        target_resource: `client_adhesion_requests/${data[0].id}`,
-        details: { 
-          sfd_id: sfdId
-        }
-      });
+      console.log('Adhesion request created:', newRequest);
       
       toast({
         title: 'Demande envoyée',
         description: 'Votre demande d\'adhésion a été envoyée avec succès',
       });
       
-      // Update local state
-      const sfd = availableSfds.find(s => s.id === sfdId);
-      const newRequest: SfdClientRequest = {
-        id: data[0].id,
-        sfd_id: sfdId,
-        sfd_name: sfd?.name,
-        status: 'pending',
-        created_at: data[0].created_at,
-        full_name: profile.full_name || 'Utilisateur sans nom',
-        email: profile.email,
-        phone: profile.phone || null
-      };
-      
-      setUserRequests([...userRequests, newRequest]);
-      setAvailableSfds(availableSfds.filter(sfd => sfd.id !== sfdId));
+      // Rafraîchir les données
+      await fetchData();
       
       return true;
-    } catch (error: any) {
-      console.error('Error requesting SFD adhesion:', error);
+    } catch (error) {
+      console.error('Error in requestSfdAdhesion:', error);
       toast({
         title: 'Erreur',
-        description: error.message || 'Impossible de soumettre votre demande d\'adhésion',
+        description: 'Impossible d\'envoyer la demande d\'adhésion',
         variant: 'destructive',
       });
       return false;
@@ -218,17 +209,13 @@ export function useSfdAdhesion() {
       setIsSubmitting(false);
     }
   };
-
-  const refetch = useCallback(() => {
-    return fetchData();
-  }, [fetchData]);
-
+  
   return {
     availableSfds,
     userRequests,
     isLoading,
     isSubmitting,
-    requestSfdAdhesion,
-    refetch
+    refetch: fetchData,
+    requestSfdAdhesion
   };
 }

@@ -53,6 +53,15 @@ const SfdSelectorPage = () => {
         
         console.log(`Fetched ${sfdsData?.length || 0} SFDs from database`);
         
+        // Si aucune SFD n'est disponible, afficher un message d'erreur
+        if (!sfdsData || sfdsData.length === 0) {
+          toast({
+            title: "Aucune SFD disponible",
+            description: "Il n'y a actuellement aucune SFD active dans le système",
+            variant: "destructive"
+          });
+        }
+        
         // 2. Récupérer les demandes existantes
         console.log('Fetching existing client adhesion requests');
         const { data: existingReqs, error: requestsError } = await supabase
@@ -66,7 +75,27 @@ const SfdSelectorPage = () => {
         setExistingRequests(existingReqs || []);
         console.log(`Found ${existingReqs?.length || 0} existing client adhesion requests`);
         
-        setSfds(sfdsData || []);
+        // 3. Récupérer les SFDs déjà associées à l'utilisateur
+        const { data: userSfds, error: userSfdsError } = await supabase
+          .from('user_sfds')
+          .select('sfd_id')
+          .eq('user_id', user.id);
+          
+        if (userSfdsError) throw userSfdsError;
+        
+        console.log(`User has ${userSfds?.length || 0} SFDs already associated`);
+        
+        // Filtrer les SFDs déjà associées et afficher les autres
+        const userSfdIds = userSfds?.map(us => us.sfd_id) || [];
+        
+        // On affiche toutes les SFDs disponibles même si l'utilisateur a déjà des demandes en cours
+        // pour permettre d'en faire de nouvelles ou de réessayer
+        const availableSfds = sfdsData?.filter(sfd => 
+          !userSfdIds.includes(sfd.id) && sfd.status === 'active'
+        ) || [];
+        
+        console.log(`After filtering, ${availableSfds.length} SFDs are available for selection`);
+        setSfds(availableSfds);
       } catch (err) {
         console.error('Error loading data:', err);
         handleError(err);
@@ -91,21 +120,7 @@ const SfdSelectorPage = () => {
     try {
       setIsSubmitting(true);
       
-      // Vérifier si une demande existe déjà pour cette SFD
-      const existingRequest = existingRequests.find(req => 
-        req.sfd_id === sfdId && (req.status === 'pending' || req.status === 'pending_validation')
-      );
-      
-      if (existingRequest) {
-        console.log('Existing request found:', existingRequest);
-        toast({
-          title: "Information",
-          description: "Vous avez déjà une demande en cours pour cette SFD",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
+      // On permet d'envoyer une nouvelle demande même si une demande rejetée existe déjà
       console.log(`Redirecting to adhesion page for SFD: ${sfdId}`);
       // Rediriger vers la page d'adhésion SFD
       navigate(`/mobile-flow/sfd-adhesion/${sfdId}`);
@@ -163,6 +178,20 @@ const SfdSelectorPage = () => {
         {isLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-[#0D6A51]" />
+          </div>
+        ) : sfds.length === 0 ? (
+          <div className="text-center py-8 bg-white rounded-lg shadow-sm p-6">
+            <div className="flex justify-center mb-4">
+              <Building className="h-16 w-16 text-gray-300" />
+            </div>
+            <h3 className="text-xl font-medium mb-2">Aucune SFD disponible</h3>
+            <p className="text-gray-500 mb-6">
+              Il n'y a actuellement aucune SFD disponible pour une nouvelle adhésion.
+              {existingRequests.length > 0 && " Vous avez déjà des demandes en cours."}
+            </p>
+            <Button onClick={() => navigate('/mobile-flow/account')} className="bg-[#0D6A51] hover:bg-[#0D6A51]/90">
+              Retour à mon compte
+            </Button>
           </div>
         ) : (
           <SfdList 
