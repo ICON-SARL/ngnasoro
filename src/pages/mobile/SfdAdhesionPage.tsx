@@ -1,199 +1,183 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  ArrowLeft, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  Building, 
-  Edit2,
-  RefreshCw
-} from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { NewAdhesionRequestForm } from '@/components/client/NewAdhesionRequestForm';
-import { useClientAdhesions } from '@/hooks/useClientAdhesions';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader } from '@/components/ui/loader';
-import { formatDate } from '@/utils/formatters';
-import { supabase } from '@/integrations/supabase/client';
-import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
-const SfdAdhesionPage: React.FC = () => {
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import MobileHeader from '@/components/mobile/MobileHeader';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { ArrowLeft, Building, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface SfdAdhesionPageProps {}
+
+const SfdAdhesionPage: React.FC<SfdAdhesionPageProps> = () => {
   const { sfdId } = useParams<{ sfdId: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
   const { toast } = useToast();
-  const { 
-    adhesionRequests, 
-    isLoadingAdhesionRequests,
-    refetchAdhesionRequests,
-    submitAdhesionRequest
-  } = useClientAdhesions();
+  const { user } = useAuth();
   
-  const [sfdInfo, setSfdInfo] = useState<{ name: string; region?: string } | null>(null);
-  const [isLoadingSfd, setIsLoadingSfd] = useState(false);
-  const [sfdError, setSfdError] = useState<string | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [existingData, setExistingData] = useState<any>(null);
+  const [sfd, setSfd] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    idNumber: '',
+    idType: 'cni'
+  });
   
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const mode = searchParams.get('mode');
-    console.log('URL mode parameter:', mode);
-    setIsEditMode(mode === 'edit');
-  }, [location.search]);
-  
-  useEffect(() => {
-    if (!user) return;
+    // Vérifier si l'utilisateur est connecté
+    if (!user) {
+      toast({
+        title: 'Authentification requise',
+        description: 'Vous devez être connecté pour accéder à cette page',
+        variant: 'destructive',
+      });
+      
+      // Enregistrer la redirection souhaitée
+      if (sfdId) {
+        localStorage.setItem('redirectAfterAuth', `/mobile-flow/sfd-adhesion/${sfdId}`);
+      }
+      
+      navigate('/auth');
+      return;
+    }
     
-    const fetchSfdInfo = async () => {
+    // Charger les informations de la SFD
+    const fetchSfdDetails = async () => {
       if (!sfdId) return;
       
-      setIsLoadingSfd(true);
-      setSfdError(null);
-      
       try {
-        console.log('Fetching SFD info for ID:', sfdId);
+        setIsLoading(true);
         
+        // Récupérer les détails de la SFD
         const { data, error } = await supabase
           .from('sfds')
-          .select('name, region')
-          .eq('id', sfdId)
-          .eq('status', 'active')
-          .maybeSingle();
-          
-        if (error) {
-          console.error('Error technique lors de la récupération des informations SFD:', error);
-          setSfdError('Une erreur technique est survenue. Veuillez réessayer.');
-          throw error;
-        }
-        
-        if (data) {
-          console.log('SFD found:', data);
-          setSfdInfo(data);
-        } else {
-          console.log('SFD not found or inactive:', sfdId);
-          setSfdError('Cette SFD n\'est pas disponible actuellement.');
-          navigate('/mobile-flow/account');
-        }
-      } catch (error) {
-        console.error('Error in fetchSfdInfo:', error);
-      } finally {
-        setIsLoadingSfd(false);
-      }
-    };
-    
-    const fetchExistingRequest = async () => {
-      if (!sfdId || !user?.id) return;
-      
-      try {
-        console.log('Fetching existing request for SFD:', sfdId, 'and user:', user.id);
-        const { data, error } = await supabase
-          .from('client_adhesion_requests')
           .select('*')
-          .eq('sfd_id', sfdId)
-          .eq('user_id', user.id)
-          .maybeSingle();
+          .eq('id', sfdId)
+          .single();
           
-        if (error) {
-          console.error('Error fetching existing request:', error);
+        if (error) throw error;
+        
+        if (!data) {
+          toast({
+            title: 'SFD non trouvée',
+            description: 'Impossible de trouver la SFD demandée',
+            variant: 'destructive',
+          });
+          navigate('/mobile-flow/sfd-connection');
           return;
         }
         
-        if (data) {
-          console.log('Existing request found:', data);
-          setExistingData(data);
-        } else {
-          console.log('No existing request found');
+        setSfd(data);
+        
+        // Vérifier si l'utilisateur a déjà une demande en cours
+        const { data: existingRequest, error: requestError } = await supabase
+          .from('client_adhesion_requests')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('sfd_id', sfdId)
+          .not('status', 'eq', 'rejected')
+          .maybeSingle();
+          
+        if (requestError) throw requestError;
+        
+        if (existingRequest) {
+          toast({
+            title: 'Demande existante',
+            description: 'Vous avez déjà une demande en cours pour cette SFD',
+          });
+          navigate('/mobile-flow/main');
+          return;
         }
+        
+        // Pré-remplir le formulaire avec les données du profil
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('full_name, email, phone')
+          .eq('id', user.id)
+          .single();
+          
+        if (!profileError && profile) {
+          setFormData({
+            ...formData,
+            fullName: profile.full_name || '',
+            email: profile.email || user.email || '',
+            phone: profile.phone || '',
+          });
+        }
+        
       } catch (error) {
-        console.error('Error in fetchExistingRequest:', error);
+        console.error('Erreur lors du chargement des données:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger les informations de la SFD',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    fetchSfdInfo();
-    fetchExistingRequest();
-    refetchAdhesionRequests();
-  }, [sfdId, toast, refetchAdhesionRequests, navigate, user]);
-
-  useRealtimeSync({
-    table: 'client_adhesion_requests',
-    filter: sfdId ? `sfd_id=eq.${sfdId}` : undefined,
-    onUpdate: (updatedRequest) => {
-      if (updatedRequest.user_id === user?.id) {
-        console.log('Adhesion request updated:', updatedRequest);
-        refetchAdhesionRequests();
-        
-        // Notifications pour les changements de statut
-        if (updatedRequest.status === 'approved') {
-          toast({
-            title: "Demande approuvée",
-            description: "Votre demande d'adhésion a été approuvée",
-          });
-        } else if (updatedRequest.status === 'rejected') {
-          toast({
-            title: "Demande rejetée",
-            description: updatedRequest.rejection_reason || "Votre demande d'adhésion a été rejetée",
-            variant: "destructive"
-          });
-        }
-      }
-    }
-  });
-
-  const handleBackClick = () => {
-    navigate('/mobile-flow/sfd-selector');
+    fetchSfdDetails();
+  }, [sfdId, user, navigate, toast]);
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
-
-  const handleSubmit = async (formData: any) => {
-    if (!sfdId || !user?.id || isSubmitting) return;
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    setIsSubmitting(true);
-    
-    try {
-      console.log('Submitting adhesion request with data:', formData);
-      
-      // Si nous avons une demande existante rejetée, supprimons-la d'abord
-      if (existingData && existingData.status === 'rejected') {
-        console.log('Deleting existing rejected request first');
-        
-        const { error: deleteError } = await supabase
-          .from('client_adhesion_requests')
-          .delete()
-          .eq('id', existingData.id);
-          
-        if (deleteError) {
-          console.error('Error deleting existing request:', deleteError);
-          throw deleteError;
-        }
-      }
-      
-      // Créer ou mettre à jour la demande
-      const { success, error } = await submitAdhesionRequest(sfdId, formData);
-      
-      if (!success) {
-        throw new Error(error || 'Échec de la soumission de la demande');
-      }
-      
-      toast({
-        title: 'Demande soumise',
-        description: 'Votre demande d\'adhésion a été soumise avec succès',
-      });
-      
-      // Rediriger vers la page du compte
-      navigate('/mobile-flow/account');
-      
-    } catch (error: any) {
-      console.error('Error submitting adhesion request:', error);
-      
+    if (!user || !sfdId) {
       toast({
         title: 'Erreur',
-        description: error.message || 'Une erreur s\'est produite lors de la soumission de votre demande',
+        description: 'Vous devez être connecté et sélectionner une SFD',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Créer une demande d'adhésion
+      const { error } = await supabase
+        .from('client_adhesion_requests')
+        .insert({
+          user_id: user.id,
+          sfd_id: sfdId,
+          full_name: formData.fullName,
+          email: formData.email || user.email,
+          phone: formData.phone,
+          address: formData.address,
+          id_number: formData.idNumber,
+          id_type: formData.idType,
+          status: 'pending',
+          reference_number: `ADH-${Date.now().toString().substring(6)}`
+        });
+        
+      if (error) throw error;
+      
+      toast({
+        title: 'Demande envoyée',
+        description: 'Votre demande d\'adhésion a été envoyée avec succès',
+      });
+      
+      navigate('/mobile-flow/main');
+      
+    } catch (error: any) {
+      console.error('Erreur lors de l\'envoi de la demande:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Impossible d\'envoyer la demande d\'adhésion',
         variant: 'destructive',
       });
     } finally {
@@ -201,164 +185,146 @@ const SfdAdhesionPage: React.FC = () => {
     }
   };
 
-  if (!sfdId) {
+  if (isLoading) {
     return (
-      <div className="container max-w-md mx-auto py-4 px-4">
-        <Button variant="ghost" onClick={handleBackClick}>
-          <ArrowLeft className="h-4 w-4 mr-2" /> Retour
-        </Button>
-        <Alert className="mt-4">
-          <AlertTitle>Erreur</AlertTitle>
-          <AlertDescription>Identifiant SFD manquant</AlertDescription>
-        </Alert>
+      <div className="min-h-screen bg-gray-50">
+        <MobileHeader />
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
   
-  const existingRequest = adhesionRequests.find(
-    request => request.sfd_id === sfdId && request.user_id === user?.id
-  );
-  
+  if (!sfd) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <MobileHeader />
+        <div className="container mx-auto px-4 py-8">
+          <Card className="text-center">
+            <CardContent className="pt-6">
+              <p className="mb-4">SFD non trouvée ou inaccessible</p>
+              <Button onClick={() => navigate('/mobile-flow/sfd-connection')}>
+                Retour à la liste des SFDs
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container max-w-md mx-auto py-4 px-4">
-      <Button 
-        variant="ghost" 
-        className="mb-4" 
-        onClick={handleBackClick}
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" /> Retour
-      </Button>
+    <div className="min-h-screen bg-gray-50">
+      <MobileHeader />
       
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center">
-            <Building className="h-5 w-5 mr-2 text-[#0D6A51]" />
-            {isLoadingSfd ? (
-              <span className="flex items-center">
-                Chargement... <Loader className="ml-2" />
-              </span>
-            ) : (
-              <>
-                {isEditMode ? 'Modification de la demande' : 'Demande d\'adhésion'} 
-                {sfdInfo && <span className="text-[#0D6A51]"> {sfdInfo.name}</span>}
-              </>
-            )}
-          </CardTitle>
-        </CardHeader>
+      <main className="container mx-auto px-4 py-6">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="mb-4 flex items-center"
+          onClick={() => navigate('/mobile-flow/sfd-connection')}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" /> Retour
+        </Button>
         
-        <CardContent className="pb-6">
-          {isLoadingAdhesionRequests || isLoadingSfd ? (
-            <div className="flex justify-center py-8">
-              <Loader size="lg" />
+        <Card className="mb-6">
+          <CardHeader className="pb-2">
+            <div className="flex items-center">
+              <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center mr-4">
+                {sfd.logo_url ? (
+                  <img src={sfd.logo_url} alt={sfd.name} className="h-10 w-10 rounded-full object-cover" />
+                ) : (
+                  <Building className="h-6 w-6 text-gray-500" />
+                )}
+              </div>
+              <CardTitle>{sfd.name}</CardTitle>
             </div>
-          ) : sfdError ? (
-            <Alert className="bg-red-50 border-red-200">
-              <XCircle className="h-4 w-4 text-red-600" />
-              <AlertTitle className="text-red-800">SFD non disponible</AlertTitle>
-              <AlertDescription className="text-red-700 space-y-4">
-                <p>{sfdError}</p>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 mb-4">
+              {sfd.description || `Complétez ce formulaire pour rejoindre ${sfd.name}.`}
+            </p>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Nom complet *</Label>
+                <Input
+                  id="fullName"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  placeholder="Votre nom complet"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Votre adresse email"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="phone">Téléphone *</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="Votre numéro de téléphone"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="address">Adresse</Label>
+                <Input
+                  id="address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder="Votre adresse"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="idNumber">Numéro de pièce d'identité</Label>
+                <Input
+                  id="idNumber"
+                  name="idNumber"
+                  value={formData.idNumber}
+                  onChange={handleChange}
+                  placeholder="Numéro CNI ou passeport"
+                />
+              </div>
+              
+              <div className="pt-4">
                 <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-3 bg-white text-red-600 border-red-300 hover:bg-red-50"
-                  onClick={handleBackClick}
+                  type="submit"
+                  className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+                  disabled={isSubmitting}
                 >
-                  Retour à la liste
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Traitement en cours...
+                    </>
+                  ) : (
+                    'Envoyer la demande d\'adhésion'
+                  )}
                 </Button>
-              </AlertDescription>
-            </Alert>
-          ) : existingRequest && !isEditMode ? (
-            <div>
-              {existingRequest.status === 'pending' && (
-                <Alert className="bg-amber-50 border-amber-200">
-                  <Clock className="h-4 w-4 text-amber-600" />
-                  <AlertTitle className="text-amber-800">Demande en attente</AlertTitle>
-                  <AlertDescription className="text-amber-700">
-                    <p>Votre demande d'adhésion est en cours d'examen.</p> 
-                    <p className="mt-1 text-sm">Soumise le {formatDate(existingRequest.created_at)}</p>
-                    <div className="mt-3 flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="bg-white text-amber-600 border-amber-300 hover:bg-amber-50"
-                        onClick={() => navigate('/mobile-flow/account')}
-                      >
-                        Voir mes demandes
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="bg-white text-blue-600 border-blue-300 hover:bg-blue-50"
-                        onClick={() => setIsEditMode(true)}
-                      >
-                        <Edit2 className="h-3 w-3 mr-1" /> Modifier
-                      </Button>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              {existingRequest.status === 'approved' && (
-                <Alert className="bg-green-50 border-green-200">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <AlertTitle className="text-green-800">Demande approuvée</AlertTitle>
-                  <AlertDescription className="text-green-700">
-                    <p>Votre demande d'adhésion a été approuvée. Vous pouvez maintenant accéder aux services de la SFD.</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="mt-3 bg-white text-green-600 border-green-300 hover:bg-green-50"
-                      onClick={() => navigate('/mobile-flow/main')}
-                    >
-                      Accéder à la SFD
-                    </Button>
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              {existingRequest.status === 'rejected' && (
-                <Alert className="bg-red-50 border-red-200">
-                  <XCircle className="h-4 w-4 text-red-600" />
-                  <AlertTitle className="text-red-800">Demande rejetée</AlertTitle>
-                  <AlertDescription className="text-red-700">
-                    <p>Votre demande d'adhésion a été rejetée.</p>
-                    {existingRequest.rejection_reason && (
-                      <p className="mt-1 text-sm">Raison: {existingRequest.rejection_reason}</p>
-                    )}
-                    <div className="mt-3 flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="bg-white text-red-600 border-red-300 hover:bg-red-50"
-                        onClick={handleBackClick}
-                      >
-                        Retour
-                      </Button>
-                      <Button 
-                        className="bg-red-600 hover:bg-red-700 text-white"
-                        size="sm" 
-                        onClick={() => {
-                          setIsEditMode(true);
-                          setExistingData(existingRequest);
-                        }}
-                      >
-                        <RefreshCw className="h-3 w-3 mr-1" /> Réessayer
-                      </Button>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          ) : (
-            <NewAdhesionRequestForm
-              sfdId={sfdId}
-              onSubmit={handleSubmit}
-              initialData={isEditMode ? existingData : null}
-              isSubmitting={isSubmitting}
-            />
-          )}
-        </CardContent>
-      </Card>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </main>
     </div>
   );
 };

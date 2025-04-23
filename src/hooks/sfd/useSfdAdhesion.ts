@@ -1,19 +1,18 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ClientAdhesionRequest } from '@/types/adhesionTypes';
-import { AvailableSfd as SfdAccountTypesAvailableSfd } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 
 export interface AvailableSfd {
   id: string;
   name: string;
-  code: string; // Requis pour la compatibilité
+  code: string;
   region?: string;
-  description?: string; // Ajouté pour correspondre à SfdAccountTypes
+  description?: string;
   logo_url?: string;
-  status: string; // Requis pour la compatibilité
+  status: string;
 }
 
 export function useSfdAdhesion() {
@@ -24,7 +23,7 @@ export function useSfdAdhesion() {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user?.id) return;
     
     setIsLoading(true);
@@ -43,27 +42,7 @@ export function useSfdAdhesion() {
         throw sfdsError;
       }
 
-      console.log('SFDs retrieved from database:', sfds?.length || 0, sfds);
-      
-      // Si aucune SFD n'est trouvée dans la DB, essayer l'Edge Function
-      let allSfds = sfds || [];
-      if (!allSfds.length) {
-        console.log('No SFDs found in database, trying edge function');
-        try {
-          const { data: edgeData, error: edgeError } = await supabase.functions.invoke('fetch-sfds', {
-            body: { userId: user.id }
-          });
-          
-          if (edgeError) {
-            console.error('Error calling edge function:', edgeError);
-          } else if (edgeData && edgeData.length) {
-            console.log(`Fetched ${edgeData.length} SFDs from edge function`);
-            allSfds = edgeData;
-          }
-        } catch (error) {
-          console.error('Error in edge function call:', error);
-        }
-      }
+      console.log('SFDs récupérées:', sfds?.length || 0);
       
       // Récupérer les demandes d'adhésion de l'utilisateur
       const { data: requests, error: requestsError } = await supabase
@@ -85,7 +64,7 @@ export function useSfdAdhesion() {
         throw requestsError;
       }
       
-      console.log('User adhesion requests:', requests?.length || 0, requests);
+      console.log('Demandes d\'adhésion utilisateur:', requests?.length || 0);
       
       // Récupérer les SFDs déjà associées à l'utilisateur
       const { data: userSfds, error: userSfdsError } = await supabase
@@ -98,10 +77,14 @@ export function useSfdAdhesion() {
         throw userSfdsError;
       }
       
-      console.log('User associated SFDs:', userSfds?.length || 0, userSfds);
+      console.log('SFDs associées à l\'utilisateur:', userSfds?.length || 0);
       
       const userSfdIds = userSfds?.map(us => us.sfd_id) || [];
+      const pendingRequestIds = requests
+        ?.filter(req => req.status === 'pending')
+        .map(req => req.sfd_id) || [];
       
+      // Format the requests for display
       const formattedRequests = requests?.map(req => ({
         id: req.id,
         user_id: req.user_id,
@@ -114,36 +97,17 @@ export function useSfdAdhesion() {
         sfds: req.sfds
       })) || [];
       
-      // Filtrage: supprimer les SFDs déjà associées à l'utilisateur
-      const filteredSfds = allSfds.filter(sfd => !userSfdIds.includes(sfd.id)) || [];
+      // Filtrage: afficher les SFDs qui ne sont pas déjà associées et pour lesquelles il n'y a pas de demande en cours
+      const filteredSfds = (sfds || []).filter(sfd => 
+        !userSfdIds.includes(sfd.id) && 
+        !pendingRequestIds.includes(sfd.id) && 
+        sfd.status === 'active'
+      );
       
-      console.log(`After filtering, ${filteredSfds.length} SFDs are available`);
+      console.log(`Après filtrage, ${filteredSfds.length} SFDs sont disponibles`);
       
       setUserRequests(formattedRequests);
       setAvailableSfds(filteredSfds);
-
-      // Si toujours aucune SFD après filtrage, ajouter des SFDs de test en environnement dev
-      if (filteredSfds.length === 0 && process.env.NODE_ENV !== 'production') {
-        console.log('Adding test SFDs for development');
-        setAvailableSfds([
-          {
-            id: 'test-sfd1',
-            name: 'RMCR (Test)',
-            code: 'RMCR',
-            region: 'Centre',
-            status: 'active',
-            logo_url: null
-          },
-          {
-            id: 'test-sfd2',
-            name: 'NYESIGISO (Test)',
-            code: 'NYESIGISO',
-            region: 'Sud',
-            status: 'active',
-            logo_url: null
-          }
-        ]);
-      }
     } catch (error) {
       console.error('Error in useSfdAdhesion:', error);
       toast({
@@ -154,13 +118,16 @@ export function useSfdAdhesion() {
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  useEffect(() => {
-    fetchData();
   }, [user?.id, toast]);
   
-  const requestSfdAdhesion = async (sfdId: string, phoneNumber?: string) => {
+  // Charger les données au montage et lorsque l'utilisateur change
+  useEffect(() => {
+    if (user?.id) {
+      fetchData();
+    }
+  }, [user?.id, fetchData]);
+  
+  const requestSfdAdhesion = async (sfdId: string, formData: any) => {
     if (!user?.id) {
       toast({
         title: 'Erreur',
@@ -173,15 +140,21 @@ export function useSfdAdhesion() {
     setIsSubmitting(true);
     
     try {
-      console.log('Requesting adhesion for SFD:', sfdId);
+      console.log('Envoi de la demande d\'adhésion pour SFD:', sfdId);
       
-      const { data: existingRequest } = await supabase
+      // Vérifier si une demande existe déjà
+      const { data: existingRequest, error: checkError } = await supabase
         .from('client_adhesion_requests')
         .select('id, status')
         .eq('user_id', user.id)
         .eq('sfd_id', sfdId)
         .maybeSingle();
         
+      if (checkError) {
+        console.error('Erreur lors de la vérification des demandes existantes:', checkError);
+        throw checkError;
+      }
+      
       if (existingRequest && existingRequest.status !== 'rejected') {
         toast({
           title: 'Demande existante',
@@ -192,51 +165,65 @@ export function useSfdAdhesion() {
       }
       
       if (existingRequest && existingRequest.status === 'rejected') {
-        console.log('Deleting existing rejected request:', existingRequest.id);
+        console.log('Suppression de la demande rejetée existante:', existingRequest.id);
         await supabase
           .from('client_adhesion_requests')
           .delete()
           .eq('id', existingRequest.id);
       }
       
-      const { data: profile } = await supabase
+      // Récupérer les infos du profile utilisateur
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('full_name, email')
+        .select('full_name, email, phone')
         .eq('id', user.id)
         .single();
       
-      const { data: newRequest, error } = await supabase
-        .from('client_adhesion_requests')
-        .insert({
-          user_id: user.id,
-          sfd_id: sfdId,
-          full_name: profile?.full_name || 'Utilisateur',
-          email: profile?.email || user.email,
-          phone: phoneNumber,
-          status: 'pending'
-        })
-        .select();
-        
-      if (error) {
-        console.error('Error creating adhesion request:', error);
-        throw error;
+      if (profileError) {
+        console.error('Erreur lors de la récupération du profil:', profileError);
       }
       
-      console.log('Adhesion request created:', newRequest);
+      // Préparer les données de la demande
+      const requestData = {
+        user_id: user.id,
+        sfd_id: sfdId,
+        full_name: formData.fullName || profile?.full_name || 'Utilisateur',
+        email: formData.email || profile?.email || user.email,
+        phone: formData.phone || profile?.phone,
+        address: formData.address || '',
+        id_number: formData.idNumber || '',
+        id_type: formData.idType || 'cni',
+        status: 'pending',
+        reference_number: `ADH-${Date.now().toString().substring(6)}`
+      };
+      
+      // Créer la demande d'adhésion
+      const { data: newRequest, error: insertError } = await supabase
+        .from('client_adhesion_requests')
+        .insert(requestData)
+        .select();
+        
+      if (insertError) {
+        console.error('Erreur lors de la création de la demande d\'adhésion:', insertError);
+        throw insertError;
+      }
+      
+      console.log('Demande d\'adhésion créée:', newRequest);
       
       toast({
         title: 'Demande envoyée',
         description: 'Votre demande d\'adhésion a été envoyée avec succès',
       });
       
+      // Actualiser les données
       await fetchData();
       
       return true;
-    } catch (error) {
-      console.error('Error in requestSfdAdhesion:', error);
+    } catch (error: any) {
+      console.error('Erreur lors de la demande d\'adhésion:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'envoyer la demande d\'adhésion',
+        description: error.message || 'Impossible d\'envoyer la demande d\'adhésion',
         variant: 'destructive',
       });
       return false;

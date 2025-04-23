@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, Edit2, RefreshCw } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { handleError } from '@/utils/errorHandler';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -21,11 +21,7 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false, isEdit = false,
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const handleJoinRequest = async (e: React.MouseEvent) => {
-    // Empêcher la propagation de l'événement pour éviter les déclenchements indésirables
-    e.preventDefault();
-    e.stopPropagation();
-    
+  const handleJoinRequest = async () => {
     try {
       // Si un gestionnaire onClick personnalisé est fourni, l'utiliser à la place
       if (onClick) {
@@ -34,16 +30,20 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false, isEdit = false,
       }
       
       if (!user) {
+        console.log("Utilisateur non authentifié, redirection vers la page d'authentification");
         toast({
           title: 'Connexion requise',
           description: "Vous devez être connecté pour envoyer une demande d'adhésion",
           variant: 'destructive',
         });
+        
+        // Sauvegarder la redirection pour revenir après connexion
+        localStorage.setItem('redirectAfterAuth', `/mobile-flow/sfd-adhesion/${sfdId}`);
         navigate('/auth');
         return;
       }
 
-      // Si c'est une modification ou édition, naviguer directement sans supprimer la demande
+      // Si c'est une modification ou édition, naviguer directement 
       if (isEdit) {
         console.log(`Édition de la demande pour SFD: ${sfdId}`);
         navigate(`/mobile-flow/sfd-adhesion/${sfdId}?mode=edit`);
@@ -94,25 +94,9 @@ export const JoinSfdButton = ({ sfdId, sfdName, isRetry = false, isEdit = false,
   return (
     <Button 
       onClick={handleJoinRequest}
-      className={`w-full ${isRetry 
-        ? 'bg-red-600 hover:bg-red-700' 
-        : isEdit 
-          ? 'bg-amber-600 hover:bg-amber-700'
-          : 'bg-[#0D6A51] hover:bg-[#0D6A51]/90'}`}
+      className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
     >
-      {isRetry ? (
-        <>
-          <RefreshCw className="mr-2 h-4 w-4" /> Réessayer
-        </>
-      ) : isEdit ? (
-        <>
-          <Edit2 className="mr-2 h-4 w-4" /> Modifier
-        </>
-      ) : (
-        <>
-          Rejoindre <ArrowRight className="ml-2 h-4 w-4" />
-        </>
-      )}
+      Rejoindre <ArrowRight className="ml-2 h-4 w-4" />
     </Button>
   );
 };

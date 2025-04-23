@@ -1,162 +1,100 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import MobileLayout from '@/components/mobile/MobileLayout';
+import MobileHome from './MobileHome';
+import MobileProfile from './MobileProfile';
+import MobileNotifications from './MobileNotifications';
+import MobileTransactions from './MobileTransactions';
+import MobileSettings from './MobileSettings';
+import MobileAccountDetails from './MobileAccountDetails';
+import MobileHelp from './MobileHelp';
+import MobileLocationSettings from './MobileLocationSettings';
+import MobileNotificationSettings from './MobileNotificationSettings';
+import MobileSecurity from './MobileSecurity';
+import SendMoney from './SendMoney';
+import ReceiveMoney from './ReceiveMoney';
+import QrScanner from './QrScanner';
+import SfdConnectionPage from './SfdConnectionPage';
+import SfdAdhesionPage from './SfdAdhesionPage';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  MainDashboard, 
-  HomeLoanPage, 
-  MobileSavingsPage, 
-  MobileTransactionsPage,
-  LoanAgreementPage, 
-  LoanDetailsPage, 
-  LoanActivityPage, 
-  AccountPage, 
-  SettingsPage, 
-  HelpPage, 
-  AboutPage, 
-  TermsPage, 
-  PrivacyPage, 
-  SecurePaymentPage, 
-  LoanPlansPage, 
-  SfdSelectorPage 
-} from '@/components/mobile';
-import MobileMenu from '@/components/mobile/MobileMenu';
-import { Account } from '@/types/transactions';
 import { apiClient } from '@/utils/apiClient';
-import { useTransactions } from '@/hooks/transactions';
+import { useToast } from '@/hooks/use-toast';
 
-const MobileApp = () => {
-  const [view, setView] = useState('Home');
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [account, setAccount] = useState<Account | null>(null);
+const MobileApp: React.FC = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
-  
-  const { user, activeSfdId } = useAuth();
-  const { transactions, isLoading: transactionsLoading } = useTransactions(
-    user?.id || '', 
-    activeSfdId || 'default-sfd'
-  );
-  
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const fetchAccount = useCallback(async () => {
-    if (!user?.id || !activeSfdId || activeSfdId === 'default-sfd') {
+  const [userAccount, setUserAccount] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Rediriger vers l'auth si l'utilisateur n'est pas connecté
+    if (!user) {
+      navigate('/auth');
       return;
     }
-    
-    setIsLoading(true);
-    
-    try {
-      const fetchedAccount = await apiClient.getClientAccount(user.id);
-      setAccount(fetchedAccount);
-    } catch (error) {
-      console.error("Failed to fetch account:", error);
-      toast({
-        title: "Erreur de compte",
-        description: "Impossible de charger les informations du compte.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+
+    // Charger le compte de l'utilisateur
+    const loadUserAccount = async () => {
+      try {
+        setIsLoading(true);
+        const accountData = await apiClient.getClientAccount(user.id);
+        setUserAccount(accountData);
+      } catch (error) {
+        console.error('Error loading user account:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger les informations de votre compte',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserAccount();
+
+    // Vérifier si une redirection après auth est demandée
+    const redirectPath = localStorage.getItem('redirectAfterAuth');
+    if (redirectPath) {
+      localStorage.removeItem('redirectAfterAuth');
+      navigate(redirectPath);
     }
-  }, [user, activeSfdId, toast]);
-  
-  useEffect(() => {
-    if (user?.id && activeSfdId && activeSfdId !== 'default-sfd') {
-      fetchAccount();
-    }
-  }, [user, activeSfdId, fetchAccount]);
-  
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const initialView = params.get('view') || 'Home';
-    setView(initialView);
-  }, [location.search]);
-  
-  const handleViewChange = (newView: string, data?: any) => {
-    setView(newView);
-    
-    if (newView === 'Loans') {
-      navigate('/mobile-flow/loan-activity');
-    }
-  };
-  
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-  
-  const closeMenu = () => {
-    setIsMenuOpen(false);
-  };
-  
-  const renderMainView = () => {
-    switch (view) {
-      case 'Home':
-        return <MainDashboard 
-          onAction={handleViewChange}
-          account={account}
-          transactions={transactions}
-          transactionsLoading={transactionsLoading}
-          toggleMenu={toggleMenu}
-        />;
-      case 'Loans':
-        return <HomeLoanPage />;
-      case 'Savings':
-        return <MobileSavingsPage />;
-      case 'Transactions':
-        return <MobileTransactionsPage />;
-      case 'LoanAgreement':
-        return <LoanAgreementPage />;
-      case 'LoanDetails':
-        return <LoanDetailsPage />;
-      case 'Payment':
-        return <SecurePaymentPage />;
-      case 'LoanActivity':
-        return <LoanActivityPage />;
-      case 'Account':
-        return <AccountPage />;
-      case 'Settings':
-        return <SettingsPage />;
-      case 'Help':
-        return <HelpPage />;
-      case 'About':
-        return <AboutPage />;
-      case 'Terms':
-        return <TermsPage />;
-      case 'Privacy':
-        return <PrivacyPage />;
-      case 'SecurePayment':
-        return <SecurePaymentPage />;
-      case 'LoanPlans':
-        return <LoanPlansPage />;
-      case 'Loan Process':
-        return <LoanPlansPage />;
-      case 'SFDSelector':
-        return <SfdSelectorPage />;
-      default:
-        return <MainDashboard 
-          onAction={handleViewChange}
-          account={account}
-          transactions={transactions}
-          transactionsLoading={transactionsLoading}
-          toggleMenu={toggleMenu}
-        />;
-    }
-  };
-  
+  }, [user, navigate, toast]);
+
+  // Protection des routes si non connecté
+  if (!user && location.pathname !== '/auth') {
+    return null; // L'utilisateur sera redirigé dans useEffect
+  }
+
   return (
-    <div className="relative h-screen">
-      {renderMainView()}
-      
-      <MobileMenu 
-        isOpen={isMenuOpen} 
-        onClose={closeMenu} 
-        onNavigate={handleViewChange}
-      />
-    </div>
+    <Routes>
+      <Route path="/" element={<MobileLayout />}>
+        {/* Main tabs */}
+        <Route index element={<MobileHome userAccount={userAccount} isLoading={isLoading} />} />
+        <Route path="profile" element={<MobileProfile />} />
+        <Route path="notifications" element={<MobileNotifications />} />
+        <Route path="transactions" element={<MobileTransactions />} />
+        
+        {/* Account sub-routes */}
+        <Route path="settings" element={<MobileSettings />} />
+        <Route path="account-details" element={<MobileAccountDetails />} />
+        <Route path="help" element={<MobileHelp />} />
+        <Route path="location-settings" element={<MobileLocationSettings />} />
+        <Route path="notification-settings" element={<MobileNotificationSettings />} />
+        <Route path="security" element={<MobileSecurity />} />
+        
+        {/* Transaction routes */}
+        <Route path="send-money" element={<SendMoney />} />
+        <Route path="receive-money" element={<ReceiveMoney />} />
+        <Route path="scan" element={<QrScanner />} />
+        
+        {/* SFD related routes */}
+        <Route path="sfd-connection" element={<SfdConnectionPage />} />
+        <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
+      </Route>
+    </Routes>
   );
 };
 

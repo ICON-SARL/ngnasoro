@@ -38,19 +38,14 @@ export function useSfdDataAccess() {
     }
   }, [activeSfdId]);
 
-  // Update the fetchSfds function to only get active SFDs
+  // Simplifier la logique pour récupérer les SFDs actives
   useEffect(() => {
     const fetchSfds = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-      
       setIsLoading(true);
       try {
-        console.log('Fetching active SFDs for user:', user.id);
+        console.log('Fetching active SFDs from database...');
         
-        // First try direct database query for active SFDs
+        // Récupérer directement les SFDs actives
         const { data: directSfds, error: directError } = await supabase
           .from('sfds')
           .select('*')
@@ -65,30 +60,14 @@ export function useSfdDataAccess() {
           console.log(`Found ${directSfds.length} active SFDs`);
           setSfdData(directSfds);
           
-          // If no active SFD is set and we have SFDs, set the first one as active
+          // Si aucune SFD active n'est définie et qu'on a des SFDs, définir la première comme active
           if ((!activeSfdId || activeSfdId.trim() === '') && directSfds.length > 0) {
             console.log('Setting first active SFD as default:', directSfds[0].id);
             setActiveSfdId(directSfds[0].id);
           }
-          
-          setIsLoading(false);
-          return;
-        }
-
-        // If no SFDs found, try the edge function
-        const { data, error } = await supabase.functions.invoke('fetch-sfds', {
-          body: { userId: user.id }
-        });
-
-        if (error) throw error;
-        
-        const activeSfds = Array.isArray(data) ? data.filter(sfd => sfd.status === 'active') : [];
-        console.log(`Found ${activeSfds.length} active SFDs from edge function`);
-        
-        setSfdData(activeSfds);
-        
-        if ((!activeSfdId || activeSfdId.trim() === '') && activeSfds.length > 0) {
-          setActiveSfdId(activeSfds[0].id);
+        } else {
+          console.log('No active SFDs found in database');
+          setSfdData([]);
         }
       } catch (err: any) {
         console.error('Error fetching SFDs:', err);
