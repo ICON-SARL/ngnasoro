@@ -1,143 +1,42 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-/**
- * Vérifie si une SFD a des associations d'administrateurs
- * @param sfdId L'identifiant de la SFD à vérifier
- * @returns true si la SFD a au moins un administrateur associé
- */
-export const verifySfdHasAdmins = async (sfdId: string): Promise<boolean> => {
-  try {
-    // Récupère les utilisateurs associés à cette SFD
-    const { data: userSfdsData, error: userSfdsError } = await supabase
-      .from('user_sfds')
-      .select('user_id')
-      .eq('sfd_id', sfdId);
-
-    if (userSfdsError) {
-      console.error('Error fetching user-SFD associations:', userSfdsError);
-      return false;
-    }
-
-    // Si aucune association n'est trouvée, retourner false
-    if (!userSfdsData || userSfdsData.length === 0) {
-      return false;
-    }
-
-    // Extraire les IDs utilisateur
-    const userIds = userSfdsData.map(item => item.user_id);
-    
-    if (userIds.length === 0) {
-      return false;
-    }
-
-    // Vérifier si au moins un des utilisateurs a le rôle sfd_admin
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .in('user_id', userIds)
-      .eq('role', 'sfd_admin');
-
-    if (roleError) {
-      console.error('Error checking user roles:', roleError);
-      return false;
-    }
-
-    return roleData && roleData.length > 0;
-  } catch (error) {
-    console.error('Exception verifying SFD admins:', error);
-    return false;
-  }
-};
-
-/**
- * Récupère toutes les SFDs actives de la base de données
- */
 export const fetchActiveSfds = async () => {
   try {
-    console.log('Fetching active SFDs from database');
-    
     const { data, error } = await supabase
       .from('sfds')
-      .select('id, name, code, region, status, logo_url, description')
+      .select('*')
       .eq('status', 'active');
-      
-    if (error) {
-      console.error('Error fetching SFDs:', error);
-      throw error;
-    }
     
-    console.log(`Fetched ${data?.length || 0} active SFDs from database`);
+    if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error in fetchActiveSfds:', error);
+    console.error('Error fetching active SFDs:', error);
     return [];
   }
 };
 
-/**
- * Récupère toutes les SFDs disponibles pour un utilisateur
- * @param userId ID de l'utilisateur (optionnel)
- */
-export const fetchSfdsFromEdgeFunction = async (userId?: string) => {
+export const fetchSfdsFromEdgeFunction = async (userId: string) => {
   try {
-    console.log('Fetching SFDs from edge function for user:', userId || 'anonymous');
-    
-    // En mode développement, afficher des SFDs de test si aucun utilisateur n'est fourni
-    if (!userId && process.env.NODE_ENV !== 'production') {
-      console.log('Dev mode: Returning test SFDs');
-      return [
-        {
-          id: 'test-sfd1',
-          name: 'RMCR (Test)',
-          code: 'RMCR',
-          region: 'Centre',
-          status: 'active',
-          logo_url: null
-        },
-        {
-          id: 'test-sfd2',
-          name: 'NYESIGISO (Test)',
-          code: 'NYESIGISO',
-          region: 'Sud',
-          status: 'active',
-          logo_url: null
-        }
-      ];
-    }
-    
-    const { data, error } = await supabase.functions.invoke('fetch-available-sfds', {
-      body: { userId }
-    });
-    
-    if (error) {
-      console.error('Error fetching SFDs from edge function:', error);
-      // Si l'edge function échoue, utiliser la méthode directe
-      return fetchActiveSfds();
-    }
-    
-    console.log(`Fetched ${data?.length || 0} SFDs from Edge function`);
-    return data || [];
+    // This is a placeholder - in a real app, you would call an edge function
+    console.log('Would call edge function to get SFDs for user:', userId);
+    // For now, return an empty array
+    return [];
   } catch (error) {
-    console.error('Error in fetchSfdsFromEdgeFunction:', error);
-    // En cas d'erreur, utiliser la méthode directe
-    return fetchActiveSfds();
+    console.error('Error fetching SFDs from edge function:', error);
+    return [];
   }
 };
 
-/**
- * Corrige les données des SFDs pour assurer la compatibilité avec les composants
- */
-export const normalizeSfdData = (sfds: any[]): any[] => {
-  if (!Array.isArray(sfds) || sfds.length === 0) return [];
+export const normalizeSfdData = (sfds: any[]) => {
+  if (!Array.isArray(sfds)) return [];
   
   return sfds.map(sfd => ({
-    id: sfd.id || `unknown-${Math.random().toString(36).substring(7)}`,
-    name: sfd.name || 'SFD Sans Nom',
-    code: sfd.code || 'CODE',
-    region: sfd.region || undefined,
-    status: sfd.status || 'active',
+    id: sfd.id || '',
+    name: sfd.name || 'Unknown SFD',
+    code: sfd.code || '',
     logo_url: sfd.logo_url || null,
-    description: sfd.description || undefined
+    region: sfd.region || '',
+    status: sfd.status || 'active'
   }));
 };

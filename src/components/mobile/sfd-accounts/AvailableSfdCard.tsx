@@ -39,7 +39,8 @@ export const AvailableSfdCard: React.FC<AvailableSfdCardProps> = ({ sfd }) => {
   const handleConfirmRequest = async () => {
     try {
       console.log('Confirming adhesion request for SFD:', sfd.id);
-      const success = await requestSfdAdhesion(sfd.id);
+      // Fix: Add the user.id as the second argument to requestSfdAdhesion
+      const success = await requestSfdAdhesion(sfd.id, user?.id || '');
       
       if (success) {
         setIsConfirmDialogOpen(false);

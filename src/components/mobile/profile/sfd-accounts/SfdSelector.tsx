@@ -91,7 +91,7 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ userId, onRequestSent }) => {
   
   const filteredSfds = effectiveSfds.filter(sfd => 
     sfd.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    sfd.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sfd.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (sfd.region && sfd.region.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   
@@ -103,7 +103,8 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ userId, onRequestSent }) => {
   const confirmRequest = async () => {
     if (!selectedSfdId) return;
     
-    const success = await requestSfdAdhesion(selectedSfdId);
+    // Fix: Add the userId as the second argument to requestSfdAdhesion
+    const success = await requestSfdAdhesion(selectedSfdId, userId);
     
     if (success) {
       setIsConfirmOpen(false);
