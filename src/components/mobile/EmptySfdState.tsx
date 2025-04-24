@@ -1,35 +1,25 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { Building } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-const EmptySfdState = () => {
+const EmptySfdState: React.FC = () => {
   const navigate = useNavigate();
-
+  
   return (
-    <div className="flex flex-col items-center justify-center p-6 text-center space-y-4">
-      <Building className="h-16 w-16 text-gray-300" />
-      <h2 className="text-xl font-semibold">Aucun compte SFD</h2>
-      <p className="text-gray-600 mb-2">
+    <div className="text-center p-6">
+      <Building className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+      <h3 className="text-lg font-medium mb-2">Aucun compte SFD</h3>
+      <p className="text-sm text-gray-500 mb-4">
         Vous n'avez pas encore de compte SFD associé à votre profil.
       </p>
-      <div className="space-y-3 w-full">
-        <Button 
-          onClick={() => navigate('/mobile-flow/sfd-selector')}
-          className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-        >
-          Ajouter un compte SFD
-        </Button>
-        <Button 
-          variant="outline"
-          onClick={() => navigate('/mobile-flow/sfd-selector')}
-          className="w-full"
-        >
-          <Building className="h-4 w-4 mr-2" />
-          Voir les SFDs disponibles
-        </Button>
-      </div>
+      <Button 
+        onClick={() => navigate('/mobile-flow/sfd-selector')}
+        className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+      >
+        Ajouter un compte SFD
+      </Button>
     </div>
   );
 };

@@ -7,6 +7,7 @@ import SfdConnectionPage from './SfdConnectionPage';
 import SfdAdhesionPage from './SfdAdhesionPage';
 import SfdSelectorPage from '@/pages/SfdSelectorPage';
 import AccountPage from '@/components/mobile/account/AccountPage';
+import UnauthorizedPage from '@/pages/UnauthorizedPage';
 
 const MobileApp: React.FC = () => {
   return (
@@ -15,6 +16,7 @@ const MobileApp: React.FC = () => {
         {/* Public routes */}
         <Route index element={<Navigate to="account" replace />} />
         <Route path="account" element={<AccountPage />} />
+        <Route path="unauthorized" element={<UnauthorizedPage />} />
         
         {/* Protected SFD routes */}
         <Route
@@ -34,7 +36,7 @@ const MobileApp: React.FC = () => {
           }
         />
         <Route
-          path="sfd-selection"
+          path="sfd-selector"
           element={
             <RoleGuard allowedRoles={['user', 'client']}>
               <SfdSelectorPage />

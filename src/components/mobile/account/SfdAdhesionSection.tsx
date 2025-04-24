@@ -8,44 +8,16 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader } from '@/components/ui/loader';
 import EmptySfdState from '@/components/mobile/EmptySfdState';
 import UserRequestsList from './sfd-adhesion/UserRequestsList';
-import AvailableSfdsList from './sfd-adhesion/AvailableSfdsList';
 import { useSfdAdhesion } from '@/hooks/sfd/useSfdAdhesion';
-import { AvailableSfd } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 
 const SfdAdhesionSection: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { availableSfds, userRequests, isLoading, refetch } = useSfdAdhesion();
   
-  const handleOpenSfdDialog = (sfd: AvailableSfd) => {
-    const existingRequest = userRequests.find(req => req.sfd_id === sfd.id);
-    
-    if (existingRequest) {
-      if (existingRequest.status === 'pending') {
-        toast({
-          title: 'Demande en cours',
-          description: `Vous avez déjà une demande en attente pour ${sfd.name}`,
-        });
-      } else if (existingRequest.status === 'approved') {
-        toast({
-          title: 'Déjà membre',
-          description: `Vous êtes déjà membre de ${sfd.name}`,
-        });
-      } else if (existingRequest.status === 'rejected') {
-        toast({
-          title: 'Demande rejetée',
-          description: `Votre demande précédente à ${sfd.name} a été rejetée. Contactez l'administrateur pour plus d'informations.`,
-          variant: 'destructive',
-        });
-      }
-      return;
-    }
-    
-    navigate(`/mobile-flow/sfd-adhesion/${sfd.id}`);
-  };
-  
   const handleGoToSfdConnection = () => {
-    navigate('/mobile-flow/sfd-connection');
+    // Directement vers la page de sélection SFD plutôt que la page de connexion
+    navigate('/mobile-flow/sfd-selector');
   };
   
   const handleContainerClick = (e: React.MouseEvent) => {
@@ -93,12 +65,6 @@ const SfdAdhesionSection: React.FC = () => {
                 <PlusCircle className="h-4 w-4 mr-2" />
                 Rejoindre une SFD
               </Button>
-              
-              <AvailableSfdsList 
-                sfds={availableSfds}
-                onSfdSelect={handleOpenSfdDialog}
-                onViewMore={handleGoToSfdConnection}
-              />
             </div>
           </div>
         )}

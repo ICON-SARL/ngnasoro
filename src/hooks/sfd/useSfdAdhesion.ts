@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,8 +23,7 @@ export function useSfdAdhesion() {
         .eq('status', 'active');
 
       if (sfdsError) throw sfdsError;
-      setAvailableSfds(sfds || []);
-
+      
       // Fetch user's requests
       const { data: requests, error: requestsError } = await supabase
         .from('client_adhesion_requests')
@@ -32,6 +31,12 @@ export function useSfdAdhesion() {
         .eq('user_id', user.id);
 
       if (requestsError) throw requestsError;
+      
+      // Filter out SFDs that user has already requested
+      const requestedSfdIds = (requests || []).map(req => req.sfd_id);
+      const available = (sfds || []).filter(sfd => !requestedSfdIds.includes(sfd.id));
+      
+      setAvailableSfds(available);
       setUserRequests(requests || []);
     } catch (error) {
       console.error('Error fetching SFD data:', error);
@@ -148,8 +153,8 @@ export function useSfdAdhesion() {
     }
   }, [user, toast, fetchData]);
 
-  // Charge les données au montage du composant
-  useCallback(() => {
+  // Charger les données au montage du composant
+  useEffect(() => {
     fetchData();
   }, [fetchData]);
 

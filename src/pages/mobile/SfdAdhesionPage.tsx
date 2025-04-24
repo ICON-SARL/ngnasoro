@@ -55,6 +55,7 @@ const SfdAdhesionPage: React.FC<SfdAdhesionPageProps> = () => {
       
       try {
         setIsLoading(true);
+        console.log(`Chargement des détails pour la SFD ${sfdId}`);
         
         // Récupérer les détails de la SFD
         const { data, error } = await supabase
@@ -63,9 +64,13 @@ const SfdAdhesionPage: React.FC<SfdAdhesionPageProps> = () => {
           .eq('id', sfdId)
           .single();
           
-        if (error) throw error;
+        if (error) {
+          console.error('Erreur lors de la récupération des détails de la SFD:', error);
+          throw error;
+        }
         
         if (!data) {
+          console.error('Aucune SFD trouvée avec cet ID');
           toast({
             title: 'SFD non trouvée',
             description: 'Impossible de trouver la SFD demandée',
@@ -75,9 +80,11 @@ const SfdAdhesionPage: React.FC<SfdAdhesionPageProps> = () => {
           return;
         }
         
+        console.log('Détails de la SFD récupérés:', data);
         setSfd(data);
         
         // Vérifier si l'utilisateur a déjà une demande en cours
+        console.log(`Vérification des demandes existantes pour l'utilisateur ${user.id} et la SFD ${sfdId}`);
         const { data: existingRequest, error: requestError } = await supabase
           .from('client_adhesion_requests')
           .select('*')
@@ -86,30 +93,49 @@ const SfdAdhesionPage: React.FC<SfdAdhesionPageProps> = () => {
           .not('status', 'eq', 'rejected')
           .maybeSingle();
           
-        if (requestError) throw requestError;
+        if (requestError) {
+          console.error('Erreur lors de la vérification des demandes existantes:', requestError);
+          throw requestError;
+        }
         
         if (existingRequest) {
+          console.log('Une demande existante a été trouvée:', existingRequest);
           toast({
             title: 'Demande existante',
             description: 'Vous avez déjà une demande en cours pour cette SFD',
           });
-          navigate('/mobile-flow/main');
+          navigate('/mobile-flow/account');
           return;
         }
         
         // Pré-remplir le formulaire avec les données du profil
+        console.log(`Récupération des données du profil pour l'utilisateur ${user.id}`);
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('full_name, email, phone')
           .eq('id', user.id)
           .single();
           
-        if (!profileError && profile) {
+        if (profileError) {
+          console.warn('Erreur lors de la récupération du profil:', profileError);
+        }
+        
+        if (profile) {
+          console.log('Données du profil récupérées:', profile);
           setFormData({
             ...formData,
-            fullName: profile.full_name || '',
-            email: profile.email || user.email || '',
-            phone: profile.phone || '',
+            fullName: profile.full_name || user?.user_metadata?.full_name || '',
+            email: profile.email || user?.email || '',
+            phone: profile.phone || user?.user_metadata?.phone || '',
+          });
+        } else {
+          // Utiliser les métadonnées de l'utilisateur si disponibles
+          console.log('Utilisation des métadonnées utilisateur');
+          setFormData({
+            ...formData,
+            fullName: user?.user_metadata?.full_name || '',
+            email: user?.email || '',
+            phone: user?.user_metadata?.phone || '',
           });
         }
         
@@ -147,6 +173,8 @@ const SfdAdhesionPage: React.FC<SfdAdhesionPageProps> = () => {
     
     try {
       setIsSubmitting(true);
+      console.log(`Soumission de la demande d'adhésion pour la SFD ${sfdId}`);
+      console.log('Données du formulaire:', formData);
       
       // Créer une demande d'adhésion
       const { error } = await supabase
@@ -164,14 +192,19 @@ const SfdAdhesionPage: React.FC<SfdAdhesionPageProps> = () => {
           reference_number: `ADH-${Date.now().toString().substring(6)}`
         });
         
-      if (error) throw error;
+      if (error) {
+        console.error('Erreur lors de l\'insertion de la demande:', error);
+        throw error;
+      }
       
+      console.log('Demande d\'adhésion envoyée avec succès');
       toast({
         title: 'Demande envoyée',
         description: 'Votre demande d\'adhésion a été envoyée avec succès',
       });
       
-      navigate('/mobile-flow/main');
+      // Redirection vers la page de compte plutôt que la page principale
+      navigate('/mobile-flow/account');
       
     } catch (error: any) {
       console.error('Erreur lors de l\'envoi de la demande:', error);
@@ -223,7 +256,7 @@ const SfdAdhesionPage: React.FC<SfdAdhesionPageProps> = () => {
           variant="ghost" 
           size="sm" 
           className="mb-4 flex items-center"
-          onClick={() => navigate('/mobile-flow/sfd-connection')}
+          onClick={() => navigate('/mobile-flow/sfd-selector')}
         >
           <ArrowLeft className="h-4 w-4 mr-2" /> Retour
         </Button>
