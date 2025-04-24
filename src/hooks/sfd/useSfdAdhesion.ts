@@ -45,9 +45,21 @@ export function useSfdAdhesion() {
     }
   }, [user, toast]);
 
-  // Make requestSfdAdhesion accept two arguments as required
-  const requestSfdAdhesion = useCallback(async (sfdId: string, userId: string) => {
-    if (!userId) return false;
+  const requestSfdAdhesion = useCallback(async (
+    sfdId: string, 
+    adhesionData: {
+      full_name: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      id_number?: string;
+      id_type?: string;
+      profession?: string;
+      monthly_income?: number;
+      source_of_income?: string;
+    }
+  ) => {
+    if (!user?.id) return false;
     
     setIsSubmitting(true);
     try {
@@ -55,7 +67,7 @@ export function useSfdAdhesion() {
       const { data: existingRequest, error: checkError } = await supabase
         .from('client_adhesion_requests')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .eq('sfd_id', sfdId)
         .single();
 
@@ -79,16 +91,18 @@ export function useSfdAdhesion() {
         }
       }
 
-      // Insert new request - Fixing the schema to match the expected fields
+      // Insert new request
       const { error: insertError } = await supabase
         .from('client_adhesion_requests')
         .insert({
-          user_id: userId,
+          user_id: user.id,
           sfd_id: sfdId,
           status: 'pending',
-          full_name: '', // Required field, will be updated later in the form
-          created_at: new Date().toISOString(), // Use created_at instead of request_date
-          personal_info: {} // Keep this if needed or remove if not in schema
+          ...adhesionData,
+          reference_number: `ADH-${Date.now().toString().substring(6)}`,
+          verification_stage: 'id_verification',
+          kyc_status: 'pending',
+          created_at: new Date().toISOString()
         });
 
       if (insertError) throw insertError;
@@ -98,7 +112,7 @@ export function useSfdAdhesion() {
         description: 'Votre demande d\'adhésion a été envoyée avec succès',
       });
       
-      fetchData();
+      await fetchData();
       return true;
     } catch (error) {
       console.error('Error submitting SFD adhesion request:', error);
@@ -111,7 +125,7 @@ export function useSfdAdhesion() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [toast, fetchData]);
+  }, [user, toast, fetchData]);
 
   return {
     availableSfds,

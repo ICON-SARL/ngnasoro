@@ -1,4 +1,3 @@
-
 export interface AdhesionRequestInput {
   full_name: string;
   email: string; // Changed from optional to required to match useClientAdhesions type
@@ -31,4 +30,16 @@ export interface ClientAdhesionRequest {
     name: string;
     logo_url?: string;
   };
+}
+
+export interface AdhesionFormData {
+  full_name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  id_number?: string;
+  id_type?: string;
+  profession?: string;
+  monthly_income?: number;
+  source_of_income?: string;
 }
