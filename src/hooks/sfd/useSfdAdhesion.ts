@@ -79,15 +79,16 @@ export function useSfdAdhesion() {
         }
       }
 
-      // Insert new request
+      // Insert new request - Fixing the schema to match the expected fields
       const { error: insertError } = await supabase
         .from('client_adhesion_requests')
         .insert({
           user_id: userId,
           sfd_id: sfdId,
           status: 'pending',
-          request_date: new Date().toISOString(),
-          personal_info: {}
+          full_name: '', // Required field, will be updated later in the form
+          created_at: new Date().toISOString(), // Use created_at instead of request_date
+          personal_info: {} // Keep this if needed or remove if not in schema
         });
 
       if (insertError) throw insertError;
