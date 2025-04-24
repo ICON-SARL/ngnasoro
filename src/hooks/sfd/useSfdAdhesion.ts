@@ -59,10 +59,16 @@ export function useSfdAdhesion() {
       source_of_income?: string;
     }
   ) => {
-    if (!user?.id) return false;
+    if (!user?.id) {
+      console.error('No user ID found for adhesion request');
+      return false;
+    }
     
     setIsSubmitting(true);
     try {
+      console.log('Starting SFD adhesion request process for:', user.id, 'to SFD:', sfdId);
+      console.log('Adhesion data:', adhesionData);
+      
       // Check if request already exists
       const { data: existingRequest, error: checkError } = await supabase
         .from('client_adhesion_requests')
@@ -71,7 +77,10 @@ export function useSfdAdhesion() {
         .eq('sfd_id', sfdId)
         .single();
 
-      if (checkError && checkError.code !== 'PGRST116') throw checkError;
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking existing request:', checkError);
+        throw checkError;
+      }
 
       if (existingRequest) {
         if (existingRequest.status === 'pending') {
@@ -91,8 +100,14 @@ export function useSfdAdhesion() {
         }
       }
 
-      // Insert new request
-      const { error: insertError } = await supabase
+      // Insert new request with all required fields
+      console.log('Creating new adhesion request with data:', {
+        user_id: user.id,
+        sfd_id: sfdId,
+        ...adhesionData
+      });
+      
+      const { data, error: insertError } = await supabase
         .from('client_adhesion_requests')
         .insert({
           user_id: user.id,
@@ -103,9 +118,15 @@ export function useSfdAdhesion() {
           verification_stage: 'id_verification',
           kyc_status: 'pending',
           created_at: new Date().toISOString()
-        });
+        })
+        .select();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Error inserting adhesion request:', insertError);
+        throw insertError;
+      }
+      
+      console.log('Successfully created adhesion request:', data);
 
       toast({
         title: 'Demande envoyée',
@@ -114,11 +135,11 @@ export function useSfdAdhesion() {
       
       await fetchData();
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting SFD adhesion request:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'envoyer votre demande d\'adhésion',
+        description: error.message || 'Impossible d\'envoyer votre demande d\'adhésion',
         variant: 'destructive',
       });
       return false;
@@ -126,6 +147,11 @@ export function useSfdAdhesion() {
       setIsSubmitting(false);
     }
   }, [user, toast, fetchData]);
+
+  // Charge les données au montage du composant
+  useCallback(() => {
+    fetchData();
+  }, [fetchData]);
 
   return {
     availableSfds,

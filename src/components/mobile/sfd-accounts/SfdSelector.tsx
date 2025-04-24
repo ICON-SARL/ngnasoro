@@ -34,6 +34,8 @@ const SfdSelector = () => {
         address: user.user_metadata?.address || ''
       };
       
+      console.log('Sending adhesion request with data:', userInfo);
+      
       const success = await requestSfdAdhesion(sfdId, userInfo);
       
       if (success) {
@@ -44,6 +46,7 @@ const SfdSelector = () => {
         navigate('/mobile-flow/account');
       }
     } catch (error: any) {
+      console.error('Error sending adhesion request:', error);
       toast({
         title: "Erreur",
         description: error.message || "Une erreur est survenue",

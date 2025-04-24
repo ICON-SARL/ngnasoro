@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,8 @@ export const AvailableSfdCard: React.FC<AvailableSfdCardProps> = ({ sfd }) => {
         email: user?.email || '',
         phone: user?.user_metadata?.phone || '',
       };
+      
+      console.log('Submitting adhesion with user info:', userInfo);
       
       const success = await requestSfdAdhesion(sfd.id, userInfo);
       
