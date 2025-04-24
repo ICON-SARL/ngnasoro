@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -40,12 +39,10 @@ export const AvailableSfdCard: React.FC<AvailableSfdCardProps> = ({ sfd }) => {
     try {
       console.log('Confirming adhesion request for SFD:', sfd.id);
       
-      // Fix: Pass user information as an object
       const userInfo = {
-        full_name: user?.user_metadata?.full_name || 'Unknown User',
-        email: user?.email,
-        phone: user?.user_metadata?.phone || user?.phone || '',
-        // Add any other available user information
+        full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Unknown User',
+        email: user?.email || '',
+        phone: user?.user_metadata?.phone || '',
       };
       
       const success = await requestSfdAdhesion(sfd.id, userInfo);
@@ -58,11 +55,15 @@ export const AvailableSfdCard: React.FC<AvailableSfdCardProps> = ({ sfd }) => {
           description: 'Votre demande d\'adhésion a été envoyée avec succès. Un administrateur la traitera prochainement.',
         });
         
-        // Redirection vers la page principale
         navigate('/mobile-flow/account?adhesion_requested=true');
       }
     } catch (error) {
       console.error('Error confirming request:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Une erreur est survenue lors de l\'envoi de la demande',
+        variant: 'destructive'
+      });
     }
   };
   
