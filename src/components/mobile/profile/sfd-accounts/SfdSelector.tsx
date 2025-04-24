@@ -16,6 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SfdSelectorProps {
   userId: string;
@@ -23,6 +24,7 @@ interface SfdSelectorProps {
 }
 
 const SfdSelector: React.FC<SfdSelectorProps> = ({ userId, onRequestSent }) => {
+  const { user } = useAuth();
   const { availableSfds, userRequests, isLoading: isLoadingHook, isSubmitting, requestSfdAdhesion } = useSfdAdhesion();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSfdId, setSelectedSfdId] = useState<string | null>(null);
@@ -101,10 +103,17 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({ userId, onRequestSent }) => {
   };
   
   const confirmRequest = async () => {
-    if (!selectedSfdId) return;
+    if (!selectedSfdId || !user) return;
     
-    // Fix: Add the userId as the second argument to requestSfdAdhesion
-    const success = await requestSfdAdhesion(selectedSfdId, userId);
+    // Fix: Pass user information as an object instead of just the ID
+    const userInfo = {
+      full_name: user.user_metadata?.full_name || 'Unknown User',
+      email: user.email,
+      phone: user.user_metadata?.phone || user.phone || '',
+      // Add any additional user information that might be available
+    };
+    
+    const success = await requestSfdAdhesion(selectedSfdId, userInfo);
     
     if (success) {
       setIsConfirmOpen(false);
