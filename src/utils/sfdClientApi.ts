@@ -64,15 +64,24 @@ export const sfdClientApi = {
       // Convert kyc_level if needed
       let dbUpdates: any = { ...updates };
       
-      // If kyc_level exists in updates and is a string, convert it to number
+      // Handle kyc_level conversion
       if (updates.kyc_level !== undefined) {
-        // Handle the case where kyc_level might be provided as a string
         if (typeof updates.kyc_level === 'string') {
-          if (updates.kyc_level === 'none') dbUpdates.kyc_level = 0;
-          else if (updates.kyc_level === 'basic') dbUpdates.kyc_level = 1;
-          else if (updates.kyc_level === 'full') dbUpdates.kyc_level = 2;
+          switch(updates.kyc_level) {
+            case 'none':
+              dbUpdates.kyc_level = 0;
+              break;
+            case 'basic':
+              dbUpdates.kyc_level = 1;
+              break;
+            case 'full':
+              dbUpdates.kyc_level = 2;
+              break;
+            default:
+              dbUpdates.kyc_level = 0;
+          }
         }
-        // if it's already a number, keep it as is
+        // If it's already a number, keep it as is
       }
 
       const { data, error } = await supabase
