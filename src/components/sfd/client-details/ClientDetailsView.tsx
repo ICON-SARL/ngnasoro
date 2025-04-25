@@ -63,7 +63,6 @@ const ClientDetailsView: React.FC<ClientDetailsViewProps> = ({ client, onClose }
                 <ClientAccountDetails 
                   clientId={client.id} 
                   clientName={client.full_name}
-                  phone={client.phone}
                 />
                 <ClientSavingsAccount
                   clientId={client.id}
