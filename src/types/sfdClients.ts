@@ -7,7 +7,7 @@ export interface SfdClient {
   address?: string | null;
   created_at: string;
   status: 'pending' | 'active' | 'rejected' | 'suspended' | 'validated';
-  kyc_level: number | 'none' | 'basic' | 'full';
+  kyc_level: number;
   sfd_id: string;
   profession?: string | null;
   monthly_income?: number | null;
