@@ -1,13 +1,13 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Phone, Search, UserCheck, X } from 'lucide-react';
-import { useClientByPhone } from '@/hooks/sfd/useClientByPhone';
+import { useClientByPhone, ClientSearchResult } from '@/hooks/sfd/useClientByPhone';
 import { Loader } from '@/components/ui/loader';
 import ClientDetailsView from '../client-details/ClientDetailsView';
+import { SfdClient } from '@/types/sfdClients';
 
 const ClientByPhoneSearch: React.FC = () => {
   const [phoneInput, setPhoneInput] = useState('');
@@ -30,6 +30,28 @@ const ClientByPhoneSearch: React.FC = () => {
     setPhoneInput('');
     setShowDetails(false);
   };
+  
+  const getClientForView = (client: ClientSearchResult | null): SfdClient | null => {
+    if (!client) return null;
+    
+    if (!('isNewClient' in client)) {
+      return client as SfdClient;
+    }
+    
+    return {
+      id: 'new-client-' + Date.now(),
+      full_name: client.full_name,
+      email: client.email,
+      phone: client.phone,
+      user_id: client.user_id,
+      sfd_id: '',
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      kyc_level: 0
+    };
+  };
+
+  const clientForView = getClientForView(client);
 
   return (
     <div className="space-y-6">
@@ -88,7 +110,7 @@ const ClientByPhoneSearch: React.FC = () => {
                         <UserCheck className="h-4 w-4 mr-2 text-green-600" />
                         {client.full_name}
                       </h3>
-                      <p className="text-sm text-gray-500">{client.phone}</p>
+                      <p className="text-sm text-gray-500">{'phone' in client ? client.phone : ''}</p>
                     </div>
                     <Button 
                       onClick={() => setShowDetails(true)}
@@ -102,9 +124,9 @@ const ClientByPhoneSearch: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-      ) : client ? (
+      ) : clientForView ? (
         <ClientDetailsView
-          client={client}
+          client={clientForView}
           onClose={() => setShowDetails(false)}
         />
       ) : null}

@@ -4,6 +4,16 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { SfdClient } from '@/types/sfdClients';
+
+// Define the types for our results
+export type ClientSearchResult = SfdClient | {
+  user_id: string;
+  full_name: string;
+  email: string | null;
+  phone: string;
+  isNewClient: boolean;
+};
 
 export function useClientByPhone() {
   const [phoneNumber, setPhoneNumber] = useState<string>('');
@@ -24,7 +34,7 @@ export function useClientByPhone() {
         // First check if the user exists with this phone number
         const { data: userData, error: userError } = await supabase
           .from('profiles')
-          .select('id, full_name, email')
+          .select('id, full_name, email, phone')
           .eq('phone', phoneNumber)
           .single();
           
@@ -53,9 +63,9 @@ export function useClientByPhone() {
           toast({
             title: "Client existant",
             description: `${userData.full_name} est déjà client de votre SFD`,
-            variant: "warning",
+            variant: "destructive", // Changed from "warning" to "destructive" to match allowed variants
           });
-          return existingClient;
+          return existingClient as SfdClient;
         }
         
         // Return user data so we can create a client
@@ -65,7 +75,7 @@ export function useClientByPhone() {
           email: userData.email,
           phone: phoneNumber,
           isNewClient: true
-        };
+        } as ClientSearchResult;
       } catch (err: any) {
         if (err.code === 'PGRST116') {
           toast({

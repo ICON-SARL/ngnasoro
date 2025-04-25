@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search, UserPlus, Loader2 } from 'lucide-react';
-import { useClientByPhone } from '@/hooks/sfd/useClientByPhone';
+import { useClientByPhone, ClientSearchResult } from '@/hooks/sfd/useClientByPhone';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
+import { SfdClient } from '@/types/sfdClients';
 
 export const ClientSearch: React.FC = () => {
   const [searchPhone, setSearchPhone] = useState('');
@@ -17,6 +18,18 @@ export const ClientSearch: React.FC = () => {
   const { activeSfdId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Helper function to check if client is a new client (not an existing SFD client)
+  const isNewClient = (client: ClientSearchResult | null): boolean => {
+    if (!client) return false;
+    return 'isNewClient' in client && client.isNewClient === true;
+  };
+
+  // Helper function to check if client is an existing client
+  const isExistingClient = (client: ClientSearchResult | null): boolean => {
+    if (!client) return false;
+    return !('isNewClient' in client) || !client.isNewClient;
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +46,7 @@ export const ClientSearch: React.FC = () => {
   };
 
   const addClient = async () => {
-    if (!client || !activeSfdId) return;
+    if (!client || !activeSfdId || !isNewClient(client)) return;
     
     setIsAdding(true);
     try {
@@ -123,7 +136,7 @@ export const ClientSearch: React.FC = () => {
             </Button>
           </form>
 
-          {client && client.isNewClient && (
+          {client && isNewClient(client) && (
             <div className="mt-4 p-4 border rounded-md bg-slate-50">
               <h3 className="font-medium text-sm">Utilisateur trouvé</h3>
               <p className="text-sm">{client.full_name}</p>
@@ -144,7 +157,7 @@ export const ClientSearch: React.FC = () => {
             </div>
           )}
 
-          {client && !client.isNewClient && (
+          {client && isExistingClient(client) && (
             <div className="mt-4 p-4 border rounded-md bg-orange-50">
               <p className="text-amber-800">Ce client est déjà associé à votre SFD.</p>
             </div>
