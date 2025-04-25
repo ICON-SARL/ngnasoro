@@ -67,7 +67,7 @@ const SfdSelectorPage: React.FC = () => {
           try {
             // Simuler une récupération depuis une fonction Edge
             // Dans un cas réel, vous appelleriez votre fonction Edge ici
-            const edgeSfds = [
+            const mockEdgeSfds = [
               {
                 id: "e578e987-67ac-4027-abf4-1b619b642a6c",
                 name: "RMCR",
@@ -86,9 +86,9 @@ const SfdSelectorPage: React.FC = () => {
               }
             ];
             
-            console.log(`Fetched ${edgeSfds.length} SFDs from Edge function:`, edgeSfds);
-            setSfds(edgeSfds);
-            setFilteredSfds(edgeSfds);
+            console.log(`Fetched ${mockEdgeSfds.length} SFDs from Edge function:`, mockEdgeSfds);
+            setSfds(mockEdgeSfds);
+            setFilteredSfds(mockEdgeSfds);
           } catch (edgeError) {
             console.error('Error fetching SFDs from Edge function:', edgeError);
             throw edgeError;
@@ -126,9 +126,7 @@ const SfdSelectorPage: React.FC = () => {
           ...(requests?.filter(r => r.status === 'approved').map(r => r.sfd_id) || [])
         ]);
         
-        const availableSfds = (sfdsData || edgeSfds || []).filter(
-          sfd => !existingSfdIds.has(sfd.id)
-        );
+        const availableSfds = sfdsData || [];
         
         console.log(`After filtering, ${availableSfds.length} SFDs are available for selection:`, availableSfds);
         
