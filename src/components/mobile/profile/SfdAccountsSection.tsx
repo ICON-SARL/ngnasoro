@@ -3,15 +3,12 @@ import React, { useEffect } from 'react';
 import { Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AccountsSection from './sfd-accounts/AccountsSection';
-import SfdVerificationDialog from './sfd-accounts/SfdVerificationDialog';
 import { useSfdSwitch } from '@/hooks/useSfdSwitch';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 import { useToast } from '@/hooks/use-toast';
 import ErrorState from '../sfd-savings/ErrorState';
-import ViewAllSfdsButton from '../sfd/ViewAllSfdsButton';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
 
 interface SfdAccountsSectionProps {
   sfdData?: any[];
@@ -53,43 +50,6 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
       isMounted = false;
     };
   }, [synchronizeWithSfd, refetch]);
-  
-  const pendingSfdName = React.useMemo(() => {
-    if (!pendingSfdId) return '';
-    
-    const account = sfdAccounts?.find(sfd => sfd?.id === pendingSfdId);
-    return account?.name || '';
-  }, [pendingSfdId, sfdAccounts]);
-
-  const handleVerificationComplete = async (code: string) => {
-    try {
-      const success = await completeSwitch(code);
-      
-      if (success) {
-        try {
-          await synchronizeBalances.mutateAsync();
-          await refetch();
-          
-          toast({
-            title: "Synchronisation terminée",
-            description: "Les données de votre nouveau compte SFD ont été synchronisées",
-          });
-        } catch (error) {
-          console.error("Error synchronizing after verification:", error);
-          toast({
-            title: "Erreur de synchronisation",
-            description: "La vérification a réussi mais la synchronisation a échoué. Veuillez rafraîchir la page.",
-            variant: "destructive",
-          });
-        }
-      }
-      
-      return success;
-    } catch (error) {
-      console.error("Error completing switch:", error);
-      return false;
-    }
-  };
 
   const handleRetrySync = () => {
     synchronizeWithSfd()
@@ -101,12 +61,6 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
       .catch(error => {
         console.error("Error retrying sync:", error);
       });
-  };
-
-  // Fonction pour empêcher les redirections non désirées
-  const handleContainerClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
   };
 
   if (syncError) {
@@ -123,19 +77,24 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
 
   return (
     <>
-      <div className="space-y-4 mt-4" onClick={handleContainerClick}>
+      <div className="space-y-4 mt-4">
         {showEmptyState ? (
           <div className="text-center p-6 border rounded-lg">
             <Building className="h-12 w-12 mx-auto mb-3 text-gray-300" />
             <h3 className="text-lg font-medium mb-2">Aucun compte SFD</h3>
             <p className="text-sm text-gray-500 mb-4">
-              Vous n'avez pas encore de compte SFD associé à votre profil.
+              Seul un administrateur SFD peut vous ajouter à un compte.
             </p>
             <Button 
-              onClick={() => navigate('/sfd-setup')} 
               className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+              onClick={() => {
+                toast({
+                  title: "Demande de compte SFD",
+                  description: "Contactez votre SFD pour l'ajout de votre compte."
+                });
+              }}
             >
-              Ajouter un compte SFD
+              Contacter un SFD
             </Button>
           </div>
         ) : (
@@ -146,21 +105,10 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
             onRefresh={synchronizeWithSfd}
           />
         )}
-        
-        <div className="mt-4">
-          <ViewAllSfdsButton />
-        </div>
       </div>
-      
-      <SfdVerificationDialog 
-        isOpen={verificationRequired && !!pendingSfdId}
-        onClose={cancelSwitch}
-        onVerify={handleVerificationComplete}
-        sfdName={pendingSfdName}
-        isLoading={isVerifying}
-      />
     </>
   );
 };
 
 export default SfdAccountsSection;
+
