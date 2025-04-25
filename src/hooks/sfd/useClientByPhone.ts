@@ -21,26 +21,62 @@ export function useClientByPhone() {
       if (!phoneNumber || !activeSfdId) return null;
       
       try {
-        const { data, error } = await supabase
-          .from('sfd_clients')
-          .select('*')
+        // First check if the user exists with this phone number
+        const { data: userData, error: userError } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
           .eq('phone', phoneNumber)
-          .eq('sfd_id', activeSfdId)
           .single();
           
-        if (error) throw error;
-        return data;
+        if (userError) {
+          if (userError.code === 'PGRST116') {
+            toast({
+              title: "Utilisateur non trouvé",
+              description: `Aucun utilisateur trouvé avec le numéro ${phoneNumber}`,
+              variant: "destructive",
+            });
+          }
+          throw userError;
+        }
+        
+        // Now check if this user already has a client account with this SFD
+        const { data: existingClient, error: clientError } = await supabase
+          .from('sfd_clients')
+          .select('*')
+          .eq('user_id', userData.id)
+          .eq('sfd_id', activeSfdId)
+          .maybeSingle();
+          
+        if (clientError && clientError.code !== 'PGRST116') throw clientError;
+        
+        if (existingClient) {
+          toast({
+            title: "Client existant",
+            description: `${userData.full_name} est déjà client de votre SFD`,
+            variant: "warning",
+          });
+          return existingClient;
+        }
+        
+        // Return user data so we can create a client
+        return {
+          user_id: userData.id,
+          full_name: userData.full_name,
+          email: userData.email,
+          phone: phoneNumber,
+          isNewClient: true
+        };
       } catch (err: any) {
         if (err.code === 'PGRST116') {
           toast({
-            title: "Client non trouvé",
-            description: `Aucun client trouvé avec le numéro ${phoneNumber}`,
+            title: "Utilisateur non trouvé",
+            description: `Aucun utilisateur trouvé avec le numéro ${phoneNumber}`,
             variant: "destructive",
           });
         } else {
           toast({
             title: "Erreur",
-            description: "Erreur lors de la recherche du client",
+            description: "Erreur lors de la recherche de l'utilisateur",
             variant: "destructive",
           });
         }

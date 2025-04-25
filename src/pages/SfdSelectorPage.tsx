@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Building, Loader2, MapPin, Search } from 'lucide-react';
+import { ArrowLeft, Building, Loader2, MapPin, Search, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -173,18 +173,28 @@ const SfdSelectorPage: React.FC = () => {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-semibold">Sélection SFD</h1>
+        <h1 className="text-xl font-semibold">Institutions Financières</h1>
       </div>
       
       <div className="p-4">
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Rechercher un SFD par nom ou région"
+            placeholder="Rechercher une institution financière"
             className="pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+        </div>
+        
+        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+          <div className="flex items-center">
+            <AlertCircle className="text-yellow-500 h-4 w-4 mr-2" />
+            <p className="text-sm text-yellow-700">
+              Les demandes d'adhésion sont désormais gérées directement par les SFDs. 
+              Veuillez contacter l'institution qui vous intéresse pour compléter votre adhésion.
+            </p>
+          </div>
         </div>
         
         {isLoading ? (
@@ -194,7 +204,7 @@ const SfdSelectorPage: React.FC = () => {
         ) : filteredSfds.length === 0 ? (
           <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
             <Building className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">Aucune SFD disponible pour le moment.</p>
+            <p className="text-gray-500">Aucune institution financière disponible pour le moment.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -226,11 +236,15 @@ const SfdSelectorPage: React.FC = () => {
                 </div>
                 
                 <div className="mt-3 flex justify-end">
-                  <JoinSfdButton 
-                    sfdId={sfd.id} 
-                    sfdName={sfd.name}
+                  <Button
+                    onClick={() => {
+                      // Navigate to the SFD's info page or contact page
+                      window.open(`tel:+123456789`, '_blank');
+                    }}
                     className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 text-white"
-                  />
+                  >
+                    Contacter
+                  </Button>
                 </div>
               </div>
             ))}
