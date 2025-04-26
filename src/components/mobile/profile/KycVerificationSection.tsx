@@ -1,69 +1,62 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, FileText, Home, Calendar, Shield } from 'lucide-react';
+import { Shield, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
+import KycVerificationStatus from './KycVerificationStatus';
+import KycDocumentUpload from './KycDocumentUpload';
+import KycDocumentList from './KycDocumentList';
 
 const KycVerificationSection = () => {
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   
-  // Simulate KYC status and documents
-  const kycStatus = 'verified'; // or 'pending', 'incomplete'
-  const documents = [
-    { type: 'id', name: 'Carte d\'identité', status: 'verified', date: '15/04/2023' },
-    { type: 'address', name: 'Justificatif de domicile', status: 'verified', date: '15/04/2023' },
-  ];
+  const handleUploadComplete = () => {
+    setOpen(false);
+    setRefreshKey(prev => prev + 1);
+  };
   
-  const handleCompleteKyc = () => {
+  const handleViewHistory = () => {
     navigate('/kyc');
   };
 
   return (
     <Card className="mb-4">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">KYC & Vérification</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg">KYC & Vérification</CardTitle>
+          <KycVerificationStatus />
+        </div>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="space-y-3">
-          <div className="flex items-center justify-between bg-green-50 p-3 rounded-lg">
-            <span className="font-medium flex items-center">
-              <Shield className="h-4 w-4 mr-2 text-green-600" />
-              Statut KYC:
-            </span>
-            <span className="text-green-600 font-medium flex items-center">
-              Vérifié <Check className="h-4 w-4 ml-1" />
-            </span>
-          </div>
+          <KycDocumentList refreshKey={refreshKey} />
           
-          <div className="space-y-2 mt-3">
-            <p className="font-medium text-sm">Documents vérifiés:</p>
-            
-            {documents.map((doc, index) => (
-              <div key={index} className="flex items-center justify-between border p-2 rounded-lg">
-                <div className="flex items-center">
-                  {doc.type === 'id' ? (
-                    <FileText className="h-4 w-4 mr-2 text-blue-600" />
-                  ) : (
-                    <Home className="h-4 w-4 mr-2 text-amber-600" />
-                  )}
-                  <span className="text-sm">{doc.name}</span>
-                </div>
-                <div className="flex items-center text-xs text-gray-500">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  {doc.date}
-                  {doc.status === 'verified' && (
-                    <Check className="h-3 w-3 ml-1 text-green-600" />
-                  )}
-                </div>
-              </div>
-            ))}
+          <div className="flex flex-col gap-2 mt-4">
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ajouter un document
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Téléverser un document</DialogTitle>
+                </DialogHeader>
+                <KycDocumentUpload onUploadComplete={handleUploadComplete} />
+              </DialogContent>
+            </Dialog>
             
             <Button 
               variant="outline" 
-              className="w-full mt-3"
-              onClick={handleCompleteKyc}
+              className="w-full"
+              onClick={handleViewHistory}
             >
+              <Shield className="h-4 w-4 mr-2" />
               Historique de vérification KYC
             </Button>
           </div>

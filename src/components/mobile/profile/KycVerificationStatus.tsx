@@ -1,0 +1,124 @@
+import React, { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Check, X, Clock, Shield } from 'lucide-react';
+
+interface KycVerificationStatusProps {
+  className?: string;
+}
+
+export type KycVerificationDocument = {
+  id: string;
+  user_id: string;
+  document_type: string;
+  document_url: string;
+  verification_status: 'submitted' | 'verified' | 'rejected';
+  created_at: string;
+  verified_at?: string;
+  verified_by?: string;
+  rejection_reason?: string;
+};
+
+const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className }) => {
+  const { user } = useAuth();
+  const [documents, setDocuments] = useState<KycVerificationDocument[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      if (!user?.id) return;
+      
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('kyc_verification_documents')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        setDocuments(data || []);
+      } catch (error) {
+        console.error('Error fetching KYC documents:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchDocuments();
+  }, [user?.id]);
+  
+  const getOverallStatus = () => {
+    if (isLoading) return 'loading';
+    if (documents.length === 0) return 'none';
+    
+    // Check if all required document types are verified
+    const requiredTypes = ['id_card_front', 'id_card_back', 'proof_of_address'];
+    const documentByType = documents.reduce((acc, doc) => {
+      acc[doc.document_type] = doc;
+      return acc;
+    }, {} as Record<string, KycVerificationDocument>);
+    
+    // Check if we have all required documents and they're all verified
+    const allVerified = requiredTypes.every(
+      type => documentByType[type]?.verification_status === 'verified'
+    );
+    
+    if (allVerified) return 'verified';
+    
+    // Check if any document is rejected
+    if (documents.some(doc => doc.verification_status === 'rejected')) {
+      return 'rejected';
+    }
+    
+    // Otherwise, it's pending
+    return 'pending';
+  };
+  
+  const status = getOverallStatus();
+  
+  if (isLoading) {
+    return <div className={`flex items-center ${className}`}>
+      <Clock className="h-4 w-4 animate-spin mr-1" />
+      <span>Chargement...</span>
+    </div>;
+  }
+  
+  if (status === 'none') {
+    return <div className={`flex items-center ${className}`}>
+      <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
+        <Shield className="h-3 w-3 mr-1" />
+        Non vérifié
+      </Badge>
+    </div>;
+  }
+  
+  if (status === 'verified') {
+    return <div className={`flex items-center ${className}`}>
+      <Badge className="bg-green-50 text-green-600 border-green-200">
+        <Shield className="h-3 w-3 mr-1" />
+        <Check className="h-3 w-3 mr-1" />
+        Vérifié
+      </Badge>
+    </div>;
+  }
+  
+  if (status === 'rejected') {
+    return <div className={`flex items-center ${className}`}>
+      <Badge variant="destructive">
+        <X className="h-3 w-3 mr-1" />
+        Rejeté
+      </Badge>
+    </div>;
+  }
+  
+  return <div className={`flex items-center ${className}`}>
+    <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
+      <Clock className="h-3 w-3 mr-1" />
+      En cours de vérification
+    </Badge>
+  </div>;
+};
+
+export default KycVerificationStatus;
