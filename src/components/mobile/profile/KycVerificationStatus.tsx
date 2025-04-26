@@ -13,7 +13,7 @@ interface KycVerificationStatusProps {
 export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 
 // Define document type with explicit properties
-export type KycVerificationDocument = {
+export interface KycVerificationDocument {
   id: string;
   user_id?: string;
   adhesion_request_id: string;
@@ -24,7 +24,7 @@ export type KycVerificationDocument = {
   verified_at?: string;
   verified_by?: string;
   verification_notes?: string;
-};
+}
 
 const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className }) => {
   const { user } = useAuth();
@@ -45,7 +45,7 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
           
         if (error) throw error;
         
-        // Explicitly cast data to our document type
+        // Set documents with proper type assertion
         setDocuments(data as KycVerificationDocument[] || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
