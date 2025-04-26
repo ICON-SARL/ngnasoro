@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { SfdClient } from '@/types/sfdClients';
+import { useNavigate } from 'react-router-dom';
 
 interface ClientsResponse {
   clients: SfdClient[];
@@ -24,6 +25,7 @@ export function useSfdClientManagement() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
+  const navigate = useNavigate();
 
   // Get all clients with pagination and filtering
   const {
@@ -89,39 +91,66 @@ export function useSfdClientManagement() {
       address?: string;
       id_number?: string;
       id_type?: string;
+      notes?: string;
     }) => {
       if (!activeSfdId) {
         throw new Error('Aucune SFD active sélectionnée');
+      }
+
+      // Check for potential duplicates before creating
+      const { data: existingClients } = await supabase
+        .from('sfd_clients')
+        .select('id, full_name, email, phone')
+        .eq('sfd_id', activeSfdId)
+        .or(`email.eq.${clientData.email},phone.eq.${clientData.phone}`);
+
+      // If potential duplicates are found, warn but don't block
+      if (existingClients && existingClients.length > 0) {
+        console.warn('Potential duplicate client detected:', existingClients);
+        // We'll show a warning but still proceed with creation
       }
 
       const { data, error } = await supabase.functions.invoke('sfd-clients', {
         body: {
           action: 'createClient',
           sfdId: activeSfdId,
-          clientData
+          clientData: {
+            ...clientData,
+            // Add validation timestamp
+            created_at: new Date().toISOString(),
+          }
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating client:', error);
+        throw error;
+      }
+      
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
-        title: 'Client créé',
+        title: 'Client créé avec succès',
         description: 'Le nouveau client a été ajouté avec succès',
       });
+      
+      // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
+      
+      // Redirect to the clients list page
+      navigate('/sfd-clients');
     },
     onError: (error: any) => {
       toast({
-        title: 'Erreur',
+        title: 'Erreur lors de la création',
         description: error.message || 'Impossible de créer le client',
         variant: 'destructive',
       });
     }
   });
 
-  // Validate client
+  // Validate client with improved error handling
   const validateClient = useMutation({
     mutationFn: async ({ clientId, notes }: { clientId: string; notes?: string }) => {
       const { data, error } = await supabase.functions.invoke('sfd-clients', {
