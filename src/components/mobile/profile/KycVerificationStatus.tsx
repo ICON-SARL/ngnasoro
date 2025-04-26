@@ -46,12 +46,12 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
         }
         
         const { data, error } = await query.order('created_at', { ascending: false });
-          
+        
         if (error) throw error;
         
-        // Explicitly cast data to break the type recursion
-        const typedDocuments = (data || []) as Array<KycVerificationDocument>;
-        setDocuments(typedDocuments);
+        // Fix the type instantiation issue by using explicit casting
+        const typedDocuments = data as KycVerificationDocument[];
+        setDocuments(typedDocuments || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
