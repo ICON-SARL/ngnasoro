@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -13,6 +12,7 @@ const NotificationsSection = () => {
     toast({
       title: `Notifications ${channel}`,
       description: `Les notifications par ${channel} ont été mises à jour`,
+      duration: 2000,
     });
   };
 
@@ -20,6 +20,7 @@ const NotificationsSection = () => {
     toast({
       title: "Langue modifiée",
       description: `La langue de l'application a été changée pour ${value === 'fr' ? 'Français' : 'Bambara'}`,
+      duration: 2000,
     });
   };
 

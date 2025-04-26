@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -6,12 +5,15 @@ import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
 const TOAST_LIMIT = 5;
 const TOAST_REMOVE_DELAY = 1000;
+const DEFAULT_TOAST_DURATION = 3000; // 3 seconds for normal toasts
+const ERROR_TOAST_DURATION = 5000;   // 5 seconds for error toasts
 
 type ToasterToast = ToastProps & {
   id: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: ToastActionElement;
+  duration?: number;
 };
 
 const actionTypes = {
@@ -130,19 +132,27 @@ type Toast = Omit<ToasterToast, "id">;
 
 function toast({ ...props }: Toast) {
   const id = genId();
+  const duration = props.variant === 'destructive' ? ERROR_TOAST_DURATION : DEFAULT_TOAST_DURATION;
 
   const update = (props: ToasterToast) =>
     dispatch({
       type: actionTypes.UPDATE_TOAST,
       toast: { ...props, id },
     });
+    
   const dismiss = () => dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
+
+  // Set up automatic dismissal
+  if (duration !== Infinity) {
+    setTimeout(dismiss, duration);
+  }
 
   dispatch({
     type: actionTypes.ADD_TOAST,
     toast: {
       ...props,
       id,
+      duration,
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss();
@@ -151,7 +161,7 @@ function toast({ ...props }: Toast) {
   });
 
   return {
-    id: id,
+    id,
     dismiss,
     update,
   };
