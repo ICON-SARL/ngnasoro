@@ -58,7 +58,10 @@ export const ClientManagementSystem = () => {
   const handleNewClientClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Empêcher le comportement par défaut
     e.stopPropagation(); // Arrêter la propagation de l'événement
+    
+    // Ouvrir directement la modal sans redirection
     setIsNewClientModalOpen(true);
+    
     console.log("Ouverture du modal nouveau client");
   };
 
@@ -99,6 +102,7 @@ export const ClientManagementSystem = () => {
               size="sm" 
               onClick={handleNewClientClick}
               className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+              type="button" // S'assurer que c'est un bouton de type button
             >
               <UserPlus className="mr-2 h-4 w-4" />
               Nouveau Client

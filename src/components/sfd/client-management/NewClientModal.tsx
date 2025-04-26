@@ -37,6 +37,8 @@ const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose, onClie
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Empêcher la propagation de l'événement
+    
     if (!activeSfdId || !user) {
       toast({
         title: 'Erreur',
@@ -81,6 +83,16 @@ const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose, onClie
         console.error('Erreur lors de la création du compte:', accountError);
         // On ne bloque pas le processus même si la création du compte échoue
       }
+
+      // Effacer les données du formulaire
+      setClientData({
+        full_name: '',
+        email: '',
+        phone: '',
+        address: '',
+        id_type: '',
+        id_number: '',
+      });
 
       onClientCreated();
     } catch (error: any) {
