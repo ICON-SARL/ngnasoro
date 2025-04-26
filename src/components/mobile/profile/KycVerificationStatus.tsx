@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -50,8 +49,8 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
         
         if (error) throw error;
         
-        // Break the recursive type by explicitly defining the document array type
-        setDocuments((data || []) as KycVerificationDocument[]);
+        // Fix the type instantiation issue by explicitly casting the data array
+        setDocuments(data as unknown as KycVerificationDocument[]);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
