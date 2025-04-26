@@ -1,572 +1,361 @@
 
-import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.8.0";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-sfd-id",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
-  // Gestion du CORS preflight
-  if (req.method === "OPTIONS") {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
-  
+
   try {
-    // Récupérer les variables d'environnement
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response(
-        JSON.stringify({ error: "Configuration du serveur manquante" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    // Créer un client Supabase avec la clé de service (privilèges admin)
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Extraire les paramètres de la requête
-    const body = await req.json();
-    const { action, sfdId, clientId, validatedBy, clientData } = body;
-    
-    // TRAITEMENT DES REQUÊTES
-    
-    // Actions existantes
-    if (action === "getClients" && sfdId) {
-      console.log(`Récupération des clients pour la SFD: ${sfdId}`);
-      
-      let query = supabase
-        .from("sfd_clients")
-        .select("*")
-        .eq("sfd_id", sfdId);
-        
-      // Apply filters if provided
-      if (body.status) {
-        query = query.eq("status", body.status);
+    // Create a Supabase client with Auth context from the request
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
       }
-      
-      if (body.searchTerm) {
-        query = query.or(`full_name.ilike.%${body.searchTerm}%,email.ilike.%${body.searchTerm}%,phone.ilike.%${body.searchTerm}%`);
-      }
-      
-      // Apply pagination if provided
-      if (body.limit) {
-        const page = body.page || 0;
-        const limit = body.limit;
-        const offset = page * limit;
-        query = query.range(offset, offset + limit - 1);
-      }
-      
-      // Apply sorting
-      query = query.order("created_at", { ascending: false });
-      
-      const { data, error } = await query;
-        
-      if (error) {
-        console.error("Erreur lors de la récupération des clients:", error);
-        return new Response(
-          JSON.stringify({ error: error.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify(data || []),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    if (action === "createClient" && sfdId && clientData) {
-      console.log(`Création d'un nouveau client pour la SFD: ${sfdId}`);
-      
-      const { data, error } = await supabase
-        .from("sfd_clients")
-        .insert({
-          ...clientData,
-          sfd_id: sfdId,
-          status: "pending",
-          kyc_level: 0
-        })
-        .select()
-        .single();
-        
-      if (error) {
-        console.error("Erreur lors de la création du client:", error);
-        return new Response(
-          JSON.stringify({ error: error.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      // Créer une activité client pour tracer cette création
-      await supabase
-        .from("client_activities")
-        .insert({
-          client_id: data.id,
-          activity_type: "client_creation",
-          description: "Nouveau client créé"
-        });
-      
-      return new Response(
-        JSON.stringify(data),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    if (action === "validateClient" && clientId && validatedBy) {
-      console.log(`Validation du client: ${clientId} par ${validatedBy}`);
-      
-      const { data, error } = await supabase
-        .from("sfd_clients")
-        .update({
-          status: "validated",
-          validated_at: new Date().toISOString(),
-          validated_by: validatedBy
-        })
-        .eq("id", clientId)
-        .select()
-        .single();
-        
-      if (error) {
-        console.error("Erreur lors de la validation du client:", error);
-        return new Response(
-          JSON.stringify({ error: error.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      // Créer une activité client pour tracer cette validation
-      await supabase
-        .from("client_activities")
-        .insert({
-          client_id: clientId,
-          activity_type: "account_validation",
-          description: "Compte client validé",
-          performed_by: validatedBy
-        });
-      
-      return new Response(
-        JSON.stringify(data),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    if (action === "rejectClient" && clientId && validatedBy) {
-      console.log(`Rejet du client: ${clientId} par ${validatedBy}`);
-      
-      const { data, error } = await supabase
-        .from("sfd_clients")
-        .update({
-          status: "rejected",
-          validated_at: new Date().toISOString(),
-          validated_by: validatedBy
-        })
-        .eq("id", clientId)
-        .select()
-        .single();
-        
-      if (error) {
-        console.error("Erreur lors du rejet du client:", error);
-        return new Response(
-          JSON.stringify({ error: error.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      // Créer une activité client pour tracer ce rejet
-      await supabase
-        .from("client_activities")
-        .insert({
-          client_id: clientId,
-          activity_type: "account_rejection",
-          description: "Compte client rejeté",
-          performed_by: validatedBy
-        });
-      
-      return new Response(
-        JSON.stringify(data),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    if (action === "deleteClient" && clientId) {
-      console.log(`Suppression du client: ${clientId}`);
-      
-      // D'abord, supprimer les documents associés
-      await supabase
-        .from("client_documents")
-        .delete()
-        .eq("client_id", clientId);
-      
-      // Ensuite, supprimer les activités associées
-      await supabase
-        .from("client_activities")
-        .delete()
-        .eq("client_id", clientId);
-      
-      // Enfin, supprimer le client
-      const { error } = await supabase
-        .from("sfd_clients")
-        .delete()
-        .eq("id", clientId);
-        
-      if (error) {
-        console.error("Erreur lors de la suppression du client:", error);
-        return new Response(
-          JSON.stringify({ error: error.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify({ success: true }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    );
+
+    // Get authenticated user
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError) {
+      throw new Error('Unauthorized: ' + userError.message);
     }
 
-    // NOUVELLES ACTIONS POUR LA GESTION EN MASSE
-    
-    // Validation en masse
-    if (action === "batchValidateClients" && body.clientIds && Array.isArray(body.clientIds) && validatedBy) {
-      console.log(`Validation en masse de ${body.clientIds.length} clients par ${validatedBy}`);
-      
-      // Mise à jour des clients
-      const { data, error } = await supabase
-        .from("sfd_clients")
-        .update({
-          status: "validated",
-          validated_at: new Date().toISOString(),
-          validated_by: validatedBy,
-          notes: body.notes
-        })
-        .in("id", body.clientIds)
-        .select();
+    // Parse request body
+    const { action, sfdId, clientId, searchTerm, statusFilter, page = 1, limit = 50 } = await req.json();
+
+    // Log the request details
+    console.log(`Received request: action=${action}, sfdId=${sfdId}`);
+
+    // Different actions
+    switch (action) {
+      case 'getClients': {
+        console.log(`Récupération des clients pour la SFD: ${sfdId}`);
         
-      if (error) {
-        console.error("Erreur lors de la validation en masse des clients:", error);
+        if (!sfdId) {
+          throw new Error('SFD ID is required');
+        }
+
+        // Build query
+        let query = supabaseClient
+          .from('sfd_clients')
+          .select('*')
+          .eq('sfd_id', sfdId)
+          .order('created_at', { ascending: false });
+
+        // Apply filters if provided
+        if (statusFilter) {
+          query = query.eq('status', statusFilter);
+        }
+
+        if (searchTerm) {
+          query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
+        }
+
+        // Apply pagination
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+        query = query.range(from, to);
+
+        // Execute query
+        const { data, error, count } = await query;
+
+        if (error) {
+          console.error('Erreur lors de la récupération des clients:', error);
+          throw error;
+        }
+
+        // Get total count in a separate query for accurate pagination
+        const { count: totalCount, error: countError } = await supabaseClient
+          .from('sfd_clients')
+          .select('*', { count: 'exact', head: true })
+          .eq('sfd_id', sfdId);
+
+        if (countError) {
+          console.error('Erreur lors du comptage des clients:', countError);
+        }
+
         return new Response(
-          JSON.stringify({ error: error.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      // Créer des activités client pour chaque validation
-      const activities = body.clientIds.map(clientId => ({
-        client_id: clientId,
-        activity_type: "account_validation",
-        description: "Compte client validé (opération en masse)",
-        performed_by: validatedBy
-      }));
-      
-      await supabase
-        .from("client_activities")
-        .insert(activities);
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          count: data.length,
-          clients: data
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    // Rejet en masse
-    if (action === "batchRejectClients" && body.clientIds && Array.isArray(body.clientIds) && validatedBy) {
-      console.log(`Rejet en masse de ${body.clientIds.length} clients par ${validatedBy}`);
-      
-      // Mise à jour des clients
-      const { data, error } = await supabase
-        .from("sfd_clients")
-        .update({
-          status: "rejected",
-          validated_at: new Date().toISOString(),
-          validated_by: validatedBy,
-          notes: body.rejectionReason
-        })
-        .in("id", body.clientIds)
-        .select();
-        
-      if (error) {
-        console.error("Erreur lors du rejet en masse des clients:", error);
-        return new Response(
-          JSON.stringify({ error: error.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      // Créer des activités client pour chaque rejet
-      const activities = body.clientIds.map(clientId => ({
-        client_id: clientId,
-        activity_type: "account_rejection",
-        description: `Compte client rejeté (opération en masse): ${body.rejectionReason || ''}`,
-        performed_by: validatedBy
-      }));
-      
-      await supabase
-        .from("client_activities")
-        .insert(activities);
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          count: data.length,
-          clients: data
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    // Import en masse de clients
-    if (action === "importClients" && sfdId && body.clients && Array.isArray(body.clients) && body.importedBy) {
-      console.log(`Import en masse de ${body.clients.length} clients pour la SFD: ${sfdId}`);
-      
-      // Ajouter le sfd_id et le statut par défaut à chaque client
-      const clientsToInsert = body.clients.map(client => ({
-        ...client,
-        sfd_id: sfdId,
-        status: "pending",
-        kyc_level: 0
-      }));
-      
-      // Insérer les clients en masse
-      const { data, error } = await supabase
-        .from("sfd_clients")
-        .insert(clientsToInsert)
-        .select();
-        
-      if (error) {
-        console.error("Erreur lors de l'import en masse des clients:", error);
-        return new Response(
-          JSON.stringify({ error: error.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      // Créer des activités client pour chaque import
-      const activities = data.map(client => ({
-        client_id: client.id,
-        activity_type: "client_import",
-        description: "Client importé en masse",
-        performed_by: body.importedBy
-      }));
-      
-      await supabase
-        .from("client_activities")
-        .insert(activities);
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          count: data.length,
-          clients: data
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    // Export de clients
-    if (action === "exportClients" && sfdId) {
-      console.log(`Export des clients pour la SFD: ${sfdId}`);
-      
-      let query = supabase
-        .from("sfd_clients")
-        .select(`
-          id, 
-          full_name, 
-          email, 
-          phone, 
-          address, 
-          id_number, 
-          id_type, 
-          status, 
-          created_at, 
-          validated_at, 
-          kyc_level,
-          client_documents (id, document_type, document_url, verified)
-        `)
-        .eq("sfd_id", sfdId);
-      
-      // Appliquer les filtres si fournis
-      if (body.status) {
-        query = query.eq("status", body.status);
-      }
-      
-      const { data, error } = await query;
-        
-      if (error) {
-        console.error("Erreur lors de l'export des clients:", error);
-        return new Response(
-          JSON.stringify({ error: error.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      // Format CSV si demandé
-      if (body.format === 'csv') {
-        // Simplifier les données pour le CSV (aplatir les documents)
-        const simplifiedData = data.map(client => {
-          const { client_documents, ...clientData } = client;
-          return {
-            ...clientData,
-            document_count: client_documents?.length || 0,
-            verified_documents: client_documents?.filter(d => d.verified)?.length || 0
-          };
-        });
-        
-        // Convertir en CSV
-        const headers = Object.keys(simplifiedData[0] || {}).join(',');
-        const rows = simplifiedData.map(client => 
-          Object.values(client).map(val => 
-            typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val
-          ).join(',')
-        ).join('\n');
-        
-        const csv = `${headers}\n${rows}`;
-        
-        return new Response(
-          csv,
-          { 
-            status: 200, 
-            headers: { 
-              ...corsHeaders, 
-              "Content-Type": "text/csv",
-              "Content-Disposition": `attachment; filename="sfd_clients_${sfdId}_${new Date().toISOString().split('T')[0]}.csv"`
+          JSON.stringify({
+            clients: data || [],
+            pagination: {
+              page,
+              limit,
+              total: totalCount || 0,
+              pages: totalCount ? Math.ceil(totalCount / limit) : 0
             }
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         );
       }
-      
-      // Format JSON par défaut
-      return new Response(
-        JSON.stringify(data || []),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    // Analytiques des clients
-    if (action === "getClientAnalytics" && sfdId) {
-      console.log(`Récupération des analytiques clients pour la SFD: ${sfdId}`);
-      
-      const period = body.period || 'month';
-      let timeInterval: string;
-      
-      // Déterminer l'intervalle de temps pour les requêtes
-      switch (period) {
-        case 'day':
-          timeInterval = '1 day';
-          break;
-        case 'week':
-          timeInterval = '1 week';
-          break;
-        case 'year':
-          timeInterval = '1 year';
-          break;
-        case 'month':
-        default:
-          timeInterval = '1 month';
-          break;
-      }
-      
-      // Récupérer le nombre total de clients
-      const { count: totalClients, error: countError } = await supabase
-        .from("sfd_clients")
-        .select("id", { count: 'exact', head: true })
-        .eq("sfd_id", sfdId);
-      
-      if (countError) {
-        console.error("Erreur lors de la récupération du nombre total de clients:", countError);
-        return new Response(
-          JSON.stringify({ error: countError.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      // Récupérer les statistiques par statut
-      const { data: statusStats, error: statusError } = await supabase
-        .from("sfd_clients")
-        .select("status, count")
-        .eq("sfd_id", sfdId)
-        .group("status");
-      
-      if (statusError) {
-        console.error("Erreur lors de la récupération des statistiques par statut:", statusError);
-        return new Response(
-          JSON.stringify({ error: statusError.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      // Récupérer les nouveaux clients par période
-      const { data: newClientsData, error: newClientsError } = await supabase.rpc(
-        'get_new_clients_by_period',
-        { 
-          p_sfd_id: sfdId,
-          p_interval: timeInterval
+
+      case 'createClient': {
+        if (!sfdId) {
+          throw new Error('SFD ID is required');
         }
-      );
-      
-      if (newClientsError) {
-        console.error("Erreur lors de la récupération des nouveaux clients par période:", newClientsError);
+
+        const { clientData } = await req.json();
+        if (!clientData || !clientData.full_name) {
+          throw new Error('Client data is required with at least a full name');
+        }
+
+        // Create client
+        const { data: newClient, error: createError } = await supabaseClient
+          .from('sfd_clients')
+          .insert({
+            ...clientData,
+            sfd_id: sfdId,
+            status: 'pending'
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Erreur lors de la création du client:', createError);
+          throw createError;
+        }
+
+        // Log activity
+        await supabaseClient
+          .from('client_activities')
+          .insert({
+            client_id: newClient.id,
+            activity_type: 'creation',
+            performed_by: user.id,
+            description: 'Client créé'
+          });
+
         return new Response(
-          JSON.stringify({ error: newClientsError.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify(newClient),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
         );
       }
-      
-      // Récupérer le taux de conversion (clients validés / total)
-      const { data: conversionData, error: conversionError } = await supabase
-        .from("sfd_clients")
-        .select("status, count")
-        .eq("sfd_id", sfdId)
-        .in("status", ["validated", "rejected"])
-        .group("status");
-      
-      if (conversionError) {
-        console.error("Erreur lors de la récupération du taux de conversion:", conversionError);
+
+      case 'validateClient': {
+        if (!clientId) {
+          throw new Error('Client ID is required');
+        }
+
+        const { validatedBy, notes } = await req.json();
+
+        // Update client status
+        const { data: updatedClient, error: updateError } = await supabaseClient
+          .from('sfd_clients')
+          .update({
+            status: 'validated',
+            validated_at: new Date().toISOString(),
+            validated_by: validatedBy || user.id,
+            notes
+          })
+          .eq('id', clientId)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('Erreur lors de la validation du client:', updateError);
+          throw updateError;
+        }
+
+        // Log activity
+        await supabaseClient
+          .from('client_activities')
+          .insert({
+            client_id: clientId,
+            activity_type: 'validation',
+            performed_by: validatedBy || user.id,
+            description: 'Compte client validé'
+          });
+
+        // Try to create a user account for the client if it doesn't exist
+        if (!updatedClient.user_id && updatedClient.email) {
+          try {
+            // Create temp password
+            const tempPassword = Math.random().toString(36).slice(-8);
+
+            // Call the create_user_from_client function
+            const { data: userData, error: userCreateError } = await supabaseClient.rpc(
+              'create_user_from_client',
+              { 
+                client_id: clientId,
+                temp_password: tempPassword
+              }
+            );
+
+            if (userCreateError) {
+              console.error('Error creating user account:', userCreateError);
+            } else {
+              console.log('User account created successfully:', userData);
+            }
+          } catch (accountError) {
+            console.error('Error in account creation process:', accountError);
+          }
+        }
+
         return new Response(
-          JSON.stringify({ error: conversionError.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify(updatedClient),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
         );
       }
-      
-      // Calculer le taux de conversion
-      const validatedCount = conversionData?.find(item => item.status === "validated")?.count || 0;
-      const rejectedCount = conversionData?.find(item => item.status === "rejected")?.count || 0;
-      const totalProcessed = validatedCount + rejectedCount;
-      const conversionRate = totalProcessed > 0 ? (validatedCount / totalProcessed) * 100 : 0;
-      
-      // Construire les résultats
-      const analytics = {
-        totalClients: totalClients || 0,
-        statusDistribution: statusStats || [],
-        newClients: newClientsData || [],
-        conversionRate: parseFloat(conversionRate.toFixed(2)),
-        period
-      };
-      
-      return new Response(
-        JSON.stringify(analytics),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+
+      case 'rejectClient': {
+        if (!clientId) {
+          throw new Error('Client ID is required');
+        }
+
+        const { validatedBy, rejectionReason } = await req.json();
+
+        // Update client status
+        const { data: updatedClient, error: updateError } = await supabaseClient
+          .from('sfd_clients')
+          .update({
+            status: 'rejected',
+            validated_at: new Date().toISOString(),
+            validated_by: validatedBy || user.id,
+            notes: rejectionReason || 'Demande rejetée'
+          })
+          .eq('id', clientId)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('Erreur lors du rejet du client:', updateError);
+          throw updateError;
+        }
+
+        // Log activity
+        await supabaseClient
+          .from('client_activities')
+          .insert({
+            client_id: clientId,
+            activity_type: 'rejection',
+            performed_by: validatedBy || user.id,
+            description: rejectionReason || 'Demande de client rejetée'
+          });
+
+        return new Response(
+          JSON.stringify(updatedClient),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      case 'getClientDetails': {
+        if (!clientId) {
+          throw new Error('Client ID is required');
+        }
+
+        // Get client details
+        const { data: client, error: clientError } = await supabaseClient
+          .from('sfd_clients')
+          .select('*')
+          .eq('id', clientId)
+          .single();
+
+        if (clientError) {
+          console.error('Erreur lors de la récupération des détails du client:', clientError);
+          throw clientError;
+        }
+
+        // Get client activities
+        const { data: activities, error: activitiesError } = await supabaseClient
+          .from('client_activities')
+          .select('*')
+          .eq('client_id', clientId)
+          .order('performed_at', { ascending: false });
+
+        if (activitiesError) {
+          console.error('Erreur lors de la récupération des activités:', activitiesError);
+        }
+
+        // Get client documents
+        const { data: documents, error: documentsError } = await supabaseClient
+          .from('client_documents')
+          .select('*')
+          .eq('client_id', clientId);
+
+        if (documentsError) {
+          console.error('Erreur lors de la récupération des documents:', documentsError);
+        }
+
+        return new Response(
+          JSON.stringify({
+            client,
+            activities: activities || [],
+            documents: documents || []
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      case 'deleteClient': {
+        if (!clientId) {
+          throw new Error('Client ID is required');
+        }
+
+        // Check if user has permission (admin or SFD admin)
+        const { data: userRole } = await supabaseClient
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!userRole || (userRole.role !== 'admin' && userRole.role !== 'sfd_admin')) {
+          throw new Error('Permission denied: Only admins can delete clients');
+        }
+
+        // Delete client
+        const { error: deleteError } = await supabaseClient
+          .from('sfd_clients')
+          .delete()
+          .eq('id', clientId);
+
+        if (deleteError) {
+          console.error('Erreur lors de la suppression du client:', deleteError);
+          throw deleteError;
+        }
+
+        return new Response(
+          JSON.stringify({ success: true }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      default:
+        throw new Error(`Action not supported: ${action}`);
     }
-    
-    // Action non supportée
-    return new Response(
-      JSON.stringify({ error: "Action non supportée" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-    
   } catch (error) {
-    console.error("Erreur serveur:", error);
+    console.error('Error processing request:', error.message);
+    
     return new Response(
-      JSON.stringify({ error: "Une erreur inattendue s'est produite" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ 
+        error: error.message,
+        success: false
+      }),
+      { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });

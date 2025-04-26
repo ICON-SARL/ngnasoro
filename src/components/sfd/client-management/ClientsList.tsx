@@ -11,10 +11,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SfdClient } from '@/types/sfdClients';
-import { Eye, Users, Phone, Mail } from 'lucide-react';
+import { Eye, Users, Phone, Mail, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ClientsListProps {
   clients: SfdClient[];
@@ -37,6 +38,8 @@ const ClientsList: React.FC<ClientsListProps> = ({
         return <Badge className="bg-red-100 text-red-800 hover:bg-red-200 border-red-200">Suspendu</Badge>;
       case 'validated':
         return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200">Validé</Badge>;
+      case 'rejected':
+        return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200">Rejeté</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -44,17 +47,17 @@ const ClientsList: React.FC<ClientsListProps> = ({
   
   if (isLoading) {
     return (
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex justify-center items-center py-12"
-      >
-        <div className="animate-spin h-8 w-8 border-4 border-[#0D6A51] border-t-transparent rounded-full"></div>
-      </motion.div>
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
     );
   }
 
-  if (clients.length === 0) {
+  if (!clients || clients.length === 0) {
     return (
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
@@ -95,7 +98,7 @@ const ClientsList: React.FC<ClientsListProps> = ({
               className="hover:bg-gray-50 transition-colors cursor-pointer"
               onClick={(e) => handleViewDetails(e, client.id)}
             >
-              <TableCell className="font-medium">{client.full_name}</TableCell>
+              <TableCell className="font-medium">{client.full_name || 'Sans nom'}</TableCell>
               <TableCell>
                 <div className="flex flex-col">
                   {client.phone && (
@@ -114,7 +117,8 @@ const ClientsList: React.FC<ClientsListProps> = ({
               </TableCell>
               <TableCell>
                 {client.created_at && (
-                  <span className="text-sm">
+                  <span className="text-sm flex items-center">
+                    <Calendar className="h-3.5 w-3.5 mr-1 text-gray-400" />
                     {format(new Date(client.created_at), 'P', { locale: fr })}
                   </span>
                 )}

@@ -1,13 +1,26 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+import React from 'react';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
-import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
-import { supabase } from '@/integrations/supabase/client';
+import { useSfdClientManagement } from '@/hooks/useSfdClientManagement';
 
 interface NewClientModalProps {
   isOpen: boolean;
@@ -15,194 +28,171 @@ interface NewClientModalProps {
   onClientCreated: () => void;
 }
 
+const newClientSchema = z.object({
+  full_name: z.string().min(2, { message: 'Le nom complet est requis' }),
+  email: z.string().email({ message: 'Email invalide' }).optional().or(z.literal('')),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  id_type: z.string().optional(),
+  id_number: z.string().optional(),
+});
+
+type NewClientFormData = z.infer<typeof newClientSchema>;
+
 const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose, onClientCreated }) => {
-  const { toast } = useToast();
-  const { user } = useAuth();
-  const { activeSfdId } = useSfdDataAccess();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const [clientData, setClientData] = useState({
-    full_name: '',
-    email: '',
-    phone: '',
-    address: '',
-    id_type: '',
-    id_number: '',
+  const { createClient } = useSfdClientManagement();
+
+  const form = useForm<NewClientFormData>({
+    resolver: zodResolver(newClientSchema),
+    defaultValues: {
+      full_name: '',
+      email: '',
+      phone: '',
+      address: '',
+      id_type: '',
+      id_number: '',
+    },
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setClientData(prev => ({ ...prev, [name]: value }));
+  const onSubmit = async (data: NewClientFormData) => {
+    try {
+      await createClient.mutateAsync({
+        full_name: data.full_name,
+        email: data.email || undefined,
+        phone: data.phone || undefined,
+        address: data.address || undefined,
+        id_type: data.id_type || undefined,
+        id_number: data.id_number || undefined,
+      });
+      
+      form.reset();
+      onClientCreated();
+    } catch (error) {
+      console.error('Erreur lors de la création du client:', error);
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!activeSfdId || !user) {
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de créer un client sans SFD active ou utilisateur connecté',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Créer un nouveau client dans la table sfd_clients
-      const { data, error } = await supabase
-        .from('sfd_clients')
-        .insert({
-          ...clientData,
-          sfd_id: activeSfdId,
-          status: 'validated',
-          validated_by: user.id,
-          validated_at: new Date().toISOString(),
-          kyc_level: 0
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: 'Client créé',
-        description: 'Le client a été créé avec succès',
-      });
-
-      // Tenter de créer un compte pour ce client
-      try {
-        await supabase.rpc('create_client_savings_account', {
-          p_client_id: data.id,
-          p_sfd_id: activeSfdId,
-          p_initial_balance: 0
-        });
-      } catch (accountError) {
-        console.error('Erreur lors de la création du compte:', accountError);
-        // On ne bloque pas le processus même si la création du compte échoue
-      }
-
-      // Effacer les données du formulaire
-      setClientData({
-        full_name: '',
-        email: '',
-        phone: '',
-        address: '',
-        id_type: '',
-        id_number: '',
-      });
-
-      onClientCreated();
-    } catch (error: any) {
-      console.error('Erreur lors de la création du client:', error);
-      toast({
-        title: 'Erreur',
-        description: error.message || 'Une erreur est survenue lors de la création du client',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleClose = () => {
+    form.reset();
+    onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Ajouter un nouveau client</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">Ajouter un nouveau client</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Nom complet *</Label>
-              <Input
-                id="full_name"
-                name="full_name"
-                value={clientData.full_name}
-                onChange={handleChange}
-                required
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+            <FormField
+              control={form.control}
+              name="full_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nom complet <span className="text-red-500">*</span></FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nom et prénom" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="email@example.com" type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Téléphone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="+223 XXXXXXXX" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email" 
-                  type="email"
-                  value={clientData.email}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="phone">Téléphone *</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  value={clientData.phone}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Adresse</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Adresse du client" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
-            <div className="space-y-2">
-              <Label htmlFor="address">Adresse</Label>
-              <Input
-                id="address"
-                name="address"
-                value={clientData.address}
-                onChange={handleChange}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="id_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type de pièce d'identité</FormLabel>
+                    <FormControl>
+                      <Input placeholder="NINA, Passeport, etc." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="id_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Numéro de pièce</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Numéro" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="id_type">Type d'identification</Label>
-                <Input
-                  id="id_type"
-                  name="id_type"
-                  value={clientData.id_type}
-                  onChange={handleChange}
-                  placeholder="CNI, Passeport, etc."
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="id_number">N° d'identification</Label>
-                <Input
-                  id="id_number"
-                  name="id_number"
-                  value={clientData.id_number}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              type="button" 
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              Annuler
-            </Button>
-            <Button 
-              type="submit"
-              className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Création...' : 'Créer le client'}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleClose}
+                className="mr-2"
+              >
+                Annuler
+              </Button>
+              <Button 
+                type="submit" 
+                className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+                disabled={createClient.isPending}
+              >
+                {createClient.isPending ? 'Création en cours...' : 'Créer le client'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

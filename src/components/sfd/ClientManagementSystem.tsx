@@ -12,7 +12,8 @@ import NewClientModal from './client-management/NewClientModal';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
+import { Pagination } from '@/components/ui/pagination';
 
 export const ClientManagementSystem = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -29,13 +30,16 @@ export const ClientManagementSystem = () => {
     statusFilter,
     setStatusFilter,
     totalClients,
-    refetch
+    refetch,
+    currentPage,
+    setCurrentPage,
+    totalPages
   } = useSfdClientManagement();
 
   // For debugging
   useEffect(() => {
     console.log("ClientManagementSystem - Current user role:", userRole);
-    console.log("ClientManagementSystem - Clients loaded:", clients.length);
+    console.log("ClientManagementSystem - Clients loaded:", clients?.length);
   }, [userRole, clients]);
 
   const handleRefresh = () => {
@@ -50,7 +54,7 @@ export const ClientManagementSystem = () => {
     console.log("Client sélectionné:", clientId);
     
     // Find the client in the loaded data
-    const selectedClient = clients.find(client => client.id === clientId);
+    const selectedClient = clients?.find(client => client.id === clientId);
     
     if (selectedClient) {
       setSelectedClientId(clientId);
@@ -81,6 +85,10 @@ export const ClientManagementSystem = () => {
     });
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   const handleNewClientClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -92,7 +100,7 @@ export const ClientManagementSystem = () => {
 
   // Si un client est sélectionné, afficher ses détails
   if (selectedClientId) {
-    const selectedClient = clients.find(client => client.id === selectedClientId);
+    const selectedClient = clients?.find(client => client.id === selectedClientId);
     
     if (clientViewError) {
       return (
@@ -249,10 +257,20 @@ export const ClientManagementSystem = () => {
               </div>
 
               <ClientsList 
-                clients={clients}
+                clients={clients || []}
                 isLoading={isLoading}
                 onClientSelect={handleClientSelect}
               />
+              
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-4">
+                  <Pagination 
+                    currentPage={currentPage} 
+                    totalPages={totalPages} 
+                    onPageChange={handlePageChange} 
+                  />
+                </div>
+              )}
             </div>
 
             <NewClientModal 
