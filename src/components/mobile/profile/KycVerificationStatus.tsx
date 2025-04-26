@@ -12,7 +12,7 @@ interface KycVerificationStatusProps {
 // Define verification status as a string literal type
 export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 
-// Define document type with explicit properties
+// Define document type with explicit properties to avoid recursive type issues
 export interface KycVerificationDocument {
   id: string;
   user_id?: string;
@@ -21,9 +21,9 @@ export interface KycVerificationDocument {
   document_url: string;
   verification_status: string;
   created_at: string;
-  verified_at?: string;
-  verified_by?: string;
-  verification_notes?: string;
+  verified_at?: string | null;
+  verified_by?: string | null;
+  verification_notes?: string | null;
 }
 
 const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className }) => {
@@ -45,8 +45,8 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
           
         if (error) throw error;
         
-        // Fix: Properly cast the data without recursive type issues
-        setDocuments(data ? data as KycVerificationDocument[] : []);
+        // Fix: Cast data without using compound expression that could cause type recursion
+        setDocuments(data ? (data as unknown as KycVerificationDocument[]) : []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
