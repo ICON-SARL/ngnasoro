@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MobileMenu from '@/components/mobile/MobileMenu';
 import SfdAdhesionSection from '@/components/mobile/account/SfdAdhesionSection';
+import ClientCodeSection from '@/components/mobile/account/ClientCodeSection';
 import LogoutButton from '@/components/LogoutButton';
 
 const AccountPage: React.FC = () => {
@@ -44,7 +44,6 @@ const AccountPage: React.FC = () => {
           </Button>
         </div>
         
-        {/* Profile Card */}
         <Card className="mb-6">
           <CardContent className="p-4 flex items-center">
             <Avatar className="h-16 w-16 bg-[#0D6A51]">
@@ -63,13 +62,13 @@ const AccountPage: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* SFD Adhesion Section */}
+        <ClientCodeSection />
+        
         <SfdAdhesionSection />
         
         <h2 className="text-xl font-semibold mb-4 mt-6">Paramètres</h2>
         
         <div className="space-y-4">
-          {/* Notifications */}
           <Card className="border cursor-pointer" onClick={() => navigate('/mobile-flow/account/notifications')}>
             <CardContent className="p-4 flex items-center">
               <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
@@ -83,7 +82,6 @@ const AccountPage: React.FC = () => {
             </CardContent>
           </Card>
           
-          {/* Security */}
           <Card className="border cursor-pointer" onClick={() => navigate('/mobile-flow/account/security')}>
             <CardContent className="p-4 flex items-center">
               <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
@@ -97,7 +95,6 @@ const AccountPage: React.FC = () => {
             </CardContent>
           </Card>
           
-          {/* SFD Accounts */}
           <Card className="border cursor-pointer" onClick={() => navigate('/sfd-setup')}>
             <CardContent className="p-4 flex items-center">
               <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center">
@@ -111,7 +108,6 @@ const AccountPage: React.FC = () => {
             </CardContent>
           </Card>
           
-          {/* About */}
           <Card className="border cursor-pointer" onClick={() => navigate('/mobile-flow/account/about')}>
             <CardContent className="p-4 flex items-center">
               <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
