@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Check, Shield } from 'lucide-react';
-import { KycVerificationDocument, VerificationStatus } from '@/types/kyc';
+import { KycVerificationDocument } from '@/types/kyc';
 
 interface KycVerificationStatusProps {
   className?: string;
@@ -15,37 +15,34 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
   const { user } = useAuth();
   const [isVerified, setIsVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const checkVerificationStatus = async () => {
       if (!user?.id && !clientCode) return;
       
       setIsLoading(true);
+      setError(null);
+      
       try {
-        // Build the base query
-        const query = supabase
+        const filterCondition = clientCode 
+          ? { client_code: clientCode }
+          : { user_id: user?.id };
+
+        const { data, error } = await supabase
           .from('verification_documents')
-          .select('*');
-        
-        // Add the appropriate filter condition
-        if (clientCode) {
-          query.eq('client_code', clientCode);
-        } else if (user?.id) {
-          query.eq('user_id', user.id);
-        }
-        
-        // Execute the query
-        const { data, error } = await query;
+          .select('verification_status')
+          .match(filterCondition);
         
         if (error) throw error;
         
-        // Check if any document is verified
         const hasVerifiedDocument = Array.isArray(data) && 
-          data.some((doc: any) => doc.verification_status === 'verified');
+          data.some((doc) => doc.verification_status === 'verified');
         
-        setIsVerified(hasVerifiedDocument || false);
+        setIsVerified(hasVerifiedDocument);
       } catch (error) {
         console.error('Error checking KYC verification status:', error);
+        setError('Unable to check verification status');
         setIsVerified(false);
       } finally {
         setIsLoading(false);
@@ -56,30 +53,50 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
   }, [user?.id, clientCode]);
 
   if (isLoading) {
-    return <div className={`flex items-center ${className}`}>
-      <Badge variant="outline" className="bg-gray-50 text-gray-500">
-        <Shield className="h-3 w-3 mr-1" />
-        Chargement...
-      </Badge>
-    </div>;
+    return (
+      <div className={`flex items-center ${className}`}>
+        <Badge variant="outline" className="bg-gray-50 text-gray-500">
+          <Shield className="h-3 w-3 mr-1" />
+          Chargement...
+        </Badge>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`flex items-center ${className}`}>
+        <Badge variant="destructive" className="border-red-200">
+          <Shield className="h-3 w-3 mr-1" />
+          Erreur
+        </Badge>
+      </div>
+    );
   }
 
   if (isVerified) {
-    return <div className={`flex items-center ${className}`}>
-      <Badge className="bg-green-50 text-green-600 border-green-200">
-        <Shield className="h-3 w-3 mr-1" />
-        <Check className="h-3 w-3 mr-1" />
-        KYC Vérifié
-      </Badge>
-    </div>;
+    return (
+      <div className={`flex items-center ${className}`}>
+        <Badge className="bg-green-50 text-green-600 border-green-200">
+          <Shield className="h-3 w-3 mr-1" />
+          <Check className="h-3 w-3 mr-1" />
+          KYC Vérifié
+        </Badge>
+      </div>
+    );
   }
 
-  return <div className={`flex items-center ${className}`}>
-    <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
-      <Shield className="h-3 w-3 mr-1" />
-      Non vérifié
-    </Badge>
-  </div>;
+  return (
+    <div className={`flex items-center ${className}`}>
+      <Badge 
+        variant="outline" 
+        className="bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+      >
+        <Shield className="h-3 w-3 mr-1" />
+        Non vérifié
+      </Badge>
+    </div>
+  );
 };
 
 export default KycVerificationStatus;
