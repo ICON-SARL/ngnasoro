@@ -59,15 +59,15 @@ export function useClientManagement() {
 
       // If there's already a user_id, we don't need to create a new user account
       if (clientData.user_id) {
-        // Just update the user's client code if needed - use a custom object to avoid TypeScript errors
-        const profileUpdate: Record<string, any> = { 
-          client_code: clientCode 
-        };
-        
-        await supabase
+        // Just update the user profile with client code if needed
+        const { error: updateError } = await supabase
           .from('profiles')
-          .update(profileUpdate)
+          .update({ client_code: clientCode })
           .eq('id', clientData.user_id);
+        
+        if (updateError) {
+          console.error("Error updating profile with client code:", updateError);
+        }
         
         // Notify the administrator
         toast({

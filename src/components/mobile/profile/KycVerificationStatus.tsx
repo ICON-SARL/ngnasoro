@@ -16,7 +16,7 @@ export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 // Define document type explicitly to avoid recursive type issues
 export interface KycVerificationDocument {
   id: string;
-  user_id?: string;
+  user_id?: string | null;
   adhesion_request_id: string;
   document_type: string;
   document_url: string;
