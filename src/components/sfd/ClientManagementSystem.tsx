@@ -38,6 +38,7 @@ export const ClientManagementSystem = () => {
   };
 
   const handleClientSelect = (clientId: string) => {
+    console.log("Client sélectionné:", clientId);
     setSelectedClientId(clientId);
   };
 
@@ -52,6 +53,13 @@ export const ClientManagementSystem = () => {
       title: 'Client ajouté',
       description: 'Le nouveau client a été ajouté avec succès',
     });
+  };
+
+  const handleNewClientClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Empêcher le comportement par défaut
+    e.stopPropagation(); // Arrêter la propagation de l'événement
+    setIsNewClientModalOpen(true);
+    console.log("Ouverture du modal nouveau client");
   };
 
   // Si un client est sélectionné, afficher ses détails
@@ -89,7 +97,7 @@ export const ClientManagementSystem = () => {
             </Button>
             <Button 
               size="sm" 
-              onClick={() => setIsNewClientModalOpen(true)}
+              onClick={handleNewClientClick}
               className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
             >
               <UserPlus className="mr-2 h-4 w-4" />
@@ -145,3 +153,5 @@ export const ClientManagementSystem = () => {
     </Card>
   );
 };
+
+export default ClientManagementSystem;

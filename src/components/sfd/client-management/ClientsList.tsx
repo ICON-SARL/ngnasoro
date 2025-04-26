@@ -14,6 +14,7 @@ import { SfdClient } from '@/types/sfdClients';
 import { Eye, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 
 interface ClientsListProps {
   clients: SfdClient[];
@@ -26,6 +27,9 @@ const ClientsList: React.FC<ClientsListProps> = ({
   isLoading,
   onClientSelect
 }) => {
+  // Utilisez le hook useNavigate pour la redirection
+  const navigate = useNavigate();
+  
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -59,6 +63,14 @@ const ClientsList: React.FC<ClientsListProps> = ({
     );
   }
 
+  // Gestionnaire d'événement pour voir les détails du client
+  const handleViewDetails = (e: React.MouseEvent, clientId: string) => {
+    e.preventDefault(); // Empêcher la navigation par défaut
+    e.stopPropagation(); // Empêcher la propagation de l'événement
+    onClientSelect(clientId); // Appeler la fonction passée en prop
+    console.log("Voir les détails du client:", clientId); // Pour le débogage
+  };
+
   return (
     <div className="border rounded-md">
       <Table>
@@ -89,7 +101,7 @@ const ClientsList: React.FC<ClientsListProps> = ({
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => onClientSelect(client.id)}
+                  onClick={(e) => handleViewDetails(e, client.id)}
                 >
                   <Eye className="h-3.5 w-3.5 mr-1" />
                   Gérer
