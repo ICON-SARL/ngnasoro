@@ -37,7 +37,7 @@ const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose, onClie
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    e.stopPropagation(); // Empêcher la propagation de l'événement
+    e.stopPropagation();
     
     if (!activeSfdId || !user) {
       toast({

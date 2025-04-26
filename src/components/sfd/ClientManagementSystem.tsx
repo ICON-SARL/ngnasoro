@@ -1,7 +1,5 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, UserPlus, RefreshCw, Filter } from 'lucide-react';
@@ -56,10 +54,9 @@ export const ClientManagementSystem = () => {
   };
 
   const handleNewClientClick = (e: React.MouseEvent) => {
-    e.preventDefault(); // Empêcher le comportement par défaut
-    e.stopPropagation(); // Arrêter la propagation de l'événement
+    e.preventDefault();
+    e.stopPropagation();
     
-    // Ouvrir directement la modal sans redirection
     setIsNewClientModalOpen(true);
     
     console.log("Ouverture du modal nouveau client");
@@ -102,7 +99,7 @@ export const ClientManagementSystem = () => {
               size="sm" 
               onClick={handleNewClientClick}
               className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-              type="button" // S'assurer que c'est un bouton de type button
+              type="button"
             >
               <UserPlus className="mr-2 h-4 w-4" />
               Nouveau Client
