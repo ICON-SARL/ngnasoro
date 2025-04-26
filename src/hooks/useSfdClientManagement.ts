@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -74,13 +73,13 @@ export function useSfdClientManagement() {
     refetchOnWindowFocus: false,
   });
 
-  // Filter clients locally based on search term
-  const filteredClients = data?.clients.filter(client =>
+  // Fix: Properly handle undefined data.clients with a fallback empty array
+  const filteredClients = (data?.clients || []).filter(client =>
     searchTerm === '' || 
     client.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (client.phone && client.phone.includes(searchTerm))
-  ) || [];
+  );
 
   // Create a new client
   const createClient = useMutation({
@@ -265,12 +264,12 @@ export function useSfdClientManagement() {
 
   return {
     clients: filteredClients,
-    totalClients: data?.pagination.total || 0,
+    totalClients: data?.pagination?.total || 0,
     currentPage,
     setCurrentPage,
     itemsPerPage,
     setItemsPerPage,
-    totalPages: data?.pagination.pages || 0,
+    totalPages: data?.pagination?.pages || 0,
     isLoading,
     error,
     searchTerm,
