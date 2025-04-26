@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,6 +22,7 @@ export interface KycVerificationDocument {
   verified_by?: string | null;
   verification_notes?: string | null;
   client_code?: string | null;
+  // Remove adhesion_request_id as it causes circular reference
 }
 
 const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className, clientCode }) => {
@@ -48,7 +50,8 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
         
         if (error) throw error;
         
-        setDocuments(data || []);
+        // Explicitly cast the data to the expected type to avoid type mismatch
+        setDocuments(data as unknown as KycVerificationDocument[]);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
         setDocuments([]);
