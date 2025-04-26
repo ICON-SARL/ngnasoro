@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,7 +50,9 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
           
         if (error) throw error;
         
-        setDocuments(data as KycVerificationDocument[] || []);
+        // Explicitly cast the data to avoid type recursion
+        const typedData = data as KycVerificationDocument[];
+        setDocuments(typedData || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
@@ -60,7 +63,7 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
     fetchDocuments();
   }, [user?.id, clientCode]);
   
-  const getOverallStatus = () => {
+  const getOverallStatus = (): 'loading' | 'none' | 'verified' | 'rejected' | 'pending' => {
     if (isLoading) return 'loading';
     if (documents.length === 0) return 'none';
     
