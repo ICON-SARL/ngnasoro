@@ -22,24 +22,28 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
       
       setIsLoading(true);
       try {
+        // Build the base query
         let query = supabase
           .from('verification_documents')
           .select('*');
         
+        // Add the appropriate filter condition
         if (clientCode) {
           query = query.eq('client_code', clientCode);
         } else if (user?.id) {
-          // Add user_id condition when we have a user
           query = query.eq('user_id', user.id);
         }
         
+        // Execute the query
         const { data, error } = await query;
         
         if (error) throw error;
         
-        // Check if all required documents are verified
-        const hasAllVerifiedDocuments = data?.some(doc => doc.verification_status === 'verified');
-        setIsVerified(hasAllVerifiedDocuments || false);
+        // Check if any document is verified
+        const hasVerifiedDocument = Array.isArray(data) && 
+          data.some(doc => doc.verification_status === 'verified');
+        
+        setIsVerified(hasVerifiedDocument || false);
       } catch (error) {
         console.error('Error checking KYC verification status:', error);
         setIsVerified(false);
