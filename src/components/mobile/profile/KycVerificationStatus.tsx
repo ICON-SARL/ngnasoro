@@ -50,9 +50,9 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
         
         if (error) throw error;
         
-        // Fix the type instantiation issue by explicitly casting with intermediate unknown type
-        const typedData = data as unknown;
-        setDocuments(typedData as KycVerificationDocument[]);
+        // Fix the type instantiation issue by using a more direct type assertion
+        // This prevents TypeScript from trying to deeply analyze the type structure
+        setDocuments(data as any[] as KycVerificationDocument[]);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
