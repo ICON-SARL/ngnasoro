@@ -50,9 +50,9 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
           
         if (error) throw error;
         
-        // Explicitly cast the data to avoid type recursion
-        const typedData = data as KycVerificationDocument[];
-        setDocuments(typedData || []);
+        // Properly handle the data with explicit type annotations
+        const documentsData = data || [];
+        setDocuments(documentsData as KycVerificationDocument[]);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
