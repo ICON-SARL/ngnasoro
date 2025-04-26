@@ -12,7 +12,7 @@ interface KycVerificationStatusProps {
 // Define verification status as a string literal type
 export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 
-// Define document type with explicit properties to avoid recursive type issues
+// Define document type explicitly with all properties to avoid recursive type issues
 export interface KycVerificationDocument {
   id: string;
   user_id?: string;
@@ -45,8 +45,8 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
           
         if (error) throw error;
         
-        // Resolve the infinite type recursion by using a proper type assertion
-        setDocuments(data ? (data as any[]).map(item => item as KycVerificationDocument) : []);
+        // Safe type casting to avoid recursive type definition
+        setDocuments(data as KycVerificationDocument[] || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
