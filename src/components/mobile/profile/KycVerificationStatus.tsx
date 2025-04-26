@@ -40,7 +40,8 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
           .order('created_at', { ascending: false });
           
         if (error) throw error;
-        setDocuments(data || []);
+        // Explicitly cast the data to KycVerificationDocument[]
+        setDocuments((data as KycVerificationDocument[]) || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
@@ -57,10 +58,12 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
     
     // Check if all required document types are verified
     const requiredTypes = ['id_card_front', 'id_card_back', 'proof_of_address'];
-    const documentByType = documents.reduce((acc, doc) => {
-      acc[doc.document_type] = doc;
-      return acc;
-    }, {} as Record<string, KycVerificationDocument>);
+    const documentByType: Record<string, KycVerificationDocument> = {};
+    
+    // Create a map of document types to their documents
+    documents.forEach(doc => {
+      documentByType[doc.document_type] = doc;
+    });
     
     // Check if we have all required documents and they're all verified
     const allVerified = requiredTypes.every(
