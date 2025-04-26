@@ -9,10 +9,10 @@ interface KycVerificationStatusProps {
   className?: string;
 }
 
-// Define verification status as a string union type
+// Define verification status as a string literal type
 export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 
-// Explicitly define document type
+// Define document type with explicit properties
 export type KycVerificationDocument = {
   id: string;
   user_id?: string;
@@ -45,7 +45,7 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
           
         if (error) throw error;
         
-        // Safely cast data to our document type
+        // Explicitly cast data to our document type
         setDocuments(data as KycVerificationDocument[] || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
