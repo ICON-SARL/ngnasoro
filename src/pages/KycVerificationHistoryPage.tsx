@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import KycVerificationStatus from '@/components/mobile/profile/KycVerificationStatus';
-import { KycVerificationDocument } from '@/components/mobile/profile/KycVerificationStatus';
+import { KycVerificationDocument } from '@/types/kyc';
 
 const KycVerificationHistoryPage = () => {
   const navigate = useNavigate();

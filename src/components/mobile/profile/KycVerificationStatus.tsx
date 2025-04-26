@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Check, Shield } from 'lucide-react';
+import { KycVerificationDocument, VerificationStatus } from '@/types/kyc';
 
 interface KycVerificationStatusProps {
   className?: string;

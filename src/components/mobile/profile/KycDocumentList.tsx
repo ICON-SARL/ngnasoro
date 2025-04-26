@@ -7,7 +7,7 @@ import { FileText, Check, AlertCircle, Clock, ExternalLink } from 'lucide-react'
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { KycVerificationDocument, VerificationStatus } from './KycVerificationStatus';
+import { KycVerificationDocument, VerificationStatus } from '@/types/kyc';
 
 interface KycDocumentListProps {
   refreshKey?: number;
@@ -32,7 +32,7 @@ const KycDocumentList: React.FC<KycDocumentListProps> = ({ refreshKey = 0 }) => 
           
         if (error) throw error;
         // Cast to the KycVerificationDocument type
-        setDocuments((data || []) as unknown as KycVerificationDocument[]);
+        setDocuments(data as KycVerificationDocument[] || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
