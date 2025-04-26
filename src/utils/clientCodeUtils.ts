@@ -1,9 +1,9 @@
-
 /**
  * Utility functions for generating and validating client codes
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { Profile } from '@/types/profile';
 
 /**
  * Generates a unique client code with a specified format
@@ -53,88 +53,57 @@ export function formatClientCode(code: string): string {
   return formattedCode;
 }
 
-/**
- * Retrieve client code from local storage or user profile
- * @param userId The user ID to get code for
- * @returns The client code or null if not found
- */
 export async function getClientCodeForUser(userId: string): Promise<string | null> {
   try {
-    // First check local storage
     const storedCode = localStorage.getItem(`client_code_${userId}`);
     if (storedCode) {
       return storedCode;
     }
     
-    // If not in local storage, check the profiles table
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error || !data) {
-        return null;
-      }
-      
-      // If client_code exists in the data object
-      if (data.client_code) {
-        // Store in local storage for future use
-        localStorage.setItem(`client_code_${userId}`, data.client_code);
-        return data.client_code;
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error retrieving client code:', error);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('client_code')
+      .eq('id', userId)
+      .single();
+    
+    if (error || !data) {
       return null;
     }
+    
+    if (data.client_code) {
+      localStorage.setItem(`client_code_${userId}`, data.client_code);
+      return data.client_code;
+    }
+    
+    return null;
   } catch (error) {
     console.error('Error retrieving client code:', error);
     return null;
   }
 }
 
-/**
- * Store client code for a user
- * @param userId The user ID
- * @param clientCode The client code to store
- */
 export async function storeClientCode(userId: string, clientCode: string): Promise<boolean> {
   try {
-    // Store in local storage
     localStorage.setItem(`client_code_${userId}`, clientCode);
     
-    // Store in the user's profile
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ client_code: clientCode })
-        .eq('id', userId);
-      
-      if (error) {
-        console.error('Error storing client code in profile:', error);
-        return false;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Error updating profile:', error);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ client_code: clientCode })
+      .eq('id', userId);
+    
+    if (error) {
+      console.error('Error storing client code in profile:', error);
       return false;
     }
+    
+    return true;
   } catch (error) {
     console.error('Error storing client code:', error);
     return false;
   }
 }
 
-/**
- * Look up a user by their client code
- * @param clientCode The client code to look up
- * @returns The user profile data or null if not found
- */
-export async function lookupUserByClientCode(clientCode: string): Promise<any | null> {
+export async function lookupUserByClientCode(clientCode: string): Promise<Profile | null> {
   try {
     if (!validateClientCode(clientCode)) {
       return null;
@@ -142,7 +111,6 @@ export async function lookupUserByClientCode(clientCode: string): Promise<any | 
     
     const formattedCode = formatClientCode(clientCode);
     
-    // Try to get from profiles first
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
@@ -153,22 +121,7 @@ export async function lookupUserByClientCode(clientCode: string): Promise<any | 
       return profileData;
     }
 
-    // If not found in profiles, try to find in verification_documents
-    const { data: docData, error: docError } = await supabase
-      .from('verification_documents')
-      .select('client_code')
-      .eq('client_code', formattedCode)
-      .maybeSingle();
-
-    if (docError || !docData || !docData.client_code) {
-      return null;
-    }
-
-    // If we found the client code in verification_documents, we still need to get the user data
-    // Since we don't have user_id in verification_documents table, we can't directly link to profiles
-    // This is a limitation of the current schema design
-    return { clientCode: docData.client_code, source: 'verification_documents' };
-      
+    return null;
   } catch (error) {
     console.error('Error looking up user by client code:', error);
     return null;

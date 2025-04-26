@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { initializeSupabase } from '@/utils/initSupabase';
 import { registerSchema, RegisterFormValues } from './schema';
 import { generateClientCode, storeClientCode } from '@/utils/clientCodeUtils';
+import { Profile } from '@/types/profile';
 
 export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
   const { signUp } = useAuth();
@@ -29,98 +29,6 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
     },
   });
 
-  // Function to initialize user account
-  const initializeUserAccount = async (userId: string, fullName: string) => {
-    try {
-      console.log("Initializing account for user:", userId);
-      
-      // Generate a unique client code for the user
-      const userClientCode = generateClientCode();
-      
-      // Check if profile exists first
-      const { data: existingProfile, error: profileCheckError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (profileCheckError) {
-        // Create profile if it doesn't exist
-        const { error: createProfileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            full_name: fullName,
-            email: form.getValues('email'),
-            // Add client_code as a separate update operation
-          });
-          
-        if (createProfileError) {
-          console.error("Error creating profile:", createProfileError);
-          throw new Error("Failed to create user profile");
-        }
-        
-        // Now update with client_code
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ client_code: userClientCode })
-          .eq('id', userId);
-          
-        if (updateError) {
-          console.error("Error adding client code to profile:", updateError);
-        }
-      } else {
-        // Update the existing profile with the client code
-        const { error: updateProfileError } = await supabase
-          .from('profiles')
-          .update({ client_code: userClientCode })
-          .eq('id', userId);
-          
-        if (updateProfileError) {
-          console.error("Error updating profile with client code:", updateProfileError);
-          // Non-blocking error - we continue
-        }
-      }
-      
-      // Save client code in state to display to user
-      setClientCode(userClientCode);
-      
-      // Store client code in local storage
-      localStorage.setItem(`client_code_${userId}`, userClientCode);
-      
-      // Check if account exists
-      const { data: existingAccount, error: accountCheckError } = await supabase
-        .from('accounts')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-        
-      if (accountCheckError) {
-        // Create account if it doesn't exist
-        const { error: createAccountError } = await supabase
-          .from('accounts')
-          .insert({
-            user_id: userId,
-            balance: 200000,
-            currency: 'FCFA'
-          });
-          
-        if (createAccountError) {
-          console.error("Error creating account:", createAccountError);
-          throw new Error("Failed to create user account");
-        }
-      }
-      
-      // Initialize Supabase data
-      await initializeSupabase();
-      
-      return true;
-    } catch (error) {
-      console.error("Error initializing user account:", error);
-      throw error;
-    }
-  };
-
   const onSubmit = async (data: RegisterFormValues) => {
     setIsSubmitting(true);
     setErrorMessage(null);
@@ -133,6 +41,9 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
         fullName: data.fullName, 
         hasPhone: !!data.phoneNumber 
       });
+      
+      const userClientCode = generateClientCode();
+      setClientCode(userClientCode);
       
       // Create metadata object
       const metadata = {
@@ -147,7 +58,6 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
         throw result.error;
       }
       
-      // Get the session to access the user ID
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -158,20 +68,36 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
         throw new Error("No user ID found after registration");
       }
       
+      // Update profile with client code
+      const updateData: Partial<Profile> = {
+        full_name: data.fullName,
+        email: data.email,
+        phone: data.phoneNumber,
+        client_code: userClientCode
+      };
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', sessionData.session.user.id);
+
+      if (updateError) {
+        console.error("Error updating profile:", updateError);
+        // Non-blocking error - we continue
+      }
+
       // Initialize the user account
-      await initializeUserAccount(sessionData.session.user.id, data.fullName);
+      await initializeSupabase();
       
-      setSuccessMessage(`Inscription réussie! Conservez votre code client: ${clientCode || 'En cours de génération...'}`);
+      setSuccessMessage(`Inscription réussie! Conservez votre code client: ${userClientCode}`);
       
       toast({
         title: "Inscription réussie",
-        description: `Votre compte a été créé avec succès. Votre code client est: ${clientCode || 'En cours de génération...'}`,
+        description: `Votre compte a été créé avec succès. Votre code client est: ${userClientCode}`,
       });
       
-      // Reset form after successful registration
       form.reset();
       
-      // Redirect to SFD selector page after a delay
       setTimeout(() => {
         navigate('/sfd-selector', { replace: true });
       }, 5000);

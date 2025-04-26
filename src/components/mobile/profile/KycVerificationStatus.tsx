@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,16 +6,13 @@ import { Check, X, Clock, Shield } from 'lucide-react';
 
 interface KycVerificationStatusProps {
   className?: string;
-  clientCode?: string; // Optional client code for admin view
+  clientCode?: string;
 }
 
-// Define verification status as a string literal type
 export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 
-// Define document type explicitly to avoid recursive type issues
 export interface KycVerificationDocument {
   id: string;
-  user_id?: string | null;
   adhesion_request_id: string;
   document_type: string;
   document_url: string;
@@ -25,7 +21,7 @@ export interface KycVerificationDocument {
   verified_at?: string | null;
   verified_by?: string | null;
   verification_notes?: string | null;
-  client_code?: string | null; // Added client code field
+  client_code?: string | null;
 }
 
 const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className, clientCode }) => {
@@ -39,25 +35,20 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
       
       setIsLoading(true);
       try {
-        // Create the base query
         let query = supabase
           .from('verification_documents')
           .select('*');
         
-        // If we have a client code (admin view), use that for querying
-        // Otherwise use the current user's ID (client view)
         if (clientCode) {
           query = query.eq('client_code', clientCode);
         } else if (user?.id) {
           query = query.eq('user_id', user.id);
         }
         
-        // Execute the query with ordering
         const { data, error } = await query.order('created_at', { ascending: false });
           
         if (error) throw error;
         
-        // Use explicit typing to avoid recursive type issues
         setDocuments(data as KycVerificationDocument[] || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
@@ -73,30 +64,24 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
     if (isLoading) return 'loading';
     if (documents.length === 0) return 'none';
     
-    // Check if all required document types are verified
     const requiredTypes = ['id_card_front', 'id_card_back', 'proof_of_address'];
     
-    // Use a simple object to map document types to their documents
     const documentByType: Record<string, KycVerificationDocument> = {};
     
-    // Populate the map
     documents.forEach(doc => {
       documentByType[doc.document_type] = doc;
     });
     
-    // Check if we have all required documents and they're all verified
     const allVerified = requiredTypes.every(
       type => documentByType[type]?.verification_status === 'verified'
     );
     
     if (allVerified) return 'verified';
     
-    // Check if any document is rejected
     if (documents.some(doc => doc.verification_status === 'rejected')) {
       return 'rejected';
     }
     
-    // Otherwise, it's pending
     return 'pending';
   };
   
