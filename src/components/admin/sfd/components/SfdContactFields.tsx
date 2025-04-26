@@ -4,6 +4,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { UseFormReturn } from 'react-hook-form';
 import { SfdFormValues } from '../schemas/sfdFormSchema';
+import { normalizeMaliPhoneNumber, validateMaliPhoneNumber } from '@/lib/constants';
 
 interface SfdContactFieldsProps {
   form: UseFormReturn<SfdFormValues>;
@@ -29,11 +30,18 @@ export function SfdContactFields({ form }: SfdContactFieldsProps) {
       <FormField
         control={form.control}
         name="phone"
-        render={({ field }) => (
+        render={({ field: { onChange, ...field } }) => (
           <FormItem>
             <FormLabel>Téléphone</FormLabel>
             <FormControl>
-              <Input placeholder="+223 XX XXX XX XX" {...field} />
+              <Input
+                placeholder="+223 XX XXX XX XX"
+                {...field}
+                onChange={(e) => {
+                  const normalized = normalizeMaliPhoneNumber(e.target.value);
+                  onChange(normalized);
+                }}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
