@@ -15,8 +15,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useClientManagement } from '@/hooks/useClientManagement';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { lookupUserByClientCode, formatClientCode, validateClientCode } from '@/utils/clientCodeUtils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const formSchema = z.object({
   full_name: z.string().min(3, { message: 'Le nom doit contenir au moins 3 caractères' }),
@@ -38,6 +40,11 @@ export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [clientCode, setClientCode] = useState<string | null>(null);
   
+  const [clientCodeSearch, setClientCodeSearch] = useState<string>('');
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [foundUser, setFoundUser] = useState<any | null>(null);
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -50,6 +57,46 @@ export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
     }
   });
 
+  const handleClientCodeSearch = async () => {
+    if (!clientCodeSearch.trim()) {
+      setSearchError("Veuillez saisir un code client");
+      return;
+    }
+
+    const formattedCode = formatClientCode(clientCodeSearch);
+    
+    if (!validateClientCode(formattedCode)) {
+      setSearchError("Format de code client invalide");
+      return;
+    }
+    
+    setIsSearching(true);
+    setSearchError(null);
+    setFoundUser(null);
+    
+    try {
+      const userData = await lookupUserByClientCode(formattedCode);
+      
+      if (!userData) {
+        setSearchError("Aucun utilisateur trouvé avec ce code client");
+        return;
+      }
+      
+      setFoundUser(userData);
+      
+      // Populate form with found user data
+      form.setValue('full_name', userData.full_name || '');
+      form.setValue('email', userData.email || '');
+      form.setValue('phone', userData.phone || '');
+      
+    } catch (error) {
+      console.error('Error searching for client:', error);
+      setSearchError("Erreur lors de la recherche");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const onSubmit = async (data: FormValues) => {
     try {
       // S'assurer que full_name et email sont toujours définis
@@ -60,6 +107,7 @@ export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
         address: data.address,
         id_type: data.id_type,
         id_number: data.id_number,
+        user_id: foundUser?.id // Link to existing user if found with client code
       };
       
       const result = await createClientWithAccount(clientData);
@@ -78,6 +126,45 @@ export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
 
   return (
     <>
+      <div className="mb-6 p-4 border rounded-md bg-blue-50">
+        <h3 className="text-sm font-medium text-blue-700 mb-2">Rechercher un utilisateur existant</h3>
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <Input
+              placeholder="Code client (ex: SFD-ABCD12-3456)"
+              value={clientCodeSearch}
+              onChange={(e) => setClientCodeSearch(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <Button 
+            onClick={handleClientCodeSearch}
+            variant="outline"
+            disabled={isSearching}
+          >
+            {isSearching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <><Search className="h-4 w-4 mr-1" /> Rechercher</>
+            )}
+          </Button>
+        </div>
+        
+        {searchError && (
+          <Alert variant="destructive" className="mt-2">
+            <AlertDescription>{searchError}</AlertDescription>
+          </Alert>
+        )}
+        
+        {foundUser && (
+          <Alert className="mt-2 bg-green-50 border-green-200">
+            <AlertDescription className="text-green-700">
+              Utilisateur trouvé! Les champs ont été pré-remplis.
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
@@ -173,7 +260,7 @@ export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
                 Création en cours...
               </>
             ) : (
-              "Créer le client"
+              foundUser ? "Créer le compte client" : "Créer un nouveau client"
             )}
           </Button>
         </form>

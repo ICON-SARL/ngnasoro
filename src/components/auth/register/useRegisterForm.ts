@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { initializeSupabase } from '@/utils/initSupabase';
 import { registerSchema, RegisterFormValues } from './schema';
+import { generateClientCode, storeClientCode } from '@/utils/clientCodeUtils';
 
 export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
   const { signUp } = useAuth();
@@ -16,6 +17,7 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [clientCode, setClientCode] = useState<string | null>(null);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -32,6 +34,9 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
     try {
       console.log("Initializing account for user:", userId);
       
+      // Generate a unique client code for the user
+      const userClientCode = generateClientCode();
+      
       // Check if profile exists first
       const { data: existingProfile, error: profileCheckError } = await supabase
         .from('profiles')
@@ -46,14 +51,32 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
           .insert({
             id: userId,
             full_name: fullName,
-            email: form.getValues('email')
+            email: form.getValues('email'),
+            client_code: userClientCode // Store the client code
           });
           
         if (createProfileError) {
           console.error("Error creating profile:", createProfileError);
           throw new Error("Failed to create user profile");
         }
+      } else {
+        // Update the existing profile with the client code
+        const { error: updateProfileError } = await supabase
+          .from('profiles')
+          .update({ client_code: userClientCode })
+          .eq('id', userId);
+          
+        if (updateProfileError) {
+          console.error("Error updating profile with client code:", updateProfileError);
+          // Non-blocking error - we continue
+        }
       }
+      
+      // Save client code in state to display to user
+      setClientCode(userClientCode);
+      
+      // Store client code in local storage
+      localStorage.setItem(`client_code_${userId}`, userClientCode);
       
       // Check if account exists
       const { data: existingAccount, error: accountCheckError } = await supabase
@@ -92,6 +115,7 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
     setIsSubmitting(true);
     setErrorMessage(null);
     setSuccessMessage(null);
+    setClientCode(null);
     
     try {
       console.log("Starting registration with data:", { 
@@ -127,11 +151,11 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
       // Initialize the user account
       await initializeUserAccount(sessionData.session.user.id, data.fullName);
       
-      setSuccessMessage("Inscription réussie! Vous allez être redirigé vers la page de sélection SFD.");
+      setSuccessMessage(`Inscription réussie! Conservez votre code client: ${clientCode || 'En cours de génération...'}`);
       
       toast({
         title: "Inscription réussie",
-        description: "Votre compte a été créé avec succès. Vous devez maintenant ajouter une SFD.",
+        description: `Votre compte a été créé avec succès. Votre code client est: ${clientCode || 'En cours de génération...'}`,
       });
       
       // Reset form after successful registration
@@ -140,7 +164,7 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
       // Redirect to SFD selector page after a delay
       setTimeout(() => {
         navigate('/sfd-selector', { replace: true });
-      }, 2000);
+      }, 5000);
     } catch (error: any) {
       console.error('Registration error:', error);
       
@@ -174,6 +198,7 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
     onSubmit: form.handleSubmit(onSubmit),
     isSubmitting,
     errorMessage,
-    successMessage
+    successMessage,
+    clientCode
   };
 };

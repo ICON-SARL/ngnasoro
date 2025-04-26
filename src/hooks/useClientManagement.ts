@@ -14,6 +14,7 @@ type ClientData = {
   address?: string;
   id_type?: string;
   id_number?: string;
+  user_id?: string; // Added user_id to allow linking to existing users
 };
 
 export function useClientManagement() {
@@ -55,6 +56,30 @@ export function useClientManagement() {
         .single();
 
       if (clientError) throw clientError;
+
+      // If there's already a user_id, we don't need to create a new user account
+      if (clientData.user_id) {
+        // Just update the user's client code if needed
+        await supabase
+          .from('profiles')
+          .update({ client_code: clientCode })
+          .eq('id', clientData.user_id);
+        
+        // Notify the administrator
+        toast({
+          title: 'Client existant associé avec succès',
+          description: `Code client: ${clientCode}. Le compte utilisateur existant a été associé à ce client SFD.`,
+        });
+        
+        // Refresh the data
+        queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
+        
+        return { 
+          clientId: clientResult.id, 
+          tempPassword: "Le client utilise déjà son mot de passe existant",
+          clientCode
+        };
+      }
 
       // 2. Générer un mot de passe temporaire
       const tempPassword = generateTempPassword();

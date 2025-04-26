@@ -50,3 +50,97 @@ export function formatClientCode(code: string): string {
   
   return formattedCode;
 }
+
+/**
+ * Retrieve client code from local storage or user profile
+ * @param userId The user ID to get code for
+ * @returns The client code or null if not found
+ */
+export async function getClientCodeForUser(userId: string): Promise<string | null> {
+  try {
+    // First check local storage
+    const storedCode = localStorage.getItem(`client_code_${userId}`);
+    if (storedCode) {
+      return storedCode;
+    }
+    
+    // If not in local storage, check the user's profile
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('client_code')
+      .eq('id', userId)
+      .single();
+    
+    if (error || !data?.client_code) {
+      return null;
+    }
+    
+    // Store in local storage for future use
+    localStorage.setItem(`client_code_${userId}`, data.client_code);
+    return data.client_code;
+  } catch (error) {
+    console.error('Error retrieving client code:', error);
+    return null;
+  }
+}
+
+/**
+ * Store client code for a user
+ * @param userId The user ID
+ * @param clientCode The client code to store
+ */
+export async function storeClientCode(userId: string, clientCode: string): Promise<boolean> {
+  try {
+    // Store in local storage
+    localStorage.setItem(`client_code_${userId}`, clientCode);
+    
+    // Store in the user's profile
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { error } = await supabase
+      .from('profiles')
+      .update({ client_code: clientCode })
+      .eq('id', userId);
+    
+    if (error) {
+      console.error('Error storing client code in profile:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error storing client code:', error);
+    return false;
+  }
+}
+
+/**
+ * Look up a user by their client code
+ * @param clientCode The client code to look up
+ * @returns The user profile data or null if not found
+ */
+export async function lookupUserByClientCode(clientCode: string): Promise<any | null> {
+  try {
+    if (!validateClientCode(clientCode)) {
+      return null;
+    }
+    
+    const formattedCode = formatClientCode(clientCode);
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('client_code', formattedCode)
+      .single();
+    
+    if (error || !data) {
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error looking up user by client code:', error);
+    return null;
+  }
+}

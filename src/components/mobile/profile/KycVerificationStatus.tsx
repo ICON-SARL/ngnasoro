@@ -12,7 +12,7 @@ interface KycVerificationStatusProps {
 // Define verification status as a string literal type
 export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 
-// Define document type explicitly with all properties to avoid recursive type issues
+// Define document type explicitly to avoid recursive type issues
 export interface KycVerificationDocument {
   id: string;
   user_id?: string;
@@ -38,22 +38,25 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
       
       setIsLoading(true);
       try {
-        let query = supabase.from('verification_documents').select('*');
+        // Create the base query
+        const query = supabase
+          .from('verification_documents')
+          .select('*');
         
         // If we have a client code (admin view), use that for querying
         // Otherwise use the current user's ID (client view)
         if (clientCode) {
-          query = query.eq('client_code', clientCode);
+          query.eq('client_code', clientCode);
         } else if (user?.id) {
-          query = query.eq('user_id', user.id);
+          query.eq('user_id', user.id);
         }
         
-        const { data, error } = await query
-          .order('created_at', { ascending: false });
+        // Execute the query with ordering
+        const { data, error } = await query.order('created_at', { ascending: false });
           
         if (error) throw error;
         
-        // Use a type assertion to avoid recursive type definition issues
+        // Use explicit typing to avoid recursive type issues
         setDocuments(data as KycVerificationDocument[] || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);

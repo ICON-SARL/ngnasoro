@@ -5,14 +5,26 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Copy } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface RegisterFormProps {
   onError?: (errorMessage: string) => void;
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onError }) => {
-  const { form, onSubmit, isSubmitting, errorMessage, successMessage } = useRegisterForm(onError);
+  const { form, onSubmit, isSubmitting, errorMessage, successMessage, clientCode } = useRegisterForm(onError);
+  const { toast } = useToast();
+
+  const handleCopyClientCode = () => {
+    if (clientCode) {
+      navigator.clipboard.writeText(clientCode);
+      toast({
+        title: "Code copié",
+        description: "Le code client a été copié dans le presse-papier"
+      });
+    }
+  };
 
   return (
     <div className="space-y-4 p-6">
@@ -27,6 +39,27 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onError }) => {
         <Alert className="bg-green-50 border-green-200">
           <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
           <AlertDescription className="text-green-700">{successMessage}</AlertDescription>
+        </Alert>
+      )}
+      
+      {clientCode && (
+        <Alert className="bg-blue-50 border-blue-200">
+          <div className="flex justify-between items-center w-full">
+            <div>
+              <p className="text-blue-700 font-medium">Votre code client:</p>
+              <p className="text-blue-800 font-bold">{clientCode}</p>
+              <p className="text-xs text-blue-600 mt-1">Conservez ce code précieusement. Il sera nécessaire pour les opérations SFD.</p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-blue-300 hover:bg-blue-100"
+              onClick={handleCopyClientCode}
+            >
+              <Copy className="h-4 w-4 mr-1" /> 
+              Copier
+            </Button>
+          </div>
         </Alert>
       )}
       
