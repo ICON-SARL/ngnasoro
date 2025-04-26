@@ -34,49 +34,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
       path: location.pathname
     });
     
-    // Super admins have access to everything except specific client routes
-    if (isAdmin) {
-      if (requiredRole === UserRole.Client) {
-        // Admins can't access client-only routes
-        setHasAccess(false);
-        return;
-      }
-      // Admins can access everything else
-      setHasAccess(true);
-      return;
-    }
-    
-    // SFD admins can access their specific routes and certain shared routes
-    if (isSfdAdmin && (
-      requiredRole === UserRole.SfdAdmin || 
-      requiredRole === 'sfd_admin'
-    )) {
-      setHasAccess(true);
-      return;
-    }
-    
-    // Clients can only access client routes
-    if (isClient && (
-      requiredRole === UserRole.Client || 
-      requiredRole === 'client' || 
-      requiredRole === 'user'
-    )) {
-      setHasAccess(true);
-      return;
-    }
-    
-    // MODIFICATION: Allow users with 'user' role to access client pages
-    // This permits new users to complete the client registration process
-    if (userRole === 'user' && (
-      requiredRole === UserRole.Client || 
-      requiredRole === 'client'
-    )) {
-      // Allow regular users to access client routes for adhesion process
-      setHasAccess(true);
-      return;
-    }
-    
-    // Map string roles to the enum for consistency
+    // Map string roles to equivalent values for consistency
     const normalizeRole = (role: string | UserRole): string => {
       if (typeof role === 'string') {
         return role.toLowerCase();
@@ -86,6 +44,44 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     
     const normalizedRequiredRole = normalizeRole(requiredRole);
     const normalizedUserRole = normalizeRole(userRole);
+    
+    // Super admins have access to everything except specific client routes
+    if (isAdmin) {
+      if (normalizedRequiredRole === 'client') {
+        // Admins can't access client-only routes
+        setHasAccess(false);
+      } else {
+        // Admins can access everything else
+        setHasAccess(true);
+      }
+      return;
+    }
+    
+    // SFD admins can access their specific routes and certain shared routes
+    if (isSfdAdmin && (
+      normalizedRequiredRole === 'sfd_admin' ||
+      normalizedRequiredRole === 'sfd_user'
+    )) {
+      setHasAccess(true);
+      return;
+    }
+    
+    // Clients can only access client routes
+    if (isClient && (
+      normalizedRequiredRole === 'client' ||
+      normalizedRequiredRole === 'user'
+    )) {
+      setHasAccess(true);
+      return;
+    }
+    
+    // Allow users with 'user' role to access client pages for registration process
+    if (normalizedUserRole === 'user' && (
+      normalizedRequiredRole === 'client'
+    )) {
+      setHasAccess(true);
+      return;
+    }
     
     // Check for exact role match
     const permitted = normalizedUserRole === normalizedRequiredRole;
@@ -107,7 +103,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
         user.id,
         AuditLogSeverity.WARNING,
         'failure'
-      );
+      ).catch(err => console.error('Error logging audit event:', err));
     }
   }, [user, requiredRole, location.pathname, userRole, isAdmin, isSfdAdmin, isClient]);
 
@@ -132,7 +128,8 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     );
   }
 
-  if (!hasAccess) {
+  // Don't redirect if on agency-dashboard - this prevents the infinite redirect loop
+  if (!hasAccess && location.pathname !== '/agency-dashboard') {
     // User doesn't have the required role, redirect to access denied
     return (
       <Navigate 
@@ -146,7 +143,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     );
   }
 
-  // User has permission, render children
+  // User has permission or is on agency-dashboard, render children
   return <>{children}</>;
 };
 

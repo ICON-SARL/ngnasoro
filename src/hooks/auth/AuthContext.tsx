@@ -22,15 +22,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
-  // Derived state for role checks
-  const isAdmin = userRole === UserRole.SuperAdmin;
-  const isSfdAdmin = userRole === UserRole.SfdAdmin;
-  const isClient = userRole === UserRole.Client;
+  // Derived state for role checks - fixed logic
+  const isAdmin = userRole === UserRole.SuperAdmin || userRole === UserRole.Admin || userRole === 'admin';
+  const isSfdAdmin = userRole === UserRole.SfdAdmin || userRole === 'sfd_admin';
+  const isClient = userRole === UserRole.Client || userRole === 'client';
 
   useEffect(() => {
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
+        console.log('Auth state changed:', event, newSession?.user?.app_metadata);
         setSession(newSession);
         setUser(newSession?.user as User || null);
         setLoading(false);
@@ -38,6 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Extract role from user metadata if available
         if (newSession?.user) {
           const role = newSession.user.app_metadata?.role || UserRole.User;
+          console.log('Setting role from auth change:', role);
           setUserRole(role);
         } else {
           setUserRole(UserRole.User);
@@ -47,11 +49,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check for existing session on load
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log('Initial session check:', currentSession?.user?.app_metadata);
       setSession(currentSession);
       setUser(currentSession?.user as User || null);
       
       if (currentSession?.user) {
         const role = currentSession.user.app_metadata?.role || UserRole.User;
+        console.log('Setting initial role:', role);
         setUserRole(role);
       }
       

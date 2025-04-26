@@ -14,6 +14,7 @@ import { SfdClient } from '@/types/sfdClients';
 import { Eye, Users, Phone, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { motion } from 'framer-motion';
 
 interface ClientsListProps {
   clients: SfdClient[];
@@ -43,19 +44,27 @@ const ClientsList: React.FC<ClientsListProps> = ({
   
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-12">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex justify-center items-center py-12"
+      >
         <div className="animate-spin h-8 w-8 border-4 border-[#0D6A51] border-t-transparent rounded-full"></div>
-      </div>
+      </motion.div>
     );
   }
 
   if (clients.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center text-center p-8 text-muted-foreground border rounded-md">
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col items-center justify-center text-center p-8 text-muted-foreground border rounded-md"
+      >
         <Users className="h-8 w-8 mb-2" />
         <h3 className="font-medium">Aucun client trouvé</h3>
         <p className="text-sm">Ajoutez de nouveaux clients ou modifiez votre recherche</p>
-      </div>
+      </motion.div>
     );
   }
 
@@ -63,8 +72,8 @@ const ClientsList: React.FC<ClientsListProps> = ({
     e.preventDefault();
     e.stopPropagation();
     
-    onClientSelect(clientId);
     console.log("Voir les détails du client:", clientId);
+    onClientSelect(clientId);
   };
 
   return (
