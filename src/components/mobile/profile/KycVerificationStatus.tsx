@@ -50,9 +50,8 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
         
         if (error) throw error;
         
-        // Fix: Use explicit type assertion with an intermediate type to avoid deep type inference
-        const documentsArray = (data || []) as unknown;
-        setDocuments(documentsArray as KycVerificationDocument[]);
+        // Use a simple type assertion to avoid deep type inference issues
+        setDocuments(data as KycVerificationDocument[] || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
