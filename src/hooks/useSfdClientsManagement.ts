@@ -4,164 +4,237 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { SfdClient } from '@/types/sfdClients';
 
-export interface SfdClient {
-  id: string;
-  full_name: string;
-  email?: string;
-  phone?: string;
-  status: string;
-  user_id?: string;
-  created_at: string;
+interface ClientsQueryOptions {
+  page?: number;
+  pageSize?: number;
+  status?: string | null;
+  searchTerm?: string | null;
 }
 
 export function useSfdClientsManagement() {
   const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isCreating, setIsCreating] = useState(false);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string | null>(null);
+  const [totalClients, setTotalClients] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  // Get all clients for the active SFD
-  const { data: clients = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['sfd-clients', activeSfdId],
+  // Calculate pagination parameters
+  const from = (currentPage - 1) * itemsPerPage;
+  const to = from + itemsPerPage - 1;
+
+  // Get clients with pagination and filtering
+  const { 
+    data: clients = [], 
+    isLoading, 
+    error,
+    refetch 
+  } = useQuery({
+    queryKey: ['sfd-clients', activeSfdId, currentPage, itemsPerPage, statusFilter, searchTerm],
     queryFn: async () => {
-      if (!activeSfdId) return [];
-
-      const { data, error } = await supabase
-        .from('sfd_clients')
-        .select('*')
-        .eq('sfd_id', activeSfdId);
-
-      if (error) throw error;
-      return data as SfdClient[];
+      if (!activeSfdId) return { data: [], count: 0 };
+      
+      try {
+        // First, get auth token for the edge function
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          toast({
+            title: 'Session expirée',
+            description: 'Votre session a expiré. Veuillez vous reconnecter.',
+            variant: 'destructive',
+          });
+          throw new Error('No active session');
+        }
+        
+        // Call the edge function with authentication
+        const { data, error } = await supabase.functions.invoke('sfd-clients', {
+          body: { 
+            action: 'getClients',
+            sfdId: activeSfdId,
+            status: statusFilter,
+            searchTerm: searchTerm
+          }
+        });
+        
+        if (error) {
+          console.error('Error from edge function:', error);
+          throw error;
+        }
+        
+        // Update pagination data
+        const filteredData = data || [];
+        setTotalClients(filteredData.length);
+        setTotalPages(Math.ceil(filteredData.length / itemsPerPage));
+        
+        // Return paginated slice
+        return filteredData.slice(from, to + 1);
+      } catch (err: any) {
+        console.error('Error fetching clients:', err);
+        
+        // Show a friendly toast error message
+        toast({
+          title: 'Erreur de chargement',
+          description: err.message || "Impossible de charger les clients. Veuillez réessayer.",
+          variant: 'destructive',
+          duration: 5000, // Show error messages for longer
+        });
+        
+        return [];
+      }
     },
-    enabled: !!activeSfdId
+    enabled: !!activeSfdId,
+    retry: 1, // Retry once on failure
+    refetchOnWindowFocus: false
   });
 
-  // Create a new client
-  const createClient = async (clientData: {
-    full_name: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    id_number?: string;
-    id_type?: string;
-  }) => {
-    if (!user || !activeSfdId) {
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de créer un client sans SFD active',
-        variant: 'destructive'
+  // Create client mutation
+  const createClient = useMutation({
+    mutationFn: async (clientData: {
+      full_name: string;
+      email: string;
+      phone?: string;
+      address?: string;
+      id_number?: string;
+      id_type?: string;
+    }) => {
+      if (!user || !activeSfdId) {
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de créer un client sans SFD active',
+          variant: 'destructive'
+        });
+        throw new Error('No active SFD');
+      }
+      
+      const { data, error } = await supabase.functions.invoke('sfd-clients', {
+        body: {
+          action: 'createClient',
+          sfdId: activeSfdId,
+          clientData
+        }
       });
-      return null;
-    }
-
-    setIsCreating(true);
-    try {
-      const { data, error } = await supabase
-        .from('sfd_clients')
-        .insert({
-          ...clientData,
-          sfd_id: activeSfdId,
-          status: 'active', // Auto-validate clients created by SFD admins
-          validated_by: user.id,
-          validated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
+      
       if (error) throw error;
-
-      // Refresh the clients list
-      queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
-
-      toast({
-        title: 'Succès',
-        description: 'Client créé avec succès'
-      });
-
       return data;
-    } catch (error) {
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Client créé',
+        description: 'Le client a été créé avec succès',
+      });
+      queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
+    },
+    onError: (error: any) => {
       console.error('Error creating client:', error);
       toast({
         title: 'Erreur',
-        description: "Une erreur s'est produite lors de la création du client",
+        description: error.message || "Erreur lors de la création du client",
         variant: 'destructive'
       });
-      return null;
-    } finally {
-      setIsCreating(false);
     }
-  };
+  });
 
-  // Create account for a client
-  const createAccountForClient = async (clientId: string, userId: string) => {
-    if (!activeSfdId) return false;
-
-    try {
-      // Check if account already exists
-      const { data: existingAccount } = await supabase
-        .from('accounts')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (existingAccount) {
-        console.log('Account already exists for this user');
-        return true;
-      }
-
-      // Create new account
-      const { error } = await supabase
-        .from('accounts')
-        .insert({
-          user_id: userId,
-          sfd_id: activeSfdId,
-          balance: 0,
-          currency: 'FCFA'
-        });
-
-      if (error) throw error;
-      
-      toast({
-        title: 'Compte créé',
-        description: 'Un compte a été créé pour ce client'
-      });
-      
-      return true;
-    } catch (error) {
-      console.error('Error creating account:', error);
-      toast({
-        title: 'Erreur',
-        description: "Impossible de créer un compte pour ce client",
-        variant: 'destructive'
-      });
-      return false;
-    }
-  };
-
-  // Delete a client
-  const deleteClient = useMutation({
+  // Validate client mutation
+  const validateClient = useMutation({
     mutationFn: async (clientId: string) => {
-      const { error } = await supabase
-        .from('sfd_clients')
-        .delete()
-        .eq('id', clientId);
-
+      if (!user || !activeSfdId) throw new Error('No active session or SFD');
+      
+      const { data, error } = await supabase.functions.invoke('sfd-clients', {
+        body: {
+          action: 'validateClient',
+          sfdId: activeSfdId,
+          clientId,
+          validatedBy: user.id
+        }
+      });
+      
       if (error) throw error;
-      return clientId;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
       toast({
-        title: 'Client supprimé',
-        description: 'Client supprimé avec succès'
+        title: 'Client validé',
+        description: 'Le client a été validé avec succès'
       });
+      queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: 'Erreur',
-        description: "Une erreur s'est produite lors de la suppression du client",
+        description: error.message || "Erreur lors de la validation du client",
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Reject client mutation
+  const rejectClient = useMutation({
+    mutationFn: async ({ clientId, reason }: { clientId: string, reason?: string }) => {
+      if (!user || !activeSfdId) throw new Error('No active session or SFD');
+      
+      const { data, error } = await supabase.functions.invoke('sfd-clients', {
+        body: {
+          action: 'rejectClient',
+          sfdId: activeSfdId,
+          clientId,
+          validatedBy: user.id,
+          rejectionReason: reason
+        }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Client rejeté',
+        description: 'La demande du client a été rejetée'
+      });
+      queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: error.message || "Erreur lors du rejet du client",
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Delete client mutation
+  const deleteClient = useMutation({
+    mutationFn: async (clientId: string) => {
+      if (!activeSfdId) throw new Error('No active SFD');
+      
+      const { data, error } = await supabase.functions.invoke('sfd-clients', {
+        body: {
+          action: 'deleteClient',
+          sfdId: activeSfdId,
+          clientId
+        }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Client supprimé',
+        description: 'Le client a été supprimé avec succès'
+      });
+      queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: error.message || "Erreur lors de la suppression du client",
         variant: 'destructive'
       });
     }
@@ -169,12 +242,22 @@ export function useSfdClientsManagement() {
 
   return {
     clients,
+    totalClients,
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
+    setItemsPerPage,
+    totalPages,
     isLoading,
     error,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
     createClient,
-    isCreating,
+    validateClient,
+    rejectClient,
     deleteClient,
-    createAccountForClient,
     refetch
   };
 }
