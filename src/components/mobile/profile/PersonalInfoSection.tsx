@@ -7,6 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Phone, Mail, Home, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import PhoneNumberInput from './sfd-accounts/PhoneNumberInput';
+import { validateMaliPhoneNumber } from '@/lib/constants';
 
 interface PersonalInfoSectionProps {
   user: User | null;
@@ -15,25 +18,69 @@ interface PersonalInfoSectionProps {
 const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
-    phone: user?.phone || '+223 76 45 32 10',
+    phone: user?.phone || user?.user_metadata?.phone || '',
     email: user?.email || '',
     address: 'Bamako, Commune V'
   });
   
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPhoneValid, setIsPhoneValid] = useState(true);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
   
-  const handleSaveInfo = () => {
-    // In a real app, this would update the user profile in the database
-    toast({
-      title: "Informations mises à jour",
-      description: "Vos informations personnelles ont été enregistrées",
-    });
-    setIsEditing(false);
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange(e);
+  };
+
+  const handlePhoneValidation = (isValid: boolean) => {
+    setIsPhoneValid(isValid);
+  };
+  
+  const handleSaveInfo = async () => {
+    // Validate phone number before saving
+    if (!isPhoneValid && formData.phone) {
+      toast({
+        title: "Numéro de téléphone invalide",
+        description: "Veuillez entrer un numéro de téléphone malien valide",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Update profile in the database
+      if (user?.id) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            phone: formData.phone || null,
+            // Don't update email here as it's managed by auth
+          })
+          .eq('id', user.id);
+          
+        if (error) throw error;
+
+        toast({
+          title: "Informations mises à jour",
+          description: "Vos informations personnelles ont été enregistrées",
+        });
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la mise à jour de vos informations",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setIsEditing(false);
+    }
   };
 
   return (
@@ -44,17 +91,28 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
       <CardContent className="pt-0">
         <div className="space-y-4">
           <div>
-            <Label htmlFor="phone" className="flex items-center gap-2">
-              <Phone className="h-4 w-4" /> Numéro de téléphone
-            </Label>
-            <Input 
-              id="phone" 
-              name="phone"
-              value={formData.phone} 
-              onChange={handleInputChange}
-              className="mt-1"
-              disabled={!isEditing}
-            />
+            {isEditing ? (
+              <PhoneNumberInput
+                value={formData.phone}
+                onChange={handlePhoneChange}
+                onValidationChange={handlePhoneValidation}
+                disabled={isLoading}
+              />
+            ) : (
+              <>
+                <Label htmlFor="phone" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" /> Numéro de téléphone
+                </Label>
+                <Input 
+                  id="phone" 
+                  name="phone"
+                  value={formData.phone || "Non renseigné"} 
+                  onChange={handleInputChange}
+                  className="mt-1"
+                  disabled={true}
+                />
+              </>
+            )}
           </div>
           
           <div>
@@ -68,7 +126,7 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
               value={formData.email} 
               onChange={handleInputChange}
               className="mt-1"
-              disabled={!isEditing}
+              disabled={true} // Email should not be editable here
             />
           </div>
           
@@ -82,7 +140,7 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
               value={formData.address} 
               onChange={handleInputChange}
               className="mt-1"
-              disabled={!isEditing}
+              disabled={!isEditing || isLoading}
             />
           </div>
           
@@ -100,15 +158,23 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
                 variant="outline" 
                 className="w-full"
                 onClick={() => setIsEditing(false)}
+                disabled={isLoading}
               >
                 Annuler
               </Button>
               <Button 
                 className="w-full"
                 onClick={handleSaveInfo}
+                disabled={isLoading || (!isPhoneValid && !!formData.phone)}
               >
-                <Save className="h-4 w-4 mr-2" />
-                Enregistrer
+                {isLoading ? (
+                  <>Enregistrement...</>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Enregistrer
+                  </>
+                )}
               </Button>
             </div>
           )}

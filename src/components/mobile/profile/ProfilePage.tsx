@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,19 +13,48 @@ import PersonalInfoSection from './PersonalInfoSection';
 import KycVerificationSection from './KycVerificationSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('accounts');
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { sfdData, activeSfdId, setActiveSfdId, switchActiveSfd } = useSfdDataAccess();
+  const { sfdData, activeSfdId, switchActiveSfd } = useSfdDataAccess();
   const { toast } = useToast();
+  const [profileData, setProfileData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (user?.id) {
+        setIsLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+          if (!error && data) {
+            setProfileData(data);
+          } else {
+            console.error('Error fetching profile data:', error);
+          }
+        } catch (err) {
+          console.error('Error in profile data fetch:', err);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    fetchProfileData();
+  }, [user?.id]);
 
   const handleGoBack = () => {
     navigate('/mobile-flow/main');
   };
 
-  // Create a wrapper for signOut that properly handles errors and success
   const handleLogout = async () => {
     try {
       toast({
@@ -41,7 +69,6 @@ const ProfilePage = () => {
         description: "Vous avez été déconnecté avec succès"
       });
       
-      // Force a full page reload and redirect
       window.location.href = '/auth';
     } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
@@ -69,7 +96,7 @@ const ProfilePage = () => {
       <ProfileHeader />
 
       <Tabs 
-        defaultValue="accounts" 
+        defaultValue={activeTab} 
         className="w-full mt-4"
         onValueChange={setActiveTab}
       >
@@ -94,7 +121,7 @@ const ProfilePage = () => {
         </TabsContent>
         
         <TabsContent value="profile" className="px-4">
-          <PersonalInfoSection user={user as any} />
+          <PersonalInfoSection user={isLoading ? null : (profileData ? {...user, ...profileData} : user)} />
           <KycVerificationSection />
         </TabsContent>
       </Tabs>

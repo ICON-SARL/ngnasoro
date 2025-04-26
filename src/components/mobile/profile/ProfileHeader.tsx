@@ -1,18 +1,41 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Shield, Check } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
 
 const ProfileHeader = () => {
   const { user } = useAuth();
+  const [profileData, setProfileData] = useState<any>(null);
   
-  // Extract user info from metadata
-  const userName = user?.user_metadata?.full_name || user?.full_name || user?.email?.split('@')[0] || 'Utilisateur';
-  const phoneNumber = user?.phone || user?.user_metadata?.phone || 'Non renseigné';
+  // Fetch profile data from the profiles table
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (user?.id) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+          
+        if (!error && data) {
+          setProfileData(data);
+        }
+      }
+    };
+    
+    fetchProfileData();
+  }, [user?.id]);
+  
+  // Extract user info from metadata and profiles
+  const userName = user?.user_metadata?.full_name || user?.full_name || profileData?.full_name || user?.email?.split('@')[0] || 'Utilisateur';
+  
+  // Get phone number from profile data first, then fall back to user metadata
+  const phoneNumber = profileData?.phone || user?.phone || user?.user_metadata?.phone || 'Non renseigné';
   
   // Get last login time and format it
   const lastLoginAt = user?.last_sign_in_at;

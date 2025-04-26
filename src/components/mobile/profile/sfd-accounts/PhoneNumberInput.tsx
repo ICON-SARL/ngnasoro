@@ -7,12 +7,18 @@ interface PhoneNumberInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onValidationChange?: (isValid: boolean) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  required?: boolean;
 }
 
 const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({ 
   value, 
   onChange, 
-  onValidationChange 
+  onValidationChange,
+  placeholder = "+223 6X XX XX XX",
+  disabled = false,
+  required = false
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -27,21 +33,28 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
     onChange({ ...e, target: { ...e.target, value: normalizedValue } });
     
     // Optionally notify parent about validation state
-    onValidationChange?.(isValid);
+    if (onValidationChange) {
+      onValidationChange(isValid);
+    }
   };
+
+  // Display formatted phone number for better readability
+  const displayValue = value || '';
 
   return (
     <div className="space-y-2">
       <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
-        Numéro de téléphone
+        Numéro de téléphone{required && <span className="text-red-500 ml-1">*</span>}
       </label>
       <Input
         id="phoneNumber"
         type="tel"
-        placeholder="+223 6X XX XX XX"
-        value={value}
+        placeholder={placeholder}
+        value={displayValue}
         onChange={handleChange}
         className="w-full"
+        disabled={disabled}
+        required={required}
       />
       <p className="text-xs text-muted-foreground">
         {PHONE_FORMAT_MESSAGE}
