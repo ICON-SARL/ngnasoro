@@ -7,8 +7,8 @@ import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 import { ClientAdhesionRequest, AdhesionRequestInput } from '@/types/adhesionTypes';
 import { useState } from 'react';
 
-// Export the AdhesionRequestInput interface
-export { AdhesionRequestInput };
+// Export the AdhesionRequestInput interface as a type
+export type { AdhesionRequestInput };
 
 export function useClientAdhesions() {
   const { user } = useAuth();

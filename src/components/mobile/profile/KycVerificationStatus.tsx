@@ -50,7 +50,8 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
         if (error) throw error;
         
         if (data) {
-          const typedData = data as unknown as KycVerificationDocument[];
+          const rawData = data as unknown;
+          const typedData = rawData as KycVerificationDocument[];
           setDocuments(typedData);
         } else {
           setDocuments([]);

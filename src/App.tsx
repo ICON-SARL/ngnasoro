@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -33,7 +34,6 @@ import ProtectedRoute from '@/components/routes/ProtectedRoute';
 import RoleGuard from '@/components/RoleGuard';
 import { UserRole } from '@/hooks/auth/types';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
-import SfdAdhesionRequestsPage from '@/pages/SfdAdhesionRequestsPage';
 import RoleTestingPage from '@/pages/RoleTestingPage';
 import SplashScreen from '@/components/mobile/SplashScreen';
 
@@ -115,14 +115,6 @@ function App() {
                     <ProtectedRoute requireSfdAdmin={true}>
                       <RoleGuard requiredRole={UserRole.SfdAdmin}>
                         <ClientsPage />
-                      </RoleGuard>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/sfd-adhesion-requests" element={
-                    <ProtectedRoute requireSfdAdmin={true}>
-                      <RoleGuard requiredRole={UserRole.SfdAdmin}>
-                        <SfdAdhesionRequestsPage />
                       </RoleGuard>
                     </ProtectedRoute>
                   } />
