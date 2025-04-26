@@ -9,13 +9,17 @@ interface KycVerificationStatusProps {
   className?: string;
 }
 
+// Define verification status as a string union type
+export type VerificationStatus = 'pending' | 'verified' | 'rejected';
+
+// Explicitly define document type
 export type KycVerificationDocument = {
   id: string;
   user_id?: string;
   adhesion_request_id: string;
   document_type: string;
   document_url: string;
-  verification_status: string;  // Changed from strict union type to string
+  verification_status: string;
   created_at: string;
   verified_at?: string;
   verified_by?: string;
@@ -40,8 +44,9 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
           .order('created_at', { ascending: false });
           
         if (error) throw error;
-        // Explicitly cast the data to KycVerificationDocument[]
-        setDocuments((data as KycVerificationDocument[]) || []);
+        
+        // Safely cast data to our document type
+        setDocuments(data as KycVerificationDocument[] || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
@@ -58,9 +63,11 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
     
     // Check if all required document types are verified
     const requiredTypes = ['id_card_front', 'id_card_back', 'proof_of_address'];
+    
+    // Use a simple object to map document types to their documents
     const documentByType: Record<string, KycVerificationDocument> = {};
     
-    // Create a map of document types to their documents
+    // Populate the map
     documents.forEach(doc => {
       documentByType[doc.document_type] = doc;
     });
