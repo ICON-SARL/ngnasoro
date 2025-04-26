@@ -4,6 +4,19 @@ export const MALI_PHONE_REGEX = /^(\+223)?[67]\d{7}$/;
 
 export const PHONE_FORMAT_MESSAGE = 'Le numéro de téléphone doit être un numéro malien valide (+223 67 ou 66 XXXXXXX)';
 
+export const MALI_REGIONS = [
+  'Bamako',
+  'Gao',
+  'Kayes',
+  'Kidal',
+  'Koulikoro',
+  'Mopti',
+  'Ségou',
+  'Sikasso',
+  'Taoudénit',
+  'Tombouctou'
+].sort();
+
 export function normalizeMaliPhoneNumber(phone: string): string {
   // Remove any existing spaces or dashes
   const cleanedPhone = phone.replace(/[\s-]/g, '');
