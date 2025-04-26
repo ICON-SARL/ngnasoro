@@ -11,6 +11,7 @@ export interface User extends SupabaseUser {
 
 export enum UserRole {
   SuperAdmin = 'admin',
+  Admin = 'admin',
   SfdAdmin = 'sfd_admin',
   Client = 'client',
   User = 'user'
