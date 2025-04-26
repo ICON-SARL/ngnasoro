@@ -23,23 +23,17 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
     
-    // Normalize input
-    const normalizedValue = normalizeMaliPhoneNumber(inputValue);
+    // Let the raw input pass through to parent component
+    onChange(e);
     
-    // Check validation
-    const isValid = validateMaliPhoneNumber(normalizedValue);
-    
-    // Call onChange with the normalized value
-    onChange({ ...e, target: { ...e.target, value: normalizedValue } });
+    // Also validate the input for feedback
+    const isValid = !inputValue || validateMaliPhoneNumber(inputValue);
     
     // Optionally notify parent about validation state
     if (onValidationChange) {
       onValidationChange(isValid);
     }
   };
-
-  // Display formatted phone number for better readability
-  const displayValue = value || '';
 
   return (
     <div className="space-y-2">
@@ -50,7 +44,7 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
         id="phoneNumber"
         type="tel"
         placeholder={placeholder}
-        value={displayValue}
+        value={value}
         onChange={handleChange}
         className="w-full"
         disabled={disabled}

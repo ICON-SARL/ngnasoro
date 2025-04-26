@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -36,6 +37,7 @@ const ProfilePage = () => {
             .single();
             
           if (!error && data) {
+            console.log('Profile data loaded:', data);
             setProfileData(data);
           } else {
             console.error('Error fetching profile data:', error);
@@ -80,6 +82,12 @@ const ProfilePage = () => {
     }
   };
 
+  const mergedUserData = isLoading ? null : { 
+    ...user, 
+    ...profileData,
+    phone: profileData?.phone || user?.phone || user?.user_metadata?.phone 
+  };
+
   return (
     <div className="pb-20">
       <div className="bg-white py-2 sticky top-0 z-10 border-b">
@@ -121,7 +129,7 @@ const ProfilePage = () => {
         </TabsContent>
         
         <TabsContent value="profile" className="px-4">
-          <PersonalInfoSection user={isLoading ? null : (profileData ? {...user, ...profileData} : user)} />
+          <PersonalInfoSection user={mergedUserData} />
           <KycVerificationSection />
         </TabsContent>
       </Tabs>

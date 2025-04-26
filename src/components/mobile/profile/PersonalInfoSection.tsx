@@ -33,7 +33,8 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
   };
   
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleInputChange(e);
+    const { value } = e.target;
+    setFormData(prev => ({ ...prev, phone: value }));
   };
 
   const handlePhoneValidation = (isValid: boolean) => {
@@ -55,7 +56,8 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
     try {
       // Update profile in the database
       if (user?.id) {
-        const { error } = await supabase
+        // Update in profiles table
+        const { error: profileError } = await supabase
           .from('profiles')
           .update({ 
             phone: formData.phone || null,
@@ -63,12 +65,22 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
           })
           .eq('id', user.id);
           
-        if (error) throw error;
+        if (profileError) throw profileError;
+        
+        // Also update in auth.users via metadata
+        const { error: userMetaError } = await supabase.auth.updateUser({
+          data: { phone: formData.phone || null }
+        });
+        
+        if (userMetaError) throw userMetaError;
 
         toast({
           title: "Informations mises à jour",
           description: "Vos informations personnelles ont été enregistrées",
         });
+        
+        // Reload page to show updated information
+        window.location.reload();
       }
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -97,6 +109,7 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
                 onChange={handlePhoneChange}
                 onValidationChange={handlePhoneValidation}
                 disabled={isLoading}
+                required={false}
               />
             ) : (
               <>
@@ -107,7 +120,6 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
                   id="phone" 
                   name="phone"
                   value={formData.phone || "Non renseigné"} 
-                  onChange={handleInputChange}
                   className="mt-1"
                   disabled={true}
                 />
