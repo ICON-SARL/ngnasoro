@@ -13,10 +13,9 @@ export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 
 export interface KycVerificationDocument {
   id: string;
-  adhesion_request_id: string;
   document_type: string;
   document_url: string;
-  verification_status: string;
+  verification_status: VerificationStatus;
   created_at: string;
   verified_at?: string | null;
   verified_by?: string | null;
@@ -49,13 +48,7 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
         
         if (error) throw error;
         
-        if (data) {
-          const rawData = data as unknown;
-          const typedData = rawData as KycVerificationDocument[];
-          setDocuments(typedData);
-        } else {
-          setDocuments([]);
-        }
+        setDocuments(data || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
         setDocuments([]);

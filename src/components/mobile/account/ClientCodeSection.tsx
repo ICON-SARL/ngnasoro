@@ -4,9 +4,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { getClientCodeForUser, generateClientCode, storeClientCode } from '@/utils/clientCodeUtils';
 import { Copy, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { getClientCodeForUser, generateClientCode, storeClientCode } from '@/utils/clientCodeUtils';
 
 const ClientCodeSection = () => {
   const [clientCode, setClientCode] = useState<string | null>(null);
@@ -19,7 +19,6 @@ const ClientCodeSection = () => {
       if (user?.id) {
         const code = await getClientCodeForUser(user.id);
         if (!code && user.id) {
-          // Generate a new code if none exists
           const generatedCode = generateClientCode();
           await storeClientCode(user.id, generatedCode);
           setClientCode(generatedCode);
@@ -60,12 +59,12 @@ const ClientCodeSection = () => {
         </div>
         
         <p className="text-sm text-gray-500 mb-4">
-          Ce code est nécessaire pour la création de votre compte auprès d'une SFD. 
-          Communiquez-le lors de votre inscription.
+          Votre code client unique est nécessaire pour la création de votre compte auprès d'une SFD. 
+          Communiquez ce code lors de votre inscription à l'agence.
         </p>
         
         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-          <code className="font-mono text-base">{clientCode}</code>
+          <code className="font-mono text-base font-semibold">{clientCode}</code>
           <Button 
             variant="outline" 
             size="sm"
