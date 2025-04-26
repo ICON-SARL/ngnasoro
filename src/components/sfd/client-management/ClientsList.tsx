@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Table, 
@@ -10,7 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SfdClient } from '@/types/sfdClients';
-import { Eye, Users } from 'lucide-react';
+import { Eye, Users, Phone, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -58,41 +59,56 @@ const ClientsList: React.FC<ClientsListProps> = ({
     );
   }
 
-  // Gestionnaire d'événement pour voir les détails du client
   const handleViewDetails = (e: React.MouseEvent, clientId: string) => {
-    e.preventDefault(); // Empêcher la navigation par défaut
-    e.stopPropagation(); // Empêcher la propagation de l'événement
+    e.preventDefault();
+    e.stopPropagation();
     
-    // Appeler directement la fonction sans passer par une redirection
     onClientSelect(clientId);
-    
     console.log("Voir les détails du client:", clientId);
   };
 
   return (
-    <div className="border rounded-md">
+    <div className="border rounded-md overflow-hidden shadow-sm">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-gray-50">
           <TableRow>
-            <TableHead>Nom complet</TableHead>
-            <TableHead>Contact</TableHead>
-            <TableHead>Date d'inscription</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="font-semibold">Nom complet</TableHead>
+            <TableHead className="font-semibold">Contact</TableHead>
+            <TableHead className="font-semibold">Date d'inscription</TableHead>
+            <TableHead className="font-semibold">Statut</TableHead>
+            <TableHead className="text-right font-semibold">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {clients.map(client => (
-            <TableRow key={client.id}>
+            <TableRow 
+              key={client.id}
+              className="hover:bg-gray-50 transition-colors cursor-pointer"
+              onClick={(e) => handleViewDetails(e, client.id)}
+            >
               <TableCell className="font-medium">{client.full_name}</TableCell>
               <TableCell>
                 <div className="flex flex-col">
-                  {client.phone && <span className="text-sm">{client.phone}</span>}
-                  {client.email && <span className="text-xs text-muted-foreground">{client.email}</span>}
+                  {client.phone && (
+                    <span className="text-sm flex items-center">
+                      <Phone className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                      {client.phone}
+                    </span>
+                  )}
+                  {client.email && (
+                    <span className="text-xs text-muted-foreground flex items-center">
+                      <Mail className="h-3.5 w-3.5 mr-1 text-gray-400" />
+                      {client.email}
+                    </span>
+                  )}
                 </div>
               </TableCell>
               <TableCell>
-                {client.created_at && format(new Date(client.created_at), 'P', { locale: fr })}
+                {client.created_at && (
+                  <span className="text-sm">
+                    {format(new Date(client.created_at), 'P', { locale: fr })}
+                  </span>
+                )}
               </TableCell>
               <TableCell>{getStatusBadge(client.status)}</TableCell>
               <TableCell className="text-right">
@@ -101,6 +117,7 @@ const ClientsList: React.FC<ClientsListProps> = ({
                   size="sm"
                   onClick={(e) => handleViewDetails(e, client.id)}
                   type="button"
+                  className="hover:bg-[#0D6A51]/10 hover:text-[#0D6A51] hover:border-[#0D6A51]/30"
                 >
                   <Eye className="h-3.5 w-3.5 mr-1" />
                   Gérer

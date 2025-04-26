@@ -1,21 +1,22 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useClientAccountOperations } from '@/hooks/useClientAccountOperations';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { CreditCard, Plus, Minus } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface AccountOperationDialogProps {
   isOpen: boolean;
   onClose: () => void;
   clientId: string;
   clientName: string;
-  onOperationComplete?: () => void;
+  onOperationComplete: () => void;
+  defaultType?: 'credit' | 'debit';
 }
 
 const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
@@ -23,45 +24,58 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
   onClose,
   clientId,
   clientName,
-  onOperationComplete
+  onOperationComplete,
+  defaultType = 'credit'
 }) => {
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [operationType, setOperationType] = useState<'credit' | 'debit'>('credit');
+  const [operationType, setOperationType] = useState<'credit' | 'debit'>(defaultType);
   const { creditAccount, isLoading } = useClientAccountOperations(clientId);
   const { toast } = useToast();
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setAmount('');
+      setDescription('');
+      setOperationType(defaultType);
+    }
+  }, [isOpen, defaultType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!amount || amount <= 0) {
+    if (!amount || parseFloat(amount) <= 0) {
       toast({
-        title: "Montant invalide",
-        description: "Veuillez entrer un montant valide supérieur à 0",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Veuillez entrer un montant valide',
+        variant: 'destructive',
       });
       return;
     }
-
+    
     try {
-      const result = await creditAccount.mutateAsync({
-        amount: operationType === 'credit' ? amount : -amount,
-        description: description || `${operationType === 'credit' ? 'Crédit' : 'Débit'} manuel`
+      // Convert amount to number and adjust sign based on operation
+      const numericAmount = parseFloat(amount);
+      const adjustedAmount = operationType === 'credit' ? numericAmount : -numericAmount;
+      
+      await creditAccount.mutateAsync({ 
+        amount: adjustedAmount,
+        description: description || (operationType === 'credit' ? 'Crédit manuel' : 'Débit manuel')
       });
-
-      if (result) {
-        toast({
-          title: "Opération réussie",
-          description: `Le compte a été ${operationType === 'credit' ? 'crédité' : 'débité'} de ${amount} FCFA`,
-        });
-        onOperationComplete?.();
-        onClose();
-      }
+      
+      toast({
+        title: operationType === 'credit' ? 'Crédit effectué' : 'Débit effectué',
+        description: `Le compte a été ${operationType === 'credit' ? 'crédité' : 'débité'} de ${amount} FCFA`,
+      });
+      
+      onOperationComplete();
+      onClose();
     } catch (error: any) {
       toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de l'opération",
-        variant: "destructive",
+        title: 'Erreur',
+        description: error.message || 'Une erreur est survenue',
+        variant: 'destructive',
       });
     }
   };
@@ -70,73 +84,78 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Opération sur compte</DialogTitle>
-          <DialogDescription>
-            Client: {clientName}
-          </DialogDescription>
+          <DialogTitle className="flex items-center">
+            <CreditCard className="h-5 w-5 mr-2 text-[#0D6A51]" />
+            {operationType === 'credit' ? 'Créditer' : 'Débiter'} le compte de {clientName}
+          </DialogTitle>
         </DialogHeader>
-
+        
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Type d'opération</Label>
-              <RadioGroup
-                value={operationType}
-                onValueChange={(value: 'credit' | 'debit') => setOperationType(value)}
-                className="flex space-x-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="credit" id="credit" />
-                  <Label htmlFor="credit">Crédit</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="debit" id="debit" />
-                  <Label htmlFor="debit">Débit</Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="amount">Montant (FCFA)</Label>
-              <Input
-                id="amount"
-                type="number"
-                min="0"
-                value={amount}
-                onChange={(e) => setAmount(parseFloat(e.target.value))}
-                placeholder="Montant en FCFA"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (optionnel)</Label>
-              <Input
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Description de l'opération"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onClose}
-              disabled={isLoading}
+          <div className="space-y-2">
+            <Label>Type d'opération</Label>
+            <RadioGroup 
+              value={operationType} 
+              onValueChange={(value) => setOperationType(value as 'credit' | 'debit')} 
+              className="flex gap-4"
             >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="credit" id="credit" />
+                <Label htmlFor="credit" className="flex items-center cursor-pointer">
+                  <Plus className="h-4 w-4 mr-1 text-green-600" />
+                  Crédit
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="debit" id="debit" />
+                <Label htmlFor="debit" className="flex items-center cursor-pointer">
+                  <Minus className="h-4 w-4 mr-1 text-red-600" />
+                  Débit
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="amount">Montant (FCFA)</Label>
+            <Input
+              id="amount"
+              type="number"
+              min="0"
+              step="100"
+              placeholder="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+              className="text-lg"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">Description (optionnel)</Label>
+            <Textarea
+              id="description"
+              placeholder={operationType === 'credit' ? "Raison du crédit..." : "Raison du débit..."}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="resize-none"
+              rows={3}
+            />
+          </div>
+          
+          <DialogFooter className="pt-2">
+            <Button variant="outline" onClick={onClose} type="button" disabled={isLoading}>
               Annuler
             </Button>
             <Button 
-              type="submit"
-              disabled={isLoading || !amount || amount <= 0}
-              className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+              type="submit" 
+              disabled={isLoading}
+              className={operationType === 'credit' ? 
+                "bg-green-600 hover:bg-green-700 text-white" : 
+                "bg-red-600 hover:bg-red-700 text-white"}
             >
-              {isLoading ? 'En cours...' : 'Valider'}
+              {isLoading ? 'Traitement...' : operationType === 'credit' ? 'Créditer' : 'Débiter'}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
