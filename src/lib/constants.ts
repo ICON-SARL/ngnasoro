@@ -1,4 +1,3 @@
-
 // Phone validation constants and utility functions
 export const MALI_PHONE_REGEX = /^(\+223)?[67]\d{7}$/;
 
