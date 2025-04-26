@@ -38,7 +38,7 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
       
       setIsLoading(true);
       try {
-        let query = supabase.from('verification_documents');
+        let query = supabase.from('verification_documents').select('*');
         
         // If we have a client code (admin view), use that for querying
         // Otherwise use the current user's ID (client view)
@@ -49,14 +49,12 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
         }
         
         const { data, error } = await query
-          .select('*')
           .order('created_at', { ascending: false });
           
         if (error) throw error;
         
         // Use a type assertion to avoid recursive type definition issues
-        const typedDocuments = (data || []) as unknown as KycVerificationDocument[];
-        setDocuments(typedDocuments);
+        setDocuments(data as KycVerificationDocument[] || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
