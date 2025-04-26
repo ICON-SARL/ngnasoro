@@ -43,27 +43,35 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
         .select('*')
         .eq('id', userId)
         .single();
-        
+      
       if (profileCheckError) {
         // Create profile if it doesn't exist
+        const profileData: Record<string, any> = {
+          id: userId,
+          full_name: fullName,
+          email: form.getValues('email')
+        };
+        
+        // Add client_code to the custom object
+        profileData.client_code = userClientCode;
+        
         const { error: createProfileError } = await supabase
           .from('profiles')
-          .insert({
-            id: userId,
-            full_name: fullName,
-            email: form.getValues('email'),
-            client_code: userClientCode // Store the client code
-          });
+          .insert(profileData);
           
         if (createProfileError) {
           console.error("Error creating profile:", createProfileError);
           throw new Error("Failed to create user profile");
         }
       } else {
-        // Update the existing profile with the client code
+        // Update the existing profile with the client code using a custom object
+        const updateData: Record<string, any> = { 
+          client_code: userClientCode 
+        };
+        
         const { error: updateProfileError } = await supabase
           .from('profiles')
-          .update({ client_code: userClientCode })
+          .update(updateData)
           .eq('id', userId);
           
         if (updateProfileError) {

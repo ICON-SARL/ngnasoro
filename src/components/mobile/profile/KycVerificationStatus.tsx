@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,16 +40,16 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
       setIsLoading(true);
       try {
         // Create the base query
-        const query = supabase
+        let query = supabase
           .from('verification_documents')
           .select('*');
         
         // If we have a client code (admin view), use that for querying
         // Otherwise use the current user's ID (client view)
         if (clientCode) {
-          query.eq('client_code', clientCode);
+          query = query.eq('client_code', clientCode);
         } else if (user?.id) {
-          query.eq('user_id', user.id);
+          query = query.eq('user_id', user.id);
         }
         
         // Execute the query with ordering

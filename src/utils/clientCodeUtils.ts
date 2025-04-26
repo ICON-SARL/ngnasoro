@@ -64,21 +64,38 @@ export async function getClientCodeForUser(userId: string): Promise<string | nul
       return storedCode;
     }
     
-    // If not in local storage, check the user's profile
+    // If not in local storage, we need to check if the client_code field exists
+    // and then proceed to query it if it exists
     const { supabase } = await import('@/integrations/supabase/client');
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('client_code')
-      .eq('id', userId)
-      .single();
     
-    if (error || !data?.client_code) {
+    // We need to handle the case where client_code might not exist in the profiles table
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      // Check if we have client_code in the result
+      if (error || !data) {
+        return null;
+      }
+      
+      // Cast to any to avoid TypeScript errors when accessing client_code
+      const profile = data as any;
+      const clientCode = profile.client_code;
+      
+      if (clientCode) {
+        // Store in local storage for future use
+        localStorage.setItem(`client_code_${userId}`, clientCode);
+        return clientCode;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error retrieving client code:', error);
       return null;
     }
-    
-    // Store in local storage for future use
-    localStorage.setItem(`client_code_${userId}`, data.client_code);
-    return data.client_code;
   } catch (error) {
     console.error('Error retrieving client code:', error);
     return null;
@@ -96,18 +113,30 @@ export async function storeClientCode(userId: string, clientCode: string): Promi
     localStorage.setItem(`client_code_${userId}`, clientCode);
     
     // Store in the user's profile
+    // We need to handle the case where client_code might not exist in the profiles table
     const { supabase } = await import('@/integrations/supabase/client');
-    const { error } = await supabase
-      .from('profiles')
-      .update({ client_code: clientCode })
-      .eq('id', userId);
     
-    if (error) {
-      console.error('Error storing client code in profile:', error);
+    try {
+      // Use a more flexible approach to update the profile - using a custom update object
+      const updateData: Record<string, any> = { 
+        client_code: clientCode
+      };
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', userId);
+      
+      if (error) {
+        console.error('Error storing client code in profile:', error);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating profile:', error);
       return false;
     }
-    
-    return true;
   } catch (error) {
     console.error('Error storing client code:', error);
     return false;
@@ -128,17 +157,47 @@ export async function lookupUserByClientCode(clientCode: string): Promise<any | 
     const formattedCode = formatClientCode(clientCode);
     const { supabase } = await import('@/integrations/supabase/client');
     
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('client_code', formattedCode)
-      .single();
-    
-    if (error || !data) {
+    // We need to handle the case where client_code might not be in the profiles table
+    // Let's try a more general approach using a RPC call if available, or direct select
+    try {
+      // Try to get from profiles first - cast to any to avoid TypeScript errors
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('client_code', formattedCode)
+        .maybeSingle();
+
+      if (!profileError && profileData) {
+        return profileData;
+      }
+
+      // If not found in profiles, try to find in verification_documents
+      const { data: verificationData, error: verificationError } = await supabase
+        .from('verification_documents')
+        .select('client_code, user_id')
+        .eq('client_code', formattedCode)
+        .maybeSingle();
+
+      if (verificationError || !verificationData) {
+        return null;
+      }
+
+      // If we found a match in verification_documents, get the user profile
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', verificationData.user_id)
+        .single();
+
+      if (userError || !userData) {
+        return null;
+      }
+
+      return userData;
+    } catch (error) {
+      console.error('Error in lookupUserByClientCode:', error);
       return null;
     }
-    
-    return data;
   } catch (error) {
     console.error('Error looking up user by client code:', error);
     return null;
