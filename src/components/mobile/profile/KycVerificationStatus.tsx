@@ -15,7 +15,7 @@ export type KycVerificationDocument = {
   adhesion_request_id: string;
   document_type: string;
   document_url: string;
-  verification_status: 'pending' | 'verified' | 'rejected';
+  verification_status: string;  // Changed from strict union type to string
   created_at: string;
   verified_at?: string;
   verified_by?: string;

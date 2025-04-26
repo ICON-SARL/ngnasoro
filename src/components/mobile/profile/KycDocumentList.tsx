@@ -31,7 +31,8 @@ const KycDocumentList: React.FC<KycDocumentListProps> = ({ refreshKey = 0 }) => 
           .order('created_at', { ascending: false });
           
         if (error) throw error;
-        setDocuments(data || []);
+        // Explicitly cast the data to KycVerificationDocument[]
+        setDocuments(data as KycVerificationDocument[] || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
