@@ -23,15 +23,15 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
       setIsLoading(true);
       try {
         // Build the base query
-        let query = supabase
+        const query = supabase
           .from('verification_documents')
           .select('*');
         
         // Add the appropriate filter condition
         if (clientCode) {
-          query = query.eq('client_code', clientCode);
+          query.eq('client_code', clientCode);
         } else if (user?.id) {
-          query = query.eq('user_id', user.id);
+          query.eq('user_id', user.id);
         }
         
         // Execute the query
@@ -41,7 +41,7 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
         
         // Check if any document is verified
         const hasVerifiedDocument = Array.isArray(data) && 
-          data.some(doc => doc.verification_status === 'verified');
+          data.some((doc: any) => doc.verification_status === 'verified');
         
         setIsVerified(hasVerifiedDocument || false);
       } catch (error) {
