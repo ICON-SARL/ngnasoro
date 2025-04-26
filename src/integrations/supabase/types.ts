@@ -253,6 +253,7 @@ export type Database = {
       client_adhesion_requests: {
         Row: {
           address: string | null
+          client_code: string | null
           created_at: string | null
           email: string | null
           full_name: string
@@ -276,6 +277,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          client_code?: string | null
           created_at?: string | null
           email?: string | null
           full_name: string
@@ -299,6 +301,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          client_code?: string | null
           created_at?: string | null
           email?: string | null
           full_name?: string
@@ -1264,6 +1267,7 @@ export type Database = {
       sfd_clients: {
         Row: {
           address: string | null
+          client_code: string | null
           created_at: string | null
           email: string | null
           full_name: string
@@ -1281,6 +1285,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          client_code?: string | null
           created_at?: string | null
           email?: string | null
           full_name: string
@@ -1298,6 +1303,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          client_code?: string | null
           created_at?: string | null
           email?: string | null
           full_name?: string
@@ -2159,6 +2165,7 @@ export type Database = {
       verification_documents: {
         Row: {
           adhesion_request_id: string
+          client_code: string | null
           created_at: string
           document_type: string
           document_url: string
@@ -2170,6 +2177,7 @@ export type Database = {
         }
         Insert: {
           adhesion_request_id: string
+          client_code?: string | null
           created_at?: string
           document_type: string
           document_url: string
@@ -2181,6 +2189,7 @@ export type Database = {
         }
         Update: {
           adhesion_request_id?: string
+          client_code?: string | null
           created_at?: string
           document_type?: string
           document_url?: string
