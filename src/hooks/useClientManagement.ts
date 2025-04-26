@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { generateTempPassword } from '@/utils/passwordUtils';
+import { generateClientCode } from '@/utils/clientCodeUtils';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
@@ -29,13 +30,26 @@ export function useClientManagement() {
         throw new Error("Aucune SFD active sélectionnée");
       }
 
+      // Get SFD code for the client code generation
+      const { data: sfdData, error: sfdError } = await supabase
+        .from('sfds')
+        .select('code')
+        .eq('id', activeSfdId)
+        .single();
+      
+      if (sfdError) throw sfdError;
+      
+      // Generate a unique client code using the SFD code as prefix
+      const clientCode = generateClientCode(sfdData?.code || 'SFD');
+
       // 1. Créer le client SFD
       const { data: clientResult, error: clientError } = await supabase
         .from('sfd_clients')
         .insert([{
           ...clientData,
           sfd_id: activeSfdId,
-          status: 'validated' // Le client est automatiquement validé
+          status: 'validated', // Le client est automatiquement validé
+          client_code: clientCode // Add the client code
         }])
         .select()
         .single();
@@ -57,13 +71,17 @@ export function useClientManagement() {
       // 4. Notifier l'administrateur
       toast({
         title: 'Client créé avec succès',
-        description: `Mot de passe temporaire : ${tempPassword}. Assurez-vous de le communiquer au client de manière sécurisée.`,
+        description: `Code client: ${clientCode}. Mot de passe temporaire : ${tempPassword}. Assurez-vous de les communiquer au client de manière sécurisée.`,
       });
 
       // 5. Rafraîchir les données
       queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
 
-      return { clientId: clientResult.id, tempPassword };
+      return { 
+        clientId: clientResult.id, 
+        tempPassword,
+        clientCode
+      };
     } catch (error: any) {
       toast({
         title: 'Erreur',

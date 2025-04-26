@@ -18,8 +18,6 @@ import { useClientManagement } from '@/hooks/useClientManagement';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-// Suppression de l'import dupliqué de useState
-
 const formSchema = z.object({
   full_name: z.string().min(3, { message: 'Le nom doit contenir au moins 3 caractères' }),
   email: z.string().email({ message: 'Email invalide' }),
@@ -31,7 +29,6 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-// Ajout d'une interface pour les props
 interface NewClientFormProps {
   onSuccess?: () => void;
 }
@@ -39,6 +36,7 @@ interface NewClientFormProps {
 export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
   const { createClientWithAccount, isLoading } = useClientManagement();
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [clientCode, setClientCode] = useState<string | null>(null);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -66,6 +64,7 @@ export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
       
       const result = await createClientWithAccount(clientData);
       setTempPassword(result.tempPassword);
+      setClientCode(result.clientCode);
       form.reset();
       
       // Appeler onSuccess s'il est défini
@@ -180,19 +179,21 @@ export const NewClientForm: React.FC<NewClientFormProps> = ({ onSuccess }) => {
         </form>
       </Form>
 
-      <Dialog open={!!tempPassword} onOpenChange={() => setTempPassword(null)}>
+      <Dialog open={!!tempPassword} onOpenChange={() => { setTempPassword(null); setClientCode(null); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Client créé avec succès</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p>Un compte utilisateur a été créé pour ce client avec les identifiants suivants :</p>
-            <div className="p-4 bg-muted rounded-md">
+            <div className="p-4 bg-muted rounded-md space-y-2">
+              <p><strong>Code client unique :</strong> {clientCode}</p>
               <p><strong>Mot de passe temporaire :</strong> {tempPassword}</p>
             </div>
             <p className="text-sm text-muted-foreground">
               Veuillez communiquer ces informations au client de manière sécurisée.
               Le client devra changer son mot de passe lors de sa première connexion.
+              Le code client servira pour lier ses documents KYC à son compte.
             </p>
           </div>
         </DialogContent>

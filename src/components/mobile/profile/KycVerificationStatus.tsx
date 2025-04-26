@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,6 +6,7 @@ import { Check, X, Clock, Shield } from 'lucide-react';
 
 interface KycVerificationStatusProps {
   className?: string;
+  clientCode?: string; // Optional client code for admin view
 }
 
 // Define verification status as a string literal type
@@ -24,29 +24,39 @@ export interface KycVerificationDocument {
   verified_at?: string | null;
   verified_by?: string | null;
   verification_notes?: string | null;
+  client_code?: string | null; // Added client code field
 }
 
-const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className }) => {
+const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className, clientCode }) => {
   const { user } = useAuth();
   const [documents, setDocuments] = useState<KycVerificationDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDocuments = async () => {
-      if (!user?.id) return;
+      if (!user?.id && !clientCode) return;
       
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('verification_documents')
+        let query = supabase.from('verification_documents');
+        
+        // If we have a client code (admin view), use that for querying
+        // Otherwise use the current user's ID (client view)
+        if (clientCode) {
+          query = query.eq('client_code', clientCode);
+        } else if (user?.id) {
+          query = query.eq('user_id', user.id);
+        }
+        
+        const { data, error } = await query
           .select('*')
-          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
           
         if (error) throw error;
         
-        // Safe type casting to avoid recursive type definition
-        setDocuments(data as KycVerificationDocument[] || []);
+        // Use a type assertion to avoid recursive type definition issues
+        const typedDocuments = (data || []) as unknown as KycVerificationDocument[];
+        setDocuments(typedDocuments);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
@@ -55,7 +65,7 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
     };
     
     fetchDocuments();
-  }, [user?.id]);
+  }, [user?.id, clientCode]);
   
   const getOverallStatus = () => {
     if (isLoading) return 'loading';
