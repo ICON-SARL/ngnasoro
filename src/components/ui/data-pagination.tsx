@@ -1,14 +1,6 @@
 
 import React from 'react';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
+import { Pagination } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
@@ -112,76 +104,68 @@ export function DataPagination({
           </div>
         )}
         
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onPageChange(1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronsLeft className="h-4 w-4" />
-                <span className="sr-only">First page</span>
-              </Button>
-            </PaginationItem>
-            
-            <PaginationItem>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onPageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                <span className="sr-only">Previous page</span>
-              </Button>
-            </PaginationItem>
-            
-            {getPageNumbers().map((page, index) => (
-              <PaginationItem key={`page-${index}`}>
-                {page === 'ellipsis1' || page === 'ellipsis2' ? (
-                  <PaginationEllipsis />
-                ) : (
-                  <PaginationLink
-                    isActive={page === currentPage}
-                    onClick={() => onPageChange(page as number)}
-                  >
-                    {page}
-                  </PaginationLink>
-                )}
-              </PaginationItem>
-            ))}
-            
-            <PaginationItem>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onPageChange(currentPage + 1)}
-                disabled={currentPage === totalPages || totalPages === 0}
-              >
-                <ChevronRight className="h-4 w-4" />
-                <span className="sr-only">Next page</span>
-              </Button>
-            </PaginationItem>
-            
-            <PaginationItem>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onPageChange(totalPages)}
-                disabled={currentPage === totalPages || totalPages === 0}
-              >
-                <ChevronsRight className="h-4 w-4" />
-                <span className="sr-only">Last page</span>
-              </Button>
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+        <div className="flex items-center">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => onPageChange(1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronsLeft className="h-4 w-4" />
+            <span className="sr-only">First page</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 ml-1"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span className="sr-only">Previous page</span>
+          </Button>
+          
+          {getPageNumbers().map((page, index) => (
+            <React.Fragment key={`page-${index}`}>
+              {page === 'ellipsis1' || page === 'ellipsis2' ? (
+                <span className="px-2">...</span>
+              ) : (
+                <Button
+                  variant={page === currentPage ? "default" : "outline"}
+                  size="icon"
+                  className="h-8 w-8 ml-1"
+                  onClick={() => onPageChange(page as number)}
+                >
+                  {page}
+                </Button>
+              )}
+            </React.Fragment>
+          ))}
+          
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 ml-1"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages || totalPages === 0}
+          >
+            <ChevronRight className="h-4 w-4" />
+            <span className="sr-only">Next page</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 ml-1"
+            onClick={() => onPageChange(totalPages)}
+            disabled={currentPage === totalPages || totalPages === 0}
+          >
+            <ChevronsRight className="h-4 w-4" />
+            <span className="sr-only">Last page</span>
+          </Button>
+        </div>
       </div>
     </div>
   );
