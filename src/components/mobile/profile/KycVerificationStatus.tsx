@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,9 +50,14 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
         
         if (error) throw error;
         
-        setDocuments(data as KycVerificationDocument[] || []);
+        if (data) {
+          setDocuments(data as KycVerificationDocument[]);
+        } else {
+          setDocuments([]);
+        }
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
+        setDocuments([]);
       } finally {
         setIsLoading(false);
       }

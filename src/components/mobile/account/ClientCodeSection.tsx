@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { getClientCodeForUser, generateClientCode } from '@/utils/clientCodeUtils';
+import { getClientCodeForUser, generateClientCode, storeClientCode } from '@/utils/clientCodeUtils';
 import { Copy, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
