@@ -1,14 +1,15 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Sun, Moon, Database, Trash2, AlertTriangle, LogOut } from 'lucide-react';
+import { Sun, Moon, Database, Trash2, AlertTriangle } from 'lucide-react';
+import { useTheme } from '@/providers/ThemeProvider';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useOfflineMode } from '@/hooks/useOfflineMode';
 import LogoutButton from '@/components/LogoutButton';
+import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,18 +27,25 @@ interface AdvancedSettingsSectionProps {
 }
 
 const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => {
+  const { theme, setTheme } = useTheme();
+  const { isOffline, toggleOfflineMode } = useOfflineMode();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const handleThemeChange = (value: string) => {
+    setTheme(value as 'light' | 'dark' | 'system');
     toast({
       title: "Thème modifié",
-      description: `Le thème a été changé pour ${value === 'light' ? 'Clair' : value === 'dark' ? 'Sombre' : 'Auto'}`,
+      description: `Le thème a été changé pour ${
+        value === 'light' ? 'Clair' : 
+        value === 'dark' ? 'Sombre' : 
+        'Automatique'
+      }`,
     });
   };
   
   const handleToggleOfflineMode = (enabled: boolean) => {
+    toggleOfflineMode(enabled);
     toast({
       title: enabled ? "Mode hors-ligne activé" : "Mode hors-ligne désactivé",
       description: enabled 
@@ -47,13 +55,11 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
   };
   
   const handleDeleteAccount = () => {
-    // In a real app, this would delete the user's account after confirmation
     toast({
       title: "Compte supprimé",
       description: "Votre compte a été supprimé avec succès",
       variant: "destructive",
     });
-    // Redirect to auth page after account deletion
     navigate('/auth');
   };
 
@@ -71,10 +77,15 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
                 Thème de l'application
               </p>
             </div>
-            <ToggleGroup type="single" defaultValue="light" onValueChange={handleThemeChange} className="justify-start">
+            <ToggleGroup 
+              type="single" 
+              value={theme} 
+              onValueChange={handleThemeChange} 
+              className="justify-start"
+            >
               <ToggleGroupItem value="light" className="text-sm">Clair</ToggleGroupItem>
               <ToggleGroupItem value="dark" className="text-sm">Sombre</ToggleGroupItem>
-              <ToggleGroupItem value="auto" className="text-sm">Auto</ToggleGroupItem>
+              <ToggleGroupItem value="system" className="text-sm">Auto</ToggleGroupItem>
             </ToggleGroup>
           </div>
           
@@ -90,7 +101,10 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
                 </p>
               </div>
             </div>
-            <Switch onCheckedChange={handleToggleOfflineMode} />
+            <Switch 
+              checked={isOffline}
+              onCheckedChange={handleToggleOfflineMode} 
+            />
           </div>
           
           <div className="pt-4 border-t border-gray-200 mt-4">
@@ -117,12 +131,16 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
                     Supprimer définitivement votre compte ?
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    Cette action est irréversible. Cette action supprimera définitivement votre compte et toutes les données associées de nos serveurs.
+                    Cette action est irréversible. Cette action supprimera définitivement votre compte 
+                    et toutes les données associées de nos serveurs.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteAccount} className="bg-red-600 hover:bg-red-700">
+                  <AlertDialogAction 
+                    onClick={handleDeleteAccount} 
+                    className="bg-red-600 hover:bg-red-700"
+                  >
                     Supprimer définitivement
                   </AlertDialogAction>
                 </AlertDialogFooter>
