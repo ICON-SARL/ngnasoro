@@ -45,8 +45,8 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
           
         if (error) throw error;
         
-        // Set documents with proper type assertion
-        setDocuments(data as KycVerificationDocument[] || []);
+        // Fix: Properly cast the data without recursive type issues
+        setDocuments(data ? data as KycVerificationDocument[] : []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
