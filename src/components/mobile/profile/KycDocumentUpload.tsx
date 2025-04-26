@@ -49,12 +49,13 @@ const KycDocumentUpload: React.FC<KycDocumentUploadProps> = ({ onUploadComplete 
         
       // 3. Record the document in the database
       const { error } = await supabase
-        .from('kyc_verification_documents')
+        .from('verification_documents')
         .insert({
           user_id: user.id,
           document_type: documentType,
           document_url: publicUrl,
-          verification_status: 'submitted'
+          verification_status: 'pending',
+          adhesion_request_id: user.id // Use user.id as adhesion_request_id as a fallback
         });
         
       if (error) throw error;

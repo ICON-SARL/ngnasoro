@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,14 +11,15 @@ interface KycVerificationStatusProps {
 
 export type KycVerificationDocument = {
   id: string;
-  user_id: string;
+  user_id?: string;
+  adhesion_request_id: string;
   document_type: string;
   document_url: string;
-  verification_status: 'submitted' | 'verified' | 'rejected';
+  verification_status: 'pending' | 'verified' | 'rejected';
   created_at: string;
   verified_at?: string;
   verified_by?: string;
-  rejection_reason?: string;
+  verification_notes?: string;
 };
 
 const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className }) => {
@@ -32,7 +34,7 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
       setIsLoading(true);
       try {
         const { data, error } = await supabase
-          .from('kyc_verification_documents')
+          .from('verification_documents')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });

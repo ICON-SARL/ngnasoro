@@ -23,7 +23,7 @@ const KycVerificationHistoryPage = () => {
       setIsLoading(true);
       try {
         const { data, error } = await supabase
-          .from('kyc_verification_documents')
+          .from('verification_documents')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
@@ -140,9 +140,9 @@ const KycVerificationHistoryPage = () => {
                       </div>
                     )}
                     
-                    {doc.verification_status === 'rejected' && doc.rejection_reason && (
+                    {doc.verification_status === 'rejected' && doc.verification_notes && (
                       <div className="text-xs text-red-600 mt-1">
-                        Motif de rejet: {doc.rejection_reason}
+                        Motif de rejet: {doc.verification_notes}
                       </div>
                     )}
                     
