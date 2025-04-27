@@ -22,6 +22,10 @@ export interface ClientAdhesionRequest {
 }
 
 export interface AdhesionRequest {
+  id?: string;
   sfd_id: string;
   status: string;
+  created_at?: string;
+  full_name?: string;
+  reference_number?: string;
 }

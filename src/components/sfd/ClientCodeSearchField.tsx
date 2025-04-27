@@ -9,10 +9,10 @@ import { validateClientCode } from '@/utils/client-code/validators';
 import { formatClientCode } from '@/utils/client-code/formatters';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader } from '@/components/ui/loader';
-import { lookupUserByClientCode } from '@/utils/client-code/lookup';
+import { lookupUserByClientCode, ClientLookupResult } from '@/utils/client-code/lookup';
 
 interface ClientCodeSearchFieldProps {
-  onClientFound: (client: any) => void;
+  onClientFound: (client: ClientLookupResult) => void;
   onSearchStart?: () => void;
   onSearchComplete?: (success: boolean) => void;
   isSearching: boolean;

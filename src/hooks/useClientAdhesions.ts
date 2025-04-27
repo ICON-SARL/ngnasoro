@@ -19,7 +19,7 @@ export interface AdhesionRequestInput {
 
 export function useClientAdhesions() {
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingRequest, setIsCreatingRequest] = useState(false);
 
   // Fetch adhesion requests for current user
   const { data: adhesionRequests, refetch, isLoading: isQueryLoading } = useQuery({
@@ -42,10 +42,10 @@ export function useClientAdhesions() {
   });
 
   // Submit new adhesion request
-  const submitRequest = async (sfdId: string, input: AdhesionRequestInput) => {
-    if (!user) return { success: false, message: 'Utilisateur non connecté' };
+  const submitAdhesionRequest = async (sfdId: string, input: AdhesionRequestInput) => {
+    if (!user) return { success: false, error: "Utilisateur non connecté" };
     
-    setIsLoading(true);
+    setIsCreatingRequest(true);
     try {
       const adhesionData = {
         user_id: user.id,
@@ -63,27 +63,29 @@ export function useClientAdhesions() {
         reference_number: `ADH-${Date.now().toString().substring(6)}`
       };
       
-      // Call the Edge Function to create adhesion request
-      const { error } = await supabase.functions.invoke('create_adhesion_request', {
-        body: { adhesionData }
-      });
-      
+      const { data, error } = await supabase
+        .from('client_adhesion_requests')
+        .insert(adhesionData)
+        .select()
+        .single();
+
       if (error) throw error;
       
       refetch();
-      return { success: true, message: 'Demande envoyée avec succès' };
+      return { success: true, data };
     } catch (error: any) {
       console.error('Error submitting adhesion request:', error);
-      return { success: false, message: error.message || 'Erreur lors de la soumission de la demande' };
+      return { success: false, error: error.message };
     } finally {
-      setIsLoading(false);
+      setIsCreatingRequest(false);
     }
   };
 
   return {
-    adhesionRequests,
-    submitRequest,
-    isLoading: isLoading || isQueryLoading,
-    refetchRequests: refetch
+    adhesionRequests: adhesionRequests || [],
+    submitAdhesionRequest,
+    isCreatingRequest,
+    isLoading: isQueryLoading || isCreatingRequest,
+    refetchAdhesionRequests: refetch
   };
 }

@@ -1,7 +1,20 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export const lookupUserByClientCode = async (clientCode: string, sfdId: string | null) => {
+// Type pour les résultats de recherche de clients
+export interface ClientLookupResult {
+  id: string;
+  user_id?: string;
+  full_name: string;
+  email?: string;
+  phone?: string;
+  client_code?: string;
+  sfd_id?: string;
+  status?: string;
+  is_new_client?: boolean;
+}
+
+export const lookupUserByClientCode = async (clientCode: string, sfdId: string | null): Promise<ClientLookupResult | null> => {
   try {
     if (!sfdId) {
       console.error('No SFD ID provided for client lookup');
@@ -23,18 +36,18 @@ export const lookupUserByClientCode = async (clientCode: string, sfdId: string |
     
     if (data) {
       console.log('Found client:', data);
+      return data as ClientLookupResult;
     } else {
       console.log('No client found with code:', clientCode);
+      return null;
     }
-    
-    return data;
   } catch (error) {
     console.error('Error looking up client:', error);
     throw error; // Let the calling code handle the error
   }
 };
 
-export const getSfdClientByCode = async (clientCode: string, sfdId: string) => {
+export const getSfdClientByCode = async (clientCode: string, sfdId: string): Promise<ClientLookupResult | null> => {
   try {
     const { data, error } = await supabase
       .rpc('lookup_client_with_sfd', {
@@ -46,7 +59,8 @@ export const getSfdClientByCode = async (clientCode: string, sfdId: string) => {
       console.error('Error getting SFD client by code:', error);
       throw error;
     }
-    return data;
+    
+    return data as ClientLookupResult;
   } catch (error) {
     console.error('Error getting SFD client by code:', error);
     throw error; // Let the calling code handle the error

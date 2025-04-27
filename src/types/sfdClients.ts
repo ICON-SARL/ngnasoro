@@ -1,4 +1,3 @@
-
 export interface SfdClient {
   id: string;
   full_name: string;
@@ -18,6 +17,7 @@ export interface SfdClient {
   validated_at?: string | null;
   user_id?: string | null;
   validated_by?: string | null;
+  client_code?: string | null;
 }
 
 export interface Loan {

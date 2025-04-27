@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,6 +30,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { ClientList } from './ClientList';
+import { ClientLookupResult } from '@/utils/client-code/lookup';
 
 // Client registration form schema
 const clientSchema = z.object({
@@ -43,9 +43,11 @@ const clientSchema = z.object({
   profession: z.string().optional().or(z.literal('')),
 });
 
+type FormValues = z.infer<typeof clientSchema>;
+
 export const ClientManagementSystem = () => {
   const [isNewClientDialogOpen, setIsNewClientDialogOpen] = useState(false);
-  const [clientToRegister, setClientToRegister] = useState<any>(null);
+  const [clientToRegister, setClientToRegister] = useState<ClientLookupResult | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const { user, activeSfdId } = useAuth();
   
@@ -53,21 +55,20 @@ export const ClientManagementSystem = () => {
     clients,
     isLoading,
     isSearching,
-    searchClientByCode,
     createClient
   } = useSfdClientOperations();
 
   // Client registration form
-  const form = useForm<z.infer<typeof clientSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
       full_name: clientToRegister?.full_name || '',
       email: clientToRegister?.email || '',
       phone: clientToRegister?.phone || '',
-      address: clientToRegister?.address || '',
-      id_number: clientToRegister?.id_number || '',
-      id_type: clientToRegister?.id_type || '',
-      profession: clientToRegister?.profession || '',
+      address: '',
+      id_number: '',
+      id_type: '',
+      profession: '',
     }
   });
   
@@ -78,21 +79,21 @@ export const ClientManagementSystem = () => {
         full_name: clientToRegister.full_name || '',
         email: clientToRegister.email || '',
         phone: clientToRegister.phone || '',
-        address: clientToRegister.address || '',
-        id_number: clientToRegister.id_number || '',
-        id_type: clientToRegister.id_type || '',
-        profession: clientToRegister.profession || '',
+        address: '',
+        id_number: '',
+        id_type: '',
+        profession: '',
       });
     } else {
       form.reset();
     }
   }, [clientToRegister, form]);
 
-  const handleClientFound = (client: any) => {
+  const handleClientFound = (client: ClientLookupResult) => {
     console.log('Client found:', client);
     
     // If this is not a new client but an existing SFD client, don't allow registration
-    if (client && !client.isNewClient && client.sfd_id === activeSfdId) {
+    if (client && !client.is_new_client && client.sfd_id === activeSfdId) {
       return;
     }
     
@@ -100,10 +101,11 @@ export const ClientManagementSystem = () => {
     setIsNewClientDialogOpen(true);
   };
   
-  const onSubmit = async (data: z.infer<typeof clientSchema>) => {
+  const onSubmit = async (data: FormValues) => {
     try {
       const clientData = {
         ...data,
+        full_name: data.full_name, // Ensure full_name is required
         user_id: clientToRegister?.user_id,
         client_code: clientToRegister?.client_code,
       };
@@ -140,7 +142,7 @@ export const ClientManagementSystem = () => {
               <ClientCodeSearchField
                 onClientFound={handleClientFound}
                 isSearching={isSearching}
-                searchClientByCode={searchClientByCode}
+                onSearchComplete={(success) => {}}
               />
             </div>
             

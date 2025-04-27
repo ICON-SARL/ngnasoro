@@ -4,12 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Search, User, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { formatClientCode, validateClientCode, lookupUserByClientCode, getSfdClientByCode } from '@/utils/clientCodeUtils';
-import { Alert, AlertDescription } from '@/components/ui/card';
+import { formatClientCode } from '@/utils/client-code/formatters';
+import { validateClientCode } from '@/utils/client-code/validators'; 
+import { lookupUserByClientCode, getSfdClientByCode, ClientLookupResult } from '@/utils/client-code/lookup';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader } from '@/components/ui/loader';
 
 interface ClientCodeSearchProps {
-  onClientFound: (client: any) => void;
+  onClientFound: (client: ClientLookupResult) => void;
 }
 
 export const ClientCodeSearch: React.FC<ClientCodeSearchProps> = ({ onClientFound }) => {
@@ -40,7 +42,7 @@ export const ClientCodeSearch: React.FC<ClientCodeSearchProps> = ({ onClientFoun
     setIsSearching(true);
     try {
       // First, try to find a direct match in sfd_clients
-      const sfdClient = await getSfdClientByCode(formattedCode);
+      const sfdClient = await getSfdClientByCode(formattedCode, "votre-sfd-id"); // Remplacer par l'ID SFD réel
       
       if (sfdClient) {
         onClientFound(sfdClient);
@@ -53,42 +55,18 @@ export const ClientCodeSearch: React.FC<ClientCodeSearchProps> = ({ onClientFoun
       }
       
       // Otherwise, try to find the user in profiles
-      const profileData = await lookupUserByClientCode(formattedCode);
+      const profileData = await lookupUserByClientCode(formattedCode, "votre-sfd-id"); // Remplacer par l'ID SFD réel
         
       if (!profileData) {
         setSearchError("Aucun utilisateur trouvé avec ce code client");
         return;
       }
       
-      // Then check if this user is already a client in sfd_clients
-      const { data: sfdClientData, error: sfdClientError } = await supabase
-        .from('sfd_clients')
-        .select('*')
-        .eq('user_id', profileData.id)
-        .maybeSingle();
-        
-      if (sfdClientError && sfdClientError.code !== 'PGRST116') {
-        throw sfdClientError;
-      }
-      
-      if (sfdClientData) {
-        // User is already a client of an SFD
-        onClientFound(sfdClientData);
-        toast({
-          title: "Client trouvé",
-          description: `Client ${profileData.full_name} déjà enregistré dans un SFD`,
-        });
-      } else {
-        // User exists but is not yet a client of an SFD
-        onClientFound({
-          ...profileData,
-          isNewClient: true
-        });
-        toast({
-          title: "Utilisateur trouvé",
-          description: `Utilisateur ${profileData.full_name} peut être ajouté comme client`,
-        });
-      }
+      onClientFound(profileData);
+      toast({
+        title: "Utilisateur trouvé",
+        description: `Utilisateur ${profileData.full_name} peut être ajouté comme client`,
+      });
       
       setClientCode('');
     } catch (error) {
