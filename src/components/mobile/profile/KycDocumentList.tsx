@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,16 +6,7 @@ import { FileText, Check, AlertCircle, Clock, ExternalLink } from 'lucide-react'
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-
-interface KycVerificationDocument {
-  id: string;
-  document_type: string;
-  document_url: string;
-  verification_status: 'pending' | 'verified' | 'rejected';
-  created_at: string;
-  verified_at?: string;
-  verification_notes?: string;
-}
+import { KycVerificationDocument } from '@/types/kyc';
 
 interface KycDocumentListProps {
   refreshKey?: number;
@@ -37,10 +27,13 @@ const KycDocumentList: React.FC<KycDocumentListProps> = ({ refreshKey = 0 }) => 
           .from('verification_documents')
           .select('id, document_type, document_url, verification_status, created_at, verified_at, verification_notes')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .returns<KycVerificationDocument[]>();
           
         if (error) throw error;
-        setDocuments(data || []);
+        if (data) {
+          setDocuments(data);
+        }
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
@@ -64,7 +57,7 @@ const KycDocumentList: React.FC<KycDocumentListProps> = ({ refreshKey = 0 }) => 
     }
   };
   
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: 'pending' | 'verified' | 'rejected') => {
     switch (status) {
       case 'verified':
         return <Badge className="bg-green-50 text-green-600 border-green-200">
