@@ -51,28 +51,32 @@ export const validateClientCode = (code: string): boolean => {
   );
 };
 
-/**
- * Generates a random client code following the format MEREF-SFD******-****
- */
-export const generateClientCode = (): string => {
-  // Generate 6 random alphanumeric characters (uppercase)
-  const alphanumericPart = Array(6)
-    .fill(0)
-    .map(() => {
-      // Use only uppercase letters and numbers
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      return chars.charAt(Math.floor(Math.random() * chars.length));
-    })
-    .join('');
+export const synchronizeClientCode = async (userId: string, clientCode: string, sfdId?: string) => {
+  try {
+    // Update profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ client_code: clientCode })
+      .eq('id', userId);
 
-  // Generate 4 random digits
-  const numericPart = Array(4)
-    .fill(0)
-    .map(() => Math.floor(Math.random() * 10))
-    .join('');
+    if (profileError) throw profileError;
 
-  // Format the client code
-  return `MEREF-SFD${alphanumericPart}-${numericPart}`;
+    // If sfdId provided, update the client record too
+    if (sfdId) {
+      const { error: clientError } = await supabase
+        .from('sfd_clients')
+        .update({ client_code: clientCode })
+        .eq('user_id', userId)
+        .eq('sfd_id', sfdId);
+
+      if (clientError) throw clientError;
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error synchronizing client code:', error);
+    return { success: false, error: error.message };
+  }
 };
 
 /**
@@ -177,37 +181,6 @@ export const createOrUpdateSfdClient = async (
     }
   } catch (error: any) {
     console.error('Error creating/updating SFD client:', error);
-    return { success: false, error: error.message };
-  }
-};
-
-/**
- * Synchronize client code between profiles and sfd_clients
- */
-export const synchronizeClientCode = async (userId: string, clientCode: string, sfdId?: string) => {
-  try {
-    // Update profile
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ client_code: clientCode })
-      .eq('id', userId);
-
-    if (profileError) throw profileError;
-
-    // If sfdId provided, update the client record too
-    if (sfdId) {
-      const { error: clientError } = await supabase
-        .from('sfd_clients')
-        .update({ client_code: clientCode })
-        .eq('user_id', userId)
-        .eq('sfd_id', sfdId);
-
-      if (clientError) throw clientError;
-    }
-
-    return { success: true };
-  } catch (error: any) {
-    console.error('Error synchronizing client code:', error);
     return { success: false, error: error.message };
   }
 };

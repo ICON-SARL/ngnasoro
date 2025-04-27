@@ -6,12 +6,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle, RefreshCw, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getClientCodeForUser, generateClientCode, storeClientCode, synchronizeClientCode } from '@/utils/clientCodeUtils';
+import { 
+  getClientCodeForUser, 
+  generateClientCode, 
+  storeClientCode, 
+  synchronizeClientCode,
+  formatClientCode
+} from '@/utils/clientCodeUtils';
 import { Loader } from '@/components/ui/loader';
+import { useSfdDataAccessCore } from '@/hooks/sfd/useSfdDataAccessCore';
 
 const ClientCodeSync: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { activeSfdId } = useSfdDataAccessCore();
   const [clientCode, setClientCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -33,7 +41,9 @@ const ClientCodeSync: React.FC = () => {
     try {
       const code = await getClientCodeForUser(user.id);
       if (code) {
-        setClientCode(code);
+        // Ensure code is in the new format
+        const formattedCode = formatClientCode(code);
+        setClientCode(formattedCode);
       } else {
         const newCode = generateClientCode();
         const stored = await storeClientCode(user.id, newCode);
@@ -58,7 +68,7 @@ const ClientCodeSync: React.FC = () => {
     setError(null);
     
     try {
-      const success = await synchronizeClientCode(user.id, clientCode);
+      const success = await synchronizeClientCode(user.id, clientCode, activeSfdId);
       if (success) {
         toast({
           title: "Synchronisation réussie",
