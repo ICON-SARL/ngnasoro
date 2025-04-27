@@ -41,7 +41,7 @@ export const ClientCodeSearchField: React.FC<ClientCodeSearchFieldProps> = ({
     
     // Validate the code format
     if (!validateClientCode(formattedCode)) {
-      setSearchError("Format de code invalide. Le code client doit avoir le format SFD-XXXXXX-0000");
+      setSearchError("Format de code invalide. Le code client doit avoir le format MEREF-SFD******-****");
       return;
     }
     
@@ -55,7 +55,7 @@ export const ClientCodeSearchField: React.FC<ClientCodeSearchFieldProps> = ({
         setClientCode('');
         onSearchComplete?.(true);
       } else {
-        setSearchError("Aucun client trouvé avec ce code");
+        setSearchError("Aucun client trouvé avec ce code. Vérifiez que le code est correct et que la SFD est active.");
         onSearchComplete?.(false);
       }
     } catch (error: any) {
@@ -72,7 +72,7 @@ export const ClientCodeSearchField: React.FC<ClientCodeSearchFieldProps> = ({
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
           <Input
             type="text"
-            placeholder="Entrez le code client (ex: SFD-ABC123-4567)"
+            placeholder="MEREF-SFD******-****"
             className="pl-9"
             value={clientCode}
             onChange={(e) => setClientCode(e.target.value)}
@@ -100,6 +100,11 @@ export const ClientCodeSearchField: React.FC<ClientCodeSearchFieldProps> = ({
           <AlertDescription>{searchError}</AlertDescription>
         </Alert>
       )}
+
+      <div className="text-sm text-gray-500">
+        Format requis: MEREF-SFD suivis de 6 caractères et 4 chiffres. 
+        Exemple: MEREF-SFDABC123-4567
+      </div>
     </div>
   );
 };

@@ -2205,6 +2205,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      lookup_client_with_sfd: {
+        Args: { p_client_code: string; p_sfd_id: string }
+        Returns: Json
+      }
       propagate_client_transaction: {
         Args: { p_transaction_id: string }
         Returns: boolean
@@ -2223,6 +2227,10 @@ export type Database = {
       }
       user_can_access_report: {
         Args: { _user_id: string; _report_id: string }
+        Returns: boolean
+      }
+      validate_client_code: {
+        Args: { code: string }
         Returns: boolean
       }
       verify_qr_code: {
