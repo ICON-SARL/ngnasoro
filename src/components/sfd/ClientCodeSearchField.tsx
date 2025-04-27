@@ -61,6 +61,19 @@ export const ClientCodeSearchField: React.FC<ClientCodeSearchFieldProps> = ({
       const result = await lookupUserByClientCode(formattedCode, activeSfdId);
       
       if (result) {
+        // Handle different result types
+        if ('sfd_id' in result && result.sfd_id === activeSfdId) {
+          toast({
+            title: "Client trouvé",
+            description: `${result.full_name} est déjà client de cette SFD`,
+          });
+        } else if ('is_new_client' in result && result.is_new_client) {
+          toast({
+            title: "Utilisateur trouvé",
+            description: `${result.full_name} peut être ajouté comme client`,
+          });
+        }
+        
         onClientFound(result);
         setClientCode('');
         onSearchComplete?.(true);

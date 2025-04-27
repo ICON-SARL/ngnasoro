@@ -1,7 +1,4 @@
 
-/**
- * Functions for looking up users and clients by client code
- */
 import { supabase } from '@/integrations/supabase/client';
 
 export const lookupUserByClientCode = async (clientCode: string, sfdId: string | null) => {
