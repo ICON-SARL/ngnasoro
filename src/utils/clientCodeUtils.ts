@@ -1,25 +1,54 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export const formatClientCode = (code: string): string => {
   // Remove spaces and convert to uppercase
   code = code.replace(/\s/g, '').toUpperCase();
   
+  // Handle legacy SFD-****** format
+  if (code.startsWith('SFD-')) {
+    // Extract the important parts
+    const parts = code.split('-');
+    if (parts.length >= 2) {
+      const identifier = parts[1];
+      // Add MEREF prefix and ensure proper formatting
+      return `MEREF-SFD${identifier}${parts[2] || ''}`
+        .replace(/^(MEREF-SFD[A-Z0-9]{6})(.*)$/, '$1-')  // Add hyphen after first 6 chars
+        + (parts[2] || generateNumericPart());  // Add or keep the numeric part
+    }
+  }
+  
   // If code doesn't start with MEREF-SFD, prepend it
   if (!code.startsWith('MEREF-SFD')) {
     code = 'MEREF-SFD' + code;
   }
   
-  // Add hyphen after the SFD part if needed
-  if (code.length >= 15 && code[14] !== '-') {
+  // Add hyphen after the first part if needed
+  if (code.length >= 14 && code[14] !== '-') {
     code = code.slice(0, 14) + '-' + code.slice(14);
+  }
+  
+  // If numeric part is missing, generate it
+  if (!code.includes('-', 14)) {
+    code += '-' + generateNumericPart();
   }
   
   return code;
 };
 
+// Helper function to generate the numeric part
+const generateNumericPart = (): string => {
+  return Array(4)
+    .fill(0)
+    .map(() => Math.floor(Math.random() * 10))
+    .join('');
+};
+
 export const validateClientCode = (code: string): boolean => {
-  return /^MEREF-SFD[A-Z0-9]{6}-\d{4}$/.test(code);
+  // Accept both old and new formats
+  return (
+    /^MEREF-SFD[A-Z0-9]{6}-\d{4}$/.test(code) ||  // New format
+    /^SFD-[A-Z0-9]{6}-\d{4}$/.test(code)          // Legacy format
+  );
 };
 
 /**
