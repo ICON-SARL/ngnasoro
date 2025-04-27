@@ -7,7 +7,7 @@ import SecuritySection from './SecuritySection';
 import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
-import ClientCodeSection from './ClientCodeSection';
+import ClientCodeSync from './ClientCodeSync';
 import { useAuth } from '@/hooks/useAuth';
 
 const ProfilePage = () => {
@@ -40,8 +40,8 @@ const ProfilePage = () => {
         </TabsContent>
         
         <TabsContent value="profile" className="px-4">
-          <ClientCodeSection />
-          <PersonalInfoSection user={user} />
+          <ClientCodeSync />
+          {user && <PersonalInfoSection user={user} />}
         </TabsContent>
       </Tabs>
     </div>

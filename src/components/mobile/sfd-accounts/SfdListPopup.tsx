@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { X, Building } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Check, Building } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader } from '@/components/ui/loader';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { JoinSfdButton } from './JoinSfdButton';
+import JoinSfdButton from './JoinSfdButton';
+import { useToast } from '@/hooks/use-toast';
+import { useAdhesionRequests } from '@/hooks/useAdhesionRequests';
+import { AdhesionRequest } from '@/types/adhesionRequests';
 
 interface SfdListPopupProps {
   isOpen: boolean;
@@ -18,186 +19,105 @@ interface SfdListPopupProps {
 interface Sfd {
   id: string;
   name: string;
-  region?: string;
-  logo_url?: string;
+  logo_url: string | null;
+  region: string | null;
+  status: string;
 }
 
-const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
+export default function SfdListPopup({ isOpen, onClose }: SfdListPopupProps) {
   const [sfds, setSfds] = useState<Sfd[]>([]);
-  const [existingRequests, setExistingRequests] = useState<{sfd_id: string, status: string}[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { toast } = useToast();
+  const { adhesionRequests } = useAdhesionRequests();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!isOpen || !user?.id) return;
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        console.log('Fetching active SFDs for popup display');
+  const fetchSfds = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('sfds')
+        .select('*')
+        .eq('status', 'active');
         
-        // Fetch active SFDs
-        const { data: sfdsData, error: sfdsError } = await supabase
-          .from('sfds')
-          .select('id, name, code, region, status, logo_url')
-          .eq('status', 'active');
-        
-        if (sfdsError) throw sfdsError;
-        
-        if (Array.isArray(sfdsData) && sfdsData.length > 0) {
-          console.log(`Fetched ${sfdsData.length} active SFDs`);
-          setSfds(sfdsData);
-        } else {
-          throw new Error('Aucune SFD active trouvée');
-        }
-        
-        // Get existing adhesion requests
-        const { data: existingReqs, error: requestsError } = await supabase
-          .from('client_adhesion_requests')
-          .select('sfd_id, status')
-          .eq('user_id', user.id);
-          
-        if (requestsError) throw requestsError;
-        
-        setExistingRequests(existingReqs || []);
-      } catch (err: any) {
-        console.error('Erreur lors du chargement des SFDs:', err);
-        setError('Impossible de charger la liste des SFDs. Veuillez réessayer plus tard.');
-        toast({
-          title: "Erreur de chargement",
-          description: "Impossible de récupérer les SFDs disponibles",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [isOpen, toast, user?.id]);
-
-  const renderButton = (sfd: Sfd) => {
-    const existingRequest = existingRequests.find(req => req.sfd_id === sfd.id);
-    const isPending = existingRequest && ['pending', 'pending_validation'].includes(existingRequest.status);
-    const isRejected = existingRequest && existingRequest.status === 'rejected';
-    
-    if (isPending) {
-      return (
-        <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-md text-sm">
-          En attente
-        </span>
-      );
-    } else if (isRejected) {
-      return (
-        <span onClick={(e) => {
-          e.stopPropagation();
-          navigate(`/mobile-flow/sfd-adhesion/${sfd.id}`);
-          onClose();
-        }} className="px-3 py-1 bg-red-100 text-red-800 rounded-md text-sm cursor-pointer">
-          Réessayer
-        </span>
-      );
-    } else {
-      return (
-        <span onClick={(e) => {
-          e.stopPropagation();
-          navigate(`/mobile-flow/sfd-adhesion/${sfd.id}`);
-          onClose();
-        }} className="px-3 py-1 bg-[#0D6A51]/10 text-[#0D6A51] rounded-md text-sm cursor-pointer">
-          Rejoindre
-        </span>
-      );
+      if (error) throw error;
+      setSfds(data || []);
+    } catch (error) {
+      console.error('Error fetching SFDs:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger la liste des SFDs",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-center text-xl text-[#0D6A51]">
-            SFDs Partenaires MEREF
-          </DialogTitle>
-        </DialogHeader>
+  // Check if user has a pending request for a specific SFD
+  const hasPendingRequest = (sfdId: string): boolean => {
+    return adhesionRequests?.some(
+      request => request.sfd_id === sfdId && request.status === 'pending'
+    ) || false;
+  };
 
-        <div className="mt-2">
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader className="h-8 w-8 text-[#0D6A51]" />
-            </div>
-          ) : error ? (
-            <div className="text-center py-8 text-red-500">
-              <p>{error}</p>
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => navigate('/sfd-selector')}
-              >
-                Voir tous les SFDs
-              </Button>
+  useEffect(() => {
+    if (isOpen) {
+      fetchSfds();
+    }
+  }, [isOpen]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Choisir une SFD</DialogTitle>
+          <DialogDescription>
+            Sélectionnez une SFD à rejoindre pour accéder à ses services financiers.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4 mt-4">
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D6A51]"></div>
             </div>
           ) : sfds.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Aucun SFD actif trouvé.</p>
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => navigate('/sfd-selector')}
-              >
-                Voir tous les SFDs
-              </Button>
+            <div className="text-center py-6">
+              <Building className="mx-auto h-12 w-12 text-gray-400" />
+              <p className="mt-2 text-gray-500">Aucune SFD disponible pour le moment</p>
             </div>
           ) : (
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto py-2">
-              {sfds.map((sfd) => (
-                <div 
-                  key={sfd.id}
-                  className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center">
-                    <div className="h-12 w-12 flex-shrink-0 bg-gray-100 rounded-md flex items-center justify-center mr-3 overflow-hidden">
+            sfds.map(sfd => (
+              <Card key={sfd.id} className={hasPendingRequest(sfd.id) ? "border-amber-200" : ""}>
+                <CardContent className="flex items-center justify-between p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
                       {sfd.logo_url ? (
-                        <img 
-                          src={sfd.logo_url} 
-                          alt={sfd.name} 
-                          className="h-full w-full object-cover"
-                        />
+                        <img src={sfd.logo_url} alt={sfd.name} className="h-8 w-8 object-contain" />
                       ) : (
-                        <span className="text-lg font-bold text-gray-500">
-                          {sfd.name.charAt(0)}
-                        </span>
+                        <Building className="h-6 w-6 text-gray-500" />
                       )}
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-800">{sfd.name}</h3>
-                      {sfd.region && (
-                        <p className="text-sm text-gray-500">{sfd.region}</p>
-                      )}
+                    <div>
+                      <h3 className="font-medium">{sfd.name}</h3>
+                      {sfd.region && <p className="text-xs text-gray-500">{sfd.region}</p>}
                     </div>
                   </div>
-                  {renderButton(sfd)}
-                </div>
-              ))}
-            </div>
+                  <JoinSfdButton 
+                    sfdId={sfd.id} 
+                    sfdName={sfd.name} 
+                    onSuccess={onClose}
+                  />
+                </CardContent>
+              </Card>
+            ))
           )}
         </div>
-
-        <div className="mt-4 flex justify-center">
-          <Button
-            onClick={() => navigate('/sfd-selector')}
-            className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 w-full"
-          >
-            <Building className="h-4 w-4 mr-2" />
-            Voir tous les SFDs disponibles
-          </Button>
+        
+        <div className="flex justify-center mt-4">
+          <Button variant="outline" onClick={onClose}>Fermer</Button>
         </div>
       </DialogContent>
     </Dialog>
   );
-};
-
-export default SfdListPopup;
+}

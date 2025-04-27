@@ -1,9 +1,11 @@
+
 /**
  * Utility functions for generating and validating client codes
  */
 
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/profile';
+import { SfdClient } from '@/types/sfdClients';
 
 /**
  * Generates a unique client code with a specified format
@@ -106,24 +108,175 @@ export async function storeClientCode(userId: string, clientCode: string): Promi
 export async function lookupUserByClientCode(clientCode: string): Promise<Profile | null> {
   try {
     if (!validateClientCode(clientCode)) {
+      console.log('Invalid client code format:', clientCode);
       return null;
     }
     
     const formattedCode = formatClientCode(clientCode);
     
+    // First check profiles table
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('client_code', formattedCode)
       .maybeSingle();
-
-    if (!profileError && profileData) {
-      return profileData;
+      
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error('Error checking profiles:', profileError);
+      throw profileError;
     }
-
+    
+    if (profileData) {
+      console.log('Found user by client code in profiles:', profileData);
+      return profileData as Profile;
+    }
+    
+    // If not found in profiles, check sfd_clients table
+    const { data: sfdClientData, error: sfdClientError } = await supabase
+      .from('sfd_clients')
+      .select('*, user:user_id(id, full_name, email, phone)')
+      .eq('client_code', formattedCode)
+      .maybeSingle();
+      
+    if (sfdClientError && sfdClientError.code !== 'PGRST116') {
+      console.error('Error checking sfd_clients:', sfdClientError);
+      throw sfdClientError;
+    }
+    
+    if (sfdClientData?.user) {
+      console.log('Found user by client code in sfd_clients:', sfdClientData);
+      // Return profile-compatible object
+      const userData = sfdClientData.user as any;
+      return {
+        id: userData.id,
+        full_name: userData.full_name,
+        email: userData.email,
+        phone: userData.phone,
+        client_code: formattedCode
+      } as Profile;
+    }
+    
+    console.log('No user found with client code:', formattedCode);
     return null;
   } catch (error) {
     console.error('Error looking up user by client code:', error);
+    return null;
+  }
+}
+
+/**
+ * Synchronize client code between profiles and sfd_clients
+ */
+export async function synchronizeClientCode(userId: string, clientCode?: string): Promise<boolean> {
+  try {
+    // If client code not provided, try to get it
+    if (!clientCode) {
+      clientCode = await getClientCodeForUser(userId);
+      if (!clientCode) {
+        clientCode = generateClientCode();
+        await storeClientCode(userId, clientCode);
+      }
+    }
+    
+    // Find all SFD clients for this user
+    const { data: sfdClientsData, error: sfdClientsError } = await supabase
+      .from('sfd_clients')
+      .select('id')
+      .eq('user_id', userId);
+      
+    if (sfdClientsError) {
+      console.error('Error finding SFD clients to sync:', sfdClientsError);
+      return false;
+    }
+    
+    // If user has SFD client records, update them with the client code
+    if (sfdClientsData && sfdClientsData.length > 0) {
+      for (const client of sfdClientsData) {
+        const { error } = await supabase
+          .from('sfd_clients')
+          .update({ client_code: clientCode })
+          .eq('id', client.id);
+          
+        if (error) {
+          console.error('Error updating client code for SFD client:', error);
+        }
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error synchronizing client code:', error);
+    return false;
+  }
+}
+
+/**
+ * Get an existing client from SFD by client code
+ */
+export async function getSfdClientByCode(clientCode: string): Promise<SfdClient | null> {
+  if (!validateClientCode(clientCode)) {
+    return null;
+  }
+  
+  const formattedCode = formatClientCode(clientCode);
+  
+  try {
+    // Check in sfd_clients directly first
+    const { data: directClientData, error: directClientError } = await supabase
+      .from('sfd_clients')
+      .select('*')
+      .eq('client_code', formattedCode)
+      .maybeSingle();
+      
+    if (directClientError && directClientError.code !== 'PGRST116') {
+      console.error('Error checking sfd_clients directly:', directClientError);
+      throw directClientError;
+    }
+    
+    if (directClientData) {
+      return directClientData as SfdClient;
+    }
+    
+    // Check via profiles table
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('client_code', formattedCode)
+      .maybeSingle();
+      
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error('Error checking profiles for client code:', profileError);
+      throw profileError;
+    }
+    
+    if (profileData?.id) {
+      // Found profile, now check if they're an SFD client
+      const { data: clientData, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('*')
+        .eq('user_id', profileData.id)
+        .maybeSingle();
+        
+      if (clientError && clientError.code !== 'PGRST116') {
+        console.error('Error checking sfd_clients by user_id:', clientError);
+        throw clientError;
+      }
+      
+      if (clientData) {
+        // Found client, update their client_code if needed
+        if (!clientData.client_code) {
+          await supabase
+            .from('sfd_clients')
+            .update({ client_code: formattedCode })
+            .eq('id', clientData.id);
+        }
+        return clientData as SfdClient;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting SFD client by code:', error);
     return null;
   }
 }
