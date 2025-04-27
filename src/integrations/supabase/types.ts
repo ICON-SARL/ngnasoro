@@ -36,47 +36,6 @@ export type Database = {
         }
         Relationships: []
       }
-      adhesion_verification_steps: {
-        Row: {
-          adhesion_request_id: string
-          completed_at: string | null
-          completed_by: string | null
-          created_at: string
-          id: string
-          notes: string | null
-          status: string
-          step_name: string
-        }
-        Insert: {
-          adhesion_request_id: string
-          completed_at?: string | null
-          completed_by?: string | null
-          created_at?: string
-          id?: string
-          notes?: string | null
-          status?: string
-          step_name: string
-        }
-        Update: {
-          adhesion_request_id?: string
-          completed_at?: string | null
-          completed_by?: string | null
-          created_at?: string
-          id?: string
-          notes?: string | null
-          status?: string
-          step_name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "adhesion_verification_steps_adhesion_request_id_fkey"
-            columns: ["adhesion_request_id"]
-            isOneToOne: false
-            referencedRelation: "client_adhesion_requests"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       admin_notifications: {
         Row: {
           action_link: string | null
@@ -246,89 +205,6 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "sfd_clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      client_adhesion_requests: {
-        Row: {
-          address: string | null
-          client_code: string | null
-          created_at: string | null
-          email: string | null
-          full_name: string
-          id: string
-          id_number: string | null
-          id_type: string | null
-          kyc_status: string | null
-          monthly_income: number | null
-          notes: string | null
-          phone: string | null
-          processed_at: string | null
-          processed_by: string | null
-          profession: string | null
-          reference_number: string | null
-          rejection_reason: string | null
-          sfd_id: string
-          source_of_income: string | null
-          status: string
-          user_id: string | null
-          verification_stage: string | null
-        }
-        Insert: {
-          address?: string | null
-          client_code?: string | null
-          created_at?: string | null
-          email?: string | null
-          full_name: string
-          id?: string
-          id_number?: string | null
-          id_type?: string | null
-          kyc_status?: string | null
-          monthly_income?: number | null
-          notes?: string | null
-          phone?: string | null
-          processed_at?: string | null
-          processed_by?: string | null
-          profession?: string | null
-          reference_number?: string | null
-          rejection_reason?: string | null
-          sfd_id: string
-          source_of_income?: string | null
-          status?: string
-          user_id?: string | null
-          verification_stage?: string | null
-        }
-        Update: {
-          address?: string | null
-          client_code?: string | null
-          created_at?: string | null
-          email?: string | null
-          full_name?: string
-          id?: string
-          id_number?: string | null
-          id_type?: string | null
-          kyc_status?: string | null
-          monthly_income?: number | null
-          notes?: string | null
-          phone?: string | null
-          processed_at?: string | null
-          processed_by?: string | null
-          profession?: string | null
-          reference_number?: string | null
-          rejection_reason?: string | null
-          sfd_id?: string
-          source_of_income?: string | null
-          status?: string
-          user_id?: string | null
-          verification_stage?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "client_adhesion_requests_sfd_id_fkey"
-            columns: ["sfd_id"]
-            isOneToOne: false
-            referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
         ]
@@ -2205,15 +2081,7 @@ export type Database = {
           verified_at?: string | null
           verified_by?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "verification_documents_adhesion_request_id_fkey"
-            columns: ["adhesion_request_id"]
-            isOneToOne: false
-            referencedRelation: "client_adhesion_requests"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
