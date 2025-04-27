@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Shield, Check } from 'lucide-react';
@@ -59,6 +58,13 @@ const ProfileHeader = () => {
       
       <h2 className="text-xl font-bold text-center">{userName}</h2>
       <p className="text-sm opacity-90 mb-2">{phoneNumber}</p>
+      
+      {user?.user_metadata?.client_code && (
+        <Badge className="bg-blue-500/90 hover:bg-blue-500 flex items-center gap-1 px-2 py-1 mb-2">
+          <Shield className="h-3 w-3" />
+          Code: {user.user_metadata.client_code}
+        </Badge>
+      )}
       
       <div className="flex flex-col items-center gap-2">
         {isKycVerified && (

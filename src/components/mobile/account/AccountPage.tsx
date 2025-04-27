@@ -1,14 +1,12 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, User, Bell, Shield, Info, ChevronRight, Building } from 'lucide-react';
+import { ArrowLeft, User, Bell, Shield, Info, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MobileMenu from '@/components/mobile/MobileMenu';
-import ClientCodeSection from '@/components/mobile/account/ClientCodeSection';
+import ClientCodeDisplay from './ClientCodeDisplay';
 import LogoutButton from '@/components/LogoutButton';
 
 const AccountPage: React.FC = () => {
@@ -61,7 +59,7 @@ const AccountPage: React.FC = () => {
           </CardContent>
         </Card>
         
-        <ClientCodeSection />
+        <ClientCodeDisplay />
         
         <h2 className="text-xl font-semibold mb-4 mt-6">Paramètres</h2>
         
