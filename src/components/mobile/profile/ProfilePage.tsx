@@ -6,14 +6,12 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import LoadingIndicator from '@/components/ui/loading-indicator';
-import ErrorMessage from '@/components/ui/error-message';
 import ProfileHeader from './ProfileHeader';
 import SfdAccountsSection from './SfdAccountsSection';
 import SecuritySection from './SecuritySection';
 import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
-import ClientCodeSection from '@/components/mobile/account/ClientCodeSection';
+import KycVerificationSection from './KycVerificationSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,36 +24,29 @@ const ProfilePage = () => {
   const { toast } = useToast();
   const [profileData, setProfileData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfileData = async () => {
-      if (!user?.id) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
+      if (user?.id) {
         setIsLoading(true);
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
             
-        if (error) {
-          throw error;
+          if (!error && data) {
+            console.log('Profile data loaded:', data);
+            setProfileData(data);
+          } else {
+            console.error('Error fetching profile data:', error);
+          }
+        } catch (err) {
+          console.error('Error in profile data fetch:', err);
+        } finally {
+          setIsLoading(false);
         }
-
-        if (data) {
-          console.log('Profile data loaded:', data);
-          setProfileData(data);
-        }
-      } catch (err) {
-        console.error('Error in profile data fetch:', err);
-        setError('Erreur lors du chargement du profil');
-      } finally {
-        setIsLoading(false);
       }
     };
     
@@ -91,18 +82,6 @@ const ProfilePage = () => {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="p-4">
-        <ErrorMessage 
-          title="Accès non autorisé" 
-          description="Vous devez être connecté pour accéder à cette page." 
-          showRetry={false}
-        />
-      </div>
-    );
-  }
-
   const mergedUserData = isLoading ? null : { 
     ...user, 
     ...profileData,
@@ -124,48 +103,36 @@ const ProfilePage = () => {
 
       <ProfileHeader />
 
-      {isLoading ? (
-        <LoadingIndicator message="Chargement du profil..." />
-      ) : error ? (
-        <div className="p-4">
-          <ErrorMessage 
-            title="Erreur" 
-            description={error}
-            onRetry={() => window.location.reload()} 
+      <Tabs 
+        defaultValue={activeTab} 
+        className="w-full mt-4"
+        onValueChange={setActiveTab}
+      >
+        <TabsList className="grid grid-cols-3 w-full">
+          <TabsTrigger value="accounts">Comptes</TabsTrigger>
+          <TabsTrigger value="security">Sécurité</TabsTrigger>
+          <TabsTrigger value="profile">Profil</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="accounts" className="px-4">
+          <SfdAccountsSection 
+            sfdData={sfdData} 
+            activeSfdId={activeSfdId} 
+            onSwitchSfd={switchActiveSfd} 
           />
-        </div>
-      ) : (
-        <Tabs 
-          defaultValue={activeTab} 
-          className="w-full mt-4"
-          onValueChange={setActiveTab}
-        >
-          <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="accounts">Comptes</TabsTrigger>
-            <TabsTrigger value="security">Sécurité</TabsTrigger>
-            <TabsTrigger value="profile">Profil</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="accounts" className="px-4">
-            <ClientCodeSection />
-            <SfdAccountsSection 
-              sfdData={sfdData} 
-              activeSfdId={activeSfdId} 
-              onSwitchSfd={switchActiveSfd} 
-            />
-          </TabsContent>
-          
-          <TabsContent value="security" className="px-4">
-            <SecuritySection />
-            <NotificationsSection />
-            <AdvancedSettingsSection onLogout={handleLogout} />
-          </TabsContent>
-          
-          <TabsContent value="profile" className="px-4">
-            <PersonalInfoSection user={mergedUserData} />
-          </TabsContent>
-        </Tabs>
-      )}
+        </TabsContent>
+        
+        <TabsContent value="security" className="px-4">
+          <SecuritySection />
+          <NotificationsSection />
+          <AdvancedSettingsSection onLogout={handleLogout} />
+        </TabsContent>
+        
+        <TabsContent value="profile" className="px-4">
+          <PersonalInfoSection user={mergedUserData} />
+          <KycVerificationSection />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
