@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export const formatClientCode = (code: string): string => {
@@ -7,29 +6,33 @@ export const formatClientCode = (code: string): string => {
   
   // Handle legacy SFD-****** format
   if (code.startsWith('SFD-')) {
-    // Extract the important parts
+    // Extract the important parts and ensure proper hyphen placement
     const parts = code.split('-');
     if (parts.length >= 2) {
       const identifier = parts[1];
-      // Add MEREF prefix and ensure proper formatting
-      return `MEREF-SFD${identifier}${parts[2] || ''}`
-        .replace(/^(MEREF-SFD[A-Z0-9]{6})(.*)$/, '$1-')  // Add hyphen after first 6 chars
+      // Add MEREF prefix and ensure proper formatting with hyphen after SFD
+      return `MEREF-SFD-${identifier}${parts[2] || ''}`
+        .replace(/^(MEREF-SFD-[A-Z0-9]{6})(.*)$/, '$1-')  // Add hyphen after 6 chars
         + (parts[2] || generateNumericPart());  // Add or keep the numeric part
     }
   }
   
   // If code doesn't start with MEREF-SFD, prepend it
   if (!code.startsWith('MEREF-SFD')) {
-    code = 'MEREF-SFD' + code;
+    code = 'MEREF-SFD-' + code;
+  } else if (!code.includes('-', 9)) {
+    // Add hyphen after SFD if missing
+    code = code.replace('MEREF-SFD', 'MEREF-SFD-');
   }
   
   // Add hyphen after the first part if needed
-  if (code.length >= 14 && code[14] !== '-') {
-    code = code.slice(0, 14) + '-' + code.slice(14);
+  const parts = code.split('-');
+  if (parts.length === 3 && parts[2].length >= 6) {
+    code = `${parts[0]}-${parts[1]}-${parts[2].slice(0, 6)}-${parts[2].slice(6) || generateNumericPart()}`;
   }
   
   // If numeric part is missing, generate it
-  if (!code.includes('-', 14)) {
+  if (!code.endsWith('-' + generateNumericPart())) {
     code += '-' + generateNumericPart();
   }
   
@@ -45,15 +48,16 @@ const generateNumericPart = (): string => {
 };
 
 export const validateClientCode = (code: string): boolean => {
-  // Accept both old and new formats
+  // Accept both old and new formats, with flexible hyphen placement
   return (
-    /^MEREF-SFD[A-Z0-9]{6}-\d{4}$/.test(code) ||  // New format
-    /^SFD-[A-Z0-9]{6}-\d{4}$/.test(code)          // Legacy format
+    /^MEREF-SFD-[A-Z0-9]{6}-\d{4}$/.test(code) ||    // New format with hyphen
+    /^MEREF-SFD[A-Z0-9]{6}-\d{4}$/.test(code) ||     // New format without hyphen
+    /^SFD-[A-Z0-9]{6}-\d{4}$/.test(code)             // Legacy format
   );
 };
 
 /**
- * Generates a random client code following the format MEREF-SFD******-****
+ * Generates a random client code following the format MEREF-SFD-******-****
  */
 export const generateClientCode = (): string => {
   // Generate 6 random alphanumeric characters (uppercase)
@@ -69,8 +73,8 @@ export const generateClientCode = (): string => {
   // Generate 4 random digits
   const numericPart = generateNumericPart();
 
-  // Format the client code
-  return `MEREF-SFD${alphanumericPart}-${numericPart}`;
+  // Format the client code with proper hyphen placement
+  return `MEREF-SFD-${alphanumericPart}-${numericPart}`;
 };
 
 export const synchronizeClientCode = async (userId: string, clientCode: string, sfdId?: string) => {

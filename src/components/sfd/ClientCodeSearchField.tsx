@@ -2,17 +2,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, User, AlertCircle, HelpCircle } from 'lucide-react';
+import { Search, User, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatClientCode, validateClientCode } from '@/utils/clientCodeUtils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader } from '@/components/ui/loader';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface ClientCodeSearchFieldProps {
   onClientFound: (client: any) => void;
@@ -42,22 +36,23 @@ export const ClientCodeSearchField: React.FC<ClientCodeSearchFieldProps> = ({
       return;
     }
     
-    // Format the entered code
-    const formattedCode = formatClientCode(clientCode);
-    
-    // Validate the code format
-    if (!validateClientCode(clientCode)) {
-      setSearchError(
-        "Format de code invalide. Formats acceptés:\n" +
-        "- MEREF-SFD******-**** (nouveau format)\n" +
-        "- SFD-******-**** (ancien format)"
-      );
-      return;
-    }
-    
-    onSearchStart?.();
-    
     try {
+      // Format the entered code
+      const formattedCode = formatClientCode(clientCode);
+      
+      // Validate the code format
+      if (!validateClientCode(formattedCode)) {
+        setSearchError(
+          "Format de code invalide. Formats acceptés:\n" +
+          "- MEREF-SFD-XXXXXX-YYYY (nouveau format)\n" +
+          "- SFD-XXXXXX-YYYY (ancien format)\n" +
+          "où X = lettres/chiffres et Y = chiffres"
+        );
+        return;
+      }
+      
+      onSearchStart?.();
+      
       const result = await searchClientByCode(formattedCode);
       
       if (result) {
@@ -65,7 +60,7 @@ export const ClientCodeSearchField: React.FC<ClientCodeSearchFieldProps> = ({
         setClientCode('');
         onSearchComplete?.(true);
         
-        // If we converted from old format, show a notification
+        // Show format conversion notification if needed
         if (clientCode !== formattedCode) {
           toast({
             title: "Code client converti",
@@ -90,34 +85,12 @@ export const ClientCodeSearchField: React.FC<ClientCodeSearchFieldProps> = ({
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
           <Input
             type="text"
-            placeholder="SFD-ABCD12-3456 ou MEREF-SFDABCD12-3456"
+            placeholder="Ex: MEREF-SFD-ABC123-4567"
             className="pl-9"
             value={clientCode}
             onChange={(e) => setClientCode(e.target.value)}
             disabled={isSearching}
           />
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="absolute right-2 top-2 h-6 w-6 p-0"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-sm">
-                <p>Formats de code acceptés:</p>
-                <ul className="list-disc pl-4 mt-1">
-                  <li>Nouveau format: MEREF-SFD******-****</li>
-                  <li>Ancien format: SFD-******-****</li>
-                </ul>
-                <p className="mt-1 text-xs">Les codes de l'ancien format seront automatiquement convertis.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
         <Button type="submit" disabled={isSearching}>
           {isSearching ? (
@@ -142,11 +115,12 @@ export const ClientCodeSearchField: React.FC<ClientCodeSearchFieldProps> = ({
       )}
 
       <div className="text-sm text-muted-foreground">
-        <p>Les deux formats sont acceptés:</p>
+        <p>Formats de code acceptés:</p>
         <ul className="list-disc pl-4 mt-1">
-          <li>MEREF-SFDABC123-4567 (nouveau format)</li>
+          <li>MEREF-SFD-ABC123-4567 (nouveau format)</li>
           <li>SFD-ABC123-4567 (ancien format)</li>
         </ul>
+        <p className="mt-1 text-xs">Les codes de l'ancien format seront automatiquement convertis.</p>
       </div>
     </div>
   );
