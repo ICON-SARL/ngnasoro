@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Code } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getClientCodeForUser, generateClientCode, storeClientCode } from '@/utils/clientCodeUtils';
 
@@ -49,27 +49,30 @@ const ClientCodeSection = () => {
   }
 
   return (
-    <Card className="mb-4">
+    <Card className="mb-6">
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-medium">Code Client</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <Code className="h-5 w-5 mr-2 text-primary" />
+            <h3 className="font-medium text-lg">Code d'identification</h3>
+          </div>
           <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
             Important
           </Badge>
         </div>
         
         <p className="text-sm text-gray-500 mb-4">
-          Votre code client unique est nécessaire pour la création de votre compte auprès d'une SFD. 
+          Ce code unique est nécessaire pour la création de votre compte auprès d'une SFD. 
           Communiquez ce code lors de votre inscription à l'agence.
         </p>
         
-        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-          <code className="font-mono text-base font-semibold">{clientCode}</code>
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+          <code className="font-mono text-lg font-semibold">{clientCode}</code>
           <Button 
             variant="outline" 
             size="sm"
-            className="ml-2"
             onClick={handleCopyCode}
+            className="ml-4"
           >
             {isCopied ? (
               <Check className="h-4 w-4 text-green-500" />

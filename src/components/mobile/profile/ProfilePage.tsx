@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -11,7 +10,7 @@ import SfdAccountsSection from './SfdAccountsSection';
 import SecuritySection from './SecuritySection';
 import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
-import KycVerificationSection from './KycVerificationSection';
+import ClientCodeSection from '@/components/mobile/account/ClientCodeSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -115,6 +114,7 @@ const ProfilePage = () => {
         </TabsList>
         
         <TabsContent value="accounts" className="px-4">
+          <ClientCodeSection />
           <SfdAccountsSection 
             sfdData={sfdData} 
             activeSfdId={activeSfdId} 
@@ -130,7 +130,6 @@ const ProfilePage = () => {
         
         <TabsContent value="profile" className="px-4">
           <PersonalInfoSection user={mergedUserData} />
-          <KycVerificationSection />
         </TabsContent>
       </Tabs>
     </div>
