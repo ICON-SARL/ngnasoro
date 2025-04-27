@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,18 +26,12 @@ const KycDocumentList: React.FC<KycDocumentListProps> = ({ refreshKey = 0 }) => 
       try {
         const { data, error } = await supabase
           .from('verification_documents')
-          .select('id, document_type, document_url, verification_status, created_at, verified_at, verification_notes')
-          .eq('user_id', user.id)
+          .select('*')
+          .or(`user_id.eq.${user.id},adhesion_request_id.in.(select id from client_adhesion_requests where user_id=\'${user.id}\')`)
           .order('created_at', { ascending: false });
           
         if (error) throw error;
-        if (data) {
-          const typedData = data.map(doc => ({
-            ...doc,
-            verification_status: doc.verification_status as KycVerificationDocument['verification_status']
-          }));
-          setDocuments(typedData);
-        }
+        setDocuments(data || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
@@ -79,14 +74,14 @@ const KycDocumentList: React.FC<KycDocumentListProps> = ({ refreshKey = 0 }) => 
         </Badge>;
     }
   };
-  
+
   if (isLoading) {
     return <div className="p-4 text-center">
       <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
       <p>Chargement des documents...</p>
     </div>;
   }
-  
+
   if (documents.length === 0) {
     return (
       <Card>
@@ -100,7 +95,7 @@ const KycDocumentList: React.FC<KycDocumentListProps> = ({ refreshKey = 0 }) => 
       </Card>
     );
   }
-  
+
   return (
     <div className="space-y-4">
       {documents.map((doc) => (

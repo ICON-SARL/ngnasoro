@@ -2173,6 +2173,7 @@ export type Database = {
           document_type: string
           document_url: string
           id: string
+          user_id: string | null
           verification_notes: string | null
           verification_status: string
           verified_at: string | null
@@ -2185,6 +2186,7 @@ export type Database = {
           document_type: string
           document_url: string
           id?: string
+          user_id?: string | null
           verification_notes?: string | null
           verification_status?: string
           verified_at?: string | null
@@ -2197,6 +2199,7 @@ export type Database = {
           document_type?: string
           document_url?: string
           id?: string
+          user_id?: string | null
           verification_notes?: string | null
           verification_status?: string
           verified_at?: string | null
