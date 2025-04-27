@@ -27,12 +27,15 @@ const KycDocumentList: React.FC<KycDocumentListProps> = ({ refreshKey = 0 }) => 
           .from('verification_documents')
           .select('id, document_type, document_url, verification_status, created_at, verified_at, verification_notes')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .returns<KycVerificationDocument[]>();
+          .order('created_at', { ascending: false });
           
         if (error) throw error;
         if (data) {
-          setDocuments(data);
+          const typedData = data.map(doc => ({
+            ...doc,
+            verification_status: doc.verification_status as KycVerificationDocument['verification_status']
+          }));
+          setDocuments(typedData);
         }
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
@@ -57,7 +60,7 @@ const KycDocumentList: React.FC<KycDocumentListProps> = ({ refreshKey = 0 }) => 
     }
   };
   
-  const getStatusBadge = (status: 'pending' | 'verified' | 'rejected') => {
+  const getStatusBadge = (status: KycVerificationDocument['verification_status']) => {
     switch (status) {
       case 'verified':
         return <Badge className="bg-green-50 text-green-600 border-green-200">
