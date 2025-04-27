@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Search, User, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { formatClientCode, validateClientCode, lookupUserByClientCode } from '@/utils/clientCodeUtils';
+import { formatClientCode, validateClientCode } from '@/utils/clientCodeUtils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader } from '@/components/ui/loader';
+import { lookupUserByClientCode } from '@/utils/client-code/lookup';
 
 interface ClientCodeSearchFieldProps {
   onClientFound: (client: any) => void;

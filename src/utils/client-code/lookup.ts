@@ -6,6 +6,11 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const lookupUserByClientCode = async (clientCode: string, sfdId: string | null) => {
   try {
+    if (!sfdId) {
+      console.error('No SFD ID provided for client lookup');
+      throw new Error("Aucune SFD active sélectionnée. Veuillez d'abord sélectionner une SFD.");
+    }
+    
     console.log('Looking up client with code:', clientCode, 'for SFD:', sfdId);
     
     const { data, error } = await supabase
