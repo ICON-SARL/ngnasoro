@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Upload, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { validateClientCode, formatClientCode } from '@/utils/clientCodeUtils';
+import { ClientAdhesionRequest } from '@/types/adhesionRequests';
 
 const documentTypes = [
   { value: 'id_card_front', label: "Carte d'identité (Recto)" },
@@ -60,45 +61,67 @@ const KycDocumentUploadByCode: React.FC<KycDocumentUploadByCodeProps> = ({ onUpl
 
     try {
       // Check if client exists with this code
-      const { data: client, error: clientError } = await supabase
-        .from('sfd_clients')
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
         .select('*')
         .eq('client_code', formattedCode)
         .single();
 
-      if (clientError) {
-        // If no client found, check adhesion requests
-        const { data: adhesion, error: adhesionError } = await supabase
-          .from('client_adhesion_requests')
-          .select('*')
-          .eq('client_code', formattedCode)
-          .single();
+      if (profileError) {
+        // Si aucun profil trouvé
+        toast({
+          title: "Client non trouvé",
+          description: "Aucun client trouvé avec ce code",
+          variant: "destructive"
+        });
+        setClientFound(false);
+        setClientData(null);
+        return;
+      }
 
-        if (adhesionError) {
-          toast({
-            title: "Client non trouvé",
-            description: "Aucun client trouvé avec ce code",
-            variant: "destructive"
-          });
-          setClientFound(false);
-          setClientData(null);
-          return;
-        }
+      // Vérifier si le client a une demande d'adhésion
+      const { data: adhesionData, error: adhesionError } = await supabase
+        .rpc('get_adhesion_request_by_user', { user_id_param: profileData.id })
+        .single();
 
-        setClientData(adhesion);
+      if (!adhesionError && adhesionData) {
+        // Une demande d'adhésion existe
+        setClientData({
+          ...profileData,
+          ...adhesionData
+        });
         setClientFound(true);
         toast({
           title: "Client trouvé",
-          description: `Demande d'adhésion trouvée pour ${adhesion.full_name}`
+          description: `Demande d'adhésion trouvée pour ${profileData.full_name || profileData.email}`
         });
         return;
       }
 
-      setClientData(client);
+      // Vérifier si l'utilisateur est un client SFD
+      const { data: sfdClientData, error: sfdClientError } = await supabase
+        .from('sfd_clients')
+        .select('*')
+        .eq('user_id', profileData.id)
+        .single();
+
+      if (!sfdClientError && sfdClientData) {
+        // Client SFD existe
+        setClientData(sfdClientData);
+        setClientFound(true);
+        toast({
+          title: "Client SFD trouvé",
+          description: `Client ${sfdClientData.full_name} trouvé`
+        });
+        return;
+      }
+
+      // Si on arrive ici, l'utilisateur existe mais n'a pas de demande d'adhésion ou n'est pas client SFD
+      setClientData(profileData);
       setClientFound(true);
       toast({
-        title: "Client trouvé",
-        description: `Client ${client.full_name} trouvé`
+        title: "Utilisateur trouvé",
+        description: `Utilisateur ${profileData.full_name || profileData.email} trouvé`
       });
 
     } catch (error) {
@@ -156,8 +179,8 @@ const KycDocumentUploadByCode: React.FC<KycDocumentUploadByCodeProps> = ({ onUpl
       const { error: docError } = await supabase
         .from('verification_documents')
         .insert({
-          user_id: clientData.user_id || null,
-          adhesion_request_id: clientData.id,
+          user_id: clientData.user_id || clientData.id,
+          adhesion_request_id: clientData.adhesion_request_id,
           document_type: documentType,
           document_url: urlData.publicUrl,
           verification_status: 'pending',
@@ -219,7 +242,7 @@ const KycDocumentUploadByCode: React.FC<KycDocumentUploadByCodeProps> = ({ onUpl
         
         {clientFound === true && clientData && (
           <div className="p-3 border rounded-md bg-green-50">
-            <p className="text-sm font-medium">Client trouvé: {clientData.full_name}</p>
+            <p className="text-sm font-medium">Client trouvé: {clientData.full_name || clientData.email || 'Utilisateur'}</p>
             {clientData.email && <p className="text-xs text-gray-600">Email: {clientData.email}</p>}
           </div>
         )}

@@ -8,9 +8,11 @@ import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
 import ClientCodeSection from './ClientCodeSection';
+import { useAuth } from '@/hooks/useAuth';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('accounts');
+  const { user } = useAuth();
 
   return (
     <div className="pb-20">
@@ -39,7 +41,7 @@ const ProfilePage = () => {
         
         <TabsContent value="profile" className="px-4">
           <ClientCodeSection />
-          <PersonalInfoSection />
+          <PersonalInfoSection user={user} />
         </TabsContent>
       </Tabs>
     </div>
