@@ -1,27 +1,23 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle, RefreshCw, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  getClientCodeForUser, 
-  generateClientCode, 
-  storeClientCode, 
-  synchronizeClientCode,
-  formatClientCode
-} from '@/utils/clientCodeUtils';
+import { getClientCodeForUser } from '@/utils/client-code/storage';
+import { generateClientCode } from '@/utils/client-code/generators';
+import { storeClientCode } from '@/utils/client-code/storage';
+import { synchronizeClientCode } from '@/utils/client-code/sync';
+import { formatClientCode } from '@/utils/client-code/formatters';
 import { Loader } from '@/components/ui/loader';
-import { useSfdDataAccessCore } from '@/hooks/sfd/useSfdDataAccessCore';
 
 const ClientCodeSync: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { activeSfdId } = useSfdDataAccessCore();
   const [clientCode, setClientCode] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,49 +35,33 @@ const ClientCodeSync: React.FC = () => {
     setError(null);
     
     try {
-      const code = await getClientCodeForUser(user.id);
-      if (code) {
-        // Ensure code is in the new format
-        const formattedCode = formatClientCode(code);
-        setClientCode(formattedCode);
-      } else {
-        const newCode = generateClientCode();
-        const stored = await storeClientCode(user.id, newCode);
+      console.log('Loading client code for user:', user.id);
+      let code = await getClientCodeForUser(user.id);
+      
+      if (!code) {
+        console.log('No existing client code, generating new one');
+        code = generateClientCode();
+        const stored = await storeClientCode(user.id, code);
+        
         if (stored) {
-          setClientCode(newCode);
+          console.log('New client code stored successfully:', code);
+          setClientCode(code);
+          toast({
+            title: "Code client généré",
+            description: "Un nouveau code client a été créé pour vous"
+          });
         } else {
           setError("Impossible de générer un code client");
         }
+      } else {
+        console.log('Existing client code found:', code);
+        setClientCode(formatClientCode(code));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error loading client code:", err);
-      setError("Erreur lors du chargement du code client");
+      setError(err.message || "Erreur lors du chargement du code client");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleSyncCode = async () => {
-    if (!user?.id || !clientCode) return;
-    
-    setIsSyncing(true);
-    setError(null);
-    
-    try {
-      const success = await synchronizeClientCode(user.id, clientCode, activeSfdId);
-      if (success) {
-        toast({
-          title: "Synchronisation réussie",
-          description: "Votre code client a été synchronisé avec succès"
-        });
-      } else {
-        setError("La synchronisation a échoué");
-      }
-    } catch (err) {
-      console.error("Error syncing client code:", err);
-      setError("Erreur lors de la synchronisation");
-    } finally {
-      setIsSyncing(false);
     }
   };
 
@@ -124,7 +104,7 @@ const ClientCodeSync: React.FC = () => {
         
         <p className="text-sm text-gray-500 mb-4">
           Votre code client unique est nécessaire pour la création de votre compte auprès d'une SFD.
-          Assurez-vous qu'il est synchronisé avec tous vos comptes.
+          Conservez-le précieusement.
         </p>
         
         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-3">
@@ -141,23 +121,6 @@ const ClientCodeSync: React.FC = () => {
             ) : (
               <Copy className="h-4 w-4" />
             )}
-          </Button>
-        </div>
-        
-        <div className="flex justify-end">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="text-xs"
-            onClick={handleSyncCode}
-            disabled={isSyncing || !clientCode}
-          >
-            {isSyncing ? (
-              <Loader size="sm" className="mr-1" />
-            ) : (
-              <RefreshCw className="h-3 w-3 mr-1" />
-            )}
-            Synchroniser
           </Button>
         </div>
       </CardContent>
