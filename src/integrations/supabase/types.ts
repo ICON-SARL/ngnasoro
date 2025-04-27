@@ -209,6 +209,81 @@ export type Database = {
           },
         ]
       }
+      client_adhesion_requests: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string
+          id: string
+          id_number: string | null
+          id_type: string | null
+          kyc_status: string | null
+          monthly_income: number | null
+          notes: string | null
+          phone: string | null
+          processed_at: string | null
+          processed_by: string | null
+          profession: string | null
+          reference_number: string
+          rejection_reason: string | null
+          sfd_id: string
+          source_of_income: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+          verification_stage: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          id_number?: string | null
+          id_type?: string | null
+          kyc_status?: string | null
+          monthly_income?: number | null
+          notes?: string | null
+          phone?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          profession?: string | null
+          reference_number: string
+          rejection_reason?: string | null
+          sfd_id: string
+          source_of_income?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+          verification_stage?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          id_number?: string | null
+          id_type?: string | null
+          kyc_status?: string | null
+          monthly_income?: number | null
+          notes?: string | null
+          phone?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          profession?: string | null
+          reference_number?: string
+          rejection_reason?: string | null
+          sfd_id?: string
+          source_of_income?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+          verification_stage?: string | null
+        }
+        Relationships: []
+      }
       client_documents: {
         Row: {
           client_id: string

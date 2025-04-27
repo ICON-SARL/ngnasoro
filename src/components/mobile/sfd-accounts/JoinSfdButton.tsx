@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +16,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Loader } from '@/components/ui/loader';
-import { useAdhesionRequests } from '@/hooks/useAdhesionRequests'; 
+import { useClientAdhesions } from '@/hooks/useClientAdhesions'; 
 
 // Form validation schema
 const formSchema = z.object({
@@ -26,6 +25,10 @@ const formSchema = z.object({
   address: z.string().optional(),
   id_number: z.string().optional(),
   id_type: z.string().optional(),
+  email: z.string().email({ message: 'Email invalide' }).optional(),
+  profession: z.string().optional(),
+  monthly_income: z.string().optional(),
+  source_of_income: z.string().optional()
 });
 
 type JoinSfdFormData = z.infer<typeof formSchema>;
@@ -40,12 +43,7 @@ export default function JoinSfdButton({ sfdId, sfdName, onSuccess }: JoinSfdButt
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { createAdhesionRequest, adhesionRequests, isLoading } = useAdhesionRequests();
-
-  // Check if user has already sent a request to this SFD
-  const hasPendingRequest = adhesionRequests?.some(
-    request => request.sfd_id === sfdId && request.status === 'pending'
-  );
+  const { submitAdhesionRequest, isCreatingRequest } = useClientAdhesions();
 
   // Initialize form
   const form = useForm<JoinSfdFormData>({
@@ -56,6 +54,10 @@ export default function JoinSfdButton({ sfdId, sfdName, onSuccess }: JoinSfdButt
       address: '',
       id_number: '',
       id_type: '',
+      email: user?.email || '',
+      profession: '',
+      monthly_income: '',
+      source_of_income: ''
     }
   });
 
@@ -70,7 +72,7 @@ export default function JoinSfdButton({ sfdId, sfdName, onSuccess }: JoinSfdButt
     }
 
     try {
-      const result = await createAdhesionRequest(sfdId, values);
+      const result = await submitAdhesionRequest(sfdId, values);
       
       if (result.success) {
         setIsOpen(false);
@@ -90,17 +92,11 @@ export default function JoinSfdButton({ sfdId, sfdName, onSuccess }: JoinSfdButt
     <>
       <Button 
         onClick={() => setIsOpen(true)}
-        variant={hasPendingRequest ? "outline" : "default"}
-        className={hasPendingRequest ? "border-amber-500 text-amber-600" : ""}
-        disabled={isLoading || hasPendingRequest}
+        disabled={isCreatingRequest}
       >
-        {isLoading ? (
+        {isCreatingRequest ? (
           <Loader size="sm" />
-        ) : hasPendingRequest ? (
-          "Demande en cours"
-        ) : (
-          "Rejoindre"
-        )}
+        ) : "Rejoindre"}
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -190,8 +186,8 @@ export default function JoinSfdButton({ sfdId, sfdName, onSuccess }: JoinSfdButt
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
                   Annuler
                 </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? <Loader size="sm" className="mr-2" /> : null}
+                <Button type="submit" disabled={isCreatingRequest}>
+                  {isCreatingRequest ? <Loader size="sm" className="mr-2" /> : null}
                   Envoyer la demande
                 </Button>
               </DialogFooter>
