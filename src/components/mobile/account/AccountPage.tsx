@@ -12,7 +12,6 @@ import LogoutButton from '@/components/LogoutButton';
 const AccountPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const handleMenuToggle = () => {

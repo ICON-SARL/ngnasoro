@@ -7,7 +7,16 @@ import { FileText, Check, AlertCircle, Clock, ExternalLink } from 'lucide-react'
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { KycVerificationDocument, VerificationStatus } from '@/types/kyc';
+
+interface KycVerificationDocument {
+  id: string;
+  document_type: string;
+  document_url: string;
+  verification_status: 'pending' | 'verified' | 'rejected';
+  created_at: string;
+  verified_at?: string;
+  verification_notes?: string;
+}
 
 interface KycDocumentListProps {
   refreshKey?: number;
@@ -26,13 +35,12 @@ const KycDocumentList: React.FC<KycDocumentListProps> = ({ refreshKey = 0 }) => 
       try {
         const { data, error } = await supabase
           .from('verification_documents')
-          .select('*')
+          .select('id, document_type, document_url, verification_status, created_at, verified_at, verification_notes')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
           
         if (error) throw error;
-        // Cast to the KycVerificationDocument type
-        setDocuments(data as KycVerificationDocument[] || []);
+        setDocuments(data || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {
