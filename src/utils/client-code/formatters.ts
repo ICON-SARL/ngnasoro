@@ -2,6 +2,8 @@
 /**
  * Functions for formatting and cleaning client codes
  */
+import { generateNumericPart } from './generators';
+
 export const cleanClientCode = (code: string): string => {
   // Remove spaces and convert to uppercase
   return code.replace(/\s/g, '').toUpperCase();

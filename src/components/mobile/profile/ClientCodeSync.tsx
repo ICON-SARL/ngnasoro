@@ -4,12 +4,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, CheckCircle, RefreshCw, Copy } from 'lucide-react';
+import { AlertCircle, CheckCircle, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getClientCodeForUser } from '@/utils/client-code/storage';
+import { getClientCodeForUser, storeClientCode } from '@/utils/client-code/storage';
 import { generateClientCode } from '@/utils/client-code/generators';
-import { storeClientCode } from '@/utils/client-code/storage';
-import { synchronizeClientCode } from '@/utils/client-code/sync';
 import { formatClientCode } from '@/utils/client-code/formatters';
 import { Loader } from '@/components/ui/loader';
 
@@ -18,7 +16,6 @@ const ClientCodeSync: React.FC = () => {
   const { toast } = useToast();
   const [clientCode, setClientCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +42,7 @@ const ClientCodeSync: React.FC = () => {
         
         if (stored) {
           console.log('New client code stored successfully:', code);
-          setClientCode(code);
+          setClientCode(formatClientCode(code));
           toast({
             title: "Code client généré",
             description: "Un nouveau code client a été créé pour vous"
@@ -60,6 +57,11 @@ const ClientCodeSync: React.FC = () => {
     } catch (err: any) {
       console.error("Error loading client code:", err);
       setError(err.message || "Erreur lors du chargement du code client");
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger votre code client",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
