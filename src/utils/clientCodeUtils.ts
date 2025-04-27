@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export const formatClientCode = (code: string): string => {
@@ -49,6 +50,27 @@ export const validateClientCode = (code: string): boolean => {
     /^MEREF-SFD[A-Z0-9]{6}-\d{4}$/.test(code) ||  // New format
     /^SFD-[A-Z0-9]{6}-\d{4}$/.test(code)          // Legacy format
   );
+};
+
+/**
+ * Generates a random client code following the format MEREF-SFD******-****
+ */
+export const generateClientCode = (): string => {
+  // Generate 6 random alphanumeric characters (uppercase)
+  const alphanumericPart = Array(6)
+    .fill(0)
+    .map(() => {
+      // Use only uppercase letters and numbers
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      return chars.charAt(Math.floor(Math.random() * chars.length));
+    })
+    .join('');
+
+  // Generate 4 random digits
+  const numericPart = generateNumericPart();
+
+  // Format the client code
+  return `MEREF-SFD${alphanumericPart}-${numericPart}`;
 };
 
 export const synchronizeClientCode = async (userId: string, clientCode: string, sfdId?: string) => {
