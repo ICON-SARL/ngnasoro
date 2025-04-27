@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, User, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { formatClientCode, validateClientCode } from '@/utils/clientCodeUtils';
+import { formatClientCode, validateClientCode, lookupUserByClientCode } from '@/utils/clientCodeUtils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader } from '@/components/ui/loader';
 
@@ -13,7 +14,6 @@ interface ClientCodeSearchFieldProps {
   onSearchStart?: () => void;
   onSearchComplete?: (success: boolean) => void;
   isSearching: boolean;
-  searchClientByCode: (code: string) => Promise<any>;
 }
 
 export const ClientCodeSearchField: React.FC<ClientCodeSearchFieldProps> = ({ 
@@ -21,54 +21,66 @@ export const ClientCodeSearchField: React.FC<ClientCodeSearchFieldProps> = ({
   onSearchStart,
   onSearchComplete,
   isSearching,
-  searchClientByCode
 }) => {
   const [clientCode, setClientCode] = useState('');
   const [searchError, setSearchError] = useState<string | null>(null);
+  const { activeSfdId } = useAuth();
   const { toast } = useToast();
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setSearchError(null);
     
+    if (!activeSfdId) {
+      setSearchError("Aucune SFD active sélectionnée. Veuillez d'abord sélectionner une SFD.");
+      return;
+    }
+    
     if (!clientCode.trim()) {
       setSearchError("Code client requis");
       return;
     }
     
+    // Format the entered code
+    const formattedCode = formatClientCode(clientCode);
+    
+    // Validate the code format
+    if (!validateClientCode(formattedCode)) {
+      setSearchError(
+        "Format de code invalide. Formats acceptés:\n" +
+        "- MEREF-SFD-XXXXXX-YYYY (nouveau format)\n" +
+        "- SFD-XXXXXX-YYYY (ancien format)\n" +
+        "où X = lettres/chiffres et Y = chiffres"
+      );
+      return;
+    }
+    
+    onSearchStart?.();
+    
     try {
-      // Format the entered code
-      const formattedCode = formatClientCode(clientCode);
-      
-      // Validate the code format
-      if (!validateClientCode(formattedCode)) {
-        setSearchError(
-          "Format de code invalide. Formats acceptés:\n" +
-          "- MEREF-SFD-XXXXXX-YYYY (nouveau format)\n" +
-          "- SFD-XXXXXX-YYYY (ancien format)\n" +
-          "où X = lettres/chiffres et Y = chiffres"
-        );
-        return;
-      }
-      
-      onSearchStart?.();
-      
-      const result = await searchClientByCode(formattedCode);
+      const result = await lookupUserByClientCode(formattedCode, activeSfdId);
       
       if (result) {
+        // Check if this is an existing client in this SFD
+        if (result.sfd_id === activeSfdId) {
+          toast({
+            title: "Client trouvé",
+            description: `${result.full_name} est déjà client de cette SFD`,
+            variant: "default"
+          });
+        } else if (result.is_new_client) {
+          toast({
+            title: "Utilisateur trouvé",
+            description: `${result.full_name} peut être ajouté comme client`,
+            variant: "default"
+          });
+        }
+        
         onClientFound(result);
         setClientCode('');
         onSearchComplete?.(true);
-        
-        // Show format conversion notification if needed
-        if (clientCode !== formattedCode) {
-          toast({
-            title: "Code client converti",
-            description: `Ancien format détecté. Le code a été converti en: ${formattedCode}`,
-          });
-        }
       } else {
-        setSearchError("Aucun client trouvé avec ce code. Vérifiez que le code est correct et que la SFD est active.");
+        setSearchError("Aucun client trouvé avec ce code. Vérifiez que le code est correct.");
         onSearchComplete?.(false);
       }
     } catch (error: any) {
@@ -114,14 +126,15 @@ export const ClientCodeSearchField: React.FC<ClientCodeSearchFieldProps> = ({
         </Alert>
       )}
 
-      <div className="text-sm text-muted-foreground">
-        <p>Formats de code acceptés:</p>
-        <ul className="list-disc pl-4 mt-1">
-          <li>MEREF-SFD-ABC123-4567 (nouveau format)</li>
-          <li>SFD-ABC123-4567 (ancien format)</li>
-        </ul>
-        <p className="mt-1 text-xs">Les codes de l'ancien format seront automatiquement convertis.</p>
-      </div>
+      {!searchError && (
+        <div className="text-sm text-muted-foreground">
+          <p>Formats de code acceptés:</p>
+          <ul className="list-disc pl-4 mt-1">
+            <li>MEREF-SFD-ABC123-4567 (nouveau format)</li>
+            <li>SFD-ABC123-4567 (ancien format)</li>
+          </ul>
+        </div>
+      )}
     </div>
   );
 };
