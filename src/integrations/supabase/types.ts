@@ -2119,6 +2119,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      create_client_adhesion_request: {
+        Args: { adhesion_data: Json }
+        Returns: string
+      }
       create_client_savings_account: {
         Args: {
           p_client_id: string
@@ -2142,6 +2146,21 @@ export type Database = {
       create_user_from_client: {
         Args: { client_id: string; temp_password: string }
         Returns: string
+      }
+      get_adhesion_request_by_user: {
+        Args: { user_id_param: string }
+        Returns: {
+          id: string
+          user_id: string
+          sfd_id: string
+          full_name: string
+          email: string
+          phone: string
+          address: string
+          status: string
+          created_at: string
+          reference_number: string
+        }[]
       }
       get_sfd_admins: {
         Args: { sfd_id_param: string }

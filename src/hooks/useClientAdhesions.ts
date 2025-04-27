@@ -26,7 +26,7 @@ export function useClientAdhesions() {
     queryKey: ['user-adhesion-requests', user?.id],
     queryFn: async () => {
       try {
-        // Appeler la fonction Edge pour récupérer les demandes
+        // Call the Edge Function to retrieve adhesion requests
         const { data, error } = await supabase.functions.invoke('get_adhesion_requests', {
           body: { userId: user?.id }
         });
@@ -63,7 +63,7 @@ export function useClientAdhesions() {
         reference_number: `ADH-${Date.now().toString().substring(6)}`
       };
       
-      // Appeler l'API Edge pour créer la demande
+      // Call the Edge Function to create adhesion request
       const { error } = await supabase.functions.invoke('create_adhesion_request', {
         body: { adhesionData }
       });
