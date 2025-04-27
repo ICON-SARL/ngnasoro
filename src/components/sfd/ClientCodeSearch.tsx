@@ -43,44 +43,55 @@ export const ClientCodeSearch: React.FC<ClientCodeSearchProps> = ({ onClientFoun
     
     setIsSearching(true);
     try {
-      // First check in sfd_clients table
-      const { data: clientData, error: clientError } = await supabase
+      // First, search in profiles table for the client code
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('client_code', formattedCode)
+        .single();
+        
+      if (profileError) {
+        throw profileError;
+      }
+      
+      if (!profileData) {
+        toast({
+          title: "Client non trouvé",
+          description: "Aucun utilisateur trouvé avec ce code client",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Then check if this user is already a client in sfd_clients
+      const { data: sfdClientData, error: sfdClientError } = await supabase
         .from('sfd_clients')
         .select('*')
-        .eq('client_code', formattedCode)
+        .eq('user_id', profileData.id)
         .single();
         
-      if (clientData) {
-        onClientFound(clientData);
+      if (sfdClientError && sfdClientError.code !== 'PGRST116') {
+        throw sfdClientError;
+      }
+      
+      if (sfdClientData) {
+        // User is already a client of an SFD
+        onClientFound(sfdClientData);
         toast({
           title: "Client trouvé",
-          description: `Client ${clientData.full_name} trouvé`,
+          description: `Client ${profileData.full_name} déjà enregistré dans un SFD`,
         });
-        return;
-      }
-      
-      // If not in clients, check in adhesion requests
-      const { data: adhesionData, error: adhesionError } = await supabase
-        .from('client_adhesion_requests')
-        .select('*')
-        .eq('client_code', formattedCode)
-        .single();
-        
-      if (adhesionData) {
-        onClientFound(adhesionData);
+      } else {
+        // User exists but is not yet a client of an SFD
+        onClientFound({
+          ...profileData,
+          isNewClient: true
+        });
         toast({
-          title: "Demande d'adhésion trouvée",
-          description: `Demande pour ${adhesionData.full_name} trouvée`,
+          title: "Utilisateur trouvé",
+          description: `Utilisateur ${profileData.full_name} peut être ajouté comme client`,
         });
-        return;
       }
-      
-      // If not found anywhere
-      toast({
-        title: "Client non trouvé",
-        description: "Aucun client ou demande trouvé avec ce code",
-        variant: "destructive",
-      });
       
     } catch (error) {
       console.error('Error searching for client:', error);
