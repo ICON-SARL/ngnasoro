@@ -1,9 +1,41 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowUpRight, ArrowDownRight, Users, CreditCard, FileBarChart } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useSfdDashboardStats } from '@/hooks/useSfdDashboardStats';
 
 export function SfdDashboard() {
+  const { data: stats, isLoading, error } = useSfdDashboardStats();
+
+  if (error) {
+    return (
+      <Alert variant="destructive" className="mb-6">
+        <AlertTitle>Erreur de chargement</AlertTitle>
+        <AlertDescription>
+          {error instanceof Error ? error.message : "Une erreur est survenue lors du chargement des statistiques"}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <Skeleton className="h-4 w-24 mb-2" />
+                <Skeleton className="h-8 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
