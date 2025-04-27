@@ -4,9 +4,8 @@
  */
 
 const VALID_FORMATS = [
-  /^MEREF-SFD-[A-Z0-9]{6}-\d{4}$/, // New format with hyphen
-  /^MEREF-SFD[A-Z0-9]{6}-\d{4}$/,  // New format without hyphen
-  /^SFD-[A-Z0-9]{6}-\d{4}$/        // Legacy format
+  /^MEREF-SFD-[A-Z0-9]{6}-\d{4}$/, // Format standard
+  /^SFD-[A-Z0-9]{6}-\d{4}$/,       // Format legacy
 ];
 
 export const validateClientCode = (code: string): boolean => {
@@ -15,4 +14,8 @@ export const validateClientCode = (code: string): boolean => {
   
   // Check against all valid formats
   return VALID_FORMATS.some(format => format.test(code));
+};
+
+export const isLegacyFormat = (code: string): boolean => {
+  return /^SFD-[A-Z0-9]{6}-\d{4}$/.test(code);
 };

@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Search, User, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { formatClientCode, validateClientCode } from '@/utils/clientCodeUtils';
+import { validateClientCode } from '@/utils/client-code/validators';
+import { formatClientCode } from '@/utils/client-code/formatters';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader } from '@/components/ui/loader';
 import { lookupUserByClientCode } from '@/utils/client-code/lookup';
@@ -42,15 +43,13 @@ export const ClientCodeSearchField: React.FC<ClientCodeSearchFieldProps> = ({
       return;
     }
     
-    // Format the entered code
+    // Format and validate the code
     const formattedCode = formatClientCode(clientCode);
-    
-    // Validate the code format
     if (!validateClientCode(formattedCode)) {
       setSearchError(
         "Format de code invalide. Formats acceptés:\n" +
-        "- MEREF-SFD-XXXXXX-YYYY (nouveau format)\n" +
-        "- SFD-XXXXXX-YYYY (ancien format)\n" +
+        "- MEREF-SFD-XXXXXX-YYYY\n" +
+        "- SFD-XXXXXX-YYYY\n" +
         "où X = lettres/chiffres et Y = chiffres"
       );
       return;
@@ -62,21 +61,6 @@ export const ClientCodeSearchField: React.FC<ClientCodeSearchFieldProps> = ({
       const result = await lookupUserByClientCode(formattedCode, activeSfdId);
       
       if (result) {
-        // Check if this is an existing client in this SFD
-        if (result.sfd_id === activeSfdId) {
-          toast({
-            title: "Client trouvé",
-            description: `${result.full_name} est déjà client de cette SFD`,
-            variant: "default"
-          });
-        } else if (result.is_new_client) {
-          toast({
-            title: "Utilisateur trouvé",
-            description: `${result.full_name} peut être ajouté comme client`,
-            variant: "default"
-          });
-        }
-        
         onClientFound(result);
         setClientCode('');
         onSearchComplete?.(true);
