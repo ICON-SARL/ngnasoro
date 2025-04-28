@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -96,19 +95,43 @@ serve(async (req) => {
         break;
         
       case 'createClient':
-        // Create a new client
+        console.log('Creating client with data:', clientData);
+        
+        // If the client has a user_id, they are an existing user being added as a client
+        const isExistingUser = !!clientData.user_id;
+        
         const { data: newClient, error: createError } = await supabase
           .from('sfd_clients')
           .insert({
             ...clientData,
             sfd_id: sfdId,
-            status: 'pending'
+            status: isExistingUser ? 'validated' : 'pending',
+            validated_at: isExistingUser ? new Date().toISOString() : null,
+            validated_by: isExistingUser ? user.id : null,
           })
           .select()
           .single();
           
+        if (createError) {
+          console.error('Error creating client:', createError);
+          throw createError;
+        }
+        
+        // If this is an existing user, create their account automatically
+        if (isExistingUser) {
+          try {
+            await supabase.rpc('sync_client_accounts', { 
+              p_sfd_id: sfdId,
+              p_client_id: newClient.id
+            });
+            console.log('Created account for existing user');
+          } catch (syncError) {
+            console.error('Error syncing client account:', syncError);
+            // Continue even if account sync fails
+          }
+        }
+          
         data = newClient;
-        error = createError;
         break;
         
       case 'validateClient':

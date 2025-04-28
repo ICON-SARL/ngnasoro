@@ -85,55 +85,44 @@ export function useSfdClientManagement() {
       email?: string;
       phone?: string;
       address?: string;
-      id_number?: string;
       id_type?: string;
-      notes?: string;
+      id_number?: string;
       user_id?: string | null;
     }) => {
       if (!activeSfdId) {
         throw new Error('Aucune SFD active sélectionnée');
       }
 
-      const { data: existingClients } = await supabase
-        .from('sfd_clients')
-        .select('id, full_name, email, phone')
-        .eq('sfd_id', activeSfdId)
-        .or(`email.eq.${clientData.email},phone.eq.${clientData.phone}`);
-
-      if (existingClients && existingClients.length > 0) {
-        console.warn('Potential duplicate client detected:', existingClients);
-      }
-
-      const { data, error } = await supabase.functions.invoke('sfd-clients', {
-        body: {
-          action: 'createClient',
-          sfdId: activeSfdId,
-          clientData: {
-            ...clientData,
-            user_id: clientData.user_id || null,
-            created_at: new Date().toISOString(),
+      try {
+        const { data, error } = await supabase.functions.invoke('sfd-clients', {
+          body: {
+            action: 'createClient',
+            sfdId: activeSfdId,
+            clientData: {
+              ...clientData,
+              user_id: clientData.user_id || null,
+            }
           }
-        }
-      });
+        });
 
-      if (error) {
-        console.error('Error creating client:', error);
-        throw error;
+        if (error) throw error;
+        console.log('Client created successfully:', data);
+        return data;
+      } catch (err: any) {
+        console.error('Error in createClient mutation:', err);
+        throw new Error(err.message || 'Erreur lors de la création du client');
       }
-      
-      return data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
         title: 'Client créé avec succès',
-        description: 'Le nouveau client a été ajouté avec succès',
+        description: 'Le client a été ajouté avec succès',
       });
       
-      queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
-      
-      navigate('/sfd-clients');
+      return queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
     },
     onError: (error: any) => {
+      console.error('Create client error:', error);
       toast({
         title: 'Erreur lors de la création',
         description: error.message || 'Impossible de créer le client',

@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useForm, Form } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { Loader2 } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSfdClientManagement } from '@/hooks/useSfdClientManagement';
 import { ClientCodeSearchSection } from './ClientCodeSearchSection';
 import { ClientLookupResult } from '@/utils/client-code/lookup';
+import { useNavigate } from 'react-router-dom';
 
 interface NewClientFormProps {
   onSuccess: () => void;
@@ -30,6 +30,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export function NewClientForm({ onSuccess }: NewClientFormProps) {
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [foundUserId, setFoundUserId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -78,11 +79,13 @@ export function NewClientForm({ onSuccess }: NewClientFormProps) {
       await createClient.mutateAsync(clientData);
       form.reset();
       setFoundUserId(null); // Reset the found user ID
+      
+      // After successful creation and query invalidation
       toast({
         title: 'Client créé avec succès',
         description: 'Le nouveau client a été ajouté à votre SFD',
       });
-      onSuccess();
+      navigate('/sfd-clients'); // Navigate after successful creation
     } catch (error: any) {
       toast({
         title: 'Erreur',
