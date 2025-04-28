@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -43,7 +44,7 @@ serve(async (req) => {
     }
 
     // Parse the request body
-    const { action, sfdId, clientId, clientData, validatedBy, rejectionReason, searchTerm = '', status } = await req.json();
+    const { action, sfdId, clientId, clientData, validatedBy, rejectionReason, searchTerm = '', status, page = 1, pageSize = 10 } = await req.json();
 
     // Check if the user has permission to manage this SFD's clients
     // For simplicity, we'll just check if the user exists for now
@@ -191,6 +192,18 @@ serve(async (req) => {
           
         data = { success: true };
         error = deleteError;
+        break;
+        
+      case 'getClientDetails':
+        // Get detailed information about a specific client
+        const { data: clientDetails, error: detailsError } = await supabase
+          .from('sfd_clients')
+          .select('*')
+          .eq('id', clientId)
+          .single();
+          
+        data = clientDetails;
+        error = detailsError;
         break;
         
       default:

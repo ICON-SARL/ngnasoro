@@ -22,7 +22,7 @@ export function useSfdClientManagement() {
   const [totalPages, setTotalPages] = useState(1);
 
   const { data: clients = [], isLoading, error } = useQuery({
-    queryKey: ['sfd-clients', activeSfdId, searchTerm, statusFilter],
+    queryKey: ['sfd-clients', activeSfdId, searchTerm, statusFilter, currentPage, itemsPerPage],
     queryFn: async () => {
       if (!activeSfdId) {
         console.log('No active SFD ID, cannot fetch clients');
@@ -35,7 +35,9 @@ export function useSfdClientManagement() {
             action: 'getClients',
             sfdId: activeSfdId,
             searchTerm,
-            status: statusFilter
+            status: statusFilter,
+            page: currentPage,
+            pageSize: itemsPerPage
           }
         });
         
