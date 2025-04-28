@@ -30,7 +30,7 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [operationType, setOperationType] = useState<'credit' | 'debit'>(defaultType);
-  const { creditAccount, isLoading } = useClientAccountOperations(clientId);
+  const { creditAccount } = useClientAccountOperations(clientId);
   const { toast } = useToast();
 
   // Reset form when dialog opens
@@ -143,17 +143,17 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
           </div>
           
           <DialogFooter className="pt-2">
-            <Button variant="outline" onClick={onClose} type="button" disabled={isLoading}>
+            <Button variant="outline" onClick={onClose} type="button" disabled={creditAccount.isPending}>
               Annuler
             </Button>
             <Button 
               type="submit" 
-              disabled={isLoading}
+              disabled={creditAccount.isPending}
               className={operationType === 'credit' ? 
                 "bg-green-600 hover:bg-green-700 text-white" : 
                 "bg-red-600 hover:bg-red-700 text-white"}
             >
-              {isLoading ? 'Traitement...' : operationType === 'credit' ? 'Créditer' : 'Débiter'}
+              {creditAccount.isPending ? 'Traitement...' : operationType === 'credit' ? 'Créditer' : 'Débiter'}
             </Button>
           </DialogFooter>
         </form>

@@ -1,180 +1,118 @@
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from './use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+
+interface CreditDebitParams {
+  amount: number;
+  description?: string;
+}
 
 export function useClientAccountOperations(clientId: string) {
-  const queryClient = useQueryClient();
+  const [balance, setBalance] = useState<number>(0);
+  const [currency, setCurrency] = useState<string>('FCFA');
   const { toast } = useToast();
-  const [isCreating, setIsCreating] = useState(false);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  // Get client account balance
+  // Get client balance
   const { 
-    data: accountData,
+    data: accountData, 
     isLoading,
-    error,
     refetch
   } = useQuery({
     queryKey: ['client-account', clientId],
     queryFn: async () => {
-      console.log('Fetching account for client:', clientId);
-      if (!clientId) throw new Error('Client ID is required');
+      if (!clientId) return null;
       
-      try {
-        // First, get the user_id from sfd_clients
-        const { data: clientData, error: clientError } = await supabase
-          .from('sfd_clients')
-          .select('user_id, sfd_id')
-          .eq('id', clientId)
-          .single();
-        
-        if (clientError || !clientData?.user_id) {
-          console.error('Error fetching client data or user_id not found:', clientError);
-          throw new Error('Client information not found');
+      const { data, error } = await supabase.functions.invoke('client-accounts', {
+        body: {
+          action: 'getBalance',
+          clientId
         }
-        
-        const userId = clientData.user_id;
-        const sfdId = clientData.sfd_id;
-        
-        // Get account information using user_id
-        const { data: accountData, error: accountError } = await supabase
-          .from('accounts')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-        
-        if (accountError) {
-          console.error('Error fetching account:', accountError);
-          
-          // Check if account doesn't exist yet
-          if (accountError.code === 'PGRST116') { // Not found error
-            console.log('Account not found, creating one...');
-            
-            // Create the account
-            setIsCreating(true);
-            
-            // Call the account creation function
-            const { data: newAccountData, error: createError } = await supabase
-              .rpc('create_client_savings_account', {
-                p_client_id: userId,
-                p_sfd_id: sfdId,
-                p_initial_balance: 0
-              });
-            
-            setIsCreating(false);
-            
-            if (createError) {
-              console.error('Error creating account:', createError);
-              throw new Error(`Failed to create account: ${createError.message}`);
-            }
-            
-            // Fetch the newly created account
-            const { data: freshAccount, error: fetchError } = await supabase
-              .from('accounts')
-              .select('*')
-              .eq('user_id', userId)
-              .single();
-            
-            if (fetchError) {
-              console.error('Error fetching newly created account:', fetchError);
-              throw new Error('Account created but could not be retrieved');
-            }
-            
-            return {
-              balance: freshAccount.balance || 0,
-              currency: freshAccount.currency || 'FCFA',
-              accountId: freshAccount.id
-            };
-          }
-          
-          throw new Error(`Failed to fetch account: ${accountError.message}`);
-        }
-        
-        return {
-          balance: accountData?.balance || 0,
-          currency: accountData?.currency || 'FCFA',
-          accountId: accountData?.id
-        };
-      } catch (err) {
-        console.error('Error in account query:', err);
-        throw err;
-      }
+      });
+      
+      if (error) throw error;
+      return data;
     },
-    retry: 1,
-    refetchOnWindowFocus: false
+    enabled: !!clientId,
+    onSuccess: (data) => {
+      if (data) {
+        setBalance(data.balance || 0);
+        setCurrency(data.currency || 'FCFA');
+      }
+    }
   });
 
-  // Credit account mutation
+  // Credit/debit client account
   const creditAccount = useMutation({
-    mutationFn: async ({ amount, description }: { amount: number, description?: string }) => {
-      if (!clientId) throw new Error('Client ID is required');
-      if (!amount || amount <= 0) throw new Error('Amount must be positive');
+    mutationFn: async ({ amount, description }: CreditDebitParams) => {
+      if (!clientId || !user) throw new Error('Missing client ID or user');
       
-      console.log('Processing account operation:', { clientId, amount, description });
-      
-      try {
-        // Get the user_id from sfd_clients
-        const { data: clientData, error: clientError } = await supabase
-          .from('sfd_clients')
-          .select('user_id, sfd_id')
-          .eq('id', clientId)
-          .single();
-        
-        if (clientError || !clientData?.user_id) {
-          throw new Error('Client information not found');
+      const { data, error } = await supabase.functions.invoke('client-accounts', {
+        body: {
+          action: 'updateBalance',
+          clientId,
+          amount,
+          description: description || (amount > 0 ? 'Crédit manuel' : 'Débit manuel'),
+          performedBy: user.id
         }
-        
-        const userId = clientData.user_id;
-        const sfdId = clientData.sfd_id;
-        
-        // Create transaction record
-        const { data, error } = await supabase
-          .from('transactions')
-          .insert({
-            user_id: userId,
-            sfd_id: sfdId,
-            amount,
-            type: amount >= 0 ? 'deposit' : 'withdrawal',
-            name: amount >= 0 ? 'Crédit de compte' : 'Débit de compte',
-            description: description || (amount >= 0 ? 'Crédit manuel' : 'Débit manuel'),
-            status: 'success'
-          })
-          .select()
-          .single();
-        
-        if (error) throw error;
-        
-        // Return the new transaction
-        return data;
-      } catch (err: any) {
-        console.error('Error in credit account mutation:', err);
-        throw new Error(`Failed to process transaction: ${err.message}`);
-      }
+      });
+      
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      // Invalidate queries to refresh data
+      refetch();
       queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
       queryClient.invalidateQueries({ queryKey: ['client-transactions', clientId] });
     },
     onError: (error: any) => {
       toast({
-        title: "Erreur",
-        description: `Impossible de traiter l'opération: ${error.message}`,
-        variant: "destructive",
+        title: 'Erreur',
+        description: error.message || 'Erreur lors de l\'opération sur le compte',
+        variant: 'destructive',
       });
-    },
+    }
   });
 
+  // Get transaction history
+  const { 
+    data: transactions = [], 
+    isLoading: isLoadingTransactions
+  } = useQuery({
+    queryKey: ['client-transactions', clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+      
+      const { data, error } = await supabase.functions.invoke('client-accounts', {
+        body: {
+          action: 'getTransactions',
+          clientId,
+          limit: 10
+        }
+      });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!clientId
+  });
+
+  // Manual refresh function
+  const refetchBalance = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
   return {
-    balance: accountData?.balance || 0,
-    currency: accountData?.currency || 'FCFA',
-    accountId: accountData?.accountId,
-    isLoading: isLoading || isCreating,
-    error,
+    balance,
+    currency,
+    isLoading,
+    transactions,
+    isLoadingTransactions,
     creditAccount,
-    refetchBalance: refetch
+    refetchBalance
   };
 }

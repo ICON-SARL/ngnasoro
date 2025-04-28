@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { User, Phone, Mail, MapPin, Calendar, FileText, AlertTriangle } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Calendar, FileText, AlertTriangle, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useSfdClientManagement } from '@/hooks/useSfdClientManagement';
@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import ClientAccountDetails from '../client-accounts/ClientAccountDetails';
 
 interface ClientDetailsViewProps {
   client: SfdClient;
@@ -109,10 +110,11 @@ const ClientDetailsView: React.FC<ClientDetailsViewProps> = ({ client, onClose }
       </div>
       
       <Tabs defaultValue="info" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-3 w-full">
+        <TabsList className="grid grid-cols-4 w-full">
           <TabsTrigger value="info">Informations</TabsTrigger>
           <TabsTrigger value="account">Compte</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="loans">Prêts</TabsTrigger>
         </TabsList>
         
         <TabsContent value="info" className="pt-4">
@@ -206,40 +208,33 @@ const ClientDetailsView: React.FC<ClientDetailsViewProps> = ({ client, onClose }
         </TabsContent>
         
         <TabsContent value="account" className="pt-4">
-          <Card>
-            <CardContent className="p-6 flex flex-col items-center justify-center min-h-[200px] text-center">
-              {client.user_id ? (
+          {client.status === 'validated' ? (
+            <ClientAccountDetails 
+              clientId={client.id}
+              clientName={client.full_name}
+            />
+          ) : (
+            <Card>
+              <CardContent className="p-6 flex flex-col items-center justify-center min-h-[200px] text-center">
                 <div className="space-y-2">
-                  <Badge variant="outline" className="mb-2 bg-green-50 text-green-700 border-green-200">
-                    Compte actif
-                  </Badge>
-                  <p>Le client possède un compte utilisateur dans l'application.</p>
-                  <p className="text-sm text-gray-500">ID utilisateur: {client.user_id}</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
                   <Badge variant="outline" className="mb-2 bg-amber-50 text-amber-700 border-amber-200">
-                    Sans compte
+                    Client non validé
                   </Badge>
-                  <p>Ce client n'a pas encore de compte utilisateur.</p>
+                  <p>Le client doit être validé avant de pouvoir gérer son compte.</p>
                   
-                  {client.status === 'validated' ? (
+                  {client.status === 'pending' && (
                     <Button 
                       className="mt-4"
                       onClick={handleValidateClient}
                       disabled={validateClient.isPending}
                     >
-                      Créer un compte
+                      Valider le client
                     </Button>
-                  ) : (
-                    <p className="text-sm text-gray-500">
-                      Validez d'abord le client pour créer un compte.
-                    </p>
                   )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
         
         <TabsContent value="documents" className="pt-4">
@@ -255,6 +250,30 @@ const ClientDetailsView: React.FC<ClientDetailsViewProps> = ({ client, onClose }
                 <Button className="mt-4" disabled>
                   Ajouter un document
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="loans" className="pt-4">
+          <Card>
+            <CardContent className="p-6 flex flex-col items-center justify-center min-h-[200px] text-center">
+              <div className="space-y-2">
+                <CreditCard className="h-12 w-12 text-gray-300 mx-auto" />
+                <p>Aucun prêt actif</p>
+                <p className="text-sm text-gray-500">
+                  Ce client n'a pas de prêts actifs pour le moment.
+                </p>
+                
+                {client.status === 'validated' ? (
+                  <Button className="mt-4">
+                    Créer un prêt
+                  </Button>
+                ) : (
+                  <p className="text-sm text-gray-500 mt-4">
+                    Le client doit être validé avant de pouvoir créer un prêt.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

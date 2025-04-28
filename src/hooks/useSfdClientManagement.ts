@@ -47,11 +47,6 @@ export function useSfdClientManagement() {
         if (Array.isArray(data)) {
           setTotalClients(data.length);
           setTotalPages(Math.ceil(data.length / itemsPerPage));
-          
-          // Apply client-side pagination (could be moved to server-side later)
-          const start = (currentPage - 1) * itemsPerPage;
-          const end = start + itemsPerPage;
-          return data.slice(start, end);
         }
         
         return data || [];
@@ -96,11 +91,14 @@ export function useSfdClientManagement() {
 
   const validateClient = useMutation({
     mutationFn: async ({ clientId, notes }: { clientId: string; notes?: string }) => {
+      if (!user) throw new Error('Utilisateur non authentifié');
+      console.log('Validating client:', clientId);
+      
       const { data, error } = await supabase.functions.invoke('sfd-clients', {
         body: {
           action: 'validateClient',
           clientId,
-          validatedBy: user?.id,
+          validatedBy: user.id,
           notes
         }
       });
@@ -126,11 +124,13 @@ export function useSfdClientManagement() {
 
   const rejectClient = useMutation({
     mutationFn: async ({ clientId, reason }: { clientId: string; reason?: string }) => {
+      if (!user) throw new Error('Utilisateur non authentifié');
+      
       const { data, error } = await supabase.functions.invoke('sfd-clients', {
         body: {
           action: 'rejectClient',
           clientId,
-          validatedBy: user?.id,
+          validatedBy: user.id,
           rejectionReason: reason
         }
       });

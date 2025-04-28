@@ -1,14 +1,13 @@
 
 import React, { useState } from 'react';
 import { useClientAccountOperations } from '@/hooks/useClientAccountOperations';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Wallet, ArrowUpDown, History, TrendingUp, CreditCard, Plus, Minus } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import AccountOperationDialog from './AccountOperationDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { motion } from 'framer-motion';
 
 interface ClientAccountDetailsProps {
   clientId: string;
@@ -21,7 +20,7 @@ const ClientAccountDetails: React.FC<ClientAccountDetailsProps> = ({
 }) => {
   const [isOperationDialogOpen, setIsOperationDialogOpen] = useState(false);
   const [operationType, setOperationType] = useState<'credit' | 'debit'>('credit');
-  const { balance, currency, isLoading, refetchBalance } = useClientAccountOperations(clientId);
+  const { balance, currency, isLoading, refetchBalance, transactions, isLoadingTransactions } = useClientAccountOperations(clientId);
 
   const handleOpenOperationDialog = (type: 'credit' | 'debit') => {
     setOperationType(type);
@@ -29,11 +28,7 @@ const ClientAccountDetails: React.FC<ClientAccountDetailsProps> = ({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
+    <>
       <Card className="overflow-hidden border shadow-sm">
         <CardHeader className="pb-2 bg-gray-50">
           <CardTitle className="text-lg flex items-center">
@@ -104,6 +99,30 @@ const ClientAccountDetails: React.FC<ClientAccountDetailsProps> = ({
                 </Tooltip>
               </TooltipProvider>
             </div>
+            
+            {transactions && transactions.length > 0 ? (
+              <div className="mt-4">
+                <h4 className="text-sm font-medium mb-2">Transactions récentes</h4>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {transactions.map((tx: any) => (
+                    <div key={tx.id} className="p-2 bg-gray-50 rounded-md border border-gray-100 text-sm">
+                      <div className="flex justify-between">
+                        <div className="font-medium">{tx.name}</div>
+                        <div className={tx.type === 'deposit' ? 'text-green-600' : 'text-red-600'}>
+                          {tx.type === 'deposit' ? '+' : '-'}{tx.amount.toLocaleString('fr-FR')} {tx.currency || 'FCFA'}
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-500 flex justify-between mt-1">
+                        <span>{tx.description}</span>
+                        <span>{new Date(tx.created_at).toLocaleDateString('fr-FR')}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : !isLoadingTransactions ? (
+              <div className="text-center py-2 text-sm text-gray-500">Aucune transaction</div>
+            ) : null}
           </div>
         </CardContent>
 
@@ -116,7 +135,7 @@ const ClientAccountDetails: React.FC<ClientAccountDetailsProps> = ({
           defaultType={operationType}
         />
       </Card>
-    </motion.div>
+    </>
   );
 };
 
