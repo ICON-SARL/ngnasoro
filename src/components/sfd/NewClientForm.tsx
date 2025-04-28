@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ type FormData = z.infer<typeof formSchema>;
 
 export function NewClientForm({ onSuccess }: NewClientFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [foundUserId, setFoundUserId] = useState<string | null>(null);
   const { toast } = useToast();
   const { createClient } = useSfdClientManagement();
   
@@ -47,6 +49,7 @@ export function NewClientForm({ onSuccess }: NewClientFormProps) {
   });
 
   const handleClientFound = (client: ClientLookupResult) => {
+    setFoundUserId(client.user_id || null);
     form.reset({
       full_name: client.full_name || '',
       email: client.email || '',
@@ -57,7 +60,6 @@ export function NewClientForm({ onSuccess }: NewClientFormProps) {
       notes: '',
     });
     
-    // Disable email and phone fields if they come from an existing user
     if (client.user_id) {
       form.setValue('email', client.email || '', { shouldValidate: true });
       form.setValue('phone', client.phone || '', { shouldValidate: true });
@@ -67,14 +69,15 @@ export function NewClientForm({ onSuccess }: NewClientFormProps) {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      // Ensure full_name is definitely assigned
       const clientData = {
         ...data,
-        full_name: data.full_name // This is now required by the form schema
+        full_name: data.full_name,
+        user_id: foundUserId // Include the found user ID if it exists
       };
       
       await createClient.mutateAsync(clientData);
       form.reset();
+      setFoundUserId(null); // Reset the found user ID
       toast({
         title: 'Client créé avec succès',
         description: 'Le nouveau client a été ajouté à votre SFD',

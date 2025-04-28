@@ -26,7 +26,6 @@ export function useSfdClientManagement() {
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const navigate = useNavigate();
 
-  // Get all clients with pagination and filtering
   const {
     data,
     isLoading,
@@ -73,7 +72,6 @@ export function useSfdClientManagement() {
     refetchOnWindowFocus: false,
   });
 
-  // Fix: Properly handle undefined data.clients with a fallback empty array
   const filteredClients = (data?.clients || []).filter(client =>
     searchTerm === '' || 
     client.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -81,7 +79,6 @@ export function useSfdClientManagement() {
     (client.phone && client.phone.includes(searchTerm))
   );
 
-  // Create a new client
   const createClient = useMutation({
     mutationFn: async (clientData: {
       full_name: string;
@@ -91,22 +88,20 @@ export function useSfdClientManagement() {
       id_number?: string;
       id_type?: string;
       notes?: string;
+      user_id?: string | null;
     }) => {
       if (!activeSfdId) {
         throw new Error('Aucune SFD active sélectionnée');
       }
 
-      // Check for potential duplicates before creating
       const { data: existingClients } = await supabase
         .from('sfd_clients')
         .select('id, full_name, email, phone')
         .eq('sfd_id', activeSfdId)
         .or(`email.eq.${clientData.email},phone.eq.${clientData.phone}`);
 
-      // If potential duplicates are found, warn but don't block
       if (existingClients && existingClients.length > 0) {
         console.warn('Potential duplicate client detected:', existingClients);
-        // We'll show a warning but still proceed with creation
       }
 
       const { data, error } = await supabase.functions.invoke('sfd-clients', {
@@ -115,7 +110,7 @@ export function useSfdClientManagement() {
           sfdId: activeSfdId,
           clientData: {
             ...clientData,
-            // Add validation timestamp
+            user_id: clientData.user_id || null,
             created_at: new Date().toISOString(),
           }
         }
@@ -134,10 +129,8 @@ export function useSfdClientManagement() {
         description: 'Le nouveau client a été ajouté avec succès',
       });
       
-      // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ['sfd-clients'] });
       
-      // Redirect to the clients list page
       navigate('/sfd-clients');
     },
     onError: (error: any) => {
@@ -149,7 +142,6 @@ export function useSfdClientManagement() {
     }
   });
 
-  // Validate client with improved error handling
   const validateClient = useMutation({
     mutationFn: async ({ clientId, notes }: { clientId: string; notes?: string }) => {
       const { data, error } = await supabase.functions.invoke('sfd-clients', {
@@ -180,7 +172,6 @@ export function useSfdClientManagement() {
     }
   });
 
-  // Reject client
   const rejectClient = useMutation({
     mutationFn: async ({ clientId, reason }: { clientId: string; reason?: string }) => {
       const { data, error } = await supabase.functions.invoke('sfd-clients', {
@@ -211,7 +202,6 @@ export function useSfdClientManagement() {
     }
   });
 
-  // Delete client
   const deleteClient = useMutation({
     mutationFn: async (clientId: string) => {
       const { data, error } = await supabase.functions.invoke('sfd-clients', {
@@ -240,7 +230,6 @@ export function useSfdClientManagement() {
     }
   });
 
-  // Get client details
   const getClientDetails = async (clientId: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('sfd-clients', {
