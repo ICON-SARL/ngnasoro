@@ -11,6 +11,7 @@ import { useSfdClientManagement } from '@/hooks/useSfdClientManagement';
 import { ClientCodeSearchSection } from './ClientCodeSearchSection';
 import { ClientLookupResult } from '@/utils/client-code/lookup';
 import { useNavigate } from 'react-router-dom';
+import { Form } from '@/components/ui/form';
 
 interface NewClientFormProps {
   onSuccess: () => void;
