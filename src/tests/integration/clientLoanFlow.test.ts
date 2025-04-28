@@ -62,7 +62,8 @@ describe('Client Loan Flow Integration Test', () => {
     email: 'test@client.com',
     phone: '+22961234567',
     address: 'Cotonou, Bénin',
-    sfd_id: 'sfd_123'
+    sfd_id: 'sfd_123',
+    status: 'pending'
   };
   
   const adminId = 'admin_123';
@@ -123,4 +124,3 @@ describe('Client Loan Flow Integration Test', () => {
     console.log('Logs: Aucune erreur de permission ou de transaction');
   });
 });
-

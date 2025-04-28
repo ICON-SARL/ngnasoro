@@ -8,7 +8,8 @@ describe('Client Creation without Loan', () => {
     email: 'nocredit@example.com',
     phone: '+22961234567',
     address: 'Cotonou, Bénin',
-    sfd_id: 'sfd_123'
+    sfd_id: 'sfd_123',
+    status: 'pending'
   };
 
   test('SFD can create a client without a loan', async () => {
