@@ -48,6 +48,7 @@
     "@types/express": "^5.0.1",
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.2",
+    "@types/uuid": "^10.0.0",
     "a": "^3.0.1",
     "add": "^2.0.6",
     "an": "^0.0.8",

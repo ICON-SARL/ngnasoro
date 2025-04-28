@@ -37,11 +37,12 @@ export const lookupUserByClientCode = async (clientCode: string, sfdId: string |
     if (data) {
       console.log('Found client:', data);
       // Explicitly cast data to ClientLookupResult with proper type checking
-      const result = data as unknown;
+      if (Array.isArray(data)) {
+        return data.length > 0 ? data[0] as ClientLookupResult : null;
+      }
       
-      // Validate that result conforms to ClientLookupResult interface
-      if (typeof result === 'object' && result !== null && 'id' in result && 'full_name' in result) {
-        return result as ClientLookupResult;
+      if (typeof data === 'object' && data !== null && 'id' in data && 'full_name' in data) {
+        return data as ClientLookupResult;
       } else {
         console.log('Data did not match expected format:', data);
         return null;
@@ -70,6 +71,10 @@ export const getSfdClientByCode = async (clientCode: string, sfdId: string): Pro
     }
     
     // Explicitly cast data to ClientLookupResult with proper type validation
+    if (Array.isArray(data)) {
+      return data.length > 0 ? data[0] as ClientLookupResult : null;
+    }
+    
     if (data && typeof data === 'object' && 'id' in data && 'full_name' in data) {
       return data as ClientLookupResult;
     }

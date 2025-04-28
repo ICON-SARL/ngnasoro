@@ -1,7 +1,45 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  getClientCodeForUser, 
+  storeClientCode 
+} from './client-code/storage';
+import { 
+  generateClientCode, 
+  generateNumericPart 
+} from './client-code/generators';
+import { 
+  validateClientCode, 
+  isLegacyFormat 
+} from './client-code/validators';
+import { 
+  formatClientCode, 
+  cleanClientCode 
+} from './client-code/formatters';
+import { 
+  synchronizeClientCode 
+} from './client-code/sync';
+import { 
+  lookupUserByClientCode, 
+  getSfdClientByCode 
+} from './client-code/lookup';
 
-// Add the missing function
+// Re-export all the functions
+export { 
+  getClientCodeForUser,
+  storeClientCode,
+  generateClientCode,
+  generateNumericPart,
+  validateClientCode,
+  isLegacyFormat,
+  formatClientCode,
+  cleanClientCode,
+  synchronizeClientCode,
+  lookupUserByClientCode,
+  getSfdClientByCode
+};
+
+// Function to create or update SFD client
 export const createOrUpdateSfdClient = async (
   sfdId: string, 
   userId: string, 
@@ -58,50 +96,5 @@ export const createOrUpdateSfdClient = async (
   } catch (error: any) {
     console.error('Error in createOrUpdateSfdClient:', error);
     return { success: false, error: error.message };
-  }
-};
-
-// Functions to lookup users and clients
-export const lookupUserByClientCode = async (clientCode: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('client_code', clientCode)
-      .single();
-    
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return null;
-      }
-      console.error('Error looking up user by client code:', error);
-      throw error;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Error in lookupUserByClientCode:', error);
-    throw error;
-  }
-};
-
-export const getSfdClientByCode = async (clientCode: string, sfdId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('sfd_clients')
-      .select('*')
-      .eq('client_code', clientCode)
-      .eq('sfd_id', sfdId)
-      .maybeSingle();
-    
-    if (error) {
-      console.error('Error getting SFD client by code:', error);
-      throw error;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Error in getSfdClientByCode:', error);
-    throw error;
   }
 };

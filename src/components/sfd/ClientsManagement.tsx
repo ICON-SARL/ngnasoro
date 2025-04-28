@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -99,48 +98,44 @@ const ClientsManagement = () => {
                 <Clock className="h-4 w-4 mr-2" />
                 En attente
               </TabsTrigger>
-              <TabsTrigger value="validated" className="flex items-center justify-center">
+              <TabsTrigger value="verification" className="flex items-center justify-center">
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Validés
+                En vérification
               </TabsTrigger>
-              <TabsTrigger value="rejected" className="flex items-center justify-center">
+              <TabsTrigger value="active" className="flex items-center justify-center">
                 <XCircle className="h-4 w-4 mr-2" />
-                Rejetés
+                Actifs
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="all" className="mt-0">
+            <TabsContent value="active" className="p-0">
               <ClientList 
-                clients={displayedClients} 
+                clients={filteredClients.filter(client => client.status === 'active')} 
+                isLoading={isLoading}
+                onViewClient={handleViewClient} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="pending" className="p-0">
+              <ClientList 
+                clients={filteredClients.filter(client => client.status === 'pending')}
                 isLoading={isLoading} 
-                status="all"
                 onViewClient={handleViewClient}
               />
             </TabsContent>
             
-            <TabsContent value="pending" className="mt-0">
+            <TabsContent value="verification" className="p-0">
               <ClientList 
-                clients={displayedClients}
-                isLoading={isLoading} 
-                status="pending"
-                onViewClient={handleViewClient}
+                clients={filteredClients.filter(client => client.status === 'verification_pending')}
+                isLoading={isLoading}
+                onViewClient={handleViewClient} 
               />
             </TabsContent>
             
-            <TabsContent value="validated" className="mt-0">
+            <TabsContent value="all" className="p-0">
               <ClientList 
-                clients={displayedClients}
-                isLoading={isLoading} 
-                status="validated"
-                onViewClient={handleViewClient}
-              />
-            </TabsContent>
-            
-            <TabsContent value="rejected" className="mt-0">
-              <ClientList 
-                clients={displayedClients}
-                isLoading={isLoading} 
-                status="rejected"
+                clients={filteredClients} 
+                isLoading={isLoading}
                 onViewClient={handleViewClient}
               />
             </TabsContent>

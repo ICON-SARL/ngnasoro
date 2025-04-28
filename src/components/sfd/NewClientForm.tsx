@@ -56,7 +56,7 @@ export function NewClientForm({ onSuccess }: NewClientFormProps) {
       // Ensure full_name is definitely assigned
       const clientData = {
         ...data,
-        full_name: data.full_name || 'Client' // Provide default if empty
+        full_name: data.full_name // This is now required by the form schema
       };
       
       await createClient.mutateAsync(clientData);

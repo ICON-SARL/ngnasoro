@@ -6,6 +6,9 @@ import { useAuth } from './useAuth';
 import { AdhesionRequestInput, ClientAdhesionRequest } from '@/types/adhesionTypes';
 import { useState } from 'react';
 
+// Re-export the type for components that import from this file
+export type { AdhesionRequestInput };
+
 export function useClientAdhesions() {
   const { user } = useAuth();
   const { toast } = useToast();
