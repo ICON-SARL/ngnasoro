@@ -19,7 +19,7 @@ export const clientService = {
       // Generate a reference number for adhesion request
       const referenceNumber = `ADH-${Date.now().toString().substring(6)}`;
       
-      // Fix: Add required fields for client_adhesion_requests
+      // Insert client adhesion request
       const { data, error } = await supabase
         .from('client_adhesion_requests')
         .insert({
@@ -41,18 +41,6 @@ export const clientService = {
       throw error;
     }
   },
-  
-  // Add for test compatibility
-  createClient: async (clientData: any) => {
-    try {
-      // Implementation for tests
-      console.log('Creating client:', clientData);
-      return 'mock-client-id';
-    } catch (error) {
-      console.error('Error in createClient:', error);
-      throw error;
-    }
-  },
 
   approveAdhesion: async (clientId: string, adminId: string) => {
     try {
@@ -63,9 +51,7 @@ export const clientService = {
       console.error('Error in approveAdhesion:', error);
       throw error;
     }
-  },
-  
-  // add other client service methods here
+  }
 };
 
 // Export for backward compatibility with tests
