@@ -1,209 +1,158 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, AlertCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Building, Loader2, Check } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import { supabase } from '@/integrations/supabase/client';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+import { AdhesionRequest } from '@/types/adhesionTypes';
 
-export default function SfdSelector() {
-  const [sfds, setSfds] = useState<any[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface SfdSelectorProps {
+  pendingRequests: AdhesionRequest[];
+}
+
+const SfdSelector: React.FC<SfdSelectorProps> = ({ pendingRequests = [] }) => {
   const navigate = useNavigate();
-  const { user, activeSfd, setActiveSfd } = useAuth();
-  const { toast } = useToast();
+  const { user } = useAuth();
+  const { 
+    sfdData, 
+    activeSfdId, 
+    setActiveSfdId, 
+    isLoading 
+  } = useSfdDataAccess();
+  
+  const [selectedSfd, setSelectedSfd] = useState<string | null>(activeSfdId);
   
   useEffect(() => {
-    const loadSfds = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const { data: sfdsData } = await supabase
-          .from('sfds')
-          .select('*')
-          .eq('status', 'active')
-          .order('name');
-        
-        if (sfdsData) {
-          setSfds(sfdsData);
-        }
-        
-        // Load user's pending adhesion requests
-        if (user?.id) {
-          const { data: requestsData, error: requestsError } = await supabase
-            .from('client_adhesion_requests')
-            .select('*')
-            .eq('user_id', user.id)
-            .in('status', ['pending', 'in_review', 'verification_pending']);
-            
-          if (!requestsError && requestsData) {
-            setPendingRequests(requestsData);
-          }
-        }
-      } catch (err) {
-        console.error('Error loading SFDs:', err);
-        setError(err instanceof Error ? err.message : "Failed to fetch SFDs");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadSfds();
-  }, [user]);
-  
-  const handleSfdSelect = async (sfd: any) => {
-    if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour sélectionner une SFD",
-        variant: "destructive",
-      });
-      return;
+    if (activeSfdId) {
+      setSelectedSfd(activeSfdId);
     }
+  }, [activeSfdId]);
+
+  const handleSelect = (sfdId: string) => {
+    setSelectedSfd(sfdId);
+  };
+
+  const handleSwitchSfd = async () => {
+    if (!selectedSfd || selectedSfd === activeSfdId) return;
     
     try {
-      setActiveSfd(sfd);
-      
-      toast({
-        title: "SFD sélectionnée",
-        description: `Vous avez sélectionné ${sfd.name} comme SFD active`,
-      });
-      
-      navigate('/mobile-flow/home');
-    } catch (err) {
-      console.error("Error setting active SFD:", err);
-      toast({
-        title: "Erreur",
-        description: "Impossible de sélectionner cette SFD",
-        variant: "destructive",
-      });
+      setActiveSfdId(selectedSfd);
+      navigate('/mobile-flow/dashboard');
+    } catch (error) {
+      console.error('Error switching SFD:', error);
     }
   };
-  
-  const handleJoinSfd = () => {
-    navigate('/mobile-flow/sfd-join');
+
+  // Check if a pending request exists for a specific SFD
+  const isPending = (sfdId: string) => {
+    return pendingRequests.some(req => req.sfd_id === sfdId);
   };
-  
+
+  // Format the status badge for an SFD
+  const getSfdStatusBadge = (sfdId: string) => {
+    const pending = isPending(sfdId);
+    
+    if (pending) {
+      return (
+        <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full">
+          En attente
+        </span>
+      );
+    }
+    
+    if (sfdId === activeSfdId) {
+      return (
+        <span className="text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded-full flex items-center">
+          <Check className="h-3 w-3 mr-1" />
+          Actif
+        </span>
+      );
+    }
+    
+    return null;
+  };
+
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center p-6">
-          Chargement des SFD...
+      <Card className="w-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Sélectionnez une SFD</CardTitle>
+        </CardHeader>
+        <CardContent className="pb-4">
+          <div className="space-y-2">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
         </CardContent>
       </Card>
     );
   }
-  
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="p-4">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4 mr-2" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
-  
+
   return (
     <Card className="w-full">
-      <CardContent className="p-4">
-        <h2 className="text-lg font-semibold mb-4">
-          Sélectionnez votre SFD
-        </h2>
-        
-        {sfds.length === 0 ? (
-          <Alert variant="info">
-            <AlertCircle className="h-4 w-4 mr-2" />
-            <AlertDescription>
-              Aucune SFD active trouvée.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <div className="space-y-3">
-            {sfds.map((sfd) => (
-              <div key={sfd.id} className="border rounded-md">
-                <div className="flex items-center justify-between p-3">
-                  <div>
-                    <h3 className="text-sm font-medium">{sfd.name}</h3>
-                    <p className="text-xs text-gray-500">{sfd.description}</p>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">Sélectionnez une SFD</CardTitle>
+      </CardHeader>
+      <CardContent className="pb-4">
+        {sfdData && sfdData.length > 0 ? (
+          <>
+            <div className="space-y-2">
+              {sfdData.map(sfd => (
+                <div 
+                  key={sfd.id}
+                  className={cn(
+                    'p-3 border rounded-lg cursor-pointer flex items-center justify-between',
+                    selectedSfd === sfd.id 
+                      ? 'border-[#0D6A51] bg-[#0D6A51]/5' 
+                      : 'hover:bg-gray-50'
+                  )}
+                  onClick={() => handleSelect(sfd.id)}
+                >
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
+                      {sfd.logo_url ? (
+                        <img src={sfd.logo_url} alt={sfd.name} className="w-6 h-6 rounded-full object-cover" />
+                      ) : (
+                        <Building className="h-4 w-4 text-gray-500" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{sfd.name}</p>
+                      <p className="text-xs text-gray-500">{sfd.region || sfd.code}</p>
+                    </div>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleSfdSelect(sfd)}
-                  >
-                    {activeSfd?.id === sfd.id ? (
-                      <>
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Sélectionnée
-                      </>
-                    ) : (
-                      "Sélectionner"
-                    )}
-                  </Button>
+                  {getSfdStatusBadge(sfd.id)}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            
+            <Button 
+              className="w-full mt-4 bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+              disabled={!selectedSfd || selectedSfd === activeSfdId}
+              onClick={handleSwitchSfd}
+            >
+              Basculer vers cette SFD
+            </Button>
+          </>
+        ) : (
+          <div className="text-center py-4">
+            <Building className="h-10 w-10 mx-auto text-gray-400 mb-2" />
+            <p className="text-sm text-gray-600 mb-4">Vous n'êtes associé à aucune SFD</p>
+            <Button 
+              className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+              onClick={() => navigate('/sfd-selector')}
+            >
+              Trouver une SFD
+            </Button>
           </div>
         )}
-        
-        <Separator className="my-4" />
-        
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="pending-requests">
-            <AccordionTrigger>
-              Demandes d'adhésion en attente ({pendingRequests.length})
-            </AccordionTrigger>
-            <AccordionContent>
-              {pendingRequests.length === 0 ? (
-                <p className="text-sm text-gray-500">
-                  Aucune demande en attente pour le moment.
-                </p>
-              ) : (
-                <ul className="list-none p-0">
-                  {pendingRequests.map((request) => (
-                    <li key={request.id} className="py-2 border-b last:border-b-0">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">{request.full_name}</p>
-                          <p className="text-xs text-gray-500">
-                            SFD: {request.sfd_id} - Statut: {request.status}
-                          </p>
-                        </div>
-                        <Badge variant="secondary">{request.status}</Badge>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-        
-        <Button 
-          variant="secondary" 
-          className="w-full mt-4"
-          onClick={handleJoinSfd}
-        >
-          Rejoindre une SFD
-        </Button>
       </CardContent>
     </Card>
   );
-}
+};
+
+export default SfdSelector;

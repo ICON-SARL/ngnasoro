@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -98,9 +99,9 @@ const ClientsManagement = () => {
                 <Clock className="h-4 w-4 mr-2" />
                 En attente
               </TabsTrigger>
-              <TabsTrigger value="verification" className="flex items-center justify-center">
+              <TabsTrigger value="validated" className="flex items-center justify-center">
                 <CheckCircle className="h-4 w-4 mr-2" />
-                En vérification
+                Validés
               </TabsTrigger>
               <TabsTrigger value="active" className="flex items-center justify-center">
                 <XCircle className="h-4 w-4 mr-2" />
@@ -124,9 +125,9 @@ const ClientsManagement = () => {
               />
             </TabsContent>
             
-            <TabsContent value="verification" className="p-0">
+            <TabsContent value="validated" className="p-0">
               <ClientList 
-                clients={filteredClients.filter(client => client.status === 'verification_pending')}
+                clients={filteredClients.filter(client => client.status === 'validated')}
                 isLoading={isLoading}
                 onViewClient={handleViewClient} 
               />
