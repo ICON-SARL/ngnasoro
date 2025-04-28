@@ -43,7 +43,7 @@ serve(async (req) => {
     }
 
     // Parse the request body
-    const { action, sfdId, clientId, clientData, validatedBy, rejectionReason, searchTerm, status } = await req.json();
+    const { action, sfdId, clientId, clientData, validatedBy, rejectionReason, searchTerm = '', status } = await req.json();
 
     // Check if the user has permission to manage this SFD's clients
     // For simplicity, we'll just check if the user exists for now
@@ -73,7 +73,9 @@ serve(async (req) => {
         }
         
         if (searchTerm) {
-          query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
+          query = query.or(
+            `full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,client_code.ilike.%${searchTerm}%`
+          );
         }
         
         const { data: clients, error: clientsError } = await query;
