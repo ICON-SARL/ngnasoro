@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -6,16 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { SfdClient } from '@/types/sfdClients';
 import { useNavigate } from 'react-router-dom';
 
-interface ClientsResponse {
-  clients: SfdClient[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
-}
-
 export function useSfdClientManagement() {
   const { activeSfdId, user } = useAuth();
   const { toast } = useToast();
@@ -23,6 +14,12 @@ export function useSfdClientManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const navigate = useNavigate();
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalClients, setTotalClients] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const { data: clients = [], isLoading, error } = useQuery({
     queryKey: ['sfd-clients', activeSfdId, searchTerm, statusFilter],
@@ -43,6 +40,18 @@ export function useSfdClientManagement() {
         });
         
         if (error) throw error;
+        
+        // Update pagination data based on returned clients
+        if (Array.isArray(data)) {
+          setTotalClients(data.length);
+          setTotalPages(Math.ceil(data.length / itemsPerPage));
+          
+          // Apply client-side pagination (could be moved to server-side later)
+          const start = (currentPage - 1) * itemsPerPage;
+          const end = start + itemsPerPage;
+          return data.slice(start, end);
+        }
+        
         return data || [];
       } catch (err) {
         console.error('Error fetching clients:', err);
@@ -191,6 +200,11 @@ export function useSfdClientManagement() {
       throw error;
     }
   };
+  
+  // Add refetch function to manually refresh data
+  const refetch = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['sfd-clients', activeSfdId, searchTerm, statusFilter] });
+  };
 
   return {
     clients,
@@ -200,6 +214,19 @@ export function useSfdClientManagement() {
     setSearchTerm,
     statusFilter,
     setStatusFilter,
-    createClient
+    createClient,
+    validateClient,
+    rejectClient,
+    deleteClient,
+    getClientDetails,
+    // Pagination properties
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
+    setItemsPerPage,
+    totalClients,
+    totalPages,
+    // Manual refetch
+    refetch
   };
 }
