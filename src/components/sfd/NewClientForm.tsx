@@ -74,7 +74,7 @@ export function NewClientForm({ onSuccess }: NewClientFormProps) {
       };
       
       await createClient.mutateAsync(clientData);
-      reset();
+      form.reset();
       toast({
         title: 'Client créé avec succès',
         description: 'Le nouveau client a été ajouté à votre SFD',
