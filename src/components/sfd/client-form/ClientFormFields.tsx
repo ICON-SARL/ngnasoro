@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFormContext } from 'react-hook-form';
 import { ClientFormData } from './types';
+import PhoneNumberInput from '@/components/mobile/profile/sfd-accounts/PhoneNumberInput';
 
 export function ClientFormFields() {
   const form = useFormContext<ClientFormData>();
@@ -39,15 +40,25 @@ export function ClientFormFields() {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="phone">Téléphone</Label>
-          <Input
-            id="phone"
-            placeholder="Ex: +223 XXXXXXXX"
-            {...form.register('phone')}
+          <PhoneNumberInput
+            value={form.watch('phone') || ''}
+            onChange={(e) => form.setValue('phone', e.target.value, { shouldValidate: true })}
+            onValidationChange={(isValid) => {
+              if (!isValid && form.getValues('phone')) {
+                form.setError('phone', { 
+                  message: 'Le numéro doit être au format malien (+223 6X/7X XX XX XX)' 
+                });
+              } else {
+                form.clearErrors('phone');
+              }
+            }}
           />
+          {form.formState.errors.phone && (
+            <p className="text-sm text-red-500">{form.formState.errors.phone.message}</p>
+          )}
         </div>
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="address">Adresse</Label>
         <Input

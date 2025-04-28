@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSfdClientManagement } from '@/hooks/useSfdClientManagement';
 import { clientFormSchema, ClientFormData } from './types';
 import { ClientLookupResult } from '@/utils/client-code/lookup';
+import { normalizeMaliPhoneNumber } from '@/lib/constants';
 
 export function useClientForm(onSuccess: () => void) {
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ export function useClientForm(onSuccess: () => void) {
       const clientData = {
         ...data,
         full_name: data.full_name,
+        phone: data.phone ? normalizeMaliPhoneNumber(data.phone) : undefined,
         user_id: foundUserId
       };
       
