@@ -53,7 +53,13 @@ export function NewClientForm({ onSuccess }: NewClientFormProps) {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      await createClient.mutateAsync(data);
+      // Ensure full_name is definitely assigned
+      const clientData = {
+        ...data,
+        full_name: data.full_name || 'Client' // Provide default if empty
+      };
+      
+      await createClient.mutateAsync(clientData);
       reset();
       toast({
         title: 'Client créé avec succès',
