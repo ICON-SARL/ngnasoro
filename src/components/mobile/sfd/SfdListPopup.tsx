@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
+import { AdhesionRequest } from '@/types/adhesionTypes';
 
 interface SfdListPopupProps {
   isOpen: boolean;
@@ -19,11 +20,6 @@ interface Sfd {
   name: string;
   region?: string;
   logo_url?: string;
-}
-
-interface AdhesionRequest {
-  sfd_id: string;
-  status: string;
 }
 
 const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
@@ -67,17 +63,15 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
         const sortedSfds = sortPrioritySfds(availableSfds);
         setSfds(sortedSfds);
         
-        // Fetch user's adhesion requests
+        // Fetch user's adhesion requests using RPC
         if (user?.id) {
           const { data: requestsData, error: requestsError } = await supabase
-            .from('client_adhesion_requests')
-            .select('sfd_id, status')
-            .eq('user_id', user.id);
+            .rpc('get_adhesion_request_by_user', { user_id_param: user.id });
             
           if (requestsError) {
             console.error('Error fetching adhesion requests:', requestsError);
           } else {
-            setAdhesionRequests(requestsData || []);
+            setAdhesionRequests(requestsData as AdhesionRequest[] || []);
           }
         }
       } catch (err: any) {
@@ -120,17 +114,17 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
     try {
       console.log("Handling retry for SFD:", sfdId);
       
-      // Supprimer l'ancienne demande rejetée
-      const { error: deleteError } = await supabase
-        .from('client_adhesion_requests')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('sfd_id', sfdId)
-        .eq('status', 'rejected');
+      // Supprimer l'ancienne demande rejetée en utilisant l'RPC
+      const { data, error } = await supabase.functions.invoke('handle-adhesion-retry', {
+        body: { 
+          userId: user.id,
+          sfdId: sfdId
+        }
+      });
         
-      if (deleteError) {
-        console.error('Erreur lors de la suppression de l\'ancienne demande:', deleteError);
-        throw deleteError;
+      if (error) {
+        console.error('Erreur lors de la suppression de l\'ancienne demande:', error);
+        throw error;
       }
       
       console.log('Demande rejetée supprimée avec succès');

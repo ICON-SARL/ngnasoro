@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AvailableSfd } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
+import { AdhesionRequest } from '@/types/adhesionTypes';
 
 export function useAvailableSfds(userId?: string) {
   const [availableSfds, setAvailableSfds] = useState<AvailableSfd[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<AdhesionRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -50,18 +51,17 @@ export function useAvailableSfds(userId?: string) {
         
         // Récupérer les demandes d'adhésion en attente
         const { data: requests, error: requestsError } = await supabase
-          .from('client_adhesion_requests')
-          .select('sfd_id, status')
-          .eq('user_id', userId);
+          .rpc('get_adhesion_request_by_user', { user_id_param: userId });
           
         if (requestsError) {
           console.error('Error fetching adhesion requests:', requestsError);
         } else {
-          pendingSfdIds = requests
-            ?.filter(req => req.status === 'pending')
+          const typedRequests = requests as AdhesionRequest[];
+          pendingSfdIds = typedRequests
+            .filter(req => req.status === 'pending')
             .map(req => req.sfd_id) || [];
           console.log('Pending adhesion requests:', pendingSfdIds.length);
-          setPendingRequests(requests?.filter(req => req.status === 'pending') || []);
+          setPendingRequests(typedRequests.filter(req => req.status === 'pending') || []);
         }
       }
       
@@ -73,7 +73,7 @@ export function useAvailableSfds(userId?: string) {
       ) || [];
       
       console.log('Available SFDs after filtering:', availableSfdsFiltered.length);
-      setAvailableSfds(availableSfdsFiltered);
+      setAvailableSfds(availableSfdsFiltered as AvailableSfd[]);
       
       // Si aucune SFD n'est disponible et en mode dev, ajouter des SFDs de test
       if (availableSfdsFiltered.length === 0 && process.env.NODE_ENV !== 'production') {
@@ -139,18 +139,19 @@ export function useAvailableSfds(userId?: string) {
       const phone = phoneNumber || userData?.phone || null;
       
       // Create the adhesion request with required full_name field
+      // Using RPC function to create client adhesion request
       const { data, error } = await supabase
-        .from('client_adhesion_requests')
-        .insert({
-          user_id: userId,
-          sfd_id: sfdId,
-          status: 'pending',
-          full_name: fullName,
-          email: email,
-          phone: phone,
-          reference_number: `ADH-${Date.now().toString().substring(6)}`
-        })
-        .select();
+        .rpc('create_client_adhesion_request', {
+          adhesion_data: {
+            user_id: userId,
+            sfd_id: sfdId,
+            status: 'pending',
+            full_name: fullName,
+            email: email,
+            phone: phone,
+            reference_number: `ADH-${Date.now().toString().substring(6)}`
+          }
+        });
         
       if (error) {
         console.error('Error creating adhesion request:', error);

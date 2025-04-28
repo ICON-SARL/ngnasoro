@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
-import { AdhesionRequestInput, ClientAdhesionRequest } from '@/types/adhesionRequests';
+import { AdhesionRequestInput, ClientAdhesionRequest } from '@/types/adhesionTypes';
 import { useState } from 'react';
 
 export function useClientAdhesions() {
@@ -93,7 +93,7 @@ export function useClientAdhesions() {
         return [];
       }
       
-      return data;
+      return data as ClientAdhesionRequest[];
     },
     enabled: !!user?.id,
   });

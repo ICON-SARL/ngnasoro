@@ -111,32 +111,36 @@ const ClientsManagement = () => {
             
             <TabsContent value="all" className="mt-0">
               <ClientList 
-                filteredClients={displayedClients} 
+                clients={displayedClients} 
                 isLoading={isLoading} 
+                status="all"
                 onViewClient={handleViewClient}
               />
             </TabsContent>
             
             <TabsContent value="pending" className="mt-0">
               <ClientList 
-                filteredClients={displayedClients} 
+                clients={displayedClients}
                 isLoading={isLoading} 
+                status="pending"
                 onViewClient={handleViewClient}
               />
             </TabsContent>
             
             <TabsContent value="validated" className="mt-0">
               <ClientList 
-                filteredClients={displayedClients} 
+                clients={displayedClients}
                 isLoading={isLoading} 
+                status="validated"
                 onViewClient={handleViewClient}
               />
             </TabsContent>
             
             <TabsContent value="rejected" className="mt-0">
               <ClientList 
-                filteredClients={displayedClients} 
+                clients={displayedClients}
                 isLoading={isLoading} 
+                status="rejected"
                 onViewClient={handleViewClient}
               />
             </TabsContent>

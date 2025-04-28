@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +18,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Loader } from '@/components/ui/loader';
 import { useClientAdhesions } from '@/hooks/useClientAdhesions'; 
+import { AdhesionRequestInput } from '@/types/adhesionTypes';
 
 // Form validation schema
 const formSchema = z.object({
@@ -72,7 +74,20 @@ export default function JoinSfdButton({ sfdId, sfdName, onSuccess }: JoinSfdButt
     }
 
     try {
-      const result = await submitAdhesionRequest(sfdId, values);
+      // Ensure values conform to AdhesionRequestInput type
+      const requestData: AdhesionRequestInput = {
+        full_name: values.full_name, // This is required
+        email: values.email,
+        phone: values.phone,
+        address: values.address,
+        profession: values.profession,
+        monthly_income: values.monthly_income,
+        source_of_income: values.source_of_income,
+        id_number: values.id_number,
+        id_type: values.id_type
+      };
+      
+      const result = await submitAdhesionRequest(sfdId, requestData);
       
       if (result.success) {
         setIsOpen(false);

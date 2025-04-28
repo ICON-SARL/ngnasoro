@@ -1,210 +1,66 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
 serve(async (req) => {
+  // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const { userId } = await req.json()
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error("Missing environment variables");
-    }
+    // Create a Supabase client with the service role key
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Parse request body
-    const body = await req.json().catch(() => ({}));
-    const { userId, action, sfdId } = body;
-    
-    console.log(`Fetching SFDs for userId: ${userId || 'not provided'}, action: ${action || 'none'}, sfdId: ${sfdId || 'none'}`);
-    
-    // Handle special actions
-    if (action === 'setDefault' && userId && sfdId) {
-      try {
-        // Reset all default flags for this user
-        await supabase
-          .from('user_sfds')
-          .update({ is_default: false })
-          .eq('user_id', userId);
-        
-        // Set the selected SFD as default
-        await supabase
-          .from('user_sfds')
-          .update({ is_default: true })
-          .eq('user_id', userId)
-          .eq('sfd_id', sfdId);
-        
-        return new Response(
-          JSON.stringify({ success: true }),
-          { 
-            status: 200, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      } catch (actionError) {
-        console.error('Error setting default SFD:', actionError);
-        throw actionError;
-      }
-    }
-    
-    // Fetch only real SFDs from DB (exclude test data)
-    console.log('Fetching SFDs with status filter: "active"');
-    const { data: activeSfds, error: sfdsError } = await supabase
+    // Fetch active SFDs
+    const { data: sfdsData, error: sfdsError } = await supabaseAdmin
       .from('sfds')
-      .select(`
-        id,
-        name,
-        code,
-        region,
-        status,
-        logo_url
-      `)
+      .select('id, name, region, logo_url, code')
       .eq('status', 'active')
-      .not('code', 'ilike', '%test%'); // Exclude test SFDs
-      
+      .order('name')
+
     if (sfdsError) {
-      console.error('Error fetching SFDs:', sfdsError);
-      throw sfdsError;
-    }
-    
-    console.log(`Found ${activeSfds?.length || 0} active real SFDs in database`);
-    
-    // Si aucune SFD active, log explicite
-    if (!activeSfds || activeSfds.length === 0) {
-      console.log('ATTENTION: Aucune SFD avec le statut "active" n\'a été trouvée dans la base de données.');
-    } else {
-      // Log les SFDs actives trouvées
-      console.log('SFDs actives trouvées:', activeSfds.map(sfd => `${sfd.name} (${sfd.id}) - status: ${sfd.status}`));
-    }
-    
-    // Get SFDs that have associated admins to ensure they're valid for clients
-    const { data: sfdsWithAdmins, error: adminsError } = await supabase
-      .from('user_sfds')
-      .select(`
-        sfd_id,
-        user:user_id (
-          id,
-          roles:user_roles(role)
-        )
-      `)
-      .order('created_at', { ascending: false });
-    
-    if (adminsError) {
-      console.error('Error fetching SFD admins:', adminsError);
-      // Continue with just active SFDs if there's an error
-    }
-    
-    // Filter to only include SFDs with admin users
-    const validSfdIds = new Set();
-    
-    if (sfdsWithAdmins && sfdsWithAdmins.length > 0) {
-      console.log('SFDs with admin associations found:', sfdsWithAdmins.length);
-      
-      sfdsWithAdmins.forEach(item => {
-        // Check if user has sfd_admin role
-        const hasAdminRole = item.user?.roles?.some(
-          (r: any) => r.role === 'sfd_admin' || r.role === 'admin'
-        );
-        
-        if (hasAdminRole && item.sfd_id) {
-          validSfdIds.add(item.sfd_id);
-          console.log(`SFD ${item.sfd_id} has admin association with user ${item.user?.id}`);
-        }
-      });
-      
-      console.log(`Found ${validSfdIds.size} SFDs with admin associations`);
-    }
-    
-    // If we found valid SFDs with admins, filter active SFDs to only include those
-    let validSfds = activeSfds;
-    if (validSfdIds.size > 0) {
-      validSfds = activeSfds.filter(sfd => validSfdIds.has(sfd.id));
-      console.log(`Filtered to ${validSfds.length} active SFDs with admins`);
+      throw sfdsError
     }
 
-    // If no valid SFDs found and we're in development, provide test data
-    // But ONLY if we're in development environment
-    const isDevEnvironment = Deno.env.get('ENVIRONMENT') === 'development';
-    
-    if ((!validSfds || validSfds.length === 0) && isDevEnvironment) {
-      console.log('No valid SFDs found, returning test data for development only');
-      return new Response(
-        JSON.stringify([
-          {
-            id: 'test-sfd1',
-            name: 'RMCR (Test)',
-            code: 'RMCR',
-            region: 'Centre',
-            status: 'active',
-            logo_url: null
-          },
-          {
-            id: 'test-sfd2',
-            name: 'NYESIGISO (Test)',
-            code: 'NYESIGISO',
-            region: 'Sud',
-            status: 'active',
-            logo_url: null
-          }
-        ]),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-    
-    // Fallback: If still no valid SFDs, use all active SFDs
-    if (!validSfds || validSfds.length === 0) {
-      console.log('No valid SFDs with admins found, using all active SFDs as fallback');
-      validSfds = activeSfds;
-    }
+    let filteredSfds = sfdsData
 
-    // Format SFDs data for response
-    const formattedSfds = validSfds.map(sfd => ({
-      id: sfd.id,
-      name: sfd.name,
-      code: sfd.code,
-      region: sfd.region,
-      status: sfd.status,
-      logo_url: sfd.logo_url
-    }));
+    // If userId is provided, filter out SFDs the user is already associated with
+    if (userId) {
+      // Get user's existing SFD associations
+      const { data: existingAssociations, error: associationError } = await supabaseAdmin
+        .from('user_sfds')
+        .select('sfd_id')
+        .eq('user_id', userId)
 
-    // Sort SFDs to prioritize RMCR
-    const sortedSfds = formattedSfds.sort((a, b) => {
-      if (a.name.toLowerCase().includes('rmcr')) return -1;
-      if (b.name.toLowerCase().includes('rmcr')) return 1;
-      return a.name.localeCompare(b.name);
-    });
-
-    console.log(`Returning ${sortedSfds.length} SFDs to client`);
-    
-    return new Response(
-      JSON.stringify(sortedSfds),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      if (associationError) {
+        console.error('Error fetching user SFD associations:', associationError)
+      } else {
+        // Filter out SFDs the user already has
+        const existingSfdIds = existingAssociations?.map(ea => ea.sfd_id) || []
+        filteredSfds = sfdsData.filter(sfd => !existingSfdIds.includes(sfd.id))
       }
-    );
-    
+    }
+
+    return new Response(
+      JSON.stringify(filteredSfds),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+    )
   } catch (error) {
-    console.error('Error processing request:', error);
+    console.error('Error fetching SFDs:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    )
   }
-});
+})

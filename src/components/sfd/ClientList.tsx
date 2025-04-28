@@ -17,14 +17,14 @@ import { SfdClient } from '@/types/sfdClients';
 interface ClientListProps {
   clients: SfdClient[];
   isLoading: boolean;
-  status: string;
+  status?: string;
   onViewClient?: (client: SfdClient) => void;
 }
 
 export const ClientList: React.FC<ClientListProps> = ({ 
   clients,
   isLoading,
-  status,
+  status = 'all',
   onViewClient 
 }) => {
   if (isLoading) {
