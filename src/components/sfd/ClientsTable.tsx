@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +11,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Loader } from '@/components/ui/loader';
 import { Eye, Search, ArrowUpDown, Users } from 'lucide-react';
-import ClientDetailsView from './client-details/ClientDetailsView';
 import { useNavigate } from 'react-router-dom';
 
 export const ClientsTable: React.FC = () => {
@@ -57,15 +57,6 @@ export const ClientsTable: React.FC = () => {
   const handleViewClient = (clientId: string) => {
     navigate(`/sfd-clients/${clientId}`);
   };
-  
-  if (selectedClient) {
-    return (
-      <ClientDetailsView 
-        client={selectedClient} 
-        onClose={() => setSelectedClient(null)} 
-      />
-    );
-  }
   
   return (
     <div className="space-y-4">
