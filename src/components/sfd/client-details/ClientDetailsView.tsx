@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import ClientAccountDetails from '../client-accounts/ClientAccountDetails';
+import { useClientAccountOperations } from '@/hooks/useClientAccountOperations';
 
 interface ClientDetailsViewProps {
   client: SfdClient;
@@ -34,32 +35,31 @@ const ClientDetailsView: React.FC<ClientDetailsViewProps> = ({ client, onClose }
   
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active':
-        return <Badge className="bg-green-100 text-green-800">Actif</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">En attente</Badge>;
-      case 'suspended':
-        return <Badge className="bg-red-100 text-red-800">Suspendu</Badge>;
       case 'validated':
-        return <Badge className="bg-blue-100 text-blue-800">Validé</Badge>;
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Validé</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">En attente</Badge>;
       case 'rejected':
-        return <Badge className="bg-gray-100 text-gray-800">Rejeté</Badge>;
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejeté</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   };
   
   const handleValidateClient = async () => {
+    if (!client || !client.id) return;
     await validateClient.mutateAsync({ clientId: client.id });
     onClose();
   };
   
   const handleRejectClient = async () => {
+    if (!client || !client.id) return;
     await rejectClient.mutateAsync({ clientId: client.id });
     onClose();
   };
   
   const handleDeleteClient = async () => {
+    if (!client || !client.id) return;
     await deleteClient.mutateAsync(client.id);
     setShowDeleteConfirm(false);
     onClose();
@@ -77,7 +77,7 @@ const ClientDetailsView: React.FC<ClientDetailsViewProps> = ({ client, onClose }
             {getStatusBadge(client.status)}
             
             <span className="text-sm text-gray-500">
-              Client depuis {format(new Date(client.created_at), 'PP', { locale: fr })}
+              Client depuis {client.created_at ? format(new Date(client.created_at), 'PP', { locale: fr }) : '-'}
             </span>
           </div>
         </div>
@@ -170,7 +170,7 @@ const ClientDetailsView: React.FC<ClientDetailsViewProps> = ({ client, onClose }
                   <p className="text-xs font-medium text-gray-500">Date d'inscription</p>
                   <p className="font-medium flex items-center">
                     <Calendar className="h-3.5 w-3.5 mr-1 text-gray-400" />
-                    {format(new Date(client.created_at), 'PPP', { locale: fr })}
+                    {client.created_at ? format(new Date(client.created_at), 'PPP', { locale: fr }) : '-'}
                   </p>
                 </div>
               </div>

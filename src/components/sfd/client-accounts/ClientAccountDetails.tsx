@@ -1,141 +1,220 @@
 
 import React, { useState } from 'react';
-import { useClientAccountOperations } from '@/hooks/useClientAccountOperations';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wallet, ArrowUpDown, History, TrendingUp, CreditCard, Plus, Minus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Loader2, ArrowDownUp, Plus, Minus, RefreshCcw, Clock } from 'lucide-react';
+import { useClientAccountOperations } from '@/hooks/useClientAccountOperations';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import AccountOperationDialog from './AccountOperationDialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ClientAccountDetailsProps {
   clientId: string;
   clientName: string;
 }
 
-const ClientAccountDetails: React.FC<ClientAccountDetailsProps> = ({ 
-  clientId, 
-  clientName
-}) => {
-  const [isOperationDialogOpen, setIsOperationDialogOpen] = useState(false);
+const ClientAccountDetails: React.FC<ClientAccountDetailsProps> = ({ clientId, clientName }) => {
+  const [amount, setAmount] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
   const [operationType, setOperationType] = useState<'credit' | 'debit'>('credit');
-  const { balance, currency, isLoading, refetchBalance, transactions, isLoadingTransactions } = useClientAccountOperations(clientId);
 
-  const handleOpenOperationDialog = (type: 'credit' | 'debit') => {
-    setOperationType(type);
-    setIsOperationDialogOpen(true);
+  const {
+    balance,
+    currency,
+    isLoading,
+    transactions,
+    isLoadingTransactions,
+    creditAccount,
+    refetchBalance
+  } = useClientAccountOperations(clientId);
+
+  const handleOperation = async () => {
+    if (!amount || isNaN(Number(amount))) return;
+    
+    const amountValue = Number(amount);
+    if (amountValue <= 0) return;
+    
+    // Pour un débit, nous passons un montant négatif
+    const finalAmount = operationType === 'credit' ? amountValue : -amountValue;
+    
+    try {
+      await creditAccount.mutateAsync({
+        amount: finalAmount,
+        description: description || (operationType === 'credit' ? `Crédit manuel` : `Débit manuel`)
+      });
+      
+      // Réinitialisation des champs après opération réussie
+      setAmount('');
+      setDescription('');
+    } catch (error) {
+      console.error('Erreur lors de l\'opération:', error);
+    }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: currency || 'FCFA',
+      currencyDisplay: 'symbol',
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+
+  const getTransactionTypeIcon = (type: string) => {
+    if (type === 'deposit') return <Plus className="h-4 w-4 text-green-500" />;
+    if (type === 'withdrawal') return <Minus className="h-4 w-4 text-red-500" />;
+    return <ArrowDownUp className="h-4 w-4 text-gray-500" />;
   };
 
   return (
-    <>
-      <Card className="overflow-hidden border shadow-sm">
-        <CardHeader className="pb-2 bg-gray-50">
-          <CardTitle className="text-lg flex items-center">
-            <CreditCard className="h-5 w-5 mr-2 text-[#0D6A51]" />
-            Compte client
-          </CardTitle>
-          <CardDescription>
-            Gestion du compte de {clientName}
-          </CardDescription>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Solde du compte</CardTitle>
         </CardHeader>
-        
-        <CardContent className="pt-4">
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold">{formatCurrency(balance)}</h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={refetchBalance}
+                  className="text-gray-500"
+                >
+                  <RefreshCcw className="h-4 w-4 mr-1" />
+                  Actualiser
+                </Button>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Compte de {clientName}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Opération sur le compte</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="space-y-4">
-            <div className="rounded-md bg-[#F8F9FC] p-4 border border-[#E5E7EB]">
-              <div className="mb-2 text-sm font-medium text-gray-500">Solde actuel</div>
-              <div className="flex items-center">
-                <div className="text-2xl font-semibold text-[#0D6A51] mr-2">
-                  {isLoading ? (
-                    <div className="animate-pulse h-8 w-32 bg-gray-200 rounded"></div>
-                  ) : (
-                    <>{balance?.toLocaleString('fr-FR')} {currency}</>
-                  )}
-                </div>
-                {!isLoading && balance > 0 && (
-                  <TrendingUp className="h-5 w-5 text-green-600" />
-                )}
+            <div className="flex space-x-4">
+              <Button
+                variant={operationType === 'credit' ? 'default' : 'outline'}
+                onClick={() => setOperationType('credit')}
+                className={operationType === 'credit' ? 'bg-green-600 hover:bg-green-700' : ''}
+                size="sm"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Crédit
+              </Button>
+              <Button
+                variant={operationType === 'debit' ? 'default' : 'outline'}
+                onClick={() => setOperationType('debit')}
+                className={operationType === 'debit' ? 'bg-red-600 hover:bg-red-700' : ''}
+                size="sm"
+              >
+                <Minus className="h-4 w-4 mr-1" />
+                Débit
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label htmlFor="amount" className="text-sm font-medium text-gray-700 mb-1 block">
+                  Montant
+                </label>
+                <Input
+                  id="amount"
+                  type="number"
+                  placeholder="Entrez un montant"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="mb-2"
+                />
               </div>
-              <div className="mt-1 text-xs text-gray-500 flex items-center">
-                <History className="h-3 w-3 mr-1" />
-                Dernière mise à jour: {format(new Date(), 'PPP', { locale: fr })}
+
+              <div>
+                <label htmlFor="description" className="text-sm font-medium text-gray-700 mb-1 block">
+                  Description (optionnel)
+                </label>
+                <Input
+                  id="description"
+                  placeholder="Description de l'opération"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={() => handleOpenOperationDialog('credit')}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                      variant="default"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Crédit
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Ajouter des fonds au compte client</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={() => handleOpenOperationDialog('debit')}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                      variant="default"
-                    >
-                      <Minus className="mr-2 h-4 w-4" />
-                      Débit
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Retirer des fonds du compte client</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            
-            {transactions && transactions.length > 0 ? (
-              <div className="mt-4">
-                <h4 className="text-sm font-medium mb-2">Transactions récentes</h4>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {transactions.map((tx: any) => (
-                    <div key={tx.id} className="p-2 bg-gray-50 rounded-md border border-gray-100 text-sm">
-                      <div className="flex justify-between">
-                        <div className="font-medium">{tx.name}</div>
-                        <div className={tx.type === 'deposit' ? 'text-green-600' : 'text-red-600'}>
-                          {tx.type === 'deposit' ? '+' : '-'}{tx.amount.toLocaleString('fr-FR')} {tx.currency || 'FCFA'}
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-500 flex justify-between mt-1">
-                        <span>{tx.description}</span>
-                        <span>{new Date(tx.created_at).toLocaleDateString('fr-FR')}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : !isLoadingTransactions ? (
-              <div className="text-center py-2 text-sm text-gray-500">Aucune transaction</div>
-            ) : null}
+            <Button
+              className={operationType === 'credit' ? 'bg-green-600 hover:bg-green-700 w-full' : 'bg-red-600 hover:bg-red-700 w-full'}
+              onClick={handleOperation}
+              disabled={!amount || isNaN(Number(amount)) || creditAccount.isPending}
+            >
+              {creditAccount.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {operationType === 'credit' ? 'Créditer le compte' : 'Débiter le compte'}
+            </Button>
           </div>
         </CardContent>
-
-        <AccountOperationDialog 
-          isOpen={isOperationDialogOpen}
-          onClose={() => setIsOperationDialogOpen(false)}
-          clientId={clientId}
-          clientName={clientName}
-          onOperationComplete={refetchBalance}
-          defaultType={operationType}
-        />
       </Card>
-    </>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Transactions récentes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoadingTransactions ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-6">
+              <Clock className="h-8 w-8 mx-auto text-gray-300 mb-2" />
+              <p className="text-gray-500">Aucune transaction récente</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {transactions.map((tx: any) => (
+                <div
+                  key={tx.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-gray-100 rounded-full">
+                      {getTransactionTypeIcon(tx.type)}
+                    </div>
+                    <div>
+                      <p className="font-medium">{tx.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {format(new Date(tx.created_at), 'PPp', { locale: fr })}
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <p
+                      className={`font-semibold ${
+                        tx.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
+                      {tx.type === 'deposit' ? '+' : '-'}
+                      {formatCurrency(tx.amount)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

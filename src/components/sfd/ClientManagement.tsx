@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -90,7 +89,7 @@ export const ClientManagement = () => {
           variant="outline" 
           size="sm"
           onClick={() => {
-            navigate(`/client/${info.row.original.id}`);
+            navigate(`/sfd-clients/${info.row.original.id}`);
           }}
         >
           Détails

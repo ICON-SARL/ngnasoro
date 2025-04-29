@@ -70,6 +70,12 @@ export function useClientAccountOperations(clientId: string) {
       refetch();
       queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
       queryClient.invalidateQueries({ queryKey: ['client-transactions', clientId] });
+      
+      toast({
+        title: 'Opération réussie',
+        description: 'Le compte client a été mis à jour avec succès.',
+        variant: 'default',
+      });
     },
     onError: (error: any) => {
       toast({
