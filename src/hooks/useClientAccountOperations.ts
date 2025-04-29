@@ -37,14 +37,16 @@ export function useClientAccountOperations(clientId: string) {
       if (error) throw error;
       return data;
     },
-    enabled: !!clientId,
-    onSuccess: (data) => {
-      if (data) {
-        setBalance(data.balance || 0);
-        setCurrency(data.currency || 'FCFA');
-      }
-    }
+    enabled: !!clientId
   });
+
+  // Update local state when accountData changes
+  useEffect(() => {
+    if (accountData) {
+      setBalance(accountData.balance || 0);
+      setCurrency(accountData.currency || 'FCFA');
+    }
+  }, [accountData]);
 
   // Credit/debit client account
   const creditAccount = useMutation({
