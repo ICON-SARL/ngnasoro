@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -36,6 +35,7 @@ import { UserRole } from '@/hooks/auth/types';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import RoleTestingPage from '@/pages/RoleTestingPage';
 import SplashScreen from '@/components/mobile/SplashScreen';
+import SfdClientDetailPage from '@/pages/SfdClientDetailPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -115,6 +115,14 @@ function App() {
                     <ProtectedRoute requireSfdAdmin={true}>
                       <RoleGuard requiredRole={UserRole.SfdAdmin}>
                         <ClientsPage />
+                      </RoleGuard>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/sfd-clients/:clientId" element={
+                    <ProtectedRoute requireSfdAdmin={true}>
+                      <RoleGuard requiredRole={UserRole.SfdAdmin}>
+                        <SfdClientDetailPage />
                       </RoleGuard>
                     </ProtectedRoute>
                   } />

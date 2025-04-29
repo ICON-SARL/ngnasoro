@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,11 +11,12 @@ import { Badge } from '@/components/ui/badge';
 import { Loader } from '@/components/ui/loader';
 import { Eye, Search, ArrowUpDown, Users } from 'lucide-react';
 import ClientDetailsView from './client-details/ClientDetailsView';
+import { useNavigate } from 'react-router-dom';
 
 export const ClientsTable: React.FC = () => {
   const { activeSfdId } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const navigate = useNavigate();
   
   const { data: clients, isLoading } = useQuery({
     queryKey: ['sfd-clients', activeSfdId],
@@ -54,6 +54,10 @@ export const ClientsTable: React.FC = () => {
     }
   };
 
+  const handleViewClient = (clientId: string) => {
+    navigate(`/sfd-clients/${clientId}`);
+  };
+  
   if (selectedClient) {
     return (
       <ClientDetailsView 
@@ -114,7 +118,7 @@ export const ClientsTable: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setSelectedClient(client)}
+                      onClick={() => handleViewClient(client.id)}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
