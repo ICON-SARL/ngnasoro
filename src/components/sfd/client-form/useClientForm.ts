@@ -65,13 +65,27 @@ export function useClientForm(onSuccess: () => void) {
         title: 'Client créé avec succès',
         description: 'Le nouveau client a été ajouté à votre SFD',
       });
-      navigate('/sfd-clients');
+      
+      // Call the success callback
+      onSuccess();
+      
+      // Optionally navigate to the clients page
+      // navigate('/sfd-clients');
     } catch (error: any) {
-      toast({
-        title: 'Erreur',
-        description: error.message || 'Erreur lors de la création du client',
-        variant: 'destructive',
-      });
+      // Improved error handling for duplicate clients
+      if (error.message && error.message.includes("existe déjà")) {
+        toast({
+          title: 'Client déjà existant',
+          description: error.message || 'Un client avec ces informations existe déjà.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Erreur',
+          description: error.message || 'Erreur lors de la création du client',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }

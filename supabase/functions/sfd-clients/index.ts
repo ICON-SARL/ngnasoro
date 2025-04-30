@@ -103,6 +103,36 @@ serve(async (req) => {
         // If the client has a user_id, they are an existing user being added as a client
         const isExistingUser = !!clientData.user_id;
         
+        // MODIFICATION: Check for client with same email in the same SFD
+        if (clientData.email) {
+          const { data: existingClient, error: checkError } = await supabase
+            .from('sfd_clients')
+            .select('id, full_name, email, status')
+            .eq('email', clientData.email)
+            .eq('sfd_id', sfdId)
+            .maybeSingle();
+            
+          if (checkError) {
+            console.error('Error checking for existing client:', checkError);
+          }
+          
+          // If a client with this email already exists in this SFD, return an error
+          if (existingClient) {
+            return new Response(
+              JSON.stringify({
+                error: "Un client avec cet email existe déjà dans cette SFD",
+                success: false,
+                existingClient: {
+                  id: existingClient.id,
+                  full_name: existingClient.full_name,
+                  status: existingClient.status
+                }
+              }),
+              { headers: { ...corsHeaders }, status: 400 }
+            );
+          }
+        }
+        
         const { data: newClient, error: createError } = await supabase
           .from('sfd_clients')
           .insert({
