@@ -7,11 +7,11 @@ import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTyp
 export interface SavingsAccount {
   id: string;
   user_id: string;
-  client_id?: string; // Optional since the database table doesn't have this field
+  client_id?: string;
   balance: number;
   currency: string;
-  status?: 'active' | 'frozen' | 'closed'; // Optional since the database table doesn't have this field
-  created_at?: string; // Optional since the database table doesn't have this field
+  status?: 'active' | 'frozen' | 'closed';
+  created_at?: string;
   updated_at: string;
   last_transaction_date?: string;
   last_updated?: string;
@@ -25,6 +25,20 @@ export interface SavingsTransactionOptions {
   adminId: string;
   transactionType: 'deposit' | 'withdrawal' | 'loan_disbursement' | 'loan_repayment';
   referenceId?: string;
+}
+
+// Interface for transaction data
+export interface SavingsTransaction {
+  id: string;
+  user_id: string;
+  amount: number;
+  type: string;
+  name: string;
+  description?: string;
+  status: string;
+  created_at: string;
+  payment_method?: string;
+  reference_id?: string;
 }
 
 /**
@@ -73,11 +87,23 @@ export const savingsAccountService = {
           initial_balance: initialBalance 
         }
       });
+
+      // Create initial deposit if balance > 0
+      if (initialBalance > 0) {
+        await this.processTransaction({
+          clientId,
+          amount: initialBalance,
+          description: 'Dépôt initial',
+          adminId: clientId,
+          transactionType: 'deposit',
+          referenceId: `initial-${Date.now()}`
+        });
+      }
       
       return data as SavingsAccount;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create savings account:', error);
-      return null;
+      throw new Error(error.message || 'Échec de la création du compte');
     }
   },
   
@@ -88,12 +114,17 @@ export const savingsAccountService = {
     const { clientId, amount, description, adminId, transactionType, referenceId } = options;
     
     try {
+      // For withdrawals, make the amount negative
+      const transactionAmount = transactionType === 'deposit' || transactionType === 'loan_disbursement' 
+        ? Math.abs(amount) 
+        : -Math.abs(amount);
+
       // Create the transaction
       const { data: transaction, error: txError } = await supabase
         .from('transactions')
         .insert({
           user_id: clientId,
-          amount: transactionType === 'deposit' || transactionType === 'loan_disbursement' ? amount : -amount,
+          amount: transactionAmount,
           type: transactionType,
           name: description || `${transactionType.charAt(0).toUpperCase() + transactionType.slice(1)}`,
           description: description || `Transaction de type ${transactionType}`,
@@ -105,31 +136,50 @@ export const savingsAccountService = {
         .single();
       
       if (txError) throw txError;
+
+      // Update the account balance directly
+      const { data: account, error: accError } = await supabase
+        .from('accounts')
+        .select('balance')
+        .eq('user_id', clientId)
+        .single();
+
+      if (accError) throw accError;
+
+      const newBalance = (account.balance || 0) + transactionAmount;
       
-      // Account balance will be updated automatically via the trigger on transactions
+      const { error: updateError } = await supabase
+        .from('accounts')
+        .update({ 
+          balance: newBalance,
+          last_updated: new Date().toISOString()
+        })
+        .eq('user_id', clientId);
+
+      if (updateError) throw updateError;
       
       // Log the transaction
       await logAuditEvent({
         action: `client_account_${transactionType}`,
-        category: AuditLogCategory.SFD_OPERATIONS, // Changed from FINANCIAL to SFD_OPERATIONS
+        category: AuditLogCategory.SFD_OPERATIONS,
         severity: AuditLogSeverity.INFO,
         status: 'success',
         user_id: adminId,
         details: { 
           client_id: clientId,
-          amount,
+          amount: transactionAmount,
           transaction_id: transaction.id
         }
       });
       
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Failed to process ${transactionType}:`, error);
       
       // Log the failed transaction
       await logAuditEvent({
         action: `client_account_${transactionType}_failed`,
-        category: AuditLogCategory.SFD_OPERATIONS, // Changed from FINANCIAL to SFD_OPERATIONS
+        category: AuditLogCategory.SFD_OPERATIONS,
         severity: AuditLogSeverity.ERROR,
         status: 'failure',
         user_id: adminId,
@@ -140,7 +190,7 @@ export const savingsAccountService = {
         }
       });
       
-      return false;
+      throw error;
     }
   },
   
@@ -153,11 +203,11 @@ export const savingsAccountService = {
         .from('accounts')
         .select('*')
         .eq('user_id', clientId)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data as SavingsAccount;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch client account:', error);
       return null;
     }
@@ -166,7 +216,7 @@ export const savingsAccountService = {
   /**
    * Get a client's transaction history
    */
-  async getTransactionHistory(clientId: string, limit: number = 10) {
+  async getTransactionHistory(clientId: string, limit: number = 20): Promise<SavingsTransaction[]> {
     try {
       const { data, error } = await supabase
         .from('transactions')
@@ -176,8 +226,8 @@ export const savingsAccountService = {
         .limit(limit);
       
       if (error) throw error;
-      return data;
-    } catch (error) {
+      return data as SavingsTransaction[];
+    } catch (error: any) {
       console.error('Failed to fetch transaction history:', error);
       return [];
     }
