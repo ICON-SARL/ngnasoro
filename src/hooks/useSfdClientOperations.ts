@@ -9,7 +9,8 @@ import {
   synchronizeClientCode, 
   createOrUpdateSfdClient,
   lookupUserByClientCode,
-  getSfdClientByCode
+  getSfdClientByCode,
+  type ClientLookupResult
 } from '@/utils/clientCodeUtils';
 
 export function useSfdClientOperations() {
@@ -119,7 +120,7 @@ export function useSfdClientOperations() {
     try {
       console.log('Searching for client by code:', clientCode);
       
-      const existingClient = await getSfdClientByCode(clientCode, activeSfdId);
+      const { data: existingClient, error: lookupError } = await getSfdClientByCode(clientCode, activeSfdId);
       
       if (existingClient) {
         console.log('Client found in this SFD:', existingClient);
@@ -148,11 +149,11 @@ export function useSfdClientOperations() {
       
       console.log('User found by client code:', userProfile);
       
-      if (userProfile.id) {
+      if (userProfile.user_id) {
         const { data: existingSfdClient, error: clientCheckError } = await supabase
           .from('sfd_clients')
           .select('*')
-          .eq('user_id', userProfile.id)
+          .eq('user_id', userProfile.user_id)
           .eq('sfd_id', activeSfdId)
           .maybeSingle();
           
@@ -187,7 +188,7 @@ export function useSfdClientOperations() {
         });
         
         return {
-          user_id: userProfile.id,
+          user_id: userProfile.user_id,
           full_name: userProfile.full_name || '',
           email: userProfile.email || '',
           phone: userProfile.phone || '',

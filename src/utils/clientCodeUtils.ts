@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   getClientCodeForUser, 
@@ -20,7 +21,8 @@ import {
 } from './client-code/sync';
 import { 
   lookupUserByClientCode,
-  ClientLookupResult 
+  getSfdClientByCode,
+  type ClientLookupResult 
 } from './client-code/lookup';
 
 // Re-export all the functions
@@ -35,7 +37,8 @@ export {
   cleanClientCode,
   synchronizeClientCode,
   lookupUserByClientCode,
-  ClientLookupResult
+  getSfdClientByCode,
+  type ClientLookupResult
 };
 
 // Function to create or update SFD client

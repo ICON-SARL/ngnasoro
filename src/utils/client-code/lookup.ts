@@ -61,7 +61,7 @@ export const lookupUserByClientCode = async (clientCode: string, sfdId?: string)
  */
 export const getSfdClientByCode = async (clientCode: string, sfdId?: string): Promise<{ data: ClientLookupResult | null, error: any }> => {
   try {
-    const { data, error } = await supabase.rpc('get_sfd_client_by_code', {
+    const { data, error } = await supabase.rpc('lookup_client_with_sfd', {
       p_client_code: clientCode,
       p_sfd_id: sfdId
     });
@@ -84,4 +84,3 @@ export const getSfdClientByCode = async (clientCode: string, sfdId?: string): Pr
     return { data: null, error };
   }
 };
-
