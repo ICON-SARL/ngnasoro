@@ -13,6 +13,12 @@ interface ClientsQueryOptions {
   searchTerm?: string | null;
 }
 
+interface ClientCheckResult {
+  exists: boolean;
+  status?: string;
+  full_name?: string;
+}
+
 export function useSfdClientManagement() {
   const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
@@ -95,7 +101,7 @@ export function useSfdClientManagement() {
   });
 
   // Check if client exists
-  const checkClientExists = async (email: string) => {
+  const checkClientExists = async (email: string): Promise<ClientCheckResult | null> => {
     if (!email || !activeSfdId) return null;
     
     try {
@@ -105,7 +111,7 @@ export function useSfdClientManagement() {
       });
       
       if (error) throw error;
-      return data;
+      return data as ClientCheckResult;
     } catch (err) {
       console.error('Error checking client existence:', err);
       return null;
@@ -136,7 +142,7 @@ export function useSfdClientManagement() {
       if (clientData.email) {
         const existingClient = await checkClientExists(clientData.email);
         if (existingClient && existingClient.exists) {
-          throw new Error(`Un client avec cet email (${clientData.email}) existe déjà dans cette SFD. Statut: ${existingClient.status}`);
+          throw new Error(`Un client avec cet email (${clientData.email}) existe déjà dans cette SFD. Statut: ${existingClient.status || 'inconnu'}`);
         }
       }
       

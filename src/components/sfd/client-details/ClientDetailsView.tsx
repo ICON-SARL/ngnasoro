@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SfdClient } from '@/types/sfdClients';
 import { Button } from '@/components/ui/button';
@@ -48,7 +47,7 @@ const ClientDetailsView: React.FC<ClientDetailsViewProps> = ({ client, onClose }
   
   const handleValidateClient = async () => {
     if (!client || !client.id) return;
-    await validateClient.mutateAsync({ clientId: client.id });
+    await validateClient.mutateAsync(client.id);
     onClose();
   };
   

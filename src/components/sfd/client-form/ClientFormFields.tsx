@@ -6,7 +6,7 @@ import { useFormContext } from 'react-hook-form';
 import { ClientFormData } from './types';
 import PhoneNumberInput from '@/components/mobile/profile/sfd-accounts/PhoneNumberInput';
 import { useSfdClientManagement } from '@/hooks/useSfdClientManagement';
-import { Alert, AlertDescription, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 export function ClientFormFields() {
   const form = useFormContext<ClientFormData>();
@@ -21,18 +21,21 @@ export function ClientFormFields() {
     const emailTimeout = setTimeout(async () => {
       if (email && email.trim() !== '') {
         setCheckingEmail(true);
-        const result = await checkClientExists(email);
-        setCheckingEmail(false);
-        
-        if (result?.exists) {
-          setEmailExists(true);
-          setExistingClientInfo({
-            full_name: result.full_name,
-            status: result.status
-          });
-        } else {
-          setEmailExists(false);
-          setExistingClientInfo(null);
+        try {
+          const result = await checkClientExists(email);
+          if (result && typeof result === 'object' && 'exists' in result) {
+            setEmailExists(result.exists);
+            if (result.exists) {
+              setExistingClientInfo({
+                full_name: result.full_name,
+                status: result.status
+              });
+            } else {
+              setExistingClientInfo(null);
+            }
+          }
+        } finally {
+          setCheckingEmail(false);
         }
       } else {
         setEmailExists(false);
