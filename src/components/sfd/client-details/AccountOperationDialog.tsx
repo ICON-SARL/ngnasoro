@@ -8,6 +8,7 @@ import { useSavingsAccount } from '@/hooks/useSavingsAccount';
 import { Loader } from '@/components/ui/loader';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AccountOperationDialogProps {
   isOpen: boolean;
@@ -30,9 +31,19 @@ export default function AccountOperationDialog({
   
   const { toast } = useToast();
   const { processDeposit, processWithdrawal, isLoading } = useSavingsAccount(clientId);
+  const { activeSfdId } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!activeSfdId) {
+      toast({
+        title: "Erreur",
+        description: "Aucune SFD active n'a été trouvée",
+        variant: "destructive"
+      });
+      return;
+    }
 
     if (amount <= 0) {
       toast({

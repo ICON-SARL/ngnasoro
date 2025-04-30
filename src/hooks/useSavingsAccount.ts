@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { savingsAccountService, SavingsTransactionOptions } from '@/services/savings/savingsAccountService';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
  * Hook for managing client savings account operations
@@ -9,6 +10,7 @@ import { savingsAccountService, SavingsTransactionOptions } from '@/services/sav
 export function useSavingsAccount(clientId?: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { activeSfdId } = useAuth();
   
   // Get client account details
   const accountQuery = useQuery({
@@ -32,9 +34,11 @@ export function useSavingsAccount(clientId?: string) {
   
   // Create savings account if doesn't exist
   const createAccount = useMutation({
-    mutationFn: async ({ sfdId, initialBalance = 0 }: { sfdId: string, initialBalance?: number }) => {
+    mutationFn: async ({ initialBalance = 0 }: { initialBalance?: number }) => {
       if (!clientId) throw new Error('Client ID is required');
-      return savingsAccountService.createSavingsAccount(clientId, sfdId, initialBalance);
+      if (!activeSfdId) throw new Error('SFD ID is required');
+      
+      return savingsAccountService.createSavingsAccount(clientId, activeSfdId, initialBalance);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
@@ -57,6 +61,8 @@ export function useSavingsAccount(clientId?: string) {
     try {
       if (!clientId) throw new Error('Client ID is required');
       if (amount <= 0) throw new Error('Le montant doit être supérieur à 0');
+      
+      if (!activeSfdId) throw new Error('SFD ID is required');
 
       // Using client ID as admin ID temporarily for simplicity
       // In a real app, this should come from the auth context
@@ -65,7 +71,8 @@ export function useSavingsAccount(clientId?: string) {
         amount,
         description,
         adminId: clientId,  // Should be the actual admin ID
-        transactionType: 'deposit'
+        transactionType: 'deposit',
+        sfdId: activeSfdId
       });
       
       await queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
@@ -88,6 +95,8 @@ export function useSavingsAccount(clientId?: string) {
       if (!clientId) throw new Error('Client ID is required');
       if (amount <= 0) throw new Error('Le montant doit être supérieur à 0');
       
+      if (!activeSfdId) throw new Error('SFD ID is required');
+      
       // Check if balance is sufficient
       const account = accountQuery.data;
       if (!account || account.balance < amount) {
@@ -105,7 +114,8 @@ export function useSavingsAccount(clientId?: string) {
         amount,
         description,
         adminId: clientId,  // Should be the actual admin ID
-        transactionType: 'withdrawal'
+        transactionType: 'withdrawal',
+        sfdId: activeSfdId
       });
       
       await queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });

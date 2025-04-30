@@ -15,6 +15,7 @@ export interface SavingsAccount {
   updated_at: string;
   last_transaction_date?: string;
   last_updated?: string;
+  sfd_id: string;
 }
 
 // Interface for transaction options
@@ -25,6 +26,7 @@ export interface SavingsTransactionOptions {
   adminId: string;
   transactionType: 'deposit' | 'withdrawal' | 'loan_disbursement' | 'loan_repayment';
   referenceId?: string;
+  sfdId: string;
 }
 
 // Interface for transaction data
@@ -39,6 +41,7 @@ export interface SavingsTransaction {
   created_at: string;
   payment_method?: string;
   reference_id?: string;
+  sfd_id?: string;
 }
 
 /**
@@ -96,7 +99,8 @@ export const savingsAccountService = {
           description: 'Dépôt initial',
           adminId: clientId,
           transactionType: 'deposit',
-          referenceId: `initial-${Date.now()}`
+          referenceId: `initial-${Date.now()}`,
+          sfdId: sfdId
         });
       }
       
@@ -111,7 +115,7 @@ export const savingsAccountService = {
    * Process a transaction on a savings account
    */
   async processTransaction(options: SavingsTransactionOptions): Promise<boolean> {
-    const { clientId, amount, description, adminId, transactionType, referenceId } = options;
+    const { clientId, amount, description, adminId, transactionType, referenceId, sfdId } = options;
     
     try {
       // For withdrawals, make the amount negative
@@ -130,7 +134,8 @@ export const savingsAccountService = {
           description: description || `Transaction de type ${transactionType}`,
           status: 'success',
           payment_method: 'sfd_account',
-          reference_id: referenceId || `tx-${Date.now()}`
+          reference_id: referenceId || `tx-${Date.now()}`,
+          sfd_id: sfdId
         })
         .select()
         .single();
@@ -168,7 +173,8 @@ export const savingsAccountService = {
         details: { 
           client_id: clientId,
           amount: transactionAmount,
-          transaction_id: transaction.id
+          transaction_id: transaction.id,
+          sfd_id: sfdId
         }
       });
       
@@ -186,7 +192,8 @@ export const savingsAccountService = {
         details: { 
           client_id: clientId,
           amount,
-          error_message: (error as Error).message
+          error_message: (error as Error).message,
+          sfd_id: sfdId
         }
       });
       
