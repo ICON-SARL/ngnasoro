@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +7,7 @@ import { Loader } from '@/components/ui/loader';
 import { ClientLookupResult } from '@/utils/client-code/lookup';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { lookupUserByClientCode } from '@/utils/client-code/lookup';
+import { useClientCodeSearch } from '@/hooks/useClientCodeSearch';
 import { validateClientCode } from '@/utils/client-code/validators';
 import { formatClientCode } from '@/utils/client-code/formatters';
 
@@ -22,6 +21,7 @@ export const ClientCodeSearchSection: React.FC<ClientCodeSearchSectionProps> = (
   const [searchError, setSearchError] = useState<string | null>(null);
   const { activeSfdId } = useAuth();
   const { toast } = useToast();
+  const { searchClient } = useClientCodeSearch();
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,23 +45,11 @@ export const ClientCodeSearchSection: React.FC<ClientCodeSearchSectionProps> = (
     
     setIsSearching(true);
     try {
-      const result = await lookupUserByClientCode(formattedCode, activeSfdId);
+      const result = await searchClient(formattedCode);
       
       if (result) {
-        if (result.sfd_id === activeSfdId) {
-          toast({
-            title: "Client déjà existant",
-            description: `${result.full_name} est déjà client de votre SFD`,
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Utilisateur trouvé",
-            description: `${result.full_name} peut être ajouté comme client`,
-          });
-          onClientFound(result);
-          setClientCode('');
-        }
+        onClientFound(result);
+        setClientCode('');
       } else {
         setSearchError("Aucun utilisateur trouvé avec ce code client");
       }

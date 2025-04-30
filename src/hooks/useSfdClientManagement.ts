@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -105,9 +104,13 @@ export function useSfdClientManagement() {
     if (!email || !activeSfdId) return null;
     
     try {
-      const { data, error } = await supabase.rpc('check_client_exists', { 
-        p_email: email, 
-        p_sfd_id: activeSfdId 
+      // Using our SQL function through the supabase RPC mechanism
+      const { data, error } = await supabase.functions.invoke('client-operations', { 
+        body: {
+          action: "checkClientExists",
+          email: email,
+          sfdId: activeSfdId
+        }
       });
       
       if (error) throw error;

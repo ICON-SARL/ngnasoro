@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,6 +6,7 @@ import { ClientFormData } from './types';
 import PhoneNumberInput from '@/components/mobile/profile/sfd-accounts/PhoneNumberInput';
 import { useSfdClientManagement } from '@/hooks/useSfdClientManagement';
 import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function ClientFormFields() {
   const form = useFormContext<ClientFormData>();
@@ -23,7 +23,7 @@ export function ClientFormFields() {
         setCheckingEmail(true);
         try {
           const result = await checkClientExists(email);
-          if (result && typeof result === 'object' && 'exists' in result) {
+          if (result && 'exists' in result) {
             setEmailExists(result.exists);
             if (result.exists) {
               setExistingClientInfo({

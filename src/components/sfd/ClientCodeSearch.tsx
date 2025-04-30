@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { formatClientCode } from '@/utils/client-code/formatters';
 import { validateClientCode } from '@/utils/client-code/validators'; 
-import { lookupUserByClientCode, getSfdClientByCode, ClientLookupResult } from '@/utils/client-code/lookup';
+import { lookupUserByClientCode, ClientLookupResult } from '@/utils/client-code/lookup';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader } from '@/components/ui/loader';
 
@@ -41,31 +41,18 @@ export const ClientCodeSearch: React.FC<ClientCodeSearchProps> = ({ onClientFoun
     
     setIsSearching(true);
     try {
-      // First, try to find a direct match in sfd_clients
-      const sfdClient = await getSfdClientByCode(formattedCode, "votre-sfd-id"); // Remplacer par l'ID SFD réel
+      // Look up the user by client code
+      const clientData = await lookupUserByClientCode(formattedCode);
       
-      if (sfdClient) {
-        onClientFound(sfdClient);
-        toast({
-          title: "Client trouvé",
-          description: `Client ${sfdClient.full_name} trouvé dans la base de données`,
-        });
-        setClientCode('');
-        return;
-      }
-      
-      // Otherwise, try to find the user in profiles
-      const profileData = await lookupUserByClientCode(formattedCode, "votre-sfd-id"); // Remplacer par l'ID SFD réel
-        
-      if (!profileData) {
+      if (!clientData) {
         setSearchError("Aucun utilisateur trouvé avec ce code client");
         return;
       }
       
-      onClientFound(profileData);
+      onClientFound(clientData);
       toast({
         title: "Utilisateur trouvé",
-        description: `Utilisateur ${profileData.full_name} peut être ajouté comme client`,
+        description: `Utilisateur ${clientData.full_name} peut être ajouté comme client`,
       });
       
       setClientCode('');
