@@ -81,32 +81,30 @@ export function useSavingsAccount(clientId?: string) {
     }
   });
   
-  // Process a loan disbursement
-  const processLoanDisbursement = useMutation({
-    mutationFn: async ({ amount, loanId, adminId, description }: { amount: number, loanId: string, adminId: string, description?: string }) => {
+  // Process a withdrawal
+  const processWithdrawal = useMutation({
+    mutationFn: async ({ amount, description, adminId }: Omit<SavingsTransactionOptions, 'clientId' | 'transactionType'>) => {
       if (!clientId) throw new Error('Client ID is required');
       return savingsAccountService.processTransaction({
         clientId,
         amount,
-        description: description || `Décaissement du prêt ${loanId}`,
+        description,
         adminId,
-        transactionType: 'loan_disbursement',
-        referenceId: loanId
+        transactionType: 'withdrawal'
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
       queryClient.invalidateQueries({ queryKey: ['client-transactions', clientId] });
-      queryClient.invalidateQueries({ queryKey: ['loans'] }); // Invalidate loans queries to refresh loan status
       toast({
-        title: "Prêt décaissé",
-        description: "Le montant du prêt a été crédité sur le compte du client"
+        title: "Retrait effectué",
+        description: "Le retrait a été effectué avec succès"
       });
     },
     onError: (error: any) => {
       toast({
         title: "Erreur",
-        description: `Impossible de décaisser le prêt: ${error.message}`,
+        description: `Impossible d'effectuer le retrait: ${error.message}`,
         variant: "destructive"
       });
     }
@@ -119,7 +117,7 @@ export function useSavingsAccount(clientId?: string) {
     isError: accountQuery.isError || transactionsQuery.isError,
     createAccount,
     processDeposit,
-    processLoanDisbursement,
+    processWithdrawal,
     refetch: () => {
       accountQuery.refetch();
       transactionsQuery.refetch();
