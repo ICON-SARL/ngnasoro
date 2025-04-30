@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader } from '@/components/ui/loader';
-import { UserId } from 'lucide-react';
+import { User } from 'lucide-react';
 
 import { ClientDetailsHeader } from './ClientDetailsHeader';
 import { ClientDetailsTab } from './ClientDetailsTab';
