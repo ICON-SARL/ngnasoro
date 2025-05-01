@@ -183,3 +183,6 @@ url = ""
 [functions]
 [functions.create-client-user]
 verify_jwt = true
+
+[functions.sync-client-by-code]
+verify_jwt = true

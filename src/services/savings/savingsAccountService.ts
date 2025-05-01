@@ -99,7 +99,19 @@ export const savingsAccountService = {
         return [];
       }
       
-      return data;
+      // Convert transactions to match SavingsTransaction type
+      return data.map(transaction => ({
+        id: transaction.id,
+        user_id: transaction.user_id,
+        // Ensure type is either 'deposit' or 'withdrawal'
+        type: transaction.type === 'deposit' ? 'deposit' : 'withdrawal',
+        amount: transaction.amount,
+        name: transaction.name,
+        description: transaction.description,
+        created_at: transaction.created_at,
+        reference_id: transaction.reference_id,
+        status: transaction.status
+      }));
     } catch (error) {
       console.error("Error fetching transaction history:", error);
       return [];
@@ -176,7 +188,18 @@ export const savingsAccountService = {
         throw error;
       }
       
-      return data;
+      // Ensure returned data matches SavingsTransaction type
+      return {
+        id: data.id,
+        user_id: data.user_id,
+        type: transactionType === 'deposit' ? 'deposit' : 'withdrawal',
+        amount: data.amount,
+        name: data.name,
+        description: data.description,
+        created_at: data.created_at,
+        reference_id: data.reference_id,
+        status: data.status
+      };
     } catch (error) {
       console.error("Error processing transaction:", error);
       throw error;

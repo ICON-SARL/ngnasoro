@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Wallet, RefreshCw, ArrowUp, ArrowDown, UserPlus } from 'lucide-react';
+import { Plus, Wallet, RefreshCw, ArrowUp, ArrowDown, UserPlus, UserCheck, KeyRound, Loader2 } from 'lucide-react';
 import { useSavingsAccount } from '@/hooks/useSavingsAccount';
 import { Loader } from '@/components/ui/loader';
 import { BankAccountDialog } from './BankAccountDialog';
@@ -11,6 +11,11 @@ import { fr } from 'date-fns/locale';
 import AccountOperationDialog from './AccountOperationDialog';
 import { useToast } from '@/hooks/use-toast';
 import { clientUserService } from '@/services/clientUserService';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ClientBankAccountTabProps {
   client: any;
@@ -19,8 +24,12 @@ interface ClientBankAccountTabProps {
 export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isOperationDialogOpen, setIsOperationDialogOpen] = useState(false);
+  const [isSyncDialogOpen, setIsSyncDialogOpen] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [clientData, setClientData] = useState(client);
+  const [clientCode, setClientCode] = useState('');
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
   
   const { 
@@ -71,6 +80,38 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
       });
     } finally {
       setIsCreatingUser(false);
+    }
+  };
+
+  const handleSyncWithExistingUser = async () => {
+    setIsSyncing(true);
+    setSyncError(null);
+    
+    try {
+      if (!clientCode.trim()) {
+        setSyncError("Veuillez entrer un code client");
+        return;
+      }
+      
+      const result = await clientUserService.syncClientWithUserByCode(clientData.id, clientCode);
+      
+      if (result.success) {
+        toast({
+          title: "Compte synchronisé",
+          description: "Le client a été synchronisé avec le compte utilisateur existant"
+        });
+        
+        if (result.client) {
+          setClientData(result.client);
+        }
+        
+        setIsSyncDialogOpen(false);
+      }
+    } catch (error: any) {
+      console.error("Erreur lors de la synchronisation:", error);
+      setSyncError(error.message || "Impossible de synchroniser avec ce code client");
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -188,17 +229,27 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
                 {!clientData.user_id ? (
                   <>
                     <p className="text-amber-600 mb-4">Ce client ne dispose pas de compte utilisateur</p>
-                    <Button 
-                      onClick={handleCreateUser}
-                      className="mb-4"
-                      disabled={isCreatingUser}
-                    >
-                      {isCreatingUser ? (
-                        <><Loader size="sm" className="mr-2" /> Création en cours...</>
-                      ) : (
-                        <><UserPlus className="h-4 w-4 mr-2" /> Créer un compte utilisateur</>
-                      )}
-                    </Button>
+                    <div className="flex flex-col space-y-2">
+                      <Button 
+                        onClick={handleCreateUser}
+                        className="mb-2"
+                        disabled={isCreatingUser}
+                      >
+                        {isCreatingUser ? (
+                          <><Loader size="sm" className="mr-2" /> Création en cours...</>
+                        ) : (
+                          <><UserPlus className="h-4 w-4 mr-2" /> Créer un compte utilisateur</>
+                        )}
+                      </Button>
+                      <Button 
+                        onClick={() => setIsSyncDialogOpen(true)}
+                        variant="outline"
+                        className="mb-2"
+                        disabled={isCreatingUser}
+                      >
+                        <UserCheck className="h-4 w-4 mr-2" /> Synchroniser avec un compte existant
+                      </Button>
+                    </div>
                   </>
                 ) : (
                   <Button 
@@ -228,6 +279,55 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
         clientName={clientData?.full_name}
         onOperationComplete={handleOperationComplete}
       />
+
+      {/* Dialog for synchronizing with existing user */}
+      <Dialog open={isSyncDialogOpen} onOpenChange={setIsSyncDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Synchroniser avec un compte existant</DialogTitle>
+            <DialogDescription>
+              Entrez le code client associé au compte utilisateur existant pour le synchroniser avec ce client.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="client-code" className="text-right">
+                Code client
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="client-code"
+                  className="col-span-3"
+                  value={clientCode}
+                  onChange={(e) => setClientCode(e.target.value)}
+                  placeholder="Ex: MEREF-SFD-ABC123-4567"
+                />
+              </div>
+            </div>
+            {syncError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{syncError}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsSyncDialogOpen(false)} disabled={isSyncing}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleSyncWithExistingUser}
+              disabled={isSyncing}
+            >
+              {isSyncing ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Synchronisation...</>
+              ) : (
+                <><KeyRound className="h-4 w-4 mr-2" /> Synchroniser</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
