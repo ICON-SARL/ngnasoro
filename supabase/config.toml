@@ -186,3 +186,6 @@ verify_jwt = true
 
 [functions.sync-client-by-code]
 verify_jwt = true
+
+[functions.sync-client-accounts]
+verify_jwt = true

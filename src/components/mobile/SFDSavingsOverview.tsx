@@ -48,7 +48,7 @@ const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({ account }) => {
   };
   
   const goToSavings = () => {
-    navigate('/mobile-flow/savings');
+    navigate('/mobile-flow/funds-management');
   };
   
   if (isLoading) {
