@@ -51,32 +51,42 @@ export const savingsAccountService = {
   /**
    * Create a new savings account for a client
    */
-  async createSavingsAccount(clientId: string, sfdId: string, initialBalance: number = 0): Promise<SavingsAccount | null> {
+  async createSavingsAccount(userId: string, sfdId: string, initialBalance: number = 0): Promise<SavingsAccount | null> {
     try {
+      console.log("Création d'un compte d'épargne avec:", { userId, sfdId, initialBalance });
+      
       // Check if account already exists
       const { data: existingAccount } = await supabase
         .from('accounts')
         .select('*')
-        .eq('user_id', clientId)
-        .single();
+        .eq('user_id', userId)
+        .maybeSingle();
       
       if (existingAccount) {
+        console.log("Compte existant trouvé:", existingAccount);
         return existingAccount as SavingsAccount;
       }
+      
+      console.log("Création d'un nouveau compte...");
       
       // Create new account
       const { data, error } = await supabase
         .from('accounts')
         .insert({
-          user_id: clientId,
+          user_id: userId,
           balance: initialBalance,
           currency: 'FCFA',
-          sfd_id: sfdId
+          sfd_id: sfdId,
         })
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur lors de la création du compte:", error);
+        throw error;
+      }
+      
+      console.log("Compte créé avec succès:", data);
       
       // Log the account creation
       await logAuditEvent({
@@ -84,7 +94,7 @@ export const savingsAccountService = {
         category: AuditLogCategory.SFD_OPERATIONS,
         severity: AuditLogSeverity.INFO,
         status: 'success',
-        user_id: clientId,
+        user_id: userId,
         details: { 
           sfd_id: sfdId,
           initial_balance: initialBalance 
@@ -93,11 +103,12 @@ export const savingsAccountService = {
 
       // Create initial deposit if balance > 0
       if (initialBalance > 0) {
+        console.log("Création du dépôt initial...");
         await this.processTransaction({
-          clientId,
+          clientId: userId,
           amount: initialBalance,
           description: 'Dépôt initial',
-          adminId: clientId,
+          adminId: userId,
           transactionType: 'deposit',
           referenceId: `initial-${Date.now()}`,
           sfdId: sfdId
@@ -118,6 +129,8 @@ export const savingsAccountService = {
     const { clientId, amount, description, adminId, transactionType, referenceId, sfdId } = options;
     
     try {
+      console.log("Traitement de la transaction:", options);
+      
       // For withdrawals, make the amount negative
       const transactionAmount = transactionType === 'deposit' || transactionType === 'loan_disbursement' 
         ? Math.abs(amount) 
@@ -140,7 +153,12 @@ export const savingsAccountService = {
         .select()
         .single();
       
-      if (txError) throw txError;
+      if (txError) {
+        console.error("Erreur lors de la création de la transaction:", txError);
+        throw txError;
+      }
+
+      console.log("Transaction créée:", transaction);
 
       // Update the account balance directly
       const { data: account, error: accError } = await supabase
@@ -149,9 +167,14 @@ export const savingsAccountService = {
         .eq('user_id', clientId)
         .single();
 
-      if (accError) throw accError;
+      if (accError) {
+        console.error("Erreur lors de la récupération du compte:", accError);
+        throw accError;
+      }
 
       const newBalance = (account.balance || 0) + transactionAmount;
+      
+      console.log("Mise à jour du solde:", { ancien: account.balance, nouveau: newBalance });
       
       const { error: updateError } = await supabase
         .from('accounts')
@@ -161,7 +184,10 @@ export const savingsAccountService = {
         })
         .eq('user_id', clientId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Erreur lors de la mise à jour du solde:", updateError);
+        throw updateError;
+      }
       
       // Log the transaction
       await logAuditEvent({
@@ -178,6 +204,7 @@ export const savingsAccountService = {
         }
       });
       
+      console.log("Transaction complétée avec succès");
       return true;
     } catch (error: any) {
       console.error(`Failed to process ${transactionType}:`, error);
@@ -206,13 +233,30 @@ export const savingsAccountService = {
    */
   async getClientAccount(clientId: string): Promise<SavingsAccount | null> {
     try {
+      // First, get the user_id associated with the client
+      const { data: client, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+      
+      if (clientError || !client?.user_id) {
+        console.error("Client not found or no user_id:", clientError);
+        return null;
+      }
+      
+      // Then get the account using the user_id
       const { data, error } = await supabase
         .from('accounts')
         .select('*')
-        .eq('user_id', clientId)
+        .eq('user_id', client.user_id)
         .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching account:", error);
+        throw error;
+      }
+      
       return data as SavingsAccount;
     } catch (error: any) {
       console.error('Failed to fetch client account:', error);
@@ -225,14 +269,31 @@ export const savingsAccountService = {
    */
   async getTransactionHistory(clientId: string, limit: number = 20): Promise<SavingsTransaction[]> {
     try {
+      // First, get the user_id associated with the client
+      const { data: client, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+      
+      if (clientError || !client?.user_id) {
+        console.error("Client not found or no user_id:", clientError);
+        return [];
+      }
+      
+      // Then get the transactions using the user_id
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
-        .eq('user_id', clientId)
+        .eq('user_id', client.user_id)
         .order('created_at', { ascending: false })
         .limit(limit);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching transactions:", error);
+        throw error;
+      }
+      
       return data as SavingsTransaction[];
     } catch (error: any) {
       console.error('Failed to fetch transaction history:', error);

@@ -38,7 +38,19 @@ export function useSavingsAccount(clientId?: string) {
       if (!clientId) throw new Error('Client ID is required');
       if (!activeSfdId) throw new Error('SFD ID is required');
       
-      return savingsAccountService.createSavingsAccount(clientId, activeSfdId, initialBalance);
+      // We need to get the user_id from sfd_clients
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: client, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+        
+      if (clientError || !client?.user_id) {
+        throw new Error("Impossible de trouver l'utilisateur associé au client");
+      }
+      
+      return savingsAccountService.createSavingsAccount(client.user_id, activeSfdId, initialBalance);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
@@ -48,6 +60,7 @@ export function useSavingsAccount(clientId?: string) {
       });
     },
     onError: (error: any) => {
+      console.error("Erreur de création du compte:", error);
       toast({
         title: "Erreur",
         description: `Impossible de créer le compte: ${error.message}`,
@@ -64,10 +77,20 @@ export function useSavingsAccount(clientId?: string) {
       
       if (!activeSfdId) throw new Error('SFD ID is required');
 
-      // Using client ID as admin ID temporarily for simplicity
-      // In a real app, this should come from the auth context
+      // Get the client's user_id
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: client, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+        
+      if (clientError || !client?.user_id) {
+        throw new Error("Impossible de trouver l'utilisateur associé au client");
+      }
+
       await savingsAccountService.processTransaction({
-        clientId,
+        clientId: client.user_id,
         amount,
         description,
         adminId: clientId,  // Should be the actual admin ID
@@ -80,6 +103,7 @@ export function useSavingsAccount(clientId?: string) {
       
       return true;
     } catch (error: any) {
+      console.error("Erreur de dépôt:", error);
       toast({
         title: "Erreur",
         description: `Impossible d'effectuer le dépôt: ${error.message}`,
@@ -97,6 +121,18 @@ export function useSavingsAccount(clientId?: string) {
       
       if (!activeSfdId) throw new Error('SFD ID is required');
       
+      // Get the client's user_id
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: client, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+        
+      if (clientError || !client?.user_id) {
+        throw new Error("Impossible de trouver l'utilisateur associé au client");
+      }
+      
       // Check if balance is sufficient
       const account = accountQuery.data;
       if (!account || account.balance < amount) {
@@ -108,9 +144,8 @@ export function useSavingsAccount(clientId?: string) {
         return false;
       }
 
-      // Using client ID as admin ID temporarily for simplicity
       await savingsAccountService.processTransaction({
-        clientId,
+        clientId: client.user_id,
         amount,
         description,
         adminId: clientId,  // Should be the actual admin ID
@@ -123,6 +158,7 @@ export function useSavingsAccount(clientId?: string) {
       
       return true;
     } catch (error: any) {
+      console.error("Erreur de retrait:", error);
       toast({
         title: "Erreur",
         description: `Impossible d'effectuer le retrait: ${error.message}`,

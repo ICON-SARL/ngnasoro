@@ -23,6 +23,11 @@ export function BankAccountDialog({ isOpen, onClose, clientId, onSuccess }: Bank
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!activeSfdId) {
+      console.error("Aucune SFD active n'a été trouvée");
+      return;
+    }
+
     try {
       await createAccount.mutateAsync({ 
         initialBalance 

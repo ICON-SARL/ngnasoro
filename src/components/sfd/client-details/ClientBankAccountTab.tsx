@@ -29,6 +29,10 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
 
   const handleRefresh = () => {
     refetch();
+    toast({
+      title: "Actualisation",
+      description: "Les données du compte ont été actualisées"
+    });
   };
 
   const handleOperationComplete = () => {
@@ -118,7 +122,7 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
                         <div>
                           <p className="font-medium">{tx.name}</p>
                           <p className="text-xs text-gray-500">
-                            {new Date(tx.created_at || tx.date || Date.now()).toLocaleDateString('fr-FR')}
+                            {format(new Date(tx.created_at || tx.date || Date.now()), 'Pp', { locale: fr })}
                           </p>
                         </div>
                       </div>
