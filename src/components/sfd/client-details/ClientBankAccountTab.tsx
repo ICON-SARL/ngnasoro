@@ -1,267 +1,233 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Wallet, RefreshCw, ArrowUp, ArrowDown, UserPlus } from 'lucide-react';
+import { useSavingsAccount } from '@/hooks/useSavingsAccount';
 import { Loader } from '@/components/ui/loader';
-import { useToast } from '@/hooks/use-toast';
-import { User, CreditCard, RefreshCw } from 'lucide-react';
-
-import ClientSavingsAccount from '@/components/sfd/ClientSavingsAccount';
 import { BankAccountDialog } from './BankAccountDialog';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import AccountOperationDialog from './AccountOperationDialog';
+import { useToast } from '@/hooks/use-toast';
 import { clientUserService } from '@/services/clientUserService';
-import { useAuth } from '@/hooks/useAuth';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 
 interface ClientBankAccountTabProps {
   client: any;
 }
 
-export const ClientBankAccountTab: React.FC<ClientBankAccountTabProps> = ({ client }) => {
-  const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
-  const [isSyncDialogOpen, setIsSyncDialogOpen] = useState(false);
-  const [clientCode, setClientCode] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
-  const [isSyncingAccounts, setIsSyncingAccounts] = useState(false);
-  const [savingsAccountRefresh, setSavingsAccountRefresh] = useState(0);
+export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isOperationDialogOpen, setIsOperationDialogOpen] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [clientData, setClientData] = useState(client);
   const { toast } = useToast();
-  const { activeSfdId } = useAuth();
+  
+  const { 
+    account, 
+    isLoading,
+    refetch,
+    transactions
+  } = useSavingsAccount(clientData?.id);
 
-  const hasUserAccount = !!client?.user_id;
+  const handleRefresh = () => {
+    refetch();
+    toast({
+      title: "Actualisation",
+      description: "Les données du compte ont été actualisées"
+    });
+  };
 
-  const createUserAccount = async () => {
-    if (!client || !client.id) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer un compte utilisateur: client invalide",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleOperationComplete = () => {
+    refetch();
+    toast({
+      title: "Opération réussie",
+      description: "Le compte a été mis à jour avec succès"
+    });
+  };
 
-    setIsCreatingAccount(true);
+  const handleCreateUser = async () => {
+    setIsCreatingUser(true);
     try {
-      const result = await clientUserService.createUserAccount(client.id);
+      const result = await clientUserService.createUserAccount(clientData.id);
       
-      if (result && result.success) {
+      if (result.success) {
         toast({
           title: "Compte utilisateur créé",
-          description: "Un nouveau compte utilisateur a été créé pour ce client."
+          description: "Un compte utilisateur a été créé pour ce client avec succès"
         });
         
-        // Try to sync accounts automatically
-        try {
-          await syncClientAccounts();
-        } catch (syncError) {
-          console.error("Error syncing accounts after user creation:", syncError);
+        // Update client data with the returned data containing user_id
+        if (result.client) {
+          setClientData(result.client);
         }
-        
-        // Force component refresh
-        setSavingsAccountRefresh(prev => prev + 1);
-      } else {
-        toast({
-          title: "Erreur",
-          description: result.error || "Impossible de créer le compte utilisateur",
-          variant: "destructive"
-        });
       }
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Erreur lors de la création du compte utilisateur:", error);
       toast({
         title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de la création du compte",
+        description: "Impossible de créer un compte utilisateur pour ce client",
         variant: "destructive"
       });
     } finally {
-      setIsCreatingAccount(false);
+      setIsCreatingUser(false);
     }
   };
-
-  const syncUserByClientCode = async () => {
-    if (!clientCode) {
-      toast({
-        title: "Code client requis",
-        description: "Veuillez entrer un code client valide",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const result = await clientUserService.syncClientWithUserByCode(client.id, clientCode);
-      
-      if (result && result.success) {
-        toast({
-          title: "Synchronisation réussie",
-          description: "Le client a été synchronisé avec le compte utilisateur."
-        });
-        
-        // Try to sync accounts automatically
-        try {
-          await syncClientAccounts();
-        } catch (syncError) {
-          console.error("Error syncing accounts after user sync:", syncError);
-        }
-        
-        // Close dialog and refresh component
-        setIsSyncDialogOpen(false);
-        setSavingsAccountRefresh(prev => prev + 1);
-      } else {
-        toast({
-          title: "Erreur de synchronisation",
-          description: result.error || "Impossible de synchroniser le client avec le compte utilisateur",
-          variant: "destructive"
-        });
-      }
-    } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de la synchronisation",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const syncClientAccounts = async () => {
-    if (!activeSfdId || !client?.user_id) {
-      console.log("Cannot sync accounts: missing sfdId or userId");
-      return;
-    }
-
-    setIsSyncingAccounts(true);
-    try {
-      const result = await clientUserService.syncClientAccounts(activeSfdId, client.id);
-      
-      if (result && result.success) {
-        toast({
-          title: "Comptes synchronisés",
-          description: `${result.syncedCount || 0} comptes ont été synchronisés`
-        });
-        
-        // Force component refresh
-        setSavingsAccountRefresh(prev => prev + 1);
-      }
-    } catch (error: any) {
-      console.error("Error syncing client accounts:", error);
-    } finally {
-      setIsSyncingAccounts(false);
-    }
-  };
-
-  // Auto-sync accounts when component mounts if the client has a user_id
-  useEffect(() => {
-    if (client?.user_id && activeSfdId) {
-      syncClientAccounts();
-    }
-  }, [client?.user_id, activeSfdId]);
 
   return (
-    <div className="space-y-6">
-      {hasUserAccount && (
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center">
-            <User className="mr-2 h-5 w-5 text-green-500" />
-            <span className="text-sm font-medium">Compte utilisateur associé</span>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={syncClientAccounts}
-            disabled={isSyncingAccounts}
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="font-medium">Comptes bancaires</h3>
+        {account && (
+          <Button 
+            variant="outline" 
+            size="sm" 
             className="flex items-center"
+            onClick={handleRefresh}
           >
-            {isSyncingAccounts ? <Loader size="sm" className="mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-            Synchroniser les comptes
+            <RefreshCw className="h-4 w-4 mr-1" /> Actualiser
           </Button>
+        )}
+      </div>
+      
+      {isLoading ? (
+        <div className="flex justify-center p-6">
+          <Loader size="md" />
         </div>
-      )}
+      ) : account ? (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Compte d'épargne</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h4 className="font-medium">Solde actuel</h4>
+                  <p className="text-2xl font-semibold text-green-700">
+                    {account.balance?.toLocaleString('fr-FR')} {account.currency || 'FCFA'}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    ID: {account.id ? account.id.substring(0, 8) : 'Compte bancaire'} - {clientData?.full_name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Mis à jour le {format(new Date(account.last_updated || account.updated_at || Date.now()), 'Pp', { locale: fr })}
+                  </p>
+                </div>
+              </div>
 
-      {!hasUserAccount && (
+              <div className="mt-4 flex gap-2">
+                <Button 
+                  onClick={() => setIsOperationDialogOpen(true)}
+                  className="bg-green-600 hover:bg-green-700"
+                  size="sm"
+                >
+                  <ArrowDown className="h-4 w-4 mr-1" /> Dépôt / Retrait
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Affichage des transactions récentes */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Transactions récentes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {transactions && transactions.length > 0 ? (
+                <div className="space-y-2">
+                  {transactions.slice(0, 5).map((tx: any) => (
+                    <div key={tx.id} className="flex items-center justify-between p-3 border-b">
+                      <div className="flex items-center gap-2">
+                        <div className={`p-1 rounded-full ${
+                          tx.type === 'deposit' || tx.amount > 0 
+                            ? 'bg-green-100' 
+                            : 'bg-blue-100'
+                        }`}>
+                          {tx.type === 'deposit' || tx.amount > 0 ? (
+                            <ArrowDown className="h-4 w-4 text-green-700" />
+                          ) : (
+                            <ArrowUp className="h-4 w-4 text-blue-700" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium">{tx.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {format(new Date(tx.created_at || tx.date || Date.now()), 'Pp', { locale: fr })}
+                          </p>
+                        </div>
+                      </div>
+                      <p className={`font-bold ${
+                        tx.type === 'deposit' || tx.amount > 0 
+                          ? 'text-green-700' 
+                          : 'text-gray-700'
+                      }`}>
+                        {tx.type === 'deposit' || tx.amount > 0 ? '+' : '-'}
+                        {Math.abs(tx.amount).toLocaleString()} FCFA
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  Aucune transaction récente
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
         <Card>
-          <CardContent className="pt-6 pb-4">
-            <div className="text-center">
-              <CreditCard className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-              <h3 className="text-lg font-medium mb-2">Ce client ne dispose pas de compte utilisateur</h3>
-              <p className="text-sm text-gray-500 mb-4">
-                Pour créer un compte d'épargne, le client doit d'abord avoir un compte utilisateur dans l'application.
-              </p>
-              
-              <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-                <Button 
-                  className="bg-blue-600 hover:bg-blue-700 flex items-center justify-center"
-                  onClick={createUserAccount}
-                  disabled={isCreatingAccount}
-                >
-                  {isCreatingAccount && <Loader size="sm" className="mr-2" />}
-                  <User className="mr-2 h-4 w-4" />
-                  Créer un compte utilisateur
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  onClick={() => setIsSyncDialogOpen(true)}
-                >
-                  Synchroniser avec un compte existant
-                </Button>
+          <CardContent className="text-center p-8">
+            <div className="flex flex-col items-center gap-4">
+              <div className="rounded-full bg-gray-100 p-3">
+                <Wallet className="h-6 w-6 text-gray-400" />
+              </div>
+              <div>
+                <p className="text-gray-500 mb-4">Aucun compte bancaire enregistré</p>
+                {!clientData.user_id ? (
+                  <>
+                    <p className="text-amber-600 mb-4">Ce client ne dispose pas de compte utilisateur</p>
+                    <Button 
+                      onClick={handleCreateUser}
+                      className="mb-4"
+                      disabled={isCreatingUser}
+                    >
+                      {isCreatingUser ? (
+                        <><Loader size="sm" className="mr-2" /> Création en cours...</>
+                      ) : (
+                        <><UserPlus className="h-4 w-4 mr-2" /> Créer un compte utilisateur</>
+                      )}
+                    </Button>
+                  </>
+                ) : (
+                  <Button 
+                    onClick={() => setIsCreateDialogOpen(true)}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> Créer un compte d'épargne
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Client Savings Account Component */}
-      <ClientSavingsAccount clientId={client?.id} clientName={client?.full_name} key={savingsAccountRefresh} />
-
-      {/* Bank Account Creation Dialog */}
       <BankAccountDialog 
-        isOpen={isBankDialogOpen} 
-        onClose={() => setIsBankDialogOpen(false)} 
-        clientId={client?.id}
-        onSuccess={() => setSavingsAccountRefresh(prev => prev + 1)}
+        isOpen={isCreateDialogOpen} 
+        onClose={() => setIsCreateDialogOpen(false)} 
+        clientId={clientData?.id}
+        onSuccess={handleRefresh}
       />
 
-      {/* Client Code Sync Dialog */}
-      <Dialog open={isSyncDialogOpen} onOpenChange={setIsSyncDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Synchroniser avec un compte existant</DialogTitle>
-            <DialogDescription>
-              Entrez le code client de l'utilisateur pour lier ce client à un compte existant.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="client-code" className="text-right">
-                Code client
-              </Label>
-              <div className="col-span-3">
-                <Input
-                  id="client-code"
-                  placeholder="Ex: MEREF-SFD-XXXXXX-0000"
-                  value={clientCode}
-                  onChange={(e) => setClientCode(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsSyncDialogOpen(false)} disabled={isLoading}>
-              Annuler
-            </Button>
-            <Button onClick={syncUserByClientCode} disabled={isLoading}>
-              {isLoading ? <Loader size="sm" className="mr-2" /> : null}
-              Synchroniser
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AccountOperationDialog
+        isOpen={isOperationDialogOpen}
+        onClose={() => setIsOperationDialogOpen(false)}
+        clientId={clientData?.id}
+        clientName={clientData?.full_name}
+        onOperationComplete={handleOperationComplete}
+      />
     </div>
   );
-};
+}
