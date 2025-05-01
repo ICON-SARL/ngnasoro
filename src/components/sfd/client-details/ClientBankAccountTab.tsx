@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Wallet, RefreshCw, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Wallet, RefreshCw, ArrowUp, ArrowDown, UserPlus } from 'lucide-react';
 import { useSavingsAccount } from '@/hooks/useSavingsAccount';
 import { Loader } from '@/components/ui/loader';
 import { BankAccountDialog } from './BankAccountDialog';
@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import AccountOperationDialog from './AccountOperationDialog';
 import { useToast } from '@/hooks/use-toast';
+import { clientUserService } from '@/services/clientUserService';
 
 interface ClientBankAccountTabProps {
   client: any;
@@ -18,6 +19,8 @@ interface ClientBankAccountTabProps {
 export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isOperationDialogOpen, setIsOperationDialogOpen] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [clientData, setClientData] = useState(client);
   const { toast } = useToast();
   
   const { 
@@ -25,7 +28,7 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
     isLoading,
     refetch,
     transactions
-  } = useSavingsAccount(client?.id);
+  } = useSavingsAccount(clientData?.id);
 
   const handleRefresh = () => {
     refetch();
@@ -41,6 +44,34 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
       title: "Opération réussie",
       description: "Le compte a été mis à jour avec succès"
     });
+  };
+
+  const handleCreateUser = async () => {
+    setIsCreatingUser(true);
+    try {
+      const result = await clientUserService.createUserAccount(clientData.id);
+      
+      if (result.success) {
+        toast({
+          title: "Compte utilisateur créé",
+          description: "Un compte utilisateur a été créé pour ce client avec succès"
+        });
+        
+        // Update client data with the returned data containing user_id
+        if (result.client) {
+          setClientData(result.client);
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors de la création du compte utilisateur:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de créer un compte utilisateur pour ce client",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingUser(false);
+    }
   };
 
   return (
@@ -77,7 +108,7 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
                     {account.balance?.toLocaleString('fr-FR')} {account.currency || 'FCFA'}
                   </p>
                   <p className="text-xs text-gray-500">
-                    ID: {account.id ? account.id.substring(0, 8) : 'Compte bancaire'} - {client?.full_name}
+                    ID: {account.id ? account.id.substring(0, 8) : 'Compte bancaire'} - {clientData?.full_name}
                   </p>
                   <p className="text-xs text-gray-500">
                     Mis à jour le {format(new Date(account.last_updated || account.updated_at || Date.now()), 'Pp', { locale: fr })}
@@ -154,12 +185,29 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
               </div>
               <div>
                 <p className="text-gray-500 mb-4">Aucun compte bancaire enregistré</p>
-                <Button 
-                  onClick={() => setIsCreateDialogOpen(true)}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  <Plus className="h-4 w-4 mr-2" /> Créer un compte d'épargne
-                </Button>
+                {!clientData.user_id ? (
+                  <>
+                    <p className="text-amber-600 mb-4">Ce client ne dispose pas de compte utilisateur</p>
+                    <Button 
+                      onClick={handleCreateUser}
+                      className="mb-4"
+                      disabled={isCreatingUser}
+                    >
+                      {isCreatingUser ? (
+                        <><Loader size="sm" className="mr-2" /> Création en cours...</>
+                      ) : (
+                        <><UserPlus className="h-4 w-4 mr-2" /> Créer un compte utilisateur</>
+                      )}
+                    </Button>
+                  </>
+                ) : (
+                  <Button 
+                    onClick={() => setIsCreateDialogOpen(true)}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> Créer un compte d'épargne
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
@@ -169,15 +217,15 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
       <BankAccountDialog 
         isOpen={isCreateDialogOpen} 
         onClose={() => setIsCreateDialogOpen(false)} 
-        clientId={client?.id}
+        clientId={clientData?.id}
         onSuccess={handleRefresh}
       />
 
       <AccountOperationDialog
         isOpen={isOperationDialogOpen}
         onClose={() => setIsOperationDialogOpen(false)}
-        clientId={client?.id}
-        clientName={client?.full_name}
+        clientId={clientData?.id}
+        clientName={clientData?.full_name}
         onOperationComplete={handleOperationComplete}
       />
     </div>

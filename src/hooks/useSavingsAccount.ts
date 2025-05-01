@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { savingsAccountService, SavingsTransactionOptions } from '@/services/savings/savingsAccountService';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Hook for managing client savings account operations
@@ -34,23 +35,30 @@ export function useSavingsAccount(clientId?: string) {
   
   // Create savings account if doesn't exist
   const createAccount = useMutation({
-    mutationFn: async ({ initialBalance = 0 }: { initialBalance?: number }) => {
+    mutationFn: async ({ initialBalance = 0, userId }: { initialBalance?: number, userId?: string }) => {
       if (!clientId) throw new Error('Client ID is required');
       if (!activeSfdId) throw new Error('SFD ID is required');
       
-      // We need to get the user_id from sfd_clients
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data: client, error: clientError } = await supabase
-        .from('sfd_clients')
-        .select('user_id')
-        .eq('id', clientId)
-        .single();
+      let userIdToUse = userId;
+      
+      // If userId is not provided, try to get it from the client record
+      if (!userIdToUse) {
+        console.log('Fetching user_id from client record...');
+        const { data: client, error: clientError } = await supabase
+          .from('sfd_clients')
+          .select('user_id')
+          .eq('id', clientId)
+          .single();
+          
+        if (clientError || !client?.user_id) {
+          throw new Error("Impossible de trouver l'utilisateur associé au client");
+        }
         
-      if (clientError || !client?.user_id) {
-        throw new Error("Impossible de trouver l'utilisateur associé au client");
+        userIdToUse = client.user_id;
       }
       
-      return savingsAccountService.createSavingsAccount(client.user_id, activeSfdId, initialBalance);
+      console.log('Creating savings account for user:', userIdToUse);
+      return savingsAccountService.createSavingsAccount(userIdToUse, activeSfdId, initialBalance);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
@@ -78,7 +86,6 @@ export function useSavingsAccount(clientId?: string) {
       if (!activeSfdId) throw new Error('SFD ID is required');
 
       // Get the client's user_id
-      const { supabase } = await import('@/integrations/supabase/client');
       const { data: client, error: clientError } = await supabase
         .from('sfd_clients')
         .select('user_id')
@@ -90,7 +97,7 @@ export function useSavingsAccount(clientId?: string) {
       }
 
       await savingsAccountService.processTransaction({
-        clientId: client.user_id,
+        userId: client.user_id,
         amount,
         description,
         adminId: clientId,  // Should be the actual admin ID
@@ -122,7 +129,6 @@ export function useSavingsAccount(clientId?: string) {
       if (!activeSfdId) throw new Error('SFD ID is required');
       
       // Get the client's user_id
-      const { supabase } = await import('@/integrations/supabase/client');
       const { data: client, error: clientError } = await supabase
         .from('sfd_clients')
         .select('user_id')
@@ -145,7 +151,7 @@ export function useSavingsAccount(clientId?: string) {
       }
 
       await savingsAccountService.processTransaction({
-        clientId: client.user_id,
+        userId: client.user_id,
         amount,
         description,
         adminId: clientId,  // Should be the actual admin ID
