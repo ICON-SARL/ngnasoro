@@ -77,3 +77,6 @@ url = ""
 [functions]
 [functions.sync-client-user-account]
 verify_jwt = true
+
+[functions.ensure-client-savings]
+verify_jwt = true

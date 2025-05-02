@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { sfdAccountService } from '@/services/sfdAccountService';
@@ -19,7 +20,7 @@ export function useSfdAccounts(sfdId?: string) {
   const queryClient = useQueryClient();
   const effectiveSfdId = sfdId || activeSfdId;
 
-  // Get all accounts for the SFD - make sure effectiveSfdId is not empty
+  // Get all accounts for the SFD
   const {
     data: accounts = [],
     isLoading,
@@ -27,34 +28,20 @@ export function useSfdAccounts(sfdId?: string) {
     refetch: refetchAccounts
   } = useQuery({
     queryKey: ['sfd-accounts', effectiveSfdId],
-    queryFn: () => {
-      // Check if we have a valid SFD ID before making the query
-      if (!effectiveSfdId) {
-        console.warn('No active SFD ID available, skipping accounts query');
-        return Promise.resolve([]);
-      }
-      return sfdAccountService.getSfdAccounts(effectiveSfdId);
-    },
-    enabled: !!user && !!effectiveSfdId && effectiveSfdId !== '', // Only run if we have both user and valid SFD ID
+    queryFn: () => sfdAccountService.getSfdAccounts(effectiveSfdId || ''),
+    enabled: !!effectiveSfdId,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Get transfer history - make sure effectiveSfdId is not empty
+  // Get transfer history
   const {
     data: transferHistory = [],
     isLoading: isLoadingHistory,
     refetch: refetchHistory
   } = useQuery({
     queryKey: ['sfd-transfers', effectiveSfdId],
-    queryFn: () => {
-      // Check if we have a valid SFD ID before making the query
-      if (!effectiveSfdId) {
-        console.warn('No active SFD ID available, skipping transfers query');
-        return Promise.resolve([]);
-      }
-      return sfdAccountService.getSfdTransferHistory(effectiveSfdId);
-    },
-    enabled: !!user && !!effectiveSfdId && effectiveSfdId !== '', // Only run if we have both user and valid SFD ID
+    queryFn: () => sfdAccountService.getSfdTransferHistory(effectiveSfdId || ''),
+    enabled: !!effectiveSfdId,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -119,7 +106,7 @@ export function useSfdAccounts(sfdId?: string) {
   const repaymentAccount = accounts.find(account => account.account_type === 'remboursement');
   const savingsAccount = accounts.find(account => account.account_type === 'epargne');
 
-  // Make sure all required fields are present when transforming accounts
+  // For compatibility with components expecting SfdClientAccount type
   const transformAccounts = (accounts: DbSfdAccount[]): SfdClientAccount[] => {
     return accounts.map(acc => ({
       id: acc.id,
@@ -132,9 +119,9 @@ export function useSfdAccounts(sfdId?: string) {
       isDefault: false,
       isVerified: true,
       status: acc.status,
-      sfd_id: acc.sfd_id,
+      sfd_id: acc.sfd_id,  // Include the required fields for compatibility
       account_type: acc.account_type,
-      description: acc.description, // Add description to fix the type error
+      description: acc.description,
       created_at: acc.created_at,
       updated_at: acc.updated_at
     }));
@@ -144,8 +131,8 @@ export function useSfdAccounts(sfdId?: string) {
   const sfdAccounts = transformAccounts(accounts);
 
   // Compute the active SFD account for UI components that expect it
-  const activeSfdAccount = accounts.length > 0 && effectiveSfdId ? {
-    id: effectiveSfdId,
+  const activeSfdAccount = accounts.length > 0 ? {
+    id: effectiveSfdId || accounts[0].sfd_id,
     name: 'SFD Account',
     logoUrl: null,
     balance: accounts.reduce((sum, acc) => sum + acc.balance, 0),
@@ -154,7 +141,7 @@ export function useSfdAccounts(sfdId?: string) {
     isVerified: true,
     loans: [],
     status: 'active',
-    sfd_id: effectiveSfdId,
+    sfd_id: effectiveSfdId || accounts[0].sfd_id,  // Add the required field
     account_type: '',
     description: null,
     created_at: '',
@@ -175,11 +162,11 @@ export function useSfdAccounts(sfdId?: string) {
     transferFunds,
     refetchAccounts,
     refetchHistory,
+    refetchSavingsAccount,
     refetch: refetchAccounts,
     synchronizeBalances,
     activeSfdAccount,
-    makeLoanPayment,
-    refetchSavingsAccount  // Add the alias here
+    makeLoanPayment
   };
 }
 

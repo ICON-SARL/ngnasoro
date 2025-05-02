@@ -118,6 +118,19 @@ export const savingsAccountService = {
     try {
       console.log(`Creating savings account for user ${userId} with SFD ${sfdId}`);
       
+      // First check if account already exists
+      const { data: existingAccount, error: checkError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+        
+      if (existingAccount) {
+        console.log("Account already exists for user", userId);
+        return existingAccount;
+      }
+      
+      // Create new account if it doesn't exist
       const { data, error } = await supabase
         .from('accounts')
         .insert([
@@ -185,6 +198,27 @@ export const savingsAccountService = {
     } catch (error) {
       console.error("Error processing transaction:", error);
       throw error;
+    }
+  },
+
+  /**
+   * Ensure client has a savings account
+   */
+  ensureClientSavingsAccount: async (clientId: string, sfdId: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('ensure-client-savings', {
+        body: { clientId, sfdId }
+      });
+
+      if (error) {
+        console.error('Error ensuring savings account:', error);
+        return false;
+      }
+
+      return data?.success || false;
+    } catch (error) {
+      console.error('Error calling ensure-client-savings function:', error);
+      return false;
     }
   }
 };

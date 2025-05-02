@@ -44,9 +44,56 @@ serve(async (req) => {
       );
     }
 
+    // If client doesn't have a user_id, attempt to find user by email
+    if (!client.user_id && client.email) {
+      const { data: userProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .ilike('email', client.email)
+        .maybeSingle();
+        
+      if (userProfile) {
+        // Update client with found user_id
+        await supabaseAdmin
+          .from('sfd_clients')
+          .update({ user_id: userProfile.id })
+          .eq('id', clientId);
+          
+        client.user_id = userProfile.id;
+      } else {
+        // Create new user if no matching email found
+        const tempPassword = Math.random().toString(36).substring(2, 12) + Math.random().toString(36).substring(2, 12).toUpperCase();
+        
+        const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+          email: client.email,
+          password: tempPassword,
+          email_confirm: true,
+          user_metadata: {
+            full_name: client.full_name,
+            phone: client.phone
+          }
+        });
+        
+        if (authError || !authUser.user) {
+          return new Response(
+            JSON.stringify({ error: "Failed to create user account", details: authError }),
+            { headers: corsHeaders, status: 500 }
+          );
+        }
+        
+        // Update client with new user_id
+        await supabaseAdmin
+          .from('sfd_clients')
+          .update({ user_id: authUser.user.id })
+          .eq('id', clientId);
+          
+        client.user_id = authUser.user.id;
+      }
+    }
+    
     if (!client.user_id) {
       return new Response(
-        JSON.stringify({ error: "Client doesn't have an associated user account" }),
+        JSON.stringify({ error: "Cannot create savings account without a user account" }),
         { headers: corsHeaders, status: 400 }
       );
     }
