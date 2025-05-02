@@ -103,7 +103,7 @@ serve(async (req) => {
         // If the client has a user_id, they are an existing user being added as a client
         const isExistingUser = !!clientData.user_id;
         
-        // MODIFICATION: Check for client with same email in the same SFD
+        // Check for client with same email in the same SFD
         if (clientData.email) {
           const { data: existingClient, error: checkError } = await supabase
             .from('sfd_clients')
@@ -133,14 +133,30 @@ serve(async (req) => {
           }
         }
         
+        // Look for existing user with this email
+        let userId = clientData.user_id;
+        if (!userId && clientData.email) {
+          const { data: userProfile } = await supabase
+            .from('profiles')
+            .select('id')
+            .ilike('email', clientData.email)
+            .maybeSingle();
+            
+          if (userProfile) {
+            userId = userProfile.id;
+            console.log(`Found existing user with ID ${userId} for email ${clientData.email}`);
+          }
+        }
+        
         const { data: newClient, error: createError } = await supabase
           .from('sfd_clients')
           .insert({
             ...clientData,
             sfd_id: sfdId,
-            status: isExistingUser ? 'validated' : 'pending',
-            validated_at: isExistingUser ? new Date().toISOString() : null,
-            validated_by: isExistingUser ? user.id : null,
+            user_id: userId, // Use the found user ID or null
+            status: isExistingUser || userId ? 'validated' : 'pending',
+            validated_at: (isExistingUser || userId) ? new Date().toISOString() : null,
+            validated_by: (isExistingUser || userId) ? user.id : null,
           })
           .select()
           .single();
@@ -150,17 +166,34 @@ serve(async (req) => {
           throw createError;
         }
         
-        // If this is an existing user, create their account automatically
-        if (isExistingUser) {
+        // If the client has a user_id (either provided or found), create a savings account automatically
+        if (newClient.user_id) {
           try {
+            // Create a savings account for the client
             await supabase.rpc('sync_client_accounts', { 
               p_sfd_id: sfdId,
               p_client_id: newClient.id
             });
-            console.log('Created account for existing user');
+            console.log('Created account for client with user_id:', newClient.user_id);
           } catch (syncError) {
             console.error('Error syncing client account:', syncError);
             // Continue even if account sync fails
+          }
+        } else if (clientData.email) {
+          // If no user_id but we have an email, try to sync the client with a new user account
+          try {
+            // Call the sync-client-user-account function to create user+account
+            const { error: syncError } = await supabase.functions.invoke('sync-client-user-account', {
+              body: { clientId: newClient.id }
+            });
+            
+            if (syncError) {
+              console.error('Error syncing client with user account:', syncError);
+            } else {
+              console.log('Successfully synced client with user account and created savings account');
+            }
+          } catch (error) {
+            console.error('Exception during client-user sync:', error);
           }
         }
           
@@ -182,10 +215,18 @@ serve(async (req) => {
           
         // Try to sync the client account (create the account if needed)
         try {
+          // First try to sync via RPC
           await supabase.rpc('sync_client_accounts', { 
             p_sfd_id: sfdId,
             p_client_id: clientId
           });
+          
+          // If the client doesn't have a user_id, try to create one and sync
+          if (!validatedClient.user_id) {
+            await supabase.functions.invoke('sync-client-user-account', {
+              body: { clientId }
+            });
+          }
         } catch (syncError) {
           console.error("Error syncing client account:", syncError);
           // We'll continue even if syncing fails, as the client is validated

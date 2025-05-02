@@ -15,13 +15,18 @@ export interface SavingsAccount {
 export interface SavingsTransaction {
   id: string;
   user_id: string;
-  type: 'deposit' | 'withdrawal';
+  type: 'deposit' | 'withdrawal' | 'transfer' | 'payment' | 'loan_repayment' | 'loan_disbursement' | 'reversal' | 'other' | string;
   amount: number;
   name: string;
   description?: string;
   created_at: string;
   reference_id?: string;
   status: string;
+  payment_method?: string;
+  avatar_url?: string;
+  provider_reference?: string;
+  date?: string;
+  sfd_id?: string;
 }
 
 export interface SavingsTransactionOptions {
@@ -99,7 +104,7 @@ export const savingsAccountService = {
         return [];
       }
       
-      return data;
+      return data as SavingsTransaction[];
     } catch (error) {
       console.error("Error fetching transaction history:", error);
       return [];
@@ -176,7 +181,7 @@ export const savingsAccountService = {
         throw error;
       }
       
-      return data;
+      return data as SavingsTransaction;
     } catch (error) {
       console.error("Error processing transaction:", error);
       throw error;

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { sfdAccountService } from '@/services/sfdAccountService';
@@ -57,6 +58,11 @@ export function useSfdAccounts(sfdId?: string) {
     enabled: !!user && !!effectiveSfdId && effectiveSfdId !== '', // Only run if we have both user and valid SFD ID
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
+  // Add refetchSavingsAccount as an alias to refetchAccounts
+  const refetchSavingsAccount = useCallback(() => {
+    return refetchAccounts();
+  }, [refetchAccounts]);
 
   // Transfer funds between accounts
   const transferFunds = useMutation({
@@ -173,7 +179,8 @@ export function useSfdAccounts(sfdId?: string) {
     refetch: refetchAccounts,
     synchronizeBalances,
     activeSfdAccount,
-    makeLoanPayment
+    makeLoanPayment,
+    refetchSavingsAccount  // Add the alias here
   };
 }
 

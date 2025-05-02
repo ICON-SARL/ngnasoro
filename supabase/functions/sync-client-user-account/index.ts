@@ -16,13 +16,11 @@ serve(async (req) => {
   }
 
   try {
-    // Create Supabase client with service role (for admin-level access)
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Get the client ID from the request
     const { clientId } = await req.json();
 
     if (!clientId) {
@@ -32,7 +30,7 @@ serve(async (req) => {
       );
     }
 
-    // Step 1: Get the client details
+    // Get client details
     const { data: client, error: clientError } = await supabaseAdmin
       .from('sfd_clients')
       .select('*')
@@ -40,102 +38,158 @@ serve(async (req) => {
       .single();
 
     if (clientError || !client) {
-      console.error('Error finding client:', clientError);
       return new Response(
         JSON.stringify({ error: "Client not found", details: clientError }),
         { headers: corsHeaders, status: 404 }
       );
     }
 
-    // Step 2: Check if client already has user_id
-    let userId = client.user_id;
-
-    // Step 3: If no user_id and client has email, search for matching user
-    if (!userId && client.email) {
+    // If client doesn't have a user_id, check if a user with the same email exists
+    if (!client.user_id && client.email) {
       const { data: userProfile, error: profileError } = await supabaseAdmin
         .from('profiles')
         .select('id')
         .ilike('email', client.email)
         .maybeSingle();
 
-      if (userProfile?.id) {
-        userId = userProfile.id;
-        
-        // Update the client with the found user_id
-        await supabaseAdmin
+      if (profileError) {
+        console.error("Error looking up user profile:", profileError);
+      }
+
+      // If a user with this email exists, link them
+      if (userProfile) {
+        const { error: updateError } = await supabaseAdmin
           .from('sfd_clients')
-          .update({ user_id: userId })
+          .update({ user_id: userProfile.id })
           .eq('id', clientId);
-        
-        console.log(`Linked client ${clientId} with existing user ${userId}`);
+
+        if (updateError) {
+          console.error("Error linking existing user:", updateError);
+        } else {
+          client.user_id = userProfile.id;
+          console.log(`Linked client to existing user with id: ${userProfile.id}`);
+        }
       }
     }
 
-    // Step 4: If we have a user_id now, check if they have a savings account
-    if (userId) {
-      // Check if account already exists
-      const { data: existingAccount, error: accountError } = await supabaseAdmin
-        .from('accounts')
-        .select('id, balance, currency')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (existingAccount) {
-        console.log(`Savings account already exists for user ${userId}`);
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            message: "User already has a savings account", 
-            account: existingAccount,
-            user_id: userId,
-            client: client
-          }),
-          { headers: corsHeaders, status: 200 }
-        );
-      } else {
-        // Create a new savings account
-        const { data: newAccount, error: createError } = await supabaseAdmin
-          .from('accounts')
-          .insert({
-            user_id: userId,
-            balance: 0,
-            currency: 'FCFA',
-            sfd_id: client.sfd_id
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating savings account:', createError);
-          return new Response(
-            JSON.stringify({ error: "Failed to create savings account", details: createError }),
-            { headers: corsHeaders, status: 500 }
-          );
+    // If client still doesn't have a user_id, create a new user
+    if (!client.user_id) {
+      // Generate a temporary password and create a user account
+      const tempPassword = (Math.random().toString(36).substring(2, 10) + 
+                           Math.random().toString(36).substring(2, 10)).toUpperCase();
+      
+      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: client.email,
+        password: tempPassword,
+        email_confirm: true, // Auto-confirm the email
+        user_metadata: {
+          full_name: client.full_name,
+          phone: client.phone
         }
+      });
 
-        console.log(`Created savings account for user ${userId}`);
+      if (authError || !authUser.user) {
         return new Response(
-          JSON.stringify({ 
-            success: true, 
-            message: "Savings account created successfully", 
-            account: newAccount,
-            user_id: userId,
-            client: client
-          }),
-          { headers: corsHeaders, status: 201 }
+          JSON.stringify({ error: "Failed to create user account", details: authError }),
+          { headers: corsHeaders, status: 500 }
         );
       }
-    } else {
+
+      // Link the new user to the client
+      const { error: updateError } = await supabaseAdmin
+        .from('sfd_clients')
+        .update({ user_id: authUser.user.id })
+        .eq('id', clientId);
+
+      if (updateError) {
+        console.error("Error linking new user to client:", updateError);
+        return new Response(
+          JSON.stringify({ error: "Failed to link user account", details: updateError }),
+          { headers: corsHeaders, status: 500 }
+        );
+      }
+
+      client.user_id = authUser.user.id;
+      console.log(`Created new user with id: ${authUser.user.id}`);
+
+      // Store the temporary password so we can send it to the client
+      try {
+        await supabaseAdmin
+          .from('temp_auth_credentials')
+          .insert({
+            client_id: clientId,
+            temp_password: tempPassword,
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+          });
+      } catch (e) {
+        console.error("Error storing temporary credentials:", e);
+      }
+    }
+
+    // At this point, client.user_id should be defined
+    if (!client.user_id) {
       return new Response(
-        JSON.stringify({ 
-          error: "No user account found or linked for this client",
-          client: client,
-          suggestion: "Consider manually creating a user account or linking to an existing one"
-        }),
-        { headers: corsHeaders, status: 404 }
+        JSON.stringify({ error: "Failed to associate user with client" }),
+        { headers: corsHeaders, status: 500 }
       );
     }
 
+    // Check if savings account already exists
+    const { data: existingAccount, error: accountError } = await supabaseAdmin
+      .from('accounts')
+      .select('*')
+      .eq('user_id', client.user_id)
+      .maybeSingle();
+
+    if (accountError) {
+      console.error("Error checking for existing account:", accountError);
+    }
+
+    // Create savings account if it doesn't exist
+    if (!existingAccount) {
+      const { data: newAccount, error: createError } = await supabaseAdmin
+        .from('accounts')
+        .insert({
+          user_id: client.user_id,
+          balance: 0,
+          currency: 'FCFA',
+          sfd_id: client.sfd_id
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error("Error creating savings account:", createError);
+        return new Response(
+          JSON.stringify({ error: "Failed to create savings account", details: createError }),
+          { headers: corsHeaders, status: 500 }
+        );
+      }
+
+      console.log(`Created new savings account for user: ${client.user_id}`);
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "User account and savings account created successfully",
+          user_id: client.user_id,
+          account: newAccount
+        }),
+        { headers: corsHeaders, status: 201 }
+      );
+    } else {
+      console.log(`Savings account already exists for user: ${client.user_id}`);
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Client already has a savings account",
+          user_id: client.user_id,
+          account: existingAccount
+        }),
+        { headers: corsHeaders, status: 200 }
+      );
+    }
   } catch (error) {
     console.error("Error in sync-client-user-account function:", error);
     return new Response(
