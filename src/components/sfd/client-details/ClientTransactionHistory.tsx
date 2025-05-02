@@ -14,7 +14,7 @@ interface ClientTransactionHistoryProps {
 const ClientTransactionHistory: React.FC<ClientTransactionHistoryProps> = ({ clientId }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { transactions, isLoading, refetch } = useTransactionQuery(undefined, undefined, { 
-    search: clientId,
+    searchTerm: clientId, // Changed from 'search' to 'searchTerm' to match the TransactionFilters type
     limit: 10
   });
 
