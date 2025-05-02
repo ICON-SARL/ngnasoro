@@ -2,27 +2,31 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Lock } from 'lucide-react';
+import { Loader2, Lock, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Account {
   balance: number;
   currency: string;
   isVerified?: boolean;
   isDefault?: boolean;
+  last_updated?: string;
 }
 
 interface SFDSavingsOverviewProps {
   account?: Account | null;
+  onRefresh?: () => Promise<void>;
 }
 
-const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({ account }) => {
+const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({ account, onRefresh }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { savingsAccount } = useSfdAccounts();
+  const { savingsAccount, refetchSavingsAccount } = useSfdAccounts();
   const [isAccountVerified, setIsAccountVerified] = useState(true);
   
   useEffect(() => {
@@ -42,6 +46,21 @@ const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({ account }) => {
     
     return () => clearTimeout(timer);
   }, [account]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      if (onRefresh) {
+        await onRefresh();
+      } else {
+        await refetchSavingsAccount();
+      }
+    } catch (error) {
+      console.error("Error refreshing account:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   
   const goToSelector = () => {
     navigate('/sfd-selector');
@@ -90,7 +109,18 @@ const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({ account }) => {
     <Card className="border-0 shadow-md bg-white rounded-2xl overflow-hidden">
       <CardContent className="p-4">
         <div className="text-center py-4">
-          <h3 className="text-lg font-medium mb-2">Solde Disponible</h3>
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-medium">Solde Disponible</h3>
+            <Button 
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="h-8 w-8 p-0"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
           
           {isAccountVerified ? (
             <p className="text-2xl font-bold mb-4">
@@ -110,6 +140,12 @@ const SFDSavingsOverview: React.FC<SFDSavingsOverviewProps> = ({ account }) => {
           >
             Gérer mes fonds
           </Button>
+          
+          {account.last_updated && (
+            <p className="text-xs text-gray-500 mt-2">
+              Dernière mise à jour: {new Date(account.last_updated).toLocaleDateString()} {new Date(account.last_updated).toLocaleTimeString()}
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

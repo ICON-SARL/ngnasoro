@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Wallet, RefreshCw, ArrowUp, ArrowDown, UserPlus } from 'lucide-react';
+import { Plus, Wallet, RefreshCw, ArrowUp, ArrowDown, UserPlus, Link } from 'lucide-react';
 import { useSavingsAccount } from '@/hooks/useSavingsAccount';
 import { Loader } from '@/components/ui/loader';
 import { BankAccountDialog } from './BankAccountDialog';
@@ -11,6 +11,9 @@ import { fr } from 'date-fns/locale';
 import AccountOperationDialog from './AccountOperationDialog';
 import { useToast } from '@/hooks/use-toast';
 import { clientUserService } from '@/services/clientUserService';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface ClientBankAccountTabProps {
   client: any;
@@ -20,6 +23,9 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isOperationDialogOpen, setIsOperationDialogOpen] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [isSyncingUser, setIsSyncingUser] = useState(false);
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [linkEmail, setLinkEmail] = useState('');
   const [clientData, setClientData] = useState(client);
   const { toast } = useToast();
   
@@ -29,6 +35,12 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
     refetch,
     transactions
   } = useSavingsAccount(clientData?.id);
+
+  useEffect(() => {
+    if (client && client !== clientData) {
+      setClientData(client);
+    }
+  }, [client]);
 
   const handleRefresh = () => {
     refetch();
@@ -61,6 +73,9 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
         if (result.client) {
           setClientData(result.client);
         }
+
+        // Create savings account automatically
+        await handleEnsureSavingsAccount();
       }
     } catch (error) {
       console.error("Erreur lors de la création du compte utilisateur:", error);
@@ -73,6 +88,120 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
       setIsCreatingUser(false);
     }
   };
+
+  const handleEnsureSavingsAccount = async () => {
+    if (!clientData?.id) return;
+    
+    try {
+      const result = await clientUserService.ensureSavingsAccount(clientData.id);
+      
+      if (result.success) {
+        toast({
+          title: result.accountExists ? "Compte épargne existant" : "Compte épargne créé",
+          description: result.accountExists 
+            ? "Le compte épargne existe déjà pour ce client" 
+            : "Un compte épargne a été créé pour ce client"
+        });
+        refetch();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Erreur lors de la création du compte épargne:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de créer un compte épargne pour ce client",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
+  const handleSyncUserAccount = async () => {
+    setIsSyncingUser(true);
+    try {
+      const result = await clientUserService.syncClientWithUserAndCreateAccount(clientData.id);
+      
+      if (result.success) {
+        toast({
+          title: "Synchronisation réussie",
+          description: result.message || "Le client a été synchronisé avec son compte utilisateur"
+        });
+        
+        if (result.user_id && result.user_id !== clientData.user_id) {
+          setClientData({
+            ...clientData,
+            user_id: result.user_id
+          });
+        }
+        
+        refetch();
+      } else if (result.error) {
+        toast({
+          title: "Erreur de synchronisation",
+          description: result.error,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors de la synchronisation:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de synchroniser ce client avec un compte utilisateur",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSyncingUser(false);
+    }
+  };
+
+  const handleLinkToExisting = async () => {
+    if (!linkEmail) {
+      toast({
+        title: "Email requis",
+        description: "Veuillez entrer l'adresse email du compte à lier",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSyncingUser(true);
+    try {
+      const result = await clientUserService.linkToExistingAccount(clientData.id, linkEmail);
+      
+      if (result.success) {
+        toast({
+          title: "Compte lié avec succès",
+          description: "Le client a été lié à un compte utilisateur existant"
+        });
+        
+        if (result.client) {
+          setClientData(result.client);
+        }
+        
+        setIsLinkDialogOpen(false);
+        setLinkEmail('');
+        refetch();
+      }
+    } catch (error) {
+      console.error("Erreur lors de la liaison avec un compte existant:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de lier ce client avec le compte utilisateur spécifié",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSyncingUser(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center p-6">
+        <Loader size="md" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -90,11 +219,7 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
         )}
       </div>
       
-      {isLoading ? (
-        <div className="flex justify-center p-6">
-          <Loader size="md" />
-        </div>
-      ) : account ? (
+      {account ? (
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-2">
@@ -188,31 +313,95 @@ export function ClientBankAccountTab({ client }: ClientBankAccountTabProps) {
                 {!clientData.user_id ? (
                   <>
                     <p className="text-amber-600 mb-4">Ce client ne dispose pas de compte utilisateur</p>
-                    <Button 
-                      onClick={handleCreateUser}
-                      className="mb-4"
-                      disabled={isCreatingUser}
-                    >
-                      {isCreatingUser ? (
-                        <><Loader size="sm" className="mr-2" /> Création en cours...</>
-                      ) : (
-                        <><UserPlus className="h-4 w-4 mr-2" /> Créer un compte utilisateur</>
-                      )}
-                    </Button>
+                    <div className="flex flex-col gap-3 mb-4">
+                      <Button 
+                        onClick={handleCreateUser}
+                        className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+                        disabled={isCreatingUser}
+                      >
+                        {isCreatingUser ? (
+                          <><Loader size="sm" className="mr-2" /> Création en cours...</>
+                        ) : (
+                          <><UserPlus className="h-4 w-4 mr-2" /> Créer un compte utilisateur</>
+                        )}
+                      </Button>
+                      <Button 
+                        onClick={() => setIsLinkDialogOpen(true)}
+                        variant="outline"
+                        disabled={isSyncingUser}
+                      >
+                        <Link className="h-4 w-4 mr-2" /> Lier à un compte existant
+                      </Button>
+                      <Button
+                        onClick={handleSyncUserAccount}
+                        variant="outline"
+                        className="mt-1"
+                        disabled={isSyncingUser}
+                      >
+                        {isSyncingUser ? (
+                          <><Loader size="sm" className="mr-2" /> Synchronisation...</>
+                        ) : (
+                          <><RefreshCw className="h-4 w-4 mr-2" /> Synchroniser avec email du client</>
+                        )}
+                      </Button>
+                    </div>
                   </>
                 ) : (
-                  <Button 
-                    onClick={() => setIsCreateDialogOpen(true)}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    <Plus className="h-4 w-4 mr-2" /> Créer un compte d'épargne
-                  </Button>
+                  <>
+                    <Button 
+                      onClick={handleEnsureSavingsAccount}
+                      className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 mb-4"
+                    >
+                      <Plus className="h-4 w-4 mr-2" /> Créer un compte d'épargne
+                    </Button>
+
+                    <p className="text-xs text-gray-500">
+                      User ID: {clientData.user_id.substring(0, 8)}...
+                    </p>
+                  </>
                 )}
               </div>
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Dialog for linking to existing account */}
+      <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lier à un compte utilisateur existant</DialogTitle>
+            <DialogDescription>
+              Entrez l'adresse email du compte utilisateur existant pour le lier à ce client.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Adresse email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={linkEmail}
+                onChange={(e) => setLinkEmail(e.target.value)}
+                placeholder="exemple@email.com"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsLinkDialogOpen(false)}>Annuler</Button>
+            <Button 
+              onClick={handleLinkToExisting}
+              disabled={isSyncingUser || !linkEmail}
+            >
+              {isSyncingUser ? (
+                <><Loader size="sm" className="mr-2" /> Liaison en cours...</>
+              ) : (
+                <><Link className="h-4 w-4 mr-2" /> Lier le compte</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <BankAccountDialog 
         isOpen={isCreateDialogOpen} 

@@ -183,3 +183,15 @@ url = ""
 [functions]
 [functions.create-client-user]
 verify_jwt = true
+
+[functions.link-client-user]
+verify_jwt = true
+
+[functions.find-link-user-by-email]
+verify_jwt = true
+
+[functions.sync-client-user-account]
+verify_jwt = true
+
+[functions.ensure-client-savings]
+verify_jwt = true
