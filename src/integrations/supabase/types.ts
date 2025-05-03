@@ -15,6 +15,7 @@ export type Database = {
           currency: string | null
           id: string
           last_updated: string | null
+          sfd_id: string | null
           updated_at: string | null
           user_id: string
         }
@@ -23,6 +24,7 @@ export type Database = {
           currency?: string | null
           id?: string
           last_updated?: string | null
+          sfd_id?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -31,10 +33,19 @@ export type Database = {
           currency?: string | null
           id?: string
           last_updated?: string | null
+          sfd_id?: string | null
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "accounts_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       admin_notifications: {
         Row: {

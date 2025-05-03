@@ -1,33 +1,16 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAccountSynchronization } from './useAccountSynchronization';
 import { useAuth } from '@/hooks/useAuth';
-
-interface ClientAccount {
-  id: string;
-  balance: number;
-  currency: string;
-  last_updated: string;
-  user_id: string;
-}
-
-interface ClientTransaction {
-  id: string;
-  amount: number;
-  type: string;
-  description: string;
-  created_at: string;
-  status: string;
-}
+import { savingsAccountService } from '@/services/savings/savingsAccountService';
 
 export function useClientSavingsAccount(clientId: string) {
-  const [account, setAccount] = useState<ClientAccount | null>(null);
-  const [transactions, setTransactions] = useState<ClientTransaction[]>([]);
+  const [account, setAccount] = useState<any>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isTransactionLoading, setIsTransactionLoading] = useState(false);
   const { toast } = useToast();
-  const { synchronizeAccounts } = useAccountSynchronization();
   const { activeSfdId } = useAuth();
 
   // Fetch account data
@@ -36,11 +19,24 @@ export function useClientSavingsAccount(clientId: string) {
     
     setIsLoading(true);
     try {
+      // First get the user_id from the client record
+      const { data: client } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+      
+      if (!client?.user_id) {
+        setAccount(null);
+        return;
+      }
+
+      // Then get the account using user_id
       const { data, error } = await supabase
         .from('accounts')
         .select('*')
-        .eq('user_id', clientId)
-        .single();
+        .eq('user_id', client.user_id)
+        .maybeSingle();
       
       if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
         throw error;
@@ -63,14 +59,26 @@ export function useClientSavingsAccount(clientId: string) {
   const fetchTransactionHistory = useCallback(async () => {
     if (!clientId) return;
     
-    setIsTransactionLoading(true);
     try {
+      // First get the user_id from the client record
+      const { data: client } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+      
+      if (!client?.user_id) {
+        setTransactions([]);
+        return;
+      }
+      
+      // Fetch transactions for this user_id
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
-        .eq('user_id', clientId)
+        .eq('user_id', client.user_id)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(10);
       
       if (error) throw error;
       
@@ -82,8 +90,6 @@ export function useClientSavingsAccount(clientId: string) {
         description: "Impossible de récupérer l'historique des transactions",
         variant: "destructive",
       });
-    } finally {
-      setIsTransactionLoading(false);
     }
   }, [clientId, toast]);
 
@@ -100,15 +106,33 @@ export function useClientSavingsAccount(clientId: string) {
     
     setIsTransactionLoading(true);
     try {
+      // First get the user_id from the client record
+      const { data: client } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+      
+      if (!client?.user_id) {
+        toast({
+          title: "Erreur",
+          description: "Client non trouvé ou compte utilisateur non associé",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Create deposit transaction
       const { data, error } = await supabase
         .from('transactions')
         .insert({
-          user_id: clientId,
+          user_id: client.user_id,
           amount: amount,
           name: 'Dépôt',
           description: description || 'Dépôt sur compte client',
           type: 'deposit',
           status: 'success',
+          sfd_id: activeSfdId
         })
         .select()
         .single();
@@ -124,9 +148,6 @@ export function useClientSavingsAccount(clientId: string) {
       await fetchAccountData();
       await fetchTransactionHistory();
       
-      // Synchronize with user app account
-      await synchronizeAccounts(clientId);
-      
       return true;
     } catch (error: any) {
       console.error('Error processing deposit:', error);
@@ -139,7 +160,7 @@ export function useClientSavingsAccount(clientId: string) {
     } finally {
       setIsTransactionLoading(false);
     }
-  }, [clientId, toast, fetchAccountData, fetchTransactionHistory, synchronizeAccounts]);
+  }, [clientId, toast, fetchAccountData, fetchTransactionHistory, activeSfdId]);
 
   // Process a withdrawal
   const processWithdrawal = useCallback(async (amount: number, description?: string) => {
@@ -163,15 +184,33 @@ export function useClientSavingsAccount(clientId: string) {
     
     setIsTransactionLoading(true);
     try {
+      // First get the user_id from the client record
+      const { data: client } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+      
+      if (!client?.user_id) {
+        toast({
+          title: "Erreur",
+          description: "Client non trouvé ou compte utilisateur non associé",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Create withdrawal transaction
       const { data, error } = await supabase
         .from('transactions')
         .insert({
-          user_id: clientId,
+          user_id: client.user_id,
           amount: -amount, // Negative amount for withdrawal
           name: 'Retrait',
           description: description || 'Retrait du compte client',
           type: 'withdrawal',
           status: 'success',
+          sfd_id: activeSfdId
         })
         .select()
         .single();
@@ -187,9 +226,6 @@ export function useClientSavingsAccount(clientId: string) {
       await fetchAccountData();
       await fetchTransactionHistory();
       
-      // Synchronize with user app account
-      await synchronizeAccounts(clientId);
-      
       return true;
     } catch (error: any) {
       console.error('Error processing withdrawal:', error);
@@ -202,7 +238,7 @@ export function useClientSavingsAccount(clientId: string) {
     } finally {
       setIsTransactionLoading(false);
     }
-  }, [clientId, account, toast, fetchAccountData, fetchTransactionHistory, synchronizeAccounts]);
+  }, [clientId, account, toast, fetchAccountData, fetchTransactionHistory, activeSfdId]);
 
   // Create a new account if it doesn't exist
   const createAccount = useCallback(async (initialBalance: number = 0) => {
@@ -217,55 +253,22 @@ export function useClientSavingsAccount(clientId: string) {
     
     setIsLoading(true);
     try {
-      const { data: client } = await supabase
-        .from('sfd_clients')
-        .select('user_id')
-        .eq('id', clientId)
-        .single();
-
-      if (!client?.user_id) {
-        throw new Error("Le client n'a pas de compte utilisateur associé");
-      }
-
-      const { data, error } = await supabase
-        .from('accounts')
-        .insert({
-          user_id: client.user_id,
-          sfd_id: activeSfdId,
-          balance: initialBalance,
-          currency: 'FCFA'
-        })
-        .select()
-        .single();
+      const result = await savingsAccountService.createClientSavingsAccount(clientId, activeSfdId, initialBalance);
       
-      if (error) throw error;
-      
-      toast({
-        title: "Compte créé",
-        description: "Le compte d'épargne client a été créé avec succès",
-      });
-      
-      // Create initial deposit transaction if initial balance > 0
-      if (initialBalance > 0) {
-        await supabase
-          .from('transactions')
-          .insert({
-            user_id: client.user_id,
-            sfd_id: activeSfdId,
-            amount: initialBalance,
-            type: 'deposit',
-            name: 'Dépôt initial',
-            description: 'Dépôt initial lors de la création du compte',
-            status: 'success'
-          });
-          
+      if (result) {
+        toast({
+          title: "Compte créé",
+          description: "Le compte d'épargne client a été créé avec succès",
+        });
+        
+        // Refresh data
+        await fetchAccountData();
         await fetchTransactionHistory();
+        
+        return true;
+      } else {
+        throw new Error("Échec de la création du compte");
       }
-      
-      // Fetch updated account data
-      await fetchAccountData();
-      
-      return true;
     } catch (error: any) {
       console.error('Error creating account:', error);
       toast({
@@ -279,22 +282,47 @@ export function useClientSavingsAccount(clientId: string) {
     }
   }, [clientId, activeSfdId, toast, fetchAccountData, fetchTransactionHistory]);
 
-  // Synchronize account with user application account
-  const syncAccount = useCallback(async () => {
-    if (!clientId) return false;
+  // Ensure client has a savings account
+  const ensureSavingsAccount = useCallback(async () => {
+    if (!clientId || !activeSfdId) {
+      toast({
+        title: "Erreur",
+        description: "ID client ou SFD invalide",
+        variant: "destructive",
+      });
+      return false;
+    }
     
     setIsLoading(true);
     try {
-      const success = await synchronizeAccounts(clientId);
+      const success = await savingsAccountService.ensureClientSavingsAccount(clientId, activeSfdId);
+      
       if (success) {
+        toast({
+          title: "Compte créé",
+          description: "Le compte d'épargne client a été créé avec succès",
+        });
+        
+        // Refresh data
         await fetchAccountData();
         await fetchTransactionHistory();
+        
+        return true;
+      } else {
+        throw new Error("Échec de la création du compte");
       }
-      return success;
+    } catch (error: any) {
+      console.error('Error ensuring savings account:', error);
+      toast({
+        title: "Erreur",
+        description: `Impossible de créer le compte client: ${error.message}`,
+        variant: "destructive",
+      });
+      return false;
     } finally {
       setIsLoading(false);
     }
-  }, [clientId, synchronizeAccounts, fetchAccountData, fetchTransactionHistory]);
+  }, [clientId, activeSfdId, toast, fetchAccountData, fetchTransactionHistory]);
 
   // Load data on component mount
   useEffect(() => {
@@ -312,7 +340,8 @@ export function useClientSavingsAccount(clientId: string) {
     processDeposit,
     processWithdrawal,
     createAccount,
-    syncAccount,
-    refreshData: fetchAccountData
+    ensureSavingsAccount,
+    refreshData: fetchAccountData,
+    balance: account?.balance || 0,
   };
 }

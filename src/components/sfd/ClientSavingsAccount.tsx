@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import AccountOperationDialog from './client-accounts/AccountOperationDialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Banknote, ArrowDownUp, PiggyBank, RefreshCw } from 'lucide-react';
+import { Banknote, PiggyBank, RefreshCw } from 'lucide-react';
 
 interface ClientSavingsAccountProps {
   clientId: string;
@@ -19,13 +19,12 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, c
   const {
     account,
     isLoading,
-    transactions,
-    createAccount,
+    ensureSavingsAccount,
     refreshData
   } = useClientSavingsAccount(clientId);
 
   const handleCreateAccount = async () => {
-    await createAccount(0);
+    await ensureSavingsAccount();
   };
 
   if (isLoading) {
