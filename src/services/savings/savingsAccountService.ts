@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SavingsAccount {
@@ -177,7 +176,7 @@ export const savingsAccountService = {
       }
       
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in createSavingsAccount:', error);
       return null;
     }
@@ -260,6 +259,14 @@ export const savingsAccountService = {
     }
 
     try {
+      console.log(`Calling client-accounts edge function with:`, { 
+        action: transactionType, 
+        userId, 
+        amount, 
+        description, 
+        sfdId 
+      });
+
       // Use edge function to process transaction to bypass RLS
       const { data, error } = await supabase.functions.invoke('client-accounts', {
         body: {
@@ -275,6 +282,8 @@ export const savingsAccountService = {
         console.error('Error in edge function:', error);
         throw new Error(`Failed to process ${transactionType}: ${error.message}`);
       }
+      
+      console.log('Edge function response:', data);
       
       if (!data.success) {
         throw new Error(data.message || `Failed to process ${transactionType}`);

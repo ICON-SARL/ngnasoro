@@ -33,25 +33,34 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
     e.preventDefault();
     let success = false;
 
-    if (operationType === 'deposit') {
-      success = await processDeposit(amount, description);
-    } else {
-      success = await processWithdrawal(amount, description);
-    }
-
-    if (success) {
-      setAmount(0);
-      setDescription('');
-      if (onOperationComplete) {
-        onOperationComplete();
+    try {
+      if (operationType === 'deposit') {
+        success = await processDeposit(amount, description);
+      } else {
+        success = await processWithdrawal(amount, description);
       }
-      onClose();
+
+      if (success) {
+        setAmount(0);
+        setDescription('');
+        if (onOperationComplete) {
+          onOperationComplete();
+        }
+        onClose();
+      }
+    } catch (error) {
+      console.error('Operation error:', error);
+      // Error is handled by the hook
     }
   };
 
   // Validation function
   const isValidAmount = () => {
-    return amount > 0 && (operationType !== 'withdrawal' || amount <= balance);
+    if (operationType === 'deposit') {
+      return amount > 0; // Any positive amount is valid for deposit
+    } else {
+      return amount > 0 && amount <= balance; // For withdrawal, must be positive and not exceed balance
+    }
   };
 
   return (

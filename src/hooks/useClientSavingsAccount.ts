@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -88,6 +87,8 @@ export function useClientSavingsAccount(clientId: string) {
         return false;
       }
       
+      console.log(`Initiating deposit for user ${client.user_id} with amount ${amount}`);
+      
       // Use the service to process the transaction
       await savingsAccountService.processTransaction({
         userId: client.user_id,
@@ -99,7 +100,7 @@ export function useClientSavingsAccount(clientId: string) {
       
       toast({
         title: "Dépôt effectué",
-        description: `${amount} FCFA ont été déposés sur le compte client`,
+        description: `${amount.toLocaleString('fr-FR')} FCFA ont été déposés sur le compte client`,
       });
       
       // Refresh account data and transaction history
