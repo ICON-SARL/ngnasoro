@@ -12,6 +12,15 @@ export interface SavingsAccount {
   sfd_id?: string;
 }
 
+export interface SavingsTransactionOptions {
+  userId: string;
+  amount: number;
+  description?: string;
+  adminId?: string;
+  transactionType: 'deposit' | 'withdrawal';
+  sfdId: string;
+}
+
 export const savingsAccountService = {
   /**
    * Get a client's savings account
@@ -47,6 +56,13 @@ export const savingsAccountService = {
       console.error('Error in getClientSavingsAccount:', error);
       return null;
     }
+  },
+
+  /**
+   * Get client account - Alias for getClientSavingsAccount
+   */
+  async getClientAccount(clientId: string): Promise<SavingsAccount | null> {
+    return this.getClientSavingsAccount(clientId);
   },
 
   /**
@@ -116,6 +132,60 @@ export const savingsAccountService = {
   },
 
   /**
+   * Create savings account - Alias for createClientSavingsAccount
+   */
+  async createSavingsAccount(userId: string, sfdId: string, initialBalance: number = 0): Promise<SavingsAccount | null> {
+    try {
+      // Check if account already exists
+      const { data: existingAccount } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (existingAccount) {
+        return existingAccount;
+      }
+      
+      // Create new account
+      const { data, error } = await supabase
+        .from('accounts')
+        .insert({
+          user_id: userId,
+          balance: initialBalance,
+          currency: 'FCFA',
+          sfd_id: sfdId
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating savings account:', error);
+        throw error;
+      }
+      
+      // If initial balance > 0, create initial transaction
+      if (initialBalance > 0) {
+        await supabase
+          .from('transactions')
+          .insert({
+            user_id: userId,
+            amount: initialBalance,
+            type: 'deposit',
+            name: 'Dépôt initial',
+            description: 'Dépôt initial lors de la création du compte',
+            status: 'success'
+          });
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error in createSavingsAccount:', error);
+      return null;
+    }
+  },
+
+  /**
    * Ensure a client has a savings account (create if not exists)
    */
   async ensureClientSavingsAccount(clientId: string, sfdId: string): Promise<boolean> {
@@ -143,5 +213,112 @@ export const savingsAccountService = {
   async getBalance(clientId: string): Promise<number> {
     const account = await this.getClientSavingsAccount(clientId);
     return account?.balance || 0;
+  },
+
+  /**
+   * Get transaction history for a client
+   */
+  async getTransactionHistory(clientId: string): Promise<any[]> {
+    try {
+      // First get the user_id from the client record
+      const { data: client, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+      
+      if (clientError || !client?.user_id) {
+        console.error('Error fetching client:', clientError);
+        return [];
+      }
+
+      // Then get transactions using user_id
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', client.user_id)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        return [];
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error('Error in getTransactionHistory:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Process a transaction (deposit or withdrawal)
+   */
+  async processTransaction(options: SavingsTransactionOptions): Promise<boolean> {
+    const { userId, amount, description, adminId, transactionType, sfdId } = options;
+    
+    if (!userId || !amount || amount <= 0) {
+      throw new Error('Invalid transaction parameters');
+    }
+
+    try {
+      // Get current account
+      const { data: account, error: accountError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      
+      if (accountError) {
+        console.error('Error fetching account:', accountError);
+        throw new Error('Account not found');
+      }
+      
+      // Check if balance is sufficient for withdrawal
+      if (transactionType === 'withdrawal' && account.balance < amount) {
+        throw new Error('Insufficient balance');
+      }
+      
+      // Create transaction
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: userId,
+          amount: transactionType === 'deposit' ? amount : -amount,
+          name: transactionType === 'deposit' ? 'Dépôt' : 'Retrait',
+          description: description || (transactionType === 'deposit' ? 'Dépôt sur compte' : 'Retrait du compte'),
+          type: transactionType,
+          status: 'success',
+          sfd_id: sfdId
+        });
+      
+      if (transactionError) {
+        console.error('Error creating transaction:', transactionError);
+        throw transactionError;
+      }
+      
+      // Update account balance
+      const newBalance = transactionType === 'deposit' 
+        ? account.balance + amount 
+        : account.balance - amount;
+      
+      const { error: updateError } = await supabase
+        .from('accounts')
+        .update({ 
+          balance: newBalance,
+          last_updated: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+      
+      if (updateError) {
+        console.error('Error updating account balance:', updateError);
+        throw updateError;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error processing transaction:', error);
+      throw error;
+    }
   }
 };
