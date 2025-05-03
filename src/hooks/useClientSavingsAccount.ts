@@ -20,6 +20,7 @@ export function useClientSavingsAccount(clientId: string) {
     try {
       const accountData = await savingsAccountService.getClientAccount(clientId);
       setAccount(accountData || null);
+      return accountData;
     } catch (error: any) {
       console.error('Error fetching client account:', error);
       toast({
@@ -48,6 +49,35 @@ export function useClientSavingsAccount(clientId: string) {
       });
     }
   }, [clientId, toast]);
+
+  // Subscribe to real-time account updates
+  const subscribeToAccountUpdates = useCallback(() => {
+    if (!account?.id) return null;
+    
+    const channel = supabase
+      .channel('account-updates')
+      .on('postgres_changes', 
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'accounts', 
+          filter: `id=eq.${account.id}` 
+        }, 
+        (payload) => {
+          console.log('Account updated:', payload);
+          setAccount(prev => ({...prev, ...payload.new}));
+          toast({
+            title: "Compte mis à jour",
+            description: "Le solde de votre compte a été mis à jour",
+          });
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [account?.id, toast]);
 
   // Process a deposit
   const processDeposit = useCallback(async (amount: number, description?: string) => {
@@ -90,7 +120,7 @@ export function useClientSavingsAccount(clientId: string) {
       console.log(`Initiating deposit for user ${client.user_id} with amount ${amount}`);
       
       // Use the service to process the transaction
-      await savingsAccountService.processTransaction({
+      const result = await savingsAccountService.processTransaction({
         userId: client.user_id,
         amount,
         description,
@@ -169,7 +199,7 @@ export function useClientSavingsAccount(clientId: string) {
       }
       
       // Use the service to process the transaction
-      await savingsAccountService.processTransaction({
+      const result = await savingsAccountService.processTransaction({
         userId: client.user_id,
         amount,
         description,
@@ -179,7 +209,7 @@ export function useClientSavingsAccount(clientId: string) {
       
       toast({
         title: "Retrait effectué",
-        description: `${amount} FCFA ont été retirés du compte client`,
+        description: `${amount.toLocaleString('fr-FR')} FCFA ont été retirés du compte client`,
       });
       
       // Refresh account data and transaction history
@@ -292,6 +322,44 @@ export function useClientSavingsAccount(clientId: string) {
     }
   }, [clientId, fetchAccountData, fetchTransactionHistory]);
 
+  // Set up real-time subscription
+  useEffect(() => {
+    const unsubscribe = subscribeToAccountUpdates();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [subscribeToAccountUpdates]);
+
+  // Set up notification subscription
+  useEffect(() => {
+    if (!account?.user_id) return;
+    
+    const notificationChannel = supabase
+      .channel('notification-updates')
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'admin_notifications',
+          filter: `recipient_id=eq.${account.user_id}` 
+        }, 
+        (payload) => {
+          console.log('New notification:', payload);
+          const notification = payload.new;
+          
+          toast({
+            title: notification.title,
+            description: notification.message,
+          });
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(notificationChannel);
+    };
+  }, [account?.user_id, toast]);
+
   return {
     account,
     transactions,
@@ -299,7 +367,7 @@ export function useClientSavingsAccount(clientId: string) {
     isTransactionLoading,
     processDeposit,
     processWithdrawal,
-    createAccount,
+    createAccount: ensureSavingsAccount, // Alias for backward compatibility
     ensureSavingsAccount,
     refreshData: fetchAccountData,
     balance: account?.balance || 0,

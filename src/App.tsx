@@ -36,6 +36,7 @@ import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import RoleTestingPage from '@/pages/RoleTestingPage';
 import SplashScreen from '@/components/mobile/SplashScreen';
 import SfdClientDetailPage from '@/pages/SfdClientDetailPage';
+import { NotificationsOverlay } from '@/components/mobile/NotificationsOverlay';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -221,6 +222,7 @@ function App() {
                   
                   <Route path="*" element={<Navigate to="/auth" replace />} />
                 </Routes>
+                <NotificationsOverlay />
                 <Toaster />
               </div>
               <Footer />

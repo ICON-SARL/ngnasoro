@@ -104,6 +104,10 @@ async function processDeposit(supabase, userId, amount, description, sfdId) {
       
     if (accountError) throw new Error('Error fetching account');
     
+    // Calculate the new balance
+    const currentBalance = account ? account.balance : 0;
+    const newBalance = currentBalance + amount;
+    
     if (!account) {
       // Create account if it doesn't exist
       const { data: newAccount, error: createError } = await supabase
@@ -123,7 +127,7 @@ async function processDeposit(supabase, userId, amount, description, sfdId) {
       const { error: updateError } = await supabase
         .from('accounts')
         .update({
-          balance: account.balance + amount,
+          balance: newBalance,
           last_updated: new Date().toISOString()
         })
         .eq('user_id', userId);
@@ -132,7 +136,7 @@ async function processDeposit(supabase, userId, amount, description, sfdId) {
     }
     
     // Create transaction record
-    const { error: transactionError } = await supabase
+    const { data: transaction, error: transactionError } = await supabase
       .from('transactions')
       .insert({
         user_id: userId,
@@ -142,12 +146,32 @@ async function processDeposit(supabase, userId, amount, description, sfdId) {
         description: description || 'Dépôt sur compte client',
         status: 'success',
         sfd_id: sfdId
-      });
+      })
+      .select()
+      .single();
       
     if (transactionError) throw new Error('Error creating transaction record');
     
+    // Create notification for the user
+    const { error: notificationError } = await supabase
+      .from('admin_notifications')
+      .insert({
+        title: 'Dépôt effectué',
+        message: `Un dépôt de ${amount.toLocaleString('fr-FR')} FCFA a été effectué sur votre compte`,
+        type: 'transaction',
+        recipient_id: userId,
+        sender_id: userId
+      });
+    
+    if (notificationError) console.error('Error creating notification:', notificationError);
+    
     return new Response(
-      JSON.stringify({ success: true, message: 'Deposit processed successfully' }),
+      JSON.stringify({ 
+        success: true, 
+        message: 'Deposit processed successfully',
+        balance: newBalance,
+        transaction_id: transaction.id
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
@@ -179,10 +203,11 @@ async function processWithdrawal(supabase, userId, amount, description, sfdId) {
     if (account.balance < amount) throw new Error('Insufficient balance');
     
     // Update account balance
+    const newBalance = account.balance - amount;
     const { error: updateError } = await supabase
       .from('accounts')
       .update({
-        balance: account.balance - amount,
+        balance: newBalance,
         last_updated: new Date().toISOString()
       })
       .eq('user_id', userId);
@@ -190,7 +215,7 @@ async function processWithdrawal(supabase, userId, amount, description, sfdId) {
     if (updateError) throw new Error('Error updating account balance');
     
     // Create transaction record
-    const { error: transactionError } = await supabase
+    const { data: transaction, error: transactionError } = await supabase
       .from('transactions')
       .insert({
         user_id: userId,
@@ -200,12 +225,32 @@ async function processWithdrawal(supabase, userId, amount, description, sfdId) {
         description: description || 'Retrait du compte client',
         status: 'success',
         sfd_id: sfdId
-      });
+      })
+      .select()
+      .single();
       
     if (transactionError) throw new Error('Error creating transaction record');
     
+    // Create notification for the user
+    const { error: notificationError } = await supabase
+      .from('admin_notifications')
+      .insert({
+        title: 'Retrait effectué',
+        message: `Un retrait de ${amount.toLocaleString('fr-FR')} FCFA a été effectué sur votre compte`,
+        type: 'transaction',
+        recipient_id: userId,
+        sender_id: userId
+      });
+    
+    if (notificationError) console.error('Error creating notification:', notificationError);
+    
     return new Response(
-      JSON.stringify({ success: true, message: 'Withdrawal processed successfully' }),
+      JSON.stringify({ 
+        success: true, 
+        message: 'Withdrawal processed successfully',
+        balance: newBalance,
+        transaction_id: transaction.id
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

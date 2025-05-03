@@ -1,77 +1,96 @@
 
-import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { formatCurrencyAmount } from '@/utils/transactionUtils';
-import { Loader } from '@/components/ui/loader';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { SfdAccount } from '@/hooks/sfd/types';
+import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeBalance } from '@/hooks/useRealtimeBalance';
 
 interface FundsBalanceSectionProps {
   balance: number;
-  isRefreshing?: boolean;
-  sfdAccounts?: SfdAccount[];
-  onSelectSfd?: (sfdId: string) => void;
-  selectedSfd?: string;
+  isRefreshing: boolean;
+  sfdAccounts: any[];
+  onSelectSfd: (sfdId: string) => void;
+  selectedSfd: string;
 }
 
-const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({ 
-  balance, 
-  isRefreshing = false,
-  sfdAccounts = [],
+const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({
+  balance: initialBalance,
+  isRefreshing,
+  sfdAccounts,
   onSelectSfd,
   selectedSfd
 }) => {
-  const [showDropdown, setShowDropdown] = useState(false);
-
-  const handleSfdChange = (value: string) => {
-    if (onSelectSfd) {
-      onSelectSfd(value);
+  const [selectedAccount, setSelectedAccount] = useState<any>(null);
+  
+  useEffect(() => {
+    if (selectedSfd !== 'all') {
+      const account = sfdAccounts.find(a => a.id === selectedSfd);
+      if (account) {
+        setSelectedAccount(account);
+      }
+    } else {
+      setSelectedAccount(null);
     }
-  };
+  }, [selectedSfd, sfdAccounts]);
+  
+  // Use real-time balance hook
+  const { balance: realtimeBalance, isLive } = useRealtimeBalance(
+    initialBalance,
+    selectedAccount?.id
+  );
 
-  const selectedSfdName = selectedSfd === 'all' 
-    ? 'Tous les comptes' 
-    : sfdAccounts.find(acc => acc.id === selectedSfd)?.name || 'Sélectionner un SFD';
-
+  // Display the real-time balance if available, otherwise use the prop
+  const displayBalance = isLive ? realtimeBalance : initialBalance;
+  
   return (
-    <div className="bg-gradient-to-r from-[#0D6A51] to-[#0D6A51]/90 text-white p-6 rounded-b-3xl shadow-md">
-      <div className="flex flex-col items-center">
-        <p className="text-sm font-medium opacity-80 mb-1">Solde disponible</p>
-        
-        {/* SFD Selector */}
-        {sfdAccounts.length > 0 && (
-          <div className="w-full max-w-xs mb-3">
-            <Select onValueChange={handleSfdChange} value={selectedSfd} defaultValue="all">
-              <SelectTrigger className="bg-white/10 border-white/20 text-white rounded-xl">
-                <SelectValue placeholder="Sélectionner un compte SFD" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les comptes</SelectItem>
-                {sfdAccounts.map((sfd) => (
-                  <SelectItem key={sfd.id} value={sfd.id}>
-                    {sfd.name || sfd.description || `Compte ${sfd.account_type || 'SFD'}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        
-        {/* Balance Display */}
-        {isRefreshing ? (
-          <div className="py-4 flex items-center justify-center">
-            <Loader size="lg" className="text-white" />
-          </div>
-        ) : (
-          <div className="text-center">
-            <h1 className="text-5xl font-bold tracking-tight mt-2">
-              {formatCurrencyAmount(balance)}
-            </h1>
-            <p className="text-sm opacity-60 mt-1">FCFA</p>
-          </div>
-        )}
+    <div className="bg-[#0D6A51] text-white p-5 rounded-b-2xl shadow-md">
+      <div className="mb-4">
+        <h2 className="text-lg font-medium opacity-90">Solde disponible</h2>
+        <p className="text-3xl font-bold mt-1">{displayBalance.toLocaleString()} FCFA</p>
       </div>
+      
+      <div className="mt-4">
+        <div className="flex overflow-x-auto space-x-2 pb-2">
+          <Button
+            key="all"
+            onClick={() => onSelectSfd('all')}
+            variant={selectedSfd === 'all' ? 'default' : 'outline'}
+            className={selectedSfd === 'all' 
+              ? 'bg-white text-[#0D6A51] hover:bg-white/90' 
+              : 'bg-transparent text-white border-white/30 hover:bg-white/10'}
+            size="sm"
+          >
+            Tous les SFDs
+          </Button>
+          
+          {sfdAccounts.map((account) => (
+            <Button
+              key={account.id}
+              onClick={() => onSelectSfd(account.id)}
+              variant={selectedSfd === account.id ? 'default' : 'outline'}
+              className={selectedSfd === account.id 
+                ? 'bg-white text-[#0D6A51] hover:bg-white/90' 
+                : 'bg-transparent text-white border-white/30 hover:bg-white/10'}
+              size="sm"
+            >
+              {account.name || 'SFD'}
+            </Button>
+          ))}
+        </div>
+      </div>
+      
+      {isRefreshing && (
+        <div className="absolute right-2 top-2">
+          <span className="animate-spin inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+        </div>
+      )}
+      
+      {isLive && (
+        <div className="text-xs text-white/70 absolute right-2 bottom-2 flex items-center">
+          <span className="inline-block w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></span> 
+          Temps réel
+        </div>
+      )}
     </div>
   );
 };
