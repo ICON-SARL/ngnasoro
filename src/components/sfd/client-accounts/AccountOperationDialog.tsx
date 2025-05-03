@@ -49,6 +49,11 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
     }
   };
 
+  // Validation function
+  const isValidAmount = () => {
+    return amount > 0 && (operationType !== 'withdrawal' || amount <= balance);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
@@ -82,7 +87,7 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
                     id="amount"
                     type="number"
                     min={1}
-                    step={1000}
+                    step={1}
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
                     className="col-span-3"
@@ -120,7 +125,7 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
               </Button>
               <Button 
                 type="submit" 
-                disabled={isTransactionLoading || amount <= 0 || (operationType === 'withdrawal' && amount > balance)}
+                disabled={isTransactionLoading || !isValidAmount()}
               >
                 {isTransactionLoading && <Loader size="sm" className="mr-2" />}
                 {operationType === 'deposit' ? 'Effectuer le dépôt' : 'Effectuer le retrait'}

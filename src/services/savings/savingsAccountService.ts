@@ -112,16 +112,15 @@ export const savingsAccountService = {
       
       // If initial balance > 0, create initial transaction
       if (initialBalance > 0) {
-        await supabase
-          .from('transactions')
-          .insert({
-            user_id: client.user_id,
+        await supabase.functions.invoke('client-accounts', {
+          body: {
+            action: 'deposit',
             amount: initialBalance,
-            type: 'deposit',
-            name: 'Dépôt initial',
+            userId: client.user_id,
             description: 'Dépôt initial lors de la création du compte',
-            status: 'success'
-          });
+            sfdId: sfdId
+          }
+        });
       }
       
       return data;
@@ -132,7 +131,7 @@ export const savingsAccountService = {
   },
 
   /**
-   * Create savings account - Alias for createClientSavingsAccount
+   * Create savings account - Alias for createClientSavingsAccount with direct userId
    */
   async createSavingsAccount(userId: string, sfdId: string, initialBalance: number = 0): Promise<SavingsAccount | null> {
     try {
@@ -164,18 +163,17 @@ export const savingsAccountService = {
         throw error;
       }
       
-      // If initial balance > 0, create initial transaction
+      // If initial balance > 0, create initial transaction using edge function
       if (initialBalance > 0) {
-        await supabase
-          .from('transactions')
-          .insert({
-            user_id: userId,
+        await supabase.functions.invoke('client-accounts', {
+          body: {
+            action: 'deposit',
             amount: initialBalance,
-            type: 'deposit',
-            name: 'Dépôt initial',
+            userId: userId,
             description: 'Dépôt initial lors de la création du compte',
-            status: 'success'
-          });
+            sfdId: sfdId
+          }
+        });
       }
       
       return data;
@@ -252,67 +250,34 @@ export const savingsAccountService = {
   },
 
   /**
-   * Process a transaction (deposit or withdrawal)
+   * Process a transaction (deposit or withdrawal) using edge function to bypass RLS
    */
   async processTransaction(options: SavingsTransactionOptions): Promise<boolean> {
-    const { userId, amount, description, adminId, transactionType, sfdId } = options;
+    const { userId, amount, description, transactionType, sfdId } = options;
     
     if (!userId || !amount || amount <= 0) {
       throw new Error('Invalid transaction parameters');
     }
 
     try {
-      // Get current account
-      const { data: account, error: accountError } = await supabase
-        .from('accounts')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-      
-      if (accountError) {
-        console.error('Error fetching account:', accountError);
-        throw new Error('Account not found');
-      }
-      
-      // Check if balance is sufficient for withdrawal
-      if (transactionType === 'withdrawal' && account.balance < amount) {
-        throw new Error('Insufficient balance');
-      }
-      
-      // Create transaction
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: userId,
-          amount: transactionType === 'deposit' ? amount : -amount,
-          name: transactionType === 'deposit' ? 'Dépôt' : 'Retrait',
+      // Use edge function to process transaction to bypass RLS
+      const { data, error } = await supabase.functions.invoke('client-accounts', {
+        body: {
+          action: transactionType,
+          userId: userId,
+          amount: amount,
           description: description || (transactionType === 'deposit' ? 'Dépôt sur compte' : 'Retrait du compte'),
-          type: transactionType,
-          status: 'success',
-          sfd_id: sfdId
-        });
+          sfdId: sfdId
+        }
+      });
       
-      if (transactionError) {
-        console.error('Error creating transaction:', transactionError);
-        throw transactionError;
+      if (error) {
+        console.error('Error in edge function:', error);
+        throw new Error(`Failed to process ${transactionType}: ${error.message}`);
       }
       
-      // Update account balance
-      const newBalance = transactionType === 'deposit' 
-        ? account.balance + amount 
-        : account.balance - amount;
-      
-      const { error: updateError } = await supabase
-        .from('accounts')
-        .update({ 
-          balance: newBalance,
-          last_updated: new Date().toISOString()
-        })
-        .eq('user_id', userId);
-      
-      if (updateError) {
-        console.error('Error updating account balance:', updateError);
-        throw updateError;
+      if (!data.success) {
+        throw new Error(data.message || `Failed to process ${transactionType}`);
       }
       
       return true;
