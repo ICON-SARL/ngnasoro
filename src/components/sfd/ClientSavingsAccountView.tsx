@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useClientSavingsAccount } from '@/hooks/useClientSavingsAccount';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,15 +8,19 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Banknote, PiggyBank, RefreshCw } from 'lucide-react';
 import { NotificationsOverlay } from '@/components/mobile/NotificationsOverlay';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ClientSavingsAccountViewProps {
   clientId: string;
   clientName: string;
-  sfdId?: string; // Added sfdId as an optional prop
+  sfdId?: string;
 }
 
 const ClientSavingsAccountView: React.FC<ClientSavingsAccountViewProps> = ({ clientId, clientName, sfdId }) => {
   const [isOperationDialogOpen, setIsOperationDialogOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { toast } = useToast();
   
   const {
     account,
@@ -25,8 +29,91 @@ const ClientSavingsAccountView: React.FC<ClientSavingsAccountViewProps> = ({ cli
     refreshData
   } = useClientSavingsAccount(clientId);
 
+  // Log component props and account data for debugging
+  useEffect(() => {
+    console.log('ClientSavingsAccountView props:', { clientId, clientName, sfdId });
+    console.log('Current account data:', account);
+  }, [clientId, clientName, sfdId, account]);
+
   const handleCreateAccount = async () => {
-    await ensureSavingsAccount();
+    try {
+      await ensureSavingsAccount();
+      toast({
+        title: 'Compte créé',
+        description: 'Le compte d\'épargne a été créé avec succès',
+      });
+    } catch (error) {
+      console.error('Error creating account:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de créer le compte d\'épargne',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    
+    try {
+      await refreshData();
+      
+      // Also update accounts table explicitly to ensure we have latest balance
+      if (account?.user_id) {
+        // Fetch the latest balance from transactions
+        const { data: transactions, error: txError } = await supabase
+          .from('transactions')
+          .select('amount, type, created_at')
+          .eq('user_id', account.user_id)
+          .order('created_at', { ascending: true });
+          
+        if (txError) throw txError;
+        
+        // Calculate balance based on transactions
+        let calculatedBalance = 0;
+        transactions?.forEach(tx => {
+          if (tx.type === 'deposit' || tx.type === 'loan_disbursement') {
+            calculatedBalance += Math.abs(Number(tx.amount));
+          } else if (tx.type === 'withdrawal' || tx.type === 'loan_repayment') {
+            calculatedBalance -= Math.abs(Number(tx.amount));
+          } else {
+            calculatedBalance += Number(tx.amount);
+          }
+        });
+        
+        console.log('Calculated balance from transactions:', calculatedBalance);
+        console.log('Current account balance:', account.balance);
+        
+        // If balances don't match, update the account
+        if (calculatedBalance !== account.balance) {
+          console.log('Updating account balance to match transactions');
+          const { error: updateError } = await supabase.functions.invoke('client-accounts', {
+            body: {
+              action: 'updateBalance',
+              clientId,
+              amount: calculatedBalance - account.balance,
+              description: 'Correction de solde automatique',
+            }
+          });
+          
+          if (updateError) throw updateError;
+          
+          toast({
+            title: 'Solde mis à jour',
+            description: 'Le solde a été recalculé et mis à jour',
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing account:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de rafraîchir les données du compte',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   if (isLoading) {
@@ -54,10 +141,15 @@ const ClientSavingsAccountView: React.FC<ClientSavingsAccountViewProps> = ({ cli
           <Button
             variant="outline"
             size="sm"
-            onClick={() => refreshData()}
+            onClick={handleRefresh}
             className="h-8 w-8 p-0"
+            disabled={isRefreshing}
           >
-            <RefreshCw className="h-4 w-4" />
+            {isRefreshing ? (
+              <div className="animate-spin h-4 w-4 border-b-2 border-[#0D6A51] rounded-full"/>
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
           </Button>
         )}
       </CardHeader>
@@ -88,7 +180,13 @@ const ClientSavingsAccountView: React.FC<ClientSavingsAccountViewProps> = ({ cli
               onClose={() => setIsOperationDialogOpen(false)}
               clientId={clientId}
               clientName={clientName}
-              onOperationComplete={() => refreshData()}
+              onOperationComplete={() => {
+                refreshData();
+                toast({
+                  title: 'Opération réussie',
+                  description: 'Le compte client a été mis à jour avec succès',
+                });
+              }}
             />
           </div>
         ) : (

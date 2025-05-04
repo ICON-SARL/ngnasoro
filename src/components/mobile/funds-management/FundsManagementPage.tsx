@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import SecurePaymentTab from '../secure-payment';
@@ -14,6 +15,7 @@ import TransferOptions from './TransferOptions';
 import AvailableChannels from './AvailableChannels';
 import TransactionList, { TransactionListItem } from '../TransactionList';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 const FundsManagementPage = () => {
   const navigate = useNavigate();
@@ -35,16 +37,44 @@ const FundsManagementPage = () => {
   const { isSyncing, synchronizeWithSfd } = useRealtimeSynchronization();
   
   const { dashboardData, refreshDashboardData } = useMobileDashboard();
+
+  // Subscribe to account changes
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const channel = supabase
+      .channel('account-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'accounts',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          console.log('Account changed, refreshing data');
+          calculateBalanceForSelectedSfd();
+          refetchSfdAccounts();
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, refetchSfdAccounts]);
   
   useEffect(() => {
     fetchTransactions();
     calculateBalanceForSelectedSfd();
   }, [selectedSfd, sfdAccounts]);
 
-  const calculateBalanceForSelectedSfd = () => {
+  const calculateBalanceForSelectedSfd = useCallback(() => {
     if (selectedSfd === 'all') {
       if (sfdAccounts && sfdAccounts.length > 0) {
         const total = sfdAccounts.reduce((sum, account) => sum + (account.balance || 0), 0);
+        console.log('Calculating total balance across all SFDs:', total, sfdAccounts);
         setTotalBalance(total);
       } else if (dashboardData?.account?.balance) {
         setTotalBalance(dashboardData.account.balance);
@@ -53,9 +83,10 @@ const FundsManagementPage = () => {
       }
     } else {
       const selectedAccount = sfdAccounts.find(account => account.id === selectedSfd);
+      console.log('Selected SFD account balance:', selectedAccount?.balance, selectedAccount);
       setTotalBalance(selectedAccount?.balance || 0);
     }
-  };
+  }, [selectedSfd, sfdAccounts, dashboardData]);
 
   const handleSfdSelection = (sfdId: string) => {
     setSelectedSfd(sfdId);
@@ -76,16 +107,21 @@ const FundsManagementPage = () => {
     setIsRefreshing(true);
     
     try {
+      // Call the Edge Function to synchronize accounts
       await synchronizeWithSfd();
       
+      // Refresh the dashboard data (includes latest balances)
       if (refreshDashboardData) {
         await refreshDashboardData();
       }
       
+      // Refresh SFD accounts
       await refetchSfdAccounts();
       
+      // Get latest transactions
       await fetchTransactions();
       
+      // Recalculate balance
       calculateBalanceForSelectedSfd();
       
       toast({
@@ -120,6 +156,11 @@ const FundsManagementPage = () => {
   const selectedSfdAccount = selectedSfd !== 'all' 
     ? sfdAccounts.find(account => account.id === selectedSfd) 
     : undefined;
+  
+  useEffect(() => {
+    // Initial data load
+    refreshData();
+  }, []);
   
   return (
     <div className="bg-gray-50 min-h-screen">

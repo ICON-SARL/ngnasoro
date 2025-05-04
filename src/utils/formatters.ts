@@ -1,66 +1,64 @@
 
 /**
- * Formate une date en format lisible
+ * Format a currency amount with thousand separators
+ * @param amount The amount to format
+ * @param currency The currency symbol/code to append (optional)
+ * @returns Formatted currency string
  */
-export function formatDate(dateString?: string): string {
-  if (!dateString) return '-';
+export const formatCurrency = (amount: number, currency?: string): string => {
+  const formattedAmount = amount.toLocaleString('fr-FR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  });
   
-  try {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
+  return currency ? `${formattedAmount} ${currency}` : formattedAmount;
+};
+
+/**
+ * Format a number with thousand separators and specified decimal places
+ * @param number The number to format
+ * @param decimals Number of decimal places (default: 2)
+ * @returns Formatted number string
+ */
+export const formatNumber = (number: number, decimals = 2): string => {
+  return number.toLocaleString('fr-FR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+};
+
+/**
+ * Format a date to a human-readable string
+ * @param date Date object or string
+ * @param includeTime Whether to include the time
+ * @returns Formatted date string
+ */
+export const formatDate = (date: Date | string, includeTime = false): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  if (includeTime) {
+    return dateObj.toLocaleString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    }).format(date);
-  } catch (error) {
-    console.error('Erreur lors du formatage de la date:', error);
-    return dateString;
-  }
-}
-
-/**
- * Formate un montant en FCFA
- */
-export function formatCurrency(amount?: number | string): string {
-  if (amount === undefined || amount === null) return '-';
-  
-  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  
-  if (isNaN(numericAmount)) return '-';
-  
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'XOF',
-    maximumFractionDigits: 0
-  }).format(numericAmount);
-}
-
-/**
- * Formate un numéro de téléphone
- */
-export function formatPhoneNumber(phoneNumber?: string): string {
-  if (!phoneNumber) return '-';
-  
-  // Format simple pour les numéros africains (ex: XX XXX XX XX)
-  // Adapté selon les standards locaux
-  const cleaned = phoneNumber.replace(/\D/g, '');
-  const match = cleaned.match(/^(\d{2})(\d{3})(\d{2})(\d{2})$/);
-  
-  if (match) {
-    return `${match[1]} ${match[2]} ${match[3]} ${match[4]}`;
+    });
   }
   
-  return phoneNumber;
-}
+  return dateObj.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+};
 
 /**
- * Tronque un texte à une longueur maximale
+ * Format a monetary amount for display in transactions
+ * @param amount The amount to format
+ * @returns Formatted amount string
  */
-export function truncateText(text: string, maxLength: number): string {
-  if (!text) return '';
-  if (text.length <= maxLength) return text;
-  
-  return text.substring(0, maxLength) + '...';
-}
+export const formatMonetaryAmount = (amount: number): string => {
+  const absAmount = Math.abs(amount);
+  return formatCurrency(absAmount);
+};

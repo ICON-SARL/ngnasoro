@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Bell } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { formatCurrency } from '@/utils/formatters';
 
 interface Notification {
   id: string;
@@ -10,6 +12,8 @@ interface Notification {
   message: string;
   read: boolean;
   created_at: string;
+  type?: string;
+  metadata?: any;
 }
 
 export function NotificationsOverlay() {
@@ -17,6 +21,7 @@ export function NotificationsOverlay() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   // Get current user's ID
   useEffect(() => {
@@ -73,10 +78,64 @@ export function NotificationsOverlay() {
           setNotifications(prev => [newNotification, ...prev]);
           setUnreadCount(count => count + 1);
           
-          // Show toast notification
+          // Show toast notification with enhanced transaction information
+          if (newNotification.type === 'transaction') {
+            // Extract and format transaction information if available
+            const transactionAmount = newNotification.metadata?.amount 
+              ? formatCurrency(newNotification.metadata.amount) 
+              : '';
+              
+            toast({
+              title: newNotification.title,
+              description: newNotification.message,
+              variant: 'default',
+              action: (
+                <Badge variant="outline" className="ml-2 bg-green-100">
+                  Transaction
+                </Badge>
+              )
+            });
+            
+            // Show notification briefly
+            setIsVisible(true);
+            setTimeout(() => setIsVisible(false), 5000);
+          } else {
+            toast({
+              title: newNotification.title,
+              description: newNotification.message,
+            });
+          }
+        }
+      )
+      .subscribe();
+      
+    // Also listen for transaction updates specifically
+    const transactionChannel = supabase
+      .channel('transaction-updates')
+      .on('postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'transactions',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          const newTransaction = payload.new;
+          console.log('New transaction detected:', newTransaction);
+          
+          // Check if this is a credit or debit
+          const isCredit = newTransaction.amount > 0 || 
+                          newTransaction.type === 'deposit' || 
+                          newTransaction.type === 'loan_disbursement';
+                          
+          const transactionType = isCredit ? 'crédit' : 'débit';
+          const amount = Math.abs(Number(newTransaction.amount));
+          
+          // Show a special transaction notification
           toast({
-            title: newNotification.title,
-            description: newNotification.message,
+            title: `${isCredit ? 'Crédit' : 'Débit'} effectué`,
+            description: `Un ${transactionType} de ${formatCurrency(amount)} FCFA a été effectué sur votre compte.`,
+            variant: isCredit ? 'default' : 'secondary',
           });
         }
       )
@@ -84,6 +143,7 @@ export function NotificationsOverlay() {
       
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(transactionChannel);
     };
   }, [userId, toast]);
 

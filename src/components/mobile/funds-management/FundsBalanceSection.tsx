@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useRealtimeBalance } from '@/hooks/useRealtimeBalance';
+import { formatCurrency } from '@/utils/formatters';
 
 interface FundsBalanceSectionProps {
   balance: number;
@@ -27,26 +28,35 @@ const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({
       const account = sfdAccounts.find(a => a.id === selectedSfd);
       if (account) {
         setSelectedAccount(account);
+        console.log('Selected account updated:', account);
       }
     } else {
       setSelectedAccount(null);
     }
   }, [selectedSfd, sfdAccounts]);
   
-  // Use real-time balance hook
+  // Use real-time balance hook with enhanced account ID handling
   const { balance: realtimeBalance, isLive } = useRealtimeBalance(
     initialBalance,
-    selectedAccount?.id
+    selectedAccount?.id || (selectedSfd !== 'all' ? selectedSfd : undefined)
   );
 
   // Display the real-time balance if available, otherwise use the prop
   const displayBalance = isLive ? realtimeBalance : initialBalance;
   
+  // Format the balance with thousand separators
+  const formattedBalance = formatCurrency(displayBalance);
+  
   return (
-    <div className="bg-[#0D6A51] text-white p-5 rounded-b-2xl shadow-md">
+    <div className="bg-[#0D6A51] text-white p-5 rounded-b-2xl shadow-md relative">
       <div className="mb-4">
         <h2 className="text-lg font-medium opacity-90">Solde disponible</h2>
-        <p className="text-3xl font-bold mt-1">{displayBalance.toLocaleString()} FCFA</p>
+        <p className="text-3xl font-bold mt-1">{formattedBalance} FCFA</p>
+        {selectedAccount && (
+          <p className="text-sm opacity-80 mt-1">
+            {selectedAccount.name || 'SFD'}
+          </p>
+        )}
       </div>
       
       <div className="mt-4">

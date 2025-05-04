@@ -15,16 +15,19 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    
+    // Use service role key for privileged access to user's account data
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Get the request body
-    const { userId, period } = await req.json()
+    const { userId, period, sfdId } = await req.json()
 
     if (!userId) {
       throw new Error('User ID is required')
     }
 
-    console.log(`Fetching dashboard data for user ${userId}, period: ${period || 'month'}`)
+    console.log(`Fetching dashboard data for user ${userId}, period: ${period || 'month'}, sfdId: ${sfdId || 'all'}`)
 
     // Get the user's information
     const { data: userProfile, error: profileError } = await supabase
@@ -35,20 +38,32 @@ Deno.serve(async (req) => {
 
     if (profileError) {
       console.error('Error fetching user profile:', profileError)
+      throw new Error(`Failed to fetch user profile: ${profileError.message}`)
     }
 
-    // Get user's account information
-    const { data: account, error: accountError } = await supabase
+    // Get user's account information (with proper balance)
+    let accountQuery = supabase
       .from('accounts')
       .select('*')
       .eq('user_id', userId)
-      .single()
+
+    // If sfdId is provided, filter by it
+    if (sfdId) {
+      accountQuery = accountQuery.eq('sfd_id', sfdId)
+    }
+    
+    const { data: account, error: accountError } = await accountQuery.single()
 
     if (accountError) {
       console.error('Error fetching account data:', accountError)
+      throw new Error(`Failed to fetch account data: ${accountError.message}`)
     }
 
-    // Get user's SFD accounts
+    if (!account) {
+      console.warn(`No account found for user ${userId}`)
+    }
+
+    // Get user's SFD accounts with detailed information
     const { data: userSfds, error: sfdsError } = await supabase
       .from('user_sfds')
       .select(`
@@ -62,12 +77,22 @@ Deno.serve(async (req) => {
       console.error('Error fetching user SFDs:', sfdsError)
     }
 
+    // Get actual SFD account balances for accurate display
+    const { data: sfdAccounts, error: sfdAccountsError } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('user_id', userId)
+
+    if (sfdAccountsError) {
+      console.error('Error fetching SFD account balances:', sfdAccountsError)
+    }
+
     // Get recent transactions
     const { data: transactions, error: transactionsError } = await supabase
       .from('transactions')
       .select('*')
       .eq('user_id', userId)
-      .order('date', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(5)
 
     if (transactionsError) {
@@ -85,8 +110,8 @@ Deno.serve(async (req) => {
     // Process transactions to calculate income and expenses
     if (transactions && transactions.length > 0) {
       transactions.forEach(tx => {
-        if (tx.amount > 0) {
-          financialSummary.income += Number(tx.amount)
+        if (tx.amount > 0 || tx.type === 'deposit' || tx.type === 'loan_disbursement') {
+          financialSummary.income += Number(Math.abs(tx.amount))
         } else {
           financialSummary.expenses += Math.abs(Number(tx.amount))
         }
@@ -108,11 +133,21 @@ Deno.serve(async (req) => {
       console.error('Error fetching loans:', loansError)
     }
 
-    // Prepare the dashboard data
+    // Enhance SFD accounts with proper names from userSfds
+    const enhancedSfdAccounts = sfdAccounts?.map(account => {
+      const userSfd = userSfds?.find(us => us.sfds?.id === account.sfd_id);
+      return {
+        ...account,
+        name: userSfd?.sfds?.name || 'SFD',
+        logo_url: userSfd?.sfds?.logo_url,
+      };
+    }) || [];
+
+    // Prepare the dashboard data with accurate balances
     const dashboardData = {
       profile: userProfile || {},
       account: account || { balance: 0, currency: 'FCFA' },
-      sfdAccounts: userSfds || [],
+      sfdAccounts: enhancedSfdAccounts,
       transactions: transactions || [],
       financialSummary,
       nearestLoan: loans && loans.length > 0 ? loans[0] : null,

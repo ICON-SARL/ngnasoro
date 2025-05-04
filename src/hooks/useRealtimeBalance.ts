@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { realtimeBalanceService } from '@/services/realtimeBalanceService';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useRealtimeBalance(initialBalance: number = 0, accountId?: string) {
   const [balance, setBalance] = useState<number>(initialBalance);
@@ -12,6 +12,9 @@ export function useRealtimeBalance(initialBalance: number = 0, accountId?: strin
 
   // Handle balance updates
   const handleBalanceUpdate = useCallback((newBalance: number, updatedAccountId: string) => {
+    console.log('Realtime balance update received:', { newBalance, updatedAccountId, accountId });
+    
+    // Update if either we're watching this specific account, or all accounts
     if (!accountId || accountId === updatedAccountId) {
       setBalance(newBalance);
       setLastUpdated(new Date());
@@ -24,20 +27,51 @@ export function useRealtimeBalance(initialBalance: number = 0, accountId?: strin
     }
   }, [accountId, toast]);
 
-  // Subscribe to realtime updates
+  // Subscribe to realtime updates with improved handling
   useEffect(() => {
     if (!user?.id) return;
     
-    const unsubscribe = realtimeBalanceService.subscribeToBalanceUpdates(
-      user.id,
-      activeSfdId,
-      handleBalanceUpdate
-    );
+    console.log('Setting up realtime balance subscription for:', { 
+      userId: user.id, 
+      accountId, 
+      activeSfdId 
+    });
     
+    // Create a channel for realtime subscriptions
+    const channel = supabase
+      .channel('account-balance-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'accounts',
+          filter: accountId 
+            ? `id=eq.${accountId}` 
+            : `user_id=eq.${user.id}${activeSfdId ? `&sfd_id=eq.${activeSfdId}` : ''}`
+        },
+        (payload) => {
+          console.log('Balance update received:', payload);
+          if (payload.new && typeof payload.new.balance === 'number') {
+            handleBalanceUpdate(payload.new.balance, payload.new.id);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
+
+    // Set initial balance if provided
+    if (initialBalance !== undefined && initialBalance > 0) {
+      setBalance(initialBalance);
+    }
+    
+    // Return unsubscribe function
     return () => {
-      unsubscribe();
+      console.log('Unsubscribing from balance updates');
+      supabase.removeChannel(channel);
     };
-  }, [user?.id, activeSfdId, handleBalanceUpdate]);
+  }, [user?.id, activeSfdId, accountId, handleBalanceUpdate, initialBalance]);
 
   // Return the current balance and last update time
   return {
