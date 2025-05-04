@@ -157,6 +157,7 @@ const ClientDetailView = () => {
         <TabsContent value="savings">
           <ClientSavingsAccountView 
             clientId={clientId as string} 
+            clientName={client.full_name}
             sfdId={activeSfdId || client.sfd_id} 
           />
         </TabsContent>
