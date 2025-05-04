@@ -47,10 +47,6 @@ export const ClientBankAccountTab: React.FC<ClientBankAccountTabProps> = ({ clie
     }
   };
 
-  const handleCreateAccount = () => {
-    setIsDialogOpen(true);
-  };
-
   const handleEnsureSavingsAccount = async () => {
     if (!client?.id || !activeSfdId) return;
     
@@ -86,35 +82,11 @@ export const ClientBankAccountTab: React.FC<ClientBankAccountTabProps> = ({ clie
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
         <ClientSavingsAccount 
           clientId={client.id} 
           clientName={client.full_name || 'Client'} 
         />
-        
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>Fonctionnalités bancaires</CardTitle>
-            <CardDescription>Options disponibles pour ce client</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Button 
-                className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-                onClick={handleEnsureSavingsAccount}
-                disabled={isLoading}
-              >
-                {isLoading ? 'Création...' : 'Créer un compte d\'épargne'}
-              </Button>
-              <Button variant="outline" className="w-full" disabled>
-                Demander un découvert bancaire
-              </Button>
-              <Button variant="outline" className="w-full" disabled>
-                Configurer des virements récurrents
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
       
       <ClientTransactionHistory clientId={client.id} />
