@@ -135,7 +135,7 @@ export function NotificationsOverlay() {
           toast({
             title: `${isCredit ? 'Crédit' : 'Débit'} effectué`,
             description: `Un ${transactionType} de ${formatCurrency(amount)} FCFA a été effectué sur votre compte.`,
-            variant: isCredit ? 'default' : 'secondary',
+            variant: 'default', // Changed from 'secondary' to 'default'
           });
         }
       )
